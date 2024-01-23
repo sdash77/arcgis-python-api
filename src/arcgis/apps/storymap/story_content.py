@@ -93,7 +93,7 @@ class Scales(Enum):
     ROOM = {"scale": 100, "zoom": 22}
 
 
-class LayoutType(Enum):
+class SlideLayout(Enum):
     """
     This depicts the various layout types that can be used for a BriefingSlide.
     """
@@ -107,7 +107,7 @@ class LayoutType(Enum):
     SECTIONSINGLE = "section-single"
 
 
-class SublayoutType(Enum):
+class SlideSubLayout(Enum):
     """
     Depicts the various subtypes for a BriefingSlide. For example, if the layout type is
     `DOUBLE` then the sublayout type can be `THREE_SEVEN` or `SEVEN_THREE` or `ONE_ONE`.
@@ -4209,18 +4209,23 @@ class BriefingSlide:
         self._story: briefing.Briefing = kwargs.pop("story")
         self._type: str = "briefing-slide"
         self.node: str = kwargs.pop("node_id", None)
-        layout: Union[LayoutType, str] = kwargs.pop("layout", "single")
-        sublayout: Union[SublayoutType, str] | None = kwargs.pop("sublayout", None)
-        title: Text | str | None = kwargs.pop("title", None)
-        subtitle: Text | str | None = kwargs.pop("subtitle", None)
-
         # Check if node exists else create a new instance
         self._existing: bool = self._check_node()
 
         if self._existing:
+            # initialize the slide
             self._initialize_existing_slide()
+            self._set_block_children()
         else:
-            self._initialize_new_slide(layout, sublayout, title, subtitle)
+            # check the kwargs and create the slide
+            layout: Union[SlideLayout, str] = kwargs.pop("layout", "single")
+            sublayout: Union[SlideSubLayout, str] | None = kwargs.pop("sublayout", None)
+            title: Text | str | None = kwargs.pop("title", None)
+            subtitle: Text | str | None = kwargs.pop("subtitle", None)
+            section_position: str | None = kwargs.pop("section_position", None)
+            self._initialize_new_slide(
+                layout, sublayout, title, subtitle, section_position
+            )
 
     def _initialize_existing_slide(self):
         # Existing slide logic
@@ -4243,39 +4248,17 @@ class BriefingSlide:
                 self._title: Text = utils._assign_node_class(self._story, title_node)
             else:
                 self._title: Text | None = None
-            self._fix_children()
 
-    def _initialize_new_slide(self, layout, sublayout, title, subtitle):
+            self._section_position: str | None = node_data.get("sectionPosition", None)
+
+    def _initialize_new_slide(
+        self, layout, sublayout, title, subtitle, section_position
+    ):
         # New slide logic
         self.node: str = "n-" + uuid.uuid4().hex[0:6]
         self._children: dict = {}
 
-        # set layout and sublayout
-        if layout in LayoutType.__members__.values():
-            self._layout: str = layout.value
-        elif layout in [
-            "single",
-            "double",
-            "titleless-single",
-            "titleless-double",
-            "full",
-            "section-single",
-            "section-double",
-        ]:
-            self._layout: str = layout
-        else:
-            raise ValueError(
-                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
-            )
-
-        if sublayout and sublayout in SublayoutType.__members__.values():
-            self._sublayout: str = sublayout.value
-        elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
-            self._sublayout: str = sublayout
-        elif sublayout:
-            raise ValueError("Invalid sublayout type")
-        else:
-            self._sublayout: str | None = None
+        self._apply_layout(layout, sublayout, section_position)
 
         # set title
         if title:
@@ -4295,46 +4278,85 @@ class BriefingSlide:
         else:
             self._subtitle: Text | None = None
 
-    def _fix_children(self):
+    def _apply_layout(self, layout, sublayout, section_position):
+        # set layout and sublayout
+        if layout in SlideLayout.__members__.values():
+            self._layout: str = layout.value
+        elif layout in [
+            "single",
+            "double",
+            "titleless-single",
+            "titleless-double",
+            "full",
+            "section-single",
+            "section-double",
+        ]:
+            self._layout: str = layout
+        else:
+            raise ValueError(
+                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
+            )
+
+        if self._layout in ["double", "titleless-double"]:
+            if sublayout and sublayout in SlideSubLayout.__members__.values():
+                self._sublayout: str = sublayout.value
+            elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
+                self._sublayout: str = sublayout
+            elif sublayout:
+                raise ValueError("Invalid sublayout type")
+            else:
+                self._sublayout: str = "1-1"
+        else:
+            self._sublayout: str | None = None
+
+        if self._layout == "section-double" and section_position:
+            self._section_position: str = section_position
+        else:
+            self._section_position: str | None = None
+
+    def _set_block_children(self):
         # Logic for fixing children, section double is special case
-        if (
+        if self._layout == "section-single":
+            self._set_special_layout()
+        elif (
             "single" in self._layout
             or self._layout == "full"
             or self._layout == "section-double"
         ):
-            self._fix_single_layout()
+            self._set_single_layout()
         elif "double" in self._layout:
-            self._fix_double_layout()
+            self._set_double_layout()
 
-    def _fix_single_layout(self):
-        if self._existing:
-            # Logic for fixing single layout
-            if "0" not in self._children:
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "0"
-                ] = []
-                self._children = self._story._properties["nodes"][self.node]["data"][
-                    "contents"
-                ]
-            self._delete_keys(1)
+    def _set_special_layout(self):
+        # Logic to fix the section-single layout, can be added to later
+        # section-single has no blocks, put empty dictionary
+        if "contents" not in self._story._properties["nodes"][self.node]["data"]:
+            self._story._properties["nodes"][self.node]["data"]["contents"] = {}
+        self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+        self._delete_keys(1)
 
-    def _fix_double_layout(self):
-        # Logic for fixing double layout
-        if self._existing:
-            for key in ["0", "1"]:
-                if key not in self._children:
-                    self._story._properties["nodes"][self.node]["data"]["contents"][
-                        key
-                    ] = []
+    def _set_single_layout(self):
+        # Logic for fixing single layout
+        if "0" not in self._children:
+            self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
             self._children = self._story._properties["nodes"][self.node]["data"][
                 "contents"
             ]
-            self._delete_keys(2)
+        self._delete_keys(1)
 
-    # ----------------------------------------------------------------------
+    def _set_double_layout(self):
+        # Logic for fixing double layout
+        for key in ["0", "1"]:
+            if key not in self._children:
+                self._story._properties["nodes"][self.node]["data"]["contents"][
+                    key
+                ] = []
+        self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+        self._delete_keys(2)
+
     def _delete_keys(self, value):
         """delete the keys starting at the value and upwards"""
-        for key in range(value, 4):
+        for key in range(value, 2):
             try:
                 del self._story._properties["nodes"][self.node]["data"]["contents"][
                     str(key)
@@ -4404,6 +4426,10 @@ class BriefingSlide:
                 title = Text(title, TextStyles.HEADING)
                 title._add_to_story(story=self._story)
             elif isinstance(title, Text):
+                if title._style != TextStyles.HEADING:
+                    raise ValueError(
+                        "Title must be of style TextStyles.HEADING. Please change the style."
+                    )
                 # If text created but not in story
                 if title._existing is False:
                     title._add_to_story(story=self._story)
@@ -4422,26 +4448,29 @@ class BriefingSlide:
     def subtitle(self, subtitle: Union[Text, str]):
         if self._layout not in ["section-single", "section-double"]:
             raise Exception("This slide does not have a subtitle.")
-        if self._existing is True:
-            # If string then need to create text node and add to story
-            if isinstance(subtitle, str):
-                subtitle = Text(subtitle, TextStyles.PARAGRAPH)
+
+        # If string then need to create text node and add to story
+        if isinstance(subtitle, str):
+            subtitle = Text(subtitle, TextStyles.PARAGRAPH)
+            subtitle._add_to_story(story=self._story)
+        elif isinstance(subtitle, Text):
+            # If text created but not in story
+            if subtitle._existing is False:
                 subtitle._add_to_story(story=self._story)
-            elif isinstance(subtitle, Text):
-                # If text created but not in story
-                if subtitle._existing is False:
-                    subtitle._add_to_story(story=self._story)
-            # Set the title node id in data of slide
-            self._story._properties["nodes"][self.node]["data"][
-                "subtitle"
-            ] = subtitle.node
+        # Set the title node id in data of slide
+        self._story._properties["nodes"][self.node]["data"]["subtitle"] = subtitle.node
+
         self._subtitle = subtitle
 
     # ----------------------------------------------------------------------
     @property
     def layout(self) -> str:
         """
-        Get/Set the layout of the slide.
+        Get the layout of the slide.
+
+        .. note::
+            Once a slide is created, the layout cannot be changed.
+
         :return:
             A string of the layout type.
         """
@@ -4457,33 +4486,55 @@ class BriefingSlide:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        sublayout           String depicting the sublayout type of the slide. Only applicable
-                            when the layout is "double", "single-double", "double-single", or "grid.
-                            Values for "double": "3-7" | "7-3" | "1-1"
-                            Values for "single-double": "1-1" | "3-2"
-                            Values for "double-single": "1-1" | "2-3"
-                            Values for "grid": "2-2" | "3-2" | "2-3"
+        sublayout           SlideSubLayout value or String depicting the sublayout type of the slide.
+                            Only applicable when the layout is "double" or "titleless-double".
         ===============     ====================================================================
         """
         return self._sublayout
 
     # ----------------------------------------------------------------------
     @sublayout.setter
-    def sublayout(self, sublayout):
-        if sublayout not in SublayoutType.__members__.values():
-            raise ValueError("Invalid sublayout value.")
+    def sublayout(self, sublayout: str | SlideSubLayout):
+        if sublayout not in SlideSubLayout.__members__.values() and not isinstance(
+            sublayout, str
+        ):
+            raise ValueError(
+                "Invalid sublayout value. Please provide a string or SlideSubLayout value."
+            )
 
+        if sublayout in SlideSubLayout.__members__.values():
+            sublayout = sublayout.value
+
+        # assign to the property
         self._sublayout = sublayout
 
-        if self._existing:
-            layout = self._story._properties["nodes"][self.node]["data"]["layout"]
-            if layout in ["double", "single-double", "double-single", "grid"]:
-                self._story._properties["nodes"][self.node]["data"][
-                    "sublayout"
-                ] = sublayout
-        else:
-            self._sublayout = sublayout
-            self._fix_children()
+        # update the story
+        layout = self._story._properties["nodes"][self.node]["data"]["layout"]
+        if layout in ["double", "titleless-double"]:
+            self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+
+    # ----------------------------------------------------------------------
+    @property
+    def section_position(self) -> str:
+        """
+        Get/Set the title panel position for a section-double layout slide.
+
+        Values: 'start' or 'end'
+        """
+        return self._section_position
+
+    # ----------------------------------------------------------------------
+    @section_position.setter
+    def section_position(self, position: str):
+        if self._layout != "section-double":
+            raise Exception("This slide does not have a section position.")
+        if position not in ["start", "end"]:
+            raise ValueError("Invalid position value. Please provide 'start' or 'end'.")
+
+        self._section_position = position
+        self._story._properties["nodes"][self.node]["data"][
+            "titlePanelPosition"
+        ] = position
 
     # ----------------------------------------------------------------------
     def delete(self) -> bool:
@@ -4506,10 +4557,18 @@ class BriefingSlide:
             "type": "briefing-slide",
             "data": {"layout": self._layout, "contents": self._children},
         }
+
+        # add sublayout
         if self._sublayout:
             self._story._properties["nodes"][self.node]["data"][
                 "sublayout"
             ] = self._sublayout
+
+        # add section position
+        if self._section_position:
+            self._story._properties["nodes"][self.node]["data"][
+                "titlePanelPosition"
+            ] = self._section_position
 
         # Add title if it exists
         if self._title:
@@ -4519,7 +4578,7 @@ class BriefingSlide:
                 "title"
             ] = self._title.node
         # For editing purposes, have children even if empty
-        self._fix_children()
+        self._set_block_children()
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -4547,11 +4606,22 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self._index == "0" and self._slide.layout == "single":
+        if self._index == "0" and self._slide.layout in [
+            "single",
+            "titleless-single",
+            "full",
+            "section-double",
+        ]:
             return "Block"
-        elif self._index == "0" and self._slide.layout == "double":
+        elif self._index == "0" and self._slide.layout in [
+            "double",
+            "titleless-double",
+        ]:
             return "Left Block"
-        elif self._index == "1" and self._slide.layout == "double":
+        elif self._index == "1" and self._slide.layout in [
+            "double",
+            "titleless-double",
+        ]:
             return "Right Block"
 
     # ----------------------------------------------------------------------

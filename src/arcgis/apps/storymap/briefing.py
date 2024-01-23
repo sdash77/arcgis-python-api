@@ -349,6 +349,8 @@ class Briefing(object):
         sublayout: Optional[str] = None,
         title: Optional[str] = None,
         subtitle: Optional[str] = None,
+        section_position: Optional[str] = None,
+        *,
         position: Optional[int] = None,
     ):
         """
@@ -357,23 +359,27 @@ class Briefing(object):
         at which it will be in your story.
         Not passing in any content means a separator will be added.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        layout              Required LayoutType or string, the layout type of the slide.
-        ---------------     --------------------------------------------------------------------
-        sublayout           Optional SubLayoutType or string, the sublayout type of the slide. Only applicable
-                            when the layout is "double".
-        ---------------     --------------------------------------------------------------------
-        title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
-                            Text can only be of type heading (h2).
-        ---------------     --------------------------------------------------------------------
-        subtitle            Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the subtitle of the slide.
-                            Text can only be of type paragraph.
-        ---------------     --------------------------------------------------------------------
-        position            Optional Integer. Indicates the position in which the slide will be
-                            added. If no position is provided, the slide will be placed at the end.
-        ===============     ====================================================================
+        ===================     ====================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------
+        layout                  Required LayoutType or string, the layout type of the slide.
+        -------------------     --------------------------------------------------------------------
+        sublayout               Optional SubLayoutType or string, the sublayout type of the slide.
+                                Only applicable when the layout is "double" or "titleless-double".
+        -------------------     --------------------------------------------------------------------
+        title                   Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
+                                Text can only be of type heading (h2).
+        -------------------     --------------------------------------------------------------------
+        subtitle                Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the subtitle of the slide.
+                                Text can only be of type paragraph.
+        -------------------     --------------------------------------------------------------------
+        section_position        Optional string, the title panel position of the section slide. Only
+                                applicable for "section-double".
+                                Values: 'start' | 'end'
+        -------------------     --------------------------------------------------------------------
+        position                Optional Integer. Indicates the position in which the slide will be
+                                added. If no position is provided, the slide will be placed at the end.
+        ===================     ====================================================================
 
         :return: The new slide that was added to the story
 
@@ -383,6 +389,7 @@ class Briefing(object):
             sublayout=sublayout,
             title=title,
             subtitle=subtitle,
+            section_position=section_position,
             story=self,
         )
 
