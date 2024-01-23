@@ -35,6 +35,7 @@ class ArrowTimeArray(pd.core.arrays.ArrowExtensionArray):
             )
         self._dtype = ArrowDtype(self._data.type)
         self.data = self._data
+        self._pa_array = self._data
 
     @property
     def dtype(self) -> ArrowTimeDtype:

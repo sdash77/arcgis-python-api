@@ -6,6 +6,7 @@ import re
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
+collection = LazyLoader("arcgis.apps.storymap.collection")
 storymap = LazyLoader("arcgis.apps.storymap.story")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
@@ -63,10 +64,16 @@ def cover(
     Changing one part of the briefing cover will not change the rest of the cover. If just the
     image is passed in then only the image will change.
     """
-    if isinstance(story, briefing.Briefing):
+    if isinstance(story, briefing.Briefing) or isinstance(story, collection.Collection):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_slide = story._properties["nodes"][ui]["children"][0]
-        story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
+        if isinstance(story, briefing.Briefing):
+            story_cover_node = story._properties["nodes"][story_cover_slide][
+                "children"
+            ][0]
+        else:
+            # for collection, the cover is the first node in ui
+            story_cover_node = story_cover_slide
     else:
         story_cover_node = story._properties["nodes"][story._properties["root"]][
             "children"
@@ -101,10 +108,7 @@ def cover(
             )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media._type == "image":
-                media._add_image(story=story)
-            else:
-                media._add_video(story=story)
+            media._add_to_story(story=story)
         story._properties["nodes"][story_cover_node]["children"] = [media.node]
     else:
         # get original image
@@ -179,6 +183,8 @@ def save(
     # Find type keywords to use based on whether to publish or not
     if isinstance(story, briefing.Briefing):
         briefing_keywords = ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        collection_keywords = ["storymapcollection"]
 
     # PUBLISH MODE
     if publish is True:
@@ -226,6 +232,8 @@ def save(
         ]
         if isinstance(story, briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
+        elif isinstance(story, collection.Collection):
+            new_keywords = new_keywords + collection_keywords
         # Setting the keywords in a set will remove duplicates
         p = {
             "typeKeywords": list(set(keywords + new_keywords)),
@@ -245,11 +253,11 @@ def save(
         story._item.update(item_properties=p)
 
         if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
+            story._item.sharing.sharing_level = "PRIVATE"
         elif sharing == "org":
-            story._item.share(org=True)
+            story._item.sharing.sharing_level = "ORGANIZATION"
         elif sharing == "public":
-            story._item.share(everyone=True)
+            story._item.sharing.sharing_level = "EVERYONE"
 
         if (
             story._gis._con._session.auth
@@ -300,6 +308,8 @@ def save(
             ]
         if isinstance(story, briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
+        elif isinstance(story, collection.Collection):
+            new_keywords = new_keywords + collection_keywords
         # Pass through set first to remove duplicates
         p = {"typeKeywords": list(set(keywords + new_keywords))}
         if title:
@@ -637,12 +647,13 @@ def _add_child(story, node_id, position=None):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
+        last = len(story._properties["nodes"][principal_id]["children"])
     else:
         # for storymap the children are the root
         principal_id = root_id
+        # find the last position. If only one node then the last position is 1
+        last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
-    # find the last position. If only one node then the last position is 1
-    last = len(story._properties["nodes"][principal_id]["children"]) - 1
     if last == 0:
         # briefings only have cover when you start
         last = 1
@@ -717,7 +728,7 @@ def _assign_node_class(story, node_id):
     if node_type == "separator":
         node = Content.Separator(story=story, node_id=node_id)
     elif node_type == "briefing-slide":
-        node = Content.Slide(story=story, node_id=node_id)
+        node = Content.BriefingSlide(story=story, node_id=node_id)
     elif node_type == "code":
         node = Content.Code(story=story, node_id=node_id)
     elif node_type == "image":
@@ -726,6 +737,8 @@ def _assign_node_class(story, node_id):
         node = Content.Video(story=story, node_id=node_id)
     elif node_type == "audio":
         node = Content.Audio(story=story, node_id=node_id)
+    elif node_type == "table":
+        node = Content.Table(story=story, node_id=node_id)
     elif node_type == "embed":
         # embed has subtype: video or link
         subtype = story._properties["nodes"][node_id]["data"]["embedType"]

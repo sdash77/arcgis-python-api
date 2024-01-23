@@ -1539,6 +1539,9 @@ class BusinessAnalyst(object):
             if isinstance(first_geo, dict):
                 geo_is_dict = True
 
+        if geo_is_df and output_spatial_reference is None:
+            output_spatial_reference = geographies.spatial.sr
+
         # check if a spatially enabled dataframe, if standard geography identifiers are not provided
         if geo_is_df and standard_geography_id_column is None and not geo_is_dict:
             assert geographies.spatial.validate(), (
@@ -1551,8 +1554,6 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
-        if geo_is_df and output_spatial_reference is None:
-            output_spatial_reference = geographies.spatial.sr
         elif geo_is_dict and output_spatial_reference is None:
             if "spatialReference" in first_geo:
                 output_spatial_reference = first_geo["spatialReference"]
