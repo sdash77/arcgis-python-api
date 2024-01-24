@@ -1704,7 +1704,7 @@ class Connection(object):
     # ----------------------------------------------------------------------
     def delete(self, url, params=None, **kwargs):
         """
-        sends a PUT request
+        sends a DELETE request
 
         ===========================   =====================================================
         **Parameter**                **Description**

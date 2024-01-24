@@ -4,6 +4,7 @@ StoryMap Implementation
 from .storymap import JournalStoryMap
 from .story import StoryMap, Themes
 from .briefing import Briefing
+from .collection import Collection
 from .story_content import (
     Image,
     Video,
@@ -19,9 +20,11 @@ from .story_content import (
     TextStyles,
     Scales,
     MapTour,
-    Slide,
+    BriefingSlide,
     Code,
     Language,
+    SlideLayout,
+    SlideSubLayout,
 )
 
 __all__ = ["JournalStoryMap", "StoryMap", "Briefing"]

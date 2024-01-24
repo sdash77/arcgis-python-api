@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
-from typing import Union
+from typing import Union, Any
 import requests
 
 arcgis = LazyLoader("arcgis")
@@ -16,7 +16,7 @@ class SharingLevel(Enum):
     ======================  ========================================================
     **Parameter**            **Description**
     ----------------------  --------------------------------------------------------
-    ORG                     Sets the value to have organizational visiblity and only
+    ORG                     Sets the value to have organizational visibility and only
                             authenticated users within the GIS can see/use the item.
     ----------------------  --------------------------------------------------------
     PRIVATE                 Sets the item's sharing level to hidden/private and only
@@ -135,7 +135,10 @@ class SharingGroupManager:
             groups: str = ",".join(g)
             do_update = True
         if do_update:
-            self._sm._share(level=self._sm.sharing_level, groups=groups)
+            resp = self._sm._share(level=self._sm.sharing_level, groups=groups)
+            if "notSharedWith" in resp["results"][0]:
+                # successfully sent the request, but the group was not shared with
+                return False
             return True
         return False
 
@@ -267,7 +270,7 @@ class SharingManager:
     def _share(
         self,
         level: SharingLevel,
-        groups: list["Group"] | str | None = None,
+        groups: list[arcgis.gis.Group] | str | None = None,
     ) -> dict[str, Any]:
         """
         The share operation shares an item with a public or organization
@@ -284,9 +287,16 @@ class SharingManager:
                                 groups will be unshared.
         ======================  ========================================================
         """
-        url: str = "{resturl}content/users/{owner}/shareItems".format(
-            resturl=self._gis._portal.resturl, owner=self._item.owner
-        )
+        # if not in org use different url
+
+        if self._gis.users.get(self._item.owner, outside_org=False):
+            url: str = "{resturl}content/users/{owner}/shareItems".format(
+                resturl=self._gis._portal.resturl, owner=self._item.owner
+            )
+        else:
+            url: str = "{resturl}content/items/{itemid}/share".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
 
         params: dict[str, Any] = {
             "f": "json",
@@ -341,9 +351,16 @@ class SharingManager:
                                 groups will be unshared.
         ======================  ========================================================
         """
-        url: str = "{resturl}content/users/{owner}/unshareItems".format(
-            resturl=self._gis._portal.resturl, owner=self._item.owner
-        )
+        # if not in org use different url
+
+        if self._gis.users.get(self._item.owner, outside_org=False):
+            url: str = "{resturl}content/users/{owner}/unshareItems".format(
+                resturl=self._gis._portal.resturl, owner=self._item.owner
+            )
+        else:
+            url: str = "{resturl}content/items/{itemid}/unshare".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
 
         params: dict[str, Any] = {
             "f": "json",
