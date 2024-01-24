@@ -4349,7 +4349,7 @@ class UserManager(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, username: str):
+    def get(self, username: str, outside_org=True):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
@@ -4358,6 +4358,11 @@ class UserManager(object):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as a string. This can be the
                                user's login name or the user's ID.
+        ------------------     --------------------------------------------------------------------
+        outside_org            Optional boolean. When working with AGOL portals, setting this
+                               to `True` will include users from other organizations in ArcGIS
+                               Online. Does not make a difference in Enterprise portals. Defaults
+                               to `True`.
         ==================     ====================================================================
 
         :return:
@@ -4373,6 +4378,11 @@ class UserManager(object):
         try:
             with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
+                if user and not outside_org:
+                    org_id = self._gis._portal._properties.get("id")
+                    user_org_id = user.get("orgId")
+                    if user_org_id != org_id:
+                        user = None
 
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
@@ -6881,11 +6891,11 @@ class ContentManager(object):
             # Update the access and return the item
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             if filetype:
@@ -6913,11 +6923,11 @@ class ContentManager(object):
             # Update access
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             return None
@@ -7237,8 +7247,8 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.create_service("Hurricane Collection")
         """
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -7284,14 +7294,14 @@ class ContentManager(object):
                 item.update(item_properties=item_properties)
             if "access" in item_properties.keys():
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
                     groups = item.shared_with["groups"]
-                    item.share(groups=groups)
+                    item.sharing._share(groups=groups)
             return item
         else:
             return None
@@ -9721,10 +9731,13 @@ class Group(dict):
             super(Group, self).update(groupdict)
 
     def _hydrate(self):
-        groupdict = self._portal.get_group(self.groupid)
-        self._hydrated = True
-        super(Group, self).update(groupdict)
-        self.__dict__.update(groupdict)
+        try:
+            groupdict = self._portal.get_group(self.groupid)
+            self._hydrated = True
+            super(Group, self).update(groupdict)
+            self.__dict__.update(groupdict)
+        except Exception as e:
+            raise e
 
     def __getattr__(
         self, name
@@ -15111,14 +15124,14 @@ class Item(dict):
             if "access" in item_properties:
                 access = item_properties.pop("access")
                 if access == "private":
-                    self.share(everyone=False, org=False)
+                    self.sharing.sharing_level = "PRIVATE"
                 if access == "org":
-                    self.share(everyone=False, org=True)
+                    self.sharing.sharing_level = "ORGANIZATION"
                 if access == "public":
-                    self.share(everyone=True)
+                    self.sharing.sharing_level = "EVERYONE"
                 if access == "shared":
                     groups = self.shared_with["groups"]
-                    self.share(groups=groups)
+                    self.sharing._share(groups=groups)
 
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
@@ -15209,19 +15222,19 @@ class Item(dict):
 
             if item_properties is not None:
                 if "tags" in item_properties:
-                    if type(item_properties["tags"]) is list:
+                    if isinstance(item_properties["tags"], list):
                         item_properties["tags"] = ",".join(item_properties["tags"])
                 if "access" in item_properties:
                     access = item_properties.pop("access")
                     if access == "private":
-                        self.share(everyone=False, org=False)
+                        self.sharing.sharing_level = "PRIVATE"
                     if access == "org":
-                        self.share(everyone=False, org=True)
+                        self.sharing.sharing_level = "ORGANIZATION"
                     if access == "public":
-                        self.share(everyone=True)
+                        self.sharing.sharing_level = "EVERYONE"
                     if access == "shared":
                         groups = self.shared_with["groups"]
-                        self.share(groups=groups)
+                        self.sharing._share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
