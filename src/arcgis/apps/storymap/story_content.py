@@ -16,6 +16,7 @@ os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 utils = LazyLoader("arcgis.apps.storymap._utils")
+briefing = LazyLoader("arcgis.apps.storymap.briefing")
 pd = LazyLoader("pandas")
 
 
@@ -2326,6 +2327,110 @@ class Text:
         self._size = size
 
     # ----------------------------------------------------------------------
+    def add_attachment(self, content):
+        """
+        Add a text action to your text. You can specify the data of the action.
+        This can only be used within a Briefing
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Required content that can be added as an attachment.
+                            Content can be:
+                            * An Item object of type: Web Map, Image, StoryMap, Collection, Dashboard,
+                            Web Experience, or other arcgis Apps.
+                            * A story content of type Image or Video
+        ===============     ====================================================================
+        """
+        if self._existing is True and isinstance(self._story, briefing.Briefing):
+            content_node = None
+            content_type = None
+
+            # First determine what type of content we are dealing with.
+            if isinstance(content, arcgis.gis.Item):
+                # Need to check the item type.
+                # If Web Map we create a Map instance, otherwise we create a custom embed dictionary
+                if content.type == "Web Map":
+                    # create the map
+                    content = Map(content)
+                    content_node = content.node
+                    content_type = "Web Map"
+                else:
+                    # content gets added to story in custom method
+                    content_type = "collection"
+                    content_node = self._create_item_embed(content)
+                    content = "custom embed"
+            elif isinstance(content, (Image, Video)):
+                content_node = content.node
+                content_type = content._type
+
+            if content_node is None:
+                # It means it didn't go through the if statement above
+                raise ValueError(
+                    "Content is not of type: Web Map, Image, StoryMap, Collection, Dashboard, Web Experience, or other arcgis Apps. Or a story content of type Image or Video."
+                )
+
+            if content != "custom embed":
+                # Now content is either type Map, Image, or Video
+                self._add_item_story(content)
+            action_id = "a-" + uuid.uuid4().hex[0:6]
+            action_dict = {
+                "origin": self.node,
+                "trigger": "InlineAction_Apply",
+                "target": self._story._properties["root"],
+                "event": "Briefing_ShowAttachment",
+                "data": {
+                    "actionId": action_id,
+                    "attachment": content_node,
+                    "attachmentType": content_type,
+                },
+            }
+
+            # Need to edit the text so that the format is: <span data-action-type="attachment-action" id="a-Mr9KE4">This is an attachment to ArcGIS Content</span>
+            # First get the text
+            text = self.text
+            # Now create the new text
+            new_text = f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>'
+            # Now update the text
+            self.text = new_text
+
+            # add to actions list in story properties
+            if "actions" in self._story._properties:
+                self._story._properties["actions"].append(action_dict)
+            else:
+                self._story._properties["actions"] = [action_dict]
+
+        else:
+            print(
+                "This can only be used within a Briefing and the Text must exist in a Block."
+            )
+
+    # ----------------------------------------------------------------------
+    def remove_attachment(self):
+        """
+        Remove any attachment from the text. This can only be used within a Briefing.
+        """
+        if self._existing is True and isinstance(self._story, briefing.Briefing):
+            # First get the text
+            text = self.text
+            # Now remove the action, get the action id to remove it from the dictionary as well
+            action_id = text.split('id="')[1].split('">')[0]
+            # Now remove the action from the text
+            new_text = text.replace(
+                f'<span data-action-type="attachment-action" id="{action_id}">', ""
+            ).replace("</span>", "")
+            # Now update the text
+            self.text = new_text
+
+            # Now remove the action from the actions list in the story properties
+            for action in self._story._properties["actions"]:
+                if action["data"]["actionId"] == action_id:
+                    self._story._properties["actions"].remove(action)
+                    break
+        else:
+            pass
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Delete the node
@@ -2333,6 +2438,41 @@ class Text:
         :return: True if successful.
         """
         return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _create_item_embed(self, item):
+        """
+        Create the embed dictionary when adding an item as a text attachment.
+        """
+        # first create resource dictionary
+        resource_id = "r-" + uuid.uuid4().hex[0:6]
+        resource_dict = {
+            "type": "portal-item",
+            "data": {
+                "itemId": item.id,
+            },
+        }
+        # add the resource to the resources
+        self._story._properties["resources"][resource_id] = resource_dict
+
+        # second create the embed dictionary
+        embed_dict = {
+            "type": "embed",
+            "data": {
+                "embedResourceId": resource_id,
+                "url": item.homepage,
+                "isInteractiveByDefault": True,
+                "display": "inline",
+            },
+        }
+
+        # add the embed dict to the nodes
+        # create node id
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        # add to nodes
+        self._story._properties["nodes"][node_id] = embed_dict
+        # return the node id
+        return node_id
 
     # ----------------------------------------------------------------------
     def _add_to_story(self, story=None, **kwargs):
@@ -2354,6 +2494,19 @@ class Text:
             if not isinstance(self._story, briefing.Briefing) and self._size == "small":
                 self._size = "medium"
             self._story._properties["nodes"][self.node]["data"]["textSize"] = self._size
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Image):
+            content._add_image(display="wide", story=self._story)
+        elif isinstance(content, Video):
+            content._add_video(display="wide", story=self._story)
+        elif isinstance(content, Embed):
+            content._add_link(display="card", story=self._story)
+        elif isinstance(content, Map):
+            content._add_map(display="wide", story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
