@@ -34,8 +34,13 @@ class SolverType(Enum):
     ROUTE: str = "Route"
     SERVICEAREA: str = "ServiceArea"
     VEHICLEROUTINGPROBLEM: str = "VehicleRoutingProblem"
-    ALL: str = [
-        "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
+    ALL: list = [
+        "ClosestFacility",
+        "Location-Allocation",
+        "OriginDestinationCostMatrix",
+        "Route",
+        "ServiceArea",
+        "VehicleRoutingProblem",
     ]
 
 
@@ -125,14 +130,17 @@ def publish_routing_services(
             if isinstance(st, str):
                 sts.append(st)
             elif isinstance(st, SolverType):
-                sts.append(sts.value)
+                sts.append(st.value)
     elif isinstance(solver_types, SolverType):
-        sts.append(solver_types.value)
+        if isinstance(solver_types.value, list):
+            sts.extend(solver_types.value)
+        else:
+            sts.append(solver_types.value)
     elif isinstance(solver_types, str):
         sts = ""
     else:
         raise ValueError("Invalid solver_types, please verify the parameter.")
-    solver_types: str = json.dumps(sts)
+    solver_types: str = json.dumps(list(sts))
 
     toolbox = _get_network_publishing_toolbox(gis=gis, server_id=server_id)
     if config and os.path.isfile(config):
