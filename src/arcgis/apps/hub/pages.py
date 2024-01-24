@@ -307,7 +307,8 @@ class PageManager(object):
 
         # share page with content and core team groups
         if collab_group:
-            item.share(groups=[collab_group])
+            i = self._gis.content.get(item.get("id"))
+            i.sharing.groups.add(collab_group)
 
         # protect page from accidental deletion
         item.protect(enable=True)
@@ -475,9 +476,9 @@ class PageManager(object):
 
         .. note::
 
-            This method will only detach the page from the site. In order to remove links to this 
-            page from the site's UI, you will have to manually remove it from the site through 
-            the site's Layout Editior. 
+            This method will only detach the page from the site. In order to remove links to this
+            page from the site's UI, you will have to manually remove it from the site through
+            the site's Layout Editior.
 
         =======================    =============================================================
         **Parameter**               **Description**

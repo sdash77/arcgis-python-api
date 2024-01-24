@@ -9,6 +9,7 @@ import time
 import logging
 import tempfile
 import collections
+import concurrent.futures
 from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item, ItemDependency
@@ -2069,6 +2070,167 @@ class FeatureLayerCollectionManager(_GISResource):
         new_item.delete()
         return orig_item
 
+    def swap_view(
+        self,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        return self._swap_view(
+            view=self._fs, index=index, new_source=new_source, future=future
+        )
+
+    def _swap_view(
+        self,
+        view: features.FeatureLayerCollection,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        view                   Required FeatureLayerCollection. The view feature layer collection
+                               to update.
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        keys: list[str] = [
+            "currentVersion",
+            "id",
+            "name",
+            "type",
+            "displayField",
+            "description",
+            "copyrightText",
+            "defaultVisibility",
+            "editingInfo",
+            "isDataVersioned",
+            "hasContingentValuesDefinition",
+            "supportsAppend",
+            "supportsCalculate",
+            "supportsASyncCalculate",
+            "supportsTruncate",
+            "supportsAttachmentsByUploadId",
+            "supportsAttachmentsResizing",
+            "supportsRollbackOnFailureParameter",
+            "supportsStatistics",
+            "supportsExceedsLimitStatistics",
+            "supportsAdvancedQueries",
+            "supportsValidateSql",
+            "supportsCoordinatesQuantization",
+            "supportsLayerOverrides",
+            "supportsTilesAndBasicQueriesMode",
+            "supportsFieldDescriptionProperty",
+            "supportsQuantizationEditMode",
+            "supportsApplyEditsWithGlobalIds",
+            "supportsMultiScaleGeometry",
+            "supportsReturningQueryGeometry",
+            "hasGeometryProperties",
+            "geometryProperties",
+            "advancedQueryCapabilities",
+            "advancedQueryAnalyticCapabilities",
+            "advancedEditingCapabilities",
+            "infoInEstimates",
+            "useStandardizedQueries",
+            "geometryType",
+            "minScale",
+            "maxScale",
+            "extent",
+            "drawingInfo",
+            "allowGeometryUpdates",
+            "hasAttachments",
+            "htmlPopupType",
+            "hasMetadata",
+            "hasM",
+            "hasZ",
+            "objectIdField",
+            "uniqueIdField",
+            "globalIdField",
+            "typeIdField",
+            "dateFieldsTimeReference",
+            "preferredTimeReference",
+            "types",
+            "templates",
+            "supportedQueryFormats",
+            "supportedAppendFormats",
+            "supportedExportFormats",
+            "supportedSpatialRelationships",
+            "supportedContingentValuesFormats",
+            "supportedSyncDataOptions",
+            "hasStaticData",
+            "maxRecordCount",
+            "standardMaxRecordCount",
+            "standardMaxRecordCountNoGeometry",
+            "tileMaxRecordCount",
+            "maxRecordCountFactor",
+            "capabilities",
+            "url",
+            "adminLayerInfo",
+        ]
+        if isinstance(new_source, features.FeatureLayer):
+            flc_lyr_info: features.FeatureLayer = view.layers[index]
+        elif isinstance(new_source, features.Table):
+            flc_lyr_info: features.Table = view.tables[index]
+        props: dict = {
+            key: new_source.properties[key]
+            for key in keys
+            if key in new_source.properties
+        }
+        if new_source._con.token:
+            props["url"] = new_source.url + f"?token={new_source._con.token}"
+        else:
+            props["url"] = new_source.url
+        if "viewLayerDefinition" in flc_lyr_info.manager.properties["adminLayerInfo"]:
+            props["adminLayerInfo"] = {}
+            props["adminLayerInfo"][
+                "viewLayerDefinition"
+            ] = flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
+            props["adminLayerInfo"]["viewLayerDefinition"][
+                "sourceServiceName"
+            ] = new_source.manager.properties["name"]
+            props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
+        if isinstance(new_source, features.FeatureLayer):
+            delete_json: dict = {"layers": [{"id": index}], "tables": []}
+            add_json: dict = {"layers": [props]}
+        elif isinstance(new_source, features.Table):
+            delete_json: dict = {"layers": [], "tables": [{"id": index}]}
+            add_json: dict = {"tables": [props]}
+        view.manager.delete_from_definition(delete_json)
+        if future:
+            return view.manager.add_to_definition(add_json, future=True)
+        else:
+            return view.manager.add_to_definition(add_json, future=False)
+
     # ----------------------------------------------------------------------
     def create_view(
         self,
@@ -2087,6 +2249,8 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2133,16 +2297,29 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         snippet                  Optional String. A short description of the view item.
         --------------------     --------------------------------------------------------------------
-        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        overwrite                Not supported.
+
+                                 .. note::
+                                     To overwrite the data used in a hosted feature layer view, you
+                                     must overwrite the hosted feature layer from which it was
+                                     created. See the `ArcGIS Online Overwrite hosted feature layers <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     or the `ArcGIS Enterprise Overwrite hosted feature layers <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     documentation for requirements and considerations for
+                                     overwriting. See also `Considerations when creating hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm#GUID-E4F46139-1F6E-4036-8C4F-EF73C2C2CE72>`_
+                                     for additional criteria for overwriting.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optional list[str] or None. A list of visible fields to display.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. A SQL statement that defines the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2169,8 +2346,8 @@ class FeatureLayerCollectionManager(_GISResource):
         import os
         from . import FeatureLayerCollection
 
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -2213,11 +2390,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isUpdatableView": updateable,
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilties"],
+                    "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
-            "tags": tags if tags else item.tags,
+            "tags": tags if tags else ",".join(item.tags),
             "snippet": snippet if snippet else item.snippet,
             "description": description if description else item.description,
             "outputType": "featureService",
@@ -2250,7 +2427,7 @@ class FeatureLayerCollectionManager(_GISResource):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 lyr_id = lyr.manager.properties.serviceItemId
-                data_path = "content/items/" + lyr_id + "/data"
+                data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {
@@ -2448,8 +2625,32 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-
-        return content.get(res["itemId"])
+        item = content.get(res["itemId"])
+        if visible_fields or query:
+            values: dict[str, Any] = {}
+            if visible_fields:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"].lower() in [f.lower() for f in visible_fields]
+                ] + [
+                    {"name": fld["name"], "visible": False}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"].lower() not in [f.lower() for f in visible_fields]
+                ]
+            else:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                ]
+            if query:
+                values["viewDefinitionQuery"] = query
+            if values:
+                flc = FeatureLayerCollection.fromitem(item)
+                lyr = flc.layers[0]
+                mgr = lyr.manager
+                mgr.update_definition(values)
+        return item
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
@@ -2717,7 +2918,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
 
-        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
+        4. In older versions of Enterprise (pre-11.2), the schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
@@ -2725,12 +2926,22 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        data                Required string. Path to the file used to overwrite the hosted
+        data_file           Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
         ===============     ====================================================================
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if data_file and (
+            not isinstance(data_file, str)
+            or not os.path.exists(data_file)
+            or not os.path.isfile(data_file)
+            or os.stat(data_file).st_size > int(2.5e7)
+        ):
+            raise ValueError(
+                "The data file provided does not exist or could not be accessed."
+            )
+
         # check for outstanding replicas
         if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
@@ -2754,6 +2965,12 @@ class FeatureLayerCollectionManager(_GISResource):
             return {
                 "Error": "Cannot find related data item used to publish this Feature Layer"
             }
+
+        # Check that file type and name are the same:
+        if os.path.basename(data_file) != related_data_item["name"]:
+            raise ValueError(
+                "The name and extension of the file must be the same as the original data."
+            )
 
         # find if we are overwritting only a hosted table
         hosted_table = False

@@ -183,11 +183,6 @@ class FeatureClassifier(ArcGISModel):
 
         self._free_memory()
         backbone = complete_transformer_backbone_name(backbone, data.chip_size)
-        if not self._check_backbone_support(backbone):
-            raise Exception(
-                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
-            )
-
         self._check_dataset_support(data)
 
         self._backend = backend
@@ -195,6 +190,14 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
+            if not (
+                self._check_backbone_support(backbone)
+                or backbone in self._transformer_backbone_original_names()
+            ):
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
+
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
 
@@ -397,7 +400,7 @@ class FeatureClassifier(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        transformer_backbones = FeatureClassifier._transformer_backbone_original_names()
+        transformer_backbones = FeatureClassifier.transformer_backbones()
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones + transformer_backbones
         )
@@ -470,6 +473,9 @@ class FeatureClassifier(ArcGISModel):
 
         :return: prediction label and confidence
         """
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
+
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:

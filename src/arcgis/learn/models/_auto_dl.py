@@ -2048,7 +2048,6 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
-            "MMDetection",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",

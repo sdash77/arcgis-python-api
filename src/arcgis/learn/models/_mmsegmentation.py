@@ -1,11 +1,16 @@
 from enum import unique
 from pathlib import Path
 import json
+from .._data import prepare_data
 
 import numpy
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
 import logging
+
+from .._mmseg_config.prithvi100m_burn_scar import img_norm_burn_model
+from .._mmseg_config.prithvi100m_crop_classification import img_norm_crop_model
+from .._mmseg_config.prithvi100m_sen1floods import img_norm_flood_model
 
 logger = logging.getLogger()
 
@@ -50,6 +55,8 @@ class MMSegmentationConfig:
         config = kwargs.get("model", False)
         checkpoint = kwargs.get("model_weight", False)
         class_weight = kwargs.get("class_weight", None)
+        if config[-2:] != "py":
+            config += ".py"
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
@@ -70,7 +77,7 @@ class MMSegmentationConfig:
                 self.pathlib.Path(arcgis.__file__).parent
                 / "learn"
                 / "_mmseg_config"
-                / (config + ".{}".format("py"))
+                / config
             )
             cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get("checkpoint", False)
@@ -98,7 +105,11 @@ class MMSegmentationConfig:
         ):
             cfg.model.backbone.in_channels = len(data._extract_bands)
 
-        model = mmseg.models.build_segmentor(cfg.model)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = mmseg.models.build_segmentor(cfg.model)
 
         if checkpoint:
             mmcv.runner.load_checkpoint(
@@ -110,15 +121,19 @@ class MMSegmentationConfig:
 
         @auto_fp16(apply_to=("img",))
         def forward_modified(self, img, img_metas=None, gt_semantic_seg=None):
-            if self.training:
-                losses = self.forward_train(img, img_metas, gt_semantic_seg)
-                loss, log_vars = self._parse_losses(losses)
+            import warnings
 
-                outputs = dict(loss=loss, log_vars=log_vars)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if self.training:
+                    losses = self.forward_train(img, img_metas, gt_semantic_seg)
+                    loss, log_vars = self._parse_losses(losses)
 
-                return outputs
-            else:
-                return self.forward_test(img[0], img[1], rescale=True)
+                    outputs = dict(loss=loss, log_vars=log_vars)
+
+                    return outputs
+                else:
+                    return self.forward_test(img[0], img[1], rescale=True)
 
         # default simple_test of the model from the original API should be modified to correctly work in test time.
         def simple_test_modified(self, img, img_meta, rescale=True):
@@ -189,7 +204,11 @@ class MMSegmentationConfig:
                 return losses
 
             _losses = self.model.decode_head.losses(model_output, model_target[0])
-            return _losses.get("loss_ce", _losses.get("loss_seg"))
+            loss_dice = _losses.get("loss_dice")
+            if loss_dice:
+                return loss_dice
+            else:
+                return _losses.get("loss_ce", _losses.get("loss_seg"))
 
         return model_output["loss"]
 
@@ -202,6 +221,47 @@ class MMSegmentationConfig:
         else:
             pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
         return pred
+
+
+def norm_prithvi(data, model):
+    scaling_info = {
+        "prithvi100m_burn_scar": (
+            img_norm_burn_model.get("means"),
+            img_norm_burn_model.get("stds"),
+        ),
+        "prithvi100m_sen1floods": (
+            img_norm_flood_model.get("means"),
+            img_norm_flood_model.get("stds"),
+        ),
+        "prithvi100m_crop_classification": (
+            img_norm_crop_model.get("means"),
+            img_norm_crop_model.get("stds"),
+        ),
+        "prithvi100m": (data._scaled_mean_values, data._scaled_std_values),
+    }
+
+    means, stds = scaling_info[model]
+    data._scaled_mean_values, data._scaled_std_values = torch.tensor(
+        means
+    ), torch.tensor(stds)
+
+    data._min_max_scaler = None
+
+    if (data._band_max_values.mean() > 1) and (
+        model != "prithvi100m_crop_classification"
+    ):
+        div_value = 10000
+    else:
+        div_value = None
+
+    data.valid_ds.x._div = div_value
+    data.train_ds.x._div = div_value
+
+    data = data.normalize(
+        stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False
+    )
+
+    return data
 
 
 class MMSegmentation(ModelExtension):
@@ -242,6 +302,10 @@ class MMSegmentation(ModelExtension):
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
 
+        if model.startswith("prithvi100m"):
+            data.remove_tfm(data.norm)
+            data.norm, data.denorm = None, None
+            data = norm_prithvi(data, model)
         self._ignore_classes = kwargs.get("ignore_classes", [])
         self.class_balancing = kwargs.get("class_balancing", False)
         if self._ignore_classes != [] and len(data.classes) <= 2:

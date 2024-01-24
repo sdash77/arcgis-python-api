@@ -6,18 +6,24 @@ import io
 import copy
 from datetime import datetime
 import json
-import imghdr
+import puremagic
 import logging
 import os
 import tempfile
 from typing import Any, Optional, Union
 from ._con import Connection
-from ._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
+from ._con import (
+    _normalize_url,
+    _is_http_url,
+    _parse_hostname,
+    _unpack,
+    find_puremagic_ext,
+)
 from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 _log = logging.getLogger(__name__)
 
@@ -410,14 +416,15 @@ class Portal(object):
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # If owner isn't specified, use the logged in user
@@ -633,14 +640,15 @@ class Portal(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # Send the POST request, and return the id from the response
@@ -730,6 +738,7 @@ class Portal(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -744,6 +753,8 @@ class Portal(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -759,6 +770,8 @@ class Portal(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:
@@ -2311,14 +2324,15 @@ class Portal(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         postdata.update(properties)
 
@@ -2469,14 +2483,15 @@ class Portal(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         if hidden_members in [True, False]:
@@ -2610,25 +2625,27 @@ class Portal(object):
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(large_thumbnail)
+                # download file
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
-                file_ext = os.path.splitext(large_thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(large_thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_large_thumbnail = large_thumbnail + "." + file_ext
-                        os.rename(large_thumbnail, new_thumbnail)
-                        large_thumbnail = new_large_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_large_thumbnail = large_thumbnail + "." + file_ext
+                    os.rename(large_thumbnail, new_large_thumbnail)
+                    large_thumbnail = new_large_thumbnail
             files.append(
                 (
                     "largeThumbnail",

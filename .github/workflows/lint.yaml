@@ -1,0 +1,30 @@
+name: Check code formatting
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  black-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch'
+      - uses: tj-actions/changed-files@v41
+        id: changed-files
+        if: github.event_name == 'pull_request'
+        with:
+          files: |
+            src/**/*.py
+      - name: Log if skipped
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed != 'true'
+        run: echo "No files were changed in ./src, skipping running black"
+      - name: Run black
+        uses: psf/black@stable
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
+        with:
+          options: --check --verbose
+          src: ./src

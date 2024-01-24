@@ -23,7 +23,7 @@ class Mission:
 
                                                 mission_name='Mission_Yucaipa'
     ------------------------------------     --------------------------------------------------------------------
-    project                                  Required Project object. The orthomapping project to which the mission belongs to.
+    project                                  Required Project object or an Orthomapping Project portal item. The orthomapping project to which the mission belongs to.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -48,7 +48,7 @@ class Mission:
 
     """
 
-    def __init__(self, mission_name, project=None):
+    def __init__(self, mission_name, project):
         self._mission_name = mission_name
         if isinstance(project, Project):
             self._project = project
@@ -73,14 +73,15 @@ class Mission:
         import copy
 
         mission_product = copy.deepcopy(items_prods)
-        for key, val in mission_product.items():
-            if "itemId" in val.keys():
-                if key == "imageCollection":
-                    key = "image_collection"
-                    mission_product[key] = self._gis.content.get(val["itemId"])
-                    del mission_product["imageCollection"]
-                else:
-                    mission_product[key] = self._gis.content.get(val["itemId"])
+        for key, val in items_prods.items():
+            if val is not None and isinstance(val, dict):
+                if "itemId" in val.keys():
+                    if key == "imageCollection":
+                        key = "image_collection"
+                        mission_product[key] = self._gis.content.get(val["itemId"])
+                        del mission_product["imageCollection"]
+                    else:
+                        mission_product[key] = self._gis.content.get(val["itemId"])
         return mission_product
 
     @property
@@ -99,11 +100,11 @@ class Mission:
         return 0
 
     @property
-    def flight_date(self):
+    def mission_date(self):
         """
-        The ``image_count`` property returns the number of images in the mission
+        The ``mission_date`` property returns the date of the mission.
 
-        :return: An integer representing the number of images
+        :return: A datetime object representing the mission date
         """
         if "sourceData" in self._mission_json.keys():
             source_data = self._mission_json["sourceData"]

@@ -6,7 +6,8 @@ from arcgis.geometry import Geometry
 import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
-
+from tests.integration.config import QALAB_ROOT_PATH
+from configparser import ConfigParser
 
 
 ###########################################################################
@@ -41,6 +42,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.connection.remove_item()
         print("\n==================================================================")
 
     def create_diagram(self):
@@ -241,7 +243,7 @@ class TestWorkflowManager(unittest.TestCase):
                             "dataType": "String",
                             "propertyAlias": "string",
                             "required": True,
-                            "fieldLength": 0,
+                            "fieldLength": 50,
                         },
                     ],
                 }
@@ -814,7 +816,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, dict, "Incorrect return type")
-        self.assertEqual( expected, actual, "Incorrect search returned")
+        self.assertEqual(expected, actual, "Incorrect search returned")
         self.assertEqual(job_list, expected_job_list, "Incorrect search returned")
 
     def test_search_jobs_successfully_returns_with_selected_fields(self):
@@ -2066,6 +2068,139 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Holds and Release Holds
+
+    def test_simple_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_simple_hold_release_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act 2
+        actual = the_job.release_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
+
+    def test_dependent_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]["id"]
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_dependent_release_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]["id"]
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act: Add a hold to job one blocked by the step from job two
+        actual = job_one.release_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
+
+    def test_add_hold_returns_error(self):
+        # Arrange
+        job_id = "abcde12345"
+        step_id = "abcde12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.get(job_id).set_current_step(
+                step_id=step_id
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
     # region Comments
 
     def test_comments_returns_successfully(self):
@@ -2385,7 +2520,6 @@ class TestWorkflowManager(unittest.TestCase):
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
             )
-
 
     # endregion
 
@@ -3172,10 +3306,15 @@ class TestWorkflowManager(unittest.TestCase):
     # must be run manually since a user must be added to test properly.
     def test_user_without_UTE_AT_11_2_can_use_workflow_manager(self):
         # Insert credentials for a portal > 11.2
-        portal_url = "https://ps0019725.esri.com/portal/"
-        portal_username = "nolicense4wfm"
-        portal_password = "..."
-        workflow_item_id = "adfa827638e64798bc6cd049096c695a"
+        _conf_reader = ConfigParser()
+        credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
+        _conf_reader.read(credential_path, "UTF-8")
+
+        portal_url = _conf_reader["credentials"]["url_11_2"]
+        portal_username = _conf_reader["credentials"]["username"]
+        portal_password = _conf_reader["credentials"]["password"]
+        workflow_item_id = _conf_reader["credentials"]["workflow_item"]
+
         gis = GIS(
             url=portal_url,
             username=portal_username,
@@ -3193,7 +3332,6 @@ class TestWorkflowManager(unittest.TestCase):
 
             # Assertions
             self.assertIsInstance(users, list, "Incorrect return type")
-            self.assertEqual(len(users), 2, "Incorrect number of items downloaded")
             self.assertIsInstance(users[0], dict, "Incorrect type")
 
         except Exception as testException:

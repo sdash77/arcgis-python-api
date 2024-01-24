@@ -63,6 +63,8 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
             "Date": "<M8[us]",
         }
     else:
+        from numpy import dtype as _dtype
+
         _lu_types = {
             "OID": pd.Int64Dtype(),
             "SmallInteger": pd.Int32Dtype(),
@@ -74,6 +76,10 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
             "Guid": pd.StringDtype(),
             "Raster": "O",
             "Date": "<M8[us]",
+            "BigInteger": pd.Int64Dtype(),
+            "DateOnly": _dtype("<M8[s]"),
+            "TimeOnly": _dtype("<m8[s]"),
+            "TimestampOffset": _dtype("<M8[us]"),
         }
     dtypes = None
     if "fields" in describe:
@@ -429,15 +435,14 @@ def from_table(filename, **kwargs):
         fields = kwargs.pop("fields", "*")
         skip_nulls = kwargs.pop("skip_nulls", True)
         null_value = kwargs.pop("null_value", None)
-        return pd.DataFrame(
-            arcpy.da.TableToNumPyArray(
-                in_table=filename,
-                field_names=fields,
-                where_clause=where,
-                skip_nulls=skip_nulls,
-                null_value=null_value,
-            )
+        arr = arcpy.da.TableToNumPyArray(
+            in_table=filename,
+            field_names=fields,
+            where_clause=where,
+            skip_nulls=skip_nulls,
+            null_value=null_value,
         )
+        return pd.DataFrame(arr)
     elif HASARCPY and filename.lower().endswith(".dbf"):
         import arcpy
 
@@ -540,6 +545,8 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 pass
             elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
+            elif df[col].dtype.name == "datetime64[s]":
+                dtypes.append((col, "<m8[us]"))
             elif df[col].dtype.name.find("datetime") > -1:
                 dtypes.append((col, "<M8[us]"))
                 df[col] = df[col].dt.to_pydatetime()
@@ -553,6 +560,8 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     u = pd.unique(df[col].apply(type)).tolist()[0]
                 if u is None:
                     dtypes.append((col, "<U254"))
+                elif u == datetime.time:
+                    dtypes.append((col, "<m8[us]"))
                 elif u == type(None):
                     dtypes.append((col, "<U254"))
                 elif issubclass(u, str):
@@ -570,6 +579,8 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     u = pd.unique(df[col].apply(type)).tolist()[0]
                 if u is None:
                     dtypes.append((col, "<U254"))
+                elif u == datetime.time:
+                    dtypes.append((col, "<m8[us]"))
                 elif issubclass(u, str):
                     mlen = df[col].str.len().max()
                     if int(mlen) == 0:
@@ -580,8 +591,8 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                         dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, "<U254"))
-            elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.float64))
+            elif df[col].dtype.name in ["int64", "Int64"]:
+                dtypes.append((col, "<i8"))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == "boolean":
@@ -812,9 +823,20 @@ def from_featureclass(filename, **kwargs):
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
         try:
-            return df.astype(pandas_dtypes)
+            for key, value in pandas_dtypes.items():
+                try:
+                    df[key] = df[key].astype(value)  # , errors='ignore')
+                except:
+                    from numpy import dtype as _dtype
+
+                    if value == _dtype("<m8[s]"):
+                        df[key] = pd.to_datetime(df[key], format="%H:%M:%S").dt.time
+                    elif value == _dtype("<M8[us]"):
+                        df[key] = pd.to_datetime(df[key], utc=True)
+
+            return df.convert_dtypes()
         except:
-            return df
+            return df.convert_dtypes()
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
@@ -1084,6 +1106,8 @@ def to_featureclass(
             for col in columns[:]:
                 if col.lower() in ["fid", "oid", "objectid"]:
                     dtypes.append((col, np.int32))
+                elif df[col].dtype.name == "datetime64[s]":
+                    dtypes.append((col, "<m8[us]"))
                 elif df[col].dtype.name.startswith("datetime"):
                     dtypes.append((col, "<M8[us]"))
                 elif df[col].dtype.name.find("timedelta") > -1:
@@ -1096,6 +1120,8 @@ def to_featureclass(
                         u = pd.unique(df[col].apply(type)).tolist()[0]
                     if u is None:
                         dtypes.append((col, "<U254"))
+                    elif u == datetime.time:
+                        dtypes.append((col, "<m8[us]"))
                     elif issubclass(u, str):
                         mlen = df[col].str.len().max()
                         dtypes.append((col, "<U%s" % int(mlen)))
@@ -1109,8 +1135,17 @@ def to_featureclass(
                                 dtypes.append((col, type(df[col][idx])))
                         except:
                             dtypes.append((col, "<U254"))
-                elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.float64))
+                elif df[col].dtype.name in ["int64", "Int64"]:
+                    # Enterprise 11.1 and less do not accept Int64. Need to make float
+                    gis = arcgis.env.active_gis
+                    if (
+                        gis is not None
+                        and gis._is_agol == False
+                        and gis.version <= [10, 3]
+                    ):
+                        dtypes.append((col, np.float64))
+                    else:
+                        dtypes.append((col, "<i8"))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 elif df[col].dtype.name == "boolean":
@@ -1443,7 +1478,7 @@ def _pyshp2(df, out_path, out_name):
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)
-                    elif isinstance(df[c].loc[idx], (bool)):
+                    elif isinstance(df[c].loc[idx], (bool, np.bool_)):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx
@@ -1467,7 +1502,7 @@ def _pyshp2(df, out_path, out_name):
                     else:
                         row[idx] = row[idx].to_pydatetime()
             for idx, value in enumerate(row):
-                if value is np.nan:
+                if value is np.nan or value is pd.NA:
                     row[idx] = None
             shpfile.record(*row)
             del idx

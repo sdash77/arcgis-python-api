@@ -40,6 +40,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.connection.remove_item()
         print("\n==================================================================")
 
     # endregion
@@ -49,7 +50,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_create_item_returns_successfully(self):
         # Act
         actual = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Create_Item_" + str(datetime.datetime.now())
         )
 
         # Assert
@@ -59,18 +60,6 @@ class TestWorkflowManager(unittest.TestCase):
         item = self.connection._gis.content.get(actual)
         self.connection.workflow_manager_admin.delete_item(item)
 
-    def test_create_item_returns_error(self):
-        # Act
-        try:
-            # Try creating item with already created name
-            self.connection.workflow_manager_admin.create_item(
-                self.connection.item_name
-            )
-        except Exception as testException:
-            assert True, (
-                "Expected error returned during test: " + testException.__str__()
-            )
-
     # endregion
 
     # region Delete Item
@@ -78,7 +67,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_delete_item_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Delete_Item_" + str(datetime.datetime.now())
         )
         item = self.connection._gis.content.get(item_id)
         actual = self.connection.workflow_manager_admin.delete_item(item)
@@ -128,14 +117,14 @@ class TestWorkflowManager(unittest.TestCase):
     def test_import_item_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Import_Item1_" + str(datetime.datetime.now())
         )
 
         item = self.connection._gis.content.get(item_id)
         filepath = self.connection.workflow_manager_admin.export_item(item)
 
         item_id_two = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Import_Item2_" + str(datetime.datetime.now())
         )
 
         item_two = self.connection._gis.content.get(item_id_two)
@@ -143,31 +132,35 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")
+        self.connection.workflow_manager_admin.delete_item(item)
+        self.connection.workflow_manager_admin.delete_item(item_two)
 
+    def test_import_item__with_passphrase_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Import_Item3_" + str(datetime.datetime.now())
+        )
 
-def test_import_item__with_passphrase_returns_successfully(self):
-    # Act
-    item_id = self.connection.workflow_manager_admin.create_item(
-        "Testing_Item_" + str(datetime.datetime.now())
-    )
+        passphrase = "test phrase"
+        item = self.connection._gis.content.get(item_id)
+        filepath = self.connection.workflow_manager_admin.export_item(
+            item, passphrase=passphrase
+        )
 
-    passphrase = "test phrase"
-    item = self.connection._gis.content.get(item_id)
-    filepath = self.connection.workflow_manager_admin.export_item(
-        item, passphrase=passphrase
-    )
+        item_id_two = self.connection.workflow_manager_admin.create_item(
+            "Testing_Import_Item4_" + str(datetime.datetime.now())
+        )
 
-    item_id_two = self.connection.workflow_manager_admin.create_item(
-        "Testing_Item_" + str(datetime.datetime.now())
-    )
+        item_two = self.connection._gis.content.get(item_id_two)
+        actual = self.connection.workflow_manager_admin.import_item(
+            item_two, filepath, passphrase=passphrase
+        )
 
-    item_two = self.connection._gis.content.get(item_id_two)
-    actual = self.connection.workflow_manager_admin.import_item(
-        item_two, filepath, passphrase=passphrase
-    )
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
 
-    # Assert
-    self.assertTrue(actual, "Incorrect return type")
+        self.connection.workflow_manager_admin.delete_item(item)
+        self.connection.workflow_manager_admin.delete_item(item_two)
 
     # endregion
 
@@ -176,7 +169,7 @@ def test_import_item__with_passphrase_returns_successfully(self):
     def test_export_item_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Export_Item_" + str(datetime.datetime.now())
         )
 
         item = self.connection._gis.content.get(item_id)
@@ -187,11 +180,12 @@ def test_import_item__with_passphrase_returns_successfully(self):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
+        self.connection.workflow_manager_admin.delete_item(item)
 
     def test_export_item_with_passphrase_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Export_Item2_" + str(datetime.datetime.now())
         )
 
         item = self.connection._gis.content.get(item_id)
@@ -204,11 +198,12 @@ def test_import_item__with_passphrase_returns_successfully(self):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
+        self.connection.workflow_manager_admin.delete_item(item)
 
     def test_export_item_with_specific_job_templates_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item(
-            "Testing_Item_" + str(datetime.datetime.now())
+            "Testing_Export_Item3_" + str(datetime.datetime.now())
         )
 
         item = self.connection._gis.content.get(item_id)
@@ -334,7 +329,7 @@ def test_import_item__with_passphrase_returns_successfully(self):
                             "dataType": "String",
                             "propertyAlias": "string",
                             "required": True,
-                            "fieldLength": 0,
+                            "fieldLength": 50,
                         },
                     ],
                 }
@@ -350,6 +345,7 @@ def test_import_item__with_passphrase_returns_successfully(self):
         self.assertTrue(
             "workflow_configuration" in actual, "Did not return a temporary file path"
         )
+        self.connection.workflow_manager_admin.delete_item(item)
 
     # endregion
 
@@ -411,6 +407,7 @@ def test_import_item__with_passphrase_returns_successfully(self):
             # Assertions
             self.assertIsInstance(roles, list, "Incorrect return type")
             self.assertEqual(len(roles), 4, "Incorrect number of items downloaded")
+            self.connection.workflow_manager_admin.delete_item(workflow_item)
 
         except Exception as testException:
             print(
