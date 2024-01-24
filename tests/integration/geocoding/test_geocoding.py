@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, r"/Users/john3092/Job/repos/geosaurus/src")
 
 import os
@@ -41,6 +42,8 @@ profiles = [
     None,
     "your_kubernetes_profile",
 ]
+
+
 ###########################################################################
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
@@ -276,9 +279,9 @@ class TestGeocoder(unittest.TestCase):
                 as_featureset=False,
             )
             g_fs = geocode(address=address, as_featureset=True)
-            suggestion = suggest(text="Cedar ", location="-82.971625,39.965386") 
+            suggestion = suggest(text="Cedar ", location="-82.971625,39.965386")
             g_magic_key = geocode(
-                address=suggestion["suggestions"][0]['text'], 
+                address=suggestion["suggestions"][0]["text"],
                 magic_key=suggestion["suggestions"][0]["magicKey"],
             )
             assert g_magic_key
