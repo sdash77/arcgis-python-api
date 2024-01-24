@@ -79,27 +79,27 @@ jobs:
           matrix=$(echo {} | jq '. |= {"os": [], "python_version": []}' | jq -r tostring)
           if [ "${{ steps.get-parameters.outputs.linux }}" = 'true' ]; then
             echo "Running on Linux"
-            matrix=$(echo $matrix | jq '.os |= ["ubuntu-latest"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.os += ["ubuntu-latest"]' | jq -r tostring)
           fi
           if [ "${{ steps.get-parameters.outputs.macos }}" = 'true' ]; then
             echo "Running on macOS"
-            matrix=$(echo $matrix | jq '.os |= ["macos-latest"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.os += ["macos-latest"]' | jq -r tostring)
           fi
           if [ "${{ steps.get-parameters.outputs.windows }}" = 'true' ]; then
             echo "Running on Windows"
-            matrix=$(echo $matrix | jq '.os |= ["windows-latest"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.os += ["windows-latest"]' | jq -r tostring)
           fi
           if [ "${{ steps.get-parameters.outputs.py39 }}" = 'true' ]; then
             echo "Running on Python 3.9"
-            matrix=$(echo $matrix | jq '.python_version |= ["3.9"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.python_version += ["3.9"]' | jq -r tostring)
           fi
-          if [ "${{ steps.get-parameters.outputs.py310 }}" == 'true' ]; then
+          if [ "${{ steps.get-parameters.outputs.py310 }}" = 'true' ]; then
             echo "Running on Python 3.10"
-            matrix=$(echo $matrix | jq '.python_version |= ["3.10"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.python_version += ["3.10"]' | jq -r tostring)
           fi
-          if [ "${{ steps.get-parameters.outputs.py311 }}" == 'true' ]; then
+          if [ "${{ steps.get-parameters.outputs.py311 }}" = 'true' ]; then
             echo "Running on Python 3.11"
-            matrix=$(echo $matrix | jq '.python_version |= ["3.11"]' | jq -r tostring)
+            matrix=$(echo $matrix | jq '.python_version += ["3.11"]' | jq -r tostring)
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
   unit-test:
@@ -151,21 +151,24 @@ jobs:
         run: |
           conda install -c main nose2 --yes
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          conda install -c esri "pandas>=2.0,<2.1" # See https://github.com/ArcGIS/geosaurus/issues/10966
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Show conda environment
-        run: |
-          conda list
-          conda info
       - name: Save Cache
         id: save-cache
         uses: actions/cache/save@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+      - name: Force install requests-kerberos
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          pip install -U requests-kerberos
+      - name: Show conda environment
+        run: |
+          conda list
+          conda info
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Copy binary dependencies
         if: runner.os == 'Linux' || runner.os == 'macOS'

@@ -68,7 +68,7 @@ class SharingGroupManager:
         """
         Shares a Group with an Item.
 
-        :returns:boolean
+        :returns: True if successful else False.
         """
         g: str | arcgis.gis.Group | None = None
         g = [grp.id for grp in self.list()]
@@ -82,7 +82,10 @@ class SharingGroupManager:
             groups: str = ",".join(g)
             do_update = True
         if do_update:
-            self._sm._share(level=self._sm.sharing_level, groups=groups)
+            resp = self._sm._share(level=self._sm.sharing_level, groups=groups)
+            if "notSharedWith" in resp["results"][0]:
+                # successfully sent the request, but the group was not shared with
+                return False
             return True
         return False
 
