@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"/Users/john3092/Job/repos/geosaurus/src")
+sys.path.insert(0, r"<local_path_to_src>")
 
 import os
 import sys
