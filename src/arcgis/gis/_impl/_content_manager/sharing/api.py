@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
-from typing import Union
+from typing import Union, Any
 import requests
 
 arcgis = LazyLoader("arcgis")
@@ -16,7 +16,7 @@ class SharingLevel(Enum):
     ======================  ========================================================
     **Parameter**            **Description**
     ----------------------  --------------------------------------------------------
-    ORG                     Sets the value to have organizational visiblity and only
+    ORG                     Sets the value to have organizational visibility and only
                             authenticated users within the GIS can see/use the item.
     ----------------------  --------------------------------------------------------
     PRIVATE                 Sets the item's sharing level to hidden/private and only
@@ -183,7 +183,7 @@ class SharingManager:
     def _share(
         self,
         level: SharingLevel,
-        groups: list["Group"] | str | None = None,
+        groups: list[arcgis.gis.Group] | str | None = None,
     ) -> dict[str, Any]:
         """
         The share operation shares an item with a public or organization
