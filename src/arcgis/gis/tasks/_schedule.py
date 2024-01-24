@@ -497,8 +497,8 @@ class TaskManager(object):
                                ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
                                to run workflow manager tasks.
                                Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
-                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
-                               `GPService`
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`,
+                               `GPService`, or `RunDataPipeline`.
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------

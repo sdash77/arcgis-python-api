@@ -18,11 +18,14 @@ from ._util import (
     create_upload_tuple,
     status,
 )
-from arcgis.gis import GIS, Item
+from arcgis.auth.tools import LazyLoader
 from ..._dataclasses import ItemProperties, ItemTypeEnum
 from arcgis.auth import EsriSession
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 logger = logging.getLogger(__name__)
+
+__all__ = ["Folder", "Folders"]
 
 
 ###########################################################################
@@ -32,7 +35,7 @@ class Folder:
     """
 
     _folder: str | None = None
-    _gis: GIS
+    _gis: _arcgis_gis.GIS
     _name: str = None
     _fid: str = None
     _properties: dict[str, Any] | None = None
@@ -40,7 +43,7 @@ class Folder:
     # ---------------------------------------------------------------------
     def __init__(
         self,
-        gis: GIS,
+        gis: _arcgis_gis.GIS,
         *,
         folder: str | None = None,
         owner: str | None = None,
@@ -198,7 +201,7 @@ class Folder:
 
         while True:
             for item in data["items"]:
-                yield Item(gis=self._gis, itemid=item.get("id", None))
+                yield _arcgis_gis.Item(gis=self._gis, itemid=item.get("id", None))
             if data.get("nextStart", -1) == -1:
                 break
             else:
@@ -308,7 +311,7 @@ class Folder:
         params: dict,
         upload_size: int,
         file_list: dict | list | None,
-    ) -> Item | dict[str, Any]:
+    ) -> _arcgis_gis.Item | dict[str, Any]:
         """performs the add by parts upload for files over 5 MBs."""
 
         parts_url: str = url.replace("/addItem", "/addPart")
@@ -385,7 +388,7 @@ class Folder:
         params: dict,
         upload_size: int,
         file_list: dict | list | None,
-    ) -> Item | dict[str, Any]:
+    ) -> _arcgis_gis.Item | dict[str, Any]:
         """performs the add by parts upload for files over 5 MBs."""
 
         parts_url: str = url.replace("/addItem", "/addPart")
@@ -452,7 +455,7 @@ class Folder:
         raise FolderException(str(r.text))
 
     # ---------------------------------------------------------------------
-    def _process_item_status(self, itemid: str) -> Item | dict[str, Any]:
+    def _process_item_status(self, itemid: str) -> _arcgis_gis.Item | dict[str, Any]:
         """Common function that handles the status of a newly added item"""
         i: int = 1
         status_messages: list[str] = [
@@ -485,13 +488,13 @@ class Folder:
             if not status_code in status_messages:
                 break
         if "id" in status_msg:
-            return Item(gis=self._gis, itemid=status_msg["id"])
+            return _arcgis_gis.Item(gis=self._gis, itemid=status_msg["id"])
         elif "itemId" in status_msg:
             count = 5
             while True:
                 time.sleep(1)
                 try:
-                    item = Item(gis=self._gis, itemid=status_msg["itemId"])
+                    item = _arcgis_gis.Item(gis=self._gis, itemid=status_msg["itemId"])
                     return item
                 except:
                     count -= 1
@@ -506,7 +509,7 @@ class Folder:
         params: dict,
         file_list: dict | list,
         check_status: bool = False,
-    ) -> Item | dict:
+    ) -> _arcgis_gis.Item | dict:
         """performs the add workflow"""
         resp: requests.Response = self._session.post(
             url=url, data=params, files=file_list
@@ -517,7 +520,7 @@ class Folder:
             return self._process_item_status(itemid=itemid)
         else:
             if itemid:
-                return Item(gis=self._gis, itemid=itemid)
+                return _arcgis_gis.Item(gis=self._gis, itemid=itemid)
         return data
 
     # ---------------------------------------------------------------------
@@ -804,7 +807,7 @@ class Folders:
         <arcgis.gis._impl._content_manager.folder.core.Folders at <memory_addr>>
     """
 
-    def __init__(self, gis: GIS) -> "Folders":
+    def __init__(self, gis: _arcgis_gis.GIS) -> "Folders":
         self._gis = gis
         self._session: EsriSession = gis._con._session
 
@@ -820,7 +823,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
@@ -895,7 +898,7 @@ class Folders:
         in the *owner* argument.
 
         .. note::
-            The ``create`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 
