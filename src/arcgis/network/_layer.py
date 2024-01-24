@@ -1821,9 +1821,9 @@ class NetworkDatasetLayer(NetworkLayer):
         When performing analysis using routing services, the inputs to an analysis
         rarely fall exactly on top of the edges or junctions of the network dataset
         the service is using. For example, you may be using a network dataset constructed
-        from street centerlines to power your routing services, and the input points
+        from street centerline to power your routing services, and the input points
         you want to analyze are the centroids of parcels in your city. These parcel
-        centroids do not fall on top of the street centerlines; rather, they are offset
+        centroids do not fall on top of the street centerline; rather, they are offset
         some distance from the streets. To successfully perform a network analysis
         using your routing services, the routing services must identify the location
         on the network dataset where each analysis input lies. This network location,
@@ -1872,11 +1872,11 @@ class NetworkDatasetLayer(NetworkLayer):
         ====================================    ====================================================================
         **Parameter**                           **Description**
         ------------------------------------    --------------------------------------------------------------------
-        input_locations                         Required FeatureSet. Specify input_locations geometries and attributes using a feature set object.
+        input_locations                         Required FeatureSet, list of Point geometries, or a comma separated string.
         ------------------------------------    --------------------------------------------------------------------
         travel_mode                             Optional string. Travel modes provide override values that help you
                                                 quickly and consistently model a vehicle or mode of transportation.
-                                                The chosen travel mode must be preconfigured on the network dataset
+                                                The chosen travel mode must be pre-configured on the network dataset
                                                 that the routing service references.
         ------------------------------------    --------------------------------------------------------------------
         locate_settings                         Optional dictionary containing additional input location settings.
