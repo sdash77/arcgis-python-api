@@ -32,10 +32,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
     ItemTypeEnum,
 )
-from arcgis.gis._impl import (
-    CreateServiceParameter,
-    ViewLayerDefParameter
-)
+from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 
 
 try:
@@ -14894,16 +14891,16 @@ class Item(dict):
 
         :returns:
             :class:`~arcgis.gis._impl._content_manager.SharingManager`
-        
+
         .. code-block:: python
-        
+
             # Usage example:
             >>> gis = GIS(profile="your_organization_admin_profile")
-            
+
             >>> an_item = gis.content.get("<item_id>")
             >>> sharing_mgr = an_item.sharing
             >>> sharing_mgr
-            
+
             < <item_id> SharingManager >
         """
 
