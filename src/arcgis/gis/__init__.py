@@ -14749,7 +14749,6 @@ class Item(dict):
         return ret_dict
 
     # ----------------------------------------------------------------------
-    @property
     @_common_deprecated.deprecated(
         deprecated_in="2.3.0",
         removed_in="3.0.0",
