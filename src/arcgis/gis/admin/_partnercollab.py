@@ -2,12 +2,15 @@ from __future__ import annotations
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Generator
+import os
 import json
+import logging
 import requests
 import urllib.parse
 from functools import lru_cache
 
 _arcgis_gis = LazyLoader("arcgis.gis")
+_log = logging.getLogger()
 
 
 @lru_cache(maxsize=255)
@@ -130,6 +133,44 @@ class PartneredCollaboration:
         resp: requests.Response = self.session.post(url=url, data=params)
         resp.raise_for_status()
         return resp.json().get("success", False)
+
+    @property
+    def is_active(self) -> bool:
+        """Checks to see if the collaboration is active between both organization"""
+        self._properties = None
+        return (
+            self.properties["from"]["established"] != -1
+            and self.properties["to"]["established"] != -1
+        )
+
+    @property
+    def is_accepted(self) -> bool:
+        """Checks to see if the collaboration has been accepted"""
+        self._properties = None
+        return self.properties["from"]["established"] != -1
+
+    def accept(self, user_access: bool) -> bool:
+        """
+        Accepts the inviriation and establishes a partnered collaboration.
+
+        """
+        if self.is_accepted == False:
+            params: dict = {
+                "f": "json",
+                "orgId": self.properties["to"]["orgId"],
+                "searchUsers": json.dumps(user_access),
+            }
+            url: str = os.path.dirname(self.url).replace(
+                "/trustedOrgs", "/addTrustedOrg"
+            )
+            resp: requests.Response = self._session.post(url=url, data=params)
+            data: dict = resp.json()
+            self._properties = None
+            return self.is_accepted
+
+        else:
+            _log.warning("Collaboration already established, skipping")
+            return False
 
 
 class PartneredCollabManager:
