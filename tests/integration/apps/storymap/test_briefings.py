@@ -70,12 +70,18 @@ class TestStoryMap(unittest.TestCase):
                 img = Image(
                     "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
                 )
-                block.add_content(img)
+                block.add(img)
                 assert block.content
                 assert isinstance(block.content, list)
                 assert isinstance(block.content[0], Image)
 
                 assert briefing.delete_briefing()
+        
+    def test_text_attachments(self):
+        for profile in profiles:
+            # establish gis connection
+            gis = GIS(profile=profile, verify_cert=False)
+            briefing = Briefing()
 
     def test_slide_layouts(self):
         for profile in profiles:
