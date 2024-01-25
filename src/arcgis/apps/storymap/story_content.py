@@ -5041,7 +5041,7 @@ class Block:
         ===============     ====================================================================
 
         :return:
-            True if successful.
+            The Content object that was added to the block.
         """
         # check that the content is not None
         if content is None:
@@ -5071,7 +5071,7 @@ class Block:
         self._story._properties["nodes"][self._slide.node]["data"]["contents"][
             str(self._index)
         ] = self._content
-        return True
+        return content
 
     # ----------------------------------------------------------------------
     def delete_content(self, index: Optional[int] = None) -> bool:
