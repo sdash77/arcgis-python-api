@@ -2207,7 +2207,11 @@ class Text:
         if self._existing is True:
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
-            self._size = self._story._properties["nodes"][self.node]["data"]["textSize"]
+            self._size = (
+                self._story._properties["nodes"][self.node]["data"]["textSize"]
+                if "textSize" in self._story._properties["nodes"][self.node]["data"]
+                else None
+            )
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._text = text
@@ -4815,6 +4819,11 @@ class BriefingSlide:
         # Set the title node id in data of slide
         self._story._properties["nodes"][self.node]["data"]["subtitle"] = subtitle.node
 
+        if self._subtitle:
+            # delete previous subtitle
+            self._subtitle.delete()
+
+        # assign new subtitle
         self._subtitle = subtitle
 
     # ----------------------------------------------------------------------
@@ -4932,6 +4941,15 @@ class BriefingSlide:
             self._story._properties["nodes"][self.node]["data"][
                 "title"
             ] = self._title.node
+
+        # Add subtitle if it exists
+        if self._subtitle:
+            if self._subtitle._existing is False:
+                self._subtitle._add_to_story(story=self._story)
+            self._story._properties["nodes"][self.node]["data"][
+                "subtitle"
+            ] = self._subtitle.node
+
         # For editing purposes, have children even if empty
         self._set_block_children()
 
