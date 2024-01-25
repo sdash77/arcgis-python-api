@@ -2345,6 +2345,8 @@ class Text:
                             Web Experience, or other arcgis Apps.
                             * A story content of type Image or Video
         ===============     ====================================================================
+
+        :return: True if successful.
         """
         if self._existing is True and isinstance(self._story, briefing.Briefing):
             content_node = None
@@ -2376,7 +2378,7 @@ class Text:
 
             if content != "custom embed":
                 # Now content is either type Map, Image, or Video
-                self._add_item_story(content)
+                content._add_to_story(story=self._story)
             action_id = "a-" + uuid.uuid4().hex[0:6]
             action_dict = {
                 "origin": self.node,
@@ -2404,8 +2406,9 @@ class Text:
             else:
                 self._story._properties["actions"] = [action_dict]
 
+            return True
         else:
-            print(
+            raise ValueError(
                 "This can only be used within a Briefing and the Text must exist in a Block."
             )
 
@@ -2498,19 +2501,6 @@ class Text:
             if not isinstance(self._story, briefing.Briefing) and self._size == "small":
                 self._size = "medium"
             self._story._properties["nodes"][self.node]["data"]["textSize"] = self._size
-
-    # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content and content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
-            content._add_image(display="wide", story=self._story)
-        elif isinstance(content, Video):
-            content._add_video(display="wide", story=self._story)
-        elif isinstance(content, Embed):
-            content._add_link(display="card", story=self._story)
-        elif isinstance(content, Map):
-            content._add_map(display="wide", story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -3717,10 +3707,12 @@ class Sidecar:
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
         # Get narrative panel, always first child of the slide
-        narrative_panel = self._story._properties["nodes"][slide]["children"][0]
+        narrative_panel: str = self._story._properties["nodes"][slide]["children"][0]
         # Delete the children of the narrative panel
         if "children" in self._story._properties["nodes"][narrative_panel]:
-            children = self._story._properties["nodes"][narrative_panel]["children"]
+            children: list = self._story._properties["nodes"][narrative_panel][
+                "children"
+            ]
             for child in children:
                 utils._delete(self._story, child)
         # Delete the narrative panel itself
@@ -3728,23 +3720,22 @@ class Sidecar:
 
         # Remove media item and resource node if one exists
         if len(self._story._properties["nodes"][slide]["children"]) >= 1:
-            media_item = self._story._properties["nodes"][slide]["children"][0]
+            media_item: str = self._story._properties["nodes"][slide]["children"][0]
             utils._delete(self._story, media_item)
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
+    def _add_item_story(self, content: Union[Image, Video, Map, Embed, Swipe]):
         if content and content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
-            content._add_to_story(display="wide", story=self._story)
-        elif isinstance(content, Video):
+        if (
+            isinstance(content, Image)
+            or isinstance(content, Video)
+            or isinstance(content, Map)
+            or isinstance(content, Audio)
+        ):
             content._add_to_story(display="wide", story=self._story)
         elif isinstance(content, Embed):
             content._add_to_story(display="card", story=self._story)
-        elif isinstance(content, Map):
-            content._add_to_story(display="wide", story=self._story)
-        elif isinstance(content, Audio):
-            content._add_to_story(display="wide", story=self._story)
         else:
             content._add_to_story(story=self._story)
 
@@ -3906,7 +3897,7 @@ class Timeline:
 
         # Check to see if content has been added to node properties
         if content.node not in self._story._properties["nodes"]:
-            self._add_item_story(content)
+            content._add_to_story(story=self._story)
 
         # Insert new content
         if isinstance(content, Text):
@@ -3981,7 +3972,7 @@ class Timeline:
                 for content in contents:
                     # Check to see if content has been added to node properties
                     if content.node not in self._story._properties["nodes"]:
-                        self._add_item_story(content)
+                        content._add_to_story(story=self._story)
                     contents_ids.append(content.node)
                 self._story._properties["nodes"][event_node] = {
                     "type": "timeline-event",
@@ -4065,12 +4056,6 @@ class Timeline:
                 # Content type doesn't exist yet and will need to be added in.
                 position = None
         return position
-
-    # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        content._add_to_story(story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -5054,17 +5039,22 @@ class Block:
                 "The content must be of type Text, Image, Video, Embed, Map, or Swipe."
             )
 
+        content._add_to_story(story=self._story)
         # If content is text and the current content is a list, append to the list
         if isinstance(content, Text) and isinstance(self._content, list):
-            content._add_to_story(story=self._story)
             self._content.append(content.node)
         # If content is text and the current content is not a list, create a list and append
         elif isinstance(content, Text) and not isinstance(self._content, list):
-            content._add_to_story(story=self._story)
-            self._content = [self._content, content.node]
+            # check the type of the current content
+            current = self.content[0]
+            if isinstance(current, Text):
+                # There can be multiple text contents in a block
+                self._content = [self._content, content.node]
+            else:
+                # There can only be one of the other types of contents
+                self._content = content.node
         # If another type, then assign to content's node id, this overwrites what is currently there
         else:
-            content._add_to_story(story=self._story)
             self._content = content.node
 
         # add to the slide in the story
@@ -5082,8 +5072,7 @@ class Block:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Optional integer, the index of the content to be deleted. If not
-                            specified, all content will be deleted. This applies for Text only since
-                            it is the only content held within a list.
+                            specified, all content will be deleted.
         ===============     ====================================================================
 
         :return: True if successful.
@@ -5104,7 +5093,7 @@ class Block:
             raise Exception("The index must be an integer.")
 
         # Update the story with the modified content
-        self._story._properties["nodes"][self._slide._node]["data"]["contents"][
+        self._story._properties["nodes"][self._slide.node]["data"]["contents"][
             str(self._index)
         ] = self._content
 
