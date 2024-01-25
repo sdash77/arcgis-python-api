@@ -823,7 +823,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
@@ -898,7 +898,7 @@ class Folders:
         in the *owner* argument.
 
         .. note::
-            The ``create`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 

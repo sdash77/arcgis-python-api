@@ -4349,7 +4349,7 @@ class UserManager(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, username: str):
+    def get(self, username: str, outside_org=True):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
@@ -4358,6 +4358,11 @@ class UserManager(object):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as a string. This can be the
                                user's login name or the user's ID.
+        ------------------     --------------------------------------------------------------------
+        outside_org            Optional boolean. When working with AGOL portals, setting this
+                               to `True` will include users from other organizations in ArcGIS
+                               Online. Does not make a difference in Enterprise portals. Defaults
+                               to `True`.
         ==================     ====================================================================
 
         :return:
@@ -4373,6 +4378,11 @@ class UserManager(object):
         try:
             with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
+                if user and not outside_org:
+                    org_id = self._gis._portal._properties.get("id")
+                    user_org_id = user.get("orgId")
+                    if user_org_id != org_id:
+                        user = None
 
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
@@ -6881,11 +6891,11 @@ class ContentManager(object):
             # Update the access and return the item
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             if filetype:
@@ -6913,11 +6923,11 @@ class ContentManager(object):
             # Update access
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             return None
@@ -7237,8 +7247,8 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.create_service("Hurricane Collection")
         """
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -7284,14 +7294,14 @@ class ContentManager(object):
                 item.update(item_properties=item_properties)
             if "access" in item_properties.keys():
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
                     groups = item.shared_with["groups"]
-                    item.share(groups=groups)
+                    item.sharing._share(groups=groups)
             return item
         else:
             return None
@@ -9090,6 +9100,35 @@ class CategorySchemaManager(object):
         return
 
     # ----------------------------------------------------------------------
+    @property
+    def schema_paths(self):
+        """
+        See the category paths that can be used to assign to an item.
+        If the category schema is empty, an empty list is returned.
+        """
+        paths = self._generate_paths(self.schema, current_path=None, paths=[])
+        modified_paths = [f"/{path}" for path in paths][1:]
+        return modified_paths
+
+    def _generate_paths(self, schema_dict, current_path=None, paths=[]):
+        """
+        Recursively generates file paths from the category schema.
+        """
+        if current_path is None:
+            current_path = ""
+        for category in schema_dict:
+            title = category["title"]
+            new_path = f"{current_path}\{title}" if current_path else title
+            paths.append(
+                new_path.replace("\\", "/")
+            )  # Replace backslashes with forward slashes
+
+            if "categories" in category:
+                self._generate_paths(category["categories"], new_path, paths)
+
+        return paths
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The ``delete`` function allows group owner or managers to remove the
@@ -9692,10 +9731,13 @@ class Group(dict):
             super(Group, self).update(groupdict)
 
     def _hydrate(self):
-        groupdict = self._portal.get_group(self.groupid)
-        self._hydrated = True
-        super(Group, self).update(groupdict)
-        self.__dict__.update(groupdict)
+        try:
+            groupdict = self._portal.get_group(self.groupid)
+            self._hydrated = True
+            super(Group, self).update(groupdict)
+            self.__dict__.update(groupdict)
+        except Exception as e:
+            raise e
 
     def __getattr__(
         self, name
@@ -11209,36 +11251,71 @@ class User(dict):
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         report_type       Required String. The type of organizational report to
-                          generated. The allowed report types are: `credits`,
-                          `content`, `users`, and `activity`.
+                          generate. The allowed arguments are:
+
+                          * *credits*
+                          * *content*
+                          * *users*
+                          * *activity*
         ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The day on which the report is
-                          generated. Each report must start on a Sunday or Monday
-                          for the start date for weekly and monthly reports. All
-                          datetimes must be in GMT timezone. Passing in `None` for
-                          the `start_time` will use the closest Sunday to the date
-                          for weekly and monthly reports.  For daily reports, the
-                          current day/time will be used in GMT.
+        start_time        Required Datetime. The time from which the report
+                          generates information.
+
+                          * If *duration* is *weekly*, the day component must
+                            evaluate to a *Sunday* or *Monday* UTC
+                          * If *duration* is *monthly*, the day component must
+                            evaluate to the first of the month
+
+                          .. note::
+                              Values must be in the UTC timezone.
+
+                          If argument is not provided:
+
+                          * and *duration* is either *weekly* or *monthly*,
+                            the report will generate from the closest Sunday.
+                          * and *duration* is *daily*, the report will
+                            generate from the current day/time in UTC.
         ----------------  --------------------------------------------------------
-        duration          Optional String. The time frame on which the reports are
-                          ran.  The allowed values are: `monthly`, `weekly`,
-                          `daily`. For `activity` and `credits` a `start_time`
-                          is required.
+        duration          Optional String. The time frame for which the reports are
+                          created.  The allowed values are:
+
+                          * *monthly*
+                          * *weekly*
+                          * *daily* - only available if *report_type* is *activity*
+
+                          .. note::
+                              Argument is required when setting *report_type*
+                              argument to *activity* or *credits*.
         ================  ========================================================
 
 
         .. code-block:: python
 
-            # Usage Example
+            # Usage Example #1
 
-            import datetime as _dt
-            seven_days_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=7)
-            item = user.report("content",
-                               seven_days_ago,
-                               duration="weekly")
+            >>> import datetime as _dt
+            >>> from arcgis.gis import GIS
 
+            >>> gis = GIS(profile="your_online_admin_profile")
 
-        :return: Item
+            >>> org_users = gis.users.search("*")
+            >>> org_user = org_users[3]
+
+            >>> sept22 = _dt.datetime(2022, 9, 1, 16)
+
+            >>> content_report = org_user.report(report_type = "content",
+                                                 start_time = sept22,
+                                                 duration = "monthly")
+
+            # Usage Example #2
+            >>> sun_dec10 = _dt.datetime(2023, 12, 10, 17)
+
+            >>> activity_report = org_user.report(report_type = "activity",
+                                                  start_time = sun_dec10,
+                                                  duration = "weekly")
+
+        :return:
+            :class: A *CSV* `~arcgis.gis.Item` that can be downloaded.
 
         """
 
@@ -15082,14 +15159,14 @@ class Item(dict):
             if "access" in item_properties:
                 access = item_properties.pop("access")
                 if access == "private":
-                    self.share(everyone=False, org=False)
+                    self.sharing.sharing_level = "PRIVATE"
                 if access == "org":
-                    self.share(everyone=False, org=True)
+                    self.sharing.sharing_level = "ORGANIZATION"
                 if access == "public":
-                    self.share(everyone=True)
+                    self.sharing.sharing_level = "EVERYONE"
                 if access == "shared":
                     groups = self.shared_with["groups"]
-                    self.share(groups=groups)
+                    self.sharing._share(groups=groups)
 
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
@@ -15180,19 +15257,19 @@ class Item(dict):
 
             if item_properties is not None:
                 if "tags" in item_properties:
-                    if type(item_properties["tags"]) is list:
+                    if isinstance(item_properties["tags"], list):
                         item_properties["tags"] = ",".join(item_properties["tags"])
                 if "access" in item_properties:
                     access = item_properties.pop("access")
                     if access == "private":
-                        self.share(everyone=False, org=False)
+                        self.sharing.sharing_level = "PRIVATE"
                     if access == "org":
-                        self.share(everyone=False, org=True)
+                        self.sharing.sharing_level = "ORGANIZATION"
                     if access == "public":
-                        self.share(everyone=True)
+                        self.sharing.sharing_level = "EVERYONE"
                     if access == "shared":
                         groups = self.shared_with["groups"]
-                        self.share(groups=groups)
+                        self.sharing._share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
