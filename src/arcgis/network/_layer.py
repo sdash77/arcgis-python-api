@@ -550,18 +550,23 @@ class RouteLayer(NetworkLayer):
 
                                                 .. note::
                                                     'default' has to be present if you want to pass in any locate_settings to the
-                                                    service. In addition, locate setttings for default have to be complete, meaning
+                                                    service. In addition, locate settings for default have to be complete, meaning
                                                     all properties need to be present.
                                                     For each override, the keys do not have to be complete.
 
                                                 .. note::
-                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                     not supported.
 
                                                 .. code-block:: python
 
                                                     from arcgis.network import LocateSettings
-                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                    locate_settings = LocateSettings(
+                                                        tolerance=5000,
+                                                        toleranceUnits="esriMeters",
+                                                        allowAutoRelocate=True,
+                                                        sources=[{"name": "Routing_Streets"}]
+                                                    )
                                                     result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
         -----------------------------------     --------------------------------------------------------------------
         return_empty_results                    Optional boolean. If True, the service will return empty results
