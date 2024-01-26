@@ -13062,6 +13062,8 @@ class RasterCollection:
         if "Geometry" not in rc_attribute_dict:
             rc_attribute_dict["Geometry"] = []
 
+        from arcgis.raster.functions import composite_band
+
         raster_list = []
         for item_resources in items:
             if is_pystac_cat:
@@ -13085,7 +13087,15 @@ class RasterCollection:
             if not item_product:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(item_product, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in item_product
+                    ]
+                )
+                if isinstance(item_product, list)
+                else Raster(item_product, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:

@@ -1852,6 +1852,11 @@ def _get_static_catalog_item_resources(request_link, request_params):
     if "maxar-opendata.s3.amazonaws.com/events" in request_link:
         product_file = request_link
     elif "https://capella-open-data.s3.us-west-2.amazonaws.com/stac" in request_link:
-        product_file = (assets.get("HH") or assets.get("VV")).get("href")
+        product_file = [
+            data["href"]
+            for data in assets.values()
+            if data["href"].endswith((".tif", ".tiff", ".ntf"))
+            and "data" in data["roles"]
+        ]
 
     return item, product_file
