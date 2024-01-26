@@ -2334,7 +2334,9 @@ class Text:
         self._size = size
 
     # ----------------------------------------------------------------------
-    def add_attachment(self, content):
+    def add_attachment(
+        self, content: arcgis.gis.Item | Image | Video, text: str = None
+    ) -> bool:
         """
         Add a text action to your text. You can specify the data of the action.
         This can only be used within a Briefing
@@ -2347,6 +2349,12 @@ class Text:
                             * An Item object of type: Web Map, Image, StoryMap, Collection, Dashboard,
                             Web Experience, or other arcgis Apps.
                             * A story content of type Image or Video
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The part of the text that the attachment will be linked to. The text
+                            must already exist in the text node.
+
+                            For example, if the entire text is "Look at this dog." and you want to link the word "dog"
+                            to the attachment, then the text parameter would be "dog".
         ===============     ====================================================================
 
         :return: True if successful.
@@ -2396,10 +2404,27 @@ class Text:
             }
 
             # Need to edit the text so that the format is: <span data-action-type="attachment-action" id="a-Mr9KE4">This is an attachment to ArcGIS Content</span>
-            # First get the text
-            text = self.text
-            # Now create the new text
-            new_text = f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>'
+            # There are two cases:
+            # 1. The text is the entire text of the node
+            # 2. The text is a part of the text of the node
+            # Case 1:
+            if text is None:
+                # Add the action to the text
+                new_text = (
+                    f'<span data-action-type="attachment-action" id="{action_id}">'
+                    + self.text
+                    + "</span>"
+                )
+            # Case 2:
+            else:
+                # First get the text
+                full_text = self.text
+                if text not in full_text:
+                    raise ValueError("The text must be part of the text of the node.")
+                new_text = full_text.replace(
+                    text,
+                    f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>',
+                )
             # Now update the text
             self.text = new_text
 
@@ -2416,29 +2441,64 @@ class Text:
             )
 
     # ----------------------------------------------------------------------
-    def remove_attachment(self):
+    def remove_attachment(self, text: str = None):
         """
-        Remove any attachment from the text. This can only be used within a Briefing.
+        Remove an attachment from the text. If text_to_remove is None, remove all attachments.
+        This can only be used within a Briefing.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The part of the text that the attachment will be removed from.
+                            The text must already exist in the text class. If text is None, then all
+                            attachments will be removed.
+        ===============     ====================================================================
+
+        :return: True if successful.
         """
         if self._existing is True and isinstance(self._story, briefing.Briefing):
             # First get the text
-            text = self.text
-            # Now remove the action, get the action id to remove it from the dictionary as well
-            action_id = text.split('id="')[1].split('">')[0]
-            # Now remove the action from the text
-            new_text = text.replace(
-                f'<span data-action-type="attachment-action" id="{action_id}">', ""
-            ).replace("</span>", "")
-            # Now update the text
-            self.text = new_text
+            full_text = self.text
+            # Initialize an empty list to store removed action IDs
+            removed_action_ids = []
 
-            # Now remove the action from the actions list in the story properties
-            for action in self._story._properties["actions"]:
-                if action["data"]["actionId"] == action_id:
-                    self._story._properties["actions"].remove(action)
-                    break
+            if text:
+                # Remove the specified attachment if text_to_remove is provided
+                if f'<span data-action-type="attachment-action" id="' in text:
+                    # Get the action id to remove it from the dictionary
+                    action_id = text.split('id="')[1].split('">')[0]
+                    # Remove the action from the text
+                    full_text = full_text.replace(
+                        f'<span data-action-type="attachment-action" id="{action_id}">',
+                        "",
+                    ).replace("</span>", "")
+                    # Add the removed action ID to the list
+                    removed_action_ids.append(action_id)
+            else:
+                # Remove all attachments if text_to_remove is not provided
+                while '<span data-action-type="attachment-action" id="' in full_text:
+                    # Get the action id to remove it from the dictionary
+                    action_id = full_text.split('id="')[1].split('">')[0]
+                    # Remove the action from the text
+                    full_text = full_text.replace(
+                        f'<span data-action-type="attachment-action" id="{action_id}">',
+                        "",
+                    ).replace("</span>", "")
+                    # Add the removed action ID to the list
+                    removed_action_ids.append(action_id)
+
+            # Now update the text
+            self.text = full_text
+
+            # Remove the corresponding actions from the actions list in the story properties
+            if "actions" in self._story._properties:
+                self._story._properties["actions"] = [
+                    action
+                    for action in self._story._properties["actions"]
+                    if action["data"]["actionId"] not in removed_action_ids
+                ]
         else:
-            pass
+            return False
 
     # ----------------------------------------------------------------------
     def delete(self):
