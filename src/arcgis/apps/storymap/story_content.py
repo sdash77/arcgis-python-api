@@ -1234,6 +1234,9 @@ class Embed:
             if isinstance(self._story, briefing.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
+                    self._story._properties["nodes"][self.node]["data"]["dependent"] = {
+                        "offline": value.node
+                    }
                     self._offline_dependent = value.node
                 else:
                     raise ValueError("offline_media must be an Image or Video")
@@ -4071,14 +4074,6 @@ class MapTour:
     .. note::
         Once you create a MapTour instance you must add it to the story to be able to edit it further.
 
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the map tour type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
-    ===============     ====================================================================
-
     .. code-block:: python
 
         >>> my_story.nodes #use to find map tour node id
@@ -4319,6 +4314,104 @@ class MapAction:
                     "targetGeometry": target_geometry,
                 }
         return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        return self._story is not None and self.node is not None
+
+
+###############################################################################################################
+class ExpressMap:
+    """
+    Class representing an ExpressMap.
+
+    .. note::
+        You can only create an ExpressMap from a pre-existing `expressmap` in a story or briefing. You cannot create
+        an ExpressMap from scratch.
+    """
+
+    def __init__(self, **kwargs):
+        # Content must already exist in the story
+        # ExpressMap is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self.node = kwargs.pop("node_id", None)
+        self._existing = self._check_node()
+
+        if self._existing:
+            self._map_resource = self._story._properties["nodes"][self.node]["data"][
+                "map"
+            ]
+            # check if offline dependent
+            if "dependent" in self._story._properties["nodes"][self.node]["data"]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "data"
+                ]["dependent"]["offline"]
+        else:
+            raise ValueError(
+                "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
+            )
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "ExpressMap"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "ExpressMap"
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       Image or Video. The new offline_media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The offline media that is being used.
+        """
+        if self._existing is True:
+            if self._offline_dependent:
+                return utils._assign_node_class(
+                    story=self._story, node_id=self._offline_dependent
+                )
+        return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: Image | Video):
+        if self._existing:
+            # can only set for briefing
+            if isinstance(self._story, briefing.Briefing):
+                if isinstance(value, Image) or isinstance(value, Video):
+                    value._add_to_story(story=self._story)
+                    self._story._properties["nodes"][self.node]["data"]["dependent"] = {
+                        "offline": value.node
+                    }
+                    self._offline_dependent = value.node
+                else:
+                    raise ValueError("offline_media must be an Image or Video")
+            else:
+                raise ValueError("offline_media can only be set for a Briefing")
+        else:
+            raise ValueError(
+                "offline_media can only be set for an ExpressMap that has been added to a Briefing."
+            )
 
     # ----------------------------------------------------------------------
     def delete(self):
