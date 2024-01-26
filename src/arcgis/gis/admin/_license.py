@@ -1,6 +1,7 @@
 """
 Entry point to working with licensing on Portal or ArcGIS Online
 """
+
 from __future__ import annotations
 import datetime
 from .._impl._con import Connection

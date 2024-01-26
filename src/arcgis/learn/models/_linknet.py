@@ -180,9 +180,9 @@ class LinkNet(ArcGISModel):
             "backbone": self._backbone,
             "backend": self._backend,
             "opt_func": self._opt_func_name if hasattr(self, "_opt_func_name") else "",
-            "opt_func_args": self._opt_func_args
-            if hasattr(self, "_opt_func_args")
-            else "",
+            "opt_func_args": (
+                self._opt_func_args if hasattr(self, "_opt_func_args") else ""
+            ),
         }
         _emd_template["ModelParameters"] = model_params
         _emd_template["Classes"] = []

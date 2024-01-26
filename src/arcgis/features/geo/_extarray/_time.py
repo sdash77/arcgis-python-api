@@ -35,6 +35,7 @@ class ArrowTimeArray(pd.core.arrays.ArrowExtensionArray):
             )
         self._dtype = ArrowDtype(self._data.type)
         self.data = self._data
+        self._pa_array = self._data
 
     @property
     def dtype(self) -> ArrowTimeDtype:
@@ -209,17 +210,19 @@ class ArrowTimeAccessor:
 
         return (
             self._series.apply(
-                lambda x: _replace(
-                    x,
-                    hour=hour,
-                    minute=minute,
-                    second=second,
-                    microsecond=microsecond,
-                    fold=fold,
-                    tzinfo=tzinfo,
-                )
-                if not pd.isna(x)
-                else None,
+                lambda x: (
+                    _replace(
+                        x,
+                        hour=hour,
+                        minute=minute,
+                        second=second,
+                        microsecond=microsecond,
+                        fold=fold,
+                        tzinfo=tzinfo,
+                    )
+                    if not pd.isna(x)
+                    else None
+                ),
                 convert_dtype=True,
             )
             .convert_dtypes()

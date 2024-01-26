@@ -5,6 +5,7 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
+
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
