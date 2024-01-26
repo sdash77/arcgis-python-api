@@ -1176,9 +1176,9 @@ class Embed:
             self._path = self._story._properties["nodes"][self.node]["data"]["url"]
 
             # check if offline dependent
-            if "dependent" in self._story._properties["nodes"][self.node]:
+            if "dependents" in self._story._properties["nodes"][self.node]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependent"
+                    "dependents"
                 ]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
@@ -1234,7 +1234,7 @@ class Embed:
             if isinstance(self._story, briefing.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
-                    self._story._properties["nodes"][self.node]["dependent"] = {
+                    self._story._properties["nodes"][self.node]["dependents"] = {
                         "offline": value.node
                     }
                     self._offline_dependent = value.node
@@ -4417,9 +4417,9 @@ class ExpressMap:
                 "map"
             ]
             # check if offline dependent
-            if "dependent" in self._story._properties["nodes"][self.node]:
+            if "dependents" in self._story._properties["nodes"][self.node]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "dependent"
+                    "dependents"
                 ]["offline"]
         else:
             raise ValueError(
@@ -4464,7 +4464,7 @@ class ExpressMap:
             if isinstance(self._story, briefing.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
-                    self._story._properties["nodes"][self.node]["dependent"] = {
+                    self._story._properties["nodes"][self.node]["dependents"] = {
                         "offline": value.node
                     }
                     self._offline_dependent = value.node
