@@ -6,6 +6,7 @@ administrator connects to.
 For ArcGIS Online GIS, administrators will get an instance of AGOLAdminManager from the gis.admin property.
 For ArcGIS Enterprise GIS , administrators will get an instance of PortalAdminManager from the gis.admin property.
 """
+
 from .portaladmin import PortalAdminManager
 from .agoladmin import AGOLAdminManager
 from ._federation import Federation
@@ -43,5 +44,6 @@ from ._dsmgr import (
     DataStoreTimeUnit,
     DataStoreMetric,
 )
+from ._partnercollab import PartneredCollabManager, PartneredCollaboration
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]

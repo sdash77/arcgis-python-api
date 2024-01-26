@@ -3,6 +3,7 @@
 The ``Symbology`` class generates Symbol Types for the :class:`~arcgis.gis.GIS` object.
 
 """
+
 import json
 import arcgis
 from arcgis.features import FeatureCollection, FeatureSet

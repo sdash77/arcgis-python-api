@@ -45,6 +45,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Workflow Manager Service",
     "StoryMap",
     "Web Scene",
+    "Data Pipeline",
 ]
 
 # Regular expressions for finding fields in json
@@ -1163,9 +1164,9 @@ class _DeepCloner:
                     "relationship_field_mapping": relationship_field_mapping,
                 }
             elif new_item.type == "Geoprocessing Service":
-                self._clone_mapping["Web Tools"][
-                    original_item["url"].rstrip("/")
-                ] = new_item["url"].rstrip("/")
+                self._clone_mapping["Web Tools"][original_item["url"].rstrip("/")] = (
+                    new_item["url"].rstrip("/")
+                )
 
     def _clone_synchronous(self):
         """
@@ -3170,10 +3171,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 os.path.basename(os.path.dirname(k))
                                                 == name
                                             ):
-                                                related_table[
-                                                    "sourceServiceName"
-                                                ] = os.path.basename(
-                                                    os.path.dirname(v["url"])
+                                                related_table["sourceServiceName"] = (
+                                                    os.path.basename(
+                                                        os.path.dirname(v["url"])
+                                                    )
                                                 )
                                                 if (
                                                     "sourceLayerId" in related_table
@@ -3256,20 +3257,20 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     # retain this previous logic when admin_layer_info is not already avalible
                                     admin_layer_info = {}
                                     view_layer_definition = {}
-                                    view_layer_definition[
-                                        "sourceServiceName"
-                                    ] = os.path.basename(
-                                        os.path.dirname(new_service["url"])
+                                    view_layer_definition["sourceServiceName"] = (
+                                        os.path.basename(
+                                            os.path.dirname(new_service["url"])
+                                        )
                                     )
-                                    view_layer_definition[
-                                        "sourceLayerId"
-                                    ] = new_service["layer_id_mapping"][
-                                        int(original_id)
-                                    ]
+                                    view_layer_definition["sourceLayerId"] = (
+                                        new_service["layer_id_mapping"][
+                                            int(original_id)
+                                        ]
+                                    )
                                     view_layer_definition["sourceLayerFields"] = "*"
-                                    admin_layer_info[
-                                        "viewLayerDefinition"
-                                    ] = view_layer_definition
+                                    admin_layer_info["viewLayerDefinition"] = (
+                                        view_layer_definition
+                                    )
                                     layer["adminLayerInfo"] = admin_layer_info
                                     break
 
@@ -3407,9 +3408,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         and new_editor_field_name is not None
                                         and new_editor_field_name != ""
                                     ):
-                                        field_mapping[
-                                            original_editor_field_name
-                                        ] = new_editor_field_name
+                                        field_mapping[original_editor_field_name] = (
+                                            new_editor_field_name
+                                        )
                                         # Delete old editor tracking fields
                                         if self.is_view == False:
                                             try:
@@ -3539,11 +3540,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 "viewDefinitionQuery"
                             ]
                             if layer_id in layer_field_mapping:
-                                update_definition[
-                                    "viewDefinitionQuery"
-                                ] = _find_and_replace_fields_sql(
-                                    update_definition["viewDefinitionQuery"],
-                                    layer_field_mapping[layer_id],
+                                update_definition["viewDefinitionQuery"] = (
+                                    _find_and_replace_fields_sql(
+                                        update_definition["viewDefinitionQuery"],
+                                        layer_field_mapping[layer_id],
+                                    )
                                 )
 
                         if len(self.view_sources[layer_id]) == 1:
@@ -3810,9 +3811,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     old_group_id = item_properties["properties"][
                         "workforceProjectGroupId"
                     ]
-                    item_properties["properties"][
-                        "workforceProjectGroupId"
-                    ] = self._clone_mapping["Group IDs"][old_group_id]
+                    item_properties["properties"]["workforceProjectGroupId"] = (
+                        self._clone_mapping["Group IDs"][old_group_id]
+                    )
 
                     # set up dispatcher webmap properties
                     old_dispatcher_webmap_id = item_properties["properties"][
@@ -4188,10 +4189,10 @@ class _WebMapDefinition(_TextItemDefinition):
                                 portal_url = "http://www.arcgis.com/"
                                 if self.target.properties.isPortal:
                                     portal_url = _get_org_url(self.target)
-                                basemap_layer[
-                                    "styleUrl"
-                                ] = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
-                                    portal_url, new_id
+                                basemap_layer["styleUrl"] = (
+                                    "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
+                                        portal_url, new_id
+                                    )
                                 )
                                 basemap_layer["itemId"] = new_id
 
@@ -4797,11 +4798,11 @@ class _ApplicationDefinition(_TextItemDefinition):
                                             )
                                         app_json["values"]["webmap"] = new_webmap_ids
                                     else:
-                                        app_json["values"][
-                                            "webmap"
-                                        ] = self._clone_mapping["Item IDs"][
-                                            app_json["values"]["webmap"]
-                                        ]
+                                        app_json["values"]["webmap"] = (
+                                            self._clone_mapping["Item IDs"][
+                                                app_json["values"]["webmap"]
+                                            ]
+                                        )
                             if self.source_app_title is not None:
                                 search_query = 'title:"{0}" AND owner:{1} AND type:Web Mapping Application'.format(
                                     self.source_app_title, "esri_en"
@@ -5454,11 +5455,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                 feature_service_item_id
                                 in self._clone_mapping["Item IDs"]
                             ):
-                                datasource[
-                                    "featureServiceItemId"
-                                ] = self._clone_mapping["Item IDs"][
-                                    feature_service_item_id
-                                ]
+                                datasource["featureServiceItemId"] = (
+                                    self._clone_mapping["Item IDs"][
+                                        feature_service_item_id
+                                    ]
+                                )
                         if "url" in datasource and datasource["url"] is not None:
                             feature_service_url = os.path.dirname(datasource["url"])
                             for (
@@ -5515,13 +5516,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                                     datasourceid
                                                 ]
                                             ):
-                                                fieldinfo[
-                                                    "fieldName"
-                                                ] = datasourceid_field_mapping[
-                                                    datasourceid
-                                                ][
-                                                    fieldname
-                                                ]
+                                                fieldinfo["fieldName"] = (
+                                                    datasourceid_field_mapping[
+                                                        datasourceid
+                                                    ][fieldname]
+                                                )
 
                 # Set the admin email
                 admin_email = _deep_get(qc_json, "preferences", "adminEmail")
@@ -5892,9 +5891,9 @@ class _ProMapDefinition(_ItemDefinition):
                                     ]
                                     layer_id = int(data_connection["dataset"])
                                     new_id = new_service["layer_id_mapping"][layer_id]
-                                    data_connection[
-                                        "workspaceConnectionString"
-                                    ] = "URL={0}".format(new_service["url"])
+                                    data_connection["workspaceConnectionString"] = (
+                                        "URL={0}".format(new_service["url"])
+                                    )
                                     data_connection["dataset"] = new_id
 
                 new_mapx_dir = os.path.join(os.path.dirname(mapx), "new_mapx")
@@ -6276,9 +6275,9 @@ def _compare_service(new_item, original_item, currentVersion):
                                     and new_editor_field_name is not None
                                     and new_editor_field_name != ""
                                 ):
-                                    field_mapping[
-                                        original_editor_field_name
-                                    ] = new_editor_field_name
+                                    field_mapping[original_editor_field_name] = (
+                                        new_editor_field_name
+                                    )
 
                 original_oid_field = _deep_get(layer, "objectIdField")
                 new_oid_field = _deep_get(new_layer, "objectIdField")
@@ -6716,11 +6715,11 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
             "parameterizedExpression" in layer["definitionEditor"]
             and layer["definitionEditor"]["parameterizedExpression"] is not None
         ):
-            layer["definitionEditor"][
-                "parameterizedExpression"
-            ] = _find_and_replace_fields_sql(
-                layer["definitionEditor"]["parameterizedExpression"],
-                field_mapping,
+            layer["definitionEditor"]["parameterizedExpression"] = (
+                _find_and_replace_fields_sql(
+                    layer["definitionEditor"]["parameterizedExpression"],
+                    field_mapping,
+                )
             )
 
 
@@ -6796,9 +6795,9 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
 
                 expression = _deep_get(label_info, "labelExpressionInfo", "expression")
                 if expression is not None:
-                    label_info["labelExpressionInfo"][
-                        "expression"
-                    ] = _find_and_replace_fields_arcade(str(expression), field_mapping)
+                    label_info["labelExpressionInfo"]["expression"] = (
+                        _find_and_replace_fields_arcade(str(expression), field_mapping)
+                    )
 
 
 def _update_layer_related_fields(layer, relationship_field_mapping):

@@ -1,6 +1,7 @@
 """
 Handles security where a user provides the token
 """
+
 from requests.auth import AuthBase
 from urllib import parse
 from ._schain import SupportMultiAuth

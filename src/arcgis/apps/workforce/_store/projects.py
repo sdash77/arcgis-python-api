@@ -1,5 +1,6 @@
 """ Defines store functions for working with Projects.
 """
+
 import arcgis
 from arcgis.gis import Item
 from arcgis.apps import workforce
@@ -243,7 +244,7 @@ def _v2_create_project(gis, summary, title):
     project_items = [workforce_service_item, workers_webmap, dispatchers_webmap]
     # share and protect items
     for i in project_items:
-        i.share(groups=[group])
+        i.sharing._share(groups=[group])
         i.protect()
 
     # set fs item properties / thumbnail
@@ -747,7 +748,7 @@ def _v1_create_project(gis, summary, title):
     ]
     # share and protect items
     for i in project_items:
-        i.share(groups=[group])
+        i.sharing._share(groups=[group])
         i.protect()
 
     my_path = os.path.abspath(os.path.dirname(__file__))
