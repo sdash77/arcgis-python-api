@@ -1178,8 +1178,8 @@ class Embed:
             # check if offline dependent
             if "dependent" in self._story._properties["nodes"][self.node]["data"]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "data"
-                ]["dependent"]["offline"]
+                    "dependent"
+                ]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
             self._path = path
@@ -1234,7 +1234,7 @@ class Embed:
             if isinstance(self._story, briefing.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
-                    self._story._properties["nodes"][self.node]["data"]["dependent"] = {
+                    self._story._properties["nodes"][self.node]["dependent"] = {
                         "offline": value.node
                     }
                     self._offline_dependent = value.node
@@ -1386,7 +1386,7 @@ class Embed:
                 "description": caption or "",
                 "providerUrl": sections.netloc,
                 "alt": alt_text or "",
-                "display": display,
+                "display": display or "inline",
             },
         }
 
@@ -4419,8 +4419,8 @@ class ExpressMap:
             # check if offline dependent
             if "dependent" in self._story._properties["nodes"][self.node]["data"]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
-                    "data"
-                ]["dependent"]["offline"]
+                    "dependent"
+                ]["offline"]
         else:
             raise ValueError(
                 "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
@@ -4464,7 +4464,7 @@ class ExpressMap:
             if isinstance(self._story, briefing.Briefing):
                 if isinstance(value, Image) or isinstance(value, Video):
                     value._add_to_story(story=self._story)
-                    self._story._properties["nodes"][self.node]["data"]["dependent"] = {
+                    self._story._properties["nodes"][self.node]["dependent"] = {
                         "offline": value.node
                     }
                     self._offline_dependent = value.node
