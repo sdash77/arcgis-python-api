@@ -1889,7 +1889,7 @@ class NetworkDatasetLayer(NetworkLayer):
 
                                                 The dictionary of parameters can be assigned to the 'default', or to the
                                                 'overrides' key which holds the dictionary of parameters for each override, types of override are
-                                                'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                'inputLocations', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                 Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                 for the default.
 
@@ -1908,8 +1908,8 @@ class NetworkDatasetLayer(NetworkLayer):
                                                     from arcgis.network import LocateSettings
                                                     locate_settings = LocateSettings(
                                                         tolerance=5000,
-                                                        toleranceUnits="esriMeters",
-                                                        allowAutoRelocate=True,
+                                                        tolerance_units="esriMeters",
+                                                        allow_auto_relocate=True,
                                                         sources=[{"name": "Routing_Streets"}]
                                                     )
                                                     result = route_layer.solve(
