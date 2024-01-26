@@ -665,7 +665,7 @@ class System(BasePortalAdmin):
         category               Optional String. Category limits to be updated.
 
                                .. note::
-                                   As of the API 2.2.0.1 release, `ScheduleTask` is the only
+                                   As of the Enterprise 11.2 release, `ScheduleTask` is the only
                                    category implemented.
         ==================     ====================================================================
 
