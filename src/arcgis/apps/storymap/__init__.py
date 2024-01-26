@@ -2,6 +2,7 @@
 StoryMap Implementation
 """
 
+from .storymap import JournalStoryMap
 from .story import StoryMap, Themes
 from .briefing import Briefing
 from .collection import Collection

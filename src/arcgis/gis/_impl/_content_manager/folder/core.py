@@ -186,7 +186,9 @@ class Folder:
         """
         url: str = f"{self._gis._portal.resturl}content/users/{self._owner}"
         if self._folder:
-            url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            url: str = (
+                f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            )
         params: dict[str, Any] = {
             "f": "json",
             "types": item_type,
@@ -280,7 +282,9 @@ class Folder:
             Only available on non-Root Folder
             :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
         """
-        url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        url: str = (
+            f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        )
         params = {
             "f": "json",
         }

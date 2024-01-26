@@ -74,7 +74,9 @@ class RecycleItem:
             >>> deleted_item = list(gis_user.recyclebin.content)[0]
             >>> restored_item = deleted_item.restore()
         """
-        url: str = f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/restore"
+        url: str = (
+            f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/restore"
+        )
         params = {
             "f": "json",
         }
@@ -93,7 +95,9 @@ class RecycleItem:
 
         :return: boolean
         """
-        url: str = f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/delete"
+        url: str = (
+            f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/delete"
+        )
         params = {"f": "json", "permanentDelete": json.dumps(True)}
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
