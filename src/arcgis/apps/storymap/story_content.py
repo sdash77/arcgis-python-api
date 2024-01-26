@@ -1176,7 +1176,7 @@ class Embed:
             self._path = self._story._properties["nodes"][self.node]["data"]["url"]
 
             # check if offline dependent
-            if "dependent" in self._story._properties["nodes"][self.node]["data"]:
+            if "dependent" in self._story._properties["nodes"][self.node]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
                     "dependent"
                 ]["offline"]
@@ -4417,7 +4417,7 @@ class ExpressMap:
                 "map"
             ]
             # check if offline dependent
-            if "dependent" in self._story._properties["nodes"][self.node]["data"]:
+            if "dependent" in self._story._properties["nodes"][self.node]:
                 self._offline_dependent = self._story._properties["nodes"][self.node][
                     "dependent"
                 ]["offline"]
