@@ -244,7 +244,6 @@ class SSDTracer(torch.nn.Module):
 
 
 class SingleShotDetector(ArcGISModel):
-
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
@@ -437,9 +436,11 @@ class SingleShotDetector(ArcGISModel):
                 self._create_anchors(grids, zooms, ratios)
 
                 feature_sizes = _get_feature_size(
-                    self._orig_backbone
-                    if hasattr(self, "_orig_backbone")
-                    else self._backbone,
+                    (
+                        self._orig_backbone
+                        if hasattr(self, "_orig_backbone")
+                        else self._backbone
+                    ),
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
                 )
@@ -943,9 +944,9 @@ class SingleShotDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
