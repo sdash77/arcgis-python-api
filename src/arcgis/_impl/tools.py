@@ -4,6 +4,7 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
+
 from __future__ import absolute_import, division, print_function, annotations
 
 from arcgis._impl.common._deprecate import deprecated
@@ -1396,9 +1397,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if required_facilities_capacity is not None:
                 params["requiredFacilitiesCapacity"] = required_facilities_capacity
             if required_facilities_capacity_field is not None:
-                params[
-                    "requiredFacilitiesCapacityField"
-                ] = required_facilities_capacity_field
+                params["requiredFacilitiesCapacityField"] = (
+                    required_facilities_capacity_field
+                )
             if candidate_facilities_layer is not None:
                 params["candidateFacilitiesLayer"] = candidate_facilities_layer
             if candidate_count is not None:
@@ -1406,9 +1407,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if candidate_facilities_capacity is not None:
                 params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
             if candidate_facilities_capacity_field is not None:
-                params[
-                    "candidateFacilitiesCapacityField"
-                ] = candidate_facilities_capacity_field
+                params["candidateFacilitiesCapacityField"] = (
+                    candidate_facilities_capacity_field
+                )
             if percent_demand_coverage is not None:
                 params["percentDemandCoverage"] = percent_demand_coverage
             if output_name is not None:
@@ -1734,9 +1735,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
-                params[
-                    "destinationsLayerRouteIDField"
-                ] = destinations_layer_route_id_field
+                params["destinationsLayerRouteIDField"] = (
+                    destinations_layer_route_id_field
+                )
             if time_of_day is not None:
                 params["timeOfDay"] = time_of_day
             if time_zone_for_time_of_day is not None:
@@ -5493,9 +5494,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if spatial_relationship_distance is not None:
             params["spatialRelationshipDistance"] = spatial_relationship_distance
         if spatial_relationship_distance_units is not None:
-            params[
-                "spatialRelationshipDistanceUnits"
-            ] = spatial_relationship_distance_units
+            params["spatialRelationshipDistanceUnits"] = (
+                spatial_relationship_distance_units
+            )
         if estimate:
             params["targetLayer"] = target_layer
             params["joinLayer"] = join_layer
@@ -17143,9 +17144,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             in_folder = in_folder.datapath
         elif isinstance(in_folder, list):
             in_folder = [
-                folder.datapath
-                if isinstance(folder, arcgis.gis.Datastore)
-                else str(folder)
+                (
+                    folder.datapath
+                    if isinstance(folder, arcgis.gis.Datastore)
+                    else str(folder)
+                )
                 for folder in in_folder
             ]
             in_folder = ",".join(in_folder)

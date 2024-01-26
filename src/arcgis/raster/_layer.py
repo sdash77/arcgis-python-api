@@ -12874,11 +12874,15 @@ class RasterCollection:
                 rc_attribute_dict[key] = attribute_dict[key]
             else:
                 rc_attribute_dict[key] = [
-                    item[attribute_dict[key]]
-                    if attribute_dict[key] in item
-                    else item["properties"][attribute_dict[key]]
-                    if attribute_dict[key] in item["properties"]
-                    else key
+                    (
+                        item[attribute_dict[key]]
+                        if attribute_dict[key] in item
+                        else (
+                            item["properties"][attribute_dict[key]]
+                            if attribute_dict[key] in item["properties"]
+                            else key
+                        )
+                    )
                     for item in items
                 ]
 

@@ -1,6 +1,7 @@
 """
 Allows access to the Portal Logs
 """
+
 from datetime import datetime, timezone
 from typing import Optional, Union
 from .. import GIS
