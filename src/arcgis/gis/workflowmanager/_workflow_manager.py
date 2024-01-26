@@ -724,12 +724,12 @@ class JobManager:
             self._handle_error(sys.exc_info())
 
     def statistics(
-            self,
-            query: str,
-            search_str: Optional[str] = None,
-            group_by: Optional[str] = None,
-            spatial_extent: Optional[str] = None,
-            has_location: Optional[bool] = None
+        self,
+        query: str,
+        search_str: Optional[str] = None,
+        group_by: Optional[str] = None,
+        spatial_extent: Optional[str] = None,
+        has_location: Optional[bool] = None,
     ):
         """
         Runs a search against the jobs stored inside the Workflow Manager instance
@@ -763,9 +763,7 @@ class JobManager:
 
         """
         try:
-            search_object = {
-                "q": query
-            }
+            search_object = {"q": query}
 
             if search_str is not None:
                 search_object["search"] = search_str
@@ -2351,19 +2349,53 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = self.notes = self.diagram_id = self.end_date = (
+        self.job_status = (
+            self.notes
+        ) = (
+            self.diagram_id
+        ) = (
+            self.end_date
+        ) = (
             self.due_date
-        ) = self.description = self.started_date = self.current_steps = (
+        ) = (
+            self.description
+        ) = (
+            self.started_date
+        ) = (
+            self.current_steps
+        ) = (
             self.job_template_name
-        ) = self.job_template_id = self.extended_properties = self.holds = (
+        ) = (
+            self.job_template_id
+        ) = (
+            self.extended_properties
+        ) = (
+            self.holds
+        ) = (
             self.diagram_name
-        ) = self.parent_job = self.job_name = self.diagram_version = (
+        ) = (
+            self.parent_job
+        ) = (
+            self.job_name
+        ) = (
+            self.diagram_version
+        ) = (
             self.active_versions
-        ) = self.percent_complete = self.priority = self.job_id = self.created_date = (
+        ) = (
+            self.percent_complete
+        ) = (
+            self.priority
+        ) = (
+            self.job_id
+        ) = (
+            self.created_date
+        ) = (
             self.created_by
-        ) = self.closed = self.owned_by = self.start_date = self._location = (
-            self.related_properties
-        ) = None
+        ) = (
+            self.closed
+        ) = (
+            self.owned_by
+        ) = self.start_date = self._location = self.related_properties = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
