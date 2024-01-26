@@ -1837,7 +1837,7 @@ def _get_all_stac_catalog_items(stac_json, request_params={}):
         yield from _get_all_stac_catalog_items(child_json, request_params)
 
 
-def _lookup_datastore(datastore_type, type=None, gis=None):
+def _lookup_datastore(datastore_type, gis=None):
     """
 
     This method returns the list of datastores that are registered with the Raster Analytics Server.
@@ -1861,8 +1861,7 @@ def _lookup_datastore(datastore_type, type=None, gis=None):
             for ds in fsds:
                 if "info" in ds and "path" in ds:
                     dataitems.append(ds)
-    if type is None:
-        return dataitems
+    return dataitems
 
 
 def _get_datastore_paths(dataitems, type=None, gis=None):
@@ -2042,11 +2041,11 @@ def _transfer_data(src, dst, gis=None):
 
     else:
         try:
-            from arcpy import aio
+            from arcpy import AIO
         except:
             raise RuntimeError("arcpy not available for cloudstore transfer")
         try:
-            cds = _lookup_datastore("cloudStore", gis)
+            cds = _lookup_datastore(r"cloudStore", gis)
         except:
             raise RuntimeError("Unable to get the cloudStore info")
 
@@ -2058,13 +2057,13 @@ def _transfer_data(src, dst, gis=None):
 
         cs_aio = None
         if cs_info is not None and isinstance(cs_info, dict):
-            cs_aio = aio(cs_info)
+            cs_aio = AIO(cs_info)
 
         if cs_aio:
             try:
                 dst = _generate_data_path(dst)
                 dst = cs_aio.copytree(src, dst)
-                final_path = os.path.join(dst, os.path.basename(src))
+                final_path = dst + "/" + os.path.basename(src)
                 exists = cs_aio.exists(final_path)
                 if exists:
                     return final_path
@@ -2077,6 +2076,7 @@ def _try_data_transfer(src, dst, gis=None):
     This method tries data transfer from local location to rasterstore. With first preference for cloudstore rasterstore.
     :param src: source location. Example - C:\temp\newop.crf
     :param dst: destination location. Example -  r"workspace/imagery/data")
+    :return: String. The path to the transferred data. Example '\\\\sha-arcgis-ra\\C$\\rasterstore\\workspace/imagery/data\\newop.crf'
     """
     ds_list = _lookup_datastore("rasterStore", gis)
     dslist_cloud = _get_datastore_paths(ds_list, "cloud", gis)
@@ -2087,10 +2087,13 @@ def _try_data_transfer(src, dst, gis=None):
 
     for ds in dslist:
         rasterstore_path = ds
-        dst = os.path.join(rasterstore_path, dst)
+        if rasterstore_path.startswith("/cloudStores/"):
+            dst_new = rasterstore_path + "/" + dst
+        else:
+            dst_new = os.path.join(rasterstore_path, dst)
         try:
-            dst = _transfer_data(src, dst)
-            if dst is not None:
-                return dst
+            final_dst = _transfer_data(src, dst_new)
+            if final_dst is not None:
+                return final_dst
         except:
             continue
