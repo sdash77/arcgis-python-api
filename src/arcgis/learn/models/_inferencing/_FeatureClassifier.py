@@ -81,9 +81,11 @@ class ChildObjectDetector:
                 "name": "test_time_augmentation",
                 "dataType": "string",
                 "required": False,
-                "value": "False"
-                if "test_time_augmentation" not in self.emd
-                else str(self.emd["test_time_augmentation"]),
+                "value": (
+                    "False"
+                    if "test_time_augmentation" not in self.emd
+                    else str(self.emd["test_time_augmentation"])
+                ),
                 "displayName": "Perform test time augmentation while predicting",
                 "description": "If True, will merge predictions from flipped and rotated images.",
             }
