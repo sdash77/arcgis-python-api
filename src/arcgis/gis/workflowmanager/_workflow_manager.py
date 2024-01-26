@@ -751,6 +751,7 @@ class JobManager:
         :return:
             An object representing workflow manager job statistics
 
+
         .. code-block:: python
 
             # Example Job Statistics Object:
