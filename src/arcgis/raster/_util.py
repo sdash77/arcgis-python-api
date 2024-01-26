@@ -1835,3 +1835,213 @@ def _get_all_stac_catalog_items(stac_json, request_params={}):
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
         yield from _get_all_stac_catalog_items(child_json, request_params)
+
+
+def _lookup_datastore(datastore_type, type=None,  gis=None):
+    """
+
+    This method returns the list of datastores of the specified type (e.g. "folder", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+
+    :param datastore_type: Required string. The type of the datastore to be retrieved (e.g. "rasterStores", "folder", "cloudStores", "egdb", etc.).
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+    """
+    import json
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    hosting_server = gis.admin.servers.get(function="RasterAnalytics")
+    ds = hosting_server[0].datastores.search(types=datastore_type, decrypt=True)
+    dslist = []
+    dataitems = []
+    if "items" in ds:
+        fsds = ds["items"]
+        if fsds:
+            for ds in fsds:
+                if "info" in ds and "path" in ds:
+                    dataitems.append(ds)
+    if type is None:
+        return dataitems
+
+
+    if type == "cloud":
+        for item in dataitems:
+            if "info" in item and "path" in item:
+                if "connectionType" in item["info"] and "connectionString" in item["info"]:
+                    if item["info"]["connectionType"] == "dataStore":
+                        # Parse connection string
+                        # Note: this is assuming "connectionSting" is always JSON
+                        connectjson = json.loads(item["info"]["connectionString"])
+                        if "path" in connectjson:
+                            if connectjson["path"].find("/cloudStores/") > -1:
+                                # Note: return the raster store path instead
+                                # of the cloud store path for hosted data
+                                print(dslist)
+                                dslist.append(connectjson["path"])
+                                
+    elif type == "fileshare":
+            # File share raster store stores path
+            for item in dataitems:
+                if "info" in item and "path" in item:
+                    if "connectionType" in item["info"] and "connectionString" in item["info"]:
+                        if item["info"]["connectionType"] == "fileShare":
+                            # Parse connection string
+                            # Note: this is assuming "connectionSting" is always JSON
+                            connectjson = json.loads(item["info"]["connectionString"])
+                            if "path" in connectjson:
+                                dslist.append(connectjson["path"])
+
+                            
+    return dslist
+
+
+def _generate_data_path(datastore_path, gis=None):
+
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    import pathlib
+    import json
+    datastore_path_parts = list(pathlib.PurePath(datastore_path).parts)
+    if datastore_path.startswith("/rasterStores"):
+        dslist = _lookup_datastore("rasterStore", gis)
+        print(dslist)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            print(dspathparts)
+            if len(dspathparts) > 2 and len(datastore_path_parts) > 2 and dspathparts[1:3] == datastore_path_parts[1:3]:
+                dsinfo = ds["info"]
+                print(1)
+                if "connectionType" in dsinfo:
+                    # file share raster store takes priority
+                    if dsinfo["connectionType"] == "fileShare":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                datapath = datastore_path.replace(ds["path"], connectjson["path"])
+                    elif dsinfo["connectionType"] == "dataStore":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                if connectjson["path"].startswith("/cloudStores"):
+                                    datapath = datastore_path.replace(ds["path"], connectjson["path"])
+
+    elif datastore_path.startswith("/fileShares"):
+        dslist = _lookup_datastore("folder", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if len(dspathparts) > 2 and len(datastore_path_parts) > 2 and dspathparts[1:3] == datastore_path_parts[1:3]:
+                dsinfo = ds["info"]
+                if "path" in dsinfo:
+                    datapath = datastore_path.replace(ds["path"], dsinfo["path"])
+
+
+    elif datastore_path.startswith("/cloudStores"):
+        dslist = _lookup_datastore("cloudStore", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if len(dspathparts) > 2 and len(datastore_path_parts) > 2 and dspathparts[1:3] == datastore_path_parts[1:3]:                    
+                cprovider = ds["provider"]
+                dsinfo = ds["info"]
+                if cprovider and "objectStore" in dsinfo:
+                    # TODO: look up Alibaba and GCloud
+                    if cprovider == "azure":
+                        datapath = datastore_path.replace(ds["path"], "/vsiaz/" + dsinfo["objectStore"])
+                    elif cprovider == "amazon":
+                        datapath = datastore_path.replace(ds["path"], "/vsis3/" + dsinfo["objectStore"])
+                        
+    return datapath
+
+
+
+def transfer_data(src, dst, gis=None):
+    """
+    This method is used to transfer data from one location to another.
+    :param src: source location
+    :param dst: destination location
+    """
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    final_path = None
+    import shutil
+    import os
+
+    def is_unc_path(path):
+        import re
+        pattern = r'^\\\\[^\\]+\\[^\\]+.*$'
+    
+        if re.match(pattern, path):
+            return True
+        else:
+            return False
+
+    if not dst.startswith("/cloudStores"):
+        if not is_unc_path(dst):
+            raise RuntimeError("Rasterstore is not a UNC path")
+
+        if not os.access(dst, os.W_OK):
+            raise RuntimeError("Rasterstore is not writable")
+
+        try:
+            if os.path.isdir(src):
+                dst = os.path.join(dst, os.path.basename(src))
+            final_path = shutil.copytree(src, dst, dirs_exist_ok=True)
+            exists = os.path.exists(final_path)
+            if exists:
+                return final_path
+        except:
+            raise RuntimeError("copy of files to rasterstore failed")
+
+    else:
+        try:
+            from arcpy import aio
+        except:
+            raise RuntimeError("arcpy not available for cloudstore transfer")
+        try:
+            cds = _lookup_datastore("cloudStore", gis)
+        except:
+            raise RuntimeError("Unable to get the cloudStore info")
+
+        cs_info = None
+        for info in cds:
+            if info['path'] in dst:
+                cs_info = info
+                break
+
+        cs_aio = None
+        if cs_info is not None and isinstance(cs_info, dict):
+            cs_aio = aio(cs_info)
+
+        if cs_aio:
+            try:
+                dst = _generate_data_path(dst)
+                dst = cs_aio.copytree(src, dst)
+                final_path =  os.path.join(dst, os.path.basename(src))
+                exists = cs_aio.exists(final_path)
+                if exists:
+                    return final_path
+            except:
+                raise RuntimeError("Upload to cloudstore failed")
+
+
+def try_data_transfer(src, dst, gis=None):
+
+    dslist_cloud = _lookup_datastore("rasterStore", "cloud", gis)
+    ds_list_file = _lookup_datastore("rasterStore", "fileshare", gis)
+    dslist = dslist_cloud + ds_list_file
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    for ds in dslist:
+        rasterstore_path = ds
+        dst = os.path.join(rasterstore_path, dst)
+        try:
+            dst = transfer_data(src, dst)
+            if dst is not None:
+                break
+        except:
+            continue
+
