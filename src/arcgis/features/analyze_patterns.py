@@ -5,6 +5,7 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader

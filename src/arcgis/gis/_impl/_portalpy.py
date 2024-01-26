@@ -1,6 +1,5 @@
 """ The portalpy module for working with the ArcGIS Online and Portal APIs."""
 
-
 from __future__ import absolute_import, annotations
 import io
 import copy

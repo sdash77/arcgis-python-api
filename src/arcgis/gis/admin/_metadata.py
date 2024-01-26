@@ -1,6 +1,7 @@
 """
 Contains tools to manage a GIS' metadata properties
 """
+
 from arcgis._impl.common._mixins import PropertyMap
 from .. import GIS
 
