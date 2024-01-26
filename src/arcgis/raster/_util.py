@@ -2006,8 +2006,8 @@ def _generate_data_path(datastore_path, gis=None):
 def _transfer_data(src, dst, gis=None):
     """
     This method is used to transfer data from one location to another.
-    :param src: source location
-    :param dst: destination location
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location Example - \\sha-arcgis-ra\C$\rasterstore\qyfqffwer5ty/imagery/data
     """
     if gis is None:
         gis = _arcgis.env.active_gis
@@ -2075,8 +2075,8 @@ def _transfer_data(src, dst, gis=None):
 def _try_data_transfer(src, dst, gis=None):
     """
     This method tries data transfer from local location to rasterstore. With first preference for cloudstore rasterstore.
-    :param src: source location
-    :param dst: destination location
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location. Example -  r"workspace/imagery/data")
     """
     ds_list = _lookup_datastore("rasterStore", gis)
     dslist_cloud = _get_datastore_paths(ds_list, "cloud", gis)
