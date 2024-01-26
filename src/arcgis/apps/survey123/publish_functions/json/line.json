@@ -1,0 +1,99 @@
+{
+    "allowGeometryUpdates": true,
+    "capabilities": "Create",
+    "copyrightText": "",
+    "defaultVisibility": true,
+    "description": "",
+    "displayField": "objectid",
+    "drawingInfo": {
+        "renderer": {
+            "symbol": {
+                "color": [
+                    0,
+                    178,
+                    255,
+                    255
+                ],
+                "style": "esriSLSSolid",
+                "type": "esriSLS",
+                "width": 2
+            },
+            "type": "simple",
+            "label": "line"
+        },
+        "transparency": 0
+    },
+    "extent": {
+        "spatialReference": {
+            "wkid": 102100
+        },
+        "type": "extent",
+        "xmax": 180,
+        "xmin": -180,
+        "ymax": 90,
+        "ymin": -90
+    },
+    "fields": [
+        {
+            "name": "objectid",
+            "type": "esriFieldTypeOID",
+            "alias": "ObjectID",
+            "nullable": false,
+            "editable": false,
+            "domain": null,
+            "defaultValue": null
+        },
+        {
+            "name": "globalid",
+            "type": "esriFieldTypeGlobalID",
+            "alias": "GlobalID",
+            "sqlType": "sqlTypeGUID",
+            "length": 38,
+            "nullable": false,
+            "editable": false,
+            "domain": null,
+            "defaultValue": null
+        }
+    ],
+    "geometryType": "esriGeometryPolyline",
+    "globalIdField": "globalid",
+    "hasAttachments": false,
+    "hasM": false,
+    "hasStaticData": false,
+    "hasZ": false,
+    "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+    "id": 1,
+    "isDataVersioned": false,
+    "maxRecordCount": 1000,
+    "maxScale": 0,
+    "minScale": 0,
+    "name": "line_repeat",
+    "objectIdField": "objectid",
+    "propagateVisibleFields": true,
+    "relationships": [],
+    "supportedQueryFormats": "JSON",
+    "supportsAdvancedQueries": true,
+    "supportsRollbackOnFailureParameter": true,
+    "supportsStatistics": true,
+    "templates": [
+        {
+            "description": "",
+            "name": "New Feature",
+            "prototype": {
+                "attributes": {}
+            }
+        }
+    ],
+    "type": "Feature Layer",
+    "typeIdField": "",
+    "types": [],
+    "indexes": [
+        {
+            "name": "GlobalIDIndex",
+            "fields": "globalid",
+            "isAscending": false,
+            "isUnique": true,
+            "description": "GlobalID index"
+        }
+    ]
+}

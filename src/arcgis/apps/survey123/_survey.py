@@ -12,6 +12,10 @@ from requests.utils import quote
 import xml.etree.ElementTree as ET
 from .exceptions import ServerError
 import requests
+import arcgis
+import shutil
+import zipfile
+from .publish_functions.publish_functions import get_version, xform2webform, xls2xform, identify_sub_url, duplicate_geometry, schema_parity, init_schema, modify_schema
 
 ########################################################################
 
@@ -145,27 +149,69 @@ class SurveyManager:
         )
 
     # ----------------------------------------------------------------------
-    def _create(
+    def create(
         self,
-        project_name: str,
-        survey_item: Item,
-        summary: str = None,
+        title: str,
+        folder: str = None,
         tags: str = None,
-    ) -> bool:
-        """TODO: implement create survery from xls"""
-        # XLS Item or File Path
-        # https://survey123.arcgis.com/api/xls2xform
-        ##Content-Disposition: form-data; name="xlsform"; filename="Form_2.xlsx"
-        ##Content-Type: application/octet-stream
-        # Create Folder
-        # Create Feature Service
-        # Update Feature layer and tables
-        # Enable editor tracking
-        # Update capabilities
-        # Create web form
-        # Create form item
-        # Refresh ?
-        return
+        summary: str = None,
+        description: str = None,
+        thumbnail: str = None,
+    ) -> Survey:
+        """
+        The `create()` method creates an empty form item and hosted feature service in the folder supplied to the method or a new folder created with the survey. 
+        
+        The output of the `create()` method is a single :class:`~arcgis.apps.survey123.Survey` object.
+
+        ============   ================================================
+        *Inputs*       *Description*
+        ------------   ------------------------------------------------
+        title          Required string. Name label of the item.
+        ------------   ------------------------------------------------
+        folder         Optional string. The folder ID to store the survey form item in your ArcGIS content.
+        ------------   ------------------------------------------------
+        tags           Optional string. Comma-separated tags for the form item.
+        ------------   ------------------------------------------------
+        summary        Optional string. Summary of the survey purpose (limit to a maximum of 250 characters).
+        ------------   ------------------------------------------------
+        description    Optional string. Description of the form item.
+        ------------   ------------------------------------------------
+        thumbnail      Optional string. Path that contains the thumbnail image.
+        ============   ================================================
+
+        :returns: :class:`~arcgis.apps.survey123.Survey`
+
+        """
+
+        if thumbnail is None:
+            thumbnail = os.path.join(os.path.abspath(os.path.dirname(__file__)), "publish_functions", "assets", "thumbnail.png")
+        
+        if folder is None:
+            folders = [f for f in self._gis.users.me.folders]
+            if f"Survey-{title}" not in [f['title'] for f in folders]:
+                folder = self._gis.content.folders.create(f"Survey-{title}").properties['id']
+            else:
+                folder = [f['id'] for f in folders if f['title'] == f"Survey-{title}"][0]
+        
+        form_properties = {'type': 'Form', 'title': title, "typeKeywords": "Form, Survey123, Survey123 Hub, Draft"}
+        if tags:
+            form_properties['tags'] = tags
+        if summary:
+            form_properties['snippet'] = summary
+        if description:
+            form_properties['description'] = description
+        form_item = self._gis.content.add(item_properties=form_properties, folder=folder, thumbnail=thumbnail)
+        
+        uid = "a%s" % uuid.uuid4().hex
+        service = self._gis.content.create_service(name=f"survey123_{uid}", folder=folder, create_params={"name":f"survey123_{uid}","serviceDescription":f"Feature Service for survey {form_item.id}","hasStaticData":False,"maxRecordCount":2000, "sourceSchemaChangesAllowed": True, "capabilities":"Create,Delete,Query,Update,Editing,Extract,Sync","description":"","copyrightText":"","spatialReference":{"wkid":4326,"latestWkid":4326},"fullExtent":{"xmin":-180,"ymin":-90,"xmax":180,"ymax":90,"spatialReference":{"wkid":4326,"latestWkid":4326}},"allowGeometryUpdates":True,"units":"esriDecimalDegrees","supportsApplyEditsWithGlobalIds":True,"editorTrackingInfo":{"enableEditorTracking":True,"enableOwnershipAccessControl":True,"allowOthersToUpdate":True,"allowOthersToDelete":True,"allowOthersToQuery":True,"allowAnonymousToUpdate":False,"allowAnonymousToDelete":False}})
+	    # Update service with title and thumbnail
+        service.update({
+            "title": title,
+            "typeKeywords": f"Survey123,Survey123 Hub,OwnerView,Source,{uid}"
+	    }, thumbnail=thumbnail)
+
+        form_item.add_relationship(service, 'Survey2Service')
+        return Survey(item=form_item, sm=self)
 
 
 ########################################################################
@@ -219,6 +265,7 @@ class Survey:
         related = self._si.related_items("Survey2Service", direction="forward")
         if len(related) > 0:
             self._ssi = related[0]
+            self._ssi_view = False
             self._ssi_layers = self._ssi.layers + self._ssi.tables
 
             ssi_layer = None
@@ -228,16 +275,26 @@ class Survey:
                         _idx = layer.properties["id"]
                         ssi_layer = layer
                         break
-            if not ssi_layer:
+            if not ssi_layer and len(self._ssi_layers)>0:
                 ssi_layer = self._ssi_layers[0]
                 _idx = ssi_layer.properties["id"]
-            self._ssi_url = ssi_layer._url
+            try:
+                self._ssi_url = ssi_layer._url
+            except AttributeError:
+                pass
             try:
                 if self._ssi_layers[0].properties["isView"] == True:
-                    view_url = ssi_layer._url[:-1]
-                    self.parent_fl_url = self._find_parent(view_url) + f"/{str(_idx)}"
+                    self._ssi_view = True
+                    view_url = self._ssi.url # [:-1]
+                    parent_info = self._find_parent(view_url)
+                    self.parent_fl_url = parent_info[0] + f"/{str(_idx)}"
+                    self._ssi_parent = arcgis.gis.Item(self._gis, parent_info[1])
+                    self._ssi_parent_layers = self._ssi.layers + self._ssi.tables
             except KeyError:
-                self.parent_fl_url = ssi_layer._url
+                if ssi_layer is not None:
+                    self.parent_fl_url = ssi_layer._url
+            except IndexError:
+                pass
 
     # ----------------------------------------------------------------------
     @property
@@ -1026,9 +1083,9 @@ class Survey:
     # ----------------------------------------------------------------------
     def _find_parent(self, view_url):
         """Finds the parent feature layer for a feature layer view"""
-        url = view_url + "sources"
+        url = view_url + "/sources"
         response = self._si._gis._con.get(url)
-        return response["services"][0]["url"]
+        return (response["services"][0]["url"], response["services"][0]["serviceItemId"])
 
     # ----------------------------------------------------------------------
     def _find_layer_name(self):
@@ -1045,3 +1102,740 @@ class Survey:
             for key, value in zip(elem.attrib.keys(), elem.attrib.values()):
                 if key == "id":
                     return value
+    
+    # ----------------------------------------------------------------------
+    def publish(self, xlsform: Optional[str] = None, info: Optional[dict] = None, media: Optional[str] = None, 
+                scripts: Optional[str] = None, create_web_form: Optional[bool] = True, 
+                enable_delete_protection: Optional[bool] = False, table_only: Optional[bool] = False,
+                create_coded_value_domains: Optional[bool] = True, enable_sync: Optional[bool] = False,
+                use_non_globalid_relationships: Optional[bool] = None, create_web_map: Optional[bool] = True,
+                thumbnail: Optional[str] = None, summary: Optional[str] = None, description: Optional[str] = None, 
+                tags: Optional[str] = None, schema_changes: Optional[bool] = False) -> Survey:
+                """
+                Publishes surveys created by the `create()` method or an existing published survey in your content. It can also be an unpublished blank survey created with the Survey123 Web Designer (any designs will be overwritten by the `publish()` method's required XLSForm.). 
+                Any survey published through the `publish()` method is treated as a survey published with Survey123 Connect.
+                
+                If `schema_changes` is set to False, any differences between the schema of the XLSForm and the submission endpoint will generate an error 
+                that lets you know what the differences are. If `schema_changes` is set to True, the following logic is applied: 
+
+                 - When using a submission_url that references an ArcGIS Server feature service, schema changes are not applied. If there are differences between the XLSForm design and the schema of the submission_url, the `publish()` method returns an error that lets you know what the difference is. 
+                 - When the survey has an associated hosted feature service and view service, with or without a submission_url set, schema changes are applied to the parent service and propagated to the view.
+                 - When the survey has an associated hosted feature service but no view service, with or without a submission_url set, schema changes are applied to the submission endpoint.
+
+                ==============================  ===============================================================
+                **Argument**                    **Description**
+                ------------------------------  ---------------------------------------------------------------
+                xlsform                         Optional string. Path that contains the XLSForm.
+                ------------------------------  ---------------------------------------------------------------
+                info                            Optional dictionary. Dictionary object that represents the contents of the `.info` file (settings). The keys in this dictionary are case-sensitive. See the table below for the keys and values. 
+                                  
+                                                .. code-block:: python
+
+                                                    # Example: Enable the Inbox:
+
+                                                    info={
+                                                        "queryInfo": {
+                                                            "mode": "manual",
+                                                            "editEnabled": True,
+                                                            "copyEnabled": True
+                                                        }
+                                                    }
+                ------------------------------  ---------------------------------------------------------------
+                media                           Optional string. Path or ZIP file that contains the media folder.
+                ------------------------------  ---------------------------------------------------------------
+                scripts                         Optional string. Path or ZIP file that contains the scripts folder.
+                ------------------------------  ---------------------------------------------------------------
+                create_web_form                 Optional boolean. Enabled by default. When this parameter is off, publishing a survey does not create a matching web form that allows users to complete the survey in the web app, so the survey only works in the field app.
+                ------------------------------  ---------------------------------------------------------------
+                enable_delete_protection        Optional boolean. Disabled by default. Enables delete protection on the form item and all related content (feature service, web maps, report templates). 
+                ------------------------------  ---------------------------------------------------------------
+                table_only                      Optional boolean. Disabled by default. Creates a hosted table instead of a feature service if no geometry is present in the parent layer. 
+                ------------------------------  ---------------------------------------------------------------
+                create_coded_value_domains      Optional boolean. Enabled by default. Choice lists in the choices worksheet will be used to create coded value domains in the feature layer. For more information, see `Multiple choice questions <https://doc.arcgis.com/en/survey123/desktop/create-surveys/xlsformessentials.htm#ESRI_SECTION1_63B0F9AA1A05458BB4B86F2A1A05AA78>`_.
+                ------------------------------  ---------------------------------------------------------------
+                enable_sync                     Optional boolean. Disabled by default. When this parameter is on, the sync capability is enabled on the feature layer when the survey is published. 
+                                                The sync capability is a requirement if a survey uses offline map areas that have been configured for a web map. 
+                                                Alternatively, you can enable sync after publishing by using the Settings tab on the feature layer's item page in your ArcGIS organization.
+                ------------------------------  ---------------------------------------------------------------
+                use_non_globalid_relationships   Optional boolean. Enabled by default when publishing to ArcGIS Online and disabled by default when publishing to ArcGIS Enterprise. 
+                                                 If your work involves copying survey data between databases, it is recommended that you do not use global ID parent keys in repeat relationships.
+                ------------------------------  ---------------------------------------------------------------
+                create_web_map                  Optional boolean. Enabled by default. Creates a web map that includes the survey's feature layer with default symbology and uses your organization's default basemap. 
+                                                This web map is automatically added to the Linked Content tab in Survey123 Connect and is available in the Survey123 field app.  
+                ------------------------------  ---------------------------------------------------------------
+                thumbnail                       Optional string. Path that contains the thumbnail image.
+                ------------------------------  ---------------------------------------------------------------
+                summary                         Optional string. Short summary about the survey  (limit to a maximum of 250 characters).             
+                ------------------------------  ---------------------------------------------------------------
+                description                     Optional string. Description of the form item.
+                ------------------------------  ---------------------------------------------------------------
+                tags                            Optional string. Tags listed as comma-separated values or a list of strings. Used for searches on items.
+                ------------------------------  ---------------------------------------------------------------
+                schema_changes                  Optional boolean. Disabled by default. Specifies if schema changes should be made to the feature service or not.                        
+                ==============================  ===============================================================
+
+                *Key:Value options for the `info` argument*
+                
+                
+                ==========================  =====================================================================
+                **Key**                     **Value**
+                --------------------------  ---------------------------------------------------------------------
+                collectInfo                 Optional dictionary. Displays the distance and direction from the device's location for each response in the list view in the Inbox, Drafts, Outbox, Sent, and Overview folders in the Survey123 field app and also enables the map view in each of these folders. 
+                                            Setting `showMap` to True enables location indicators, and False disables location indicators. 
+                                            
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "foldersInfo":{
+                                                        "showMap": True|False
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                displayInfo                 Optional dictionary. Defines the appearance of the survey with style options and specifies its map and coordinate information. 
+                
+                                            `map`—Optional dictionary. Provides access to a number of default settings for maps used in a survey, including the coordinate format, zoom level, and home location. 
+                                            You can also set a default basemap for all map questions in a survey by clicking the Basemap button on the lower map.
+                                            
+                                                - `coordinateFormat`—Optional string. Displays a location value in the specified format, including the following coordinate types: Degrees Minutes, Degrees Decimal Minutes, Decimal Degrees, MGRS, USNG, and UTM/UPS. This setting doesn't affect manually entered values (which only accepts decimal minutes) nor the value recorded in a survey (which is recorded in decimal degrees).
+                                                - `defaultType`—Optional dictionary. Control the name of the default basemap by setting the `name` in the `defaultType` dictionary.
+                                                - `home`—Optional dictionary. The home location provided for a survey is returned if the device's location cannot be found. In the `home` dictionary, set `latitude`, `longitude`, and `zoomLevel` to define the home location. The Survey123 website uses the home zoom level as a default when viewing or printing individual survey results.
+                                                - `preview`—Optional dictionary. Control the preview map by using the `preview` dictionary. Setting `coordinateFormat` controls the display format of the coordinates. Setting `zoomLevel` controls the tile level of detail to display.
+                                                - `mapTypes`—Optional dictionary. Use the `mapTypes` dictionary to manually associate a map to a survey. This workflow won't link the map to the survey. You can add the default basemap list to any `mapSources` by setting `append` to True. By setting `includeLibrary` to True, all maps associated with the survey will be added to the ArcGIS/My Surveys/Maps folder to make them available to any survey. 
+                                            
+                                            `mapSources`—Optional list. List of dictionaries for which each contains a map to include. Parameters in the dictionary include: `url` for the the map's item page URL, `name` sets the display name of the map, `description` sets the description of the map, and `storeInLibrary` is a boolean that controls if the map gets added to the ArcGIS/My Surveys/Maps folder making it available to any survey.
+                                            
+                                            `style`—Optional dictionary. Controls the colors of various elements in the survey.
+                                            You can customize `toolbarTextColor` and `toolbarBackgroundColor` colors for the survey header, body (`textColor`/`backgroundColor`/`backgroundImage`), input fields (`inputTextColor`/`inputBackgroundColor`), and footer (`footerTextColor`/`footerBackgroundColor`). Provide the hexadecimal color code or HTML color name for the respective parameter. For readability, the contrast ratio between text and background colors should not be below 4.5.
+                
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "displayInfo": {
+                                                        "map": {
+                                                            "coordinateFormat" : "<dm | ddm | d | mgrs | usng | utmups>",
+                                                            "defaultType": {
+                                                                "name": "Basemap name"
+                                                            },
+                                                            "home": {
+                                                                "latitude": 34.0568,
+                                                                "longitude": -117.1961,
+                                                                "zoomLevel": 20
+                                                            },
+                                                            "preview": {
+                                                                "coordinateFormat": "<dm | ddm | d | mgrs | usng | utmups>",
+                                                                "zoomLevel": 0
+                                                            },
+                                                            "mapTypes": {
+                                                                "append": True|False,
+                                                                "includeLibrary": True|False,
+                                                                "mapSources": [{
+                                                                    "url": "https://www.arcgis.com/home/item.html?id=ABC1234...",
+                                                                    "name": "Redlands Basemap",
+                                                                    "description": "Basemap for the City of Redlands, CA",
+                                                                    "storyInLibrary": True|False
+                                                                }]
+                                                            },
+                                                        },
+                                                        "style": {
+                                                            "backgroundColor": "#00338D",
+                                                            "backgroundImage": "media/backgroundImage.jpeg",
+                                                            "inputBackgroundColor": "#C60C30",
+                                                            "inputTextColor": "#00338D",
+                                                            "textColor": "#C60C30",
+                                                            "toolbarBackgroundColor": "#00338D",
+                                                            "toolbarTextColor": "#C60C30",
+                                                            "footerTextColor": "#00338D",
+                                                            "footerBackgroundColor": "#C60C30"
+                                                        }
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                foldersInfo                 Optional dictionary. Displays the distance and direction from the device's location for each response in the list view in the Inbox, Drafts, Outbox, Sent, and Overview folders in the Survey123 field app and also enables the map view in each of these folders. Setting `showMap` to True enables location indicators, and False disables location indicators. 
+
+                                            .. code-block:: python
+
+                                                # Syntax:
+                                                
+                                                {
+                                                    "foldersInfo":{
+                                                        "showMap": True|False
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                imagesInfo                  Optional dictionary. Controls the maximum dimensions for images submitted to the survey. A photo taken in Survey123 is saved as a .jpg file, with a quality level dependent on the device's camera. The image size, measured by pixels on the longest edge, can be set using the `captureResolution` property. This size is applied to all image questions in the survey. The default size is 1280. To allow any size photo, set a value of 0.
+                
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "imagesInfo": {
+                                                        "captureResolution": <320 | 640 | 1280 | 1920 | 0>
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                locationSharingInfo         Optional dictionary. Ignored if location sharing is not enabled in the organization; a survey setting cannot override the organization setting. To require location sharing for an individual survey, set both `enabled` and `required` to True. To allow users to enable location sharing, set `enabled` to True and `required` to False.
+                
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "locationSharingInfo": {
+                                                        "enabled": True|False,
+                                                        "required": True|False
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                overviewInfo                Optional dictionary. Setting `enabled` to True provides access to the Overview folder in the Survey123 field app. This folder contains every survey record currently stored on the device, color-coded by the folder in which they are located.
+
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "overviewInfo": {
+                                                        "enabled": True|False
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                queryInfo                   Optional dictionary. Setting `mode` to `"manual"` provides access to the inbox, which allows viewing (`viewEnabled`: True), editing (`editEnabled`: True), and copying (`copyEnabled`: True) existing survey responses stored in the feature layer.
+                
+                                            The query expression specified by the `where` parameter determines which surveys in the Survey123 field app are available for editing in the inbox. 
+                                            
+                                            In the inbox, selecting Refresh updates the list of surveys shown on the List tab. The refresh action generally returns all surveys that satisfy the query expression in the `where` parameter (if set) and that are not already stored in other folders on the device. If you set `applySpatialFilter` to True, selecting Refresh on the Map tab applies a spatial filter that updates the list to show only surveys that are within the current map extent. 
+                
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "queryInfo": {
+                                                        "mode": ""|"manual",
+                                                        "where": "status='for_review'",
+                                                        "applySpatialFilter": True|False,
+                                                        "editEnabled": True|False,
+                                                        "viewEnabled": True|False,
+                                                        "copyEnabled": True|False
+                                                    }
+                                                }
+                --------------------------  ---------------------------------------------------------------------
+                sentInfo                    Optional dictionary. Controls access to the sent folder, which allows access to surveys that were previously sent from the device. Setting `enabled` to True provides access to the sent folder, which allows editing (`editEnabled`: True) and copying (`copyEnabled`: True) existing survey responses that were previously submitted from the device.
+
+                                            .. code-block:: python
+
+                                                # Syntax:
+
+                                                {
+                                                    "sentInfo": {
+                                                        "enabled": True|False,
+                                                        "editEnabled": True|False,
+                                                        "copyEnabled": True|False
+                                                    }
+                                                }
+                ==========================  =====================================================================
+                
+                :returns: :class:`~arcgis.apps.survey123.Survey`
+
+                """
+                def extractzip(filename,folder):
+                    zfile = zipfile.ZipFile(filename)
+                    zfile.extractall(folder)
+                
+                tmpdir = tempfile.TemporaryDirectory()
+                tmp_name = tmpdir.name
+                # Identify if publishing a new survey or re-publishing an existing survey.
+                if "Draft" in self._si.typeKeywords:
+                    if xlsform is None:
+                        raise ValueError("XLSForm required for initial publish")
+                    initial_publish = True
+                    directory = os.path.join(tmp_name, self._si.id, "esriinfo")
+                    os.makedirs(directory)
+                    # Survey123 Connect has an option to use GUID to GUID relationships instead of GlobalId to GUID. This is the default configuration if the user does not specify.
+                    if use_non_globalid_relationships is None and self._gis.properties.isPortal is True:
+                        use_non_globalid_relationships = True
+                    elif use_non_globalid_relationships is None:
+                        use_non_globalid_relationships = False
+                    
+                    # Create forminfo.json
+                    with open(os.path.join(directory, "forminfo.json"), "w") as forminfo:
+                        forminfo.write(json.dumps({
+                            "name": self._si.title,
+                            "type": "xform"
+                            }, indent=4))
+                else:
+                    # Since this is a re-publish of an existing survey we work with the current state of the form item. 
+                    initial_publish = False
+                    form_zip = self._si.download(save_path=tmp_name)
+                    extractzip(form_zip, os.path.join(tmp_name, self._si.id))
+                    os.remove(form_zip)
+                    directory = os.path.join(tmp_name, self._si.id, 'esriinfo')
+
+                connect_version = get_version()
+                # Copy all files from a user supplied media folder 
+                if media:
+                    if os.path.isfile(media):
+                        tmpmedia = tempfile.TemporaryDirectory()
+                        tmp_media = tmpmedia.name
+                        extractzip(media, os.path.join(tmp_media, "media"))
+                        media = os.path.join(tmp_media, "media") 
+                    if not os.path.exists(os.path.join(directory, "media")):
+                        os.mkdir(os.path.join(directory, "media"))
+                    [shutil.copy2(os.path.join(media, x), os.path.join(directory, "media", x)) for x in os.listdir(media) if not(os.path.isdir(os.path.join(media, x)))]
+            # Copy all files from a user supplied scripts folder
+                if scripts:
+                    if os.path.isfile(scripts):
+                        tmpscripts = tempfile.TemporaryDirectory()
+                        tmp_scripts = tmpscripts.name
+                        extractzip(scripts, os.path.join(tmp_scripts, "scripts"))
+                        media = os.path.join(tmp_scripts, "scripts") 
+                    if not os.path.exists(os.path.join(directory, "scripts")):
+                        os.mkdir(os.path.join(directory, "scripts"))
+                    [shutil.copy2(os.path.join(scripts, x), os.path.join(directory, "scripts", x)) for x in os.listdir(scripts) if not(os.path.isdir(os.path.join(media, x)))]             
+            
+                # Create .info file
+                if info is None and initial_publish is True:
+                    # No info supplied new publish, use default .info config
+                    shutil.copy2(os.path.join(os.path.abspath(os.path.dirname(__file__)), "publish_functions", "json", "info.info"), os.path.join(directory, f"{self._si.title}.info"))
+                elif info is not None and initial_publish is True:
+                    # User supplied info on new publish, use the default and update what the user supplied
+                    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "publish_functions", "json", "info.info"), 'r') as infojson:
+                        full_info = json.load(infojson)
+                    for property in info.keys():
+                        for setting in info[property]:
+                            if not(isinstance(info[property][setting], dict)):
+                                full_info[property][setting] = info[property][setting]
+                            else:
+                                for m_setting in info[property][setting]:
+                                    full_info[property][setting][m_setting] = info[property][setting][m_setting]
+                    with open(os.path.join(directory, f"{self._si.title}.info"), "w") as infofile:
+                        infofile.write(json.dumps(full_info))
+                elif info is None and initial_publish is False:
+                    # No info republish, do nothing keep .info as is
+                    pass
+                else:
+                    # User supplied .info on re-publish, update what the user supplied
+                    with open(os.path.join(directory, f"{self._si.title}.info"), 'r') as infojson:
+                        user_full_info = json.load(infojson)
+                    for property in info.keys():
+                        for setting in info[property]:
+                            if not(isinstance(info[property][setting], dict)):
+                                user_full_info[property][setting] = info[property][setting]
+                            else:
+                                for m_setting in info[property][setting]:
+                                    user_full_info[property][setting][m_setting] = info[property][setting][m_setting]
+                    with open(os.path.join(directory, f"{self._si.title}.info"), "w") as infofile:
+                        infofile.write(json.dumps(user_full_info))
+
+                if xlsform:
+                    # Convert XLSForm to XForm (XML)
+                    xlsform = shutil.copy2(xlsform, os.path.join(directory,f"{self._si.title}.xlsx"))
+                    xform = xls2xform(xlsform)
+
+                    # Check for duplicate geometry in the same layer, can only have one geometry per layer.
+                    duplicate = duplicate_geometry(xform)
+                    if duplicate is not None:
+                        print(duplicate)
+                        exit()
+
+                    # Generate webform file if desired
+                    if create_web_form is True:
+                        xform2webform(xform=xform, portalUrl=self._gis.url, connectVersion=connect_version)
+                    
+                    # sub is a boolean true if it is a submission_url survey and false if it is not. Also returns the URL for the submission URL feature service.
+                    # If view also returns the parent layer
+                    sub, submission_url, parent_layer = identify_sub_url(xform)
+                    use_parent = False
+
+                    if sub is True:
+                        # User defined submission_url
+                        try:
+                            use_non_globalid_relationships = None
+                            service = arcgis.gis.Item(self._gis, submission_url.split("/")[-1])
+                            service_layers = service.layers + service.tables
+                            if 'Hosted Service' in service.typeKeywords:
+                                hosted = True
+                            else:
+                                hosted = False
+                            if 'isView' in list(service_layers[0].properties.keys()) and service_layers[0].properties['isView'] is True:
+                                use_parent = True
+                                parent_info = self._find_parent(service.url)
+                                parent_item = arcgis.gis.Item(self._gis, parent_info[1])
+                                parent_deltas = schema_parity(self, parent_item, xform, table_only, use_non_globalid_relationships, parent_layer)[0]
+                        except Exception:
+                            raise RuntimeError("The feature service set in the submission_url does not exist or is inaccessible.")
+                    else:
+                        # Publish method needs to manage the feature service
+                        service = self._ssi
+                        if initial_publish is False and 'isView' in list(self._ssi_layers[0].properties.keys()) and self._ssi_layers[0].properties['isView'] is True:
+                            use_parent = True
+                            parent_info = self._find_parent(service.url)
+                            parent_item = arcgis.gis.Item(self._gis, parent_info[1])
+                            parent_deltas = schema_parity(self, parent_item, xform, table_only, use_non_globalid_relationships, parent_layer)[0]
+
+                    # Identify deltas between feature service and XForm
+                    deltas, guid = schema_parity(self, service, xform, table_only, use_non_globalid_relationships, parent_layer)
+
+                    if use_parent is True and schema_changes is True and deltas != parent_deltas:
+                        if sub is True:
+                            raise RuntimeError("The schema between the source layer and its view do not match. Review and update accordingly.")
+                        else:
+                            parent_layers = parent_item.layers + parent_item.tables
+                            for lyr in parent_layers:
+                                if "propagateVisibleFields" not in lyr.properties:
+                                    lyr_url = lyr.url.replace("/rest/services", "/rest/admin/services")
+                                    flcm = arcgis.features.managers.FeatureLayerCollectionManager(url=lyr_url, gis=self._gis, fs=parent_item)
+                                    flcm.update_definition({"propagateVisibleFields": True})
+                            
+                            parent_deltas = schema_parity(self, parent_item, xform, table_only, use_non_globalid_relationships, parent_layer)[0]
+                            deltas, guid = schema_parity(self, service, xform, table_only, use_non_globalid_relationships, parent_layer)
+                            if parent_deltas != deltas:
+                                raise RuntimeError("The schema between the source layer and its view do not match. Review and update accordingly.")
+
+
+                    # Scenario | initial publish | submission_url | hosted | view | schema_changes | result
+                    # -------- | --------------- | -------------- | ------ | ---- | -------------- | --------------------------------------
+                    #    1     |       1         |        0       |   0    |  0   |        0       | Create feature service & schema
+                    #    2     |       1         |        1       |   0    |  0   |        0       | Error on deltas -> update relationship
+                    #    3     |       1         |        1       |   1    |  0   |        0       | Error on deltas -> update relationship
+                    #    4     |       1         |        1       |   1    |  0   |        1       | Apply deltas -> update relationship
+                    #    5     |       1         |        1       |   1    |  1   |        0       | Error on deltas -> update relationship
+                    #    6     |       1         |        1       |   1    |  1   |        1       | Apply deltas to parent -> propagate to view -> update relationship
+                    # -------- |---------------- | -------------- | ------ | ---- | -------------- | --------------------------------------
+                    #    7     |       0         |        1       |   1    |  1   |        1       | Apply deltas to parent -> propagate to view
+                    #    8     |       0         |        1       |   1    |  1   |        0       | Error on deltas
+                    #    9     |       0         |        1       |   1    |  0   |        1       | Apply deltas
+                    #    10    |       0         |        1       |   1    |  0   |        0       | Error on deltas
+                    #    11    |       0         |        1       |   0    |  0   |        0       | Error on deltas
+                    #    12    |       0         |        0       |   1    |  1   |        1       | Apply deltas to parent -> propagate to view
+                    #    13    |       0         |        0       |   1    |  1   |        0       | Error on deltas
+                    #    14    |       0         |        0       |   1    |  0   |        1       | Apply deltas
+                    #    15    |       0         |        0       |   1    |  0   |        0       | Error on deltas                    
+
+                    if initial_publish is True:
+                        if sub is False:
+                            """ Scenario 1 """
+                            init_schema(self, use_non_globalid_relationships, xform, table_only, create_coded_value_domains, enable_sync)
+                        else:
+                            if hosted is False:
+                                """ Scenario 2 """
+                                mod_schema = modify_schema(self, service, False, deltas, use_non_globalid_relationships)
+                                if mod_schema is not None:
+                                    raise RuntimeError(mod_schema)
+                                self._si.delete_relationship(self._ssi, 'Survey2Service')
+                                self._ssi.delete()
+                                self._si.add_relationship(service, 'Survey2Service')
+                                self._ssi = service
+                            else:
+                                if use_parent is False:
+                                    """ Scenario 3 & 4 """
+                                    mod_schema = modify_schema(self, service, schema_changes, deltas, use_non_globalid_relationships)
+                                    if mod_schema is not None:
+                                        raise RuntimeError(mod_schema)
+                                    self._si.delete_relationship(self._ssi, 'Survey2Service')
+                                    self._ssi.delete()
+                                    self._si.add_relationship(service, 'Survey2Service')
+                                    self._ssi = service
+                                else:
+                                    """ Scenario 5 & 6 """
+                                    mod_schema = modify_schema(self, parent_item, schema_changes, deltas, use_non_globalid_relationships, True, service)
+                                    if mod_schema is not None:
+                                        raise RuntimeError(mod_schema)
+                                    self._si.delete_relationship(self._ssi, 'Survey2Service')
+                                    self._ssi.delete()
+                                    self._si.add_relationship(service, 'Survey2Service')
+                                    self._ssi = service            
+                    else:
+                        if sub is True:
+                            if hosted is True:
+                                if use_parent is True:
+                                    """ Scenario 7 & 8 """
+                                    mod_schema = modify_schema(self, parent_item, schema_changes, deltas, use_non_globalid_relationships, True, service)
+                                    if mod_schema is not None:
+                                        raise RuntimeError(mod_schema)
+                                else:
+                                    """ Scenario 9 & 10 """
+                                    mod_schema = modify_schema(self, service, schema_changes, deltas, use_non_globalid_relationships)
+                                    if mod_schema is not None:
+                                        raise RuntimeError(mod_schema)
+                            else:
+                                """ Scenario 11 """
+                                mod_schema = modify_schema(self, service, False, deltas, use_non_globalid_relationships)
+                                if mod_schema is not None:
+                                    raise RuntimeError(mod_schema)
+                        else:
+                            if use_parent is True:
+                                """ Scenario 12 & 13 """
+                                mod_schema = modify_schema(self, parent_item, schema_changes, deltas, use_non_globalid_relationships, True, service)
+                                if mod_schema is not None:
+                                    raise RuntimeError(mod_schema)
+                            else:
+                                """ Scenario 14 & 15 """
+                                mod_schema = modify_schema(self, service, schema_changes, deltas, use_non_globalid_relationships)
+                                if mod_schema is not None:
+                                    raise RuntimeError(mod_schema)
+
+                # Update form item
+                form_zip = shutil.move(shutil.make_archive(self._si.id, 'zip', os.path.join(tmp_name, self._si.id)), tmp_name)
+                properties = {"connectVersion": connect_version, "typeKeywords": "xForm, Form, Survey123, Survey123 Connect"}
+                if tags:
+                    properties['tags'] = tags
+                if summary:
+                    properties['snippet'] = summary
+                if description:
+                    properties['description'] = description
+                self._si.update(properties, data=form_zip, thumbnail=thumbnail)
+                
+                # Create web map
+                if create_web_map is True and initial_publish is True:
+                    wm = arcgis.mapping.WebMap()
+                    wm.basemap.baseMapLayers = [
+                            {
+                                "id": "VectorTile_3324",
+                                "itemId": "de26a3cf4cc9451298ea173c4b324736",
+                                "layerType": "VectorTileLayer",
+                                "opacity": 1,
+                                "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/de26a3cf4cc9451298ea173c4b324736/resources/styles/root.json",
+                                "title": "World Street Map",
+                                "type": "VectorTileLayer",
+                                "visibility": True
+                            }
+                        ]
+                    wm.basemap.title = "Streets"
+                    for lyr in list(self._ssi.layers + self._ssi.tables):
+                        wm.add_layer(lyr, {'title': f"{self._si.title} - {lyr.properties.name}"})
+                    wm_properties = {'title':self._si.title, "snippet": "", "tags": [], "typeKeywords": 'ArcGIS Online,Data Editing,Explorer Web Map,Map,Offline,Online Map,Survey123Python,useOnly,Web Map'}
+                    web_map = wm.save(wm_properties, thumbnail=thumbnail, folder=self._si.ownerFolder)
+                    self._si.add_relationship(web_map, 'Survey2Data')
+                
+                # Enable delete protection
+                if enable_delete_protection is True:
+                    self._si.protect(enable=True)
+                    [x.protect(enable=True) for x in self._si.related_items("Survey2Service", direction="forward") + self._si.related_items("Survey2Data", direction="forward")]
+                
+                return Survey(item=self._gis.content.get(self._si.id), sm=self._sm)
+
+    # ----------------------------------------------------------------------
+    @property
+    def webhooks(self) -> list:
+        """Returns a list of existing :class:`~arcgis.apps.survey123.Survey` webhooks"""
+        url = f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{self._si.title}.info"
+        params = {
+            "f": "json"
+        }
+        submit = self._si._gis._con.get(
+            url, params)
+        try:
+            webhook = submit['notificationsInfo']["webhooks"]
+        except KeyError:
+            webhook = []
+        return webhook
+    
+    # ----------------------------------------------------------------------
+    def add_webhook(self, name:str, payload_url:str, trigger_events: Optional[list] = ["addData"], portal_info: Optional[bool] = False, 
+                    submitted_record: Optional[bool] = False, user_info: Optional[bool] = False, server_response: Optional[bool] = False,
+                    survey_info: Optional[bool] = False, active: Optional[bool] = True) -> dict:
+        """ 
+        Add a webhook to your survey. 
+        
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        name              Required String. The name for your webhook. 
+        ----------------  ---------------------------------------------------------------
+        payload_url       Required String. The payload URL is where the survey information will be sent. This needs to be provided by an external webhook service.
+        ----------------  ---------------------------------------------------------------
+        trigger_events    Optional list. The trigger events describe the specific actions that will call the webhook. Options are "addData" and "editData". Set to "addData" by default.
+        ----------------  ---------------------------------------------------------------
+        portal_info       Optional boolean. Information about the ArcGIS organization where the survey is hosted. It contains the following properties:
+
+                          + `url`
+                          + `token`
+
+        ----------------  ---------------------------------------------------------------
+        submitted_record  Optional boolean. The survey record that was submitted. It contains the following properties:
+        
+                          + `attributes`
+                          + `geometry`
+                          + `layerInfo`
+                          + `result`
+                          + `repeats`
+                          .. note::
+                              Each object within the repeats array is a feature that has attributes, geometry, layerInfo, result, repeats, and attachments.
+                          + `attachments`
+                            + `id`
+                            + `globalId`
+                            + `name`
+                            + `contentType`
+                            + `size`
+                            + `keywords`
+                            + `url`
+                            + `parentObjectId`
+    
+        ----------------  ---------------------------------------------------------------
+        user_info         Optional boolean. Information about the ArcGIS organizational account for the user who submitted the survey. It contains the following properties:
+                          
+                          + `username`
+                          + `firstName`
+                          + `lastName`
+                          + `fullName`
+                          + `email`
+
+        ----------------  ---------------------------------------------------------------
+        server_response   Optional boolean. The response from the applyEdits operation. 
+                          It includes the global IDs for the features created by the operation and whether the operation was successful.
+        ----------------  ---------------------------------------------------------------
+        survey_info       Optional boolean. Information about the survey that generated the webhook. It contains the following properties:
+        
+                          + `formItemId`
+                          + `formTitle`
+                          + `serviceItemId`
+                          + `serviceUrl`
+
+        ----------------  ---------------------------------------------------------------
+        active            Optional boolean. Determines whether the webhook will be active when saved. Set to True by default.
+        ================  ===============================================================
+
+        :Returns: Dictionary {success, webhookId}
+
+        """
+        url = f"https://{self._baseurl}/api/survey/{self._si.id}/webhook/add"
+        params = {
+            "f": "json",
+            "webhook": {
+                "active": active,
+                "name": name,
+                "url": payload_url,
+                "includePortalInfo": portal_info,
+                "includeServiceRequest": submitted_record,
+                "includeUserInfo": user_info,
+                "includeServiceResponse": server_response,
+                "includeSurveyInfo": survey_info,
+                "events": trigger_events
+            },
+            "portalUrl": self._gis._url
+        }
+        submit = self._si._gis._con.post(
+            url, params)
+        return submit
+    
+    # ----------------------------------------------------------------------
+    def update_webhook(self, webhook_id: str, name: Optional[str] = None, payload_url: Optional[str] = None, trigger_events: Optional[list] = None, 
+                       portal_info: Optional[bool] = None, submitted_record: Optional[bool] = None, user_info: Optional[bool] = None, 
+                       server_response: Optional[bool] = None, survey_info: Optional[bool] = None, active: Optional[bool] = None) -> dict:
+        """ 
+        Update a webhook with your survey. 
+        
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        webhook_id        Required string. The ID for the webhook to update. 
+        ----------------  ---------------------------------------------------------------
+        name              Optional string. The name for your webhook. 
+        ----------------  ---------------------------------------------------------------
+        payload_url       Optional string. The payload URL is where the survey information will be sent. This needs to be provided by an external webhook service.
+        ----------------  ---------------------------------------------------------------
+        trigger_events    Optional list. The trigger events describe the specific actions that will call the webhook. Options are "addData" and "editData".
+        ----------------  ---------------------------------------------------------------
+        portal_info       Optional boolean. Information about the ArcGIS organization where the survey is hosted. It contains the following properties:
+
+                          + `url`
+                          + `token`
+
+        ----------------  ---------------------------------------------------------------
+        submitted_record  Optional boolean. The survey record that was submitted. It contains the following properties:
+        
+                          + `attributes`
+                          + `geometry`
+                          + `layerInfo`
+                          + `result`
+                          + `repeats`
+                          .. note::
+                              Each object within the repeats array is a feature that has attributes, geometry, layerInfo, result, repeats, and attachments.
+                          + `attachments`
+                            + `id`
+                            + `globalId`
+                            + `name`
+                            + `contentType`
+                            + `size`
+                            + `keywords`
+                            + `url`
+                            + `parentObjectId`
+    
+        ----------------  ---------------------------------------------------------------
+        user_info         Optional boolean. Information about the ArcGIS organizational account for the user who submitted the survey. It contains the following properties:
+                          
+                          + `username`
+                          + `firstName`
+                          + `lastName`
+                          + `fullName`
+                          + `email`
+                          
+        ----------------  ---------------------------------------------------------------
+        server_response   Optional boolean. The response from the applyEdits operation. 
+                          It includes the global IDs for the features created by the operation and whether the operation was successful.
+        ----------------  ---------------------------------------------------------------
+        survey_info       Optional boolean. Information about the survey that generated the webhook. It contains the following properties:
+        
+                          + `formItemId`
+                          + `formTitle`
+                          + `serviceItemId`
+                          + `serviceUrl`
+
+        ----------------  ---------------------------------------------------------------
+        active            Optional boolean. Determines whether the webhook will be active when saved.
+        ================  ===============================================================
+
+        :Returns: Dictionary {success, webhookId}
+
+        """
+
+
+        url = f"https://{self._baseurl}/api/survey/{self._si.id}/webhook/{webhook_id}/update"        
+        existing_webhook = [x for x in self.webhooks if x['id'] == webhook_id][0]
+                
+        params = {
+            "f": "json",
+            "webhook": {
+                "active": active if active is not None else existing_webhook['active'],
+                "name": name if name is not None else existing_webhook['name'],
+                "url": payload_url if payload_url is not None else existing_webhook['url'],
+                "includePortalInfo": portal_info if portal_info is not None else existing_webhook['includePortalInfo'],
+                "includeServiceRequest": submitted_record if submitted_record is not None else existing_webhook['includeServiceRequest'],
+                "includeUserInfo": user_info if user_info is not None else existing_webhook['includeUserInfo'],
+                "includeServiceResponse": server_response if server_response is not None else existing_webhook['includeServiceResponse'],
+                "includeSurveyInfo": survey_info if survey_info is not None else existing_webhook['includeSurveyInfo'],
+                "events": trigger_events if trigger_events is not None else existing_webhook['events']
+            },
+            "portalUrl": self._gis._url
+        }
+        submit = self._si._gis._con.post(
+            url, params)
+        return submit
+    
+    # ----------------------------------------------------------------------
+    def delete_webhook(self, webhook_id: str) -> bool:
+        """ 
+        Deletes a webhook from a survey 
+        
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        webhook_id        Required string. The ID for the webhook to delete. 
+        ================  ===============================================================
+
+        :Returns: String
+        
+        """
+
+        url = f"https://{self._baseurl}/api/survey/{self._si.id}/webhook/{webhook_id}/delete"
+        params = {
+            "portalUrl": self._gis._url
+        }
+        submit = self._si._gis._con.post(
+            url, params)
+        return submit['success']
