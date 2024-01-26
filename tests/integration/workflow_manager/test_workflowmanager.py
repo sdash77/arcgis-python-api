@@ -1169,6 +1169,26 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Statistics
+
+    def test_job_statistics_successfully_returns(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "99o2QTePTqq-BHRHK_Aeag"
+        user_query = (
+            "diagramId='" + diagram_id + "' "
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(query=user_query, group_by='assignedTo')
+
+        # Assert
+        self.assertTrue(actual['total'] > 0, "Incorrect return type")
+        self.assertEqual(actual['group_by'], 'assignedTo', "Incorrect return type")
+        self.assertIsInstance(actual['grouped_values'], list, "Incorrect return type")
+
+    # endregion
+
     # region Settings
 
     def test_get_valid_settings(self):
