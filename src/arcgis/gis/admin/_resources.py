@@ -1,6 +1,7 @@
 """
 Provides class, methods and functions to manage resources for a given GIS.
 """
+
 import os
 import json
 import tempfile

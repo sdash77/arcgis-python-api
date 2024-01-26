@@ -2,6 +2,7 @@
 Generates Layer Types from the given inputs.
 
 """
+
 from __future__ import absolute_import
 import os
 from urllib.parse import urlparse

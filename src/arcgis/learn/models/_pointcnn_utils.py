@@ -418,9 +418,9 @@ class PointCNNSeg(nn.Module):
             self.encoder_layers.append(
                 ## in_channels is equal to num_extra_features for the first layer.
                 XConvDepthwise(
-                    in_channel=num_extra_features
-                    if i == 0
-                    else out_channels[i - 1] * m,
+                    in_channel=(
+                        num_extra_features if i == 0 else out_channels[i - 1] * m
+                    ),
                     lift_channel=out_channels[i] * m // 4,
                     out_channel=out_channels[i] * m,
                     P=P[i],
@@ -440,9 +440,11 @@ class PointCNNSeg(nn.Module):
             self.decoder_layers.append(  ## append decoder layers
                 ## Since in the
                 XConvDepthwise(
-                    in_channel=out_channels[j + 1] * m + (out_channels[j + 1] * m) // 4
-                    if (j + 1) == (len(P) - 1)
-                    else out_channels[j + 1] * m,
+                    in_channel=(
+                        out_channels[j + 1] * m + (out_channels[j + 1] * m) // 4
+                        if (j + 1) == (len(P) - 1)
+                        else out_channels[j + 1] * m
+                    ),
                     lift_channel=out_channels[j] * m // 4,
                     out_channel=out_channels[j] * m,
                     P=P[j],
