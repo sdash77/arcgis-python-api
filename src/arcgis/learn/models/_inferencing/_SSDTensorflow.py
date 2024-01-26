@@ -164,9 +164,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 

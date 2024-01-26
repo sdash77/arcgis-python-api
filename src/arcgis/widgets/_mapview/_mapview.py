@@ -2,6 +2,7 @@
 The arcgis.widgets module provides components for visualizing GIS data and analysis.
 This module includes the MapView Jupyter notebook widget for visualizing maps and layers
 """
+
 import json
 import time
 import logging

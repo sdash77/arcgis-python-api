@@ -1,6 +1,7 @@
 """
 Holds Delegate and Accessor Logic
 """
+
 from __future__ import annotations
 import logging
 import pandas as pd
@@ -3659,9 +3660,11 @@ class GeoAccessor(object):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
                     self._data[self.name].apply(
-                        lambda x: x.update({"spatialReference": ref})
-                        if pd.notnull(x)
-                        else None
+                        lambda x: (
+                            x.update({"spatialReference": ref})
+                            if pd.notnull(x)
+                            else None
+                        )
                     )
 
     # ----------------------------------------------------------------------

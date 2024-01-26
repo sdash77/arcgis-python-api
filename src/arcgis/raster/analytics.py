@@ -5,6 +5,7 @@ The Hosted Imagery & Raster Analysis capabilities are available both on ArcGIS E
 Refer https://doc.arcgis.com/en/arcgis-online/analyze/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Online.
 Refer https://enterprise.arcgis.com/en/portal/latest/use/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Enterprise.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 
@@ -147,9 +148,9 @@ def _flow_direction_analytics_converter(
     future=False,
     **kwargs,
 ):
-    input_surface_raster = (
-        forceFlow
-    ) = flowDirectionType = output_flow_direction_raster = output_drop_name = None
+    input_surface_raster = forceFlow = flowDirectionType = (
+        output_flow_direction_raster
+    ) = output_drop_name = None
 
     input_surface_raster = raster_function["rasterFunctionArguments"][
         "in_surface_raster"
