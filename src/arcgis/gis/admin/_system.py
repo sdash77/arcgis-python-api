@@ -617,16 +617,16 @@ class System(BasePortalAdmin):
         :returns: dict[str,Any]
             A Python dictionary with a *ScheduledTask* key whose value is a list
             of dictionaries with specific limit names and their values.
-            
+
         .. code-block:: python
-        
+
             # Usage example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_enterprise_admin_profile")
-            
+
             >>> ent_system = gis.admin.system
             >>> ent_system.limits
-            
+
             {'ScheduleTask': [{'limitName': 'UpdateInsightsUserLimit', 'numLimit': 20},
                               {'limitName': 'UpdateInsightsOrgLimit', 'numLimit': 50},
                               .
@@ -663,7 +663,7 @@ class System(BasePortalAdmin):
                                for comprehensive list of limit options to set.
         ------------------     --------------------------------------------------------------------
         category               Optional String. Category limits to be updated.
-                               
+
                                .. note::
                                    As of the API 2.2.0.1 release, `ScheduleTask` is the only
                                    category implemented.
@@ -671,17 +671,17 @@ class System(BasePortalAdmin):
 
         :returns:
             Python dictionary with a *status* key indicating success or failure of the operation.
-        
+
         .. code-block:: python
-        
+
             # Usage Example
             >>> gis = GIS(profile="your_enterprise_admin_profile")
-            
+
             >>> ent_system = gis.admin.system
             >>> ent_system.set_limits(properties=[{"limitName": "TaskRunHistoryCount",
                                                    "numLimit": 45}],
                                       category="ScheduleTask")
-            
+
             {'status': 'success'}
         """
         if self._gis.version < [2023, 2]:
