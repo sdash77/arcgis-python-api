@@ -1,6 +1,7 @@
 """
 urllib parsing helpers to help figure out of the URL returns a file.
 """
+
 import os
 import re
 import unicodedata

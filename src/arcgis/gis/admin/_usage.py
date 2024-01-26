@@ -1,6 +1,7 @@
 """
 Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
+
 import os
 import time
 import datetime
