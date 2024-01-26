@@ -1,6 +1,7 @@
 """
 Modifies a local portal's system settings.
 """
+
 import json
 import requests
 from typing import Optional, Any

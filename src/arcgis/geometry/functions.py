@@ -32,6 +32,7 @@ section of the API for Python documentation.
 For a complete list of well-known ID values, see
 `Coordinate System PDF <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm#ESRI_SECTION2_2861129E93634E5394F9F256F7617EB1>`_
 """
+
 from __future__ import annotations
 from enum import Enum
 import json

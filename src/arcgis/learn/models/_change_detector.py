@@ -19,7 +19,6 @@ except ImportError:
 
 
 class ChangeDetector(ArcGISModel):
-
     """
     Creates a Change Detection model.
 
@@ -216,9 +215,9 @@ class ChangeDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         if self._is_multispectral:
             # change this when we start to honour extract bands parameter.
             _emd_template["ExtractBands"] = list(

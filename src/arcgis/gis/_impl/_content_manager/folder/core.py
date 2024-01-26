@@ -186,7 +186,9 @@ class Folder:
         """
         url: str = f"{self._gis._portal.resturl}content/users/{self._owner}"
         if self._folder:
-            url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            url: str = (
+                f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            )
         params: dict[str, Any] = {
             "f": "json",
             "types": item_type,
@@ -280,7 +282,9 @@ class Folder:
             Only available on non-Root Folder
             :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
         """
-        url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        url: str = (
+            f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        )
         params = {
             "f": "json",
         }
@@ -823,7 +827,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
@@ -898,7 +902,7 @@ class Folders:
         in the *owner* argument.
 
         .. note::
-            The ``create`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 

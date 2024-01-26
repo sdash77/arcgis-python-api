@@ -2,6 +2,7 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
+
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
@@ -1144,21 +1145,31 @@ class FeatureSet(object):
             fields=fields,
             has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
             has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
-            geometry_type=featureset_dict["geometryType"]
-            if "geometryType" in featureset_dict
-            else None,
-            object_id_field_name=featureset_dict["objectIdFieldName"]
-            if "objectIdFieldName" in featureset_dict
-            else None,
-            global_id_field_name=featureset_dict["globalIdFieldName"]
-            if "globalIdFieldName" in featureset_dict
-            else None,
-            display_field_name=featureset_dict["displayFieldName"]
-            if "displayFieldName" in featureset_dict
-            else None,
-            spatial_reference=featureset_dict["spatialReference"]
-            if "spatialReference" in featureset_dict
-            else None,
+            geometry_type=(
+                featureset_dict["geometryType"]
+                if "geometryType" in featureset_dict
+                else None
+            ),
+            object_id_field_name=(
+                featureset_dict["objectIdFieldName"]
+                if "objectIdFieldName" in featureset_dict
+                else None
+            ),
+            global_id_field_name=(
+                featureset_dict["globalIdFieldName"]
+                if "globalIdFieldName" in featureset_dict
+                else None
+            ),
+            display_field_name=(
+                featureset_dict["displayFieldName"]
+                if "displayFieldName" in featureset_dict
+                else None
+            ),
+            spatial_reference=(
+                featureset_dict["spatialReference"]
+                if "spatialReference" in featureset_dict
+                else None
+            ),
         )
 
     # ----------------------------------------------------------------------

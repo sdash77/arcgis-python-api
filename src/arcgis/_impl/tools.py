@@ -4,6 +4,7 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
+
 from __future__ import absolute_import, division, print_function, annotations
 
 from arcgis._impl.common._deprecate import deprecated
@@ -1396,9 +1397,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if required_facilities_capacity is not None:
                 params["requiredFacilitiesCapacity"] = required_facilities_capacity
             if required_facilities_capacity_field is not None:
-                params[
-                    "requiredFacilitiesCapacityField"
-                ] = required_facilities_capacity_field
+                params["requiredFacilitiesCapacityField"] = (
+                    required_facilities_capacity_field
+                )
             if candidate_facilities_layer is not None:
                 params["candidateFacilitiesLayer"] = candidate_facilities_layer
             if candidate_count is not None:
@@ -1406,9 +1407,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if candidate_facilities_capacity is not None:
                 params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
             if candidate_facilities_capacity_field is not None:
-                params[
-                    "candidateFacilitiesCapacityField"
-                ] = candidate_facilities_capacity_field
+                params["candidateFacilitiesCapacityField"] = (
+                    candidate_facilities_capacity_field
+                )
             if percent_demand_coverage is not None:
                 params["percentDemandCoverage"] = percent_demand_coverage
             if output_name is not None:
@@ -1734,9 +1735,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
-                params[
-                    "destinationsLayerRouteIDField"
-                ] = destinations_layer_route_id_field
+                params["destinationsLayerRouteIDField"] = (
+                    destinations_layer_route_id_field
+                )
             if time_of_day is not None:
                 params["timeOfDay"] = time_of_day
             if time_zone_for_time_of_day is not None:
@@ -5493,9 +5494,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if spatial_relationship_distance is not None:
             params["spatialRelationshipDistance"] = spatial_relationship_distance
         if spatial_relationship_distance_units is not None:
-            params[
-                "spatialRelationshipDistanceUnits"
-            ] = spatial_relationship_distance_units
+            params["spatialRelationshipDistanceUnits"] = (
+                spatial_relationship_distance_units
+            )
         if estimate:
             params["targetLayer"] = target_layer
             params["joinLayer"] = join_layer
@@ -17143,9 +17144,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             in_folder = in_folder.datapath
         elif isinstance(in_folder, list):
             in_folder = [
-                folder.datapath
-                if isinstance(folder, arcgis.gis.Datastore)
-                else str(folder)
+                (
+                    folder.datapath
+                    if isinstance(folder, arcgis.gis.Datastore)
+                    else str(folder)
+                )
                 for folder in in_folder
             ]
             in_folder = ",".join(in_folder)
@@ -18259,6 +18262,227 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
+
+    def locate_regions(
+        self,
+        input_raster,
+        input_existing_regions=None,
+        total_area=None,
+        area_units="SQUARE_MAP_UNITS",
+        number_of_regions=1,
+        region_shape="CIRCLE",
+        region_orientation=0,
+        shape_tradeoff=50,
+        evaluation_method="HIGHEST_AVERAGE_VALUE",
+        minimum_area=None,
+        maximum_area=None,
+        minimum_distance=None,
+        maximum_distance=None,
+        distance_units="MAP_UNITS",
+        number_of_neighbors=None,
+        no_islands=None,
+        region_seeds="BASED_ON_INPUT",
+        region_resolution="BASED_ON_INPUT",
+        selection_method="BASED_ON_NUMBER_OF_REGIONS",
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        task = "LocateRegions"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if isinstance(input_existing_regions, _FEATURE_INPUTS):
+            input_existing_regions = self._feature_input(
+                input_layer=input_existing_regions
+            )
+        elif isinstance(input_existing_regions, Item):
+            input_existing_regions = {"itemId": input_existing_regions.itemid}
+        elif input_existing_regions is not None:
+            input_existing_regions = self._layer_input(
+                input_layer=input_existing_regions
+            )
+
+        if area_units is not None:
+            area_units_allowed_values = [
+                "SQUARE_MAP_UNITS",
+                "SQUARE_MILES",
+                "SQUARE_KILOMETERS",
+                "ACRES",
+                "HECTARES",
+                "SQUARE_METERS",
+                "SQUARE_YARDS",
+                "SQUARE_FEET",
+            ]
+            if [element.lower() for element in area_units_allowed_values].count(
+                area_units.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "area_units can only be one of the following: "
+                    + str(area_units_allowed_values)
+                )
+            for element in area_units_allowed_values:
+                if area_units.lower() == element.lower():
+                    area_units = element
+
+        if region_shape is not None:
+            region_shape_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_shape"
+            ]
+            if [element.lower() for element in region_shape_allowed_values].count(
+                region_shape.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_shape can only be one of the following: "
+                    + str(region_shape_allowed_values)
+                )
+            for element in region_shape_allowed_values:
+                if region_shape.lower() == element.lower():
+                    region_shape = element
+
+        if evaluation_method is not None:
+            evaluation_method_allowed_values = self._tbx.choice_list.locate_regions[
+                "evaluation_method"
+            ]
+            if [element.lower() for element in evaluation_method_allowed_values].count(
+                evaluation_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "evaluation_method can only be one of the following: "
+                    + str(evaluation_method_allowed_values)
+                )
+            for element in evaluation_method_allowed_values:
+                if evaluation_method.lower() == element.lower():
+                    evaluation_method = element
+
+        if distance_units is not None:
+            distance_units_allowed_values = [
+                "MAP_UNITS",
+                "MILES",
+                "KILOMETERS",
+                "METERS",
+                "YARDS",
+                "FEET",
+            ]
+
+            if [element.lower() for element in distance_units_allowed_values].count(
+                distance_units.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "distance_units can only be one of the following: "
+                    + str(distance_units_allowed_values)
+                )
+            for element in distance_units_allowed_values:
+                if distance_units.lower() == element.lower():
+                    distance_units = element
+
+        if number_of_neighbors is not None:
+            number_of_neighbors_allowed_values = self._tbx.choice_list.locate_regions[
+                "number_of_neighbors"
+            ]
+            if [
+                element.lower() for element in number_of_neighbors_allowed_values
+            ].count(number_of_neighbors.lower()) <= 0:
+                raise RuntimeError(
+                    "number_of_neighbors can only be one of the following: "
+                    + str(number_of_neighbors_allowed_values)
+                )
+            for element in number_of_neighbors_allowed_values:
+                if number_of_neighbors.lower() == element.lower():
+                    number_of_neighbors = element
+
+        if region_seeds is not None:
+            region_seeds_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_seeds"
+            ]
+            if [element.lower() for element in region_seeds_allowed_values].count(
+                region_seeds.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_seeds can only be one of the following: "
+                    + str(region_seeds_allowed_values)
+                )
+            for element in region_seeds_allowed_values:
+                if region_seeds.lower() == element.lower():
+                    region_seeds = element
+
+        if region_resolution is not None:
+            region_resolution_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_resolution"
+            ]
+            if [element.lower() for element in region_resolution_allowed_values].count(
+                region_resolution.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_resolution can only be one of the following: "
+                    + str(region_resolution_allowed_values)
+                )
+            for element in region_resolution_allowed_values:
+                if region_resolution.lower() == element.lower():
+                    region_resolution = element
+
+        if selection_method is not None:
+            selection_method_allowed_values = self._tbx.choice_list.locate_regions[
+                "selection_method"
+            ]
+            if [element.lower() for element in selection_method_allowed_values].count(
+                selection_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "selection_method can only be one of the following: "
+                    + str(selection_method_allowed_values)
+                )
+            for element in selection_method_allowed_values:
+                if selection_method.lower() == element.lower():
+                    selection_method = element
+
+        if no_islands is not None:
+            if not isinstance(no_islands, bool):
+                raise RuntimeError("no_islands should be of type bool")
+
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
+
+        gpjob = self._tbx.locate_regions(
+            input_raster=input_raster,
+            in_existing_regions=input_existing_regions,
+            total_area=total_area,
+            area_units=area_units,
+            number_of_regions=number_of_regions,
+            region_shape=region_shape,
+            region_orientation=region_orientation,
+            shape_tradeoff=shape_tradeoff,
+            evaluation_method=evaluation_method,
+            minimum_area=minimum_area,
+            maximum_area=maximum_area,
+            minimum_distance=minimum_distance,
+            maximum_distance=maximum_distance,
+            distance_units=distance_units,
+            number_of_neighbors=number_of_neighbors,
+            no_islands=no_islands,
+            region_seeds=region_seeds,
+            region_resolution=region_resolution,
+            selection_method=selection_method,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
 ###########################################################################
