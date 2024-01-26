@@ -753,13 +753,13 @@ class JobManager:
 
         .. code-block:: python
 
-        # JOB STATISTICS EXAMPLE:
+            # Example Job Statistics Object:
 
-        {
-          "total": 0,
-          "groupBy": "string",
-          "groupedValues": [ { "value": "string", count": 0 } ]
-        }
+            {
+              "total": 0,
+              "groupBy": "string",
+              "groupedValues": [ { "value": "string", count": 0 } ]
+            }
 
         """
         try:
