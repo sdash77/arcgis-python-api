@@ -5,6 +5,7 @@ chosen areas.
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader

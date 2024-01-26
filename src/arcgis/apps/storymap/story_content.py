@@ -1621,9 +1621,9 @@ class Map:
         rdata_dict = self._story._properties["resources"][self.resource_node]["data"]
         if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
             try:
-                self._story._properties["nodes"][self.node]["data"][
-                    "viewpoint"
-                ] = rdata_dict["viewpoint"]
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"] = (
+                    rdata_dict["viewpoint"]
+                )
             except Exception:
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"] = {
                     "rotation": 0,
@@ -1670,9 +1670,9 @@ class Map:
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                     "scale"
                 ] = scale.value["scale"]
-                self._story._properties["nodes"][self.node]["data"][
-                    "zoom"
-                ] = scale.value["zoom"]
+                self._story._properties["nodes"][self.node]["data"]["zoom"] = (
+                    scale.value["zoom"]
+                )
                 change_made = True
             elif isinstance(scale, dict):
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"][
@@ -1923,9 +1923,9 @@ class Map:
         # Get all the old properties but update with new map where needed
 
         # remove old resource node
-        self._story._properties["resources"][
-            new_map.resource_node
-        ] = self._story._properties["resources"].pop(self.resource_node)
+        self._story._properties["resources"][new_map.resource_node] = (
+            self._story._properties["resources"].pop(self.resource_node)
+        )
         # assign new resource node
         self.resource_node = new_map.resource_node
         # set the new item id in the story resources dictionary for this resource
@@ -3331,9 +3331,11 @@ class Sidecar:
             "origin": node,
             "trigger": "ActionButton_Apply",
             "target": map_node,
-            "event": "ExpressMap_UpdateData"
-            if map_type == "expressmap"
-            else "WebMap_UpdateData",
+            "event": (
+                "ExpressMap_UpdateData"
+                if map_type == "expressmap"
+                else "WebMap_UpdateData"
+            ),
             "data": {},
         }
         if extent and not viewpoint:
@@ -3343,9 +3345,11 @@ class Sidecar:
             viewpoint = {
                 "rotation": 0,
                 "targetGeometry": {
-                    "spatialReference": extent["spatialReference"]
-                    if "spatialReference" in extent
-                    else {"latestWkid": 3857, "wkid": 102100},
+                    "spatialReference": (
+                        extent["spatialReference"]
+                        if "spatialReference" in extent
+                        else {"latestWkid": 3857, "wkid": 102100}
+                    ),
                     "x": x_center,
                     "y": y_center,
                 },

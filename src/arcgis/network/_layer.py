@@ -544,7 +544,7 @@ class RouteLayer(NetworkLayer):
 
                                                 The dictionary of parameters can be assigned to the 'default', or to the
                                                 'overrides' key which holds the dictionary of parameters for each override, types of override are
-                                                'stops', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                'stops', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                 Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                 for the default.
 
@@ -555,7 +555,7 @@ class RouteLayer(NetworkLayer):
                                                     For each override, the keys do not have to be complete.
 
                                                 .. note::
-                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
+                                                    for 'polylineBarriers' and 'polygonBarriers', tolerance and tolerance_units are
                                                     not supported.
 
                                                 .. code-block:: python
@@ -563,8 +563,8 @@ class RouteLayer(NetworkLayer):
                                                     from arcgis.network import LocateSettings
                                                     locate_settings = LocateSettings(
                                                         tolerance=5000,
-                                                        toleranceUnits="esriMeters",
-                                                        allowAutoRelocate=True,
+                                                        toleranc_units="esriMeters",
+                                                        allow_auto_relocate=True,
                                                         sources=[{"name": "Routing_Streets"}]
                                                     )
                                                     result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
@@ -993,18 +993,18 @@ class ServiceAreaLayer(NetworkLayer):
 
                                                 The dictionary of parameters can be assigned to the 'default', or to the
                                                 'overrides' key which holds the dictionary of parameters for each override, types of override are
-                                                'facilities', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                'facilities', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                 Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                 for the default.
 
                                                 .. note::
                                                     'default' has to be present if you want to pass in any locate_settings to the
-                                                    service. In addition, locate setttings for default have to be complete, meaning
+                                                    service. In addition, locate settings for default have to be complete, meaning
                                                     all properties need to be present.
                                                     For each override, the keys do not have to be complete.
 
                                                 .. note::
-                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                    for 'polylineBarriers' and 'polygonBarriers', tolerance and tolerance_units are
                                                     not supported.
 
                                                 .. code-block:: python
@@ -1141,9 +1141,9 @@ class ServiceAreaLayer(NetworkLayer):
         if return_empty_results is not None:
             params["returnEmptyResults"] = return_empty_results
         if include_source_information_on_lines is not None:
-            params[
-                "includeSourceInformationOnLines"
-            ] = include_source_information_on_lines
+            params["includeSourceInformationOnLines"] = (
+                include_source_information_on_lines
+            )
         if future:
             f = self._run_async(
                 self._con.post,
@@ -1442,18 +1442,18 @@ class ClosestFacilityLayer(NetworkLayer):
 
                                                 The dictionary of parameters can be assigned to the 'default', or to the
                                                 'overrides' key which holds the dictionary of parameters for each override, types of override are
-                                                'incidents', 'facilities', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                'incidents', 'facilities', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                 Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                 for the default.
 
                                                 .. note::
                                                     'default' has to be present if you want to pass in any locate_settings to the
-                                                    service. In addition, locate setttings for default have to be complete, meaning
+                                                    service. In addition, locate settings for default have to be complete, meaning
                                                     all properties need to be present.
                                                     For each override, the keys do not have to be complete.
 
                                                 .. note::
-                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                    for 'polylineBarriers' and 'polygonBarriers', tolerance and tolerance_units are
                                                     not supported.
 
                                                 .. code-block:: python
@@ -1771,18 +1771,18 @@ class ODCostMatrixLayer(NetworkLayer):
 
                                                     The dictionary of parameters can be assigned to the 'default', or to the
                                                     'overrides' key which holds the dictionary of parameters for each override, types of override are
-                                                    'origins', 'destinations', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                    'origins', 'destinations', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                     Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                     for the default.
 
                                                     .. note::
                                                         'default' has to be present if you want to pass in any locate_settings to the
-                                                        service. In addition, locate setttings for default have to be complete, meaning
+                                                        service. In addition, locate settings for default have to be complete, meaning
                                                         all properties need to be present.
                                                         For each override, the keys do not have to be complete.
 
                                                     .. note::
-                                                        for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                        for 'polylineBarriers' and 'polygonBarriers', tolerance and tolerance_units are
                                                         not supported.
 
                                                     .. code-block:: python
