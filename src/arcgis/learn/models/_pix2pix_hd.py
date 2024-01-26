@@ -22,7 +22,6 @@ except Exception as e:
 
 
 class Pix2PixHD(ArcGISModel):
-
     """
     Creates a model object which generates fake images of type B from type A.
 

@@ -555,9 +555,9 @@ class UtilityNetworkManager(object):
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
-            "momentsToReturn": moments_to_return
-            if moments_to_return is not None
-            else ["all"],
+            "momentsToReturn": (
+                moments_to_return if moments_to_return is not None else ["all"]
+            ),
             "moment": moment,
         }
         return self._con.post(url, params)

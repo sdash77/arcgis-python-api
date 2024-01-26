@@ -1,6 +1,7 @@
 """
 class to work with the living atlas
 """
+
 from typing import Optional
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap

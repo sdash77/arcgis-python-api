@@ -320,8 +320,9 @@ class ViewLayerDefParameter:
     @classmethod
     def fromlayer(
         self,
-        layer: arcgis.features.managers.FeatureLayerManager
-        | arcgis.features.FeatureLayer,
+        layer: (
+            arcgis.features.managers.FeatureLayerManager | arcgis.features.FeatureLayer
+        ),
     ) -> "ViewLayerDefParameter":
         """Creates a view layer definition parameter object from a layer."""
         from arcgis.features.managers import FeatureLayerManager

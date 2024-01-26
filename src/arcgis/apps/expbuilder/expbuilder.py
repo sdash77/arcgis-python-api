@@ -75,7 +75,6 @@ class Templates(Enum):
 
 
 class WebExperience(object):
-
     """
     A Web Experience is web-based application that provides viewers with an interactive
     interface to maps, data, feature layers, and other components of the creator's design.

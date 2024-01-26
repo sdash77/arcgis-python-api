@@ -4,6 +4,7 @@ the GIS to perform continuous processing and analysis on the streaming data. It 
 to subscribe to the streamed feature data or to broadcast updates and alerts.
 
 """
+
 from arcgis.gis import *
 from arcgis.features import *
 
