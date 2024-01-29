@@ -1846,14 +1846,12 @@ def _lookup_datastore(datastore_type, gis=None):
     :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
     :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
     """
-    import json
 
     if gis is None:
         gis = _arcgis.env.active_gis
 
     hosting_server = gis.admin.servers.get(function="RasterAnalytics")
     ds = hosting_server[0].datastores.search(types=datastore_type, decrypt=True)
-    dslist = []
     dataitems = []
     if "items" in ds:
         fsds = ds["items"]
