@@ -281,7 +281,11 @@ class LocateSettings:
     def to_dict(self):
         return {
             "tolerance": self.tolerance,
-            "toleranceUnits": self.tolerance_units.value,
+            "toleranceUnits": (
+                self.tolerance_units.value
+                if isinstance(self.tolerance_units, ToleranceUnits)
+                else self.tolerance_units
+            ),
             "allowAutoRelocate": self.allow_auto_relocate,
             "sources": self.sources,
         }
@@ -563,7 +567,7 @@ class RouteLayer(NetworkLayer):
                                                     from arcgis.network import LocateSettings
                                                     locate_settings = LocateSettings(
                                                         tolerance=5000,
-                                                        toleranc_units="esriMeters",
+                                                        tolerance_units=ToleranceUnits.meters,
                                                         allow_auto_relocate=True,
                                                         sources=[{"name": "Routing_Streets"}]
                                                     )
@@ -1010,7 +1014,7 @@ class ServiceAreaLayer(NetworkLayer):
                                                 .. code-block:: python
 
                                                     from arcgis.network import LocateSettings
-                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
                                                     result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
 
         -----------------------------------     --------------------------------------------------------------------
@@ -1459,7 +1463,7 @@ class ClosestFacilityLayer(NetworkLayer):
                                                 .. code-block:: python
 
                                                     from arcgis.network import LocateSettings
-                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
                                                     result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
         -----------------------------------     --------------------------------------------------------------------
         return_empty_results                    Optional boolean. If True, the service will return empty results instead
@@ -1788,7 +1792,7 @@ class ODCostMatrixLayer(NetworkLayer):
                                                     .. code-block:: python
 
                                                         from arcgis.network import LocateSettings
-                                                        locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                        locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
                                                         result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
         -----------------------------------         --------------------------------------------------------------------
         return_empty_results                        Optional boolean. If True, the service will return empty results instead
