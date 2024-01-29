@@ -43,7 +43,6 @@ except Exception as e:
 
 
 class PointCNN(ArcGISModel):
-
     """
     Model architecture from https://arxiv.org/abs/1801.07791.
     Creates a Point Cloud classification model.

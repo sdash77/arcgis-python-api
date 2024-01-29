@@ -3,6 +3,7 @@
 These tools are used for data enrichment using geoanalytics
 
 """
+
 from __future__ import annotations
 from datetime import datetime
 import json as _json

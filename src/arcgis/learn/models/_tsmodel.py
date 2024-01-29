@@ -864,15 +864,17 @@ class TimeSeriesModel(ArcGISModel):
         while index < len(prediction_sequence_list):
             if pd.isna(prediction_sequence_list[index]).any() or any(
                 [
-                    True
-                    if i
-                    in [
-                        "",
-                        None,
-                        "null",
-                        "None",
-                    ]
-                    else False
+                    (
+                        True
+                        if i
+                        in [
+                            "",
+                            None,
+                            "null",
+                            "None",
+                        ]
+                        else False
+                    )
                     for i in prediction_sequence_list[index]
                 ]
             ):
@@ -1134,9 +1136,9 @@ class TimeSeriesModel(ArcGISModel):
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[
-                :
-            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
+                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            )
         return processed_dataframe_transform
 
     def score(self):

@@ -3,6 +3,7 @@ The System resource is a collection of miscellaneous server-wide
 resources such as server properties, server directories, the
 configuration store, Web Adaptors, and licenses.
 """
+
 from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
