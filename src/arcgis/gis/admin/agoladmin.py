@@ -98,9 +98,10 @@ class AGOLAdminManager(object):
     @property
     def partnered_collaboration(self) -> PartneredCollabManager:
         """
-        returns a manager to work with partnered collaboration
+        Returns a manager to work with partnered collaborations
 
-        :return: PartneredCollabManager
+        :return:
+            :class:`~arcgis.gis.admin.PartneredCollabManager`
         """
         if self._collabmgr is None:
             url: str = self._gis.resturl + "portal/self/tustedOrgs"

@@ -674,7 +674,7 @@ class UX(object):
             }
             im_item = self._gis.content.add(item_props, logo)
             # share to everyone
-            im_item.share(everyone=True)
+            im_item.sharing.sharing_level = "EVERYONE"
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
