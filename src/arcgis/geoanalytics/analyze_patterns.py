@@ -4,6 +4,7 @@ These tools help you identify, quantify, and visualize spatial patterns in your 
 calculate_density takes known quantities of some phenomenon and spreads these quantities across the map.
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 """
+
 from __future__ import annotations
 import json as _json
 from datetime import datetime as _datetime

@@ -103,9 +103,11 @@ def _overlay_intersection(df1, df2):
         this, other = this.align(other)
         data = np.array(
             [
-                getattr(this_elem, "intersect")(other_elem, gtype)
-                if not this_elem.is_empty | other_elem.is_empty
-                else None
+                (
+                    getattr(this_elem, "intersect")(other_elem, gtype)
+                    if not this_elem.is_empty | other_elem.is_empty
+                    else None
+                )
                 for this_elem, other_elem in zip(this, other)
             ]
         )

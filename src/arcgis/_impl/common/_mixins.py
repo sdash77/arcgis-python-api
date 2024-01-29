@@ -4,6 +4,7 @@ Mixin Classes for Attr-support.
 Copyright (c) 2013 Brendan Curran-Johnson
 https://github.com/bcj/AttrDict
 """
+
 from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, MutableMapping, Sequence

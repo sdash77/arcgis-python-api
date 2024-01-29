@@ -1908,7 +1908,7 @@ class NetworkDatasetLayer(NetworkLayer):
                                                     from arcgis.network import LocateSettings
                                                     locate_settings = LocateSettings(
                                                         tolerance=5000,
-                                                        tolerance_units="esriMeters",
+                                                        tolerance_units=ToleranceUnits.esriMeters,
                                                         allow_auto_relocate=True,
                                                         sources=[{"name": "Routing_Streets"}]
                                                     )

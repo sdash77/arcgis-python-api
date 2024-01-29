@@ -1351,9 +1351,11 @@ class BusinessAnalyst(object):
 
         # calculate impedance categories for ease of filtering in some workflows
         trvl_df["impedance_category"] = trvl_df["impedance"].apply(
-            lambda val: ("temporal" if val.endswith("Time") else "distance")
-            if pd.notna(val)
-            else val
+            lambda val: (
+                ("temporal" if val.endswith("Time") else "distance")
+                if pd.notna(val)
+                else val
+            )
         )
 
         # reorganize the column order

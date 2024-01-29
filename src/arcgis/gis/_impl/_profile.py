@@ -224,9 +224,9 @@ class ServerProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
@@ -774,9 +774,9 @@ class ProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)

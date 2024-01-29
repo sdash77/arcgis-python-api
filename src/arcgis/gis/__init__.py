@@ -6,6 +6,7 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
+
 from __future__ import absolute_import, annotations
 import base64
 import json
@@ -5094,7 +5095,6 @@ class UserManager(object):
 
 
 class RoleManager(object):
-
     """
         The ``RoleManager`` class is a helper class to manage custom :class:`roles <arcgis.gis.Role>` for
         :class:`~arcgis.gis.User` in a GIS. It is available as the :attr:`~arcgis.gis.UserManager.roles`
@@ -13405,7 +13405,9 @@ class Item(dict):
             raise ValueError("`user` must be a string or User object.")
         elif isinstance(target_user, User):
             target_user: str = target_user.username
-        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        url: str = (
+            f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        )
         params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
         session: EsriSession = self._gis._con._session
         resp: requests.Response = session.post(url=url, data=params)
@@ -14133,12 +14135,16 @@ class Item(dict):
             wmjs = {
                 "mapOptions": {
                     "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent)
-                    if container
-                    else dict(self._gis.properties.defaultExtent),
-                    "spatialReference": dict(container.properties.spatialReference)
-                    if container
-                    else dict(self._gis.properties.defaultExtent.spatialReference),
+                    "extent": (
+                        dict(container.properties.initialExtent)
+                        if container
+                        else dict(self._gis.properties.defaultExtent)
+                    ),
+                    "spatialReference": (
+                        dict(container.properties.spatialReference)
+                        if container
+                        else dict(self._gis.properties.defaultExtent.spatialReference)
+                    ),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
