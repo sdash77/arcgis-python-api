@@ -1252,7 +1252,7 @@ def generate_service_areas(
                                                           .. code-block:: python
 
                                                               from arcgis.network import LocateSettings
-                                                              locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                              locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
                                                               result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
     -------------------------------------------------     ------------------------------------------------------------------------
     exclude_sources_from_polygon_generation               Optional list of strings. You can exclude certain network dataset edge sources when

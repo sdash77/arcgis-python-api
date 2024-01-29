@@ -905,7 +905,7 @@ def generate_origin_destination_cost_matrix(
                                             .. code-block:: python
 
                                                 from arcgis.network import LocateSettings
-                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
                                                 result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
     ======================================  ==========================================================================================================================================
 
