@@ -1,6 +1,7 @@
 """
 New Geometries Classes
 """
+
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 import copy

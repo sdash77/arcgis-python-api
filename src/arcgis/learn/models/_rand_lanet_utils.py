@@ -425,9 +425,9 @@ class SharedMLP(nn.Sequential):
                     args[i],
                     args[i + 1],
                     bn=(not first or not preact or (i != 0)) and bn,
-                    activation=activation
-                    if (not first or not preact or (i != 0))
-                    else None,
+                    activation=(
+                        activation if (not first or not preact or (i != 0)) else None
+                    ),
                     preact=preact,
                     instance_norm=instance_norm,
                 ),

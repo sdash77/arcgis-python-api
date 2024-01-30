@@ -1300,15 +1300,15 @@ def prepare_las_data(
                         data[idx_in_batch, 0:point_num, ...] = block_xzyrgbi[
                             start:end, :
                         ]
-                        unnormalized_data[
-                            idx_in_batch, 0:point_num, ...
-                        ] = unnormalized_block_xzyrgbi[start:end, :]
+                        unnormalized_data[idx_in_batch, 0:point_num, ...] = (
+                            unnormalized_block_xzyrgbi[start:end, :]
+                        )
                         data_num[idx_in_batch] = point_num
                         label[idx_in_batch] = dataset_idx  # won't be used...
                         label_seg[idx_in_batch, 0:point_num] = block_labels[start:end]
-                        indices_split_to_full[
-                            idx_in_batch, 0:point_num
-                        ] = point_indices[start:end]
+                        indices_split_to_full[idx_in_batch, 0:point_num] = (
+                            point_indices[start:end]
+                        )
 
                         if ((idx + 1) % batch_size == 0) or (
                             block_idx == idx_last_non_empty_block
@@ -2853,7 +2853,6 @@ def augment(points, xforms, range=None):
 
 
 class Transform3d(object):
-
     """
     Create transformations for 3D datasets, that can be used in
     :meth:`~arcgis.learn.prepare_data` to apply data augmentation

@@ -794,21 +794,27 @@ class FormInfo:
                     field_name=element.get("fieldName"),
                     hint=element.get("hint"),
                     input_type=element.get("inputType"),
-                    required_expression=FormInfo._get_expression_info(
-                        form, element.get("requiredExpression")
-                    )
-                    if form
-                    else None,
-                    editable_expression=FormInfo._get_expression_info(
-                        form, element.get("editableExpression")
-                    )
-                    if form
-                    else None,
-                    value_expression=FormInfo._get_expression_info(
-                        form, element.get("valueExpression")
-                    )
-                    if form
-                    else None,
+                    required_expression=(
+                        FormInfo._get_expression_info(
+                            form, element.get("requiredExpression")
+                        )
+                        if form
+                        else None
+                    ),
+                    editable_expression=(
+                        FormInfo._get_expression_info(
+                            form, element.get("editableExpression")
+                        )
+                        if form
+                        else None
+                    ),
+                    value_expression=(
+                        FormInfo._get_expression_info(
+                            form, element.get("valueExpression")
+                        )
+                        if form
+                        else None
+                    ),
                 )
             elif element["type"] == "group":
                 el = FormGroupElement(
@@ -817,11 +823,13 @@ class FormInfo:
                     initial_state=element.get("initialState"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=FormInfo._get_expression_info(
-                        form, element.get("visibilityExpression")
-                    )
-                    if form
-                    else None,
+                    visibility_expression=(
+                        FormInfo._get_expression_info(
+                            form, element.get("visibilityExpression")
+                        )
+                        if form
+                        else None
+                    ),
                 )
             else:
                 el = FormElement(
@@ -829,11 +837,13 @@ class FormInfo:
                     element_type=element.get("type"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=FormInfo._get_expression_info(
-                        form, element.get("visibilityExpression")
-                    )
-                    if form
-                    else None,
+                    visibility_expression=(
+                        FormInfo._get_expression_info(
+                            form, element.get("visibilityExpression")
+                        )
+                        if form
+                        else None
+                    ),
                 )
             elements.append(el)
         return elements
