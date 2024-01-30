@@ -1751,7 +1751,7 @@ def summarize_raster_within(
                                              If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
                                              for MAJORITY, MEDIAN, MEAN, AND VARIETY cannot be computed. \
 
-                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT \
+                                             \ MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT \
                                              statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     ignore_missing_values                    Optional bool, If you choose to ignore missing values, only the cells that 
