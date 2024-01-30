@@ -557,7 +557,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         # terms and conditions acceptance.
         #
         if response.text.find("OAUTH_0015") > -1:
-            raise ArcGISLoginError()
+            dict_object: dict = json.loads(
+                re.search("({.+})", response.text).group(0).replace("'", '"')
+            )
+            message: str = ",".join(dict_object["messages"])
+            raise ArcGISLoginError(message=message)
         callback_url = response.headers["location"]
         if callback_url.find("acceptTermsAndConditions") > -1:
             parsed = parse_url(response.headers["location"])
@@ -842,7 +846,9 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 else:
                     self._init_token_auth_handshake()
                 return self.token
-        except:
+        except ArcGISLoginError as aex:
+            raise aex
+        except Excepation as ex:
             self._auth_token = None
             self._init_token_auth_handshake()
             if self._auth_token:
