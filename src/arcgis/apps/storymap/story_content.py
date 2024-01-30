@@ -5167,7 +5167,10 @@ class Block:
             return [utils._assign_node_class(self._story, self._content)]
 
     # ----------------------------------------------------------------------
-    def add_content(self, content: Text | Image | Video | Embed | Map | Swipe) -> bool:
+    def add_content(
+        self,
+        content: Text | Image | Video | Embed | Map | Swipe | Gallery | Code | Table,
+    ) -> bool:
         """
         Add content to the block.
 
@@ -5191,9 +5194,11 @@ class Block:
                 "The content cannot be None. To remove content use the delete_content method."
             )
         # check that the content is of the correct type
-        if not isinstance(content, (Text, Image, Video, Embed, Map, Swipe)):
+        if not isinstance(
+            content, (Text, Image, Video, Embed, Map, Swipe, Gallery, Code, Table)
+        ):
             raise Exception(
-                "The content must be of type Text, Image, Video, Embed, Map, or Swipe."
+                "The content must be of type Text, Image, Video, Embed, Map, Swipe, Gallery, Code, or Table."
             )
 
         content._add_to_story(story=self._story)
