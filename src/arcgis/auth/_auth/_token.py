@@ -848,7 +848,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 return self.token
         except ArcGISLoginError as aex:
             raise aex
-        except Excepation as ex:
+        except Exception as ex:
             self._auth_token = None
             self._init_token_auth_handshake()
             if self._auth_token:
