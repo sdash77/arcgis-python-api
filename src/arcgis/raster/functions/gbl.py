@@ -857,21 +857,21 @@ def zonal_statistics(
                                         - VARIETY-Calculates the number of unique values for all pixels in the \
                                         Value Raster that belong to the same zone as the output pixel.
 
-                                        - PERCENTILE -Calculates a percentile of all cells in the value raster that \
+                                        - PERCENTILE-Calculates a percentile of all cells in the value raster that \
                                         belong to the same zone as the output cell. The 90th percentile \
                                         is calculated by default. You can specify other values (from 0 to 100) \
                                         using the percentile_value parameter.
 
-                                        - MAJORITY_COUNT -Calculates the frequency of all cells that contain the majority \
+                                        - MAJORITY_COUNT-Calculates the frequency of all cells that contain the majority \
                                         value in the value raster that belong to the same zone as the output cell.
 
-                                        - MAJORITY_PERCENT -Calculates the percentage of cells that contain the majority value in \
+                                        - MAJORITY_PERCENT-Calculates the percentage of cells that contain the majority value in \
                                         the value raster that belong to the same zone as the output cell.
 
-                                        - MINORITY_COUNT -Calculates the frequency of all cells that contain the minority value in \
+                                        - MINORITY_COUNT-Calculates the frequency of all cells that contain the minority value in \
                                         the value raster that belong to the same zone as the output cell.
 
-                                        - MINORITY_PERCENT -Calculates the percentage of cells that contain the minority value in \
+                                        - MINORITY_PERCENT-Calculates the percentage of cells that contain the minority value in \
                                         the value raster that belong to the same zone as the output cell.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     process_as_multidimensional         Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
