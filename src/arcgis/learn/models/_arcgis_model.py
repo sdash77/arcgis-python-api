@@ -1105,7 +1105,7 @@ class ArcGISModel(object):
 
             return _emd_template
 
-        if self._backbone is None:
+        if self._backbone is None or type(self._backbone) is str:
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
