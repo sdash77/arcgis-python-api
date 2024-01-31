@@ -318,7 +318,7 @@ class Survey:
 
         .. note::
             To save to disk, do not specify a `folder_id` argument.
-            
+
         See `Get Started with Survey123 Reports <https://www.esri.com/arcgis-blog/products/survey123/sharing-collaboration/get-started-with-survey123-reports/>`_
         for further information.
 
