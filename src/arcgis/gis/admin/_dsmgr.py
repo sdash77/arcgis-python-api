@@ -223,8 +223,8 @@ class DataStoreMetricsManager:
             "standard": 500000,
             "M1": 500000 * 2,
             "M2": 500000 * 2,
-            "M3": 500000 * 2,
-            "M4": 500000 * 8,
+            "M3": 500000 * 4,  # 2TB
+            "M4": 500000 * 8,  # 4TB
         }
         storage_type: str = dict(self._gis.properties["subscriptionInfo"]).get(
             "dataStoreLevel", "standard"
