@@ -737,9 +737,11 @@ class JobManager:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        query               Required string. The query for the search you want total number of records for
+        query               Optional string. The query for the search you want total number of records for.
+                            Must specify either query or search_str as a parameter.
         ---------------     --------------------------------------------------------------------
-        search_str          Optional string. The match criteria for a simple search
+        search_str          Optional string. The match criteria for a simple search.
+                            Must specify either search_str or query as a parameter.
         ---------------     --------------------------------------------------------------------
         groupBy             Optional string. The search field that is used to separate counts by value.
         ---------------     --------------------------------------------------------------------
@@ -749,7 +751,7 @@ class JobManager:
         ===============     ====================================================================
 
         :return:
-            An object representing workflow manager job statistics
+            An object representing Workflow Manager job statistics
 
 
         .. code-block:: python
@@ -757,15 +759,17 @@ class JobManager:
             # Example Job Statistics Object:
 
             {
-              "total": 0,
-              "groupBy": "string",
-              "groupedValues": [ { "value": "string", count": 0 } ]
+              "total": 2,
+              "groupBy": "assignedTo",
+              "groupedValues": [ { "value": "assignedTo", count": 2 } ]
             }
 
         """
         try:
-            search_object = {"q": query}
+            search_object = {}
 
+            if query is not None:
+                search_object["q"] = query
             if search_str is not None:
                 search_object["search"] = search_str
             if group_by is not None:
