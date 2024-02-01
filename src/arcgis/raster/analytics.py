@@ -1743,11 +1743,7 @@ def summarize_raster_within(
                                              - VARIETY: Calculates the variety of all cells in the value raster that belong to \
                                              the same zone as the output cell.
 
-                                             If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
-                                             for MAJORITY, MEDIAN, MEAN, AND VARIETY cannot be computed.
-
-                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT
-                                             statistic types are available in ArcGIS Enterprise 11.3 and higher.
+                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     ignore_missing_values                    Optional bool, If you choose to ignore missing values, only the cells that 
                                              have a value in the layer to be summarized will be
@@ -9006,13 +9002,7 @@ def zonal_statistics_as_table(
                                              perform statistical calculations for all the cells in that zone; \
                                              therefore, the entire zone will receive the NoData value on the output raster.
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
-                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
-                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
-                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
-
-                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
-                                             RANGE, STD, and SUM.
+    statistic_type                           Optional string. Statistic type to be calculated. Default is ALL. 
 
                                              - ALL - All of the statistics will be calculated. \
                                              This is the default.
