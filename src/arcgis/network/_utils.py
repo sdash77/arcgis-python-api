@@ -89,7 +89,7 @@ def publish_routing_services(
     solver_types: list[SolverType] | SolverType = SolverType.ALL,
     config: str = None,
     gis: _arcgis_gis.GIS | None = None,
-) -> dict:
+) -> _arcgis.geoprocessing._job.GPJob:
     """
     ======================================  ==========================================================================================================================================
     **Parameter**                            **Description**
@@ -111,7 +111,19 @@ def publish_routing_services(
     gis                                     Optional GIS. The GIS object where the dataset will be hosted at.  If `None` is provided, the datastore's GIS will be used.
     ======================================  ==========================================================================================================================================
 
-    :returns: Future
+    .. code-block:: python
+
+        # Usage Example
+        >>> job = publish_routing_services(datastore=gis.content.get("05cb079948f241a799651b3ac0401309"),
+                                           path="sde.networkt.DgoStreets/sde.networkt.NORTHAMERICA_ND",
+                                           config=config_file,
+                                           solver_types=SolverType.ROUTE,
+                                           server_id=gis.servers['servers'][0]['id'],)
+        >>> type(job)
+        <:class:`~arcgis.geoprocessing._job.GPJob>
+
+
+    :returns: GPJob
     """
 
     if gis is None:
@@ -143,7 +155,14 @@ def publish_routing_services(
     solver_types: str = json.dumps(list(sts))
 
     toolbox = _get_network_publishing_toolbox(gis=gis, server_id=server_id)
-    if config and os.path.isfile(config):
+    if config and os.path.isfile(config) and gis._is_kubernetes:
+        um = gis.admin.uploads
+        status, data = um.upload(config)
+        if status:
+            config: dict = {"itemID": data["item"]["itemID"]}
+        else:
+            config = ""
+    elif config and os.path.isfile(config):
         base_url: str = _get_network_publishing_url(gis=gis, server_id=server_id)
         uploads = Uploads(url=f"{base_url}/uploads", gis=gis)
         upload = uploads.upload(config)
