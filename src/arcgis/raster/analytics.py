@@ -1694,12 +1694,7 @@ def summarize_raster_within(
 
                                              Default: "Value"
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string - statistic to calculate.
-                                             You can calculate statistics of any numerical attribute of the points, lines, or areas within the input area
-                                             layer. 
-                                             
-                                             statistic_type can be one of the following:
-                                             ['MEAN', 'MAJORITY', 'MAXIMUM', 'MEDIAN', 'MINIMUM', 'MINORITY', 'RANGE', 'STD', 'SUM', 'VARIETY', 'PERCENTILE']
+    statistic_type                           Optional string - Statistic type to be calculated. Default is MEAN.
 
                                              - MEAN: Calculates the average of all cells in the value raster that belongs to \
                                              the same zone as the output cell. This is the default.
@@ -1707,46 +1702,46 @@ def summarize_raster_within(
                                              - MAJORITY: Determines the majority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
+                                             - MAJORITY_COUNT: Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT: Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
                                              - MAXIMUM: Determines the largest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - MEDIAN: Finds the median value of all cells in the value raster that belongs to \
+                                             - MEDIAN: Calculates the median value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - MINIMUM: Finds the smallest value of all cells in the value raster that belongs to \
+                                             - MINIMUM: Determines the smallest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
                                              - MINORITY: Determines the minority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - RANGE: Finds the range of all cells in the value that belongs to \
-                                             the same zone as the output zone.
+                                             - MINORITY_COUNT: Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - SUM: Adds the total value of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
+                                             - MINORITY_PERCENT: Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - STD: Finds the standard deviation of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
-
-                                             - VARIETY: Finds the variety of all cells in the value raster that belong to \
-                                             the same zone as the output cell.
-
-                                             - PERCENTILE: Finds a percentile of all cells in the value raster that \
+                                             - PERCENTILE: Calculates a percentile of all cells in the value raster that \
                                              belong to the same zone as the output cell. The 90th percentile \
                                              is calculated by default. You can specify other values (from 0 to 100) \
                                              using the percentile_value parameter.
 
-                                             - MAJORITY_COUNT: Finds the frequency of all cells that contain the majority \
-                                             value in the value raster that belong to the same zone as the output cell.
+                                             - RANGE: Calculates the range of all cells in the value that belongs to \
+                                             the same zone as the output zone.
 
-                                             - MAJORITY_PERCENT: Finds the percentage of cells that contain the majority value in \
-                                             the value raster that belong to the same zone as the output cell.
+                                             - SUM: Calculates the total value of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
 
-                                             - MINORITY_COUNT: Finds the frequency of all cells that contain the minority value in \
-                                             the value raster that belong to the same zone as the output cell.
+                                             - STD: Calculates the standard deviation of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
 
-                                             - MINORITY_PERCENT: Finds the percentage of cells that contain the minority value in \
-                                             the value raster that belong to the same zone as the output cell.
+                                             - VARIETY: Calculates the variety of all cells in the value raster that belong to \
+                                             the same zone as the output cell.
 
                                              If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
                                              for MAJORITY, MEDIAN, MEAN, AND VARIETY cannot be computed.
@@ -9028,10 +9023,16 @@ def zonal_statistics_as_table(
                                              - MAJORITY - Determines the value that occurs most often of all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
+                                             - MAJORITY_COUNT - Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT - Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
                                              - MAXIMUM - Determines the largest value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
-                                             - MEDIAN - Determines the median value of all cells in the raster layer \
+                                             - MEDIAN - Calculates the median value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
                                              - MINIMUM - Determines the smallest value of all cells in the raster \
@@ -9040,6 +9041,12 @@ def zonal_statistics_as_table(
                                              - MINORITY - Determines the value that occurs least often of all cells in \
                                              the raster layer to be summarized that belong to the same zone as the \
                                              output cell.
+
+                                             - MINORITY_COUNT - Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
+                                             - MINORITY_PERCENT - Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
                                              - PERCENTILE - Calculates a percentile of all cells in the value raster \
                                              that belong to the same zone as the output cell. The 90th percentile is calculated by default. \
@@ -9065,21 +9072,9 @@ def zonal_statistics_as_table(
 
                                              - MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
 
-                                             - MAJORITY_COUNT - Calculates the frequency of all cells that contain the majority \
-                                             value in the value raster that belong to the same zone as the output cell.
-
-                                             - MAJORITY_PERCENT - Calculates the percentage of cells that contain the majority value in \
-                                             the value raster that belong to the same zone as the output cell.
-
-                                             - MINORITY_COUNT - Calculates the frequency of all cells that contain the minority value in \
-                                             the value raster that belong to the same zone as the output cell.
-
-                                             - MINORITY_PERCENT - Calculates the percentage of cells that contain the minority value in \
-                                             the value raster that belong to the same zone as the output cell.
-
                                              - MAJORITY_VALUE_COUNT_PERCENT - Calculates the majority value, count, and percentage statistics.
 
-                                             - MINORITY_VALUE_COUNT_PERCENT - Calculates the minority value, count, and percentage statistics
+                                             - MINORITY_VALUE_COUNT_PERCENT - Calculates the minority value, count, and percentage statistics.
 
                                              MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT \
                                              statistic types are available in ArcGIS Enterprise 11.3 and higher.
