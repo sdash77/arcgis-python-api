@@ -6404,17 +6404,16 @@ def _share_item_with_groups(item, sharing, group_mapping):
         if "access" in item and item["access"] is not None:
             everyone = item["access"] == "public"
             org = item["access"] == "org"
-        
+
         if org and not everyone:
             sharing_level = SharingLevel.ORG
         elif not org and not everyone:
             sharing_level = SharingLevel.PRIVATE
         elif not org and everyone:
             sharing_level = SharingLevel.EVERYONE
-        
+
         item.sharing.sharing_level = sharing_level
         item.sharing._share(groups=groups)
-        
 
 
 def _wgs84_envelope(envelope):
