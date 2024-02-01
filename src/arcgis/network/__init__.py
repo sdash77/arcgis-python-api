@@ -13,7 +13,7 @@ from ._layer import (
     NAJob,
     ODCostMatrixLayer,
 )
-from ._utils import publish_routing_services
+from ._utils import publish_routing_services, SolverType
 from arcgis.auth.tools import LazyLoader
 
 analysis = LazyLoader("arcgis.network.analysis")
