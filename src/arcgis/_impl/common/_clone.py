@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 from typing import Tuple
 import concurrent.futures
 from arcgis import gis
+from arcgis.gis._impl._content_manager import SharingLevel
 from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
@@ -6403,7 +6404,16 @@ def _share_item_with_groups(item, sharing, group_mapping):
         if "access" in item and item["access"] is not None:
             everyone = item["access"] == "public"
             org = item["access"] == "org"
-        item.share(everyone, org, ",".join(groups))
+
+        if org and not everyone:
+            sharing_level = SharingLevel.ORG
+        elif not org and not everyone:
+            sharing_level = SharingLevel.PRIVATE
+        elif not org and everyone:
+            sharing_level = SharingLevel.EVERYONE
+
+        item.sharing.sharing_level = sharing_level
+        item.sharing._share(groups=groups)
 
 
 def _wgs84_envelope(envelope):
