@@ -363,8 +363,8 @@ class Survey:
     ) -> str:
         """
         The `generate_report` method allows users to create Microsoft Word and PDF reports
-        from a survey using a report template. Reports are saved as an :class:`~arcgis.gis.Item` in an ArcGIS
-        content folder or saved locally on disk. For additional information on parameters,
+        for survey results based on a reporting template. Reports are saved as an :class:`~arcgis.gis.Item`
+        in an ArcGIS content folder or saved locally on disk. For additional information on parameters,
         see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`.
 
         .. note::
@@ -375,6 +375,9 @@ class Survey:
 
         .. note::
             To save to disk, do not specify a `folder_id` argument.
+
+        See `Get Started with Survey123 Reports <https://www.esri.com/arcgis-blog/products/survey123/sharing-collaboration/get-started-with-survey123-reports/>`_
+        for further information.
 
         ================  ===============================================================
         **Parameter**      **Description**

@@ -3531,6 +3531,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
         -----------------------------------     ---------------------------------------------------------
         future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        -----------------------------------     ---------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For extract_data, there are two settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+
+                                                .. code-block:: python
+
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857}}
         ===================================     =========================================================
 
         :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
