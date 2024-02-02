@@ -973,7 +973,7 @@ class OMJob(GPJob):
                         mission_json["items"].update({key: {}})
 
             itemid = None
-            if self._item:                
+            if self._item:
                 item_props = json.loads(self._item)
                 if "serviceProperties" in item_props.keys():
                     if "itemProperties" in item_props.keys():
