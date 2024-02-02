@@ -269,10 +269,7 @@ def _init_schema(
         {
             "title": f"{survey._si.title}_form",
             "typeKeywords": f"ArcGIS Server,Data,Feature Access,Feature Service,Service,Singlelayer,Hosted Service,View Service,FieldworkerView,{survey._si.id},Survey123,Survey123 Hub",
-        },
-        thumbnail=os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "assets", "thumbnail.png"
-        ),
+        }
     )
     form_view_definition = {"layers": [], "tables": []}
     for layer in survey._ssi.layers:
