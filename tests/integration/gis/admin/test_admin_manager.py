@@ -1,4 +1,8 @@
 import os
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 import pandas as pd
 import unittest
 from arcgis.apps.tracker import LocationTrackingManager
@@ -25,15 +29,18 @@ from arcgis._impl.common._isd import InsensitiveDict
 from datetime import datetime
 from utils.decorators import profiles, integration_test
 
+
 @profiles.admin_enterprise_and_agol
-@integration_test
+# @integration_test
 class TestAdminManager(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         if self.gis._is_agol:
             self.admin = AGOLAdminManager(gis=self.gis)
         else:
-            self.admin = PortalAdminManager(url=f"{self.gis.url}/sharing/rest/", gis=self.gis)
+            self.admin = PortalAdminManager(
+                url=f"{self.gis.url}/sharing/rest/", gis=self.gis
+            )
 
     def test_properties_are_instances_of_expected_type(self):
         dict_or_insensitive = (dict, InsensitiveDict)
@@ -41,7 +48,9 @@ class TestAdminManager(unittest.TestCase):
         assert isinstance(self.admin.collaborations, CollaborationManager)
         assert isinstance(self.admin.idp, IdentityProviderManager)
         assert isinstance(self.admin.license, LicenseManager)
-        assert isinstance(self.admin.location_tracking, LocationTrackingManager)
+        assert isinstance(
+            self.admin.location_tracking, LocationTrackingManager
+        )
         assert isinstance(self.admin.metadata, MetadataManager)
         assert isinstance(self.admin.password_policy, PasswordPolicy)
         assert isinstance(self.admin.social_providers, SocialProviders)
@@ -60,12 +69,13 @@ class TestAdminManager(unittest.TestCase):
             assert self.admin.mode
             assert isinstance(self.admin.security, Security)
             assert isinstance(self.admin.servers, ServerManager)
-            assert isinstance(self.admin.servers.properties, dict_or_insensitive)
+            assert isinstance(
+                self.admin.servers.properties, dict_or_insensitive
+            )
             assert self.admin.servers.properties
             assert isinstance(self.admin.site, Site)
             assert isinstance(self.admin.system, System)
             assert isinstance(self.admin.webhooks, WebhookManager)
-        
 
     def test_set_ux_program(self):
         """
@@ -142,6 +152,14 @@ class TestAdminManager(unittest.TestCase):
         date_str = '2023-02-01'
         date_format = '%Y-%m-%d'
         date_obj = datetime.strptime(date_str, date_format)
+        from arcgis.gis import ItemTypeEnum
+
+        [
+            item.delete()
+            for item in self.gis.admin.content(
+                ItemTypeEnum.ADMINISTRATIVE_REPORT
+            )
+        ]
         for report in reports:
             with self.subTest(report):
                 try:
