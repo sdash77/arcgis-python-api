@@ -196,6 +196,8 @@ class Mission:
                     item_info = mission_json["items"][key]
                     if isinstance(item_info, dict) and "itemId" in item_info.keys():
                         item_object = self._gis.content.get(item_info["itemId"])
+                        if item_object is None:
+                            return False
                         deleted = item_object.delete()
                         if deleted:
                             mission_json["items"].update({key: {}})
