@@ -4,6 +4,7 @@ Allows for requests authentication to be chained.
 Inspired by: https://github.com/Colin-b/requests_auth
 
 """
+
 from requests.auth import AuthBase
 
 

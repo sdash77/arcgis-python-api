@@ -29,7 +29,6 @@ except Exception as e:
 
 
 class WNet_cGAN(ArcGISModel):
-
     """
     Creates a model object which generates images of type C from type A and type B.
 
