@@ -1191,7 +1191,7 @@ class KnowledgeGraph:
 
         results_dict = dec.get_results()
         return results_dict
-    
+
     def constraint_rule_adds(self, rules: list[dict[str, Any]]) -> dict:
         """
         Adds constraint rules for entities & relationships to the data model.
@@ -1232,10 +1232,15 @@ class KnowledgeGraph:
         :return: A `dict` showing the results of adding the rule(s).
 
         """
-    
+
         self._validate_import()
         split_url = self._url.split("rest")
-        url = split_url[0] + "rest/admin" + split_url[1] + "/dataModel/constraintRules/add"
+        url = (
+            split_url[0]
+            + "rest/admin"
+            + split_url[1]
+            + "/dataModel/constraintRules/add"
+        )
         params = {
             "f": "pbf",
             "token": self._gis._con.token,
@@ -1250,7 +1255,7 @@ class KnowledgeGraph:
         error = enc_result.error
         if error.error_code != 0:
             raise Exception(error.error_message)
-        
+
         session = self._gis._con._session
         response = session.post(
             url=url,
@@ -1259,14 +1264,14 @@ class KnowledgeGraph:
             stream=True,
             headers=headers,
         )
-        
+
         response_content = response.content
         dec = _kgparser.GraphAddConstraintRulesDecoder()
         dec.decode(response_content)
 
         results_dict = dec.get_results()
         return results_dict
-    
+
     def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
         """
         Deletes existing constraint rules for entities & relationships from the data model.
@@ -1289,7 +1294,12 @@ class KnowledgeGraph:
         """
         self._validate_import()
         split_url = self._url.split("rest")
-        url = split_url[0] + "rest/admin" + split_url[1] + "/dataModel/constraintRules/delete"
+        url = (
+            split_url[0]
+            + "rest/admin"
+            + split_url[1]
+            + "/dataModel/constraintRules/delete"
+        )
         params = {
             "f": "pbf",
             "token": self._gis._con.token,
@@ -1303,7 +1313,7 @@ class KnowledgeGraph:
         error = enc_result.error
         if error.error_code != 0:
             raise Exception(error.error_message)
-        
+
         session = self._gis._con._session
         response = session.post(
             url=url,
@@ -1312,7 +1322,7 @@ class KnowledgeGraph:
             stream=True,
             headers=headers,
         )
-        
+
         response_content = response.content
         dec = _kgparser.GraphDeleteConstraintRulesDecoder()
         dec.decode(response_content)
