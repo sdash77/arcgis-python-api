@@ -1,10 +1,10 @@
-# import sys
+import sys
 
-# sys.path.insert(0, r"C:\workspace\geosaurus\src")
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import Briefing, Themes
-from arcgis.apps.storymap import Image
+from arcgis.apps.storymap import Image, SlideLayout, SlideSubLayout, Text
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
@@ -70,12 +70,75 @@ class TestStoryMap(unittest.TestCase):
                 img = Image(
                     "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
                 )
-                block.add_content(img)
+                block.add(img)
                 assert block.content
-                assert isinstance(block.content, Image)
+                assert isinstance(block.content, list)
+                assert isinstance(block.content[0], Image)
 
                 assert briefing.delete_briefing()
+        
+    def test_text_attachments(self):
+        for profile in profiles:
+            # establish gis connection
+            gis = GIS(profile=profile, verify_cert=False)
+            briefing = Briefing()
 
+    def test_slide_layouts(self):
+        for profile in profiles:
+            with self.subTest(msg=profile):
+                # establish gis connection
+                gis = GIS(profile=profile, verify_cert=False)
+                briefing = Briefing()
+
+                # assert some properties
+                assert briefing.slides
+                assert len(briefing.slides) == 1
+
+                # single layout
+                single_slide = briefing.add(SlideLayout.SINGLE)
+                assert single_slide.layout == SlideLayout.SINGLE.value
+                assert len(single_slide.blocks) == 1
+
+                # single slide without title
+                single_no_title_slide = briefing.add(SlideLayout.TITLELESSSINGLE)
+                single_no_title_slide.blocks[0].add_content(Text(content="Hello World"))
+                assert single_no_title_slide.layout == SlideLayout.TITLELESSSINGLE.value
+                assert len(single_no_title_slide.blocks) == 1
+
+                # double slide
+                double_slide = briefing.add(SlideLayout.DOUBLE, SlideSubLayout.THREE_SEVEN)
+                double_slide.blocks[0].add_content(Text(content="Hello World"))
+                assert double_slide.layout == SlideLayout.DOUBLE.value
+                assert double_slide.sublayout == SlideSubLayout.THREE_SEVEN.value
+                assert len(double_slide.blocks) == 2
+
+                # double slide without title
+                double_no_title_slide = briefing.add(SlideLayout.TITLELESSDOUBLE, SlideSubLayout.SEVEN_THREE)
+                double_no_title_slide.blocks[0].add_content(Text(content="Hello World"))
+                assert double_no_title_slide.layout == SlideLayout.TITLELESSDOUBLE.value
+                assert double_no_title_slide.sublayout == SlideSubLayout.SEVEN_THREE.value
+                assert len(double_no_title_slide.blocks) == 2
+
+                # change the sublayout
+                double_no_title_slide.sublayout = SlideSubLayout.THREE_SEVEN
+                assert double_no_title_slide.sublayout == SlideSubLayout.THREE_SEVEN.value
+
+                # media only
+                media_only_slide = briefing.add(SlideLayout.FULL)
+                assert media_only_slide.layout == SlideLayout.FULL.value
+                assert len(media_only_slide.blocks) == 1
+
+                # section single
+                section_single = briefing.add(SlideLayout.SECTIONSINGLE)
+                assert section_single.layout == SlideLayout.SECTIONSINGLE.value
+
+                # section double
+                section_double = briefing.add(SlideLayout.SECTIONDOUBLE, section_position="end")
+                assert section_double.layout == SlideLayout.SECTIONDOUBLE.value
+                assert section_double.section_position == "end"
+                assert len(section_double.blocks) == 1
+
+                assert briefing.delete_briefing()
 
 if __name__ == "__main__":
     unittest.main()

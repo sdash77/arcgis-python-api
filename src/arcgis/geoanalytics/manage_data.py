@@ -4,6 +4,7 @@ These tools are used for the day-to-day management of geographic and tabular dat
 
 copy_to_data_store copies data to your ArcGIS Data Store and creates a layer in your web GIS.
 """
+
 from __future__ import annotations
 from datetime import datetime
 import json as _json

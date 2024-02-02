@@ -1,6 +1,7 @@
 """
 StoryMap Implementation
 """
+
 from .storymap import JournalStoryMap
 from .story import StoryMap, Themes
 from .briefing import Briefing
@@ -23,6 +24,8 @@ from .story_content import (
     BriefingSlide,
     Code,
     Language,
+    SlideLayout,
+    SlideSubLayout,
 )
 
 __all__ = ["JournalStoryMap", "StoryMap", "Briefing"]

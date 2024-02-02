@@ -674,7 +674,7 @@ class UX(object):
             }
             im_item = self._gis.content.add(item_props, logo)
             # share to everyone
-            im_item.share(everyone=True)
+            im_item.sharing.sharing_level = "EVERYONE"
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
@@ -1591,9 +1591,9 @@ class HomePageSettings(object):
                 "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
                 "show_text": hp["footer"]["showCopy"],
                 "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
-                "custom_color": hp["footer"]["bgCustom"]
-                if "bgCustom" in hp["footer"]
-                else "",
+                "custom_color": (
+                    hp["footer"]["bgCustom"] if "bgCustom" in hp["footer"] else ""
+                ),
             }
             return footer
 
@@ -2020,9 +2020,11 @@ class MapSettings(object):
         if share_public:
             self._gis.update_properties({"canShareBingPublic": share_public})
         bing_dict = {
-            "key": self._gis.properties["bingKey"]
-            if "bingKey" in self._gis.properties
-            else None,
+            "key": (
+                self._gis.properties["bingKey"]
+                if "bingKey" in self._gis.properties
+                else None
+            ),
             "public": self._gis.properties["canShareBingPublic"],
         }
         return bing_dict
@@ -2326,9 +2328,9 @@ class SecuritySettings(object):
             "text": text if text else current_info_banner["text"],
             "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
             "fontColor": font_color if font_color else current_info_banner["fontColor"],
-            "enabled": enabled
-            if enabled is not None
-            else current_info_banner["enabled"],
+            "enabled": (
+                enabled if enabled is not None else current_info_banner["enabled"]
+            ),
         }
 
         # get all the org settings

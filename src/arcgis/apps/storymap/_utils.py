@@ -1,4 +1,5 @@
 from __future__ import annotations
+import tempfile
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -11,6 +12,7 @@ storymap = LazyLoader("arcgis.apps.storymap.story")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
+sharing = LazyLoader("gis._impl._content_manager_sharing.api")
 
 
 # ----------------------------------------------------------------------
@@ -90,9 +92,9 @@ def cover(
             "title": orig_data["title"] if title is None else title,
             "summary": orig_data["summary"] if summary is None else summary,
             "byline": orig_data["byline"] if by_line is None else by_line,
-            "titlePanelPosition": orig_data["titlePanelPosition"]
-            if by_line is None
-            else "start",
+            "titlePanelPosition": (
+                orig_data["titlePanelPosition"] if by_line is None else "start"
+            ),
         },
     }
 
@@ -108,10 +110,7 @@ def cover(
             )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media._type == "image":
-                media._add_image(story=story)
-            else:
-                media._add_video(story=story)
+            media._add_to_story(story=story)
         story._properties["nodes"][story_cover_node]["children"] = [media.node]
     else:
         # get original image
@@ -179,8 +178,18 @@ def save(
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-    json_str = json.dumps(story._properties, ensure_ascii=False)
-    _add_resource(story, resource_name=draft, text=json_str, access="private")
+
+    # Add a new empty json draft
+    _add_resource(story, resource_name=draft, text="{}", access="private")
+
+    # Create a temporary file to write the story._properties
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
+        json.dump(story._properties, temp, ensure_ascii=False)
+        temp.seek(0)
+
+        # update the draft with the story._properties
+        story._item.resources.update(file=temp.name, file_name=draft)
+
     # get the story map version from endpoint
     sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
     # Find type keywords to use based on whether to publish or not
@@ -256,11 +265,11 @@ def save(
         story._item.update(item_properties=p)
 
         if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
+            story._item.sharing.sharing_level = "PRIVATE"
         elif sharing == "org":
-            story._item.share(org=True)
+            story._item.sharing.sharing_level = "ORGANIZATION"
         elif sharing == "public":
-            story._item.share(everyone=True)
+            story._item.sharing.sharing_level = "EVERYONE"
 
         if (
             story._gis._con._session.auth
@@ -650,12 +659,13 @@ def _add_child(story, node_id, position=None):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
+        last = len(story._properties["nodes"][principal_id]["children"])
     else:
         # for storymap the children are the root
         principal_id = root_id
+        # find the last position. If only one node then the last position is 1
+        last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
-    # find the last position. If only one node then the last position is 1
-    last = len(story._properties["nodes"][principal_id]["children"]) - 1
     if last == 0:
         # briefings only have cover when you start
         last = 1

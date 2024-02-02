@@ -151,7 +151,6 @@ jobs:
         run: |
           conda install -c main nose2 --yes
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          conda install -c esri "pandas>=2.0,<2.1" # See https://github.com/ArcGIS/geosaurus/issues/10966
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes

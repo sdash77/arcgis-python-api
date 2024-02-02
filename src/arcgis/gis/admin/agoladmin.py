@@ -1,6 +1,7 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
 from __future__ import annotations
 import json
 import tempfile
@@ -97,9 +98,10 @@ class AGOLAdminManager(object):
     @property
     def partnered_collaboration(self) -> PartneredCollabManager:
         """
-        returns a manager to work with partnered collaboration
+        Returns a manager to work with partnered collaborations
 
-        :return: PartneredCollabManager
+        :return:
+            :class:`~arcgis.gis.admin.PartneredCollabManager`
         """
         if self._collabmgr is None:
             url: str = self._gis.resturl + "portal/self/tustedOrgs"
@@ -207,7 +209,9 @@ class AGOLAdminManager(object):
 
         if item_type:
             params["types"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()
