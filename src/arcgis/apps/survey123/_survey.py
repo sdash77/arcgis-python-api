@@ -15,7 +15,7 @@ import requests
 import arcgis
 import shutil
 import zipfile
-from .publish_functions._publish_functions import (
+from ._publish_functions import (
     _get_version,
     _xform2webform,
     _xls2xform,
