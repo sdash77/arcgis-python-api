@@ -1191,3 +1191,131 @@ class KnowledgeGraph:
 
         results_dict = dec.get_results()
         return results_dict
+    
+    def constraint_rule_adds(self, rules: list[dict[str, Any]]) -> dict:
+        """
+        Adds constraint rules for entities & relationships to the data model.
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        rules               Required list of dicts. The dictionaries defining the
+                            constraint rules to be added. See below for an example of the
+                            structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Create a constraint rule and add it to the Knowledge Graph's data model.
+            person = {"set": ["Person"]}
+
+            works_at = {"set": ["WorksAt"]}
+
+            company = {"set_complement": ["Company"]}
+
+            relationship_exclusion_rule = {
+                "origin_entity_types": person,
+                "relationship_types": works_at,
+                "destination_entity_types": company
+            }
+
+            constraint_rule = {
+                "name": "PersonCS",
+                "alias": "officespace",
+                "disabled": False,
+                "relationship_exclusion_rule": relationship_exclusion_rule
+            }
+
+            knowledge_graph.constraint_rule_adds([constraint_rule])
+
+
+        :return: A `dict` showing the results of adding the rule(s).
+
+        """
+    
+        self._validate_import()
+        split_url = self._url.split("rest")
+        url = split_url[0] + "rest/admin" + split_url[1] + "/dataModel/constraintRules/add"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphAddConstraintRulesEncoder()
+        for rule in rules:
+            enc.add_constraint_rule(rule)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+        
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+        
+        response_content = response.content
+        dec = _kgparser.GraphAddConstraintRulesDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
+    
+    def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
+        """
+        Deletes existing constraint rules for entities & relationships from the data model.
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        rule_names          Required list of strings. The names of the constraint rules to
+                            be deleted, as defined in a rule's 'name' attribute.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a constraint rule from the Knowledge Graph's data model.
+            knowledge_graph.constraint_rule_deletes(["constraint_rule_1"])
+
+
+        :return: A `dict` showing the results of deleting the rule(s).
+
+        """
+        self._validate_import()
+        split_url = self._url.split("rest")
+        url = split_url[0] + "rest/admin" + split_url[1] + "/dataModel/constraintRules/delete"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphDeleteConstraintRulesEncoder()
+        enc.add_constraint_rule_names(rule_names)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+        
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+        
+        response_content = response.content
+        dec = _kgparser.GraphDeleteConstraintRulesDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
