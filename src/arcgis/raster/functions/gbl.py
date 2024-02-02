@@ -832,10 +832,16 @@ def zonal_statistics(
                                         - MAJORITY-Determines the value that occurs most often of all pixels in the \
                                         Value Raster that belong to the same zone as the output pixel.
 
+                                        - MAJORITY_COUNT-Calculates the frequency of all cells that contain the majority \
+                                        value in the value raster that belong to the same zone as the output cell.
+
+                                        - MAJORITY_PERCENT-Calculates the percentage of cells that contain the majority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
                                         - MAXIMUM-Determines the largest value of all pixels in the Value Raster \
                                         that belong to the same zone as the output pixel.
 
-                                        - MEDIAN-Determines the median value of all pixels in the Value Raster \
+                                        - MEDIAN-Calculates the median value of all pixels in the Value Raster \
                                         that belong to the same zone as the output pixel.
 
                                         - MINIMUM-Determines the smallest value of all pixels in the Value Raster \
@@ -843,6 +849,17 @@ def zonal_statistics(
 
                                         - MINORITY-Determines the value that occurs least often of all pixels in \
                                         the Value Raster that belong to the same zone as the output pixel.
+
+                                        - MINORITY_COUNT-Calculates the frequency of all cells that contain the minority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
+                                        - MINORITY_PERCENT-Calculates the percentage of cells that contain the minority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
+                                        - PERCENTILE-Calculates a percentile of all cells in the value raster that \
+                                        belong to the same zone as the output cell. The 90th percentile \
+                                        is calculated by default. You can specify other values (from 0 to 100) \
+                                        using the percentile_value parameter.
 
                                         - RANGE-Calculates the difference between the largest and smallest value \
                                         of all pixels in the Value Raster that belong to the same zone as the \
@@ -856,11 +873,6 @@ def zonal_statistics(
 
                                         - VARIETY-Calculates the number of unique values for all pixels in the \
                                         Value Raster that belong to the same zone as the output pixel.
-
-                                        - PERCENTILE -Calculates a percentile of all cells in the value raster that \
-                                        belong to the same zone as the output cell. The 90th percentile \
-                                        is calculated by default. You can specify other values (from 0 to 100) \
-                                        using the percentile_value parameter.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     process_as_multidimensional         Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -938,6 +950,10 @@ def zonal_statistics(
         "SUM",
         "VARIETY",
         "PERCENTILE",
+        "MAJORITY_COUNT",
+        "MAJORITY_PERCENT",
+        "MINORITY_COUNT",
+        "MINORITY_PERCENT",
     ]
     if statistics_type is not None:
         if statistics_type.upper() not in statistics_type_list:

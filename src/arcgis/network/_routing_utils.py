@@ -54,6 +54,7 @@ def get_tool_info(
     service_name: str = "asyncRoute",
     tool_name: str = "FindRoutes",
     gis: Optional[GIS] = None,
+    include_network_source_info: bool = False,
 ):
     """
 
@@ -68,7 +69,10 @@ def get_tool_info(
        tool_name: Tool Name (str). Required parameter.  Specify the tool name in the geoprocessing service. The parameter value should be a valid tool name in the geoprocessing service specified by the serviceName parameter. The default value is FindRoutes.
           Choice list:['EditVehicleRoutingProblem', 'FindClosestFacilities', 'FindRoutes', 'GenerateOriginDestinationCostMatrix', 'GenerateServiceAreas', 'SolveLocationAllocation', 'SolveVehicleRoutingProblem']
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+       include_network_source_info: Specify whether the information of all the source feature classes that participate in the network dataset will be included. The default value is False.
+
 
 
     Returns:
@@ -88,6 +92,7 @@ def get_tool_info(
         "tool_name": tool_name,
         "gis": gis,
         "future": False,
+        "include_network_source_info": include_network_source_info,
     }
 
     return tbx.get_tool_info(**kwargs)
