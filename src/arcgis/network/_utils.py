@@ -103,7 +103,7 @@ def publish_routing_services(
     folder                                  Optional String. The name for the server folder that will contain all the routing services created by this service. The service returns
                                             an error if the folder contains existing services. The default value is `Routing`
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    solver_types                            Optional SolverType. The list of Network Analyst solvers to be included in the services. The default is to include just the routing.
+    solver_types                            Optional SolverType. The list of Network Analyst solvers to be included in the services. The default is to include all the solvers.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     config                                  Optional str. The file containing additional configuration for the services. If no value is specified, the system default configuration
                                             file is used.  For a full list of config values and explanation, please reach out to support@esri.com.
@@ -115,10 +115,10 @@ def publish_routing_services(
 
         # Usage Example
         >>> job = publish_routing_services(datastore=gis.content.get("05cb079948f241a799651b3ac0401309"),
-                                           path="sde.networkt.DgoStreets/sde.networkt.NORTHAMERICA_ND",
+                                           path="/streets/NorthAmerica.gdb/Routing/Routing_ND",
                                            config=config_file,
-                                           solver_types=SolverType.ROUTE,
-                                           server_id=gis.servers['servers'][0]['id'],)
+                                           solver_types=[SolverType.ROUTE, SolverType.VEHICLEROUTINGPROBLEM],
+                                           server_id=gis.servers['servers'][0]['id'])
         >>> type(job)
         <:class:`~arcgis.geoprocessing._job.GPJob>
 
