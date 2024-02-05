@@ -2,7 +2,7 @@ import unittest
 from arcgis.auth import EsriPKCEAuth, EsriSession
 from arcgis.gis import GIS
 from utils.decorators import profiles
-from utils.logging import enable_verbose_logging
+from utils._logging import enable_verbose_logging
 
 enable_verbose_logging()
 
@@ -14,9 +14,16 @@ class TestPkceAuthHandler(unittest.TestCase):
         gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
         auth = EsriPKCEAuth(url, username, password)
-        with EsriSession(auth=auth, proxies=self.proxies, verify_cert=False) as session:
-            data = session.get(f"{url}/sharing/rest/portals/self?f=json").json()
-            assert data.get("user", {}).get("username", "").lower() == username.lower()
+        with EsriSession(
+            auth=auth, proxies=self.proxies, verify_cert=False
+        ) as session:
+            data = session.get(
+                f"{url}/sharing/rest/portals/self?f=json"
+            ).json()
+            assert (
+                data.get("user", {}).get("username", "").lower()
+                == username.lower()
+            )
 
     def test_gis(self):
         """tests the PKCE auth on AGOL using a GIS"""
