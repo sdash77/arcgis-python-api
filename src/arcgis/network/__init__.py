@@ -12,6 +12,8 @@ from ._layer import (
     RouteLayer,
     NAJob,
     ODCostMatrixLayer,
+    LocateSettings,
+    ToleranceUnits,
 )
 
 from arcgis.auth.tools import LazyLoader

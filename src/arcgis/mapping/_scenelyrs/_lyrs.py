@@ -37,7 +37,7 @@ class SceneLayerManager(_GISResource):
         server cache for the service.
         """
         if self._source_type == "Scene Layer Package":
-            url = self._url + "SceneServer/refresh"
+            url = self._url + "/refresh"
             params = {"f": "json"}
 
             res = self._con.post(url, params)
@@ -214,6 +214,7 @@ class SceneLayerManager(_GISResource):
             params = {
                 "f": "json",
                 "sourceItemId": None,
+                "serviceDefinition": {"capabilities": ["View", "Query"]},
             }
             if isinstance(item, str):
                 params["sourceItemId"] = item
@@ -237,7 +238,7 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required int or list of int. Comma seperated values indicating
+        layers                      Required int or list of int. Comma separated values indicating
                                     the id of the layers to rebuild in the cache.
 
                                     Ex: [0,1,2]

@@ -1,10 +1,11 @@
 import unittest
 from arcgis.gis.admin._dsmgr import DataStoreMetricsManager
 from utils.decorators import profiles, integration_test
-from utils.logging import enable_verbose_logging
+from utils._logging import enable_verbose_logging
 
 
 enable_verbose_logging()
+
 
 @profiles.admin_agol
 @integration_test
