@@ -467,9 +467,9 @@ class JobManager:
         end: Optional[str] = None,
         priority: Optional[str] = None,
         description: Optional[str] = None,
-        owner: Optional[str] = None,
-        group: Optional[str] = None,
-        assigned: Optional[str] = None,
+        owned_by: Optional[str] = None,
+        assigned_type: Optional[str] = None,
+        assigned_to: Optional[str] = None,
         complete: Optional[str] = None,
         notes: Optional[str] = None,
         parent: Optional[str] = None,
@@ -498,11 +498,12 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         description                 Optional string. Job Description
         -------------------         --------------------------------------------------------------------
-        owner                       Optional string. Job Owner
+        owned_by                    Optional string. Job Owner
         -------------------         --------------------------------------------------------------------
-        group                       Optional string Job Group
+        assigned_type               Optional string The Assignment type of the job to be created.
+                                    Type of assignment designated Values: "User" | "Group" | "Unassigned"
         -------------------         --------------------------------------------------------------------
-        assigned                    Optional string. Initial Job Assignee
+        assigned_to                 Optional string. Initial Job Assignee
         -------------------         --------------------------------------------------------------------
         complete                    Optional Integer Percentage Complete
         -------------------         --------------------------------------------------------------------
@@ -558,9 +559,9 @@ class JobManager:
             "dueDate": end,
             "priority": priority,
             "description": description,
-            "ownedBy": owner,
-            "assignedType": group,
-            "assignedTo": assigned,
+            "ownedBy": owned_by,
+            "assignedType": assigned_type,
+            "assignedTo": assigned_to,
             "percentComplete": complete,
             "notes": notes,
             "parentJob": parent,
@@ -2508,13 +2509,23 @@ class Job(object):
         step_id             Required String. Active Step ID
         ---------------     --------------------------------------------------------------------
         assigned_type       Required String. Type of assignment designated
-                            Values: "user" | "group" | "unassigned"
+                            Values: "User" | "Group" | "Unassigned"
         ---------------     --------------------------------------------------------------------
         assigned_to         Required String. User id to which the active step is assigned
         ===============     ====================================================================
 
         :return:
             success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a steps assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+            job.update_step(step_id='123456', assigned_type="User", assigned_to='my_user')
 
         """
 
