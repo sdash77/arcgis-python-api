@@ -756,7 +756,16 @@ class JobManager:
 
         .. code-block:: python
 
-            # Example Job Statistics Object:
+            # USAGE EXAMPLE
+
+            # create a Workflow Manager object from the workflow item
+            workflow_manager = WorkflowManager(wf_item)
+
+            user_query = "diagramId='99o2QTePTqq-BHRHK_Aeag' "
+            workflow_manager.jobs.statistics(query=user_query, group_by="assignedTo")
+
+
+            # Example returned Job Statistics Object:
 
             {
               "total": 2,
@@ -2354,53 +2363,33 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = (
-            self.notes
-        ) = (
-            self.diagram_id
-        ) = (
-            self.end_date
-        ) = (
-            self.due_date
-        ) = (
-            self.description
-        ) = (
-            self.started_date
-        ) = (
-            self.current_steps
-        ) = (
-            self.job_template_name
-        ) = (
-            self.job_template_id
-        ) = (
-            self.extended_properties
-        ) = (
-            self.holds
-        ) = (
-            self.diagram_name
-        ) = (
-            self.parent_job
-        ) = (
-            self.job_name
-        ) = (
-            self.diagram_version
-        ) = (
-            self.active_versions
-        ) = (
-            self.percent_complete
-        ) = (
-            self.priority
-        ) = (
-            self.job_id
-        ) = (
-            self.created_date
-        ) = (
-            self.created_by
-        ) = (
-            self.closed
-        ) = (
-            self.owned_by
-        ) = self.start_date = self._location = self.related_properties = None
+        self.job_status = None
+        self.notes = None
+        self.diagram_id = None
+        self.end_date = None
+        self.due_date = None
+        self.description = None
+        self.started_date = None
+        self.current_steps = None
+        self.job_template_name = None
+        self.job_template_id = None
+        self.extended_properties = None
+        self.holds = None
+        self.diagram_name = None
+        self.parent_job = None
+        self.job_name = None
+        self.diagram_version = None
+        self.active_versions = None
+        self.percent_complete = None
+        self.priority = None
+        self.job_id = None
+        self.created_date = None
+        self.created_by = None
+        self.closed = None
+        self.owned_by = None
+        self.start_date = None
+        self._location = None
+        self.related_properties = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
