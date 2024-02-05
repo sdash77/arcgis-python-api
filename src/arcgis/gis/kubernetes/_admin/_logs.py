@@ -1,14 +1,20 @@
 from __future__ import annotations
 import csv
+import json
+import logging
+import tempfile
+import datetime as _dt
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from typing import Dict, Any, Optional, List, Union
+
+_log = logging.getLogger()
 
 
 ########################################################################
 class LogManager(_BaseKube):
     """
-    Helper class for the management of logs by administrators.
+    Helper class for the management of Kubernetes logs by administrators.
 
     Logs are the transaction records written by the various components
     of ArcGIS Server.  You can query the logs, change various log settings,
@@ -132,6 +138,179 @@ class LogManager(_BaseKube):
             return self._con.get(url, params)
         except:
             return ""
+
+    # ----------------------------------------------------------------------
+    def export(
+        self,
+        query: str | None = None,
+        start_time: _dt.datetime | None = None,
+        end_time: _dt.datetime | None = None,
+        level: str = "WARNING",
+        log_code: str | None = None,
+        users: list[str] | None = None,
+        request_ids: str | None = None,
+        service_types: str | None = None,
+        source: str | None = None,
+        stack_traces: bool = False,
+        out_folder: str | None = None,
+    ) -> str:
+        """
+        The export operation exports organization logs based on either query
+        or search parameters. Using the query filter parameters, you can
+        aggregate and filter through logs for your deployment. Using the
+        search parameters, you can search for specific log records. Once
+        completed, a .zip file of the exported logs is uploaded to the
+        uploads directory, which can be downloaded from the URL provided
+        with the success response. If necessary, the export operation can
+        be invoked multiple times to acquire additional logs.
+
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        query                  Optional string. The search terms used to query your organization's
+                               logs. This parameter supports keywords (for example, completed) and
+                               phrases (for example, completed successfully).
+        ------------------     --------------------------------------------------------------------
+        start_time             Optional datetime. The oldest time to query logs against, formatted as
+                               either a timestamp (yyyy-mm-ddThh:mm:ss) or milliseconds from epoch.
+                               The default is the beginning of all recorded logs.
+        ------------------     --------------------------------------------------------------------
+        end_time               Optional datetime. The most recent time to query against, formatted as
+                               either a timestamp (yyyy-mm-ddThh:mm:ss) or milliseconds from epoch.
+                               The default is the current date.
+        ------------------     --------------------------------------------------------------------
+        level                  Optional string. Gets only the records with a log level at or more
+                               severe than the level declared here. Can be one of (in severity
+                               order): DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The
+                               default is WARNING.
+        ------------------     --------------------------------------------------------------------
+        log_code               Optional String. Specifies the log codes assigned to the logs. When
+                               specified, query will return logs associated with those codes.
+        ------------------     --------------------------------------------------------------------
+        users                  Optional list[str]. The username(s) of a user within the organization
+                               that can be used to further filter log results.
+
+                               example:
+                               >>> users = ["user1", "user2"]
+                               >>> logs.export(users=users)
+
+        ------------------     --------------------------------------------------------------------
+        request_ids            Optional String. An ID assigned to a specific server event.
+        ------------------     --------------------------------------------------------------------
+        service_types          Optional String. The service type of a service within the
+                               organization that can be used to further filter query results.
+
+                               Note: Currently, only MapServer, GPServer, and FeatureServer are the
+                                     only supported service types.
+        ------------------     --------------------------------------------------------------------
+        source                 Optional String. The source of logged events.
+        ------------------     --------------------------------------------------------------------
+        stack_traces           Optional Boolean. If `True` the stack trace is returned.
+        ------------------     --------------------------------------------------------------------
+        out_folder             Optional string. The save folder location.
+        ==================     ====================================================================
+
+        """
+
+        if out_folder is None:
+            out_folder: str = tempfile.gettempdir()
+        if (
+            level
+            and isinstance(level, str)
+            and level.upper()
+            in ["VERBOSE", "SEVERE", "WARNING", "INFO", "FINE", "DEBUG"]
+        ):
+            level = level.upper()
+        else:
+            level = ""
+            _log.warning("`level` is not a valid value, ignoring")
+        num: int = 10000
+        if isinstance(users, list):
+            users = ",".join(users)
+        elif users and not isinstance(users, str):
+            _log.warning("`users` is a string, accepting the value.")
+        elif users and not isinstance(users, (str, list)):
+            _log.warning("`users` is not a list[str] or string, ignoring the value.")
+            users = ""
+        if start_time and isinstance(start_time, _dt.datetime):
+            start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+        elif start_time:
+            _log.warning("Invalid `start_time`, please use a datetime object")
+        if end_time and isinstance(end_time, _dt.datetime):
+            end_time = end_time.strftime("%Y-%m-%dT%H:%M:%S")
+        elif end_time:
+            _log.warning("Invalid `end_time`, please use a datetime object")
+        url: str = f"{self._url}/export"
+        if num > 10000:
+            _log.warning(
+                "The maximum value is 10,000 records.  Adjusting value to 10,000."
+            )
+            num = 10000
+        params = {
+            "logLevel": level or "",
+            "startTime": start_time or "",
+            "endTime": end_time or "",
+            "logCode": log_code or "",
+            "users": users or "",
+            "requestIDs": request_ids or "",
+            "serviceTypes": service_types or "",
+            "source": source or "",
+            "searchQuery": query or "",
+            "sortBy": "bestMatch",
+            "sortOrder": "desc",
+            "num": num,
+            "stackTraces": json.dumps(stack_traces),
+            "f": "json",
+        }
+        resp = self._con.post(url, params)
+        status_url: str = resp.get("jobsUrl", None)
+        if status_url:
+            data: dict[str, Any] = self._status_url(status_url)
+            # download the result
+            if "result" in data and "URL" in data["result"]:
+                upload_url = data["result"]["URL"] + "/download"
+                return self._con.get(
+                    upload_url,
+                    params={
+                        "f": "json",
+                    },
+                    out_folder=out_folder,
+                )
+            else:
+                return data
+
+        else:
+            return resp
+
+    def _status_url(self, url) -> dict[str, Any]:
+        import time
+
+        resp = self._con.get(
+            url,
+            {
+                "f": "json",
+            },
+        )
+        i = 1
+        # 'CANCELLING',
+        while not resp.get("status", "FAILED") in [
+            "COMPLETED",
+            "FAILED",
+            "CANCELLED",
+            "TIME OUT",
+        ]:
+            time.sleep(i)
+            resp = self._con.get(
+                url,
+                {
+                    "f": "json",
+                },
+            )
+            i += 1
+            if i > 5:
+                i = 5
+        return resp
 
     # ----------------------------------------------------------------------
     def search(

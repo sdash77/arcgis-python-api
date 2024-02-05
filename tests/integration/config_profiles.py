@@ -52,6 +52,7 @@ def setup_profiles(
     ent_name="your_enterprise_profile",
     ent_admin_name="your_ent_admin_profile",
     kube_name="your_kubernetes_profile",
+    kube_admin_name="your_kubernetes_admin_profile",
     reset=False,
 ):
     """create profiles"""
@@ -128,6 +129,15 @@ def setup_profiles(
             password="geosaurus_automation123",
         )
         print(f"Created profile {kube_name}")
+    
+    if not kube_admin_name in updated_list:
+        pm.create(
+            kube_admin_name,
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusadmin",
+            password="geosaurus_automation123",
+        )
+        print(f"Created profile {kube_admin_name}")
 
     print(pm.get(online_name))
     print(pm.get(online_admin_name))

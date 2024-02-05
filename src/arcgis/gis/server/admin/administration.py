@@ -3,6 +3,7 @@
    through the Administration REST API
 
 """
+
 from __future__ import annotations
 from __future__ import absolute_import
 from .._common import BaseServer
@@ -241,7 +242,16 @@ class Server(BaseServer):
             config = self._uploads._service_configuration(uid)
             if folder or service_config:
                 if service_config and isinstance(service_config, dict):
-                    config.update(service_config)
+                    for key in service_config.keys():
+                        if key in config and isinstance(service_config[key], dict):
+                            config[key].update(service_config[key])
+                        elif (
+                            key in config
+                            and isinstance(service_config[key], dict) == False
+                        ):
+                            config[key] = service_config[key]
+                        elif not key in config:
+                            config[key] = service_config[key]
                 if "folderName" in config:
                     config["folderName"] = folder
                 res = service.publish_service_definition(

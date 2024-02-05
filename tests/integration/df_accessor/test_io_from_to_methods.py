@@ -12,6 +12,7 @@ from arcgis.geometry import Geometry
 from configparser import ConfigParser
 from pathlib import Path
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 
 ##--------------------------------------------------------------------------
 ##
@@ -37,7 +38,7 @@ from arcgis.features.geo._io.serviceops import (
 _conf_reader2 = ConfigParser()
 _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+qalab_base_path = QALAB_ROOT_PATH
 qalab_data_path = qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
 qalab_gax_datasets = (
     qalab_base_path + _conf_reader2["test_data"]["qalab_geoanalytics_datasets"]

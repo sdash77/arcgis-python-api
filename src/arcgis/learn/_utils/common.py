@@ -67,7 +67,9 @@ def read_image(path, resize_to: int = None, keep_raw=False):
         else:
             from osgeo import gdal
 
-            ds = gdal.Open(path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(path)
             if resize_to is None or keep_raw:
                 arr = ds.ReadAsArray()
             else:
@@ -174,7 +176,9 @@ class ArcGISMSImage(Image):
             """
             raise Exception(message)
         path = str(os.path.abspath(path))
-        x = gdal.Open(path).ReadAsArray()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
@@ -200,7 +204,9 @@ class ArcGISMSImage(Image):
         try:
             from osgeo import gdal
 
-            x = gdal.Open(path).ReadAsArray()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                x = gdal.Open(path).ReadAsArray()
             # Ignore Alpha Channel
             if x.shape[0] == 4 and imagery_type == "RGB":
                 x = x[:3]

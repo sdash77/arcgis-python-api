@@ -733,24 +733,26 @@ class TimeSeriesModel(ArcGISModel):
 
         if match_field_names is None:
             match_field_names = {}
+        fields_needed = (
+            self._data._categorical_variables
+            + self._data._continuous_variables
+            + self._data._dependent_variable
+        )
 
         (
             orig_dataframe,
             single_swap_pred,
             number_of_predictions,
         ) = self._infer_number_of_pred(
-            orig_dataframe, number_of_predictions, match_field_names
+            orig_dataframe, number_of_predictions, match_field_names, fields_needed
         )
 
         dataframe = orig_dataframe.copy()
-        fields_needed = (
-            self._data._categorical_variables
-            + self._data._continuous_variables
-            + self._data._dependent_variable
-        )
         distance_feature_layers = distance_features if distance_features else []
 
-        continuous_variables = self._data._continuous_variables
+        continuous_variables = (
+            self._data._continuous_variables + self._data._dependent_variable
+        )
 
         feature_layer_columns = []
         for column in dataframe.columns:
@@ -783,6 +785,7 @@ class TimeSeriesModel(ArcGISModel):
                     continue
 
                 raster_columns.append((raster, categorical))
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             (
@@ -861,15 +864,17 @@ class TimeSeriesModel(ArcGISModel):
         while index < len(prediction_sequence_list):
             if pd.isna(prediction_sequence_list[index]).any() or any(
                 [
-                    True
-                    if i
-                    in [
-                        "",
-                        None,
-                        "null",
-                        "None",
-                    ]
-                    else False
+                    (
+                        True
+                        if i
+                        in [
+                            "",
+                            None,
+                            "null",
+                            "None",
+                        ]
+                        else False
+                    )
                     for i in prediction_sequence_list[index]
                 ]
             ):
@@ -913,6 +918,7 @@ class TimeSeriesModel(ArcGISModel):
                         )
         transformed_results = prediction_sequence_list
         transformed_results_col = self._apply_inverse_transform(transformed_results)
+
         for idx, col in enumerate(self._data._dependent_variable):
             orig_dataframe[col + "_results"] = transformed_results_col[:, idx]
 
@@ -946,7 +952,7 @@ class TimeSeriesModel(ArcGISModel):
         return np.stack(transformed_results_ret, axis=1)
 
     def _add_predict_rows(
-        self, number_of_predictions, orig_dataframe, match_field_names
+        self, number_of_predictions, orig_dataframe, match_field_names, fields_needed
     ):
         # Changed to make code future ready as the previous method of adding
         # pandas series will be deprecated.
@@ -961,18 +967,32 @@ class TimeSeriesModel(ArcGISModel):
             index_field_name = match_field_names.get(
                 self._data._index_field, self._data._index_field
             )
-            if index_field_name in list(orig_dataframe.columns) and is_datetime(
-                orig_dataframe[index_field_name]
-            ):
-                delta = (
-                    orig_dataframe[index_field_name].iloc[1]
-                    - orig_dataframe[index_field_name].iloc[0]
-                )
-                end_value = None
-                if delta is not None:
-                    end_value = orig_dataframe[index_field_name].iloc[
-                        len(orig_dataframe) - 1
-                    ]
+            if index_field_name in list(orig_dataframe.columns):
+                if is_datetime(orig_dataframe[index_field_name]):
+                    delta = (
+                        orig_dataframe[index_field_name].iloc[1]
+                        - orig_dataframe[index_field_name].iloc[0]
+                    )
+                    end_value = None
+                    if delta is not None:
+                        end_value = orig_dataframe[index_field_name].iloc[
+                            len(orig_dataframe) - 1
+                        ]
+                else:
+                    orig_dataframe[index_field_name], sample = self._convert_datetime(
+                        orig_dataframe[index_field_name]
+                    )
+                    if not sample:
+                        delta = (
+                            orig_dataframe[index_field_name].iloc[1]
+                            - orig_dataframe[index_field_name].iloc[0]
+                        )
+                        end_value = None
+                        if delta is not None:
+                            end_value = orig_dataframe[index_field_name].iloc[
+                                len(orig_dataframe) - 1
+                            ]
+
         for i in orig_dataframe.columns:
             if i != index_field_name:
                 if is_datetime(orig_dataframe[i]):
@@ -982,6 +1002,23 @@ class TimeSeriesModel(ArcGISModel):
                         end_value_temp = orig_dataframe[i].iloc[len(orig_dataframe) - 1]
                     if new_delta is not None:
                         datetime_dict[i] = tuple([new_delta, end_value_temp])
+                else:
+                    if orig_dataframe[i].dtype == "object" and i in fields_needed:
+                        # check whether it is time
+                        orig_dataframe[i], sample = self._convert_datetime(
+                            orig_dataframe[i]
+                        )
+                        if not sample:
+                            new_delta = (
+                                orig_dataframe[i].iloc[1] - orig_dataframe[i].iloc[0]
+                            )
+                            end_value_temp = None
+                            if new_delta is not None:
+                                end_value_temp = orig_dataframe[i].iloc[
+                                    len(orig_dataframe) - 1
+                                ]
+                            if new_delta is not None:
+                                datetime_dict[i] = tuple([new_delta, end_value_temp])
 
         pred_temp_df = pd.DataFrame(
             np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
@@ -1010,7 +1047,7 @@ class TimeSeriesModel(ArcGISModel):
         return orig_dataframe
 
     def _infer_number_of_pred(
-        self, orig_dataframe, number_of_predictions, match_field_names
+        self, orig_dataframe, number_of_predictions, match_field_names, fields_needed
     ):
         # Type of inference
         #     ├── Multivariate
@@ -1068,6 +1105,7 @@ class TimeSeriesModel(ArcGISModel):
                 orig_dataframe=orig_dataframe,
                 match_field_names=match_field_names,
                 number_of_predictions=number_of_predictions,
+                fields_needed=fields_needed,
             )
         return orig_dataframe, single_swap_pred, number_of_predictions
 
@@ -1098,9 +1136,9 @@ class TimeSeriesModel(ArcGISModel):
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[
-                :
-            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
+                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            )
         return processed_dataframe_transform
 
     def score(self):
@@ -1160,13 +1198,15 @@ class TimeSeriesModel(ArcGISModel):
 
     def _convert_datetime(self, index_data_copy):
         sample_ticks = False
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
-            try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
-            except:
-                sample_ticks = True
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
+                index_data_copy
+            ):
+                try:
+                    index_data_copy = pd.to_datetime(index_data_copy)
+                except:
+                    sample_ticks = True
         return index_data_copy, sample_ticks
 
     def show_results(self, rows=5):
@@ -1234,16 +1274,17 @@ class TimeSeriesModel(ArcGISModel):
                             transformed_data = transform.inverse_transform(
                                 np.array(transformed_data, dtype=int)
                             )
-                        else:
-                            transformed_data = transform.inverse_transform(
-                                np.array(transformed_data).reshape(-1, 1)
-                            )
-                            transformed_data = transformed_data.squeeze(1)
+                        # else: # Commenting it out. Because inverse transform tends to change the scale
+                        #     transformed_data = transform.inverse_transform(
+                        #         np.array(transformed_data).reshape(-1, 1)
+                        #     )
+                        #     transformed_data = transformed_data.squeeze(1)
 
                 seq_inverse.append(transformed_data)
                 index = index + 1
 
             sequence_inversed.append(seq_inverse)
+
         if self._data._index_seq is not None:
             validation_index_seq = self._data._index_seq.take(
                 self._data._validation_indexes_ts, axis=0

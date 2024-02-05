@@ -507,9 +507,9 @@ class TextClassifier(ArcGISModel):
         _emd_template = {}
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
         _emd_template["Architecture"] = self.learn.model._transformer_architecture
-        _emd_template[
-            "PretrainedModel"
-        ] = self.learn.model._transformer_pretrained_model_name
+        _emd_template["PretrainedModel"] = (
+            self.learn.model._transformer_pretrained_model_name
+        )
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols
@@ -976,6 +976,10 @@ samples. Metrics are only being calculated for classes present in the validation
                 key=self.learn.model._config.label2id.get,
             )
             explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
+            text_or_list = [
+                text if len(text.split(" ")) > 1 else text + "  "
+                for text in text_or_list
+            ]
             self.shap_values = explainer(text_or_list)
             shap.plots.text(self.shap_values)
 

@@ -91,7 +91,6 @@ class TabularDataObject(object):
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
-        random_split=True,
         **kwargs,
     ):
         if not HAS_FASTAI:
@@ -99,6 +98,10 @@ class TabularDataObject(object):
 
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
+
+        random_split = True
+        if kwargs.get("random_split") == False:
+            random_split = False
 
         tabular_data = cls()
         (
@@ -146,6 +149,26 @@ class TabularDataObject(object):
             "raster_field_variables"
         ]
         if tabular_data._dependent_variable:
+            if isinstance(tabular_data._dependent_variable, list):
+                for var in tabular_data._dependent_variable:
+                    if (
+                        var
+                        in tabular_data._categorical_variables
+                        + tabular_data._continuous_variables
+                    ):
+                        raise Exception(
+                            "Variable to predict cannot be an explanatory variable"
+                        )
+            else:
+                if (
+                    tabular_data._dependent_variable
+                    in tabular_data._categorical_variables
+                    + tabular_data._continuous_variables
+                ):
+                    raise Exception(
+                        "Variable to predict cannot be an explanatory variable"
+                    )
+
             if (
                 tabular_data._dataframe[tabular_data._dependent_variable]
                 .isnull()
@@ -631,7 +654,9 @@ class TabularDataObject(object):
             scaled_features_df = pd.DataFrame(
                 processed_data,
                 index=dataframe.index,
-                columns=self._continuous_variables + self._categorical_variables,
+                columns=self._continuous_variables
+                + self._embedding_variables
+                + self._categorical_variables,
             )
             scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 
@@ -1254,9 +1279,7 @@ class TabularDataObject(object):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
+                index_data_copy = pd.to_datetime(index_data_copy)
             except:
                 sample_ticks = True
 
@@ -1517,7 +1540,7 @@ class TabularDataObject(object):
             elif (
                 unique_values[col] / total_rows > 0.5
                 and col_length[col] > 5
-                and len(dataframe[col][0].split("\\")[0]) < 3
+                and len(dataframe[col].iloc[0].split("\\")[0]) < 3
             ):
                 categorical_variables.remove(col)
                 image_variables.append(col)
@@ -1609,22 +1632,22 @@ class TabularDataObject(object):
             dataframe,
             {
                 "dependent_variable": dependent_variable,
-                "categorical_variables": categorical_variables
-                if categorical_variables
-                else [],
-                "continuous_variables": continuous_variables
-                if continuous_variables
-                else [],
+                "categorical_variables": (
+                    categorical_variables if categorical_variables else []
+                ),
+                "continuous_variables": (
+                    continuous_variables if continuous_variables else []
+                ),
                 "text_variables": text_variables if text_variables else [],
                 "image_variables": image_variables if image_variables else [],
                 "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
-                "feature_field_variables": feature_field_variables
-                if feature_field_variables
-                else [],
-                "raster_field_variables": raster_field_variables
-                if raster_field_variables
-                else [],
+                "feature_field_variables": (
+                    feature_field_variables if feature_field_variables else []
+                ),
+                "raster_field_variables": (
+                    raster_field_variables if raster_field_variables else []
+                ),
             },
         )
 
@@ -2174,7 +2197,10 @@ class TabularDataObject(object):
                 "sorted_index_col"
             ].to_list()
         del sorted_dataframe
-
+        # CHanges to handle the pandas datatype issue
+        dataframe[fields_mapping["categorical_variables"]] = dataframe[
+            fields_mapping["categorical_variables"]
+        ].astype("category")
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,

@@ -45,7 +45,7 @@ class TestVideoContent(unittest.TestCase):
                 print(vid.caption)
 
                 assert vid.properties
-                assert vid._url
+                assert vid._is_url
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()

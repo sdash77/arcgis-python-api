@@ -1,6 +1,7 @@
 """
 Controls the local portal's security settings
 """
+
 from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
@@ -390,7 +391,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def ssl(self):
         """
         .. note::

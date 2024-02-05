@@ -1,6 +1,7 @@
 """
 Contains the base class that all server object inherit from.
 """
+
 from __future__ import annotations
 from __future__ import absolute_import
 import json

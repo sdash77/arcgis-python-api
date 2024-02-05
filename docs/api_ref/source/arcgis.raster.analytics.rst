@@ -211,3 +211,15 @@ mosaic_image
 derive_continuous_flow
 ----------------------
 .. autofunction:: arcgis.raster.analytics.derive_continuous_flow
+
+multidimensional_principal_components
+----------------------
+.. autofunction:: arcgis.raster.analytics.multidimensional_principal_components
+
+predict_using_regression_model
+------------------------------
+.. autofunction:: arcgis.raster.analytics.predict_using_regression_model
+
+locate_regions
+--------------
+.. autofunction:: arcgis.raster.analytics.locate_regions

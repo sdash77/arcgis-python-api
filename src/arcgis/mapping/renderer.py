@@ -1,6 +1,7 @@
 """
 Creates renderer dictionaries that can be used to help visualize webmap content
 """
+
 from __future__ import annotations
 from typing import Optional, Union
 

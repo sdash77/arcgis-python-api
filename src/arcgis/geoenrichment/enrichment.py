@@ -720,7 +720,7 @@ class Country(object):
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the :func:`~arcgis.geoenrichment.Country.enrich_variables`
-                                         property. If using a list of strings, the values are mached against
+                                         property. If using a list of strings, the values are matched against
                                          the :func:`~arcgis.geoenrichment.Country.enrich_variables` dataframe
                                          columns for `name`, 'enrich_name', or 'enrich_field_name'. All the
                                          values must match to one of these columns.
@@ -892,9 +892,6 @@ class Country(object):
             )
 
         """
-        # pull out named area properties if present and set to use country instead of just BA global
-        standard_geography_level = None
-
         # If dictionary was passed, turn to list
         if isinstance(study_areas, dict):
             if isinstance(study_areas, Geometry):
@@ -909,9 +906,11 @@ class Country(object):
         if isinstance(study_areas, list):
             # For extent
             study_areas = [
-                Geometry(area).polygon
-                if isinstance(area, dict) and "xmin" in area
-                else area
+                (
+                    Geometry(area).polygon
+                    if isinstance(area, dict) and "xmin" in area
+                    else area
+                )
                 for area in study_areas
             ]
             first_geo = study_areas[0]
@@ -1525,6 +1524,7 @@ def enrich(
     proximity_type=None,
     proximity_value=None,
     proximity_metric=None,
+    sanitize_columns=True,
 ):
     """
     Enrich provides access to a massive dataset describing exactly who people are
@@ -1645,6 +1645,12 @@ def enrich(
                                   defining the proximity value. For instance, if specifying one
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
+    -------------------------     --------------------------------------------------------------------
+    sanitize_columns              Optional boolean. Convert output column names to snake case python style.
+                                  Default is ``True``.
+                                  Examples:
+                                  Value is ``True``: ['source_country', 'area_type', 'aggregation_method', 'totpop']
+                                  Value is ``False``: ['sourceCountry', 'areaType', 'aggregationMethod', 'TOTPOP']
     =========================     ====================================================================
 
     :return:
@@ -1678,9 +1684,11 @@ def enrich(
         #
         # [f(x) if condition else g(x) for x in sequence]
         study_areas = [
-            Geometry(area).polygon
-            if isinstance(area, dict) and "xmin" in area
-            else area
+            (
+                Geometry(area).polygon
+                if isinstance(area, dict) and "xmin" in area
+                else area
+            )
             for area in study_areas
         ]
         first_geo = study_areas[0]
@@ -1718,6 +1726,11 @@ def enrich(
                         value = value.true_centroid
                     elif "geometry" in value:
                         value = value["geometry"]
+
+                    # if it's a dictionary representing a polygon...
+                    if "rings" in value:
+                        polygon = Polygon(value)
+                        value = polygon.true_centroid
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
@@ -1781,6 +1794,7 @@ def enrich(
                     proximity_metric=proximity_metric,
                     standard_geography_level=standard_geography_level,
                     return_geometry=return_geometry,
+                    sanitize_columns=sanitize_columns,
                 )
 
                 enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
@@ -1799,6 +1813,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
     # check if data collections used as input parameter against available data collections
     elif data_collections is not None:
@@ -1830,6 +1845,7 @@ def enrich(
                         proximity_metric=proximity_metric,
                         standard_geography_level=standard_geography_level,
                         return_geometry=return_geometry,
+                        sanitize_columns=sanitize_columns,
                     )
                     enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
                 else:
@@ -1882,6 +1898,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
 
     return enrich_res
@@ -2293,7 +2310,9 @@ def interesting_facts(
     if out_sr is None:
         out_sr = {"wkid": 3857}
 
-    url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    url: str = (
+        f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    )
     study_areas = _process_study_areas(areas=study_areas)
     params = {
         "studyAreas": study_areas,

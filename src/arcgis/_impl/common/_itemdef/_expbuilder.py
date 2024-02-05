@@ -9,6 +9,7 @@ from arcgis._impl.common._clone import (
     _search_org_for_existing_item,
     _share_item_with_groups,
 )
+import tempfile
 
 try:
     import ujson as json
@@ -106,6 +107,8 @@ class _WebExperience(_ItemDefinition):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
+                if "itemId" not in v:
+                    continue
                 v["portalUrl"] = target.url
                 orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
@@ -117,6 +120,8 @@ class _WebExperience(_ItemDefinition):
                     if targ_item:
                         if targ_item.type == item.type:
                             v["itemId"] = new_id
+                            if "url" in v:
+                                v["url"] = targ_item.url
                             continue
 
                 # if not, try cloning item
@@ -154,8 +159,15 @@ class _WebExperience(_ItemDefinition):
             new_dict = _clone_dict(
                 config_dict, self.portal_item._gis, self.target, self._search_existing
             )
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                json.dump(new_dict, tfile)
+                tfile.close()
             new_item.resources.update(
-                folder_name="config", file_name="config.json", text=new_dict
+                folder_name="config",
+                file_name="config.json",
+                file=tfile.name,
             )
             if new_item.url:
                 new_item.update(

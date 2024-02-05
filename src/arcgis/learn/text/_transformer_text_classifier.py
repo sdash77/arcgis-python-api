@@ -1,4 +1,5 @@
 import os
+import torch
 import json
 import traceback
 
@@ -306,7 +307,9 @@ class TransformerForTextClassification(ArcGISTransformer):
         batch_token_ids = encodings["input_ids"]
         results_list = []
         sequence = torch.tensor(batch_token_ids).to(device)
-        logits = self._transformer(sequence)[0]
+        with torch.no_grad():
+            logits = self._transformer(sequence)[0]
+
         if is_multilabel_problem:
             results = torch.sigmoid(logits)
             for res in results:
@@ -321,14 +324,11 @@ class TransformerForTextClassification(ArcGISTransformer):
                     (";".join(category), raw_pred, [round(x, 4) for x in res.tolist()])
                 )
         else:
-            results = torch.softmax(logits, dim=1)
-            results_cls = [
-                (
-                    self._config.id2label[torch.argmax(logits, dim=1)[x].item()],
-                    results[x][torch.argmax(logits, dim=1)[0]].item(),
-                )
-                for x in range(len(logits))
+            results = torch.softmax(logits, dim=1).cpu()
+            res_class = [
+                self._config.id2label[i] for i in torch.argmax(results, dim=1).numpy()
             ]
-            return results_cls
+            res_score = torch.max(results, dim=1).values.numpy()
+            return list(zip(res_class, res_score))
 
         return results_list
