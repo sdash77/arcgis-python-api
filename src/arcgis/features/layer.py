@@ -4538,42 +4538,42 @@ class FeatureLayerCollection(_GISResource):
     :class:`tables <arcgis.features.Table>` with the associated relationships among the records.
 
     Instances of a ``FeatureLayerCollection`` can be obtained
-    
+
     * from *Feature Layer*
       :class:`items <arcgis.gis.Item>` using the :attr:`~arcgis.features.FeatureLayer.container`
       property
     * using the :meth:`~arcgis.features.FeatureLayerCollection.fromitem` method
     * by initializing an object using the feature service url
-    
+
     .. code-block:: python
-    
+
         # Using the container property
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
         >>> flc = flyr_item.layers[0].container
         >>> flc
-        
+
         <FeatureLayerCollection url:"https://services8.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer">
-        
+
         # Using the fromitem method
         >>> from arcgis.features import FeatureLayerCollection
-        
+
          >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
          >>> flc = FeatureLayerCollection.fromitem(flyr_item)
-         
+
          <FeatureLayerCollection url:"https://services8.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer">
-            
+
         # Initializing from a service url
         >>> from arcgis.gis import GIS
         >>> from arcgis.features import FeatureLayerCollection
-        
+
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> fs_url = "https://services7.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer"
         >>> flc = FeatureLayerCollection(fs_url, gis)
-        
+
         <FeatureLayerCollection https://services7.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer>
 
     The :attr:`~arcgis.features.FeatureLayerCollection.manager` property accesses the
@@ -4767,28 +4767,28 @@ class FeatureLayerCollection(_GISResource):
         """
         A method to query for changes that have been made to the layers and
         tables in a feature service.
-        
+
         To verify whether a feature service is configured to send responses about
         the features that have changed within its layers, query the service for
         the *ChangeTracking* capability:
-        
+
         .. code-block:: python
-        
+
             # Get the capabilities a feature service is configured with
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_organization_profile")
-            
+
             >>> flyr_item = gis.content.search("my_feature_layer", "Feature Layer")[0]
             # Initialize a FeatureLayerCollection object from a layer
             >>> flc = flyr_item.layers[0].container
-            
+
             >>> flc.properties.capabilities
-            
+
             'Create,Delete,Query,Update,Editing,Extract,ChangeTracking'
 
         Change tracking can be enabled for ArcGIS Online hosted feature services
         as well as enterprise-geodatabase based ArcGIS Enterprise services.
-        
+
         .. note::
             For Enterprise geodatabase based feature services published
             from ArcGIS Pro 2.2 or higher, the ``ChangeTracking`` capability
@@ -4800,95 +4800,70 @@ class FeatureLayerCollection(_GISResource):
         --------------------------------     --------------------------------------------------------------------
         layers                               Required List.  The list of layers (by index value) and tables to
                                              include in the output.
-                                             
+
                                              .. code-block:: python
-                                             
+
                                                  # Get layer index values
                                                  >>> from arcgis.gis import FeatureLayerCollection
-                                                 
+
                                                  >>> flyr_item = gis.content.get("<>flyr_item_id>")
                                                  >>> flc = FeatureLayerCollection(flyr_item, gis)
-                                                 
+
                                                  >>> for flyr_obj in flc.layers:
                                                  >>>     print(f"{flyr_obj.properties.id<3}{lfyr_obj.properties.name}")
-                                                 
+
                                                  0  Airports
                                                  1  Roads
-                                                 2  Railroads  
+                                                 2  Railroads
         --------------------------------     --------------------------------------------------------------------
         servergen                            Required integer (when *layer_servergen* argument not present).
                                              Introduced at 11.0, this argument provides the server generation
                                              numbers to apply to all layers included in the layers parameter from
                                              which to return changes.
-                                              
+
                                              Either a single generation value, or a pair of generation values can
                                              be provided.
-                                             
-                                             * If a single value is provided, all changes that have happened 
+
+                                             * If a single value is provided, all changes that have happened
                                                since that generation are returned.
                                              * If a pair of values are provided, the changes that have
                                                happened between the first generation (the minimum value) and up to
                                                and including the second generation (the maximum value) value are
                                                returned. The first value in the pair is expected to be the smaller
                                                value.
-                                             
+
                                              Query the :class:`~arcgis.features.FeatureLayerCollection`
-                                             *properties* to verify whether the feature service supports 
+                                             *properties* to verify whether the feature service supports
                                              this capability. If the *supportServerGens* property in the
                                              *extractChangesCapabilities* property group is set to *true*, the
                                              capability is present.
-                                             
+
                                              .. code-block:: python
-                                             
+
                                                  # Determine whether parameter is supported
                                                  >>> from arcgis.gis import GIS
                                                  >>> gis = GIS(profile="your_organizaation_profile")
-                                                 
+
                                                  >>> flyr_item = gis.content.get("<item_id>")
                                                  >>> flc_object = flyr_item.layers[0].container
-                                                 
+
                                                  >>> flc_object.properties.get("extractChangesCapabilities","no support")
-                                             
+
                                                  {...
                                                  'supportsServerGens': True,
                                                  ...}
-                                             
+
                                              .. note::
                                                  Either the *servergen* or *layer_servergen* argument must be
                                                  provided with this method.
-                                             
+
                                              You can get the latest generation numbers from the *changeTrackingInfo*
                                              property of the feature service:
-                                             
+
                                              .. code-block:: python
-                                             
+
                                                  >>> flc_obj.properties.changeTrackingInfo
-                                                 
-                                                 {
-                                                    "lastSyncDate": 1706901271525,
-                                                    "layerServerGens": [
-                                                      {
-                                                        "id": 0,
-                                                        "minServerGen": 594109,
-                                                        "serverGen": 594109
-                                                      },
-                                                      {
-                                                        "id": 1,
-                                                        "minServerGen": 594109,
-                                                        "serverGen": 594109
-                                                      }
-                                                    ]
-                                                 }               
-        --------------------------------     --------------------------------------------------------------------
-        layer_servergen                      Required list (if *servergen* argument not provided) of generation
-                                             numbers for each layer to return changes. Use the *changeTrackingInfo*
-                                             information to get values:
-                                             
-                                             .. code-block:: python
-                                             
-                                                 # Get change tracking info
-                                                 >>> flc_obj.properties.changeTrackingInfo
-                                                 
+
                                                  {
                                                     "lastSyncDate": 1706901271525,
                                                     "layerServerGens": [
@@ -4904,18 +4879,43 @@ class FeatureLayerCollection(_GISResource):
                                                       }
                                                     ]
                                                  }
-                                                 
+        --------------------------------     --------------------------------------------------------------------
+        layer_servergen                      Required list (if *servergen* argument not provided) of generation
+                                             numbers for each layer to return changes. Use the *changeTrackingInfo*
+                                             information to get values:
+
+                                             .. code-block:: python
+
+                                                 # Get change tracking info
+                                                 >>> flc_obj.properties.changeTrackingInfo
+
+                                                 {
+                                                    "lastSyncDate": 1706901271525,
+                                                    "layerServerGens": [
+                                                      {
+                                                        "id": 0,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      },
+                                                      {
+                                                        "id": 1,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      }
+                                                    ]
+                                                 }
+
                                              * *minServerGen* - It is the minimum generation number of the server
-                                               data changes. 
+                                               data changes.
                                              * *serverGen* - It is the current server generation number of the
                                                changes. Every changed feature has a version or a generation number
                                                that is changed every time the feature is updated.
-                                               
+
                                              .. note::
                                                  These values may be identical.
 
                                              The argument format should be a list of dictionaries whose keys are:
-                                             
+
                                              * *id* - values is the index position of the layer within the feature
                                              * *serverGen* - value is the generation number after which to get the changes
 
@@ -4947,16 +4947,16 @@ class FeatureLayerCollection(_GISResource):
                                                   from the layer that intersect the geometry are not added.
                                                 + ``includeRelated`` - Determines whether or not to add related
                                                   rows. The default is *True* and honored only when *queryOption=None*.
-                                                  This is only applicable if your data has relationship classes. 
+                                                  This is only applicable if your data has relationship classes.
                                                   Relationships are only processed in a forward direction from origin
-                                                  to destination.  
+                                                  to destination.
                                                 + ``queryOption`` - Defines whether or how filters will be applied
                                                   to a layer. The queryOption was added in 10.2. See the
                                                   `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic
                                                   for more information.
-                                                  
+
                                                   Valid values are:
-                                                  
+
                                                   * ``None``
                                                   * ``useFilter``
                                                   * ``all``. See also the *layerQueries* column in the Request Parameters
@@ -4965,13 +4965,13 @@ class FeatureLayerCollection(_GISResource):
 
                                              .. note::
                                                 Info on ``queryOption`` key values:
-                                                
+
                                                 * If the value is *None* and the layer participates in a relationship:
-                                                  
+
                                                   * If ``includeRelated`` is *False*, no related features are returned.
                                                   * If ``includeRelated`` is *True*, features in this layer (that are related to
                                                     the features in other layers) are returned.
-                                                
+
                                                 * If value is ``useFilter``, features that satisfy filtering based on
                                                   geometry and ``where`` are returned. ``includeRelated`` is ignored.
 
@@ -4991,7 +4991,7 @@ class FeatureLayerCollection(_GISResource):
         geometry                             Optional :class:`~arcgis.geometry.Geometry` or :class:`~arcgis.geometry.Envelope`
                                              object to apply as the spatial filter for the changes. All the changed
                                              features intersecting this geometry will be returned.
-                                             
+
                                              .. note::
                                                  For *envelope* and *point* geometries, you can specify the geometry
                                                  with a simple comma-separated syntax instead of a json object.
@@ -5001,7 +5001,7 @@ class FeatureLayerCollection(_GISResource):
                                              polygon. The default geometry type is an envelope.
 
                                              Values:
-                                             
+
                                              * ``esriGeometryPoint``
                                              * ``esriGeometryMultipoint``
                                              * ``esriGeometryPolyline``
@@ -5021,7 +5021,7 @@ class FeatureLayerCollection(_GISResource):
                                              to extract changes from.
         --------------------------------     --------------------------------------------------------------------
         return_inserts                       Optional Boolean, *Required* if neither *return_updates* nor
-                                             *return_deletes* provided. If *True*, newly inserted features will 
+                                             *return_deletes* provided. If *True*, newly inserted features will
                                              be returned. The default is *False*.
         --------------------------------     --------------------------------------------------------------------
         return_updates                       Optional Boolean. *Required* if neither *return_inserts* nor
@@ -5049,18 +5049,18 @@ class FeatureLayerCollection(_GISResource):
         --------------------------------     --------------------------------------------------------------------
         data_format                          Optional String. The format of the changes returned in the response.
                                              The default is *json*. Values:
-                                             
+
                                              * *sqllite*
                                              * *json*
         --------------------------------     --------------------------------------------------------------------
         change_extent_grid_cell              Optional String. To optimize localizing changes extent, the value
                                              of *medium* is an 8x8 grid that bound the changes extent.
-                                             
+
                                              .. note::
                                                  Used only when *return_extent_only* is *True*. Default is *None*.
-                                             
+
                                              Values:
-                                             
+
                                              * *None*
                                              * *large*
                                              * *medium*
@@ -5107,7 +5107,7 @@ class FeatureLayerCollection(_GISResource):
            # Extract the changes from the specific layers
            >>> deltas = flc.extract_changes(layers=[0, 1, 2],
                                             layer_servergen=[{"id": 0, "serverGen": 594109},
-                                                             {"id": 1, "serverGen": 594109}, 
+                                                             {"id": 1, "serverGen": 594109},
                                                              {"id": 2, "serverGen": 594109}],
                                             return_inserts=True,
                                             return_updates=True,
