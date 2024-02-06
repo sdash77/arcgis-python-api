@@ -11,7 +11,7 @@ from arcgis.gis import GIS, Item
 from requests.utils import quote
 import xml.etree.ElementTree as ET
 from .exceptions import ServerError
-import requests
+from arcgis.auth import EsriSession
 import arcgis
 import shutil
 import zipfile
@@ -31,8 +31,8 @@ from ._publish_functions import (
 
 class SurveyManager:
     """
-    Survey Manager allows users and administrators of Survey 123 to
-    analyze, report on, and access the data for various surveys.
+    Survey Manager allows users and administrators of ArcGIS Survey123 to
+    analyze, report on, and access the data for surveys.
 
     """
 
@@ -94,10 +94,6 @@ class SurveyManager:
         (dir_path, file_name) = os.path.split(xform)
         xlsx_name = os.path.splitext(file_name)[0]
 
-        # xform_tree = ET.parse(xform)
-        # root = xform_tree.getroot()
-        # xform_string = ET.tostring(root, encoding='utf8', method='xml')
-
         with open(xform, "r", encoding="utf-8") as intext:
             xform_string = intext.read()
 
@@ -105,34 +101,26 @@ class SurveyManager:
         params = {"xform": xform_string}
         if connectVersion:
             params["connectVersion"] = connectVersion
-        try:
-            r = requests.post(url, params)
-            response_json = r.json()
-            r.close()
-        except requests.exceptions.ConnectionError as c:
-            return "Unable to complete request with message: " + str(c)
-        except requests.exceptions.Timeout as t:
-            return "Connection timed out: " + str(t)
+        session = EsriSession()
+        r = session.post(url, params)
+        response_json = r.json()
+        r.close()
 
-        else:
-            with open(
-                os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
-            ) as fp:
-                # with open(os.path.join(dir_path, xlsx_name + ".webform"), 'w') as fp:
-                response_json["surveyFormJson"]["portalUrl"] = portalUrl
-                webform = {
-                    "form": response_json["form"],
-                    "languageMap": response_json["languageMap"],
-                    "model": response_json["model"],
-                    "success": response_json["success"],
-                    "surveyFormJson": response_json["surveyFormJson"],
-                    "transformerVersion": response_json["transformerVersion"],
-                }
+        with open(
+            os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
+        ) as fp:
+            response_json["surveyFormJson"]["portalUrl"] = portalUrl
+            webform = {
+                "form": response_json["form"],
+                "languageMap": response_json["languageMap"],
+                "model": response_json["model"],
+                "success": response_json["success"],
+                "surveyFormJson": response_json["surveyFormJson"],
+                "transformerVersion": response_json["transformerVersion"],
+            }
 
-                fp.write(json.dumps(webform, indent=2))
-                # fp.write(json.dumps(response_json, indent=2))
-                # fp.close()
-            return os.path.join(dir_path, xlsx_name + ".webform")
+            fp.write(json.dumps(webform, indent=2))
+        return os.path.join(dir_path, xlsx_name + ".webform")
 
     # ----------------------------------------------------------------------
     def _xls2xform(self, file_path: str):
@@ -175,9 +163,9 @@ class SurveyManager:
         ============   ================================================
         *Inputs*       *Description*
         ------------   ------------------------------------------------
-        title          Required string. Name label of the item.
+        title          Required string. Title for the form item.
         ------------   ------------------------------------------------
-        folder         Optional string. The folder ID to store the survey form item in your ArcGIS content.
+        folder         Optional string. The folder ID of the folder to store the survey form item in your ArcGIS content.
         ------------   ------------------------------------------------
         tags           Optional string. Comma-separated tags for the form item.
         ------------   ------------------------------------------------
@@ -185,7 +173,7 @@ class SurveyManager:
         ------------   ------------------------------------------------
         description    Optional string. Description of the form item.
         ------------   ------------------------------------------------
-        thumbnail      Optional string. Path that contains the thumbnail image.
+        thumbnail      Optional string. Path for the thumbnail image file.
         ============   ================================================
 
         :returns: :class:`~arcgis.apps.survey123.Survey`
@@ -372,11 +360,11 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        export_format     Required String. This is the acceptable export format that a
+        export_format     Required string. This is the acceptable export format that a
                           user can export the survey data to. The following formats are
                           acceptable: File Geodatabase, Shapefile, CSV, and DF.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output file should be stored.
+        save_folder       Optional string. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
         :Returns: String or DataFrame
@@ -436,7 +424,7 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item`. The report template.
         ----------------  ---------------------------------------------------------------
-        where             Optional String. The select statement issued on survey
+        where             Optional string. The select statement issued on survey
                           :class:`~arcgis.features.FeatureLayer` to report on
                           all survey records or a subset.
 
@@ -456,11 +444,11 @@ class Survey:
 
                               >>> print([f["name"] for f in survey_fl.properties.fields])
         ----------------  ---------------------------------------------------------------
-        utc_offset        Optional String.  Time offset from UTC. This offset is applied to
+        utc_offset        Optional string.  Time offset from UTC. This offset is applied to
                           all `date`, `time`, and `dateTime` questions that appear in the report output.
                           Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. If `folder_id` is provided, the result is an
+        report_title      Optional string. If `folder_id` is provided, the result is an
                           :class:`~arcgis.gis.Item` with this argument as the title. If
                           `save_folder` argument is provided, this argument will be the
                           name of the output file, or the base name for files
@@ -473,7 +461,7 @@ class Survey:
                               If `merge_files` is either `nextPage` or `continuous`,
                               `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
-        package_name      Optional String. Specify the file name (without extension) of the
+        package_name      Optional string. Specify the file name (without extension) of the
                           packaged `.zip` file. If multiple files are packaged, the `report_title`
                           argument will be used to name individual files in the package.
 
@@ -484,17 +472,17 @@ class Survey:
                             See the `packageFiles` parameter description in the `Create Report Request parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_
                             documentation for details.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output
+        save_folder       Optional string. Specify the folder location where the output
                           file or zipped file should be stored. If `folder_id` argument
                           is provided, this argument is ignored.
         ----------------  ---------------------------------------------------------------
-        output_format     Optional String. Accepts `docx` or `pdf`.
+        output_format     Optional string. Accepts `docx` or `pdf`.
         ----------------  ---------------------------------------------------------------
-        folder_id         Optional String. If a file :class:`~arcgis.gis.Item` is the
+        folder_id         Optional string. If a file :class:`~arcgis.gis.Item` is the
                           desired output, specify the `id` value of the ArcGIS content
                           folder.
         ----------------  ---------------------------------------------------------------
-        merge_files       Optional String. Specify if output is a single file containing individual
+        merge_files       Optional string. Specify if output is a single file containing individual
                           records on multiple pages (`nextPage` or `continuous`) or
                           multiple files (`none`).
 
@@ -516,11 +504,11 @@ class Survey:
                           map questions in the report. This takes precedence over the map set for
                           each question in the report template.
         ----------------  ---------------------------------------------------------------
-        map_scale         Optional Float. Specify the map scale for all map questions in the report.
+        map_scale         Optional float. Specify the map scale for all map questions in the report.
                           The map will center on the feature geometry. This takes precedence over the
                           scale set for each question in the report template.
         ----------------  ---------------------------------------------------------------
-        locale            Optional String. Specify the locale to format number
+        locale            Optional string. Specify the locale to format number
                           and date values.
         ================  ===============================================================
 
@@ -532,7 +520,7 @@ class Survey:
 
         .. code-block:: python
 
-            # Usage example #1: output a PDF file Item:
+            # Usage example #1: output a PDF file item:
             >>> from arcgis.gis import GIS
             >>> from arcgis.apps.survey123 import SurveyManager
 
@@ -550,7 +538,7 @@ class Survey:
                                  if f["title"] == "folder_title"][0]
 
             >>> report_item = svy_obj.generate_report(report_template=report_templ,
-                                                      report_title="Title of Report Item",
+                                                      report_title="Title of Report item",
                                                       output_format="pdf",
                                                       folder_id=user_folder_id,
                                                       merge_files="continuous")
@@ -641,7 +629,7 @@ class Survey:
     @property
     def report_templates(self) -> list:
         """
-        Returns a list of saved report items
+        Returns a list of saved report :class:`Items <arcgis.gis.Item>`.
 
         :returns: list of :class:`Items <arcgis.gis.Item>`
         """
@@ -677,13 +665,13 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        template_type     Optional String. Specify which sections to include in the template.
+        template_type     Optional string. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
                           Default is `individual`.
         ----------------  ---------------------------------------------------------------
-        template_name     Optional String. Specify the name of the output template file without file extension.
+        template_name     Optional string. Specify the name of the output template file without file extension.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output file should be stored.
+        save_folder       Optional string. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
         :returns: String
@@ -740,7 +728,7 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        template_file     Required String. The report template file which syntax to be checked.
+        template_file     Required string. The report template file for which syntax is to be checked.
         ================  ===============================================================
 
         :returns: dictionary {Success or Failure}
@@ -790,13 +778,13 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        template_file     Required String. The report template file which syntax to be checked, and uploaded.
+        template_file     Required string. The report template file which syntax to be checked, and uploaded.
         ----------------  ---------------------------------------------------------------
-        template_name     Optional String. If provided the resulting item will use the provided name, otherwise
+        template_name     Optional string. If provided the resulting item will use the provided name, otherwise
                           the name of the docx file will be used.
         ================  ===============================================================
 
-        :returns: item {Success) or string (Failure}
+        :returns: :class:`~arcgis.gis.Item` {Success) or string (Failure}
         """
 
         check = self.check_template_syntax(template_file)
@@ -837,16 +825,16 @@ class Survey:
     def update_report_template(self, template_file: Optional[str] = None):
         """
         Check report template syntax to identify any syntax which will lead to a failure
-        when generating reports in the given feature and updates existing Report template Org item.
+        when generating reports in the given feature and updates existing report template organizational item.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        template_file     Required String. The report template file which syntax to be checked, and uploaded.
+        template_file     Required string. The report template file which syntax to be checked, and uploaded.
                           The updated template name must match the name of the existing template item.
         ================  ===============================================================
 
-        :returns: item {Success) or string (Failure}
+        :returns: :class:`~arcgis.gis.Item` {Success) or string (Failure}
         """
 
         check = self.check_template_syntax(template_file)
@@ -873,9 +861,9 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`. The report template item.
         ----------------  ---------------------------------------------------------------
-        where             Optional String. This is the select statement used to export
+        where             Optional string. This is the select statement used to export
                           part or whole of the dataset. If the filtered result has more
                           than one feature/record, the request will be considered as a
                           batch printing. Currently, one individual report will be
@@ -935,22 +923,21 @@ class Survey:
         save_folder: Optional[str] = None,
     ) -> str:
         """
-        Similar task to generate_report for creating test sample report, and refining
-        a report template before generating any formal report.
+        Task for creating a test sample report (similar to generate_report) and refining a report template before generating any formal report.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required :class:`~arcgis.gis.Item`. The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`. The report template :class:`~arcgis.gis.Item`.
         ----------------  ---------------------------------------------------------------
-        where             Optional String. This is the select statement used to export
+        where             Optional string. This is the select statement used to export
                           part or whole of the dataset.  If the record count is > 1, then
                           the item must be saved to your organization.
         ----------------  ---------------------------------------------------------------
-        utc_offset        Optional String.  This is the time offset from UTC to match the
+        utc_offset        Optional string.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. An :class:`~arcgis.gis.Item` with this argument
+        report_title      Optional string. An :class:`~arcgis.gis.Item` with this argument
                           as the title if no `save_folder` argument. If `save_folder`
                           argument is provided, this argument will be the name of the
                           output file, or the base name for files in the output zipped
@@ -961,7 +948,7 @@ class Survey:
                               If `merge_files` is either `nextPage` or `continuous`,
                               `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
-        merge_files       Optional String. Specify if output is a single file containing individual
+        merge_files       Optional string. Specify if output is a single file containing individual
                           records on multiple pages (`nextPage` or `continuous`) or
                           multiple files (`none`).
 
@@ -976,19 +963,19 @@ class Survey:
                               A merged file larger than 500 MB will be split into multiple
                               files.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output
+        save_folder       Optional string. Specify the folder location where the output
                           file should be stored.
         ----------------  ---------------------------------------------------------------
         survey_item       Optional survey :class:`~arcgis.gis.Item` to provide additional
                           information on the survey structure.
         ----------------  ---------------------------------------------------------------
-        webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
+        webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the basemap for printing task when printing
                           a point/polyline/polygon. This takes precedence over the map set for
                           each question inside a survey.
         ----------------  ---------------------------------------------------------------
-        map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
+        map_scale         Optional float. Specify the map scale when printing, the map will center on the feature geometry.
         ----------------  ---------------------------------------------------------------
-        locale            Optional String. Specify the locale setting to format number and date values.
+        locale            Optional string. Specify the locale setting to format number and date values.
         ================  ===============================================================
 
         :Returns: String
@@ -1182,23 +1169,22 @@ class Survey:
         schema_changes: Optional[bool] = False,
     ) -> Survey:
         """
-        Publishes surveys created by the `create()` method or an existing published survey in your content.
+        Publishes surveys created by the `create()` method or an existing survey published to your ArcGIS organization.
         It can also be an unpublished blank survey created with the Survey123 Web Designer (any designs will be overwritten by the `publish()` method's required XLSForm.).
-        Any survey published through the `publish()` method is treated as a survey published with Survey123 Connect.
 
         If `schema_changes` is set to False, any differences between the schema of the XLSForm and the submission endpoint will generate an error
         that lets you know what the differences are. If `schema_changes` is set to True, the following logic is applied:
 
-         - When using a submission_url that references an ArcGIS Server feature service, schema changes are not applied. If there are differences between the XLSForm design and the schema of the submission_url, the `publish()` method returns an error that lets you know what the difference is.
+         - When using a submission_url that references an ArcGIS Server feature service, schema changes are not applied. The publish() method returns an error about any differences found between the design and schema.
          - When the survey has an associated hosted feature service and view service, with or without a submission_url set, schema changes are applied to the parent service and propagated to the view.
          - When the survey has an associated hosted feature service but no view service, with or without a submission_url set, schema changes are applied to the submission endpoint.
 
         ==============================  ===============================================================
         **Argument**                    **Description**
         ------------------------------  ---------------------------------------------------------------
-        xlsform                         Optional string. Path that contains the XLSForm.
+        xlsform                         Optional string. Path for the XLSForm file.
         ------------------------------  ---------------------------------------------------------------
-        info                            Optional dictionary. Dictionary object that represents the contents of the `.info` file (settings). The keys in this dictionary are case-sensitive. See the table below for the keys and values.
+        info                            Optional dictionary. Represents the contents of the .info file (settings); See the table below for the keys and values. Keys are case sensitive.
 
                                         .. code-block:: python
 
@@ -1212,9 +1198,9 @@ class Survey:
                                                 }
                                             }
         ------------------------------  ---------------------------------------------------------------
-        media                           Optional string. Path or ZIP file that contains the media folder.
+        media                           Optional string. Path for the media folder or the ZIP file that contains it.
         ------------------------------  ---------------------------------------------------------------
-        scripts                         Optional string. Path or ZIP file that contains the scripts folder.
+        scripts                         Optional string. Path for the scripts folder or the ZIP file that contains it.
         ------------------------------  ---------------------------------------------------------------
         create_web_form                 Optional boolean. Enabled by default. When this parameter is off, publishing a survey does not create a matching web form that allows users to complete the survey in the web app, so the survey only works in the field app.
         ------------------------------  ---------------------------------------------------------------
@@ -1234,7 +1220,7 @@ class Survey:
         create_web_map                  Optional boolean. Enabled by default. Creates a web map that includes the survey's feature layer with default symbology and uses your organization's default basemap.
                                         This web map is automatically added to the Linked Content tab in Survey123 Connect and is available in the Survey123 field app.
         ------------------------------  ---------------------------------------------------------------
-        thumbnail                       Optional string. Path that contains the thumbnail image.
+        thumbnail                       Optional string. Path for the thumbnail image file.
         ------------------------------  ---------------------------------------------------------------
         summary                         Optional string. Short summary about the survey  (limit to a maximum of 250 characters).
         ------------------------------  ---------------------------------------------------------------
@@ -1423,7 +1409,9 @@ class Survey:
         # Identify if publishing a new survey or re-publishing an existing survey.
         if "Draft" in self._si.typeKeywords:
             if xlsform is None:
-                raise ValueError("XLSForm required for initial publish")
+                raise ValueError(
+                    "An XLSForm is required when publishing a survey for the first time."
+                )
             initial_publish = True
             directory = os.path.join(tmp_name, self._si.id, "esriinfo")
             os.makedirs(directory)
@@ -1643,7 +1631,7 @@ class Survey:
             ):
                 if sub is True:
                     raise RuntimeError(
-                        "The schema between the source layer and its view do not match. Review and update accordingly."
+                        "The schema of the source layer and its view do not match. Review content and update accordingly."
                     )
                 else:
                     parent_layers = parent_item.layers + parent_item.tables
@@ -1677,7 +1665,7 @@ class Survey:
                     )
                     if parent_deltas != deltas:
                         raise RuntimeError(
-                            "The schema between the source layer and its view do not match. Review and update accordingly."
+                            "The schema of the source layer and its view do not match. Review content and update accordingly."
                         )
 
             # - When using a submission_url that references an ArcGIS Server feature service, schema changes are not applied. If there are differences between the XLSForm design and the schema of the submission_url, the `publish()` method returns an error that lets you know what the difference is.
@@ -1871,9 +1859,9 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        name              Required String. The name for your webhook.
+        name              Required string. The name for your webhook.
         ----------------  ---------------------------------------------------------------
-        payload_url       Required String. The payload URL is where the survey information will be sent. This needs to be provided by an external webhook service.
+        payload_url       Required string. The payload URL is where the survey information will be sent. This needs to be provided by an external webhook service.
         ----------------  ---------------------------------------------------------------
         trigger_events    Optional list. The trigger events describe the specific actions that will call the webhook. Options are "addData" and "editData". Set to "addData" by default.
         ----------------  ---------------------------------------------------------------

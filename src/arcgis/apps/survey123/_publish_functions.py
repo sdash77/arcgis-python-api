@@ -5,7 +5,7 @@ import arcgis
 import uuid
 import json
 import os
-import requests
+from arcgis.auth import EsriSession
 import locale
 import unicodedata
 import warnings
@@ -91,7 +91,7 @@ def _duplicate_geometry(xml):
     s_geometry = _iter_schema(schema, name, name, ns_dict)
     for layer in s_geometry.keys():
         if s_geometry[layer] > 1:
-            return f"Only one geometry field is allowed per layer, {s_geometry[layer]} found in {layer}"
+            return f"Only one geometry field is allowed per layer; {s_geometry[layer]} found in the {layer} layer."
 
     return None
 
@@ -397,7 +397,7 @@ def _modify_schema(
             else:
                 [
                     error_reciept[f"{layer} Errors"]["Field Errors"].append(
-                        f"Field not found in feature service: {x['name']}"
+                        f"Field not found in the feature service for the {x['name']} question."
                     )
                     for x in deltas[layer]["fields"]
                 ]
@@ -424,7 +424,7 @@ def _modify_schema(
                         ch.append(choice)
                 [
                     warnings.warn(
-                        f"Warning: Choice {x} not found in feature service domain"
+                        f"Warning: Choice {x} not found in the feature service domain."
                     )
                     for x in ch
                 ]
@@ -440,7 +440,7 @@ def _modify_schema(
         if len(deltas[layer]["fieldtype"]) > 0:
             [
                 error_reciept[f"{layer} Errors"]["Field Type Errors"].append(
-                    f"Field {x['fieldname']} in {x['layer']} has a type mismatch: {x['xmltype']} != {x['servicetype']}"
+                    f"Field type {x['xmltype']} for question {x['fieldname']} does not match {x['servicetype']} for field {x['fieldname']} in {x['layer']}."
                 )
                 for x in deltas[layer]["fieldtype"]
             ]
@@ -449,7 +449,7 @@ def _modify_schema(
         if len(deltas[layer]["fieldlength"]) > 0:
             [
                 error_reciept[f"{layer} Errors"]["Field Length Errors"].append(
-                    f"Field {x['fieldname']} in {x['layer']} length is too short {x['fieldlength']}"
+                    f"Field length {x['xmllength']} for {x['fieldname']} exceeds length {x['fieldlength']} in the {x['layer']} layer."
                 )
                 for x in deltas[layer]["fieldlength"]
             ]
@@ -458,14 +458,14 @@ def _modify_schema(
         if len(deltas[layer]["geometry"]) > 0:
             [
                 error_reciept[f"{layer} Errors"]["Geometry Errors"].append(
-                    f"{x['xmllayer']} is a Table, a feature layer is required for {x['xmlgeom']['geometryType']}"
+                    f"{x['xmlgeom']['geometryType']} requires a feature layer but {x['xmllayer']} is a table."
                 )
                 for x in deltas[layer]["geometry"]
                 if "xmllayer" in list(x.keys())
             ]
             [
                 error_reciept[f"{layer} Errors"]["Geometry Errors"].append(
-                    f"Incompatible geometry types: {x['xmlgeometry']['geometryType']} does not match {x['servicegeometry']['geometryType']} in {x['xmllayer']}"
+                    f"Incompatible geometry types: {x['xmlgeometry']['geometryType']} set in the survey does not match {x['servicegeometry']['geometryType']} in the {x['xmllayer']} layer."
                 )
                 for x in deltas[layer]["geometry"]
                 if "servicegeometry" in list(x.keys())
@@ -484,8 +484,8 @@ def _modify_schema(
 def _get_version():
     """Identifies the current version of Survey123 Connect"""
     url = "https://doc.arcgis.com/en/survey123/versions.json"
-
-    response = requests.request("GET", url, headers={}, data={})
+    session = EsriSession()
+    response = session.get(url=url)
     for version in response.json()["secured"]["windows64_connect"]["versions"]:
         return ".".join(
             ".".join(
@@ -613,6 +613,7 @@ def _schema_parity(
                             "layer": xml_layer,
                             "fieldname": field["name"],
                             "fieldlength": service_fields[field["name"]]["length"],
+                            "xmllength": field["length"],
                             "field": field,
                         }
                     )
@@ -724,10 +725,6 @@ def _xform2webform(xform, portalUrl, connectVersion=None):
     (dir_path, file_name) = os.path.split(xform)
     xlsx_name = os.path.splitext(file_name)[0]
 
-    # xform_tree = ET.parse(xform)
-    # root = xform_tree.getroot()
-    # xform_string = ET.tostring(root, encoding='utf8', method='xml')
-
     with open(xform, "r", encoding="utf-8") as intext:
         xform_string = intext.read()
 
@@ -735,34 +732,27 @@ def _xform2webform(xform, portalUrl, connectVersion=None):
     params = {"xform": xform_string}
     if connectVersion:
         params["connectVersion"] = connectVersion
-    try:
-        r = requests.post(url, params)
-        response_json = r.json()
-        r.close()
-    except requests.exceptions.ConnectionError as c:
-        return "Unable to complete request with message: " + str(c)
-    except requests.exceptions.Timeout as t:
-        return "Connection timed out: " + str(t)
 
-    else:
-        with open(
-            os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
-        ) as fp:
-            # with open(os.path.join(dir_path, xlsx_name + ".webform"), 'w') as fp:
-            response_json["surveyFormJson"]["portalUrl"] = portalUrl
-            webform = {
-                "form": response_json["form"],
-                "languageMap": response_json["languageMap"],
-                "model": response_json["model"],
-                "success": response_json["success"],
-                "surveyFormJson": response_json["surveyFormJson"],
-                "transformerVersion": response_json["transformerVersion"],
-            }
+    session = EsriSession()
+    r = session.post(url=url, data=params)
+    response_json = r.json()
+    r.close()
+    with open(
+        os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
+    ) as fp:
+        # with open(os.path.join(dir_path, xlsx_name + ".webform"), 'w') as fp:
+        response_json["surveyFormJson"]["portalUrl"] = portalUrl
+        webform = {
+            "form": response_json["form"],
+            "languageMap": response_json["languageMap"],
+            "model": response_json["model"],
+            "success": response_json["success"],
+            "surveyFormJson": response_json["surveyFormJson"],
+            "transformerVersion": response_json["transformerVersion"],
+        }
 
-            fp.write(json.dumps(webform, indent=2))
-            # fp.write(json.dumps(response_json, indent=2))
-            # fp.close()
-        return os.path.join(dir_path, xlsx_name + ".webform")
+        fp.write(json.dumps(webform, indent=2))
+    return os.path.join(dir_path, xlsx_name + ".webform")
 
 
 # =============================================================================================================
@@ -1991,39 +1981,24 @@ def _xls2xform(file_path):
             "application/octet-stream",
         )
     }
-    try:
-        r = requests.post(url, files=file)
-        response_json = r.json()
-        r.close()
-        if response_json["result"]["code"] == 999:
-            raise RuntimeError
-    except requests.exceptions.ConnectionError as c:
-        raise RuntimeError("Unable to complete request with message: " + str(c))
-    except requests.exceptions.Timeout as t:
-        raise RuntimeError("Connection timed out: " + str(t))
-    except Exception:
-        raise RuntimeError(
-            "XLSForm conversion failed: " + response_json["result"]["message"]
-        )
-    except:
-        raise RuntimeError(
-            "There was an error, unable to convert XLSForm. Please contact Esri Technical Support for assistance."
-        )
-    else:
-        # If itemsets in the response update the itemsets.csv file
-        if "itemsets" in response_json:
-            if not os.path.exists(os.path.join(dir_path, "media")):
-                os.mkdir(os.path.join(dir_path, "media"))
-            with open(
-                os.path.join(dir_path, "media", "itemsets.csv"), "w", newline=""
-            ) as itemsets:
-                itemsets.write(response_json["itemsets"])
-                itemsets.close()
+    session = EsriSession()
+    r = session.post(url=url, files=file)
+    response_json = r.json()
+    r.close()
+    # If itemsets in the response update the itemsets.csv file
+    if "itemsets" in response_json:
+        if not os.path.exists(os.path.join(dir_path, "media")):
+            os.mkdir(os.path.join(dir_path, "media"))
         with open(
-            os.path.join(dir_path, xlsx_name + ".xml"), "w", encoding="utf-8"
-        ) as fp:
-            fp.write(response_json["xform"])
-            fp.close()
-        if len(response_json["warnings"]) > 0:
-            warnings.warn("Warning: ", str(response_json["warnings"]))
-        return os.path.join(dir_path, xlsx_name + ".xml")
+            os.path.join(dir_path, "media", "itemsets.csv"), "w", newline=""
+        ) as itemsets:
+            itemsets.write(response_json["itemsets"])
+            itemsets.close()
+    with open(
+        os.path.join(dir_path, xlsx_name + ".xml"), "w", encoding="utf-8"
+    ) as fp:
+        fp.write(response_json["xform"])
+        fp.close()
+    if len(response_json["warnings"]) > 0:
+        warnings.warn("Warning: ", str(response_json["warnings"]))
+    return os.path.join(dir_path, xlsx_name + ".xml")
