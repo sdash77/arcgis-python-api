@@ -1994,9 +1994,7 @@ def _xls2xform(file_path):
         ) as itemsets:
             itemsets.write(response_json["itemsets"])
             itemsets.close()
-    with open(
-        os.path.join(dir_path, xlsx_name + ".xml"), "w", encoding="utf-8"
-    ) as fp:
+    with open(os.path.join(dir_path, xlsx_name + ".xml"), "w", encoding="utf-8") as fp:
         fp.write(response_json["xform"])
         fp.close()
     if len(response_json["warnings"]) > 0:
