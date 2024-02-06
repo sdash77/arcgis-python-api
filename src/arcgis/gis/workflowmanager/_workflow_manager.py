@@ -467,9 +467,9 @@ class JobManager:
         end: Optional[str] = None,
         priority: Optional[str] = None,
         description: Optional[str] = None,
-        owned_by: Optional[str] = None,
-        assigned_type: Optional[str] = None,
-        assigned_to: Optional[str] = None,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        assigned: Optional[str] = None,
         complete: Optional[str] = None,
         notes: Optional[str] = None,
         parent: Optional[str] = None,
@@ -498,12 +498,12 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         description                 Optional string. Job Description
         -------------------         --------------------------------------------------------------------
-        owned_by                    Optional string. Job Owner
+        owner                       Optional string. The Job Owner
         -------------------         --------------------------------------------------------------------
-        assigned_type               Optional string The Assignment type of the job to be created.
-                                    Type of assignment designated Values: "User" | "Group" | "Unassigned"
+        group                       Optional string. The Job Assignment Group. The Assignment type of the job to be
+                                    created. Type of assignment designated Values: "User" | "Group" | "Unassigned"
         -------------------         --------------------------------------------------------------------
-        assigned_to                 Optional string. Initial Job Assignee
+        assigned                    Optional string. Initial Job Assignee
         -------------------         --------------------------------------------------------------------
         complete                    Optional Integer Percentage Complete
         -------------------         --------------------------------------------------------------------
@@ -559,9 +559,9 @@ class JobManager:
             "dueDate": end,
             "priority": priority,
             "description": description,
-            "ownedBy": owned_by,
-            "assignedType": assigned_type,
-            "assignedTo": assigned_to,
+            "ownedBy": owner,
+            "assignedType": group,
+            "assignedTo": assigned,
             "percentComplete": complete,
             "notes": notes,
             "parentJob": parent,
