@@ -1200,7 +1200,6 @@ class SyncManager(object):
         replica_id: str,
         transport_type: str = "esriTransportTypeUrl",
         replica_server_gen: int | None = None,
-        replica_servers_sib_gen: list[dict[str, Any]] | None = None, 
         return_ids_for_adds: bool = False,
         edits: list[dict[str, Any]] | None = None,
         return_attachment_databy_url: bool = False,
