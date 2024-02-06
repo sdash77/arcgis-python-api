@@ -667,9 +667,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(
-                    params_iterator
-                ).requires_grad = True  # make first conv weights learnable
+                next(params_iterator).requires_grad = (
+                    True  # make first conv weights learnable
+                )
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
@@ -969,9 +969,11 @@ class ArcGISModel(object):
                 and (
                     dice.__qualname__
                     not in [
-                        metric.func.__qualname__
-                        if hasattr(metric, "func")
-                        else metric.__qualname__
+                        (
+                            metric.func.__qualname__
+                            if hasattr(metric, "func")
+                            else metric.__qualname__
+                        )
                         for metric in self.learn.metrics
                     ]
                 )
@@ -1103,7 +1105,7 @@ class ArcGISModel(object):
 
             return _emd_template
 
-        if self._backbone is None:
+        if self._backbone is None or type(self._backbone) is str:
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
@@ -1271,9 +1273,9 @@ class ArcGISModel(object):
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template[
-                            "per_class_metrics"
-                        ] = self.per_class_metrics().to_json()
+                        _emd_template["per_class_metrics"] = (
+                            self.per_class_metrics().to_json()
+                        )
         return _emd_template
 
     @staticmethod

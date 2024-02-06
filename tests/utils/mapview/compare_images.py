@@ -4,7 +4,6 @@ import logging
 
 log = logging.getLogger()
 
-from PIL import Image
 from IPython.display import HTML
 from IPython.display import display
 
@@ -14,6 +13,8 @@ class UnsimilarImageError(Exception):
 
 
 def compare_images(img1_path, img2_path, max_perc_diff=0.005):
+    from PIL import Image
+
     img1 = Image.open(img1_path)
     img2 = Image.open(img2_path)
 

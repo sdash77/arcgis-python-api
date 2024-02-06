@@ -1,6 +1,7 @@
 """
 Controls the local portal's security settings
 """
+
 from typing import Optional
 from .._impl._con import Connection
 from .. import GIS

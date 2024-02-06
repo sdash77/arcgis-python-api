@@ -197,6 +197,13 @@ MaXDeepLab
     :inherited-members:
     :undoc-members:
 
+SamLoRA
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.SamLoRA
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Image Translation Models
 ------------------------
 CycleGAN
