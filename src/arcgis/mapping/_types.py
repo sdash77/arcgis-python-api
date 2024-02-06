@@ -2179,10 +2179,25 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
+        .. note::
+            To create, edit, and manage offline map areas for a web map, you must be the owner
+            of the map and have privileges to create content.
+
+        .. note::
+            You cannot share a web map that contains an offline map area with a group that allows
+            members to update all items, and organization administrators cannot change ownership of a
+            web map that contains an offline map area.
+
         :return:
             The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
         """
-        return OfflineMapAreaManager(self.item, self._gis)
+        # Need to check that the owner of the map is the same as the logged in user
+        if self._gis.users.me.username == self.item.owner:
+            return OfflineMapAreaManager(self.item, self._gis)
+        else:
+            raise RuntimeError(
+                "You do not have permission to manage offline areas for this map. You must be the owner of the item."
+            )
 
     @property
     def pop_ups(self):
