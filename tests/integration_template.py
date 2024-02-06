@@ -1,6 +1,6 @@
 import unittest
 from utils.decorators import profiles, integration_test
-from utils.logging import enable_verbose_logging
+from utils._logging import enable_verbose_logging
 
 enable_verbose_logging()
 
@@ -10,7 +10,7 @@ enable_verbose_logging()
 # sets `self.profile` to the profile name
 # sets `self.gis` to the GIS for the profile, if connection is successful
 # sets `self.proxies` to the detected proxies, if any
-# 
+#
 # see tests/utils/decorators.py for available credential and profile decorators
 @integration_test
 # ^^^ marks the test as an integration test
