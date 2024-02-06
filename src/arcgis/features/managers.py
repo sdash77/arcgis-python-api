@@ -882,31 +882,33 @@ class SyncManager(object):
     ):
         """
         The create operation is performed on a
-        :class:`~arcgis.features.FeatureLayerCollection` resource. This 
+        :class:`~arcgis.features.FeatureLayerCollection` resource. This
         operation creates a replica on the server between the feature service
-        and the client based on a replica definition criteria supplied by the
+        and the client based on replica definition criteria supplied by the
         client.
-        
+
         The feature service must have the *Sync* capability. See `publishing criteria
         <https://enterprise.arcgis.com/en/server/latest/publish-services/windows/prepare-data-for-feature-services.htm>`_
-        for details on how to pulish services. The `Sync overview
+        for details on how to pulish services and set capabilities.
+        The `Sync overview
         <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_
         provides additional details and links for details.
-        
-        The response to this method for includes the *replicaID*, *replica
-        generation number*, and data similar to the response from the 
+
+        The response to this method includes the *replicaID*, *replica
+        generation number*, and data similar to the response from the
         :meth:`~arcgis.features.FeatureLayerCollection.query` operation on
-        a service. The response type is of type *esriReplicaResponseTypeData*,
-        because it has data for the layers meeting the create criteria. See
-        `Sync response types <https://developers.arcgis.com/rest/services-reference/enterprise/response-type-for-sync-operations.htm>`_
-        for type descriptions.
-        
-        The operations allows for register exiting data with the
-        *replica_options* argument, a dictionary whose key-value pairs are
-        detailed `here <https://developers.arcgis.com/rest/services-reference/enterprise/create-replica.htm#GUID-73F56FCD-BA1F-4C8B-AA1B-676C89A7FE64>`_
-        The response type will be * esriReplicaResponseTypeInfo* in this case
-        since no data for the layers is returned.
-        
+        a service. This information should be kept track of by the client because
+        it will be needed when synchronizing changes in the local data with the
+        replica created on the server.
+
+        See `Sync response types
+        <https://developers.arcgis.com/rest/services-reference/enterprise/response-type-for-sync-operations.htm>`_
+        details on the response received.
+
+        The operations allows for register exiting data for the replica by
+        using the *replica_options* argument, a dictionary whose key-value pairs are
+        detailed `here <https://developers.arcgis.com/rest/services-reference/enterprise/create-replica.htm#GUID-73F56FCD-BA1F-4C8B-AA1B-676C89A7FE64>`_.
+
         For full details see `Create Replica <https://developers.arcgis.com/rest/services-reference/enterprise/create-replica.htm>`_.
 
         =============================       ====================================================================
@@ -1227,22 +1229,22 @@ class SyncManager(object):
         *edits_upload_format* arguments to identify a file item containing the
         edits that were previously uploaded using the
         :meth:`~arcgis.features.FeatureLayerCollection.upload` method.
-        
+
         The response for this operation includes a *replicaID* value, new
         replica generation number, or layer's generation numbers. The response
         has edits or layers according to the *sync_direction*/*sync_layers*
         arguments. Presence of layers and edits in the response is indicated by the
         `responseType <https://developers.arcgis.com/rest/services-reference/enterprise/response-type-for-sync-operations.htm>`_
         key.
-        
+
         If the *responseType* value is *esriReplicaResponseTypeEdits* or
         *esriReplicaResponseTypeEditsAndData*, the result of this operation can
-        include lists of edit results for each layer/table edited. Each edit 
-        result identifies a single feature in a layer or row in a table and 
+        include lists of edit results for each layer/table edited. Each edit
+        result identifies a single feature in a layer or row in a table and
         indicates if the edits were successful or not. If an edit is not
         successful, the edit result also includes an error code and an error
         description.
-        
+
         * If *sync_model* is *perReplica* and *sync_direction* is download or
           bidirectional, the :meth:`~arcgis.features.managers.SyncManager.synchronize`
           operation's response will have edits.
@@ -1263,7 +1265,7 @@ class SyncManager(object):
 
         See `Synchronize Replica <https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm>`_
         for full details on the operation.
-        
+
         =============================   ====================================================================
         **Parameter**                   **Description**
         -----------------------------   --------------------------------------------------------------------
@@ -1271,49 +1273,49 @@ class SyncManager(object):
         -----------------------------   --------------------------------------------------------------------
         transport_type                  Optional String. Represents the format of the response. The default
                                         value is *esriTransportTypeUrl*.
-                                        
+
                                         Values:
-                                        
+
                                         * *esriTransportTypeUrl* - the response is contained in a file and a
                                           the URL link to the file is returned
                                         * *esriTransporTypeEmbedded* - a JSON object is returned in the
                                           response
-                                        
+
                                         .. note::
                                             If *asynchronous* is *True* or *data_format=sqllite*, the
                                             response is always returned by URL.
         -----------------------------   --------------------------------------------------------------------
         replica_server_gen              Required Integer. A generation number that allows the server to keep
-                                        track of what changes have already been sychronized. 
+                                        track of what changes have already been sychronized.
                                         A new *replicaServerGen* is sent with the response. Clients should
                                         persist this value and use it with the next call to *synchronize*.
-                                        
+
                                         ..  note::
                                             Applies when *sync_model* is *perReplica*
         -----------------------------   --------------------------------------------------------------------
         return_ids_for_adds             Optional Boolean. If *True*, the *objectIDs* and *globalIDs* of
                                         features added during the synchronize will be returned to the client
-                                        in the *addResults* sections of the response. Otherwise, the IDs are 
+                                        in the *addResults* sections of the response. Otherwise, the IDs are
                                         not returned. The default is *False*.
         -----------------------------   --------------------------------------------------------------------
         edits                           Optional list of dictionaries. Contains The edits the client wants
                                         to apply to the service.
-                                        
+
                                         .. note::
                                             This argument can be omitted if the *edits_upload_id* and
                                             *edits_upload_format* arguments are provided instead.
-                                            
+
                                         The edits are provided as a list where each element is a dictionary
                                         whose key-value pairs provide:
-                                        
+
                                         * *id* - The layer or table ID
                                         * *features* - a dictionary of inserts, updates, and deletes. New
                                           features and updates are provided as lists of :class:`features <arcgis.features.Feature>`.
                                           Deletes are provided as lists of *globalIDs*.
                                         * *attachments* - a dictionary of inserts, updates, and deletes. Deletes
-                                          can be specified as a list of *globalIDs*. Updates and adds are 
+                                          can be specified as a list of *globalIDs*. Updates and adds are
                                           specified using the following set of properties:
-                                          
+
                                           - *globalid* - The globalID of the attachment that is to be added or updated.
                                           - *parentGlobalid* - The globalID of the feature associated with the attachment.
                                           - *contentType* - Describes the file type of the attachment (for example, image/jpeg).
@@ -1323,17 +1325,17 @@ class SyncManager(object):
                                           - *url* - The location where the service will upload the attachment file (for example,
                                             http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
                                             embedded.
-                                          
+
                                           .. note::
                                               If embedding the attachment, set the *data* property, otherwise set *url*.
-                                            
+
                                         See `edits <https://developers.arcgis.com/rest/services-reference/enterprise/synchronize-replica.htm#UL_B8C0FE10EF1D4412B8170A3E9C8AAC54>`_
                                         for full details on formatting.
         -----------------------------   --------------------------------------------------------------------
         return_attachment_databy_url    If *True*, a reference to a URL will be provided for each attachment
-                                        returned. Otherwise, attachments are embedded in the respose. The 
+                                        returned. Otherwise, attachments are embedded in the respose. The
                                         default is *True*.
-                                        
+
                                         .. note::
                                             Only applies if attachments are included in the replica.
         -----------------------------   --------------------------------------------------------------------
@@ -1346,8 +1348,8 @@ class SyncManager(object):
                                         and download. By default, a replica is synchronized bi-directionally.
                                         Only applicable when *sync_model* is *perReplica*. If *sync_model*
                                         is *perLayer*, the *sync_layers* argument contains this information.
-                                        
-                                        Values: 
+
+                                        Values:
 
                                         - *download* -
                                              The changes that have taken place on the server since last download are
@@ -1369,12 +1371,12 @@ class SyncManager(object):
                                         dictionary allows a client to specify layer level generation numbers,
                                         and can also be used to specify individual directions for
                                         synchronization per layer.
-                                        
-                                        
+
+
                                         Syntax:
-                                        
+
                                         .. code-block:: python
-                                            
+
                                             >>> flc.replicas.synchronize(...
                                                                          sync_layers = [
                                                                                         {
@@ -1387,10 +1389,10 @@ class SyncManager(object):
                                                                             ]
                                                                           ...
                                                                           )
-                                        
+
                                         .. note::
                                             This parameter is ignored when *sync_model* is *perReplica*
-                                        
+
                                         * If *syncDirection* value is *bidirectional* or *download*,
                                           *serverGen* is required
                                         * The *serverSibGen* is only needed when syncing for replicas where
@@ -1407,7 +1409,7 @@ class SyncManager(object):
         edits_upload_id                 Optinal String. The ID for the uploaded item that contains the edits
                                         the client wants to apply to the service. Used in conjunction with
                                         *edits_upload_format*.
-                                        
+
                                         .. note::
                                             This is the :attr:`~arcgis.gis.Item.id` value returned when the
                                             edits were added to the service resources using
@@ -1418,21 +1420,21 @@ class SyncManager(object):
         -----------------------------   --------------------------------------------------------------------
         data_format                     Optional String. The format for the data returned in the response.
                                         The default value is *json*.
-                                        
+
                                         Values:
-                                        
+
                                         * *json* - data is embedded in the response
                                         * *sqlite* - a mobile geodatabase is returned which can be used in
                                           ArcGIS runtime applications
         -----------------------------   --------------------------------------------------------------------
         rollback_on_failure             Optional Boolean. Determines the behavior when there are errors
                                         while importing edits on the server during the operation. This only
-                                        applies when *sync_direction* is *upload* or *bidirectional*, or 
+                                        applies when *sync_direction* is *upload* or *bidirectional*, or
                                         the *syncDirection* key of an individual *sync_layers* element is
                                         *upload* or *bidirectional*. See the `Rollback On Failure and
                                         Sync Model <https://developers.arcgis.com/rest/services-reference/enterprise/rollbackonfailure-and-sync-models.htm>`_
                                         documentation for full details.
-                                        
+
                                         * When *True*, if an error occurs while importing edits on the
                                           server, all edits are rolled back and not applied. The
                                           operation returns an error in the response. Use this setting
@@ -1440,14 +1442,14 @@ class SyncManager(object):
                                           applied.
                                         * When *False*, if an error occurs while importing an edit on the
                                           server, the operation skips the edit and continues.
-                                          that were skipped are returned in the edits results with 
+                                          that were skipped are returned in the edits results with
                                           information describing why the edits were skipped.
         -----------------------------   --------------------------------------------------------------------
         close_replica                   Optional Boolean. Indicates whether to unregister the replica
                                         upon completion. The default value is *False*.
-                                        
+
                                         * If *True*, the replica will be unregistered when operation
-                                          completes. 
+                                          completes.
                                         * If *False*, the replica can continue to be synchronized.
         -----------------------------   --------------------------------------------------------------------
         out_path                        Opitonal String. Path of a folder to save the output to a file.
