@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 from typing import Tuple
 import concurrent.futures
 from arcgis import gis
+from arcgis.gis._impl._content_manager import SharingLevel
 from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
@@ -128,6 +129,11 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
+        if self._clone_mapping.get("Item IDs") is not None:
+            raise Exception(
+                "The item_mapping parameter is not supported when cloning ArcGIS"
+                " Dashboards. Use item data to remap values and update item."
+            )
         if "desktopView" in dashboard_item.get_data():
             widgets = dashboard_item.get_data()["desktopView"]["widgets"]
         else:
@@ -6403,7 +6409,16 @@ def _share_item_with_groups(item, sharing, group_mapping):
         if "access" in item and item["access"] is not None:
             everyone = item["access"] == "public"
             org = item["access"] == "org"
-        item.share(everyone, org, ",".join(groups))
+
+        if org and not everyone:
+            sharing_level = SharingLevel.ORG
+        elif not org and not everyone:
+            sharing_level = SharingLevel.PRIVATE
+        elif not org and everyone:
+            sharing_level = SharingLevel.EVERYONE
+
+        item.sharing.sharing_level = sharing_level
+        item.sharing._share(groups=groups)
 
 
 def _wgs84_envelope(envelope):

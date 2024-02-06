@@ -83,7 +83,10 @@ class SharingGroupManager:
             do_update = True
         if do_update:
             resp = self._sm._share(level=self._sm.sharing_level, groups=groups)
-            if "notSharedWith" in resp["results"][0]:
+            if (
+                "notSharedWith" in resp["results"][0]
+                and len(resp["results"][0]["notSharedWith"]) > 0
+            ):
                 # successfully sent the request, but the group was not shared with
                 return False
             return True
