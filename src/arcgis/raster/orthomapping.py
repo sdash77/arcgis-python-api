@@ -208,25 +208,18 @@ def _create_project(
     gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_" + name
-    if folder is not None:
-        if isinstance(folder, dict):
-            if "id" in folder:
-                folderId = folder["id"]
-                folder = folder["title"]
-        else:
-            owner = gis.properties.user.username
-            folderId = gis._portal.get_folder_id(owner, folder)
-        if folderId is None:
-            folder_item = gis.content.folders.create(folder, owner)
-            folder_dict = folder_item.properties
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+        folder = "_orthomapping " + name
+    owner = gis.properties.user.username
+    try:
+        folder_dict = gis.content.create_folder(folder, owner)
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
@@ -2224,7 +2217,8 @@ def generate_orthomosaic(
 
     update_flight_json = False
     from ._mission import Mission
-    flight_json_details= {}
+
+    flight_json_details = {}
 
     if isinstance(image_collection, Mission):
         mission = image_collection
@@ -2686,6 +2680,7 @@ def reset_image_collection(
 
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+
     flight_json_details = {}
 
     if isinstance(image_collection, Mission):
@@ -2814,7 +2809,12 @@ class Project:
             except:
                 raise RuntimeError("Creation of orthompping project failed.")
 
-        self._project_item = project
+        if project.type == "Ortho Mapping Project":
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Ortho Mapping Project"
+            )
         try:
             self._project_name = self._project_item.title
         except:
