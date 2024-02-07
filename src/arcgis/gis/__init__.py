@@ -33,10 +33,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
     ItemTypeEnum,
 )
-from arcgis.gis._impl import (
-    CreateServiceParameter,
-    ViewLayerDefParameter,
-)
+from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 
 
 try:
@@ -14892,11 +14889,24 @@ class Item(dict):
     @functools.lru_cache(maxsize=255)
     def sharing(self) -> _sharing.SharingManager:
         """
-        The ``sharing`` property allows users and administrators to control how
-        the current ``Item`` is shared throughout the `GIS`.
+        The ``sharing`` property accesses a
+        :class:`~arcgis.gis._impl._content_manager.SharingManager`
+        object to allow users and administrators to control how the current
+        :class:`~arcgis.gis.Item` is shared throughout the :class:`~arcgis.gis.GIS`.
 
-        :returns: SharingManager
+        :returns:
+            :class:`~arcgis.gis._impl._content_manager.SharingManager`
 
+        .. code-block:: python
+
+            # Usage example:
+            >>> gis = GIS(profile="your_organization_admin_profile")
+
+            >>> an_item = gis.content.get("<item_id>")
+            >>> sharing_mgr = an_item.sharing
+            >>> sharing_mgr
+
+            < <item_id> SharingManager >
         """
 
         return _sharing.SharingManager(item=self, gis=self._gis)
