@@ -213,7 +213,8 @@ def _create_project(
         folder = "_orthomapping " + name
     owner = gis.properties.user.username
     try:
-        folder_dict = gis.content.create_folder(folder, owner)
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
     except:
         raise RuntimeError(
             "Unable to create folder for Orthomapping Project Item. The project name is not available."
