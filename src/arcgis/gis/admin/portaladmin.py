@@ -1,6 +1,7 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
 from __future__ import annotations
 from datetime import datetime
 from typing import Optional
@@ -240,8 +241,10 @@ class PortalAdminManager(BasePortalAdmin):
             "num": 100,
         }
         if item_type:
-            params["type"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+            params["types"] = item_type.value
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()

@@ -76,6 +76,20 @@ ContentManager
 .. autoclass:: arcgis.gis.ContentManager
     :members:
     :undoc-members:
+    
+Folders
+-------
+.. autoclass:: arcgis.gis._impl._content_manager.Folders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Folder
+------
+.. autoclass:: arcgis.gis._impl._content_manager.Folder
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 UserManager
 ----------------------

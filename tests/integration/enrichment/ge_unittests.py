@@ -52,7 +52,7 @@ def _setup_ge_service(gis: GIS):
     cm = gis.content
     isinstance(cm, ContentManager)
     item = cm.add(item_properties=item_properties)
-    item.share(org=True)
+    item.sharing.sharing_level = "ORGANIZATION"
     item.protect(True)
     gis.update_properties({"geoenrichmentService": {"url": item.url}})
     return item

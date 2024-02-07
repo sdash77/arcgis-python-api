@@ -18,11 +18,14 @@ from ._util import (
     create_upload_tuple,
     status,
 )
-from arcgis.gis import GIS, Item
+from arcgis.auth.tools import LazyLoader
 from ..._dataclasses import ItemProperties, ItemTypeEnum
 from arcgis.auth import EsriSession
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 logger = logging.getLogger(__name__)
+
+__all__ = ["Folder", "Folders"]
 
 
 ###########################################################################
@@ -32,7 +35,7 @@ class Folder:
     """
 
     _folder: str | None = None
-    _gis: GIS
+    _gis: _arcgis_gis.GIS
     _name: str = None
     _fid: str = None
     _properties: dict[str, Any] | None = None
@@ -40,7 +43,7 @@ class Folder:
     # ---------------------------------------------------------------------
     def __init__(
         self,
-        gis: GIS,
+        gis: _arcgis_gis.GIS,
         *,
         folder: str | None = None,
         owner: str | None = None,
@@ -69,7 +72,23 @@ class Folder:
     # ---------------------------------------------------------------------
     @property
     def properties(self) -> dict[str, Any]:
-        """returns the folder's properties"""
+        """Returns a Python dictionary of the
+        :class:`arcgis.gis._impl._content_manager.Folder` properties.
+
+        .. code-block:: python
+
+            # Usage example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_org_admin_profile")
+
+            >>> water_folder = gis.content.folders.get(folder="water_resources",
+                                                       owner="field_editor3")
+            >>> water_folder.properties
+            {'username': 'field_editor3',
+             'id': 'fc82e2ebd2091ca752ac29332aa5cfaa',
+             'title': 'water_resources',
+             'created': 1567502017000}
+        """
         return self._properties
 
     # ---------------------------------------------------------------------
@@ -101,10 +120,75 @@ class Folder:
         order: str | None = "asc",
         sort_on: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        """returns the content in a given folder"""
+        """Returns a Python generator object to ierate over the the content in
+           the *folder*.
+
+        ================  ==========================================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------------------------
+        item_type         Required string. The specific :class:`~arcgis.gis.Item` type to create
+                          a generator for. Authoritative values can be entered by using the *value*
+                          attribute of any :class:`arcgis.gis.ItemTypeEnum` member.
+
+                          .. code-block:: python
+
+                              # Usage example
+                              >>> from arcgis.gis import ItemTypeEnum
+                              >>> user_folder = gis.content.folders.get(folder="data_folder")
+
+                              >>> fs_generator = user_folder.list(item_type=ItemTypeEnum.FEATURE_SERVICE.value)
+        ----------------  --------------------------------------------------------------------------
+        order             Optional string. Order of the folders in the returned generator.
+                          Options:
+
+                          * *asc*
+                          * *desc*
+        ----------------  --------------------------------------------------------------------------
+        sort_on           Optional string.
+                          Options:
+
+                          * *username*
+                          * *id*
+                          * *title*
+        ================  ==========================================================================
+
+        :return:
+            A Python generator object which can iterate over the
+            :class:`items <arcgis.gis.Item>` that meet the defined arguments.
+
+        .. code-block:: python
+
+            # Usage example #1
+            >>> from arcgis.gis import GIS, ItemTypeEnum
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> wetlands_fldr = gis.content.folders.get(folder="Wetlands data")
+            >>> wm_generator = wetlands_fldr.list(item_type=ItemTypeEnum.WEB_MAP.value)
+
+            >>> for wm_item in wm_generator:
+            >>>    print(f"{wm_item.title:30}{wm_item.type}")
+
+            swamp_preserves_in_2016       Web Map
+            wetland_protected_areas       Web Map
+
+            # Usage example #2
+            >>> highway_folder = gis.content.folders.get(folder="highway project")
+
+            >>> sd_genr = highway_folder.list(item_type=ItemTypeEnum.SERVICE_DEFINITION.value,
+                                              order="desc", sort_on="title)
+
+            >>> next(sd_genr)
+            <Item title:"I-40 sd" type:Service Definition owner:gis_user>
+
+            >>> next(sd_genr)
+            <Item title:"I-64-dev sd" type:Service Definition owner:gis_user>
+        """
         url: str = f"{self._gis._portal.resturl}content/users/{self._owner}"
         if self._folder:
-            url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            url: str = (
+                f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            )
         params: dict[str, Any] = {
             "f": "json",
             "types": item_type,
@@ -119,7 +203,7 @@ class Folder:
 
         while True:
             for item in data["items"]:
-                yield Item(gis=self._gis, itemid=item.get("id", None))
+                yield _arcgis_gis.Item(gis=self._gis, itemid=item.get("id", None))
             if data.get("nextStart", -1) == -1:
                 break
             else:
@@ -130,7 +214,8 @@ class Folder:
 
     def rename(self, name: str, owner: str | "User" = None) -> bool:
         """
-        The ``rename_folder`` method renames an existing folder from it's existing name to a new name.
+        The ``rename`` method replaces an existing folder's title with the
+        new value in the *name* argument.
 
         .. note::
             If owner is not specified, owner is set as the logged in user.
@@ -141,7 +226,7 @@ class Folder:
         ----------------  --------------------------------------------------------------------------
         name              Required string. The new name of the folder.
         ----------------  --------------------------------------------------------------------------
-        owner             Optional string. User, folder owner, None for logged in user.
+        owner             Optional :class:`~arcgis.gis.User` object or *username* string.
         ================  ==========================================================================
 
         :return:
@@ -150,8 +235,12 @@ class Folder:
         .. code-block:: python
 
             # Usage Example
-            >>> gis.content.rename_folder("2020_Hurricane_Data", "2021_Hurricane_Data", "User1234")
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_admin_profile")
 
+            >>> orig_folder = gis.content.folders.get("2020 Hurricane Data", "mobile_worker6")
+            >>> orig_folder.rename("2021_Hurricane_Data", "mobile_worker6")
+            True
         """
         params: dict[str, Any] = {"f": "json", "newTitle": name}
         owner_name: str = None
@@ -187,8 +276,15 @@ class Folder:
 
     # ---------------------------------------------------------------------
     def delete(self, permanent: bool = False) -> bool:
-        """deletes the folder and all of it's content"""
-        url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        """Deletes the user folder and all its :class`items <arcgis.gis.Item>`.
+
+        .. note::
+            Only available on non-Root Folder
+            :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
+        """
+        url: str = (
+            f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        )
         params = {
             "f": "json",
         }
@@ -219,7 +315,7 @@ class Folder:
         params: dict,
         upload_size: int,
         file_list: dict | list | None,
-    ) -> Item | dict[str, Any]:
+    ) -> _arcgis_gis.Item | dict[str, Any]:
         """performs the add by parts upload for files over 5 MBs."""
 
         parts_url: str = url.replace("/addItem", "/addPart")
@@ -296,7 +392,7 @@ class Folder:
         params: dict,
         upload_size: int,
         file_list: dict | list | None,
-    ) -> Item | dict[str, Any]:
+    ) -> _arcgis_gis.Item | dict[str, Any]:
         """performs the add by parts upload for files over 5 MBs."""
 
         parts_url: str = url.replace("/addItem", "/addPart")
@@ -363,7 +459,7 @@ class Folder:
         raise FolderException(str(r.text))
 
     # ---------------------------------------------------------------------
-    def _process_item_status(self, itemid: str) -> Item | dict[str, Any]:
+    def _process_item_status(self, itemid: str) -> _arcgis_gis.Item | dict[str, Any]:
         """Common function that handles the status of a newly added item"""
         i: int = 1
         status_messages: list[str] = [
@@ -396,13 +492,13 @@ class Folder:
             if not status_code in status_messages:
                 break
         if "id" in status_msg:
-            return Item(gis=self._gis, itemid=status_msg["id"])
+            return _arcgis_gis.Item(gis=self._gis, itemid=status_msg["id"])
         elif "itemId" in status_msg:
             count = 5
             while True:
                 time.sleep(1)
                 try:
-                    item = Item(gis=self._gis, itemid=status_msg["itemId"])
+                    item = _arcgis_gis.Item(gis=self._gis, itemid=status_msg["itemId"])
                     return item
                 except:
                     count -= 1
@@ -417,7 +513,7 @@ class Folder:
         params: dict,
         file_list: dict | list,
         check_status: bool = False,
-    ) -> Item | dict:
+    ) -> _arcgis_gis.Item | dict:
         """performs the add workflow"""
         resp: requests.Response = self._session.post(
             url=url, data=params, files=file_list
@@ -428,7 +524,7 @@ class Folder:
             return self._process_item_status(itemid=itemid)
         else:
             if itemid:
-                return Item(gis=self._gis, itemid=itemid)
+                return _arcgis_gis.Item(gis=self._gis, itemid=itemid)
         return data
 
     # ---------------------------------------------------------------------
@@ -443,13 +539,25 @@ class Folder:
         stream: bool = True,
     ) -> concurrent.futures.Future:
         """
-        Adds an item to the current folder
+        Adds an :class:`~arcgis.gis.Item` to the current folder.
+
+        .. note::
+            This method returns a :class:`concurrent.futures.Future` object. To
+            obtain *item*, use :meth:`concurrent.future.Future.result` method.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        item_properties     Required ItemProperties. The information to create an item.  The
-                            `title` and `item_type` are required.
+        item_properties     Required *ItemProperties* object. The properties for the item to add.
+                            When initializing the object, the *title* and *item_type* are
+                            required.
+
+                            .. code-block:: python
+
+                                >>> from arcgis.gis import ItemProperties, ItemTypeEnum
+
+                                >>> item_props = ItemProperties(title="<item_title>",
+                                                                item_type=ItemTypeEnum.SHAPEFILE.value)
         ---------------     --------------------------------------------------------------------
         file                Optional string, io.StringIO, or io.BytesIO. Provide the data to the
                             item.
@@ -481,10 +589,33 @@ class Folder:
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
 
-        :returns: concurrent.futures.Future
+        :returns:
+            :class:`concurrent.futures.Future` object
 
+        .. code-block:: python
 
+            # Usage Example:
+            >>> from arcgis.gis import GIS, ItemProperties, ItemTypeEnum
 
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> data_path = r"<path_to_zipped_shapefile>"
+            >>> item_props = ItemProperties(title="new_shapefile_item",
+                                            item_type=ItemTypeEnum.SHAPEFILE.value,
+                                            tags="new_shp_item,from_api",
+                                            snippet="Demo item added from Python API")
+
+            >>> folders_obj = gis.content.folders
+            >>> item_folder = folders_obj.get(folder="water_data")
+
+            >>> add_job = item_folder.add(item_props=item_props,
+                                          file=data_path)
+            >>> if not add_job.done():
+            >>>     print("...job precessing...")
+            >>> else:
+            >>>     new_shp_item = add_job.result()
+
+            >>> new_flyr_item = new_shp_item.publish()
         """
         if isinstance(item_properties, ItemProperties):
             item_properties: dict = {
@@ -663,7 +794,24 @@ class Folder:
 
 ###########################################################################
 class Folders:
-    def __init__(self, gis: GIS) -> "Folders":
+    """This class is a helper class for accessing and managing
+    :class:`folders <arcgis.gis._impl._content_manager.Folder>`. A *Folders*
+    object is not meant to be initialized directly, but rather returned by
+    the :attr:`~arcgis.gis.ContentManager.folders` property of the
+    :class:`~arcgis.gis.ContentManager` class.
+
+    .. code-block:: python
+
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_online_or_enterprise_profile")
+
+        >>> cm = gis.content
+        >>> folders_obj = cm.folders
+        >>> folders_obj
+        <arcgis.gis._impl._content_manager.folder.core.Folders at <memory_addr>>
+    """
+
+    def __init__(self, gis: _arcgis_gis.GIS) -> "Folders":
         self._gis = gis
         self._session: EsriSession = gis._con._session
 
@@ -679,7 +827,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
@@ -694,15 +842,47 @@ class Folders:
         owner: str | "User" | None = None,
     ) -> Folder | None:
         """
-        Gets a Single folder for a User
+        Gets a single :class:`~arcgis.gis._impl._content_manager.Folder` owned
+        by the :class:`~arcgis.gis.User` entered as the *owner* argument.
 
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        folder            required string, the name of the folder to create for the owner
+        folder            Optional string. The name of the
+                          :class:`~arcgis.gis._impl._content_manager.Folder` object
+                          to get from the *owner* argument's folders.
         ----------------  --------------------------------------------------------
-        owner             required string, the name of the user
+        owner             Optional string. The :attr:`~arcgis.gis.User.username`
+                          value or a :class:`~arcgis.gis.User` object indicating
+                          the the owner of the folder to get.
+
+                          .. note::
+                              Must have appropriate permissions to get another
+                              user's *folders*.
         ================  ========================================================
+
+        .. note::
+            If no *folder* or no *owner* argument provided, the
+            root folder of the logged-in *user* is returned.
+
+        :returns:
+            :class:`~arcgis.gis._impl._content_manager.Folder` object.
+
+        .. code-block:: python
+
+            # Usage Example #1: Get Root Folder of another user
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_or_enterprise_admin_profile")
+
+            >>> user_folder = gis.content.folders.get(owner="gis_editor3")
+            >>> user_folder
+                < Folder: Root Folder Owner: gis_editor3>
+
+            # Usage Example #2: Get particular folder from a specific user
+            >>> h2o_folder = gis.content.folders.get(folder="Water_Resources",
+                                                     owner="h2o_project_user")
+            >>> h2o_folder
+                < Folder: Water_Resources Owner: h2o_project_user>
         """
         if folder in ["/", "root", None, "Root Folder"]:
             folder = "Root Folder"
@@ -717,10 +897,12 @@ class Folders:
     # ---------------------------------------------------------------------
     def create(self, folder: str, owner: str | "User" = None) -> Folder:
         """
-        The ``create_folder`` method creates a folder with the given folder name, for the given owner.
+        The ``create`` method creates a folder named with the value of the
+        *folder* argument owned by the :class:`user <arcgis.gis.User>` entered
+        in the *owner* argument.
 
         .. note::
-            The ``create_folder`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 
@@ -729,17 +911,24 @@ class Folders:
         ----------------  --------------------------------------------------------------------------
         folder            Required string. The name of the folder to create for the owner.
         ----------------  --------------------------------------------------------------------------
-        owner             Optional string. User, folder owner, None for logged in user.
+        owner             Optional string of the :attr:`~arcgis.gis.User.username` attribute
+                          or :class:`~arcgis.gis.User` object who will own the *folder*.
+
+                          .. note::
+                              Must have administrator privileges to create content for another *user*.
         ================  ==========================================================================
 
         :return:
-            Folder
+            A :class:`~arcgis.gis._impl._content_manager.Folder` object.
 
         .. code-block:: python
 
             # Usage Example
-            >>> folder:Folder = gis.content.create_folder("Hurricane_Data", owner= "User1234")
-
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_or_enterprise_admin_profile")
+            >>> new_folder = gis.content.create("Hurricane_Data", owner= "User1234")
+            >>> new_folder.name
+                'Hurricane_Data'
         """
         if folder in ["/", None, ""]:  # we don't create root folder
             logger.warning("Cannot create the root folder, just returning the root.")
@@ -775,9 +964,56 @@ class Folders:
     # ---------------------------------------------------------------------
     def list(self, owner: str | "User" | None = None) -> Iterator[Folder]:
         """
-        returns a list of folder objects
+        Returns a Python generator over the
+        :class:`~arcgis.gis._impl._content_manager.Folder` objects owned by the
+        *username* entered in the *owner* argument.
 
-        :return: Iterator[Folder]
+        .. note::
+            Must have appropriate privileges to list another user's *folder's*.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        owner             Optional string. An :attr:`~arcgis.gis.User.username`
+                          value or :class:`arcgis.gis.User` object to indicate
+                          the *user* whose folders to examine.
+
+                          .. note::
+                              If no argument is provided, a generator over the
+                              list of the currently logged in *user's*
+                              *folders* is returned.
+        ================  ========================================================
+
+        :return:
+            Iterator[:class:`~arcgis.gis._impl._content_manager.Folder`]
+
+            A Python `generator <https://realpython.com/introduction-to-python-generators/#understanding-generators>`_
+            for iterating over the *owner* argument's folders.
+
+        .. code-block:: python
+
+            # Usage example #1:
+
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> folders_mgr = gis.content.folders
+            >>> user1_folder_gen = folders_mgr.list(owner="web_gis_user_1")
+            >>> for user_folder in user1_folder_gen:
+                    print(f"{user_folder.name}")
+            Root Folder
+            Water_Resources_data
+            Electric Utility Data
+            project_testing_data
+            Maps_for_population
+
+            # Usage example #2:
+
+            >>> folders_mgr = gis.content.folders
+            >>> user2_folder_gen = folders_mgr.list(owner="web_gis_user_2")
+            >>> next(user2_folder_gen)
+            < Folder: Root Folder Owner: web_gis_user_2>
+            >>> next(user2_folder_gen)
+            < Folder: City_project_data Owner: web_gis_user_2>
         """
         if owner and hasattr(owner, "username"):
             owner: str = getattr(owner, "username")

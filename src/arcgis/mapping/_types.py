@@ -404,6 +404,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISMapServiceLayer",
             "ArcGISTiledImageServiceLayer",
             "ArcGISVectorTileLayer",
+            "VectorTileLayer",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
             self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
@@ -442,8 +443,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
-            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self.definition = _mixins.PropertyMap(self._webmapdict)
             return self.basemap
         else:
@@ -782,12 +783,12 @@ class WebMap(HasTraits, collections.OrderedDict):
             elif hasattr(layer, "properties"):
                 if hasattr(layer.properties, "layerDefinition"):
                     if hasattr(layer.properties.layerDefinition, "serviceItemId"):
-                        new_layer[
-                            "type"
-                        ] = "Feature Collection"  # if ItemId is found, then type is fc and insert item id
-                        new_layer[
-                            "itemId"
-                        ] = layer.properties.layerDefinition.serviceItemId
+                        new_layer["type"] = (
+                            "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                        )
+                        new_layer["itemId"] = (
+                            layer.properties.layerDefinition.serviceItemId
+                        )
                 elif hasattr(layer, "layer"):
                     if hasattr(layer.layer, "layers"):
                         if hasattr(layer.layer.layers[0], "layerDefinition"):
@@ -795,9 +796,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                                 layer.layer.layers[0].layerDefinition,
                                 "serviceItemId",
                             ):
-                                new_layer[
-                                    "type"
-                                ] = "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                                new_layer["type"] = (
+                                    "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                                )
                                 new_layer["itemId"] = layer.layer.layers[
                                     0
                                 ].layerDefinition.serviceItemId
@@ -2178,10 +2179,25 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
+        .. note::
+            To create, edit, and manage offline map areas for a web map, you must be the owner
+            of the map and have privileges to create content.
+
+        .. note::
+            You cannot share a web map that contains an offline map area with a group that allows
+            members to update all items, and organization administrators cannot change ownership of a
+            web map that contains an offline map area.
+
         :return:
             The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
         """
-        return OfflineMapAreaManager(self.item, self._gis)
+        # Need to check that the owner of the map is the same as the logged in user
+        if self._gis.users.me.username == self.item.owner:
+            return OfflineMapAreaManager(self.item, self._gis)
+        else:
+            raise RuntimeError(
+                "You do not have permission to manage offline areas for this map. You must be the owner of the item."
+            )
 
     @property
     def pop_ups(self):
@@ -3142,43 +3158,59 @@ class OfflineMapAreaManager(object):
         if "offline" not in v:
             v["offline"] = {
                 "editableLayers": {
-                    "download": dl_lu[values["download"]]
-                    if "download" in values
-                    else remove.add("download"),
-                    "sync": dl_lu[values["sync"]]
-                    if "sync" in values
-                    else remove.add("sync"),
+                    "download": (
+                        dl_lu[values["download"]]
+                        if "download" in values
+                        else remove.add("download")
+                    ),
+                    "sync": (
+                        dl_lu[values["sync"]]
+                        if "sync" in values
+                        else remove.add("sync")
+                    ),
                 },
                 "offlinebasemap": {
-                    "referenceBasemapName": dl_lu[values["reference_basemap"]]
-                    if "reference_basemap" in values
-                    else remove.add("reference_basemap")
+                    "referenceBasemapName": (
+                        dl_lu[values["reference_basemap"]]
+                        if "reference_basemap" in values
+                        else remove.add("reference_basemap")
+                    )
                 },
                 "readonlyLayers": {
-                    "downloadAttachments": values["get_attachments"]
-                    if "get_attachments" in values
-                    else remove.add("get_attachments")
+                    "downloadAttachments": (
+                        values["get_attachments"]
+                        if "get_attachments" in values
+                        else remove.add("get_attachments")
+                    )
                 },
             }
         else:
             v["offline"] = {
                 "editableLayers": {
-                    "download": dl_lu[values["download"]]
-                    if "download" in values
-                    else remove.add("download"),
-                    "sync": dl_lu[values["sync"]]
-                    if "sync" in values
-                    else remove.add("sync"),
+                    "download": (
+                        dl_lu[values["download"]]
+                        if "download" in values
+                        else remove.add("download")
+                    ),
+                    "sync": (
+                        dl_lu[values["sync"]]
+                        if "sync" in values
+                        else remove.add("sync")
+                    ),
                 },
                 "offlinebasemap": {
-                    "referenceBasemapName": dl_lu[values["reference_basemap"]]
-                    if "reference_basemap" in values
-                    else remove.add("reference_basemap")
+                    "referenceBasemapName": (
+                        dl_lu[values["reference_basemap"]]
+                        if "reference_basemap" in values
+                        else remove.add("reference_basemap")
+                    )
                 },
                 "readonlyLayers": {
-                    "downloadAttachments": values["get_attachments"]
-                    if "get_attachments" in values
-                    else remove.add("get_attachments")
+                    "downloadAttachments": (
+                        values["get_attachments"]
+                        if "get_attachments" in values
+                        else remove.add("get_attachments")
+                    )
                 },
             }
         for r in remove:
@@ -3789,12 +3821,14 @@ class OfflineMapAreaManager(object):
 
         output_name = {
             "title": item_properties["title"] if "title" in item_properties else None,
-            "snippet": item_properties["snippet"]
-            if "snippet" in item_properties
-            else None,
-            "description": item_properties["description"]
-            if "description" in item_properties
-            else None,
+            "snippet": (
+                item_properties["snippet"] if "snippet" in item_properties else None
+            ),
+            "description": (
+                item_properties["description"]
+                if "description" in item_properties
+                else None
+            ),
             "tags": tags,
             "folderId": folder_id,
             "packageRefreshSchedule": refresh_schedule,
@@ -3968,9 +4002,11 @@ class OfflineMapAreaManager(object):
 
                 min_lod_info = sorted_lods[bisect_left(keys, min_scale)]
                 max_lod_info = sorted_lods[
-                    bisect_left(keys, max_scale) - 1
-                    if bisect_left(keys, max_scale) > 0
-                    else 0
+                    (
+                        bisect_left(keys, max_scale) - 1
+                        if bisect_left(keys, max_scale) > 0
+                        else 0
+                    )
                 ]
 
                 lod_span = [
