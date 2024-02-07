@@ -644,6 +644,10 @@ stretch
 _______
 .. autofunction:: arcgis.raster.functions.stretch
 
+subset_bands
+____________
+.. autofunction:: arcgis.raster.functions.subset_bands
+
 sultan
 ______
 .. autofunction:: arcgis.raster.functions.sultan
