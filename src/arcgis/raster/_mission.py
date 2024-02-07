@@ -139,7 +139,7 @@ class Mission:
         """
         The ``reset`` method resets the mission to its original state
 
-        :return: None
+        :return: A boolean indicating whether the reset was successful or not
         """
         from arcgis.raster.orthomapping import reset_image_collection
 
