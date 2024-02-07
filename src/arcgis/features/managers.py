@@ -2,6 +2,7 @@
 Helper classes for managing feature layers and datasets.  These class are not created by users directly.
 Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
+
 from __future__ import absolute_import, annotations
 import os
 import json
@@ -2212,12 +2213,12 @@ class FeatureLayerCollectionManager(_GISResource):
             props["url"] = new_source.url
         if "viewLayerDefinition" in flc_lyr_info.manager.properties["adminLayerInfo"]:
             props["adminLayerInfo"] = {}
-            props["adminLayerInfo"][
-                "viewLayerDefinition"
-            ] = flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
-            props["adminLayerInfo"]["viewLayerDefinition"][
-                "sourceServiceName"
-            ] = new_source.manager.properties["name"]
+            props["adminLayerInfo"]["viewLayerDefinition"] = (
+                flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
+            )
+            props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
+                new_source.manager.properties["name"]
+            )
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
             delete_json: dict = {"layers": [{"id": index}], "tables": []}
@@ -2319,7 +2320,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2346,8 +2347,8 @@ class FeatureLayerCollectionManager(_GISResource):
         import os
         from . import FeatureLayerCollection
 
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -2390,11 +2391,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isUpdatableView": updateable,
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilties"],
+                    "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
-            "tags": tags if tags else item.tags,
+            "tags": tags if tags else ",".join(item.tags),
             "snippet": snippet if snippet else item.snippet,
             "description": description if description else item.description,
             "outputType": "featureService",
@@ -2432,9 +2433,11 @@ class FeatureLayerCollectionManager(_GISResource):
                 add_def["layers"].append(
                     {
                         "adminLayerInfo": {
-                            "popupInfo": data["layers"][0]["popupInfo"]
-                            if "layers" in data
-                            else None,
+                            "popupInfo": (
+                                data["layers"][0]["popupInfo"]
+                                if "layers" in data
+                                else None
+                            ),
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
@@ -2473,9 +2476,11 @@ class FeatureLayerCollectionManager(_GISResource):
                         data = item._portal.con.get(path=data_path)
                         def_lyr = dict(lyr.properties)
                         def_lyr["adminLayerInfo"] = {
-                            "popupInfo": data["layers"][0]["popupInfo"]
-                            if "layers" in data
-                            else None,
+                            "popupInfo": (
+                                data["layers"][0]["popupInfo"]
+                                if "layers" in data
+                                else None
+                            ),
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
@@ -2636,7 +2641,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 ] + [
                     {"name": fld["name"], "visible": False}
                     for fld in self.layers[0].properties["fields"]
-                    if not fld["name"].lower() in [f.lower() for f in visible_fields]
+                    if fld["name"].lower() not in [f.lower() for f in visible_fields]
                 ]
             else:
                 values["fields"] = [
@@ -2803,9 +2808,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 if "editorTrackingInfo" in json_dict:
                     definition["editorTrackingInfo"] = collections.OrderedDict()
                     if "enableEditorTracking" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "enableEditorTracking"
-                        ] = json_dict["editorTrackingInfo"]["enableEditorTracking"]
+                        definition["editorTrackingInfo"]["enableEditorTracking"] = (
+                            json_dict["editorTrackingInfo"]["enableEditorTracking"]
+                        )
 
                     if (
                         "enableOwnershipAccessControl"
@@ -2818,19 +2823,19 @@ class FeatureLayerCollectionManager(_GISResource):
                         ]
 
                     if "allowOthersToUpdate" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToUpdate"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
+                        definition["editorTrackingInfo"]["allowOthersToUpdate"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
+                        )
 
                     if "allowOthersToDelete" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToDelete"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToDelete"]
+                        definition["editorTrackingInfo"]["allowOthersToDelete"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToDelete"]
+                        )
 
                     if "allowOthersToQuery" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToQuery"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                        definition["editorTrackingInfo"]["allowOthersToQuery"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                        )
                     if isinstance(json_dict["editorTrackingInfo"], dict):
                         for key, val in json_dict["editorTrackingInfo"].items():
                             if key not in definition["editorTrackingInfo"]:

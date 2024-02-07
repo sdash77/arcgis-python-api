@@ -1,6 +1,7 @@
 """
 Imports the layer and popup definitions to create services and webmaps for workforce
 """
+
 import json
 
 assignment_layer_definition_v1 = json.loads(

@@ -5,6 +5,7 @@ The Hosted Imagery & Raster Analysis capabilities are available both on ArcGIS E
 Refer https://doc.arcgis.com/en/arcgis-online/analyze/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Online.
 Refer https://enterprise.arcgis.com/en/portal/latest/use/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Enterprise.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 
@@ -147,9 +148,9 @@ def _flow_direction_analytics_converter(
     future=False,
     **kwargs,
 ):
-    input_surface_raster = (
-        forceFlow
-    ) = flowDirectionType = output_flow_direction_raster = output_drop_name = None
+    input_surface_raster = forceFlow = flowDirectionType = (
+        output_flow_direction_raster
+    ) = output_drop_name = None
 
     input_surface_raster = raster_function["rasterFunctionArguments"][
         "in_surface_raster"
@@ -1693,50 +1694,56 @@ def summarize_raster_within(
 
                                              Default: "Value"
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string - statistic to calculate.
-                                             You can calculate statistics of any numerical attribute of the points, lines, or areas within the input area
-                                             layer. 
-                                             
-                                             statistic_type can be one of the following:
-                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety', 'Percentile']
+    statistic_type                           Optional string - Statistic type to be calculated. Default is MEAN.
 
-                                             - Mean: Calculates the average of all cells in the value raster that belongs to \
+                                             - MEAN: Calculates the average of all cells in the value raster that belongs to \
                                              the same zone as the output cell. This is the default.
 
-                                             - Majority: Determines the majority value of all cells in the value raster that belongs to \
+                                             - MAJORITY: Determines the majority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Maximum: Determines the largest value of all cells in the value raster that belongs to \
+                                             - MAJORITY_COUNT: Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT: Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
+                                             - MAXIMUM: Determines the largest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Median: Finds the median value of all cells in the value raster that belongs to \
+                                             - MEDIAN: Calculates the median value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Minimum: Finds the smallest value of all cells in the value raster that belongs to \
+                                             - MINIMUM: Determines the smallest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Minority: Determines the minority value of all cells in the value raster that belongs to \
+                                             - MINORITY: Determines the minority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Range: Finds the range of all cells in the value that belongs to \
-                                             the same zone as the output zone.
+                                             - MINORITY_COUNT: Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - Sum: Adds the total value of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
+                                             - MINORITY_PERCENT: Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - STD: Finds the standard deviation of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
-
-                                             - Variety: Finds the variety of all cells in the value raster that belong to \
-                                             the same zone as the output cell.
-
-                                             - Percentile: Finds a percentile of all cells in the value raster that \
+                                             - PERCENTILE: Calculates a percentile of all cells in the value raster that \
                                              belong to the same zone as the output cell. The 90th percentile \
                                              is calculated by default. You can specify other values (from 0 to 100) \
                                              using the percentile_value parameter.
 
-                                             If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
-                                             for Majority, Median, Mean, and Variety cannot be computed.
+                                             - RANGE: Calculates the range of all cells in the value that belongs to \
+                                             the same zone as the output zone.
+
+                                             - SUM: Calculates the total value of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
+
+                                             - STD: Calculates the standard deviation of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
+
+                                             - VARIETY: Calculates the variety of all cells in the value raster that belong to \
+                                             the same zone as the output cell.
+
+                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     ignore_missing_values                    Optional bool, If you choose to ignore missing values, only the cells that 
                                              have a value in the layer to be summarized will be
@@ -8995,13 +9002,7 @@ def zonal_statistics_as_table(
                                              perform statistical calculations for all the cells in that zone; \
                                              therefore, the entire zone will receive the NoData value on the output raster.
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
-                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
-                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
-                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
-
-                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
-                                             RANGE, STD, and SUM.
+    statistic_type                           Optional string. Statistic type to be calculated. Default is ALL. 
 
                                              - ALL - All of the statistics will be calculated. \
                                              This is the default.
@@ -9012,10 +9013,16 @@ def zonal_statistics_as_table(
                                              - MAJORITY - Determines the value that occurs most often of all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
+                                             - MAJORITY_COUNT - Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT - Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
                                              - MAXIMUM - Determines the largest value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
-                                             - MEDIAN - Determines the median value of all cells in the raster layer \
+                                             - MEDIAN - Calculates the median value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
                                              - MINIMUM - Determines the smallest value of all cells in the raster \
@@ -9024,6 +9031,12 @@ def zonal_statistics_as_table(
                                              - MINORITY - Determines the value that occurs least often of all cells in \
                                              the raster layer to be summarized that belong to the same zone as the \
                                              output cell.
+
+                                             - MINORITY_COUNT - Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
+                                             - MINORITY_PERCENT - Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
                                              - PERCENTILE - Calculates a percentile of all cells in the value raster \
                                              that belong to the same zone as the output cell. The 90th percentile is calculated by default. \
@@ -9048,6 +9061,13 @@ def zonal_statistics_as_table(
                                              are calculated.
 
                                              - MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+
+                                             - MAJORITY_VALUE_COUNT_PERCENT - Calculates the majority value, count, and percentage statistics.
+
+                                             - MINORITY_VALUE_COUNT_PERCENT - Calculates the minority value, count, and percentage statistics.
+
+                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT \
+                                             statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_values                        Optional list of double values.
                                              The percentile to calculate. The default is 90, for the 90th percentile.
@@ -10233,6 +10253,331 @@ def predict_using_regression_model(
         input_rasters=input_rasters,
         input_regression_definition=input_regression_definition,
         output_predicted_raster_name=output_predicted_raster_name,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+
+def locate_regions(
+    input_raster,
+    input_existing_regions: Optional[Union[ImageryLayer, FeatureLayer]] = None,
+    total_area: Optional[float] = None,
+    area_units: Optional[str] = None,
+    number_of_regions: Optional[int] = 1,
+    region_shape: Optional[str] = "CIRCLE",
+    region_orientation: Optional[float] = 0,
+    shape_tradeoff: Optional[float] = 50,
+    evaluation_method: Optional[str] = "HIGHEST_AVERAGE_VALUE",
+    minimum_area: Optional[float] = None,
+    maximum_area: Optional[float] = None,
+    minimum_distance: Optional[float] = None,
+    maximum_distance: Optional[float] = None,
+    distance_units: Optional[str] = None,
+    number_of_neighbors: Optional[str] = None,
+    no_islands: Optional[bool] = None,
+    region_seeds: Optional[str] = "AUTO",
+    region_resolution: Optional[str] = "AUTO",
+    selection_method: Optional[str] = "AUTO",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Function identifies the best regions, or groups of contiguous cells, from an input utility (suitability) raster that satisfy a specified evaluation criterion and that meet identified shape, size, number, and interregion distance constraints.
+
+    .. note::
+           Function available in ArcGIS Image Server 11.2 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required ImageryLayer object. The input utility raster from which the regions will be derived.
+                                             The higher the value in the input raster, the greater the utility.
+    ------------------------------------     --------------------------------------------------------------------
+    input_existing_regions                   Optional ImageryLayer or FeatureLayer object. A dataset identifying where regions already exist.
+                                             The input can be a raster or a feature layer. If the input is a raster, any location in the raster with a valid value is considered already allocated. All other locations are set to NoData.
+
+                                             In the parameterized region-growing algorithm, no region will grow from any location containing an existing region.
+                                             Existing regions will be used in the growth and evaluation of the minimum_distance and maximum_distance as described
+                                             in the corresponding parameter descriptions below.
+    ------------------------------------     --------------------------------------------------------------------
+    total_area                               Optional float. The total amount of area for all regions.
+                                             The default is 10 percent of the input cells within the processing extent.
+    ------------------------------------     --------------------------------------------------------------------
+    area_units                               Optional string. Defines the area units used for the ``total_area``, ``minimum_area``, and ``maximum_area`` parameters.
+
+                                             | The available options and their corresponding units are the following:
+
+                                             - SQUARE_MAP_UNITS - For the square of the linear units of the output spatial reference.
+
+                                             - SQUARE_MILES - For miles.
+
+                                             - SQUARE_KILOMETERS - For kilometers.
+
+                                             - ACRES - For acres.
+
+                                             - HECTARES - For hectares.
+
+                                             - SQUARE_METERS - For meters.
+
+                                             - SQUARE_YARDS - For yards.
+
+                                             - SQUARE_FEET - For feet.
+
+                                             | The default is based on the input raster.
+                                             If the input raster is in feet, yards, miles or any other imperial unit, Square miles will be used.
+                                             If the input raster is in meters, kilometers, or any other metric unit, Square kilometers will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_regions                        Optional integer. Determines how many regions the ``total_area`` will be distributed across.
+
+                                             The maximum number of regions that can be specified is 30. The default is 1.
+    ------------------------------------     --------------------------------------------------------------------
+    region_shape                             Optional string. Defines the shape characteristics for the output regions.
+
+                                             | The regions start out from seed cell locations and grow outward with preference given to the cells that maintain the desired shape.
+
+                                             The available shape options are the following:
+
+                                             - CIRCLE - Cells that maintain circular regions will receive a greater weight. This is the default.
+
+                                             - ELLIPSE - Cells that maintain elliptical-shaped regions will receive a greater weight.
+
+                                             - TRIANGLE - Cells that maintain equilateral triangular-shaped regions will receive a greater weight.
+
+                                             - SQUARE - Cells that maintain square-shaped regions will receive a greater weight.
+
+                                             - PENTAGON - Cells that maintain pentagon-shaped regions will receive a greater weight.
+
+                                             - HEXAGON - Cells that maintain hexagon-shaped regions will receive a greater weight.
+
+                                             - OCTAGON - Cells that maintain octagon-shaped regions will receive a greater weight.
+    ------------------------------------     --------------------------------------------------------------------
+    region_orientation                       Optional float. Defines the orientation of the defined shape. Regions are grown out from the seed locations with preference
+                                             given to the cells that maintain the desired orientation of the region shapes.
+
+                                             | The orientation values are in compass degrees ranging from 0 to 360, increasing clockwise starting from north. The default is 0.
+
+                                             The default of 0 orients the shapes in the following manner:
+
+                                             - CIRCLE - no effect.
+
+                                             - ELLIPSE - the minor axis is orientated north-south.
+
+                                             - TRIANGLE - one point is straight up.
+
+                                             - SQUARE - one flat side is oriented east-west.
+
+                                             - PENTAGON - one point is straight up.
+
+                                             - HEXAGON - one flat side is oriented east-west.
+
+                                             - OCTAGON - one flat side is oriented east-west.
+    ------------------------------------     --------------------------------------------------------------------
+    shape_tradeoff                           Optional float. Identifies the weight for the cells when growing the candidate regions in the parameterized
+                                             region-growing algorithm. The weighting is a tradeoff between a cell's contribution for maintaining the region
+                                             shape relative to the utility contribution of the cell's attribute value.
+
+                                             Higher values indicates maintaining the shape of the region is more important than selecting higher utility values.
+                                             The acceptable percent values are 0 to 100, inclusively. The default is 50.
+
+                                             This parameter is used to identify the feasible candidate regions. The candidate regions that will be selected are
+                                             controlled by the ``evaluation_method`` parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    evaluation_method                        Optional string. The evaluation criteria to be used for determining which of the candidate regions identified in the
+                                             parameterized region-growing algorithm are most preferred. The preference can be specified based on a particular statistic
+                                             of the utility values, or spatial arrangement of the cells within the regions.
+
+                                             The available options are the following:
+
+                                             - HIGHEST_AVERAGE_VALUE - Selects regions based on the highest average value. This is the default.
+
+                                             - HIGHEST_SUM - Selects regions based on the highest sum.
+
+                                             - HIGHEST_MEDIAN_VALUE - Selects regions based on the highest median value.
+
+                                             - HIGHEST_VALUE - Selects regions based on the highest individual cell value contained within the region. This option ensures the best individual cells are selected.
+
+                                             - LOWEST_VALUE - Selects regions based on the highest lowest individual cell value contained within the region. This option ensures the selected regions contain cells with really low utility.
+
+                                             - GREATEST_CORE_AREA - Selects regions based on the greatest core area.Any cell that is farther than one cell from the edge of a region is considered to be part of the core.
+                                               The edge distance can be controlled by the analysis cell size. Setting a smaller cell size can increase the core area.
+
+                                             - HIGHEST_CORE_SUM - Selects regions based on the highest cumulative sum of the utility values for the core area. The edge distance can be controlled by the analysis cell size.
+
+                                             - GREATEST_EDGE - Selects regions based on the greatest amount of edge using the P1 ratio, which is the ratio of the perimeter of the shape to the perimeter of a circle of the same area. The P1 ratio for a circle is 1.
+    ------------------------------------     --------------------------------------------------------------------
+    minimum_area                             Optional float. Define the minimum area allowed for each region.
+
+                                             The units specified by ``area_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    maximum_area                             Optional float. Define the maximum area allowed for each region.
+
+                                             The units specified by ``area_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    minimum_distance                         | Optional float. Define the minimum distance allowed between regions. No two regions can be within this distance.
+
+                                             This parameter influences the parameterized region-growing (PRG) algorithm. If a cell has the potential of being
+                                             added to a candidate region, but it is within this distance from any individual region in the ``input_existing_regions``,
+                                             it will not be considered for the candidate region. The minimum distance setting is not applied to
+                                             excluded locations (NoData cells).
+
+                                             The units specified by ``distance_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    maximum_distance                         Optional float. Define the maximum distance allowed between regions. No region can be farther apart than this distance from at least one other region.
+
+                                             When sequentially selecting regions, if the next best region is farther than this distance from any of the already selected regions,
+                                             it will not be considered at this time, but it may be selected later when more regions are selected.
+
+                                             The maximum distance is applied to ``input_existing_regions``; that is, at least one of the selected regions must be within the maximum distance from existing regions.
+                                             The maximum distance setting is not applied to excluded areas (NoData cells), and has no effect on the PRG algorithm.
+
+                                             The units specified by ``distance_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    distance_units                           | Optional string. Defines the distance units that will be used for the ``minimum_distance`` and ``maximum_distance`` parameters.
+
+                                             The available options and their corresponding units are the following:
+
+                                             - MAP_UNITS - For the linear units of the output spatial reference
+                                             - MILES - For miles
+                                             - KILOMETERS - For kilometers
+                                             - METERS - For meters
+                                             - YARDS - For yards
+                                             - FEET - For feet
+
+                                             The default is based on the input raster. If the input raster is in feet, yards, miles, or any other imperial unit, MILES will be used.
+                                             If the input raster is in meters, kilometers, or any other metric unit, KILOMETERS will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_neighbors                      | Optional string. Defines which neighboring cells to use in the growth of the regions.
+
+                                             The available options are the following:
+
+                                             - FOUR - Only the four direct (orthogonal) neighbors of the region cells will be considered in the region growth.
+
+                                             - EIGHT - The eight nearest neighbors (orthogonal and diagonal) will be considered in the region growth. This is the default.
+    ------------------------------------     --------------------------------------------------------------------
+    no_islands                               Optional boolean. Defines whether or not islands will be allowed within the potential regions.
+
+                                             - True - A value of True specifies that there will be no islands within a region. A flood field algorithm is implemented as a
+                                               postprocess once the regions are created but before the regions are selected. If there are islands within a region,
+                                               they will be filled in and the cells will join the region. Since the fill process occurs before the selection process,
+                                               the utility of the island cells will be added to the region, and their values will be included in the selection process
+                                               of the regions and in the statistics of the output regions. As a result of the fill process, it is likely that the total
+                                               area allocated will exceed the target specified by the ``total_area`` parameter.
+
+                                             - False - A value of False specifies that there will be islands within a region.
+    ------------------------------------     --------------------------------------------------------------------
+    region_seeds                             Optional string. Defines the number of seeds from which to grow the potential regions.
+
+                                             The available options are the following:
+
+                                             - AUTO - The number of seeds will be based on the number of cells in the input raster. When the input raster has 100,000 cells or fewer, the default is MAXIMUM.
+                                               When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
+
+                                             - SMALL - The number of seeds will be equal to 10 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 1,600 seeds.
+
+                                             - MEDIUM - The number of seeds will be equal to 20 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 2,500 seeds.
+
+                                             - LARGE - The number of seeds will be equal to 30 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 3,600 seeds.
+
+                                             - MAXIMUM - The region growth will occur at each available cell within the input raster. Available cells are all cells that are not NoData and not identified as an existing region.
+    ------------------------------------     --------------------------------------------------------------------
+    region_resolution                        Optional string. Sets the resolution at which region growth occurs.
+
+                                             The available options are the following:
+
+                                             - AUTO - The resolution will be based on the number of cells in the input raster. When the input raster has 500,000 cells or fewer, the default is MAXIMUM.
+                                               When the input raster has more than 500,000 cells, the default is LOW. This is the default.
+
+                                             - LOW - The analysis will be performed on an intermediate raster containing 147,356 (384 x 384) cells distributed in the same x and y ratio as the input raster.
+
+                                             - MEDIUM - The analysis will be performed on an intermediate raster containing 262,144 (512 x 512) cells distributed in the same x and y ratio as the input raster.
+
+                                             - HIGH - The analysis will be performed on an intermediate raster containing 589,824 (768 x 768) cells distributed in the same x and y ratio as the input raster.
+
+                                             - MAXIMUM - The analysis will be performed on all cells in the input raster.
+    ------------------------------------     --------------------------------------------------------------------
+    selection_method                         Optional string. Identifies how the regions will be selected.
+
+                                             The available options are the following:
+
+                                             - AUTO - The selection method is based on the Number of regions parameter. If the Number of regions is eight or less, the COMBINATORIAL selection method is used.
+                                               If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
+
+                                             - COMBINATORIAL - Selects the best regions based on the specified evaluation method, while honoring the spatial constraints, by testing all
+                                               combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
+
+                                             - SEQUENTIAL - Sequentially selects the best regions based on the evaluation method and that meets the spatial constraints until the desired number of regions is reached.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                  projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Snap Raster (snapRaster): The output raster will have its
+                                                  cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Mask (mask): Only cells that fall within the analysis mask will be considered in the operation.
+    ====================================     ====================================================================
+
+    :return: The imagery layer item
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.locate_regions(
+        input_raster=input_raster,
+        input_existing_regions=input_existing_regions,
+        total_area=total_area,
+        area_units=area_units,
+        number_of_regions=number_of_regions,
+        region_shape=region_shape,
+        region_orientation=region_orientation,
+        shape_tradeoff=shape_tradeoff,
+        evaluation_method=evaluation_method,
+        minimum_area=minimum_area,
+        maximum_area=maximum_area,
+        minimum_distance=minimum_distance,
+        maximum_distance=maximum_distance,
+        distance_units=distance_units,
+        number_of_neighbors=number_of_neighbors,
+        no_islands=no_islands,
+        region_seeds=region_seeds,
+        region_resolution=region_resolution,
+        selection_method=selection_method,
+        output_name=output_name,
         context=context,
         future=future,
         **kwargs,
