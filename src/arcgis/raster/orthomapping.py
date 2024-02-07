@@ -2812,7 +2812,7 @@ class Project:
             try:
                 project = _create_project(name=project, definition=definition)
             except:
-                raise RuntimeError("Creation of orthompping project failed.")
+                raise RuntimeError("Creation of orthomapping project failed.")
 
         if project.type == "Ortho Mapping Project":
             self._project_item = project
