@@ -1443,7 +1443,8 @@ class SyncManager(object):
                                         * When *False*, if an error occurs while importing an edit on the
                                           server, the operation skips the edit and continues.
                                           that were skipped are returned in the edits results with
-                                          information describing why the edits were skipped.
+                                          information describing why the edits were skipped. This is the
+                                          default value.
         -----------------------------   --------------------------------------------------------------------
         close_replica                   Optional Boolean. Indicates whether to unregister the replica
                                         upon completion. The default value is *False*.
