@@ -189,18 +189,18 @@ class Mission:
             raise RuntimeError("Invalid product type")
 
         mission_json = self._mission_json
-        if "items" in mission_json.keys():
-            for key in mission_json["items"].keys():
+        if "items" in mission_json:
+            for key in mission_json["items"]:
                 if key == product:
                     item_info = mission_json["items"][key]
-                    if isinstance(item_info, dict) and "itemId" in item_info.keys():
+                    if isinstance(item_info, dict) and "itemId" in item_info:
                         item_object = self._gis.content.get(item_info["itemId"])
                         if item_object is None:
                             return False
                         deleted = item_object.delete()
                         if deleted:
                             mission_json["items"].update({key: {}})
-                            if key in mission_json["jobs"].keys():
+                            if key in mission_json["jobs"]:
                                 mission_json["jobs"].update({key: {"checked": False}})
                             self._update_mission_json(mission_json)
                             return True

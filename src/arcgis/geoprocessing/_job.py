@@ -961,9 +961,9 @@ class OMJob(GPJob):
 
                 item_keys = ["ortho", "dsm", "dtm"]
                 for key in item_keys:
-                    if key in mission_json["items"].keys():
+                    if key in mission_json["items"]:
                         item_info = mission_json["items"][key]
-                        if isinstance(item_info, dict) and "itemId" in item_info.keys():
+                        if isinstance(item_info, dict) and "itemId" in item_info:
                             item_object = mission._gis.content.get(item_info["itemId"])
                             try:
                                 if item_object:
@@ -975,22 +975,19 @@ class OMJob(GPJob):
             itemid = None
             if self._item:
                 item_props = json.loads(self._item)
-                if "serviceProperties" in item_props.keys():
-                    if "itemProperties" in item_props.keys():
-                        if "itemId" in item_props["itemProperties"].keys():
+                if "serviceProperties" in item_props:
+                    if "itemProperties" in item_props:
+                        if "itemId" in item_props["itemProperties"]:
                             itemid = item_props["itemProperties"]["itemId"]
-                elif "itemId" in item_props.keys():
+                elif "itemId" in item_props:
                     itemid = item_props["itemId"]
 
             if item_name == "dsm" or item_name == "dtm" or item_name == "ortho":
-                if "items" in mission_json.keys():
-                    for key in mission_json["items"].keys():
+                if "items" in mission_json:
+                    for key in mission_json["items"]:
                         if key == item_name:
                             item_info = mission_json["items"][key]
-                            if (
-                                isinstance(item_info, dict)
-                                and "itemId" in item_info.keys()
-                            ):
+                            if isinstance(item_info, dict) and "itemId" in item_info:
                                 if item_info["itemId"] != itemid:
                                     item_object = mission._gis.content.get(
                                         item_info["itemId"]
@@ -1001,7 +998,7 @@ class OMJob(GPJob):
                                     except:
                                         pass
                             mission_json["items"].update({key: {}})
-                            if key in mission_json["jobs"].keys():
+                            if key in mission_json["jobs"]:
                                 mission_json["jobs"].update({key: {"checked": False}})
 
             if processing_states is not None:
