@@ -144,7 +144,6 @@ class Mission:
 
     def _update_mission_json(self, mission_json):
         rm = self._project_item.resources
-        # mission_json = mission._mission_json
         resource = self._resource_info
         resource_name = resource["resource"]
 
