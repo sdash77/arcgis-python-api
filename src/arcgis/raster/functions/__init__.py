@@ -7105,7 +7105,7 @@ def remap(
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
-    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when allow_unmatched is False.
+    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when `allow_unmatched` is set to False.
     ================================     ====================================================================
 
     :return: The output raster.
