@@ -73,7 +73,7 @@ class Folder:
     @property
     def properties(self) -> dict[str, Any]:
         """Returns a Python dictionary of the
-        :class:`arcgis.gis._impl._content_manager.Folder` properties.
+        :class:`~arcgis.gis._impl._content_manager.Folder` properties.
 
         .. code-block:: python
 
@@ -120,15 +120,15 @@ class Folder:
         order: str | None = "asc",
         sort_on: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        """Returns a Python generator object to ierate over the the content in
-           the *folder*.
+        """Returns a Python generator object that can be iterated over to return
+        the content in the *folder*.
 
         ================  ==========================================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         item_type         Required string. The specific :class:`~arcgis.gis.Item` type to create
                           a generator for. Authoritative values can be entered by using the *value*
-                          attribute of any :class:`arcgis.gis.ItemTypeEnum` member.
+                          attribute of any :class:`~arcgis.gis._impl._dataclasses.ItemTypeEnum` member.
 
                           .. code-block:: python
 
@@ -584,7 +584,7 @@ class Folder:
                             The specified id must be a 32 character GUID string without any special characters.
 
                             If the `item_id` is already being used, an error will be raised
-                            during the `add` process.
+                            during the `add` operation.
 
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
@@ -975,7 +975,7 @@ class Folders:
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             Optional string. An :attr:`~arcgis.gis.User.username`
-                          value or :class:`arcgis.gis.User` object to indicate
+                          value or :class:`~arcgis.gis.User` object to indicate
                           the *user* whose folders to examine.
 
                           .. note::
