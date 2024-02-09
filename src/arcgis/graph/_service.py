@@ -82,6 +82,23 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
+    def _validate_response(self, response):
+        if response.status_code != 200:
+            raise Exception(
+                "Invalid HTTP Response. Expected status code 200, got "
+                + str(response.status_code)
+            )
+        headers = response.headers
+        if (
+            "Content-Type" not in headers
+            or headers["Content-Type"] != "application/x-protobuf"
+        ):
+            err_message = (
+                "Improper response type from server. See error below.\n"
+                + response.content.decode()
+            )
+            raise Exception(err_message)
+
     def search(self, search: str, category: str = "both") -> List[dict]:
         """
         Allows for the searching of the properties of entities,
@@ -146,6 +163,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         rows = []
         query_dec = _kgparser.GraphQueryDecoder()
         query_dec.data_model = self._datamodel
@@ -214,6 +233,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         content = response.content
         dec = _kgparser.GraphUpdateSearchIndexResponseDecoder()
         dec.decode(content)
@@ -253,6 +273,7 @@ class KnowledgeGraph:
         }
 
         data = self._gis._con.get(url, params, return_raw_response=True, try_json=False)
+        self._validate_response(data)
         buffer_dm = data.content
         gqd = _kgparser.GraphQueryDecoder()
         gqd.push_buffer(buffer_dm)
@@ -428,6 +449,8 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
+
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
@@ -446,6 +469,7 @@ class KnowledgeGraph:
         r_dm = self._gis._con.get(
             url, params=params, return_raw_response=True, try_json=False
         )
+        self._validate_response(r_dm)
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm
@@ -463,6 +487,7 @@ class KnowledgeGraph:
         r_dm = self._gis._con.get(
             url, params=params, return_raw_response=True, try_json=False
         )
+        self._validate_response(r_dm)
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
@@ -487,7 +512,7 @@ class KnowledgeGraph:
         }
         headers = {"Content-Type": "application/octet-stream"}
         response = session.post(url=url, params=params, headers=headers, stream=True)
-
+        self._validate_response(response)
         sync_response = response.content
         dec = _kgparser.SyncDataModelResponseDecoder()
         dec.decode(sync_response)
@@ -620,6 +645,8 @@ class KnowledgeGraph:
             data=res.byte_buffer,
             stream=True,
         )
+
+        self._validate_response(request_response)
         apply_edits_response = request_response.content
 
         dec = _kgparser.GraphApplyEditsDecoder()
@@ -707,6 +734,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -787,6 +816,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -827,6 +858,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -910,6 +943,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -1007,6 +1042,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -1058,6 +1095,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -1126,6 +1165,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         response_content = response.content
         dec = _kgparser.GraphIndexAddsResponseDecoder()
         dec.decode(response_content)
@@ -1185,6 +1225,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         response_content = response.content
         dec = _kgparser.GraphIndexDeleteResponseDecoder()
         dec.decode(response_content)
@@ -1265,6 +1306,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         response_content = response.content
         dec = _kgparser.GraphAddConstraintRulesDecoder()
         dec.decode(response_content)
@@ -1323,6 +1365,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         response_content = response.content
         dec = _kgparser.GraphDeleteConstraintRulesDecoder()
         dec.decode(response_content)
