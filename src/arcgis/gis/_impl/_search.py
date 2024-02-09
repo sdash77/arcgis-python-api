@@ -20,6 +20,7 @@ def _search(
     group_id=None,
     as_dict=False,
     enrich=None,
+    filter=None,
 ):
     """
     Generalized advanced search method.  This method allows for the query and
@@ -116,6 +117,8 @@ def _search(
         if isinstance(bbox, (tuple, list)):
             bbox = ",".join([str(b) for b in bbox])
         params["bbox"] = bbox
+    if filter:
+        params["filter"] = filter
     if stype in {"content", "item", "items"}:
         url = "{base}search".format(base=gis._portal.resturl)
         if enrich:
