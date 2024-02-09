@@ -377,7 +377,7 @@ class MarketPlaceManager:
 
         params = {
             "f": "json",
-            "purchaseOrgId": purchase_org_id,
+            "purchaserOrgId": purchase_org_id,
             "provisionedItemId": provisioned_itemid,
             "endDate": end_date,
         }
