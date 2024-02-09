@@ -5864,7 +5864,7 @@ class FeatureLayerCollection(_GISResource):
         """
         Docstring in SyncManager.synchronize.
         """
-            
+
         url = "{url}/synchronizeReplica".format(url=self._url)
         params = {
             "f": "json",

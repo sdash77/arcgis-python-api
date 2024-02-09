@@ -1458,11 +1458,11 @@ class SyncManager(object):
         :returns:
             A Python dictionary with various keys depending upon inputs.
         """
-       
+
         if rollback_on_failure:
             if not self._fs.properties["syncCapabilities"]["supportsRollbackOnFailure"]:
                 raise Exception("Feature service does not support rollback on failure.")
-        
+
         # TODO:
         return self._fs._synchronize_replica(
             replica_id=replica_id,
