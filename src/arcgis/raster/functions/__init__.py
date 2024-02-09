@@ -7078,7 +7078,7 @@ def remap(
     no_data_ranges: Optional[list[float]] = None,
     allow_unmatched: Optional[bool] = None,
     astype: Optional[str] = None,
-    replacement_value: Optional[float]=None
+    replacement_value: Optional[float] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
