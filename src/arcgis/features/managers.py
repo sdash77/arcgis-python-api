@@ -1211,7 +1211,7 @@ class SyncManager(object):
         edits_upload_id: dict | None = None,
         edits_upload_format: str | None = None,
         data_format: str = "json",
-        rollback_on_failure: bool = True,
+        rollback_on_failure: bool = False,
     ):
         """
         The synchronize operation synchronizes data between a local copy of data
@@ -1356,7 +1356,7 @@ class SyncManager(object):
                                              returned. Client does not need to send any changes. If the changes are sent, service
                                              will ignore them.
                                         - *upload* -
-                                             The changes submitted in the edits or editsUploadID/editsUploadFormatt
+                                             The changes submitted in the edits or editsUploadID/editsUploadFormat
                                              parameters are applied, and no changes are downloaded from the server.
                                         - *bidirectional* -
                                              The changes submitted in the edits or editsUploadID/editsUploadFormat
@@ -1411,8 +1411,8 @@ class SyncManager(object):
                                         *edits_upload_format*.
 
                                         .. note::
-                                            This is the :attr:`~arcgis.gis.Item.id` value returned when the
-                                            edits were added to the service resources using
+                                            This is the *id* value returned when the edits were added
+                                            to the service resources using
                                             :meth:`~arcgis.features.FeatureLayerCollection.upload`.
         -----------------------------   --------------------------------------------------------------------
         edits_upload_format             Optional String. The data format of the data referenced in
@@ -1458,6 +1458,11 @@ class SyncManager(object):
         :returns:
             A Python dictionary with various keys depending upon inputs.
         """
+       
+        if rollback_on_failure:
+            if not self._fs.properties["syncCapabilities"]["supportsRollbackOnFailure"]:
+                raise Exception("Feature service does not support rollback on failure.")
+        
         # TODO:
         return self._fs._synchronize_replica(
             replica_id=replica_id,
