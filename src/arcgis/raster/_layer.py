@@ -4839,13 +4839,13 @@ class ImageryLayer(Layer):
         max_count: Optional[int] = None,
     ):
         """
-        The function will locates all images that contain to_geometry and sort them 
-        accordingly. For example, in the image inspection workflow, in most cases, 
-        from_geometry is the viewing camera position, and to_geometry is the target 
-        point (where user clicked on the map). The images found are sorted in 
-        ascending order based on the angle between the vector from viewing camera 
-        position to target point, and that from the image camera GPS location to 
-        the target point, plus distance between the image center and the target 
+        The function will locates all images that contain to_geometry and sort them
+        accordingly. For example, in the image inspection workflow, in most cases,
+        from_geometry is the viewing camera position, and to_geometry is the target
+        point (where user clicked on the map). The images found are sorted in
+        ascending order based on the angle between the vector from viewing camera
+        position to target point, and that from the image camera GPS location to
+        the target point, plus distance between the image center and the target
         point.
 
         .. note::
@@ -4858,7 +4858,7 @@ class ImageryLayer(Layer):
                               A point geometry that defines the from location.
         -----------------     --------------------------------------------------------------------
         to_geometry           Required dictionary or :class:`~arcgis.geometry.Point` object.
-                              A point geometry that defines the to location. 
+                              A point geometry that defines the to location.
         -----------------     --------------------------------------------------------------------
         in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
                               If in_sr is not specified, the geometry is assumed to be in the spatial reference of the service.
@@ -4960,14 +4960,14 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         needs to be converted from image space to map space.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. 
+        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
                                         The spatial reference of the returned geometry.
         ----------------------------    --------------------------------------------------------------------
         options                         Optional dict. Supports DOff and Adjust keys.
-                                         - DOff - The DOff key is the depth offset value, and has a numeric value. 
-                                                  DOff is introduced to resolve Z-fighting, setting the depth offset to 
-                                                  that the geometries the user sketched can draw on top of mesh instead 
-                                                  of burying inside of it. 
+                                         - DOff - The DOff key is the depth offset value, and has a numeric value.
+                                                  DOff is introduced to resolve Z-fighting, setting the depth offset to
+                                                  that the geometries the user sketched can draw on top of mesh instead
+                                                  of burying inside of it.
                                          - Adjust is a boolean value. If Adjust is set to True, the "background" vertices will be adjusted to the foreground.
 
                                          Syntax: {"DOff":<depth offset value>, "Adjust": True/False}
@@ -5176,9 +5176,9 @@ class ImageryLayer(Layer):
         """
 
         The ``image_to_map_multiray`` computes a geometry in map space from multiple views of the geometry in image space on multiple images.
-        The function operation computes a 3D geometry in a map from multiple image space geometries on multiple corresponding raster items of 
-        one same object. For example, a house shows up in several raster items. Users may specify the house location on each image using the 
-        geometries parameter. In the rasterIds parameter, specify the rasterIds of the images in the same order. Then the operation will find the house 
+        The function operation computes a 3D geometry in a map from multiple image space geometries on multiple corresponding raster items of
+        one same object. For example, a house shows up in several raster items. Users may specify the house location on each image using the
+        geometries parameter. In the rasterIds parameter, specify the rasterIds of the images in the same order. Then the operation will find the house
         location in the map space.
 
         .. note::
