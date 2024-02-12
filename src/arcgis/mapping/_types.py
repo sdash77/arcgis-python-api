@@ -7322,3 +7322,21 @@ class Events(object):
                             "targetId": widget_id,
                         }
                     )
+###########################################################################
+class VectorTileLayer3D(arcgis.gis.Layer):
+    """
+    Cached web layers representing integrated mesh or 3D object type of data and can be viewed in ArcGIS clients such as the Scene Viewer and ArcGIS Pro.
+    """
+
+    def __init__(self, url, gis=None):
+        super(VectorTileLayer3D, self).__init__(url, gis)
+
+    # ----------------------------------------------------------------------
+    @classmethod
+    def fromitem(cls, item) -> VectorTileLayer:
+        if not item.type == "3DTiles Service":
+            raise TypeError(
+                "Item must be a type of 3D Tile Service, not " + item.type
+            )
+
+        return cls(item.url, item._gis)

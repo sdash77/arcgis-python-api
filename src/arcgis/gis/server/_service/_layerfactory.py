@@ -15,6 +15,7 @@ from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
 from arcgis.mapping import VectorTileLayer
+from arcgis.mapping import VectorTileLayer3D
 from arcgis.mapping import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
@@ -103,6 +104,8 @@ class ServiceFactory(type):
             return SchematicLayers(url=url, gis=server)
         elif base_name.lower() == "vectortileserver":
             return VectorTileLayer(url=url, gis=server)
+        elif base_name.lower() == "3dtilesservice":
+            return VectorTileLayer3D(url=url, gis=server)
         else:
             return Layer(url=url, gis=server)
         return type.__call__(cls, url, connection, item, initialize)

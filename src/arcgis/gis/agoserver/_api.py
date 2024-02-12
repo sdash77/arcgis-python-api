@@ -51,6 +51,8 @@ def _create_service(url: str, layer_type: str, gis: GIS, name: str = None):
         return network_dataset.NetworkDataset(url=url, gis=gis)
     elif layer_type.lower() == "vectortileserver":
         return mapping.VectorTileLayer(url=url, gis=gis)
+    elif layer_type.lower() =="3dtilesservice":
+        return mapping.VectorTileLayer3D(url=url, gis=gis)
     elif layer_type.lower() == "sceneserver":
         return mapping._scenelyrs._lyrs.SceneLayer(url=url, gis=gis)
     else:
