@@ -13241,7 +13241,12 @@ class Item(dict):
             FeatureLayerCollection,
             Table,
         )
-        from arcgis.mapping import VectorTileLayer, MapImageLayer, SceneLayer, VectorTileLayer3D
+        from arcgis.mapping import (
+            VectorTileLayer,
+            MapImageLayer,
+            SceneLayer,
+            VectorTileLayer3D,
+        )
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
 
@@ -16122,7 +16127,7 @@ class Item(dict):
             elif self["type"] == "Tile Package":
                 fileType = "tilePackage"
             elif self["type"] == "3DTiles Package":
-                fileType="3dtilespackage"
+                fileType = "3dtilespackage"
                 if output_type is None:
                     output_type = "3DTilesService"
             elif self["type"] == "SQLite Geodatabase":
@@ -16255,7 +16260,7 @@ class Item(dict):
                 buildInitialCache = True
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
                 output_type = "sceneService"
-            
+
             elif fileType == "3dtilespackage":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
