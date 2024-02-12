@@ -686,7 +686,9 @@ class Folder:
                     file
                 )
                 params["async"] = True
-                file_list["file"] = create_upload_tuple(file)
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.pop("fileName", None)
+                )
                 future = tp.submit(
                     self._add_async_streaming,
                     **{
