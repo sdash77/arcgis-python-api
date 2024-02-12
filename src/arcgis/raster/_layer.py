@@ -4832,8 +4832,14 @@ class ImageryLayer(Layer):
         max_count: Optional[int] = None,
     ):
         """
-        The function will find all images that can see the view point, and are ordered based on the distance
-        from the view point to the center of each image..
+        The function will locates all images that contain to_geometry and sort them 
+        accordingly. For example, in the image inspection workflow, in most cases, 
+        from_geometry is the viewing camera position, and to_geometry is the target 
+        point (where user clicked on the map). The images found are sorted in 
+        ascending order based on the angle between the vector from viewing camera 
+        position to target point, and that from the image camera GPS location to 
+        the target point, plus distance between the image center and the target 
+        point.
 
         .. note::
             The ``find_images`` operation is supported at 11.2 and later.
@@ -4842,20 +4848,13 @@ class ImageryLayer(Layer):
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         from_geometry         Required dictionary or :class:`~arcgis.geometry.Point` object.
-                              It is the scene camera position in the air.
+                              A point geometry that defines the from location.
         -----------------     --------------------------------------------------------------------
         to_geometry           Required dictionary or :class:`~arcgis.geometry.Point` object.
+                              A point geometry that defines the to location. 
         -----------------     --------------------------------------------------------------------
-        in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
-                              can accept a
-                              multitudes of values.  These can be a WKID, image coordinate system
-                              (ICSID), or image coordinate system in json/dict format.
-
-                              .. note::
-
-                                    An image coordinate system ID can be specified
-                                    using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                                    conflicts with wkid
+        in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
+                              If in_sr is not specified, the geometry is assumed to be in the spatial reference of the service.
         -----------------     --------------------------------------------------------------------
         object_ids            Optional string. The object IDs of this raster catalog to be
                               queried. When this parameter is specified, any other filter
@@ -4954,20 +4953,14 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         needs to be converted from image space to map space.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
-                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
-                                        (ICSID), or image coordinate system in json/dict format.
-                                        Additionally the arcgis.geometry.SpatialReference object is also a
-                                        valid entry.
-
-                                        .. note::
-
-                                        An image coordinate system ID can be specified
-                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                                        conflicts with wkid
+        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. 
+                                        The spatial reference of the returned geometry.
         ----------------------------    --------------------------------------------------------------------
-        options                         Optional dict. It has DOff and Adjust keys.
-                                         - DOff is the depth offset value.
+        options                         Optional dict. Supports DOff and Adjust keys.
+                                         - DOff - The DOff key is the depth offset value, and has a numeric value. 
+                                                  DOff is introduced to resolve Z-fighting, setting the depth offset to 
+                                                  that the geometries the user sketched can draw on top of mesh instead 
+                                                  of burying inside of it. 
                                          - Adjust is a boolean value. If Adjust is set to True, the "background" vertices will be adjusted to the foreground.
 
                                          Syntax: {"DOff":<depth offset value>, "Adjust": True/False}
@@ -5041,7 +5034,7 @@ class ImageryLayer(Layer):
         The ``map_to_image`` method converts a point on a map location to an image location.
 
         .. note::
-            The ``find_images`` operation is supported at 11.2 and later.
+            The ``map_to_image`` operation is supported at 11.2 and later.
 
         ============================    ====================================================================
         **Parameter**                   **Description**
@@ -5053,17 +5046,7 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
         ----------------------------    --------------------------------------------------------------------
-        in_sr                           Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
-                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
-                                        (ICSID), or image coordinate system in json/dict format.
-                                        Additionally the arcgis.geometry.SpatialReference object is also a
-                                        valid entry.
-
-                                        .. note::
-
-                                        An image coordinate system ID can be specified
-                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                                        conflicts with wkid
+        in_sr                           Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
         ----------------------------    --------------------------------------------------------------------
         options                         Optional dict. It has VisibleOnly key.
                                          - VisibleOnly is a boolean value. If it's true, method will return an empty geometry if vertices are behind the depths
@@ -5128,7 +5111,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def get_image_url(self, image_uri: str):
+    def get_image_url(self, image_uri: str, raster_id: int):
         """
 
         Returns an accessible url to the image.
@@ -5140,6 +5123,9 @@ class ImageryLayer(Layer):
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         image_uri             Required string. URI of the image to be accessed. The find_images operation returns the image_uri.
+        -----------------     --------------------------------------------------------------------
+        raster_id             Required integer. Specifies the objectId of the image service’s raster catalog.
+                              The url will be returned only if it belongs to the raster_id specified.
         =================     ====================================================================
 
         :return: A dictionary containing the accessible url to the image.
@@ -5148,7 +5134,7 @@ class ImageryLayer(Layer):
 
             # Example Usage
             img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            op = img_layer.get_image_url(image_uri="/vsis3/t-agu/Hosted_om20230601105400/data/YUN_0040.JPG")
+            op = img_layer.get_image_url(image_uri="/vsis3/t-agu/Hosted_om20230601105400/data/YUN_0040.JPG", raster_id=1)
 
         """
 
@@ -5166,6 +5152,9 @@ class ImageryLayer(Layer):
         if image_uri:
             params["uri"] = image_uri
 
+        if raster_id:
+            params["rasterId"] = raster_id
+
         resp = self._con.post(path=url, postdata=params, timeout=None)
 
         if isinstance(resp, dict) and "imageURL" in resp.keys():
@@ -5180,6 +5169,10 @@ class ImageryLayer(Layer):
         """
 
         The ``image_to_map_multiray`` computes a geometry in map space from multiple views of the geometry in image space on multiple images.
+        The function operation computes a 3D geometry in a map from multiple image space geometries on multiple corresponding raster items of 
+        one same object. For example, a house shows up in several raster items. Users may specify the house location on each image using the 
+        geometries parameter. In the rasterIds parameter, specify the rasterIds of the images in the same order. Then the operation will find the house 
+        location in the map space.
 
         .. note::
             The ``image_to_map_multiray`` operation is supported at 11.2 and later.
@@ -5192,17 +5185,7 @@ class ImageryLayer(Layer):
         ----------------------------    --------------------------------------------------------------------
         raster_ids                      Required string. The object IDs of a raster catalog items.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
-                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
-                                        (ICSID), or image coordinate system in json/dict format.
-                                        Additionally the arcgis.geometry.SpatialReference object is also a
-                                        valid entry.
-
-                                        .. note::
-
-                                        An image coordinate system ID can be specified
-                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                                        conflicts with wkid
+        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
         ============================    ====================================================================
 
         :return: A dictionary
