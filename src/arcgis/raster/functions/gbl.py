@@ -12,6 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
+
 from arcgis.raster._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
 from typing import Union, Optional
 from arcgis.features import FeatureLayer
@@ -831,10 +832,16 @@ def zonal_statistics(
                                         - MAJORITY-Determines the value that occurs most often of all pixels in the \
                                         Value Raster that belong to the same zone as the output pixel.
 
+                                        - MAJORITY_COUNT-Calculates the frequency of all cells that contain the majority \
+                                        value in the value raster that belong to the same zone as the output cell.
+
+                                        - MAJORITY_PERCENT-Calculates the percentage of cells that contain the majority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
                                         - MAXIMUM-Determines the largest value of all pixels in the Value Raster \
                                         that belong to the same zone as the output pixel.
 
-                                        - MEDIAN-Determines the median value of all pixels in the Value Raster \
+                                        - MEDIAN-Calculates the median value of all pixels in the Value Raster \
                                         that belong to the same zone as the output pixel.
 
                                         - MINIMUM-Determines the smallest value of all pixels in the Value Raster \
@@ -842,6 +849,17 @@ def zonal_statistics(
 
                                         - MINORITY-Determines the value that occurs least often of all pixels in \
                                         the Value Raster that belong to the same zone as the output pixel.
+
+                                        - MINORITY_COUNT-Calculates the frequency of all cells that contain the minority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
+                                        - MINORITY_PERCENT-Calculates the percentage of cells that contain the minority value in \
+                                        the value raster that belong to the same zone as the output cell.
+
+                                        - PERCENTILE-Calculates a percentile of all cells in the value raster that \
+                                        belong to the same zone as the output cell. The 90th percentile \
+                                        is calculated by default. You can specify other values (from 0 to 100) \
+                                        using the percentile_value parameter.
 
                                         - RANGE-Calculates the difference between the largest and smallest value \
                                         of all pixels in the Value Raster that belong to the same zone as the \
@@ -855,11 +873,6 @@ def zonal_statistics(
 
                                         - VARIETY-Calculates the number of unique values for all pixels in the \
                                         Value Raster that belong to the same zone as the output pixel.
-
-                                        - PERCENTILE -Calculates a percentile of all cells in the value raster that \
-                                        belong to the same zone as the output cell. The 90th percentile \
-                                        is calculated by default. You can specify other values (from 0 to 100) \
-                                        using the percentile_value parameter.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     process_as_multidimensional         Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -937,6 +950,10 @@ def zonal_statistics(
         "SUM",
         "VARIETY",
         "PERCENTILE",
+        "MAJORITY_COUNT",
+        "MAJORITY_PERCENT",
+        "MINORITY_COUNT",
+        "MINORITY_PERCENT",
     ]
     if statistics_type is not None:
         if statistics_type.upper() not in statistics_type_list:
@@ -2083,17 +2100,6 @@ def kernel_density(
             "OutputRasterParameterName": "out_raster",
             "in_features": input_features,
             "population_field": population_field,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 9,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 0,
-                "pixelSizeY": 0,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4137,17 +4143,6 @@ def distance_accumulation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_accumulation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 9,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4421,17 +4416,6 @@ def distance_allocation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_allocation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 8,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4630,17 +4614,6 @@ def optimal_path_as_raster(
             "PrimaryInputParameterName": "in_destination_data",
             "OutputRasterParameterName": "out_path_accumulation_raster",
             "in_destination_data": input_destination_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 8,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 

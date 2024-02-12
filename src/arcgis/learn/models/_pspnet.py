@@ -40,7 +40,6 @@ except Exception as e:
 
 
 class PSPNetClassifier(ArcGISModel):
-
     """
     Model architecture from https://arxiv.org/abs/1612.01105.
     Creates a PSPNet Image Segmentation/ Pixel Classification model.
@@ -236,6 +235,8 @@ class PSPNetClassifier(ArcGISModel):
             )
 
         self._map_location = getattr(self.learn, "_map_location_multi_gpu", None)
+        if self._map_location is not None:
+            self._multigpu_training = True
 
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))
@@ -453,6 +454,7 @@ class PSPNetClassifier(ArcGISModel):
             param.requires_grad = True
 
     def accuracy(self, input=None, target=None, void_code=0, class_mapping=None):
+        """Computes per pixel accuracy."""
         if input is not None or target is not None:
             accuracy(input, target)
         else:
@@ -481,9 +483,9 @@ class PSPNetClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True

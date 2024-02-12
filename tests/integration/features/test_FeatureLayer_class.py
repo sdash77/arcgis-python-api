@@ -6,6 +6,7 @@ import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 
@@ -68,7 +69,7 @@ class Test_FeatureLayer_portal(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureLayer_cls"]
         )
@@ -503,8 +504,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -552,8 +552,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -1355,3 +1354,5 @@ def tearDownModule():
     #
     #     except Exception as testException:
     #         self.fail("Error during test: " + testException.__str__())
+if __name__ == "__main__":
+    unittest.main()

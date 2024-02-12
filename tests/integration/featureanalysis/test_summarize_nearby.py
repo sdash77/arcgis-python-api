@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import summarize_nearby
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
 
 test_items = [
     "435fcf6cff1f4f34989e151c1f25d64a",  # Esri Offices

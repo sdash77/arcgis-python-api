@@ -2302,7 +2302,7 @@ class ImageryLayer(Layer):
                 import lerc
             except ImportError:
                 raise ImportError(
-                    "lerc not found. Install lerc to export image service as numpy array"
+                    "lerc not found. Install lerc to export image service as numpy array (pip install pylerc)"
                 )
 
             if not isinstance(res, bytes):
@@ -4716,7 +4716,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def _query_gps_info(
+    def query_gps_info(
         self,
         where: Optional[str] = None,
         object_ids: Optional[list[int]] = None,
@@ -4729,6 +4729,9 @@ class ImageryLayer(Layer):
         The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
         the user. The result of this operation is the gps and orientation information for image collections created by
         OrthoMapping REST/Python API or Ortho Maker.
+
+        .. note::
+            The ``query_gps_info`` operation is supported at 11.2 and later.
 
         ==============================  ====================================================================
         **Parameter**                   **Description**
@@ -4757,9 +4760,7 @@ class ImageryLayer(Layer):
                                         relationship with another geometry.
         ==============================  ====================================================================
 
-        :return: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
-                  return_geometry is ``True``, else a dictionary containing the expected return
-                  type.
+        :return: A dict containing the gps and camera information for the image collection.
 
         .. code-block:: python
 
@@ -4767,6 +4768,12 @@ class ImageryLayer(Layer):
 
             img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
             gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
+
+            # Usage Example 2
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            aoi_intersects = arcgis.geometry.filters.intersects(geometry=geometry_obj)
+            gps_info = img_lyr.query_gps_info(geometry_filter=aoi_intersects)
 
         """
 
@@ -7079,6 +7086,7 @@ class ImageryLayer(Layer):
             colStart = math.floor(
                 (dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw
             )
+            colStart = 0 if colStart < 0 else colStart
             colEnd = math.ceil(
                 (dataSourceExtent["xmax"] - origin["x"] - resolution["x"])
                 / resolution["x"]
@@ -7087,6 +7095,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor(
                 (origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th
             )
+            rowStart = 0 if rowStart < 0 else rowStart
             rowEnd = math.ceil(
                 (origin["y"] - dataSourceExtent["ymin"] - resolution["y"])
                 / resolution["y"]
@@ -7151,8 +7160,14 @@ class ImageryLayer(Layer):
                             band_arr = numarray[:, :, i]
 
                         # percent clip stretching
-                        p005 = np.percentile(band_arr, 0.5)
-                        p995 = np.percentile(band_arr, 99.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p005 = np.percentile(band_arr_new, 0.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
                         out[band_arr < p005] = 0
@@ -7162,6 +7177,8 @@ class ImageryLayer(Layer):
                     if num_bands == 1 and numarray.ndim == 2:
                         stretched_img = band_arr_list[0]
                     else:
+                        if num_bands == 2:
+                            band_arr_list.append(band_arr_list[1])
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
@@ -7228,7 +7245,7 @@ class ImageryLayer(Layer):
                 import lerc
             except:
                 _LOGGER.warning(
-                    "lerc needs to be installed, to render Tiled Imagery Layer"
+                    "lerc needs to be installed, to render Tiled Imagery Layer (pip install pylerc)"
                 )
             if not isinstance(res, bytes):
                 raise RuntimeError(res)
@@ -7243,9 +7260,7 @@ class ImageryLayer(Layer):
             data = ma.masked_array(data, valid_mask)
             if data.shape[0] > 3 and len(data.shape) == 3:
                 data = data[0:3]  # Extract first 3 bands
-            if len(data) == 2:
-                data = np.expand_dims(data, axis=2)
-            elif len(data) == 3:
+            if len(data) == 2 or len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
             # data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
@@ -7608,42 +7623,51 @@ class ImageryLayer(Layer):
         }
 
         mosaic_rule = {}
-        if type(self) == ImageryLayer:
-            if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
-                "defaultMosaicMethod"
-            ] != None:
+        try:
+            if type(self) == ImageryLayer:
                 if (
-                    self.properties["defaultMosaicMethod"].lower()
-                    in mosaic_method_mapping.keys()
+                    "capabilities" in self.properties
+                    and str(self.properties["capabilities"]).lower().find("catalog")
+                    == -1
                 ):
+                    return None
+                if (
+                    "defaultMosaicMethod" in self.properties.keys()
+                ) and self.properties["defaultMosaicMethod"] != None:
+                    if (
+                        self.properties["defaultMosaicMethod"].lower()
+                        in mosaic_method_mapping.keys()
+                    ):
+                        mosaic_rule.update(
+                            {
+                                "mosaicMethod": mosaic_method_mapping[
+                                    self.properties["defaultMosaicMethod"].lower()
+                                ]
+                            }
+                        )
+                if ("sortField" in self.properties.keys()) and self.properties[
+                    "sortField"
+                ] != None:
+                    mosaic_rule.update({"sortField": self.properties["sortField"]})
+                if ("sortValue" in self.properties.keys()) and self.properties[
+                    "sortValue"
+                ] != None:
+                    mosaic_rule.update({"sortValue": self.properties["sortValue"]})
+                if ("mosaicOperator" in self.properties.keys()) and self.properties[
+                    "mosaicOperator"
+                ] != None:
                     mosaic_rule.update(
                         {
-                            "mosaicMethod": mosaic_method_mapping[
-                                self.properties["defaultMosaicMethod"].lower()
-                            ]
+                            "mosaicOperation": "MT_"
+                            + self.properties["mosaicOperator"].upper()
                         }
                     )
-            if ("sortField" in self.properties.keys()) and self.properties[
-                "sortField"
-            ] != None:
-                mosaic_rule.update({"sortField": self.properties["sortField"]})
-            if ("sortValue" in self.properties.keys()) and self.properties[
-                "sortValue"
-            ] != None:
-                mosaic_rule.update({"sortValue": self.properties["sortValue"]})
-            if ("mosaicOperator" in self.properties.keys()) and self.properties[
-                "mosaicOperator"
-            ] != None:
-                mosaic_rule.update(
-                    {
-                        "mosaicOperation": "MT_"
-                        + self.properties["mosaicOperator"].upper()
-                    }
-                )
-            if ("sortAscending" in self.properties.keys()) and self.properties[
-                "sortAscending"
-            ] != None:
-                mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+                if ("sortAscending" in self.properties.keys()) and self.properties[
+                    "sortAscending"
+                ] != None:
+                    mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+        except:
+            pass
 
         return mosaic_rule
 
@@ -8647,8 +8671,29 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
+                              .. note::
+
+                                STAC items from the following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: daymet-annual-pr, daymet-daily-hi, \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, gridmet, daymet-annual-na, daymet-monthly-na, daymet-annual-hi, \
+                                        daymet-monthly-hi, daymet-monthly-pr, hgb, cop-dem-glo-30, cop-dem-glo-90, terraclimate, gnatsgo-rasters, 3dep-lidar-hag, \
+                                        3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, mobi, landsat-c2-l2, \
+                                        chloris-biomass, daymet-daily-pr, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, daymet-daily-na, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, noaa-climate-normals-netcdf, \
+                                        noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, noaa-cdr-sea-surface-temperature-whoi, \
+                                        noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, sentinel-3-olci-wfr-l2-netcdf, \
+                                        noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, sentinel-3-olci-lfr-l2-netcdf, \
+                                        sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, sentinel-3-synergy-syn-l2-netcdf, \
+                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+
                               Example:
-                                    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -8720,23 +8765,45 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
+        zarr_datasets = [
+            "daymet-annual-pr",
+            "daymet-daily-hi",
+            "gridmet",
+            "daymet-annual-na",
+            "daymet-monthly-na",
+            "daymet-annual-hi",
+            "daymet-monthly-hi",
+            "daymet-monthly-pr",
+            "terraclimate",
+            "daymet-daily-pr",
+            "daymet-daily-na",
+        ]
+
         if "type" not in json_data or (
             json_data["type"] != "Feature"
             and (
                 json_data["type"] == "Collection"
-                and not json_data["id"].startswith("daymet")
+                and json_data["id"] not in zarr_datasets
             )
         ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
+
         item = json_data
 
         from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, engine=engine, gis=gis)
+        ras = (
+            composite_band(
+                rasters=[Raster(file, engine=engine, gis=gis) for file in metadata_file]
+            )
+            if isinstance(metadata_file, list)
+            else Raster(metadata_file, engine=engine, gis=gis)
+        )
         return ras
 
     def get_raster_bands(self, band_ids_or_names: Optional[list[str]] = None):
@@ -12959,8 +13026,29 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
+                              .. note::
+
+                                The following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, hgb, cop-dem-glo-30, cop-dem-glo-90, gnatsgo-rasters, \
+                                        3dep-lidar-hag, 3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, \
+                                        chloris-biomass, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        mobi, landsat-c2-l2, noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, \
+                                        noaa-climate-normals-netcdf, noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, \
+                                        noaa-cdr-sea-surface-temperature-whoi, noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, \
+                                        sentinel-3-olci-wfr-l2-netcdf, noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, \
+                                        sentinel-3-olci-lfr-l2-netcdf, sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, \
+                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+
+
                               Example:
-                                    "https://earth-search.aws.element84.com/v0"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1"
         -----------------     --------------------------------------------------------------------
         query                 Optional dictionary. The GET/POST request query dictionary that can be
                               used to query a STAC API's search endpoint. (keys/values would depend
@@ -12971,10 +13059,17 @@ class RasterCollection:
                               and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
+                              .. note:: 
+
+                                ``limit`` key of the query should be explicitly set as ``None`` when \
+                                trying to create a RasterCollection from all the matched items \
+                                (retrieving them from all the pages). By default, the RasterCollection \
+                                is created from the first page of matches.
+
                               Example:
                                     | {
-                                    |   "collections": ["sentinel-s2-l2a-cogs"],
-                                    |   "bbox": [-110,39.5,-105,40.5],
+                                    |   "collections": ["sentinel-2-l2a"],
+                                    |   "bbox": [-110, 39.5, -105, 40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 0.5}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                     |   "limit": 100
@@ -13053,8 +13148,8 @@ class RasterCollection:
 
             rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
                                                 query={
-                                                        "collections": ["sentinel-s2-l2a-cogs"],
-                                                        "bbox": [-110,39.5,-105,40.5],
+                                                        "collections": ["sentinel-2-l2a"],
+                                                        "bbox": [-110, 39.5, -105, 40.5],
                                                         "query": {"eo:cloud_cover": {"lt": 0.5}},
                                                         "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                                         "limit": 100
@@ -13071,6 +13166,9 @@ class RasterCollection:
                                                 gis=gis)
 
         """
+
+        from ._util import _get_stac_metadata_file, _get_stac_api_search_items
+
         if not isinstance(stac_api, str):
             raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
         api_search_endpoint = (
@@ -13120,11 +13218,12 @@ class RasterCollection:
                         raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
-                    bbox_list = []
-                    bbox_list.append(projected_envelope[0]["xmin"])
-                    bbox_list.append(projected_envelope[0]["ymin"])
-                    bbox_list.append(projected_envelope[0]["xmax"])
-                    bbox_list.append(projected_envelope[0]["ymax"])
+                    bbox_list = [
+                        projected_envelope[0]["xmin"],
+                        projected_envelope[0]["ymin"],
+                        projected_envelope[0]["xmax"],
+                        projected_envelope[0]["ymax"],
+                    ]
 
                     if request_method.upper() == "GET":
                         bbox_str = ",".join(str(e) for e in bbox_list)
@@ -13132,29 +13231,41 @@ class RasterCollection:
                     else:
                         new_query["bbox"] = bbox_list
 
-        if request_method.upper() == "GET":
-            data = _requests.get(
-                api_search_endpoint, params=new_query, **request_params
-            )
-        else:
-            data = _requests.post(api_search_endpoint, json=new_query, **request_params)
+        max_limit_map = {
+            "planetarycomputer.microsoft.com/api/stac": 1000,
+            "earth-search.aws.element84.com": 200,
+            "services.sentinel-hub.com/api": 100,
+        }
 
-        if data.status_code != 200 or data.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-            "application/geo+json; charset=utf-8",
-        ]:
-            raise RuntimeError(
-                f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
-            )
+        stacs = list(max_limit_map.keys())
 
-        json_data = data.json()
-        if "type" not in json_data or json_data["type"] != "FeatureCollection":
-            raise RuntimeError(
-                f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}"
-            )
-        items = json_data["features"]
+        search_stac = next(
+            (stac for stac in stacs if stac in api_search_endpoint), None
+        )
+
+        if search_stac is None:
+            raise RuntimeError("STAC API not supported")
+
+        get_all_items = False
+
+        if (
+            new_query is not None
+            and "limit" in new_query
+            and new_query["limit"] is None
+        ):
+            new_query["limit"] = max_limit_map[search_stac]
+            get_all_items = True
+
+        items = _get_stac_api_search_items(
+            api_search_endpoint,
+            new_query,
+            request_method,
+            request_params,
+            get_all_items,
+        )
+
+        if len(items) < 1:
+            raise RuntimeError(f"No STAC items found. Please specify a better query")
 
         rc_attribute_dict = {}
         attribute_dict = {} if attribute_dict is None else attribute_dict
@@ -13163,23 +13274,34 @@ class RasterCollection:
                 rc_attribute_dict[key] = attribute_dict[key]
             else:
                 rc_attribute_dict[key] = [
-                    item[attribute_dict[key]]
-                    if attribute_dict[key] in item
-                    else item["properties"][attribute_dict[key]]
-                    if attribute_dict[key] in item["properties"]
-                    else key
+                    (
+                        item[attribute_dict[key]]
+                        if attribute_dict[key] in item
+                        else (
+                            item["properties"][attribute_dict[key]]
+                            if attribute_dict[key] in item["properties"]
+                            else key
+                        )
+                    )
                     for item in items
                 ]
 
-        from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
         for item in items:
             metadata_file = _get_stac_metadata_file(item)
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
-
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in metadata_file
+                    ]
+                )
+                if isinstance(metadata_file, list)
+                else Raster(metadata_file, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:

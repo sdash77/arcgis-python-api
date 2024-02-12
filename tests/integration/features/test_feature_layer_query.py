@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
@@ -7,10 +10,13 @@ gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # Major cities point layer
 try:
-    item = gis.content.search("major_cities", "Feature Layer")[0]
-    assert item
+    pitem = gis.content.search(
+        "major_cities owner:{username}".format(username=gis.users.me.username),
+        "Feature Layer",
+    )[0]
+    assert pitem
 except:
-    fp = "./major_cities"
+    fp = "./major_cities.zip"
     if os.path.isfile(path=fp):
         item = gis.content.add(
             item_properties={
@@ -20,8 +26,10 @@ except:
             data=fp,
         )
         pitem = item.publish()
+    else:
+        raise Exception("major_cities not found")
 
-layer = item.layers[0]
+layer = pitem.layers[0]
 print(layer)
 
 
@@ -52,6 +60,32 @@ class TestQueryFeatureLayer(unittest.TestCase):
 
         geometry_false = layer.query(return_geometry=False)
         assert geometry_false.features[0].geometry is None
+
+    def test_query_result_offset(self):
+        """
+        Test query result_offset
+        """
+        result_offset_results = layer.query(result_offset=100, return_all_records=False)
+        assert result_offset_results
+        assert result_offset_results.features[0].attributes["OBJECTID"] == 101
+
+    def test_query_object_ids(self):
+        """
+        Test query object_ids
+        """
+        object_ids_result = layer.query(object_ids="10,20,30")
+        assert object_ids_result
+        assert len(object_ids_result) == 3
+
+    def test_query_as_df(self):
+        """
+        Test query as_df
+        """
+        import pandas as pd
+
+        df = layer.query(as_df=True)
+        assert isinstance(df, pd.DataFrame)
+        assert not df.empty
 
     def test_query_out_fields(self):
         """ "
@@ -87,9 +121,10 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
         assert ordered
 
-    def test_query_return_m_and_z(self):
+    def test_query_return_m_and_z_and_centroid(self):
         """ "
         Test query with return_m and return_z
+        Test query with return_centroid
         """
         try:
             all_coord_item = gis.content.search("Jordan_Aviation")[1]
@@ -118,22 +153,31 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert m_and_z.has_m
         assert m_and_z.has_z
 
+        # polygon layer
+        centroid_results = all_coord_item.layers[2].query(return_centroid=True)
+        assert centroid_results
+
     def test_query_all_records(self):
         """ "
         Test query with return_all_records=False
         """
-        limit_records = layer.query(return_all_records=False)
+        limit_records = layer.query(return_all_records=False, result_record_count=2000)
         all_records = layer.query()
 
         assert len(limit_records) < len(all_records)
         assert limit_records
 
-    def test_query_historic_moments(self):
+    def test_query_historic_moments_and_time(self):
         """ "
         Test query with historic_moments parameter
+        Test query with time_filter parameter
         """
         try:
-            item = gis.content.search("Traffic Collisions")[0]
+            pitem = gis.content.search(
+                "Traffic Collisions owner:{username}".format(
+                    username=gis.users.me.username
+                )
+            )[0]
         except:
             fp = "./traffic_collisions"
             if os.path.isfile(path=fp):
@@ -144,10 +188,13 @@ class TestQueryFeatureLayer(unittest.TestCase):
                     },
                     data=fp,
                 )
-                item.publish()
-        layer_1 = item.layers[0]
-        historic = layer_1.query(historic_moment=3)
+                pitem = item.publish()
+        layer_1 = pitem.layers[0]
+        historic = layer_1.query(historic_moment=1199145600000)
         assert historic
+
+        time_filter_results = layer.query(time_filter=[1199145600000, 1230768000000])
+        assert time_filter_results
 
     def test_query_sql_format(self):
         """ "

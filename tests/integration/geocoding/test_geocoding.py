@@ -1,6 +1,7 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
+sys.path.insert(0, r"<local_path_to_src>")
+
 import os
 import sys
 import json
@@ -41,6 +42,8 @@ profiles = [
     None,
     "your_kubernetes_profile",
 ]
+
+
 ###########################################################################
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
@@ -125,7 +128,7 @@ class TestGeocoder(unittest.TestCase):
             else:
                 print(f"{p} has no geocoders")
 
-    #######################################################################
+    ########################################################################
 
     def test_create_geocoder_from_server(self):
         """tests creating a service from the sample server 6 endpoint"""
@@ -276,9 +279,10 @@ class TestGeocoder(unittest.TestCase):
                 as_featureset=False,
             )
             g_fs = geocode(address=address, as_featureset=True)
+            suggestion = suggest(text="Cedar ", location="-82.971625,39.965386")
             g_magic_key = geocode(
-                address="",
-                magic_key="dHA9MSNubT1TdGFyYnVja3Mjc3o9LTExNy4xOTY6MzQuMDU1OTk5OTk5OTk5OTk3I2NzPTcw",
+                address=suggestion["suggestions"][0]["text"],
+                magic_key=suggestion["suggestions"][0]["magicKey"],
             )
             assert g_magic_key
             assert g1
@@ -480,7 +484,7 @@ class TestGeocoder(unittest.TestCase):
                     assert bc_ent
                     assert len(bc_ent) > 0
 
-    #######################################################################
+    ########################################################################
     def test_batch_geocode_list(self):
         """tests the batch geocoding operation via list of strings"""
         addresses_dict = [

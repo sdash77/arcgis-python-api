@@ -8,9 +8,15 @@ from ._ref import templates
 from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
+import tempfile
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 arcgis = LazyLoader("arcgis")
-json = LazyLoader("json")
+# json = LazyLoader("json")
 time = LazyLoader("time")
 
 
@@ -51,7 +57,7 @@ class Templates(Enum):
 
         try:
             temp = WebExperience(template=self.value)
-            temp._item.share(everyone=True)
+            temp._item.sharing.sharing_level = "EVERYONE"
             temp.save(publish=True)
             from IPython.display import IFrame
 
@@ -69,7 +75,6 @@ class Templates(Enum):
 
 
 class WebExperience(object):
-
     """
     A Web Experience is web-based application that provides viewers with an interactive
     interface to maps, data, feature layers, and other components of the creator's design.
@@ -380,8 +385,17 @@ class WebExperience(object):
             props["tags"] = tags
 
         self._expdict = self._draft
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config",
+            file_name="config.json",
+            file=tfile.name,
         )
         self._resources = self._item.resources.list()
         if publish:
@@ -416,8 +430,15 @@ class WebExperience(object):
         """
 
         self._draft = self._expdict
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         return self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config", file_name="config.json", file=tfile.name
         )
 
     # ----------------------------------------------------------------------
@@ -712,7 +733,7 @@ class WebExperience(object):
 
         try:
             dummy_exp = self._duplicate()
-            dummy_exp._item.share(everyone=True)
+            dummy_exp._item.sharing.sharing_level = "EVERYONE"
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 
@@ -760,14 +781,20 @@ class WebExperience(object):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
+                if "itemId" not in v:
+                    continue
                 v["portalUrl"] = target.url
                 item = source.content.get(v["itemId"])
                 clone_result = target.content.clone_items([item], owner=owner, **kwargs)
                 if clone_result:
                     v["itemId"] = clone_result[0].itemid
+                    if "url" in v:
+                        v["url"] = clone_result[0].url
                 else:
                     targ_item = target.content.search(item.title)[0]
                     v["itemId"] = targ_item.itemid
+                    if "url" in v:
+                        v["url"] = targ_item.url
 
             return new_dict
 
@@ -776,8 +803,15 @@ class WebExperience(object):
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
             target_exp = WebExperience(exp_clone[0], gis=target)
             target_exp._expdict = new_dict
+            # Create a temporary file and write data to it
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                json.dump(self._expdict, tfile)
+                # Close the file explicitly
+                tfile.close()
             target_exp._item.resources.update(
-                folder_name="config", file_name="config.json", text=target_exp._expdict
+                folder_name="config", file_name="config.json", file=tfile.name
             )
             keywords = target_exp._item.typeKeywords
             for word in keywords:

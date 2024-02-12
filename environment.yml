@@ -12,7 +12,7 @@ dependencies:
 - ujson >=3
 - numpy>=1.21.6
 - pip
-- python>=3.9, <3.10
+- python>=3.9, <3.12
 - setuptools
 - widgetsnbextension >=3
 - jupyter_client <=6.1.12
@@ -43,6 +43,8 @@ dependencies:
 - lxml
 - dask >=2023.3.2
 - matplotlib-inline
+- azure-storage-blob <=12.9
+- pyarrow >=12.0.0
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

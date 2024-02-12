@@ -267,7 +267,7 @@ class ImageryModel(ArcGISModel):
                                 the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         """
-        getattr(self, "imagery_model").save(
+        saved_path = getattr(self, "imagery_model").save(
             name_or_path,
             framework,
             publish,
@@ -277,6 +277,7 @@ class ImageryModel(ArcGISModel):
             save_inference_file,
             **kwargs
         )
+        return saved_path
 
     def lr_find(self, allow_plot=True):
         """
@@ -2048,7 +2049,6 @@ class AutoDL:
             "FasterRCNN",
             "YOLOv3",
             "DETReg",
-            "MMDetection",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",

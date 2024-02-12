@@ -209,9 +209,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                )
             _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
@@ -222,9 +222,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                )
             _emd_template["ModelConfiguration"] = "_panoptic_inferencing"
 
         else:
@@ -232,9 +232,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["Classes"] = []
@@ -507,7 +507,12 @@ class ModelExtension(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
-        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
+        # Standalone models will be missing _ignore_classes attribute
+        if hasattr(self, "_ignore_classes"):
+            ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
+        else:
+            ignore_classes = np.unique(ignore_classes).tolist()
+
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`
@@ -894,6 +899,7 @@ class ModelExtension(ArcGISModel):
     ):
         """
         Runs prediction on an Image.
+        This method is only supported for RGB images.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -940,6 +946,9 @@ class ModelExtension(ArcGISModel):
             raise Exception(
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

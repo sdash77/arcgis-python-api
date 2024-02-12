@@ -6,14 +6,18 @@ import tempfile
 from enum import Enum
 import os
 import json
+import logging
 from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
+import requests
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
+
+_log = logging.getLogger(__name__)
 
 
 class StockImage(Enum):
@@ -670,7 +674,7 @@ class UX(object):
             }
             im_item = self._gis.content.add(item_props, logo)
             # share to everyone
-            im_item.share(everyone=True)
+            im_item.sharing.sharing_level = "EVERYONE"
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
@@ -728,8 +732,9 @@ class UX(object):
     @property
     def homepage_settings(self):
         """
-        Get an instance of the HomePageSettings class to make edits to the org's
-        homepage such as the background, title, logo, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.HomePageSettings` class
+        to make edits to the organization's  homepage such as the background,
+        title, logo, etc.
         """
         return HomePageSettings(gis=self._gis)
 
@@ -737,8 +742,8 @@ class UX(object):
     @property
     def map_settings(self):
         """
-        Get an instance of the MapSettings class to make edits to the org's default
-        map settings such as extent, basemap, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.MapSettings` class to
+        make edits to the org's default map settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
 
@@ -746,8 +751,9 @@ class UX(object):
     @property
     def item_settings(self):
         """
-        Get an instance of the ItemSettings class to make edits to the org's default
+        Get an instance of the :class:`~arcgis.gis.admin.ItemSettings` class to make edits to the org's default
         map settings such as comments, metadata, etc.
+
         """
         return ItemSettings(gis=self._gis)
 
@@ -755,14 +761,15 @@ class UX(object):
     @property
     def security_settings(self):
         """
-        Get an instance of the SecuritySettings class to make edits to the org's default
-        map settings such as informational banner, password policy, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.SecuritySettings` class
+        to make edits to the organization's default map settings such as
+        the informational banner, password policy, etc.
         """
         return SecuritySettings(gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def enable_comments(self):
         """
         Get/Set item commenting and comments.
@@ -780,7 +787,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
@@ -788,7 +795,7 @@ class UX(object):
         self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def set_background(
         self, background_file: str | None = None, is_built_in: bool = True
     ):
@@ -819,7 +826,7 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -838,7 +845,7 @@ class UX(object):
         return self.homepage_settings.get_background(download_path=download_path)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def set_banner(
         self,
         banner_file: str | None = None,
@@ -967,7 +974,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -1005,7 +1012,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -1029,7 +1036,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -1038,7 +1045,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -1061,7 +1068,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -1070,7 +1077,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -1088,7 +1095,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
@@ -1584,9 +1591,9 @@ class HomePageSettings(object):
                 "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
                 "show_text": hp["footer"]["showCopy"],
                 "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
-                "custom_color": hp["footer"]["bgCustom"]
-                if "bgCustom" in hp["footer"]
-                else "",
+                "custom_color": (
+                    hp["footer"]["bgCustom"] if "bgCustom" in hp["footer"] else ""
+                ),
             }
             return footer
 
@@ -1682,6 +1689,7 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def get_base_color(self):
+        """Gets the base color of the home page."""
         if self._new_hp:
             hp = self._reader_hp()
             return hp["baseColor"]
@@ -1837,7 +1845,10 @@ class MapSettings(object):
 
         :return: An instance of Group if a group is set, else the default or None
         """
-        group = self._gis.properties["basemapGalleryGroupQuery"]
+        if self._gis.properties["useVectorBasemaps"]:
+            group = self._gis.properties["vectorBasemapGalleryGroupQuery"]
+        else:
+            group = self._gis.properties["basemapGalleryGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
             groups = self._gis.groups.search(group[3::])
@@ -1870,17 +1881,76 @@ class MapSettings(object):
         )
 
     # ----------------------------------------------------------------------
+    @property
+    def use_3D_basemaps(self) -> bool:
+        """
+        Include Esri default 3D basemaps. The 3D basemaps can be used as a
+        reference in a web scene.
+
+        **This is only applicable to to ArcGIS Online**
+        """
+        if self._gis._is_arcgisonline:
+            return self._gis.properties.get("use3dBasemaps", False)
+        else:
+            _log.warning("This property only works with ArcGIS Online.")
+            return False
+
+    # ----------------------------------------------------------------------
+    @use_3D_basemaps.setter
+    def use_3D_basemaps(self, value: bool) -> bool:
+        """
+        Include Esri default 3D basemaps. The 3D basemaps can be used as a
+        reference in a web scene.
+
+        **This is only applicable to to ArcGIS Online**
+        """
+
+        if (
+            self._gis._is_arcgisonline
+            and self._gis.properties.get("use3dBasemaps", False) != value
+        ):
+            self._gis.update_properties({"use3dBasemaps": value})
+            assert self._gis.properties["use3dBasemaps"] == value
+        elif self._gis._is_arcgisonline == False:
+            _log.warning("This property only works with ArcGIS Online.")
+
+    # ----------------------------------------------------------------------
     def update_basemap_gallery(self):
         """
-        Update the basemap gallery group by getting rid of deprecated maps.
+        Update the basemap gallery group by getting rid of deprecated maps and
+        adding any non-deprecated default basemaps.
         Returns the updated group.
         """
+
+        # can skip if vector
         if self.use_vector_basemap:
             return self.basemap_gallery_group
+
+        # get rid of deprecated basemaps
         basemap_group = self.basemap_gallery_group
         for item in basemap_group.content():
             if item.content_status == "deprecated" and item.type == "Web Map":
-                item.unshare([basemap_group])
+                dep_id = item.itemid
+                self._gis._portal.unshare_item_as_group_admin(dep_id, basemap_group.id)
+
+        # retrieve the default basemaps and add any missing, non-deprecated ones
+        try:
+            gis_culture = self._gis.properties.user.culture
+        except:
+            gis_culture = "en-US"
+        url = (
+            "https://www.arcgis.com/sharing/rest/portals/self?f=json&culture="
+            + gis_culture
+        )
+        resp = requests.get(url)
+        bm_query = resp.json()["basemapGalleryGroupQuery"]
+        default_group = self._gis.groups.search(bm_query, outside_org=True)[0]
+        bmg_content = basemap_group.content()
+        for bm in default_group.content():
+            if bm not in bmg_content and bm.content_status != "deprecated":
+                new_id = bm.itemid
+                self._gis._portal.share_item_as_group_admin(new_id, basemap_group.id)
+
         return basemap_group
 
     # ----------------------------------------------------------------------
@@ -1950,9 +2020,11 @@ class MapSettings(object):
         if share_public:
             self._gis.update_properties({"canShareBingPublic": share_public})
         bing_dict = {
-            "key": self._gis.properties["bingKey"]
-            if "bingKey" in self._gis.properties
-            else None,
+            "key": (
+                self._gis.properties["bingKey"]
+                if "bingKey" in self._gis.properties
+                else None
+            ),
             "public": self._gis.properties["canShareBingPublic"],
         }
         return bing_dict
@@ -2256,9 +2328,9 @@ class SecuritySettings(object):
             "text": text if text else current_info_banner["text"],
             "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
             "fontColor": font_color if font_color else current_info_banner["fontColor"],
-            "enabled": enabled
-            if enabled is not None
-            else current_info_banner["enabled"],
+            "enabled": (
+                enabled if enabled is not None else current_info_banner["enabled"]
+            ),
         }
 
         # get all the org settings
@@ -2740,7 +2812,7 @@ class SecuritySettings(object):
                     "Cannot set empty list as Administrative contacts. You must have at least two administrators in the list."
                 )
             for ad in admins:
-                role = self._gis.users.search(ad)[0].role
+                role = self._gis.users.get(ad).role
                 if role == "org_admin":
                     admins_ok.append(ad)
             if len(admins_ok) < 2:

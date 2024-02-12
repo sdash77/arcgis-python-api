@@ -13,6 +13,7 @@ from arcgis.features.geo._dask import (_from_geometry,
                                        GeoDaskSeriesAccessor,
                                        GeoDaskSpatialAccessor)
 from arcgis.features.geo import _is_geoenabled
+from integration.config import QALAB_ROOT_PATH
 
 class TestDaskSpatialOps(unittest.TestCase):
     """tests the spatial operations select, join, overlay"""
@@ -38,7 +39,7 @@ class TestDaskSpatialOps(unittest.TestCase):
     def test_join(self):
         """tests the spatial join"""
 
-        fp_dir = r"\\qalab_server\pydata\v109\geosaurus\dask_test\spatial"
+        fp_dir = QALAB_ROOT_PATH + r"\dask_test\spatial"
         sdf1 = pd.DataFrame.spatial.from_featureclass(fr"{fp_dir}/area_of_int.shp")
         sdf2 = pd.DataFrame.spatial.from_featureclass(fr"{fp_dir}/training.shp")
         ddf1 = dd.from_pandas(sdf1, 5)

@@ -43,9 +43,9 @@ class TestAdvancedUserSearch(unittest.TestCase):
         for gis in self._gis:
             orgid = gis.users.me.orgId
             q = f"orgid: {orgid}"
-            res = gis.users.advanced_search(query=q, start=5, max_users=10)
+            res = gis.users.advanced_search(query=q, start=3, max_users=10)
             assert len(res["results"]) >= 1
-            assert res["start"] == 5
+            assert res["start"] == 3
 
     # ----------------------------------------------------------------------
     def testAllUsers(self):

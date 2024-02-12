@@ -112,9 +112,11 @@ def _binary_predicate(name, left, right, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=bool)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else False
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else False
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return data
@@ -151,9 +153,11 @@ def _binary_op(name, left, right=None, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else null_value
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else null_value
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return data
@@ -190,9 +194,11 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else null_value
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else null_value
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return GeoArray(data)

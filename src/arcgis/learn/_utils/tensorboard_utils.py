@@ -72,7 +72,14 @@ class ArcGISTBCallback(
                 model=self._arcgis_model,
             )
         elif (type(self._arcgis_model).__name__) in img_to_img_models:
-            fig1 = self.show_results(rows=rows)  # Segmentation
+            if (type(self._arcgis_model).__name__) == "SuperResolution":
+                if self.data.train_ds.__class__.__name__ == "SR3Dataset":
+                    rows = 1
+                else:
+                    rows = rows
+                fig1 = self.show_results_superres(rows=rows)
+            else:
+                fig1 = self.show_results(rows=rows)  # Segmentation
         elif (type(self._arcgis_model).__name__) in other_models:
             fig1 = self._arcgis_model.show_results(2, return_fig=True)
         # elif (type(self._arcgis_model).__name__) in text_models:
@@ -287,6 +294,122 @@ class ArcGISTBCallback(
             for i, (x, y, z) in enumerate(zip(xs, ys, zs)):
                 x.show(ax=axs[i, 0], y=y, **kwargs)
                 x.show(ax=axs[i, 1], y=z, **kwargs)
+        return fig
+
+    def show_results_superres(self, rows, **kwargs):
+        from .._data_utils.pix2pix_data import display_row, denormalize
+        from .._utils.common import get_nbatches, get_top_padding
+        from .common import ArcGISMSImage
+        from math import ceil
+
+        sampling = kwargs.get("sampling_type", "ddim")
+        ntimestep = kwargs.get("n_timestep", None)
+        device = next(self.learn.model.parameters()).device.type
+
+        self.learn.model.eval()
+        activ = []
+        top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
+        denormfunc = lambda img, max, min: (img + 1) * (max - min) / 2 + min
+
+        if self._arcgis_model.model_type == "UNet":
+            x_batch, y_batch = get_nbatches(
+                self._arcgis_model._data.valid_dl,
+                ceil(rows / self._arcgis_model._data.batch_size),
+            )
+            if isinstance(x_batch[0], list):
+                x_batch = x_batch[0]
+
+            x_A, x_B = torch.cat(x_batch), torch.cat(y_batch)
+
+            for i in range(0, x_A.shape[0], self._arcgis_model._data.batch_size):
+                preds = self._arcgis_model.learn.model(
+                    x_A[i : i + self._arcgis_model._data.batch_size].detach()
+                )
+                activ.append(preds)
+            activations = torch.cat(activ)
+
+            x_A = denormalize(x_A.cpu(), *self._arcgis_model._data._image_stats)
+            x_B = denormalize(x_B.cpu(), *self._arcgis_model._data._image_stats)
+            activations = denormalize(
+                activations.cpu(), *self._arcgis_model._data._image_stats
+            )
+            rows = min(rows, x_A.shape[0])
+        else:
+            x_A = torch.cat([i[0] for i, _ in self._arcgis_model.learn.data.valid_dl])[
+                :rows
+            ]
+            x_B = torch.cat([j for _, j in self._arcgis_model.learn.data.valid_dl])[
+                :rows
+            ]
+
+            x_A_batch = x_A.detach()
+
+            if sampling == "ddim":
+                n_timestep = ntimestep if ntimestep else 200
+                nstp = {"n_timestep": self._arcgis_model.kwargs.get("n_timestep", 1000)}
+            else:
+                n_timestep = (
+                    ntimestep
+                    if ntimestep
+                    else self._arcgis_model.kwargs.get("n_timestep", 1000)
+                )
+                nstp = {"n_timestep": n_timestep}
+            combkwargs = {**kwargs, **self._arcgis_model.kwargs, **nstp}
+            self._arcgis_model.learn.model.set_new_noise_schedule(device, **combkwargs)
+
+            preds = []
+            for k in range(x_A_batch.shape[0]):
+                if sampling == "ddim":
+                    preds.append(
+                        self._arcgis_model.learn.model.super_resolution(
+                            x_A_batch[k, None],
+                            continous=False,
+                            sampling_timesteps=n_timestep,
+                            ddim_sampling_eta=1,
+                            sampling="ddim",
+                        )
+                    )
+                else:
+                    preds.append(
+                        self._arcgis_model.learn.model.super_resolution(
+                            x_A_batch[k, None], continous=False
+                        )
+                    )
+            activations = torch.cat(preds)
+
+            maxvals_a = self._arcgis_model._data.batch_stats_a["band_max_values"][
+                ..., None, None
+            ]
+            minvals_a = self._arcgis_model._data.batch_stats_a["band_min_values"][
+                ..., None, None
+            ]
+            maxvals_b = self._arcgis_model._data.batch_stats_b["band_max_values"][
+                ..., None, None
+            ]
+            minvals_b = self._arcgis_model._data.batch_stats_b["band_min_values"][
+                ..., None, None
+            ]
+            x_A = denormfunc(x_A.cpu(), maxvals_a, minvals_a)
+            x_B = denormfunc(x_B.cpu(), maxvals_b, minvals_b)
+            activations = denormfunc(activations.cpu(), maxvals_b, minvals_b)
+
+        fig, axs = plt.subplots(
+            nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
+        )
+        plt.subplots_adjust(top=top)
+        axs[0, 0].title.set_text("Input")
+        axs[0, 1].title.set_text("Target")
+        axs[0, 2].title.set_text("Prediction")
+        for r in range(rows):
+            display_row(
+                axs[r],
+                (
+                    ArcGISMSImage(x_A[r].cpu()),
+                    ArcGISMSImage(x_B[r].cpu()),
+                    ArcGISMSImage(activations[r].detach().cpu()),
+                ),
+                kwargs.get("rgb_bands", None),
+            )
         return fig
 
     def img_img_show_xyzs(

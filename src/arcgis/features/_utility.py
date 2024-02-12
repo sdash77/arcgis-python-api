@@ -422,6 +422,7 @@ class UtilityNetworkManager(object):
         moment: int | None = None,
         run_async: bool = False,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         The `export_subnetwork` operation is used to export information
@@ -469,6 +470,8 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
+        ------------------------------------        --------------------------------------------------------------------
+        pbf                                         Optional Boolean. If true, the response will be in PBF format.
         ====================================        ====================================================================
 
         :return:
@@ -504,7 +507,11 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf:
+            params["f"] = "pbf"
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def query_network_moments(
@@ -548,15 +555,15 @@ class UtilityNetworkManager(object):
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
-            "momentsToReturn": moments_to_return
-            if moments_to_return is not None
-            else ["all"],
+            "momentsToReturn": (
+                moments_to_return if moments_to_return is not None else ["all"]
+            ),
             "moment": moment,
         }
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
     def query_overrides(
         self,
         attribute_ids: Optional[list[str]] = None,
@@ -824,7 +831,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
     def apply_overrides(
         self,
         adds: Optional[Union[list, dict[str, Any]]] = None,
