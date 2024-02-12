@@ -49,8 +49,8 @@ def setup_profiles(
     online_name="your_online_profile",
     online_admin_name="your_online_admin_profile",
     online_api_data_owner_name="your_online_api_data_owner_profile",
-    ent_name="your_enterprise_profile",
-    ent_admin_name="your_ent_admin_profile",
+    ent_name="your_integration_ent_profile",
+    ent_admin_name="your_integration_ent_admin_profile",
     kube_name="your_kubernetes_profile",
     kube_admin_name="your_kubernetes_admin_profile",
     reset=False,
@@ -106,7 +106,7 @@ def setup_profiles(
     if not ent_name in updated_list:
         pm.create(
             ent_name,
-            url="https://pythonapi.playground.esri.com/portal/",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
@@ -115,7 +115,7 @@ def setup_profiles(
     if not ent_admin_name in updated_list:
         pm.create(
             ent_admin_name,
-            url="https://pythonapi.playground.esri.com/portal/",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
             username="arcgispyapibot",
             password="geosaurus_automation123",
         )
