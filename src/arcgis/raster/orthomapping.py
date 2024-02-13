@@ -2829,6 +2829,13 @@ class Project:
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
 
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
+
     @property
     def missions(self):
         """
@@ -2867,6 +2874,15 @@ class Project:
         :return: A portal item
         """
         return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
