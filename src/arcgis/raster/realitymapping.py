@@ -298,6 +298,7 @@ def _add_mission(
             folder = f
             break
 
+    from datetime import datetime
     from arcgis.raster.analytics import create_image_collection
 
     if image_collection is None:
@@ -305,6 +306,18 @@ def _add_mission(
 
     if raster_type_name is None:
         raster_type_name = "UAV/UAS"
+
+    if mission_name is None:
+        mission_name = "mission" + "_" + _id_generator()
+    fname = f"{mission_name}.json"
+    workspace_name = fname.replace(".json", "")
+    # timestamp = datetime.timestamp()
+    # workspace_name = f"{mission_name}_{timestamp}"
+    
+    if context is None:
+        context = {"workspace": workspace_name}
+    else:
+        context["workspace"] = workspace_name
 
     if out_sr is None and project._spatial_reference is not None:
         out_sr = project._spatial_reference["spatialReference"]
@@ -390,6 +403,7 @@ def _add_mission(
             "createTS": "",
             "oid": oid,
             "gcsExtent": {},
+            "workspace": workspace_name,
         }
 
         mission_json.update(
@@ -468,7 +482,6 @@ def _add_mission(
             except:
                 # older servers may not have query gps info rest end point
                 pass
-        from datetime import datetime
 
         try:
             lyr = output_collection.layers[0]
@@ -535,12 +548,6 @@ def _add_mission(
             mission_json.update({"coverage": coverage_area})
         except:
             pass
-
-        import uuid
-
-        if mission_name is None:
-            mission_name = "mission" + "_" + _id_generator()
-        fname = "%s.json" % mission_name
 
         try:
             resource_manager.add(
@@ -1941,6 +1948,12 @@ def reconstruct_surface(
             "mission": mission,
             "item_name": "reconstructSurface",
         }
+
+        if mission.workspace:
+            if context:
+                context["workspace"] = mission.workspace
+            else:
+                context = {"workspace": mission.workspace}
 
     return gis._tools.realitymapping.reconstruct_surface(
         image_collection=image_collection,

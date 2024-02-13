@@ -59,6 +59,7 @@ class Mission:
         self._project_item = project._project_item
         self._gis = project._gis
         self._mission_json = self._get_mission_json(self._mission_name)
+        self._workspace = self._mission_json.get("workspace", None)
         self._collection = None
         self._resource_info = self._resource_info(self._mission_name)
 
@@ -134,6 +135,21 @@ class Mission:
                 image_collection_item = self._gis.content.get(item_id)
                 self._collection = image_collection_item
                 return image_collection_item
+            
+    @property
+    def workspace(self):
+        """
+        The ``workspace`` property returns the workspace created for the reality mapping mission on the server
+
+        :return: A string representing the workspace name
+        """
+        if self._workspace is not None:
+            return self._workspace
+        try:
+            self._workspace = self._mission_json["workspace"]
+        except:
+            pass
+        return self._workspace
 
     def add_image(
         self,
