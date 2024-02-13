@@ -176,13 +176,6 @@ EnterpriseVectorTileLayerManager
     :undoc-members:
     :show-inheritance:
 
-VectorTileLayer3D
-^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.VectorTileLayer3D
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Working with OGC layers
 -----------------------
 arcgis.mapping.ogc

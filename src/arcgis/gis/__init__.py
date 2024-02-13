@@ -13245,7 +13245,6 @@ class Item(dict):
             VectorTileLayer,
             MapImageLayer,
             SceneLayer,
-            VectorTileLayer3D,
         )
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
@@ -13284,8 +13283,6 @@ class Item(dict):
 
             elif self.type == "Vector Tile Service":
                 layers.append(VectorTileLayer(self.url, self._gis))
-            elif self.type == "3DTiles Service":
-                layers.append(VectorTileLayer3D(self.url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 

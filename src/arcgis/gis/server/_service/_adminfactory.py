@@ -14,7 +14,6 @@ from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
 from arcgis.mapping import VectorTileLayer
-from arcgis.mapping import VectorTileLayer3D
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
