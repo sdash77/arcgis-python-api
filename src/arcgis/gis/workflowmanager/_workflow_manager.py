@@ -500,7 +500,8 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         owner                       Optional string. Job Owner
         -------------------         --------------------------------------------------------------------
-        group                       Optional string Job Group
+        group                       Optional string. Job Assignment Group. The Assignment type of the job to be
+                                    created. Type of assignment designated Values: "User" | "Group" | "Unassigned"
         -------------------         --------------------------------------------------------------------
         assigned                    Optional string. Initial Job Assignee
         -------------------         --------------------------------------------------------------------
@@ -2508,13 +2509,23 @@ class Job(object):
         step_id             Required String. Active Step ID
         ---------------     --------------------------------------------------------------------
         assigned_type       Required String. Type of assignment designated
-                            Values: "user" | "group" | "unassigned"
+                            Values: "User" | "Group" | "Unassigned"
         ---------------     --------------------------------------------------------------------
         assigned_to         Required String. User id to which the active step is assigned
         ===============     ====================================================================
 
         :return:
             success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+            job.update_step(step_id='123456', assigned_type='User', assigned_to='my_user')
 
         """
 
