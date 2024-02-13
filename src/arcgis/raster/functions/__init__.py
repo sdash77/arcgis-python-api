@@ -7078,6 +7078,7 @@ def remap(
     no_data_ranges: Optional[list[float]] = None,
     allow_unmatched: Optional[bool] = None,
     astype: Optional[str] = None,
+    replacement_value: Optional[float] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
@@ -7103,6 +7104,8 @@ def remap(
     allow_unmatched                         Boolean, specify whether to keep the unmatched values or turn into nodata.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when `allow_unmatched` is set to False.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7131,6 +7134,8 @@ def remap(
         template_dict["rasterFunctionArguments"]["NoDataRanges"] = no_data_ranges
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
+    if replacement_value is not None:
+        template_dict["rasterFunctionArguments"]["ReplacementValue"] = replacement_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
