@@ -9203,7 +9203,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_products["DSM"] = output_dsm_raster
+            output_products["dsm"] = output_dsm_raster
 
         if output_true_ortho_name is not None:
             (
@@ -9214,28 +9214,32 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_products["True_Ortho"] = output_true_ortho_raster
+            output_products["true_ortho"] = output_true_ortho_raster
 
         if output_dsm_mesh_name is not None:
             if isinstance(output_dsm_mesh_name, str):
                 output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
-            output_products["DSM_Mesh"] = output_dsm_mesh_dict
+            output_products["dsm_mesh"] = output_dsm_mesh_dict
 
         if output_point_cloud_name is not None:
             if isinstance(output_point_cloud_name, str):
                 output_point_cloud_dict = {"name": output_point_cloud_name}
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
-            output_products["Point_Cloud"] = output_point_cloud_dict
+            output_products["point_cloud"] = output_point_cloud_dict
 
         if output_mesh_name is not None:
             if isinstance(output_mesh_name, str):
                 output_mesh_dict = {"name": output_mesh_name}
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
-            output_products["Mesh"] = output_mesh_dict
+            output_products["mesh"] = output_mesh_dict
+
+        for product in ["dsm", "true_ortho"]:
+            if product in output_products and context:
+                output_products[product].update(context[product])
 
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,
@@ -9255,9 +9259,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         items = {}
         if output_dsm_name is not None:
-            items["DSM"] = json.loads(output_dsm_raster)
+            items["dsm"] = json.loads(output_dsm_raster)
         if output_true_ortho_name is not None:
-            items["True_Ortho"] = json.loads(output_true_ortho_raster)
+            items["true_ortho"] = json.loads(output_true_ortho_raster)
         final_job = None
         print(f"passing items: {items}")
         final_job = RMJob(job, item=items)
