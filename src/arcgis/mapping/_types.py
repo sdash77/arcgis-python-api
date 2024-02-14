@@ -3213,18 +3213,17 @@ class OfflineMapAreaManager(object):
                     )
                 },
             }
-        for r in remove:
-            if "sync" in remove and "download" in remove:
-                del v["offline"]["editableLayers"]
-            if "sync" in remove:
-                del v["offline"]["editableLayers"]["sync"]
-            if "download" in remove:
-                del v["offline"]["editableLayers"]["download"]
-            if "reference_basemap" in remove:
-                del v["offline"]["offlinebasemap"]
-            if "get_attachments" in remove:
-                del v["offline"]["readonlyLayers"]
-            del r
+        if "sync" in remove and "download" in remove:
+            del v["offline"]["editableLayers"]
+        if "sync" in remove:
+            del v["offline"]["editableLayers"]["sync"]
+        if "download" in remove:
+            del v["offline"]["editableLayers"]["download"]
+        if "reference_basemap" in remove:
+            del v["offline"]["offlinebasemap"]
+        if "get_attachments" in remove:
+            del v["offline"]["readonlyLayers"]
+        del remove
         update_items = {
             "clearEmptyFields": True,
             "text": json.dumps(self._web_map._webmapdict),
