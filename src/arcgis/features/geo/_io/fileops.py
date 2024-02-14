@@ -1,6 +1,7 @@
 """
 IO operations for Feature Classes
 """
+
 from arcgis.auth.tools import LazyLoader
 import io
 import os
@@ -1478,7 +1479,7 @@ def _pyshp2(df, out_path, out_name):
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)
-                    elif isinstance(df[c].loc[idx], (bool)):
+                    elif isinstance(df[c].loc[idx], (bool, np.bool_)):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx
@@ -1502,7 +1503,7 @@ def _pyshp2(df, out_path, out_name):
                     else:
                         row[idx] = row[idx].to_pydatetime()
             for idx, value in enumerate(row):
-                if value is np.nan:
+                if value is np.nan or value is pd.NA:
                     row[idx] = None
             shpfile.record(*row)
             del idx

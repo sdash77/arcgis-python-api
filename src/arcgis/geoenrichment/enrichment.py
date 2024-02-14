@@ -720,7 +720,7 @@ class Country(object):
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the :func:`~arcgis.geoenrichment.Country.enrich_variables`
-                                         property. If using a list of strings, the values are mached against
+                                         property. If using a list of strings, the values are matched against
                                          the :func:`~arcgis.geoenrichment.Country.enrich_variables` dataframe
                                          columns for `name`, 'enrich_name', or 'enrich_field_name'. All the
                                          values must match to one of these columns.
@@ -892,9 +892,6 @@ class Country(object):
             )
 
         """
-        # pull out named area properties if present and set to use country instead of just BA global
-        standard_geography_level = None
-
         # If dictionary was passed, turn to list
         if isinstance(study_areas, dict):
             if isinstance(study_areas, Geometry):
@@ -909,9 +906,11 @@ class Country(object):
         if isinstance(study_areas, list):
             # For extent
             study_areas = [
-                Geometry(area).polygon
-                if isinstance(area, dict) and "xmin" in area
-                else area
+                (
+                    Geometry(area).polygon
+                    if isinstance(area, dict) and "xmin" in area
+                    else area
+                )
                 for area in study_areas
             ]
             first_geo = study_areas[0]
@@ -1685,9 +1684,11 @@ def enrich(
         #
         # [f(x) if condition else g(x) for x in sequence]
         study_areas = [
-            Geometry(area).polygon
-            if isinstance(area, dict) and "xmin" in area
-            else area
+            (
+                Geometry(area).polygon
+                if isinstance(area, dict) and "xmin" in area
+                else area
+            )
             for area in study_areas
         ]
         first_geo = study_areas[0]
@@ -2309,7 +2310,9 @@ def interesting_facts(
     if out_sr is None:
         out_sr = {"wkid": 3857}
 
-    url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    url: str = (
+        f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    )
     study_areas = _process_study_areas(areas=study_areas)
     params = {
         "studyAreas": study_areas,

@@ -4,7 +4,6 @@
 # -------------------------------------------------------------------------------
 import unittest
 import os
-import sys
 import uuid
 
 from integration.dino_utils.dino_configs import DinoConfigs
@@ -42,6 +41,7 @@ except ImportError:
     print("API import error. Quitting test")
     raise (exit())
 # endregion PreCondition Check
+
 
 # TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in GIS module")
@@ -104,7 +104,12 @@ class Test_Item_portal_builtin(unittest.TestCase):
             cls.gis, "set1_overwrite_manyHFS_csv_1", "Feature Service"
         )
         if not cls.one_to_many_wfl_item_1:
-            cls.one_to_many_wfl_item_1 = cls.one_to_many_csv_item.publish(
+            csv_path_1 = os.path.join(
+                cls.qalab_cls_path, "set1_overwrite_manyHFS_csv_1.csv"
+            )
+            cls.one_to_many_csv_item_1 = cls.gis.content.add({}, data=csv_path_1)
+            print("CSV_1 item added")
+            cls.one_to_many_wfl_item_1 = cls.one_to_many_csv_item_1.publish(
                 publish_parameters={"name": "set1_overwrite_manyHFS_csv_1"}
             )
             cls.assertIsNotNone(
@@ -118,7 +123,12 @@ class Test_Item_portal_builtin(unittest.TestCase):
             cls.gis, "set1_overwrite_manyHFS_csv_2", "Feature Service"
         )
         if not cls.one_to_many_wfl_item_2:
-            cls.one_to_many_wfl_item_2 = cls.one_to_many_csv_item.publish(
+            csv_path_2 = os.path.join(
+                cls.qalab_cls_path, "set1_overwrite_manyHFS_csv_2.csv"
+            )
+            cls.one_to_many_csv_item_2 = cls.gis.content.add({}, data=csv_path_2)
+            print("CSV_2 item added")
+            cls.one_to_many_wfl_item_2 = cls.one_to_many_csv_item_2.publish(
                 publish_parameters={"name": "set1_overwrite_manyHFS_csv_2"}
             )
             cls.assertIsNotNone(
@@ -414,7 +424,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         test_skip, "Test condition not met. Check if old outputs are present"
     )
     def test_publish_shp(self):
-        zip_package_name = "Streets_Centerline.zip"
+        zip_package_name = "set1_line.zip"
 
         # region delete old service on portal
         service_title = os.path.splitext(zip_package_name)[0]
@@ -439,10 +449,8 @@ class Test_Item_portal_builtin(unittest.TestCase):
 
             else:
                 print("Old zip not found on portal. Adding new")
-                file_path = os.path.join(
-                    self.qalab_data_path, "packages", zip_package_name
-                )
-                zip_item = self.gis.content.add({}, file_path)
+                file_path = os.path.join(self.qalab_data_path, "shp", zip_package_name)
+                zip_item = self.gis.content.add({"type": "Shapefile"}, file_path)
 
             # publish tpk item
             publish_output = zip_item.publish()
@@ -490,7 +498,6 @@ class Test_Item_portal_builtin(unittest.TestCase):
         test_skip, "Test condition not met. Check if old outputs are present"
     )
     def test_resources_property(self):
-
         # create a vector tile service item
         item_properties_dict = {
             "title": self.namePrefix + self._testMethodName,
@@ -988,8 +995,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
             )[0]
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -1021,8 +1029,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
 
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -1302,7 +1311,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
                 chicago_deps, "Unable to get dependencies for CSV item"
             )
             self.assertEqual(
-                chicago_deps["fullCount"],
+                chicago_deps["total"],
                 0,
                 "A default CSV item should have 0 dependencies",
             )
@@ -1313,7 +1322,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             )
             self.assertGreaterEqual(
                 len(wm_deps["list"]),
-                1,
+                2,
                 "at least 1 dependency should be found for cities webmap",
             )
 
@@ -1340,7 +1349,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         Get class test asset location
         :return:
         """
-        cls.gis = GIS(profile="your_online_profile", verify_cert=False)
+        cls.gis = GIS(profile="your_online_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
         _conf_reader2 = ConfigParser()
@@ -1355,14 +1364,13 @@ class Test_Item_arcgis_online(unittest.TestCase):
         )
 
         # region publish necessary web layers
-        cls.one_to_many_csv_item = PortalUtils.search_portal_item(
-            cls.gis, "set1_overwrite_manyHFS_csv", "CSV"
+        cls.one_to_many_csv_item = cls.gis.content.search(
+            f"title:set1_overwrite_manyHFS_csv AND owner:{cls.gis.users.me.username}",
+            "CSV",
         )
         if not cls.one_to_many_csv_item:
             # upload csv item
-            csv_path = os.path.join(
-                cls.qalab_cls_path, "set1_overwrite_manyHFS_csv.csv"
-            )
+            csv_path = os.path.join(cls.qalab_cls_path, "set1_overwrite_manyHFS_csv")
             cls.one_to_many_csv_item = cls.gis.content.add({}, data=csv_path)
             print("CSV item added")
             cls.assertIsNotNone(cls.one_to_many_csv_item, "Cannot add csv item")
@@ -1462,7 +1470,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
         try:
             # search for vtpk item
             sr = self.gis.content.search(
-                vtpk_package_name, item_type="Vector Tile Package", max_items=1
+                f"title:{vtpk_package_name}",
+                item_type="Vector Tile Package",
+                max_items=1,
             )
             if sr is not None and len(sr) > 0:
                 vtpk_item = sr[0]
@@ -1730,7 +1740,6 @@ class Test_Item_arcgis_online(unittest.TestCase):
         test_skip, "Test condition not met. Check if old outputs are present"
     )
     def test_resources_property(self):
-
         # create a vector tile service item
         item_properties_dict = {
             "title": self.namePrefix + self._testMethodName,
@@ -1843,7 +1852,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         :return:
         """
         try:
-            chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+            chicago_csv_item = self.gis.content.get("88048ba287c844928d1bf4b98dfe72f0")
             with tempfile.TemporaryDirectory() as temp_dir:
                 chicago_data = chicago_csv_item.download()
                 chicago_data_size = os.stat(chicago_data).st_size
@@ -2228,8 +2237,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )[0]
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -2252,7 +2262,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         :return:
         """
         try:
-            item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            item = self.gis.content.get("6e39ae0904a8484786a0121a01fcedf1")
             self.assertGreater(
                 item.size,
                 0,
@@ -2261,8 +2271,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -2433,16 +2444,17 @@ class Test_Item_arcgis_online(unittest.TestCase):
             new_csv_path = os.path.join(
                 self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_manyHFS_csv.csv"
             )
-            item_update_result = self.one_to_many_csv_item.update({}, data=new_csv_path)
+            item_update_result = self.one_to_many_csv_item[0].update(
+                {}, data=new_csv_path
+            )
             self.assertTrue(
                 item_update_result, "Calling update on csv item does not return True"
             )
             print("CSV item updated")
 
             # overwrite the feature layer
-            self.assertRaises(
-                RuntimeError, self.one_to_many_csv_item.publish(overwrite=True)
-            )
+            with self.assertRaises(RuntimeError):
+                self.one_to_many_csv_item[0].publish(overwrite=True)
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -2855,7 +2867,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             import time
 
             time.sleep(
-                10
+                50
             )  # should find a way around waiting like this for cache is update
 
             interested_item = [i for i in group3_content if i.id == data_item.id]
@@ -2866,14 +2878,16 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )
 
             # try sharing to the group in the org
-            share_result = data_item.share(groups=[group3])
+            share_result = data_item.sharing._share(groups=[group3])
 
             import time
 
-            time.sleep(10)
+            time.sleep(50)
 
             # get contents of group3 to verify
             group3_content = group3.content()
+
+            time.sleep(50)
 
             interested_item = [i for i in group3_content if i.id == data_item.id]
             self.assertEqual(
@@ -2890,8 +2904,8 @@ class Test_Item_arcgis_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(
-        test_skip, "Test condition not met. Check if old outputs are present"
+    @unittest.skip(
+        "According to doc, dependent_upon() only works for Enterprise"
     )
     def test_dependent_upon_ownItems(self):
         """
@@ -2900,8 +2914,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
 
         # get an item
-        chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+        chicago_csv_item = self.gis.content.search("title:set1_Chicago", "CSV")[0]
         wm = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+        print(wm)
         try:
             chicago_deps = chicago_csv_item.dependent_upon()
             wm_deps = wm.dependent_upon()
@@ -2911,7 +2926,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
                 chicago_deps, "Unable to get dependencies for CSV item"
             )
             self.assertEqual(
-                chicago_deps["fullCount"],
+                chicago_deps["total"],
                 0,
                 "A default CSV item should have 0 dependencies",
             )
@@ -2922,7 +2937,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )
             self.assertGreaterEqual(
                 len(wm_deps["list"]),
-                1,
+                2,
                 "at least 1 dependency should be found for cities webmap",
             )
 

@@ -223,7 +223,8 @@ def _create_project(
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_item = gis.content.folders.create(folder, owner)
+            folder_dict = folder_item.properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 
@@ -517,7 +518,11 @@ def _add_mission(
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-        if "gps" in raster_type_params:
+        if (
+            raster_type_params is not None
+            and isinstance(raster_type_params, dict)
+            and "gps" in raster_type_params
+        ):
             for ele in raster_type_params["gps"]:
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
@@ -2821,6 +2826,13 @@ class Project:
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
 
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
+
     @property
     def missions(self):
         """
@@ -2859,6 +2871,15 @@ class Project:
         :return: A portal item
         """
         return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

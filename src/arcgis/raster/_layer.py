@@ -6691,6 +6691,7 @@ class ImageryLayer(Layer):
             colStart = math.floor(
                 (dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw
             )
+            colStart = 0 if colStart < 0 else colStart
             colEnd = math.ceil(
                 (dataSourceExtent["xmax"] - origin["x"] - resolution["x"])
                 / resolution["x"]
@@ -6699,6 +6700,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor(
                 (origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th
             )
+            rowStart = 0 if rowStart < 0 else rowStart
             rowEnd = math.ceil(
                 (origin["y"] - dataSourceExtent["ymin"] - resolution["y"])
                 / resolution["y"]
@@ -6763,8 +6765,14 @@ class ImageryLayer(Layer):
                             band_arr = numarray[:, :, i]
 
                         # percent clip stretching
-                        p005 = np.percentile(band_arr, 0.5)
-                        p995 = np.percentile(band_arr, 99.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p005 = np.percentile(band_arr_new, 0.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
                         out[band_arr < p005] = 0
@@ -6774,6 +6782,8 @@ class ImageryLayer(Layer):
                     if num_bands == 1 and numarray.ndim == 2:
                         stretched_img = band_arr_list[0]
                     else:
+                        if num_bands == 2:
+                            band_arr_list.append(band_arr_list[1])
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
@@ -6855,9 +6865,7 @@ class ImageryLayer(Layer):
             data = ma.masked_array(data, valid_mask)
             if data.shape[0] > 3 and len(data.shape) == 3:
                 data = data[0:3]  # Extract first 3 bands
-            if len(data) == 2:
-                data = np.expand_dims(data, axis=2)
-            elif len(data) == 3:
+            if len(data) == 2 or len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
             # data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
@@ -12871,11 +12879,15 @@ class RasterCollection:
                 rc_attribute_dict[key] = attribute_dict[key]
             else:
                 rc_attribute_dict[key] = [
-                    item[attribute_dict[key]]
-                    if attribute_dict[key] in item
-                    else item["properties"][attribute_dict[key]]
-                    if attribute_dict[key] in item["properties"]
-                    else key
+                    (
+                        item[attribute_dict[key]]
+                        if attribute_dict[key] in item
+                        else (
+                            item["properties"][attribute_dict[key]]
+                            if attribute_dict[key] in item["properties"]
+                            else key
+                        )
+                    )
                     for item in items
                 ]
 
