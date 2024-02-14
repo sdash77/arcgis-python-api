@@ -61,3 +61,64 @@ storymap_2 = {
         }
     },
 }
+
+briefing = {
+    "root": "n-k23c2p",
+    "nodes": {
+        "n-XK0GeP": {"type": "briefing-ui", "children": ["n-11SuEF"]},
+        "n-11SuEF": {
+            "type": "briefing-slide",
+            "data": {"layout": "cover"},
+            "children": ["n-3r3mhh"],
+        },
+        "n-3r3mhh": {
+            "type": "storycover",
+            "data": {
+                "type": "sidebyside",
+                "title": "",
+                "summary": "",
+                "byline": "",
+                "titlePanelPosition": "start",
+            },
+            "children": [],
+        },
+        "n-k23c2p": {
+            "type": "briefing",
+            "data": {"storyTheme": "r-vlc4Kp"},
+            "children": ["n-XK0GeP"],
+        },
+    },
+    "resources": {
+        "r-vlc4Kp": {
+            "type": "story-theme",
+            "data": {"themeId": "summit", "themeBaseVariableOverrides": {}},
+        }
+    },
+}
+
+collection = {
+    "root": "n-vCW523",
+    "nodes": {
+        "n-vCW523": {
+            "type": "collection",
+            "data": {"storyTheme": "r-QvId58"},
+            "children": ["n-eERiZz"],
+        },
+        "n-eERiZz": {
+            "type": "collection-ui",
+            "data": {"items": []},
+            "children": ["n-U3Ou63", "n-JTJJo2"],
+        },
+        "n-U3Ou63": {
+            "type": "collection-cover",
+            "data": {"title": "", "summary": "", "byline": "", "type": "tiles"},
+        },
+        "n-JTJJo2": {"type": "collection-nav", "data": {"type": "compact"}},
+    },
+    "resources": {
+        "r-QvId58": {
+            "type": "story-theme",
+            "data": {"themeId": "summit", "themeBaseVariableOverrides": {}},
+        }
+    },
+}

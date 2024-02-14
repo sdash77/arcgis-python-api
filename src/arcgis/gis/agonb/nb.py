@@ -28,7 +28,7 @@ class AGOLNotebookManager:
     def containers(self) -> ContainerManager:
         """
         Provides the ability to manage containers and the notebooks within them
-        
+
         :returns: :class:`~arcgis.gis.agonb.ContainerManager`
         """
         if self._container is None:
@@ -41,7 +41,7 @@ class AGOLNotebookManager:
     def instance_preferences(self) -> InstancePreference:
         """
         Provides information about the available instances for notebooks
-        
+
         :returns: :class:`~arcgis.gis.agonb.InstancePreference`
         """
         if self._istpref is None:
@@ -63,7 +63,7 @@ class AGOLNotebookManager:
     def runtimes(self) -> RuntimeManager:
         """
         Provides information about the available runtimes on the notebook server
-        
+
         :returns: :class:`~arcgis.gis.agonb.RuntimeManager`
         """
         if self._runtimes is None:
@@ -75,7 +75,7 @@ class AGOLNotebookManager:
     def snaphots(self) -> SnapshotManager:
         """
         Returns tools to work with snapshots on notebooks
-        
+
         :returns: :class:`~arcgis.gis.agonb.SnapshotManager`
         """
         if self._snapshot is None:

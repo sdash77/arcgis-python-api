@@ -16,6 +16,20 @@ Item
     :undoc-members:
     :show-inheritance:
 
+SharingManager
+---------------
+.. autoclass:: arcgis.gis._impl._content_manager.SharingManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SharingGroupManager
+-------------------
+.. autoclass:: arcgis.gis._impl._content_manager.SharingGroupManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ItemDependency
 ---------------
 .. autoclass:: arcgis.gis.ItemDependency
@@ -76,6 +90,20 @@ ContentManager
 .. autoclass:: arcgis.gis.ContentManager
     :members:
     :undoc-members:
+    
+Folders
+-------
+.. autoclass:: arcgis.gis._impl._content_manager.Folders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Folder
+------
+.. autoclass:: arcgis.gis._impl._content_manager.Folder
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 UserManager
 ----------------------
@@ -225,6 +253,13 @@ SpatialRelationship
     :members:
     :undoc-members:
     :show-inheritance:    
+
+SharingLevel
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._content_manager.SharingLevel
+    :members:
+    :undoc-members:
+    :show-inheritance:
     
 Dataclasses
 -----------

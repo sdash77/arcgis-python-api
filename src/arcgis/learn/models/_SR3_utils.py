@@ -542,7 +542,7 @@ class UNet(nn.Module):
         super().__init__()
 
         inner_channel = kwargs.get("inner_channel", 64)
-        norm_groups = kwargs.get("norm_groups", 32)
+        norm_groups = kwargs.get("norm_groups", 8)
         channel_mults = kwargs.get("channel_mults", [1, 2, 4, 4, 8, 8])
         attn_res = [kwargs.get("attn_res", 16)]
         res_blocks = kwargs.get("res_blocks", 3)

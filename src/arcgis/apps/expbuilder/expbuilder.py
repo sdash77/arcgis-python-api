@@ -57,7 +57,7 @@ class Templates(Enum):
 
         try:
             temp = WebExperience(template=self.value)
-            temp._item.share(everyone=True)
+            temp._item.sharing.sharing_level = "EVERYONE"
             temp.save(publish=True)
             from IPython.display import IFrame
 
@@ -75,7 +75,6 @@ class Templates(Enum):
 
 
 class WebExperience(object):
-
     """
     A Web Experience is web-based application that provides viewers with an interactive
     interface to maps, data, feature layers, and other components of the creator's design.
@@ -734,7 +733,7 @@ class WebExperience(object):
 
         try:
             dummy_exp = self._duplicate()
-            dummy_exp._item.share(everyone=True)
+            dummy_exp._item.sharing.sharing_level = "EVERYONE"
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 

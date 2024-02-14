@@ -73,7 +73,7 @@ else:
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
         "pandas >=2.0.0,<3",
-        "numpy >=1.21.6",
+        "numpy >=1.21.6,<2",
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",
@@ -84,7 +84,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.27.1,<3",
+        "requests >=2.31.0,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
@@ -93,6 +93,7 @@ else:
         "dask >=2023.3.2",
         "matplotlib-inline",
         "pyarrow >=11.0.0",
+        "puremagic >=1.15,<2",
     ]
 
 

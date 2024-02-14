@@ -422,6 +422,7 @@ class YOLOv3(ArcGISModel):
         Predicts and displays the results of a trained model on a single image.
         This method is only supported for RGB images. The image size should at
         least be 416x416px if using COCO pretrained weights.
+        This method is only supported for RGB images.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -473,6 +474,9 @@ class YOLOv3(ArcGISModel):
 
         if not HAS_PIL:
             raise Exception("This function requires PIL.")
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)
@@ -907,9 +911,9 @@ class YOLOv3(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_yolov3_inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]

@@ -6,6 +6,7 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 Python and is an invaluable tool in the API.
 
 """
+
 from __future__ import absolute_import, annotations
 import base64
 import json
@@ -19,7 +20,6 @@ import shutil
 import tempfile
 import warnings
 import zipfile
-from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
@@ -30,14 +30,11 @@ from urllib.error import HTTPError
 import requests
 
 from arcgis.gis._impl._dataclasses._contentds import (
-    ItemTypeEnum,
     ItemProperties,
+    ItemTypeEnum,
 )
-from arcgis.gis._impl import (
-    MetadataFormatEnum,
-    CreateServiceParameter,
-    ViewLayerDefParameter,
-)
+from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
+
 
 try:
     import pandas as pd
@@ -75,8 +72,10 @@ _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
+_sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
+from arcgis.auth.tools._util import create_base_url as _create_base_url
 
 
 class Error(Exception):
@@ -530,7 +529,7 @@ class GIS(object):
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
-
+        self.resturl = _create_base_url(url)
         self._url = url
         self._username = username
         self._password = password
@@ -1373,6 +1372,9 @@ class GIS(object):
 
     @property
     def _public_rest_url(self):
+        if self.url.find("/sharing/rest/") > -1:
+            return self.url
+
         return self.url + "/sharing/rest/"
 
     # ----------------------------------------------------------------------
@@ -4345,7 +4347,7 @@ class UserManager(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, username: str):
+    def get(self, username: str, outside_org=True):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
@@ -4354,6 +4356,11 @@ class UserManager(object):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as a string. This can be the
                                user's login name or the user's ID.
+        ------------------     --------------------------------------------------------------------
+        outside_org            Optional boolean. When working with AGOL portals, setting this
+                               to `True` will include users from other organizations in ArcGIS
+                               Online. Does not make a difference in Enterprise portals. Defaults
+                               to `True`.
         ==================     ====================================================================
 
         :return:
@@ -4369,6 +4376,11 @@ class UserManager(object):
         try:
             with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
+                if user and not outside_org:
+                    org_id = self._gis._portal._properties.get("id")
+                    user_org_id = user.get("orgId")
+                    if user_org_id != org_id:
+                        user = None
 
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
@@ -4500,7 +4512,7 @@ class UserManager(object):
         results = []
         # ensure /Categories is at the start of each string.
         categories = [
-            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            (cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}")
             for cat in categories
         ]
         for user in users:
@@ -5080,7 +5092,6 @@ class UserManager(object):
 
 
 class RoleManager(object):
-
     """
         The ``RoleManager`` class is a helper class to manage custom :class:`roles <arcgis.gis.Role>` for
         :class:`~arcgis.gis.User` in a GIS. It is available as the :attr:`~arcgis.gis.UserManager.roles`
@@ -5691,7 +5702,7 @@ class GroupManager(object):
     as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
-        This class is not created by users directly.
+       This class is not created by users directly.
     """
 
     def __init__(self, gis):
@@ -5818,8 +5829,7 @@ class GroupManager(object):
         owner.
 
         .. note::
-            Only title and tags are required.
-
+            Only title and tags are required. ``autojoin`` is deprecated, use ``auto_join`` instead
 
         ====================  =========================================================
         **Parameter**         **Description**
@@ -5901,10 +5911,6 @@ class GroupManager(object):
 
                               .. note::
                                 For Enterprise only "org" is accepted.
-        --------------------  ---------------------------------------------------------
-        autojoin              Optional Boolean. The default is `False`. Only applies to
-                              org accounts. If `True`, this group will allow joined
-                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -5929,6 +5935,12 @@ class GroupManager(object):
             "scenes": {"itemTypes": "Web Scene"},
             "tools": {"itemTypes": "Locator Package"},
         }
+
+        if autojoin is not None:
+            warnings.warn(
+                "The 'autojoin' parameter is deprecated. Use 'auto_join' instead.",
+                DeprecationWarning,
+            )
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
@@ -6185,9 +6197,22 @@ class ContentManager(object):
     @property
     def folders(self):
         """
-        A manager to work with `User` folders.
+        A manager object to work with folders owned by the currently logged-in
+        :class:`~arcgis.gis.User`.
 
-        :return: Folders
+        :return:
+            A :class:`~arcgis.gis._impl._content_manager.Folders` object.
+
+        .. code-block:: python
+
+            # Usage example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> folders_obj = gis.content.folders
+            >>> type(folder_obj)
+
+            arcgis.gis._impl._content_manager.folder.core.Folders
         """
         if self._folders is None:
             from ._impl._content_manager import Folders
@@ -6863,11 +6888,11 @@ class ContentManager(object):
             # Update the access and return the item
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             if filetype:
@@ -6895,11 +6920,11 @@ class ContentManager(object):
             # Update access
             if item_properties and "access" in item_properties:
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
             return item
         else:
             return None
@@ -7219,8 +7244,8 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.create_service("Hurricane Collection")
         """
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -7266,14 +7291,14 @@ class ContentManager(object):
                 item.update(item_properties=item_properties)
             if "access" in item_properties.keys():
                 if item_properties["access"] == "public":
-                    item.share(everyone=True)
+                    item.sharing.sharing_level = "EVERYONE"
                 elif item_properties["access"] == "org":
-                    item.share(org=True)
+                    item.sharing.sharing_level = "ORGANIZATION"
                 elif item_properties["access"] == "private":
-                    item.share(everyone=False, org=False)
+                    item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
                     groups = item.shared_with["groups"]
-                    item.share(groups=groups)
+                    item.sharing._share(groups=groups)
             return item
         else:
             return None
@@ -9072,6 +9097,35 @@ class CategorySchemaManager(object):
         return
 
     # ----------------------------------------------------------------------
+    @property
+    def schema_paths(self):
+        """
+        See the category paths that can be used to assign to an item.
+        If the category schema is empty, an empty list is returned.
+        """
+        paths = self._generate_paths(self.schema, current_path=None, paths=[])
+        modified_paths = [f"/{path}" for path in paths][1:]
+        return modified_paths
+
+    def _generate_paths(self, schema_dict, current_path=None, paths=[]):
+        """
+        Recursively generates file paths from the category schema.
+        """
+        if current_path is None:
+            current_path = ""
+        for category in schema_dict:
+            title = category["title"]
+            new_path = f"{current_path}\{title}" if current_path else title
+            paths.append(
+                new_path.replace("\\", "/")
+            )  # Replace backslashes with forward slashes
+
+            if "categories" in category:
+                self._generate_paths(category["categories"], new_path, paths)
+
+        return paths
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The ``delete`` function allows group owner or managers to remove the
@@ -9336,8 +9390,7 @@ class ResourceManager(object):
         elif file and os.path.isfile(os.path.abspath(file)) == False:
             raise RuntimeError("File(" + file + ") not found.")
 
-        params = {}
-        params["f"] = "json"
+        params = {"f": "json"}
 
         if folder_name is not None:
             params["resourcesPrefix"] = folder_name
@@ -9675,10 +9728,13 @@ class Group(dict):
             super(Group, self).update(groupdict)
 
     def _hydrate(self):
-        groupdict = self._portal.get_group(self.groupid)
-        self._hydrated = True
-        super(Group, self).update(groupdict)
-        self.__dict__.update(groupdict)
+        try:
+            groupdict = self._portal.get_group(self.groupid)
+            self._hydrated = True
+            super(Group, self).update(groupdict)
+            self.__dict__.update(groupdict)
+        except Exception as e:
+            raise e
 
     def __getattr__(
         self, name
@@ -10097,7 +10153,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.add_users(usernames=["User1234","User5678"], admin="Admin9012")
+            >>> group.add_users(usernames=["User1234","User5678"], admins="Admin9012")
         """
         if usernames is None and admins is None:
             return {"notAdded": []}
@@ -11192,36 +11248,71 @@ class User(dict):
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         report_type       Required String. The type of organizational report to
-                          generated. The allowed report types are: `credits`,
-                          `content`, `users`, and `activity`.
+                          generate. The allowed arguments are:
+
+                          * *credits*
+                          * *content*
+                          * *users*
+                          * *activity*
         ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The day on which the report is
-                          generated. Each report must start on a Sunday or Monday
-                          for the start date for weekly and monthly reports. All
-                          datetimes must be in GMT timezone. Passing in `None` for
-                          the `start_time` will use the closest Sunday to the date
-                          for weekly and monthly reports.  For daily reports, the
-                          current day/time will be used in GMT.
+        start_time        Required Datetime. The time from which the report
+                          generates information.
+
+                          * If *duration* is *weekly*, the day component must
+                            evaluate to a *Sunday* or *Monday* UTC
+                          * If *duration* is *monthly*, the day component must
+                            evaluate to the first of the month
+
+                          .. note::
+                              Values must be in the UTC timezone.
+
+                          If argument is not provided:
+
+                          * and *duration* is either *weekly* or *monthly*,
+                            the report will generate from the closest Sunday.
+                          * and *duration* is *daily*, the report will
+                            generate from the current day/time in UTC.
         ----------------  --------------------------------------------------------
-        duration          Optional String. The time frame on which the reports are
-                          ran.  The allowed values are: `monthly`, `weekly`,
-                          `daily`. For `activity` and `credits` a `start_time`
-                          is required.
+        duration          Optional String. The time frame for which the reports are
+                          created.  The allowed values are:
+
+                          * *monthly*
+                          * *weekly*
+                          * *daily* - only available if *report_type* is *activity*
+
+                          .. note::
+                              Argument is required when setting *report_type*
+                              argument to *activity* or *credits*.
         ================  ========================================================
 
 
         .. code-block:: python
 
-            # Usage Example
+            # Usage Example #1
 
-            import datetime as _dt
-            seven_days_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=7)
-            item = user.report("content",
-                               seven_days_ago,
-                               duration="weekly")
+            >>> import datetime as _dt
+            >>> from arcgis.gis import GIS
 
+            >>> gis = GIS(profile="your_online_admin_profile")
 
-        :return: Item
+            >>> org_users = gis.users.search("*")
+            >>> org_user = org_users[3]
+
+            >>> sept22 = _dt.datetime(2022, 9, 1, 16)
+
+            >>> content_report = org_user.report(report_type = "content",
+                                                 start_time = sept22,
+                                                 duration = "monthly")
+
+            # Usage Example #2
+            >>> sun_dec10 = _dt.datetime(2023, 12, 10, 17)
+
+            >>> activity_report = org_user.report(report_type = "activity",
+                                                  start_time = sun_dec10,
+                                                  duration = "weekly")
+
+        :return:
+            :class: A *CSV* `~arcgis.gis.Item` that can be downloaded.
 
         """
 
@@ -11250,12 +11341,22 @@ class User(dict):
             raise ValueError("Daily only applies to activity report type.")
         if (
             start_time
-            and isinstance(start_time, _dt.datetime)
-            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
-            and duration in ["weekly", "monthly"]
+            and duration == "weekly"
+            and (
+                not isinstance(start_time, _dt.datetime)
+                or not start_time.date().strftime("%A") in ["Monday", "Sunday"]
+            )
         ):
             raise ValueError(
                 "Invalid start_time. Weekly report must start from Sunday or Monday."
+            )
+        if (
+            start_time
+            and duration == "monthly"
+            and (not isinstance(start_time, _dt.datetime) or start_time.day != 1)
+        ):
+            raise ValueError(
+                "Invalid start_time. Monthly report must start from 1st of the month."
             )
         elif start_time and isinstance(start_time, _dt.datetime):
             start_time = int(start_time.timestamp() * 1000)
@@ -13336,7 +13437,9 @@ class Item(dict):
             raise ValueError("`user` must be a string or User object.")
         elif isinstance(target_user, User):
             target_user: str = target_user.username
-        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        url: str = (
+            f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        )
         params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
         session: EsriSession = self._gis._con._session
         resp: requests.Response = session.post(url=url, data=params)
@@ -14049,7 +14152,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "opacity": (lyr["opacity"] if "opacity" in lyr else None),
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -14064,12 +14167,16 @@ class Item(dict):
             wmjs = {
                 "mapOptions": {
                     "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent)
-                    if container
-                    else dict(self._gis.properties.defaultExtent),
-                    "spatialReference": dict(container.properties.spatialReference)
-                    if container
-                    else dict(self._gis.properties.defaultExtent.spatialReference),
+                    "extent": (
+                        dict(container.properties.initialExtent)
+                        if container
+                        else dict(self._gis.properties.defaultExtent)
+                    ),
+                    "spatialReference": (
+                        dict(container.properties.spatialReference)
+                        if container
+                        else dict(self._gis.properties.defaultExtent.spatialReference)
+                    ),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
@@ -14209,9 +14316,14 @@ class Item(dict):
             Items with metadata have 'Metadata' in their typeKeywords.
 
         """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
+
         try:
-            return self._portal.con.get(metadataurlpath, try_json=False)
+            response = self._portal.con.get(metadataurlpath, try_json=False)
+            if response.find("Metadata for item not found") > -1:
+                return None
+            else:
+                return response
 
         # If the get operation returns a 400 HTTP Error then the metadata simply
         # doesn't exist, let's just return None in this case
@@ -14408,7 +14520,7 @@ class Item(dict):
         portalurl = self.homepage
 
         # locale.setlocale(locale.LC_ALL, "")
-        numViews = locale.format("%d", self.numViews, grouping=True)
+        numViews = locale.format_string("%d", self.numViews, grouping=True)
         return (
             """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
@@ -14514,6 +14626,12 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def shared_with(self):
         """
         The ``shared_with`` property reveals the privacy or sharing status of the current item. An item can be private
@@ -14634,6 +14752,12 @@ class Item(dict):
         return ret_dict
 
     # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def share(
         self,
         everyone: bool = False,
@@ -14761,6 +14885,39 @@ class Item(dict):
             )
 
     # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=255)
+    def sharing(self) -> _sharing.SharingManager:
+        """
+        The ``sharing`` property accesses a
+        :class:`~arcgis.gis._impl._content_manager.SharingManager`
+        object to allow users and administrators to control how the current
+        :class:`~arcgis.gis.Item` is shared throughout the :class:`~arcgis.gis.GIS`.
+
+        :returns:
+            :class:`~arcgis.gis._impl._content_manager.SharingManager`
+
+        .. code-block:: python
+
+            # Usage example:
+            >>> gis = GIS(profile="your_organization_admin_profile")
+
+            >>> an_item = gis.content.get("<item_id>")
+            >>> sharing_mgr = an_item.sharing
+            >>> sharing_mgr
+
+            < <item_id> SharingManager >
+        """
+
+        return _sharing.SharingManager(item=self, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
@@ -15017,14 +15174,14 @@ class Item(dict):
             if "access" in item_properties:
                 access = item_properties.pop("access")
                 if access == "private":
-                    self.share(everyone=False, org=False)
+                    self.sharing.sharing_level = "PRIVATE"
                 if access == "org":
-                    self.share(everyone=False, org=True)
+                    self.sharing.sharing_level = "ORGANIZATION"
                 if access == "public":
-                    self.share(everyone=True)
+                    self.sharing.sharing_level = "EVERYONE"
                 if access == "shared":
                     groups = self.shared_with["groups"]
-                    self.share(groups=groups)
+                    self.sharing._share(groups=groups)
 
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
@@ -15115,19 +15272,19 @@ class Item(dict):
 
             if item_properties is not None:
                 if "tags" in item_properties:
-                    if type(item_properties["tags"]) is list:
+                    if isinstance(item_properties["tags"], list):
                         item_properties["tags"] = ",".join(item_properties["tags"])
                 if "access" in item_properties:
                     access = item_properties.pop("access")
                     if access == "private":
-                        self.share(everyone=False, org=False)
+                        self.sharing.sharing_level = "PRIVATE"
                     if access == "org":
-                        self.share(everyone=False, org=True)
+                        self.sharing.sharing_level = "ORGANIZATION"
                     if access == "public":
-                        self.share(everyone=True)
+                        self.sharing.sharing_level = "EVERYONE"
                     if access == "shared":
                         groups = self.shared_with["groups"]
-                        self.share(groups=groups)
+                        self.sharing._share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -18406,5 +18563,6 @@ class Layer(_GISResource):
 
 
 from arcgis.gis._impl._profile import ProfileManager
+from ._impl import SharingLevel
 
 login_profiles = ProfileManager()

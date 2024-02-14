@@ -1,6 +1,7 @@
 """
 Connection Object that uses Python Requests
 """
+
 from arcgis.auth.tools import LazyLoader
 from typing import Union
 from arcgis.auth.tools._util import check_module_exists
@@ -1704,7 +1705,7 @@ class Connection(object):
     # ----------------------------------------------------------------------
     def delete(self, url, params=None, **kwargs):
         """
-        sends a PUT request
+        sends a DELETE request
 
         ===========================   =====================================================
         **Parameter**                **Description**
