@@ -175,7 +175,7 @@ class UtilityNetworkManager(object):
                                    to return.
 
                                    .. code-block::
-                                       
+
                                        [{
                                            "type" : "elements" | "aggregatedGeometry" | "connectivity",
                                            "includeGeometry" : true | false,
@@ -197,14 +197,14 @@ class UtilityNetworkManager(object):
         pbf                        Optional Boolean. If True, the results are returned in
                                    the PBF format. The default is False.
         =======================    ==================================================
-     
+
         .. note::
             When the Elements, Features, Connectivity, or Containment and attachment
             associations result_types options are specified, the output .json file
             includes a sourceMapping element. This element allows you to look up the
             layer name associated with each networkSourceId. To learn more, see
             `Configure a trace <https://pro.arcgis.com/en/pro-app/latest/help/data/utility-network/configure-a-trace.htm>`_
-            
+
         :return:
             A dictionary with keys and value types of:
 
@@ -443,7 +443,7 @@ class UtilityNetworkManager(object):
     ) -> dict:
         """
         The *export_subnetwork* operation is used to export information about a
-        subnetwork into a JSON file. That information can then be consumed by 
+        subnetwork into a JSON file. That information can then be consumed by
         outside systems such as outage management and asset tracking. The
         operation allows you to delete corresponding rows in the Subnetworks
         table as long as the *IsDeleted* attribute is set to *True*. This
@@ -500,7 +500,7 @@ class UtilityNetworkManager(object):
                 |    "subnetworkHasBeenDeleted": bool,
                 |    "success": bool
                 | }
-                
+
         .. note::
             When the Features, Connectivity, or Containment and attachment
             associations *result_types* options are specified, the output
@@ -558,9 +558,9 @@ class UtilityNetworkManager(object):
                                                     Values:
 
                                                             [ "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"]
-                                                    
+
                                                     .. code-block:: python
-                                                    
+
                                                         >>> # Example Usage:
 
                                                         >>> query_network_moments(moments_to_return=["enableTopology","initialEnableTopology"],
@@ -808,8 +808,8 @@ class UtilityNetworkManager(object):
         return_edits                                Optional Boolean. Returned results are organized in a layer-by-layer fashion.
                                                     If `return_edits` is set to True, each layer may have edited features
                                                     returned in an *editedFeatures* object.The editedFeatures object
-                                                    returns full features including the original features prior to 
-                                                    to delete; the original and current features for updates; and the 
+                                                    returns full features including the original features prior to
+                                                    to delete; the original and current features for updates; and the
                                                     current rows for inserts, which may contain implicit changes
                                                     (for example, as a result of a calculation rule).
 
@@ -895,7 +895,7 @@ class UtilityNetworkManager(object):
             A dictionary with two keys
 
         .. code-block:: python
-        
+
             {"associations":list, "success": bool}
         """
 
@@ -913,7 +913,7 @@ class UtilityNetworkManager(object):
         return_deletes: bool = False,
     ) -> dict:
         """
-        The query operation allows you to query the associations table and 
+        The query operation allows you to query the associations table and
         return association information for network features in a utility network.
 
         .. note::
