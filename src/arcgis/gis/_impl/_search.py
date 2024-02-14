@@ -80,6 +80,34 @@ def _search(
                         searching.
     ----------------    ---------------------------------------------------------------
     as_dict             Required Boolean. If True, the response comes back as a dictionary.
+    ----------------    ---------------------------------------------------------------
+    filter              Optional String. A filter to apply to the search.
+                        The following fields are supported for the filter parameter:
+
+                        For Users
+
+                        - username
+                        - firstname
+                        - lastname
+                        - fullname
+                        - email
+                        Example: filter=username:"jsmith"
+
+                        For Items
+
+                        - title
+                        - tags
+                        - typeKeywords
+                        - type
+                        - owner
+                        Example: filter=tags:"public"
+
+                        For Groups
+
+                        - title
+                        - typeKeywords
+                        - owner
+                        Example: filter=owner:"jsmith"
     ================    ===============================================================
 
     """
