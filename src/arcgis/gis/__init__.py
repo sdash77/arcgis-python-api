@@ -4512,7 +4512,7 @@ class UserManager(object):
         results = []
         # ensure /Categories is at the start of each string.
         categories = [
-            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            (cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}")
             for cat in categories
         ]
         for user in users:
@@ -11374,7 +11374,7 @@ class User(dict):
             and duration == "weekly"
             and (
                 not isinstance(start_time, _dt.datetime)
-                or not start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+                or not start_time.date().strftime("%A") in ["Monday", "Sunday"]
             )
         ):
             raise ValueError(
@@ -14182,7 +14182,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "opacity": (lyr["opacity"] if "opacity" in lyr else None),
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
