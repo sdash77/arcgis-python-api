@@ -4693,6 +4693,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
         method=None,
         sensitivity=None,
+        time_field=None,
+        search_time_interval=None,
+        search_time_interval_unit=None,
     ):
         """
         The ``find_point_clusters`` method finds clusters of point features within surrounding
@@ -4713,77 +4716,83 @@ class _FeatureAnalysisTools(BaseAnalytics):
         no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
         of varying densities from sparser noise resulting in more data-driven clusters.
 
-        ====================    =========================================================
-        **Parameter**            **Description**
-        --------------------    ---------------------------------------------------------
-        analysis_layer          Required layer. The point feature layer for which
-                                density-based clustering will be calculated.
-                                See :ref:`Feature Input<FeatureInput>`.
-        --------------------    ---------------------------------------------------------
-        min_features_cluster    Required integer. The minimum number of features to be
-                                considered a cluster. Any cluster with fewer features
-                                than the number provided will be considered noise.
-        --------------------    ---------------------------------------------------------
-        search_distance         Optional float. The maximum distance to consider. The
-                                Minimum Features per Cluster specified must be found
-                                within this distance for cluster membership. Individual
-                                clusters will be separated by at least this distance. If
-                                a feature is located further than this distance from the
-                                next closest feature in the cluster, it will not be
-                                included in the cluster.
-        --------------------    ---------------------------------------------------------
-        search_distance_unit    Optional string. The linear unit to be used with the distance
-                                value specified for ``search_distance``. You must provide a
-                                value if ``search_distance`` has been set.
+        ============================    =========================================================
+        **Parameter**                   **Description**
+        ----------------------------    ---------------------------------------------------------
+        analysis_layer                  Required layer. The point feature layer for which
+                                        density-based clustering will be calculated.
+                                        See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    ---------------------------------------------------------
+        min_features_cluster            Required integer. The minimum number of features to be
+                                        considered a cluster. Any cluster with fewer features
+                                        than the number provided will be considered noise.
+        ----------------------------    ---------------------------------------------------------
+        search_distance                 Optional float. The maximum distance to consider. The
+                                        Minimum Features per Cluster specified must be found
+                                        within this distance for cluster membership. Individual
+                                        clusters will be separated by at least this distance. If
+                                        a feature is located further than this distance from the
+                                        next closest feature in the cluster, it will not be
+                                        included in the cluster.
+        ----------------------------    ---------------------------------------------------------
+        search_distance_unit            Optional string. The linear unit to be used with the distance
+                                        value specified for ``search_distance``. You must provide a
+                                        value if ``search_distance`` has been set.
 
-                                Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
+                                        Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
 
-                                The default is 'Miles'.
-        --------------------    ---------------------------------------------------------
-        output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                                feature layer will cause the new layer to be appended to the Feature Service.
-                                If overwrite is True in context, new layer will overwrite existing layer.
-                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-        --------------------    ---------------------------------------------------------
-        context                 Optional dict. Additional settings such as processing extent and output spatial reference.
-                                For find_point_clusters, there are three settings.
+                                        The default is 'Miles'.
+        ----------------------------    ---------------------------------------------------------
+        output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                        feature layer will cause the new layer to be appended to the Feature Service.
+                                        If overwrite is True in context, new layer will overwrite existing layer.
+                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------------------    ---------------------------------------------------------
+        context                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                        For find_point_clusters, there are three settings.
 
-                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
+                                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
-                                    .. code-block:: python
+                                            .. code-block:: python
 
-                                        # Example Usage
-                                        context = {"extent": {"xmin": 3164569.408035,
-                                                            "ymin": -9187921.892449,
-                                                            "xmax": 3174104.927313,
-                                                            "ymax": -9175500.875353,
-                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                    "outSR": {"wkid": 3857},
-                                                    "overwrite": True}
-        --------------------    ---------------------------------------------------------
-        gis                     Optional, the GIS on which this tool runs. If not
-                                specified, the active GIS is used.
-        --------------------    ---------------------------------------------------------
-        estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
-        --------------------    ---------------------------------------------------------
-        future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-        --------------------    ---------------------------------------------------------
-        method                  Optional string. Specifies the method that will be used to
-                                find clusters. If the method is not specified and the
-                                search_distance value is not provided, the HDBSCAN algorithm
-                                will be used. If the method is not specified and the search_distance
-                                value is provided, the DBSCAN algorithm will be used.
+                                                # Example Usage
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                    "ymin": -9187921.892449,
+                                                                    "xmax": 3174104.927313,
+                                                                    "ymax": -9175500.875353,
+                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                            "outSR": {"wkid": 3857},
+                                                            "overwrite": True}
+        ----------------------------    ---------------------------------------------------------
+        gis                             Optional, the GIS on which this tool runs. If not
+                                        specified, the active GIS is used.
+        ----------------------------    ---------------------------------------------------------
+        estimate                        Optional Boolean. If True, the number of credits to run the operation will be returned.
+        ----------------------------    ---------------------------------------------------------
+        future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ----------------------------    ---------------------------------------------------------
+        method                          Optional string. Specifies the method that will be used to
+                                        find clusters. If the method is not specified and the
+                                        search_distance value is not provided, the HDBSCAN algorithm
+                                        will be used. If the method is not specified and the search_distance
+                                        value is provided, the DBSCAN algorithm will be used.
 
-                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
+                                        This parameter is available in ArcGIS Enterprise 11.2 or higher.
 
-                                Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
-        --------------------    ---------------------------------------------------------
-        sensitivity             Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
+                                        Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
+        ----------------------------    ---------------------------------------------------------
+        sensitivity                     Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
 
-                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
-        ====================    =========================================================
+                                        This parameter is available in ArcGIS Enterprise 11.2 or higher.
+        ----------------------------    ---------------------------------------------------------
+        time_field                      Optional string. The date field that will be used to calculate the time interval for the analysis.
+        ----------------------------    ---------------------------------------------------------
+        search_time_interval            Optional float. The time interval to consider. The Minimum Features per Cluster specified must be found within this time interval for cluster membership.
+        ----------------------------    ---------------------------------------------------------
+        search_time_interval_unit       Optional string. The time unit to be used with the time interval value specified for ``search_time_interval``. You must provide a value if ``search_time_interval`` has been set.
+        ============================    =========================================================
 
         :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
@@ -4801,12 +4810,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
             overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
-        if self._gis.version >= [2023, 2] or self._gis._is_agol:
-            method = method
-            sensitivity = sensitivity
-        else:
+        if not self._gis.version >= [2023, 2] or not self._gis._is_agol:
             method = None
             sensitivity = None
+
+        if not self._gis.version >= [2024, 1] or not self._gis._is_agol:
+            # Enterprise 11.3+ or Online
+            time_field = None
+            search_time_interval = None
+            search_time_interval_unit = None
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -4823,6 +4835,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["method"] = method
             if sensitivity is not None:
                 params["sensitivity"] = sensitivity
+            if time_field is not None:
+                params["timeField"] = time_field
+            if search_time_interval is not None:
+                params["searchTimeInterval"] = search_time_interval
+            if search_time_interval_unit is not None:
+                params["searchTimeIntervalUnit"] = search_time_interval_unit
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
@@ -4837,6 +4855,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             future=True,
             method=method,
             sensitivity=sensitivity,
+            time_field=time_field,
+            search_time_interval=search_time_interval,
+            search_time_interval_unit=search_time_interval_unit,
         )
         gpjob._is_fa = True
         if future:
