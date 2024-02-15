@@ -27,6 +27,7 @@ def _parse_enum(value: Enum | Any | None) -> Any | None:
 
 ###########################################################################
 class ItemTypeEnum(Enum):
+    DATA_STORE = "Data Store"
     VR_EXPERIENCE = "360 VR Experience"
     CITYENGINE_WEB_SCENE = "CityEngine Web Scene"
     MAP_AREA = "Map Area"
