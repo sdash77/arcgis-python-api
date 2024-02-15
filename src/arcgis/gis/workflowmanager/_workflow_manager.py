@@ -726,7 +726,7 @@ class JobManager:
 
     def statistics(
         self,
-        query: str,
+        query: Optional[str] = None,
         search_str: Optional[str] = None,
         group_by: Optional[str] = None,
         spatial_extent: Optional[str] = None,
@@ -738,13 +738,13 @@ class JobManager:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        query               Optional string. The query for the search you want total number of records for.
-                            Must specify either query or search_str as a parameter.
+        query               Optional string. The SQL query for the search you want total number of records for.
+                            (e.g. "priority='High'") Must specify either query or search_str as a parameter.
         ---------------     --------------------------------------------------------------------
-        search_str          Optional string. The match criteria for a simple search.
+        search_str          Optional string. The match criteria for a simple search. (e.g. "High")
                             Must specify either search_str or query as a parameter.
         ---------------     --------------------------------------------------------------------
-        groupBy             Optional string. The search field that is used to separate counts by value.
+        group_by            Optional string. The search field that is used to separate counts by value.
         ---------------     --------------------------------------------------------------------
         spatial_extent      Optional string. Spatial extent string to filter jobs by their locations
         ---------------     --------------------------------------------------------------------
