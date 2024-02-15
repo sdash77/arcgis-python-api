@@ -39,6 +39,7 @@ from .manage_data import (
 )
 from .summarize_data import (
     aggregate_points,
+    calculate_composite_index,
     join_features,
     summarize_center_and_dispersion,
     summarize_nearby,
