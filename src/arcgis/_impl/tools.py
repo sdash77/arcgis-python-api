@@ -1191,7 +1191,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
         """
-        if not self._gis._is_agol and self._gis.version < [11, 3]:
+        if not self._gis._is_agol and self._gis.version < [2024, 1]:
             raise Exception(
                 "This tool is only available in ArcGIS Online and Enterprise 11.3+."
             )
