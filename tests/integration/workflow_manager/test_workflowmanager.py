@@ -1529,7 +1529,9 @@ class TestWorkflowManager(unittest.TestCase):
         delattr(job, "extended_properties")
 
         # Act
-        actual = self.connection.workflow_manager.jobs.update(job_id, vars(job), "123456")
+        actual = self.connection.workflow_manager.jobs.update(
+            job_id, vars(job), "123456"
+        )
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")

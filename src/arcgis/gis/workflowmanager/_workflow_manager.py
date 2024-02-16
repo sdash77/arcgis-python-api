@@ -724,7 +724,9 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update(self, job_id: str, update_object, allow_running_step_id: Optional[str] = None):
+    def update(
+        self, job_id: str, update_object, allow_running_step_id: Optional[str] = None
+    ):
         """
         Updates a job object by ID
 
@@ -2298,19 +2300,53 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = self.notes = self.diagram_id = self.end_date = (
+        self.job_status = (
+            self.notes
+        ) = (
+            self.diagram_id
+        ) = (
+            self.end_date
+        ) = (
             self.due_date
-        ) = self.description = self.started_date = self.current_steps = (
+        ) = (
+            self.description
+        ) = (
+            self.started_date
+        ) = (
+            self.current_steps
+        ) = (
             self.job_template_name
-        ) = self.job_template_id = self.extended_properties = self.holds = (
+        ) = (
+            self.job_template_id
+        ) = (
+            self.extended_properties
+        ) = (
+            self.holds
+        ) = (
             self.diagram_name
-        ) = self.parent_job = self.job_name = self.diagram_version = (
+        ) = (
+            self.parent_job
+        ) = (
+            self.job_name
+        ) = (
+            self.diagram_version
+        ) = (
             self.active_versions
-        ) = self.percent_complete = self.priority = self.job_id = self.created_date = (
+        ) = (
+            self.percent_complete
+        ) = (
+            self.priority
+        ) = (
+            self.job_id
+        ) = (
+            self.created_date
+        ) = (
             self.created_by
-        ) = self.closed = self.owned_by = self.start_date = self._location = (
-            self.related_properties
-        ) = None
+        ) = (
+            self.closed
+        ) = (
+            self.owned_by
+        ) = self.start_date = self._location = self.related_properties = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
