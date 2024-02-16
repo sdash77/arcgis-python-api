@@ -84,10 +84,7 @@ class KnowledgeGraph:
 
     def _validate_response(self, response):
         if response.status_code != 200:
-            raise Exception(
-                "Invalid HTTP Response. Expected status code 200, got "
-                + str(response.status_code)
-            )
+            response.raise_for_status()
         headers = response.headers
         if (
             "Content-Type" not in headers
