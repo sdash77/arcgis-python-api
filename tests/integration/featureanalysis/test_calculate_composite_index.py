@@ -15,7 +15,7 @@ profiles = ["online_test", "ent_test", "kube_test"]
 setup_profiles(profiles[0], profiles[1], profiles[2])
 
 
-class TestAggregatePoints(unittest.TestCase):
+class TestCalculateCompositeIndex(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""
         for profile in profiles:

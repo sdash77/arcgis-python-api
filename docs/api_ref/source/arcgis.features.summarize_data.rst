@@ -7,10 +7,6 @@ aggregate_points
 ----------------
 .. autofunction:: arcgis.features.summarize_data.aggregate_points
 
-calculate_composite_index
--------------------------
-.. autofunction:: arcgis.features.summarize_data.calculate_composite_index
-
 describe_dataset
 ----------------
 .. autofunction:: arcgis.features.summarize_data.describe_dataset
