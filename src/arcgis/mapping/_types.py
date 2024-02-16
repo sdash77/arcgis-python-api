@@ -193,7 +193,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # Viewer items.
         self._id = str(uuid4())
-        self.type = "mapWidget"
+        self.type = "Web Map"
 
         self._pop_ups = False
         self._navigation = False
