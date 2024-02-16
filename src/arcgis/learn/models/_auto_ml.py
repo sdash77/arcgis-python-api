@@ -27,7 +27,11 @@ try:
         add_h3,
         _extract_embeddings,
     )
-    from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.common import (
+        _get_emd_path,
+        check_path_or_url,
+        _get_hosted_dlpk,
+    )
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
     from sklearn.preprocessing import normalize
@@ -822,10 +826,13 @@ class AutoML(object):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        emd_path_orig = Path(emd_path)
-        emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
+        is_hosted_dlpk = check_path_or_url(emd_path)
+        if is_hosted_dlpk:
+            success, emd_path = _get_hosted_dlpk(emd_path)
+
+        emd_path = _get_emd_path(emd_path)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
