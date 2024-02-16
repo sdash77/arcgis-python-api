@@ -724,17 +724,19 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update(self, job_id: str, update_object):
+    def update(self, job_id: str, update_object, allow_running_step_id: Optional[str] = None):
         """
         Updates a job object by ID
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        job_id              Required string. ID for the job to update
-        ---------------     --------------------------------------------------------------------
-        update_object       Required object. An object containing the fields and new values to add to the job
-        ===============     ====================================================================
+        ===============             ====================================================================
+        **Parameter**               **Description**
+        ---------------             --------------------------------------------------------------------
+        job_id                      Required string. ID for the job to update
+        ---------------             --------------------------------------------------------------------
+        update_object               Required object. An object containing the fields and new values to add to the job
+        ---------------             --------------------------------------------------------------------
+        allow_running_step_id       Optional string. Allow updating job properties when the specified step is running
+        ===============             ====================================================================
 
         :return:
             success object
@@ -766,6 +768,8 @@ class JobManager:
             current_job = self.get(job_id).__dict__
             for k in update_object.keys():
                 current_job[k] = update_object[k]
+            if allow_running_step_id is not None:
+                current_job["allowRunningStepId"] = allow_running_step_id
             url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=job_id)
             new_job = Job(current_job, self._gis, url)
             # remove existing properties if not updating.
