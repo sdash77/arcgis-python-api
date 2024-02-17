@@ -1427,7 +1427,10 @@ def _append_labels(body, ns_dict, itext_labels, model):
             ):
                 q_body.update({"alias": x.attrib["ref"].split("/")[-1]})
             for y in x:
-                if re.sub("[{][^}]*[}]", "", y.tag) == "item":
+                if (
+                    re.sub("[{][^}]*[}]", "", y.tag) == "item"
+                    and re.sub("[{][^}]*[}]", "", x.tag) == "select1"
+                ):
                     choice = {}
                     for i in y:
                         if re.sub("[{][^}]*[}]", "", i.tag) == "label":
@@ -1875,8 +1878,6 @@ def _xmlschema(
 
     rel_id = 1
     rel_ids_dict = {}
-
-    # schema[parent].update({"title": title})
 
     for layer in layers:
         if len(schema[layer]["relationships"]) > 0:

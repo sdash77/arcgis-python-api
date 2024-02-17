@@ -14,7 +14,7 @@ from .exceptions import ServerError
 from arcgis.auth import EsriSession
 import arcgis
 import shutil
-import zipfile
+from arcgis.gis import ItemTypeEnum, ItemProperties
 from ._publish_functions import (
     _get_version,
     _xform2webform,
@@ -181,30 +181,26 @@ class SurveyManager:
         """
 
         if folder is None:
-            folders = [f for f in self._gis.users.me.folders]
-            if f"Survey-{title}" not in [f["title"] for f in folders]:
-                folder = self._gis.content.folders.create(f"Survey-{title}").properties[
-                    "id"
-                ]
+            existing_folder = self._gis.content.folders.get(
+                folder=f"Survey-{title}", owner=self._gis.users.me.username
+            )
+            if existing_folder is None:
+                folder_obj = self._gis.content.folders.create(f"Survey-{title}")
+                folder = folder_obj.properties["id"]
             else:
-                folder = [f["id"] for f in folders if f["title"] == f"Survey-{title}"][
-                    0
-                ]
+                folder_obj = existing_folder
+                folder = folder_obj.properties["id"]
 
-        form_properties = {
-            "type": "Form",
-            "title": title,
-            "typeKeywords": "Form, Survey123, Survey123 Hub, Draft",
-        }
-        if tags:
-            form_properties["tags"] = tags
-        if summary:
-            form_properties["snippet"] = summary
-        if description:
-            form_properties["description"] = description
-        form_item = self._gis.content.add(
-            item_properties=form_properties, folder=folder, thumbnail=thumbnail
+        form_properties = ItemProperties(
+            title=title,
+            item_type=ItemTypeEnum.FORM.value,
+            type_keywords=["Form, Survey123, Survey123 Hub, Draft"],
+            tags=tags,
+            snippet=summary,
+            description=description,
+            thumbnail=thumbnail,
         )
+        form_item = folder_obj.add(item_properties=form_properties).result()
 
         uid = "%s" % uuid.uuid4().hex
         service = self._gis.content.create_service(
@@ -1135,13 +1131,16 @@ class Survey:
     # ----------------------------------------------------------------------
     def _find_layer_name(self):
         """Finds the name of the layer the survey is submitting to, used to find the appropriate layer index"""
+        tmpdir = tempfile.TemporaryDirectory()
+        tmp_name = tmpdir.name
         name = self._si._gis._con.get(
             f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/forminfo.json"
         )["name"]
         title = quote(name, safe="()!-_.'~")
         url = f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{title}.xml"
-        response = self._si._gis._con.get(url, out_folder=tempfile.gettempdir())
+        response = self._si._gis._con.get(url, out_folder=tmp_name)
         tree = ET.parse(response)
+        shutil.rmtree(tmp_name, ignore_errors=True)
         root = tree.getroot()
         for elem in root[0][1].iter():
             for key, value in zip(elem.attrib.keys(), elem.attrib.values()):
@@ -1400,10 +1399,6 @@ class Survey:
 
         """
 
-        def extractzip(filename, folder):
-            zfile = zipfile.ZipFile(filename)
-            zfile.extractall(folder)
-
         tmpdir = tempfile.TemporaryDirectory()
         tmp_name = tmpdir.name
         # Identify if publishing a new survey or re-publishing an existing survey.
@@ -1433,18 +1428,20 @@ class Survey:
             # Since this is a re-publish of an existing survey we work with the current state of the form item.
             initial_publish = False
             form_zip = self._si.download(save_path=tmp_name)
-            extractzip(form_zip, os.path.join(tmp_name, self._si.id))
+            shutil.unpack_archive(form_zip, os.path.join(tmp_name, self._si.id), "zip")
             os.remove(form_zip)
             directory = os.path.join(tmp_name, self._si.id, "esriinfo")
 
         connect_version = _get_version()
         # Copy all files from a user supplied media folder
         if media:
+            clear_media = False
             if os.path.isfile(media):
                 tmpmedia = tempfile.TemporaryDirectory()
                 tmp_media = tmpmedia.name
-                extractzip(media, os.path.join(tmp_media, "media"))
+                shutil.unpack_archive(media, os.path.join(tmp_media, "media"), "zip")
                 media = os.path.join(tmp_media, "media")
+                clear_media = True
             if not os.path.exists(os.path.join(directory, "media")):
                 os.mkdir(os.path.join(directory, "media"))
             [
@@ -1454,13 +1451,19 @@ class Survey:
                 for x in os.listdir(media)
                 if not (os.path.isdir(os.path.join(media, x)))
             ]
+            if clear_media is True:
+                shutil.rmtree(tmp_media, ignore_errors=True)
         # Copy all files from a user supplied scripts folder
         if scripts:
+            clear_scripts = False
             if os.path.isfile(scripts):
                 tmpscripts = tempfile.TemporaryDirectory()
                 tmp_scripts = tmpscripts.name
-                extractzip(scripts, os.path.join(tmp_scripts, "scripts"))
-                media = os.path.join(tmp_scripts, "scripts")
+                shutil.unpack_archive(
+                    scripts, os.path.join(tmp_scripts, "scripts"), "zip"
+                )
+                scripts = os.path.join(tmp_scripts, "scripts")
+                clear_scripts = True
             if not os.path.exists(os.path.join(directory, "scripts")):
                 os.mkdir(os.path.join(directory, "scripts"))
             [
@@ -1468,8 +1471,10 @@ class Survey:
                     os.path.join(scripts, x), os.path.join(directory, "scripts", x)
                 )
                 for x in os.listdir(scripts)
-                if not (os.path.isdir(os.path.join(media, x)))
+                if not (os.path.isdir(os.path.join(scripts, x)))
             ]
+            if clear_scripts is True:
+                shutil.rmtree(tmp_scripts, ignore_errors=True)
 
         # Create .info file
         full_info = {
@@ -1824,7 +1829,7 @@ class Survey:
                 for x in self._si.related_items("Survey2Service", direction="forward")
                 + self._si.related_items("Survey2Data", direction="forward")
             ]
-
+        shutil.rmtree(tmp_name, ignore_errors=True)
         return Survey(item=self._gis.content.get(self._si.id), sm=self._sm)
 
     # ----------------------------------------------------------------------
