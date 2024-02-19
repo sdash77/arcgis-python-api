@@ -10406,6 +10406,7 @@ def locate_regions(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -10702,5 +10703,6 @@ def locate_regions(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )

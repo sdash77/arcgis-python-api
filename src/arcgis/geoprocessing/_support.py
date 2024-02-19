@@ -643,6 +643,10 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
 def _prepare_params_for_estimate_credits_task(gp_params, task_name):
     if "f" in gp_params:
         del gp_params["f"]
+
+    for param, value in gp_params.copy().items():
+        if value == "" or value == {}:
+            del gp_params[param]
     gp_new_params = {"f": "json", "context": gp_params.get("context", {})}
     gp_new_params.update(
         {"inputAnalysisTask": {"name": task_name, "parameters": gp_params}}

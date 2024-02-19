@@ -605,6 +605,7 @@ def export_training_data(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -856,6 +857,7 @@ def export_training_data(
         min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1483,6 +1485,7 @@ def detect_change_using_deep_learning(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
