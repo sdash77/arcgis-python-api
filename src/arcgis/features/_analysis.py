@@ -87,8 +87,8 @@ def aggregate_points(
 
 
 def calculate_composite_index(
-    input_layer,
-    input_variables,
+    input_layer=None,
+    input_variables=None,
     index_method=None,
     output_index_reverse=False,
     output_index_min_max=None,
@@ -103,7 +103,7 @@ def calculate_composite_index(
         "input_variables": (str, "inputVariables"),
         "index_method": (str, "indexMethod"),
         "output_index_reverse": (bool, "outputIndexReverse"),
-        "output_index_min_max": (str, "outputIndexMinMax"),
+        "output_index_min_max": (list, "outputIndexMinMax"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
     }

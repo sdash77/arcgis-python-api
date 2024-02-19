@@ -1073,8 +1073,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def calculate_composite_index(
         self,
-        input_layer,
-        input_variables,
+        input_layer=None,
+        input_variables=None,
         index_method=None,
         output_index_reverse=False,
         output_index_min_max=None,
@@ -1104,10 +1104,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                     Provide at least two variables. For each variable, specify the following:
 
                                                     * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
-                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to false. When true the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
+                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to False. When True the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
                                                     * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
 
-                                                    Example: "inputVariables":[{"field":"median_income", "reverseVariable": true, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": false, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": false, "weight": 1}]
+                                                    Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
         -------------------------------------       ---------------------------------------------------------
         index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
                                                     the scaled variables to create the index.
@@ -1122,19 +1122,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                     * `geomeanRaw` creates the index by calculating the geometric mean of the raw input variables. This option is useful when variables are already on a compatible scale and when high variable values should not cancel out low variable values.
                                                     * `sumFlagsPercentile` creates the index by counting the number of input variables with values greater than or equal to the 90th percentile. This method is useful for identifying locations that may be considered the most extreme or the most in need.
 
-                                                    Values: meanScaled | meanPercentile | meanRaw | geomeanScaled | geomeanPercentile | geomeanRaw | sumFlagsPercentile
+                                                    Values: "meanScaled" | "meanPercentile" | "meanRaw" | "geomeanScaled" | "geomeanPercentile" | "geomeanRaw" | "sumFlagsPercentile"
 
-                                                    Default: meanScaled
+                                                    Default: "meanScaled"
         -------------------------------------       ---------------------------------------------------------
         output_index_reverse                        Optional boolean. Specifies whether the output index values will
                                                     be reversed in direction. When checked, high index values will be treated
                                                     as low index values and vice versa. Reversing is applied after combining
                                                     the scaled variables. The default is False.
         -------------------------------------       ---------------------------------------------------------
-        output_index_min_max                        Optional list of dictionaries. The minimum and maximum of the output index values.
+        output_index_min_max                        Optional list of one dictionary. The minimum and maximum of the output index values.
                                                     Specifying a minimum and maximum value will apply minimum-maximum scaling to the combined variables.
 
-                                                    Example: "[{'min': 0, 'max': 100}]"
+                                                    Example: [{'min': 0, 'max': 100}]
         -------------------------------------       ---------------------------------------------------------
         output_name                                 Optional dictionary. If provided, the task will create a feature service of the results. You define the name of the service. If an outputName value is not provided, the task will return a feature collection.
 
@@ -1154,7 +1154,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                     "itemProperties": {
                                                                 "itemId": "<itemID of the existing feature service>",
-                                                                "overwrite": true
+                                                                "overwrite": True
                                                         }
                                                     }
                                                     ```
@@ -1167,7 +1167,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                     },
                                                     "itemProperties": {
                                                                     "itemId": "<itemID of the existing feature service>",
-                                                                    "overwrite": true
+                                                                    "overwrite": True
                                                         }
                                                     }
                                                     ```
@@ -1196,7 +1196,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 "This tool is only available in ArcGIS Online and Enterprise 11.3+."
             )
 
-        if input_layer is None and input_variables is None:
+        if input_layer is None or input_variables is None:
             raise Exception(
                 "User must provide the `input_layer` and `input_variables` to use this tool."
             )
