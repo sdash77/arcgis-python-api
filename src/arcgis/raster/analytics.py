@@ -3385,7 +3385,6 @@ def create_image_collection(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4212,7 +4211,6 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
-        estimate=estimate,
         md_to_upload=source_mosaic_dataset,
         **kwargs,
     )
@@ -4230,7 +4228,6 @@ def add_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4371,7 +4368,6 @@ def add_image(
         raster_type_params=raster_type_params,
         context=context,
         future=future,
-        estimate=estimate,
         **kwargs,
     )
 

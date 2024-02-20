@@ -1099,6 +1099,7 @@ def compute_accuracy_for_object_detection(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -1225,6 +1226,7 @@ def compute_accuracy_for_object_detection(
         out_accuracy_report_name=out_accuracy_report_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 

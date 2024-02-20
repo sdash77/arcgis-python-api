@@ -9706,7 +9706,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_params=None,
         context=None,
         future=False,
-        estimate=False,
         **kwargs,
     ):
         """
@@ -9802,7 +9801,6 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
-            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -10789,7 +10787,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         md_to_upload=None,
-        estimate=False,
         **kwargs,
     ):
         """
@@ -11020,7 +11017,6 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
-            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -16649,6 +16645,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         mask_features=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16747,6 +16744,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = True
