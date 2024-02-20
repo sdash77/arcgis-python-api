@@ -8339,6 +8339,8 @@ class Raster:
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
+                "text/plain; charset=utf-8",
+                "text/plain",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8382,12 +8384,14 @@ class Raster:
 
         item = json_data
 
-        from ._util import _get_stac_metadata_file
+        from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
         from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
-            raise RuntimeError("STAC Item not supported")
+            item, metadata_file = _get_static_catalog_item_resources((stac_item, item))
+            if not metadata_file:
+                raise RuntimeError("STAC Item not supported")
 
         ras = (
             composite_band(
@@ -12866,11 +12870,15 @@ class RasterCollection:
                 rc_attribute_dict[key] = attribute_dict[key]
             else:
                 rc_attribute_dict[key] = [
-                    item[attribute_dict[key]]
-                    if attribute_dict[key] in item
-                    else item["properties"][attribute_dict[key]]
-                    if attribute_dict[key] in item["properties"]
-                    else key
+                    (
+                        item[attribute_dict[key]]
+                        if attribute_dict[key] in item
+                        else (
+                            item["properties"][attribute_dict[key]]
+                            if attribute_dict[key] in item["properties"]
+                            else key
+                        )
+                    )
                     for item in items
                 ]
 
@@ -13024,6 +13032,9 @@ class RasterCollection:
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
                 "binary/octet-stream",
+                "application/octet-stream",
+                "text/plain; charset=utf-8",
+                "text/plain",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"

@@ -1832,31 +1832,57 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             "application/geo+json",
             "application/json;charset=utf-8",
             "binary/octet-stream",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
         yield from _get_all_stac_catalog_items(child_json, request_link, request_params)
 
 
-def _get_static_catalog_item_resources(request_link, request_params):
-    item_res = _requests.get(request_link, **request_params)
-    if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
-        "application/json",
-        "application/geo+json",
-        "application/json;charset=utf-8",
-    ]:
-        raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
-    item = item_res.json()
+def _get_static_catalog_item_resources(request_link, request_params={}):
+
+    if isinstance(request_link, str):
+        item_res = _requests.get(request_link, **request_params)
+        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
+        ]:
+            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+        item = item_res.json()
+    else:
+        request_link, item = request_link
     assets = item["assets"]
     product_file = None
-    if "maxar-opendata.s3.amazonaws.com/events" in request_link:
-        product_file = request_link
-    elif "https://capella-open-data.s3.us-west-2.amazonaws.com/stac" in request_link:
+    self_link_products = [
+        "https://maxar-opendata.s3.amazonaws.com/events",
+        "https://capella-open-data.s3.us-west-2.amazonaws.com/stac",
+    ]
+    cog_composite_products = [
+        "https://pta.data.lit.fmi.fi/stac",
+        "https://storage.googleapis.com/cfo-public",
+    ]
+
+    if any(link in request_link for link in self_link_products):
+        product_file = f"StacItemHref/{request_link}"
+    elif "https://datacloud.icgc.cat/stac-catalog" in request_link:
+        product_file = f"/vsicurl/{assets['visual']['href']}"
+    elif "https://dop-stac.opengeodata.lgln.niedersachsen.de" in request_link:
+        product_file = f"/vsicurl/{assets['rgbi']['href']}"
+    elif "https://nz-imagery.s3-ap-southeast-2.amazonaws.com" in request_link:
+        product_file = urljoin(request_link, assets["visual"]["href"])
+    elif "https://raw.githubusercontent.com/m-mohr/oam-example/main" in request_link:
+        product_file = assets["data"]["href"]
+    elif any(link in request_link for link in cog_composite_products):
         product_file = [
-            data["href"]
-            for data in assets.values()
-            if data["href"].endswith((".tif", ".tiff", ".ntf"))
-            and "data" in data["roles"]
+            f"/vsicurl/{cog['href']}"
+            for cog in item["assets"].values()
+            if cog["href"].endswith((".tif", ".tiff"))
         ]
 
     return item, product_file
