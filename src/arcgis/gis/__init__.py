@@ -15980,7 +15980,7 @@ class Item(dict):
         future: bool = False,
     ) -> Item | concurrent.futures.Future:
         """
-        The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
+        The ``publish`` method is used to publish a hosted service based on an existing source item (this item).
         Publishers can then create feature, tiled map, vector tile and scene services.
         Feature services can be created from  input files of various types, including
             1. csv files
@@ -16108,7 +16108,7 @@ class Item(dict):
         geocode_service=None,
     ):
         """
-        The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
+        The ``_publish`` method is used to publish a hosted service based on an existing source item (this item).
         Publishers can then create feature, tiled map, vector tile and scene services.
         Feature services can be created from  input files of various types, including
             1. csv files
