@@ -219,7 +219,7 @@ class PlacesAPI:
         if search_text is None:
             search_text = ""
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['near-point']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
@@ -288,7 +288,7 @@ class PlacesAPI:
             "pageSize": page_size,
         }
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['within-extent']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
