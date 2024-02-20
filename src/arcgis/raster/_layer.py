@@ -1495,7 +1495,6 @@ class ImageryLayer(Layer):
         linear_unit: Optional[str] = None,
         angular_unit: Optional[str] = None,
         area_unit: Optional[str] = None,
-        raster_id: Optional[int] = None,
     ):
         """
         The ``measure`` method lets a user measure distance, direction, area,
@@ -1602,9 +1601,6 @@ class ImageryLayer(Layer):
                               SquareMiles,SquareMillimeters,SquareCentimeters,
                               SquareDecimeters,SquareMeters,Ares,Hectares,
                               SquareKilometers`
-        -----------------     --------------------------------------------------------------------
-        raster_id             Optional integer. Specifies the objectId of the image service’s raster catalog.
-                              The raster_id value identifies which raster to use in a mosaic dataset
         =================     ====================================================================
 
         :return: A dictionary
@@ -1669,8 +1665,6 @@ class ImageryLayer(Layer):
             params["areaUnit"] = area_unit
         if angular_unit:
             params["angularUnit"] = angular_unit
-        if raster_id:
-            params["rasterId"] = raster_id
         return self._con.post(path=url, postdata=params, timeout=None)
 
     def set_filter(
@@ -5221,6 +5215,88 @@ class ImageryLayer(Layer):
         if out_sr:
             params["outSR"] = out_sr
 
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def measure_from_image(
+        self,
+        from_geometry: Union[Geometry, dict[str, Any]],
+        to_geometry: Optional[Union[Geometry, dict[str, Any]]] = None,
+        raster_id: Optional[int] = None,
+    ):
+        """
+        The ``measure_from_image`` operation provides mensuration capabilities within one image space and
+        returns the measurement result in a map space unit. When to_geometry is specified, this operation
+        returns distance between the two geometries. When to_geometry is not specified, this operation returns
+        length for a polyline geometry and area for a polygon geometry.
+
+        =================     ====================================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------------------------
+        from_geometry         Required :class:`~arcgis.geometry.Geometry` or dictionary.
+                              A geometry defines the from location of the measurement.
+                              If the spatial reference is missing, the coordinate is assumed to be
+                              in image space set through rasterId parameter. If the spatial reference
+                              exists, it will be used for the geometry's coordinates.
+
+                              Possible geometry types are: Point, Polyline, Polygon
+        -----------------     --------------------------------------------------------------------
+        to_geometry           Optional :class:`~arcgis.geometry.Geometry` or dictionary.
+                              A geometry that defines the to location of the measurement.
+                              If spatialReference is missing, the coordinate is assumed to be in
+                              image space set through rasterId parameter. If spatialReference exists,
+                              it will be used for the geometry's coordinates.
+
+                              Possible geometry types are: Point, Polyline, Polygon
+        -----------------     --------------------------------------------------------------------
+        raster_id             Optional integer. Specifies the objectId of the raster item.
+                              The from_geometry and to_geometry in this operation use the image coordinate system of the specified raster item.
+        =================     ====================================================================
+
+        :return: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            measured = img_layer.measure(from_geometry=point1,
+                                         to_geometry=point2,
+                                         raster_id=2)
+        """
+        if self.tiles_only:
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform measureFromImage operation on the TilesOnly service"
+                )
+
+        url = "%s/measureFromImage" % self._url
+
+        params = {"f": "json", "fromGeometry": from_geometry}
+        if self._datastore_raster:
+            params["Raster"] = self._uri
+
+        from arcgis.geometry._types import Polygon, Point, Polyline
+
+        if isinstance(from_geometry, Polygon):
+            params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(from_geometry, Point):
+            params["geometryType"] = "esriGeometryPoint"
+        elif isinstance(from_geometry, Polyline):
+            params["geometryType"] = "esriGeometryPolyline"
+        elif isinstance(from_geometry, dict):
+            if "x" in from_geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "paths" in from_geometry:
+                params["geometryType"] = "esriGeometryPolyline"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
+        if to_geometry:
+            params["toGeometry"] = to_geometry
+
+        if raster_id:
+            params["rasterId"] = raster_id
         return self._con.post(path=url, postdata=params, timeout=None)
 
     def _compute_multidimensional_info(
