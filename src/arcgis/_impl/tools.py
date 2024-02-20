@@ -7873,7 +7873,8 @@ class _OrthoMappingTools:
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9344,7 +9345,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9408,7 +9410,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -10754,7 +10757,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -11402,7 +11406,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -15031,7 +15036,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -15234,7 +15240,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -15456,7 +15463,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -16409,7 +16417,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -16514,7 +16523,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             out_accuracy_table_name = json.dumps(
@@ -16958,7 +16968,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -17352,7 +17363,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -17512,7 +17524,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_summary_table_name = json.dumps(
