@@ -26,7 +26,10 @@ aggregate_points
 --------------
 .. autofunction:: arcgis.features.analysis.aggregate_points
 
-
+calculate_composite_index
+--------------
+.. autofunction:: arcgis.features.analysis.calculate_composite_index
+    
 calculate_density
 --------------
 .. autofunction:: arcgis.features.analysis.calculate_density
