@@ -1547,7 +1547,7 @@ class GeoAccessor(object):
                 )
             )
 
-        # self.sr = self._sr
+        self.sr = self._sr
         if not inplace:
             return self._data.copy()
 
