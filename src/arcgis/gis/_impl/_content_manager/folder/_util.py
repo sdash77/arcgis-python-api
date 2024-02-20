@@ -96,6 +96,19 @@ def chunk_by_file_size(
                 else:
                     yield bio
                 i += 1
+    elif isinstance(fp, io.StringIO):
+        while True:
+            bio = io.StringIO()
+            data = bio.write(fp.read(size))
+            bio.seek(0)
+            if not data:
+                break
+            if upload_format:
+                fpath = f"split{i}.split"
+                yield parameter_name, bio, fpath
+            else:
+                yield bio
+            i += 1
     else:
         while True:
             bio = io.BytesIO()

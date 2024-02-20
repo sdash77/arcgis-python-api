@@ -40,7 +40,7 @@ model = dict(
                 ),
                 adapt_cfg=dict(type="dilation", dilation=3),
                 bridged_feature=True,
-                sampling=False,
+                # sampling=False,
                 with_cls=False,
                 reg_decoded_bbox=True,
                 bbox_coder=dict(
@@ -58,7 +58,7 @@ model = dict(
                 feat_channels=256,
                 adapt_cfg=dict(type="offset"),
                 bridged_feature=False,
-                sampling=True,
+                # sampling=True,
                 with_cls=True,
                 reg_decoded_bbox=True,
                 bbox_coder=dict(
