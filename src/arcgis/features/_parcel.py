@@ -1260,8 +1260,8 @@ class ParcelFabricManager(object):
                                     of the dividing lines.
         --------------------------- --------------------------------------------------------------------
         divide_associated_lines     Optional boolean. If true, boundary lines of divided parcels will be split.
-                                    The original parent lines will be set as historic. 
-                                    
+                                    The original parent lines will be set as historic.
+
                                     The default is `False`.
         --------------------------- --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
