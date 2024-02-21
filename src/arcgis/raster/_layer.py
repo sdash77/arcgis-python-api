@@ -8292,6 +8292,18 @@ class Raster:
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
 
+                                STAC items from the following Static Catalogs (and their underying Child Catalogs) are supported:
+
+                                    - https://capella-open-data.s3.us-west-2.amazonaws.com/stac/catalog.json \
+                                        (Following product-types are supported: GEO, GEC, SICD)
+                                    - https://maxar-opendata.s3.amazonaws.com/events/catalog.json
+                                    - https://storage.googleapis.com/cfo-public/catalog.json
+                                    - https://nz-imagery.s3-ap-southeast-2.amazonaws.com/catalog.json
+                                    - https://raw.githubusercontent.com/m-mohr/oam-example/main/catalog.json
+                                    - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
+                                    - https://pta.data.lit.fmi.fi/stac/root.json
+                                    - https://datacloud.icgc.cat/stac-catalog/catalog.json
+
                               Example:
                                     "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
