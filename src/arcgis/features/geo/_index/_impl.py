@@ -1,6 +1,7 @@
 """
 Wrapper for implementing Spatial Indexing for DataFrames
 """
+
 from .quadtree import Index as QIndex
 
 try:

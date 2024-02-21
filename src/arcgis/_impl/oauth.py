@@ -1,6 +1,7 @@
 """
 The root of all OAuth2 resources and operations.
 """
+
 import os
 import json
 

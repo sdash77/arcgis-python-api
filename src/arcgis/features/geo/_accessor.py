@@ -1,6 +1,7 @@
 """
 Holds Delegate and Accessor Logic
 """
+
 from __future__ import annotations
 import logging
 import pandas as pd
@@ -1509,6 +1510,11 @@ class GeoAccessor(object):
                         self._sr = _geometry.SpatialReference(g["spatialReference"])
                 except:
                     self._sr = _geometry.SpatialReference({"wkid": 4326})
+            else:
+                if isinstance(sr, int):
+                    self._sr = _geometry.SpatialReference({"wkid": sr})
+                elif isinstance(sr, _geometry.SpatialReference):
+                    self._sr = sr
             self._name = col
             # q = self._data[col].isna()
             # self._data.loc[q, "SHAPE"] = None
@@ -1541,6 +1547,7 @@ class GeoAccessor(object):
                 )
             )
 
+        self.sr = self._sr
         if not inplace:
             return self._data.copy()
 
@@ -3659,9 +3666,11 @@ class GeoAccessor(object):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
                     self._data[self.name].apply(
-                        lambda x: x.update({"spatialReference": ref})
-                        if pd.notnull(x)
-                        else None
+                        lambda x: (
+                            x.update({"spatialReference": ref})
+                            if pd.notnull(x)
+                            else None
+                        )
                     )
 
     # ----------------------------------------------------------------------

@@ -4,6 +4,7 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
+
 from __future__ import absolute_import, division, print_function, annotations
 
 from arcgis._impl.common._deprecate import deprecated
@@ -1070,6 +1071,163 @@ class _FeatureAnalysisTools(BaseAnalytics):
         return ret
 
     # ----------------------------------------------------------------------
+    def calculate_composite_index(
+        self,
+        input_layer=None,
+        input_variables=None,
+        index_method=None,
+        output_index_reverse=False,
+        output_index_min_max=None,
+        output_name=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+        """
+        The Calculate Composite Index task combines multiple numeric variables to create a single index. This task is only available in ArcGIS Online and Enterprise 11.3+.
+
+        =====================================       =========================================================
+        **Parameter**                               **Description**
+        -------------------------------------       ---------------------------------------------------------
+        input_layer                                 Required layer. The input table or features containing the variables that will be combined into the index.
+
+                                                    Syntax: As described in detail in the Feature input topic, this parameter can be one of the following:
+
+                                                    A URL to a feature service layer with an optional filter to select specific features
+                                                    A feature collection
+                                                    Examples:
+
+                                                    {"url": <feature service layer url>, "filter": <where clause>}
+                                                    {"layerDefinition": {}, "featureSet": {}, "filter": <where clause>}
+        -------------------------------------       ---------------------------------------------------------
+        input_variables                             Required list of dictionaries. The variables that will be combined to create the index.
+                                                    Provide at least two variables. For each variable, specify the following:
+
+                                                    * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
+                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to False. When True the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
+                                                    * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
+
+                                                    Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
+        -------------------------------------       ---------------------------------------------------------
+        index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
+                                                    the scaled variables to create the index.
+
+                                                    Scaling is a type of preprocessing that ensures the variables are on a compatible scale before they are combined. These scaled variables are then combined to create a single index value. The following options are available:
+
+                                                    * `meanScaled` the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the mean of the scaled values. This method is useful for creating an index that is easy to interpret. The shape of the distribution and outliers in the input variables will impact the index.
+                                                    * `meanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values. The shape of the distribution and outliers in the input variables will not impact the index.
+                                                    * `meanRaw` creates the index by calculating the mean of the raw input variables. This option is useful when variables are already on a compatible scale.
+                                                    * `geomeanScaled` creates the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the geometric mean of the scaled values. High values will not cancel low values, so this option is useful for creating an index in which higher index values will occur only when there are high values in multiple variables.
+                                                    * `geomeanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the geometric mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values and when high variable values should not cancel out low variable values.
+                                                    * `geomeanRaw` creates the index by calculating the geometric mean of the raw input variables. This option is useful when variables are already on a compatible scale and when high variable values should not cancel out low variable values.
+                                                    * `sumFlagsPercentile` creates the index by counting the number of input variables with values greater than or equal to the 90th percentile. This method is useful for identifying locations that may be considered the most extreme or the most in need.
+
+                                                    Values: "meanScaled" | "meanPercentile" | "meanRaw" | "geomeanScaled" | "geomeanPercentile" | "geomeanRaw" | "sumFlagsPercentile"
+
+                                                    Default: "meanScaled"
+        -------------------------------------       ---------------------------------------------------------
+        output_index_reverse                        Optional boolean. Specifies whether the output index values will
+                                                    be reversed in direction. When checked, high index values will be treated
+                                                    as low index values and vice versa. Reversing is applied after combining
+                                                    the scaled variables. The default is False.
+        -------------------------------------       ---------------------------------------------------------
+        output_index_min_max                        Optional list of one dictionary. The minimum and maximum of the output index values.
+                                                    Specifying a minimum and maximum value will apply minimum-maximum scaling to the combined variables.
+
+                                                    Example: [{'min': 0, 'max': 100}]
+        -------------------------------------       ---------------------------------------------------------
+        output_name                                 Optional dictionary. If provided, the task will create a feature service of the results. You define the name of the service. If an outputName value is not provided, the task will return a feature collection.
+
+                                                    Syntax:
+                                                    ```
+                                                    {
+                                                    "serviceProperties": {
+                                                        "name": "<service name>"
+                                                    }
+                                                    }
+                                                    ```
+
+                                                    You can overwrite an existing feature service by providing the itemId value of the existing feature service and setting the overwrite property to True. Including the serviceProperties parameter is optional. As described in the Feature output topic, you must either be the owner of the feature service or have administrative privileges to perform the overwrite.
+                                                    Syntax:
+                                                    ```
+                                                    {
+
+                                                    "itemProperties": {
+                                                                "itemId": "<itemID of the existing feature service>",
+                                                                "overwrite": True
+                                                        }
+                                                    }
+                                                    ```
+
+                                                    or
+                                                    ```
+                                                    {
+                                                    "serviceProperties": {
+                                                        "name": "<existing service name>"
+                                                    },
+                                                    "itemProperties": {
+                                                                    "itemId": "<itemID of the existing feature service>",
+                                                                    "overwrite": True
+                                                        }
+                                                    }
+                                                    ```
+        -------------------------------------       ---------------------------------------------------------
+        context                                     Optional dict. The Context parameter contains the following additional settings that affect task operation:
+
+                                                    * Extent (extent)—A bounding box that defines the analysis area. Only input features that intersect the bounding box will be analyzed.
+                                                    * Output spatial reference (outSR)—The output features will be projected into the output spatial reference.
+
+                                                    Syntax:
+                                                    ```
+                                                    {
+                                                    "extent" : {extent},
+                                                    "outSR" : {spatial reference}
+                                                    }
+                                                    ```
+        -------------------------------------       ---------------------------------------------------------
+        future                                      Optional boolean. If True, the task will be performed asynchronously.
+        =====================================       =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
+        """
+        if not self._gis._is_agol and self._gis.version < [2024, 1]:
+            raise Exception(
+                "This tool is only available in ArcGIS Online and Enterprise 11.3+."
+            )
+
+        if input_layer is None or input_variables is None:
+            raise Exception(
+                "User must provide the `input_layer` and `input_variables` to use this tool."
+            )
+
+        input_layer = self._feature_input(input_layer)
+        output_name = self._output_name_dict(output_name, False)
+        if index_method is None:
+            index_method = "meanScaled"
+
+        gpjob = self._tbx.calculate_composite_index(
+            input_layer=input_layer,
+            input_variables=input_variables,
+            index_method=index_method,
+            output_index_reverse=output_index_reverse,
+            output_index_min_max=output_index_min_max,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        ret = gpjob.result()
+        if isinstance(ret, FeatureCollection):
+            return ret
+        elif "index_result_layer" in ret and output_name:
+            return ret["index_result_layer"]
+        return ret
+
+    # ----------------------------------------------------------------------
     def choose_best_facilities(
         self,
         goal="Allocate",
@@ -1396,9 +1554,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if required_facilities_capacity is not None:
                 params["requiredFacilitiesCapacity"] = required_facilities_capacity
             if required_facilities_capacity_field is not None:
-                params[
-                    "requiredFacilitiesCapacityField"
-                ] = required_facilities_capacity_field
+                params["requiredFacilitiesCapacityField"] = (
+                    required_facilities_capacity_field
+                )
             if candidate_facilities_layer is not None:
                 params["candidateFacilitiesLayer"] = candidate_facilities_layer
             if candidate_count is not None:
@@ -1406,9 +1564,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if candidate_facilities_capacity is not None:
                 params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
             if candidate_facilities_capacity_field is not None:
-                params[
-                    "candidateFacilitiesCapacityField"
-                ] = candidate_facilities_capacity_field
+                params["candidateFacilitiesCapacityField"] = (
+                    candidate_facilities_capacity_field
+                )
             if percent_demand_coverage is not None:
                 params["percentDemandCoverage"] = percent_demand_coverage
             if output_name is not None:
@@ -1734,9 +1892,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
-                params[
-                    "destinationsLayerRouteIDField"
-                ] = destinations_layer_route_id_field
+                params["destinationsLayerRouteIDField"] = (
+                    destinations_layer_route_id_field
+                )
             if time_of_day is not None:
                 params["timeOfDay"] = time_of_day
             if time_zone_for_time_of_day is not None:
@@ -3530,6 +3688,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
         -----------------------------------     ---------------------------------------------------------
         future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        -----------------------------------     ---------------------------------------------------------
+        context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                                For extract_data, there are two settings.
+
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+
+                                                .. code-block:: python
+
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857}}
         ===================================     =========================================================
 
         :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
@@ -5493,9 +5667,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if spatial_relationship_distance is not None:
             params["spatialRelationshipDistance"] = spatial_relationship_distance
         if spatial_relationship_distance_units is not None:
-            params[
-                "spatialRelationshipDistanceUnits"
-            ] = spatial_relationship_distance_units
+            params["spatialRelationshipDistanceUnits"] = (
+                spatial_relationship_distance_units
+            )
         if estimate:
             params["targetLayer"] = target_layer
             params["joinLayer"] = join_layer
@@ -7699,7 +7873,8 @@ class _OrthoMappingTools:
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9170,7 +9345,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9234,7 +9410,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -10580,7 +10757,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -11228,7 +11406,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -14857,7 +15036,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
         output_service = self._create_output_feature_service(
@@ -15060,7 +15240,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -15282,7 +15463,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -16235,7 +16417,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -16340,7 +16523,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             out_accuracy_table_name = json.dumps(
@@ -16784,7 +16968,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -17143,9 +17328,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             in_folder = in_folder.datapath
         elif isinstance(in_folder, list):
             in_folder = [
-                folder.datapath
-                if isinstance(folder, arcgis.gis.Datastore)
-                else str(folder)
+                (
+                    folder.datapath
+                    if isinstance(folder, arcgis.gis.Datastore)
+                    else str(folder)
+                )
                 for folder in in_folder
             ]
             in_folder = ",".join(in_folder)
@@ -17176,7 +17363,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -17336,7 +17524,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_summary_table_name = json.dumps(
@@ -18259,6 +18448,227 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
+
+    def locate_regions(
+        self,
+        input_raster,
+        input_existing_regions=None,
+        total_area=None,
+        area_units="SQUARE_MAP_UNITS",
+        number_of_regions=1,
+        region_shape="CIRCLE",
+        region_orientation=0,
+        shape_tradeoff=50,
+        evaluation_method="HIGHEST_AVERAGE_VALUE",
+        minimum_area=None,
+        maximum_area=None,
+        minimum_distance=None,
+        maximum_distance=None,
+        distance_units="MAP_UNITS",
+        number_of_neighbors=None,
+        no_islands=None,
+        region_seeds="BASED_ON_INPUT",
+        region_resolution="BASED_ON_INPUT",
+        selection_method="BASED_ON_NUMBER_OF_REGIONS",
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        task = "LocateRegions"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if isinstance(input_existing_regions, _FEATURE_INPUTS):
+            input_existing_regions = self._feature_input(
+                input_layer=input_existing_regions
+            )
+        elif isinstance(input_existing_regions, Item):
+            input_existing_regions = {"itemId": input_existing_regions.itemid}
+        elif input_existing_regions is not None:
+            input_existing_regions = self._layer_input(
+                input_layer=input_existing_regions
+            )
+
+        if area_units is not None:
+            area_units_allowed_values = [
+                "SQUARE_MAP_UNITS",
+                "SQUARE_MILES",
+                "SQUARE_KILOMETERS",
+                "ACRES",
+                "HECTARES",
+                "SQUARE_METERS",
+                "SQUARE_YARDS",
+                "SQUARE_FEET",
+            ]
+            if [element.lower() for element in area_units_allowed_values].count(
+                area_units.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "area_units can only be one of the following: "
+                    + str(area_units_allowed_values)
+                )
+            for element in area_units_allowed_values:
+                if area_units.lower() == element.lower():
+                    area_units = element
+
+        if region_shape is not None:
+            region_shape_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_shape"
+            ]
+            if [element.lower() for element in region_shape_allowed_values].count(
+                region_shape.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_shape can only be one of the following: "
+                    + str(region_shape_allowed_values)
+                )
+            for element in region_shape_allowed_values:
+                if region_shape.lower() == element.lower():
+                    region_shape = element
+
+        if evaluation_method is not None:
+            evaluation_method_allowed_values = self._tbx.choice_list.locate_regions[
+                "evaluation_method"
+            ]
+            if [element.lower() for element in evaluation_method_allowed_values].count(
+                evaluation_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "evaluation_method can only be one of the following: "
+                    + str(evaluation_method_allowed_values)
+                )
+            for element in evaluation_method_allowed_values:
+                if evaluation_method.lower() == element.lower():
+                    evaluation_method = element
+
+        if distance_units is not None:
+            distance_units_allowed_values = [
+                "MAP_UNITS",
+                "MILES",
+                "KILOMETERS",
+                "METERS",
+                "YARDS",
+                "FEET",
+            ]
+
+            if [element.lower() for element in distance_units_allowed_values].count(
+                distance_units.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "distance_units can only be one of the following: "
+                    + str(distance_units_allowed_values)
+                )
+            for element in distance_units_allowed_values:
+                if distance_units.lower() == element.lower():
+                    distance_units = element
+
+        if number_of_neighbors is not None:
+            number_of_neighbors_allowed_values = self._tbx.choice_list.locate_regions[
+                "number_of_neighbors"
+            ]
+            if [
+                element.lower() for element in number_of_neighbors_allowed_values
+            ].count(number_of_neighbors.lower()) <= 0:
+                raise RuntimeError(
+                    "number_of_neighbors can only be one of the following: "
+                    + str(number_of_neighbors_allowed_values)
+                )
+            for element in number_of_neighbors_allowed_values:
+                if number_of_neighbors.lower() == element.lower():
+                    number_of_neighbors = element
+
+        if region_seeds is not None:
+            region_seeds_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_seeds"
+            ]
+            if [element.lower() for element in region_seeds_allowed_values].count(
+                region_seeds.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_seeds can only be one of the following: "
+                    + str(region_seeds_allowed_values)
+                )
+            for element in region_seeds_allowed_values:
+                if region_seeds.lower() == element.lower():
+                    region_seeds = element
+
+        if region_resolution is not None:
+            region_resolution_allowed_values = self._tbx.choice_list.locate_regions[
+                "region_resolution"
+            ]
+            if [element.lower() for element in region_resolution_allowed_values].count(
+                region_resolution.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "region_resolution can only be one of the following: "
+                    + str(region_resolution_allowed_values)
+                )
+            for element in region_resolution_allowed_values:
+                if region_resolution.lower() == element.lower():
+                    region_resolution = element
+
+        if selection_method is not None:
+            selection_method_allowed_values = self._tbx.choice_list.locate_regions[
+                "selection_method"
+            ]
+            if [element.lower() for element in selection_method_allowed_values].count(
+                selection_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "selection_method can only be one of the following: "
+                    + str(selection_method_allowed_values)
+                )
+            for element in selection_method_allowed_values:
+                if selection_method.lower() == element.lower():
+                    selection_method = element
+
+        if no_islands is not None:
+            if not isinstance(no_islands, bool):
+                raise RuntimeError("no_islands should be of type bool")
+
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
+
+        gpjob = self._tbx.locate_regions(
+            input_raster=input_raster,
+            in_existing_regions=input_existing_regions,
+            total_area=total_area,
+            area_units=area_units,
+            number_of_regions=number_of_regions,
+            region_shape=region_shape,
+            region_orientation=region_orientation,
+            shape_tradeoff=shape_tradeoff,
+            evaluation_method=evaluation_method,
+            minimum_area=minimum_area,
+            maximum_area=maximum_area,
+            minimum_distance=minimum_distance,
+            maximum_distance=maximum_distance,
+            distance_units=distance_units,
+            number_of_neighbors=number_of_neighbors,
+            no_islands=no_islands,
+            region_seeds=region_seeds,
+            region_resolution=region_resolution,
+            selection_method=selection_method,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
 ###########################################################################

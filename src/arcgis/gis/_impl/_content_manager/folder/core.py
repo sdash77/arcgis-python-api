@@ -73,7 +73,7 @@ class Folder:
     @property
     def properties(self) -> dict[str, Any]:
         """Returns a Python dictionary of the
-        :class:`arcgis.gis._impl._content_manager.Folder` properties.
+        :class:`~arcgis.gis._impl._content_manager.Folder` properties.
 
         .. code-block:: python
 
@@ -120,15 +120,15 @@ class Folder:
         order: str | None = "asc",
         sort_on: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        """Returns a Python generator object to ierate over the the content in
-           the *folder*.
+        """Returns a Python generator object that can be iterated over to return
+        the content in the *folder*.
 
         ================  ==========================================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         item_type         Required string. The specific :class:`~arcgis.gis.Item` type to create
                           a generator for. Authoritative values can be entered by using the *value*
-                          attribute of any :class:`arcgis.gis.ItemTypeEnum` member.
+                          attribute of any :class:`~arcgis.gis._impl._dataclasses.ItemTypeEnum` member.
 
                           .. code-block:: python
 
@@ -186,7 +186,9 @@ class Folder:
         """
         url: str = f"{self._gis._portal.resturl}content/users/{self._owner}"
         if self._folder:
-            url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            url: str = (
+                f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}"
+            )
         params: dict[str, Any] = {
             "f": "json",
             "types": item_type,
@@ -280,7 +282,9 @@ class Folder:
             Only available on non-Root Folder
             :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
         """
-        url: str = f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        url: str = (
+            f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
+        )
         params = {
             "f": "json",
         }
@@ -580,7 +584,7 @@ class Folder:
                             The specified id must be a 32 character GUID string without any special characters.
 
                             If the `item_id` is already being used, an error will be raised
-                            during the `add` process.
+                            during the `add` operation.
 
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
@@ -682,7 +686,9 @@ class Folder:
                     file
                 )
                 params["async"] = True
-                file_list["file"] = create_upload_tuple(file)
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.pop("fileName", None)
+                )
                 future = tp.submit(
                     self._add_async_streaming,
                     **{
@@ -823,7 +829,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
@@ -898,7 +904,7 @@ class Folders:
         in the *owner* argument.
 
         .. note::
-            The ``create`` method does nothing if the folder already exists.
+            The ``create`` method raises a `FolderException` if the folder already exists.
             Additionally, if owner is not specified, owner is set as the logged in user.
 
 
@@ -971,7 +977,7 @@ class Folders:
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             Optional string. An :attr:`~arcgis.gis.User.username`
-                          value or :class:`arcgis.gis.User` object to indicate
+                          value or :class:`~arcgis.gis.User` object to indicate
                           the *user* whose folders to examine.
 
                           .. note::

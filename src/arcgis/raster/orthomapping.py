@@ -208,24 +208,19 @@ def _create_project(
     gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_" + name
-    if folder is not None:
-        if isinstance(folder, dict):
-            if "id" in folder:
-                folderId = folder["id"]
-                folder = folder["title"]
-        else:
-            owner = gis.properties.user.username
-            folderId = gis._portal.get_folder_id(owner, folder)
-        if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+        folder = "_orthomapping " + name
+    owner = gis.properties.user.username
+    try:
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
@@ -517,7 +512,11 @@ def _add_mission(
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-        if "gps" in raster_type_params:
+        if (
+            raster_type_params is not None
+            and isinstance(raster_type_params, dict)
+            and "gps" in raster_type_params
+        ):
             for ele in raster_type_params["gps"]:
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
@@ -2224,6 +2223,8 @@ def generate_orthomosaic(
     update_flight_json = False
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2685,6 +2686,8 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2809,9 +2812,14 @@ class Project:
             try:
                 project = _create_project(name=project, definition=definition)
             except:
-                raise RuntimeError("Creation of orthompping project failed.")
+                raise RuntimeError("Creation of orthomapping project failed.")
 
-        self._project_item = project
+        if project.type == "Ortho Mapping Project":
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Ortho Mapping Project"
+            )
         try:
             self._project_name = self._project_item.title
         except:
@@ -2820,6 +2828,13 @@ class Project:
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
 
     @property
     def missions(self):
@@ -2859,6 +2874,15 @@ class Project:
         :return: A portal item
         """
         return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

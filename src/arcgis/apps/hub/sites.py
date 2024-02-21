@@ -359,7 +359,9 @@ class Site(OrderedDict):
                     new_content_list.append(item_temp)
                 # share item back to the content group
                 self._gis.content.share_items(
-                    new_content_list, groups=[core_team], allow_members_to_edit=True
+                    new_content_list,
+                    groups=[core_team],
+                    allow_members_to_edit=True,
                 )
                 # reassign core team to target owner
                 core_team.reassign_to(target_owner)
@@ -537,7 +539,9 @@ class Site(OrderedDict):
                             self.initiative.item.update(item_properties={"url": domain})
                         # update site item and data
                         data = self.definition
-                        data["values"]["defaultHostname"] = hostname
+                        data["values"]["defaultHostname"] = hostname.replace(
+                            "http://", ""
+                        ).replace("https://", "")
                         data["values"]["subdomain"] = subdomain
                         data["values"]["internalUrl"] = hostname
                         data["values"]["clientId"] = _client_key
@@ -567,7 +571,9 @@ class Site(OrderedDict):
                 hostname = self._gis.url[7:-5] + "/apps/sites/#/" + subdomain
                 domain = "https://" + hostname
                 data = self.definition
-                data["values"]["defaultHostname"] = hostname
+                data["values"]["defaultHostname"] = hostname.replace(
+                    "http://", ""
+                ).replace("https://", "")
                 data["values"]["subdomain"] = subdomain
                 data["values"]["internalUrl"] = hostname
                 if self.item.update(
@@ -761,7 +767,9 @@ class SiteManager(object):
         ] = site.title
         site_data["values"]["collaborationGroupId"] = collab_group_id
         site_data["values"]["subdomain"] = subdomain
-        site_data["values"]["defaultHostname"] = site.url
+        site_data["values"]["defaultHostname"] = site.url.replace(
+            "http://", ""
+        ).replace("https://", "")
         site_data["values"]["updatedBy"] = self._gis.users.me.username
         if self._gis._portal.is_arcgisonline:
             site_data["values"]["siteId"] = _siteId
@@ -955,7 +963,11 @@ class SiteManager(object):
                 _content_group_title = title + " Content"
                 _content_group_dict = {
                     "title": _content_group_title,
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "tags": [
+                        "Hub Group",
+                        "Hub Content Group",
+                        "Hub Site Group",
+                    ],
                     "access": "public",
                 }
                 _collab_group_title = title + " Core Team"
@@ -1147,7 +1159,11 @@ class SiteManager(object):
             if self._gis._portal.is_arcgisonline:
                 _content_group_dict = {
                     "title": subdomain + " Content",
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "tags": [
+                        "Hub Group",
+                        "Hub Content Group",
+                        "Hub Site Group",
+                    ],
                     "access": "public",
                 }
                 _collab_group_dict = {
@@ -1218,7 +1234,11 @@ class SiteManager(object):
 
         # Register new site and update its data
         _data = self._create_and_register_site(
-            new_item, subdomain, site.definition, content_group_id, collab_group_id
+            new_item,
+            subdomain,
+            site.definition,
+            content_group_id,
+            collab_group_id,
         )
 
         new_item.update(item_properties={"text": _data, "url": domain})

@@ -10,6 +10,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
+
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
@@ -7077,6 +7078,7 @@ def remap(
     no_data_ranges: Optional[list[float]] = None,
     allow_unmatched: Optional[bool] = None,
     astype: Optional[str] = None,
+    replacement_value: Optional[float] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
@@ -7102,6 +7104,8 @@ def remap(
     allow_unmatched                         Boolean, specify whether to keep the unmatched values or turn into nodata.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when `allow_unmatched` is set to False.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7130,6 +7134,8 @@ def remap(
         template_dict["rasterFunctionArguments"]["NoDataRanges"] = no_data_ranges
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
+    if replacement_value is not None:
+        template_dict["rasterFunctionArguments"]["ReplacementValue"] = replacement_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -8765,9 +8771,9 @@ def pansharpen(
     }
 
     if type is not None:
-        template_dict["rasterFunctionArguments"][
-            "PansharpeningType"
-        ] = pansharpening_types[type]
+        template_dict["rasterFunctionArguments"]["PansharpeningType"] = (
+            pansharpening_types[type]
+        )
 
     if ir_raster is not None:
         template_dict["rasterFunctionArguments"]["InfraredImage"] = ir_raster_1
@@ -10786,12 +10792,12 @@ def aggregate(
                 percentile_interpolation_type = 2
             elif percentile_interpolation_type.upper() == "LINEAR":
                 percentile_interpolation_type = 3
-            template_dict["rasterFunctionArguments"][
-                "AggregationFunction"
-            ] = _local_function_template(
-                operation_number=opnum,
-                percentile_value=percentile_value,
-                percentile_interpolation_type=percentile_interpolation_type,
+            template_dict["rasterFunctionArguments"]["AggregationFunction"] = (
+                _local_function_template(
+                    operation_number=opnum,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                )
             )
         if (
             "type"
@@ -12772,9 +12778,9 @@ def dimensional_moving_statistics(
                 "nodata_handling parameter value should be one of the following "
                 + str(nodata_handling_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "NoDataHandling"
-        ] = nodata_handling_types[nodata_handling.upper()]
+        template_dict["rasterFunctionArguments"]["NoDataHandling"] = (
+            nodata_handling_types[nodata_handling.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13224,9 +13230,9 @@ def surface_parameters(
                 "parameter_type should be one of the following "
                 + str(parameter_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "SurfaceCalculation"
-        ] = parameter_types[parameter_type.upper()]
+        template_dict["rasterFunctionArguments"]["SurfaceCalculation"] = (
+            parameter_types[parameter_type.upper()]
+        )
 
     surface_types = {
         "QUADRATIC": 1,
@@ -13316,9 +13322,9 @@ def surface_parameters(
                 "use_equatorial_aspect should be one of the following "
                 + str(eq_aspect_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "UseEquatorialAspect"
-        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+        template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = (
+            eq_aspect_types[use_equatorial_aspect.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -14491,16 +14497,20 @@ class RFT:
                             else:  # when gdict["arguments"]["value"]["elements"]=[]
                                 _raster_function_traversal(
                                     gdict["arguments"],
-                                    function_arg_type=gdict["arguments"]["type"]
-                                    if "type" in gdict["arguments"]
-                                    else None,
+                                    function_arg_type=(
+                                        gdict["arguments"]["type"]
+                                        if "type" in gdict["arguments"]
+                                        else None
+                                    ),
                                 )
                     else:
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
 
                 else:
@@ -14511,9 +14521,11 @@ class RFT:
                     ):  # Aspect function with only raster parameter
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
             _function_traversal(gdict["arguments"])
         return key_value_dict, raster_dictionary
