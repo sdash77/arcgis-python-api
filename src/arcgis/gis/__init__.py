@@ -7360,6 +7360,7 @@ class ContentManager(object):
         count_size: Optional[int] = None,
         as_dict: bool = False,
         enrich: bool = False,
+        filter: Optional[str] = None,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -7450,6 +7451,34 @@ class ContentManager(object):
         enrich              Optional Boolean. If True, search results will include both
                             literal and relevant matches. Without this parameter search
                             results will include only literal matches.
+        ----------------    ---------------------------------------------------------------
+        filter              Optional String. A filter to apply to the search.
+                            The following fields are supported for the filter parameter:
+
+                            For Users
+
+                            - username
+                            - firstname
+                            - lastname
+                            - fullname
+                            - email
+                            Example: filter=username:"jsmith"
+
+                            For Items
+
+                            - title
+                            - tags
+                            - typeKeywords
+                            - type
+                            - owner
+                            Example: filter=tags:"public"
+
+                            For Groups
+
+                            - title
+                            - typeKeywords
+                            - owner
+                            Example: filter=owner:"jsmith"
         ================    ===============================================================
 
         :return:
@@ -7488,6 +7517,7 @@ class ContentManager(object):
                 group_id=group_id,
                 as_dict=as_dict,
                 enrich=enrich,
+                filter=filter,
             )["total"]
         so = {
             "asc": "asc",
@@ -7517,6 +7547,7 @@ class ContentManager(object):
                 group_id=group_id,
                 as_dict=as_dict,
                 enrich=enrich,
+                filter=filter,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -7673,6 +7704,7 @@ class ContentManager(object):
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
         enrich: Optional[bool] = None,
+        filter: Optional[str] = None,
     ):
         """
         The ``search`` method searches for portal items.
@@ -7738,6 +7770,34 @@ class ContentManager(object):
         enrich            Optional Boolean. If True, search results will include both literal and
                           relevant matches. Without this parameter search results will include only
                           literal matches.
+        ----------------  --------------------------------------------------------------------------
+        filter            Optional String. A filter to apply to the search.
+                          The following fields are supported for the filter parameter:
+
+                          For Users
+
+                          - username
+                          - firstname
+                          - lastname
+                          - fullname
+                          - email
+                          Example: filter=username:"jsmith"
+
+                          For Items
+
+                          - title
+                          - tags
+                          - typeKeywords
+                          - type
+                          - owner
+                          Example: filter=tags:"public"
+
+                          For Groups
+
+                          - title
+                          - typeKeywords
+                          - owner
+                          Example: filter=owner:"jsmith"
         ================  ==========================================================================
 
         :return:
@@ -7812,6 +7872,7 @@ class ContentManager(object):
             sort_field=sort_field,
             sort_order=sort_order,
             enrich=enrich,
+            filter=filter,
         )["results"]
         return itemlist
 
