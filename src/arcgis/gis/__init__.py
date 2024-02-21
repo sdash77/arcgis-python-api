@@ -33,10 +33,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
     ItemTypeEnum,
 )
-from arcgis.gis._impl import (
-    CreateServiceParameter,
-    ViewLayerDefParameter,
-)
+from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 
 
 try:
@@ -4515,7 +4512,7 @@ class UserManager(object):
         results = []
         # ensure /Categories is at the start of each string.
         categories = [
-            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            (cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}")
             for cat in categories
         ]
         for user in users:
@@ -7363,6 +7360,7 @@ class ContentManager(object):
         count_size: Optional[int] = None,
         as_dict: bool = False,
         enrich: bool = False,
+        filter: Optional[str] = None,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -7453,6 +7451,34 @@ class ContentManager(object):
         enrich              Optional Boolean. If True, search results will include both
                             literal and relevant matches. Without this parameter search
                             results will include only literal matches.
+        ----------------    ---------------------------------------------------------------
+        filter              Optional String. A filter to apply to the search.
+                            The following fields are supported for the filter parameter:
+
+                            For Users
+
+                            - username
+                            - firstname
+                            - lastname
+                            - fullname
+                            - email
+                            Example: filter=username:"jsmith"
+
+                            For Items
+
+                            - title
+                            - tags
+                            - typeKeywords
+                            - type
+                            - owner
+                            Example: filter=tags:"public"
+
+                            For Groups
+
+                            - title
+                            - typeKeywords
+                            - owner
+                            Example: filter=owner:"jsmith"
         ================    ===============================================================
 
         :return:
@@ -7491,6 +7517,7 @@ class ContentManager(object):
                 group_id=group_id,
                 as_dict=as_dict,
                 enrich=enrich,
+                filter=filter,
             )["total"]
         so = {
             "asc": "asc",
@@ -7520,6 +7547,7 @@ class ContentManager(object):
                 group_id=group_id,
                 as_dict=as_dict,
                 enrich=enrich,
+                filter=filter,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -7676,6 +7704,7 @@ class ContentManager(object):
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
         enrich: Optional[bool] = None,
+        filter: Optional[str] = None,
     ):
         """
         The ``search`` method searches for portal items.
@@ -7741,6 +7770,34 @@ class ContentManager(object):
         enrich            Optional Boolean. If True, search results will include both literal and
                           relevant matches. Without this parameter search results will include only
                           literal matches.
+        ----------------  --------------------------------------------------------------------------
+        filter            Optional String. A filter to apply to the search.
+                          The following fields are supported for the filter parameter:
+
+                          For Users
+
+                          - username
+                          - firstname
+                          - lastname
+                          - fullname
+                          - email
+                          Example: filter=username:"jsmith"
+
+                          For Items
+
+                          - title
+                          - tags
+                          - typeKeywords
+                          - type
+                          - owner
+                          Example: filter=tags:"public"
+
+                          For Groups
+
+                          - title
+                          - typeKeywords
+                          - owner
+                          Example: filter=owner:"jsmith"
         ================  ==========================================================================
 
         :return:
@@ -7815,6 +7872,7 @@ class ContentManager(object):
             sort_field=sort_field,
             sort_order=sort_order,
             enrich=enrich,
+            filter=filter,
         )["results"]
         return itemlist
 
@@ -11347,7 +11405,7 @@ class User(dict):
             and duration == "weekly"
             and (
                 not isinstance(start_time, _dt.datetime)
-                or not start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+                or not start_time.date().strftime("%A") in ["Monday", "Sunday"]
             )
         ):
             raise ValueError(
@@ -14155,7 +14213,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "opacity": (lyr["opacity"] if "opacity" in lyr else None),
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -14892,11 +14950,24 @@ class Item(dict):
     @functools.lru_cache(maxsize=255)
     def sharing(self) -> _sharing.SharingManager:
         """
-        The ``sharing`` property allows users and administrators to control how
-        the current ``Item`` is shared throughout the `GIS`.
+        The ``sharing`` property accesses a
+        :class:`~arcgis.gis._impl._content_manager.SharingManager`
+        object to allow users and administrators to control how the current
+        :class:`~arcgis.gis.Item` is shared throughout the :class:`~arcgis.gis.GIS`.
 
-        :returns: SharingManager
+        :returns:
+            :class:`~arcgis.gis._impl._content_manager.SharingManager`
 
+        .. code-block:: python
+
+            # Usage example:
+            >>> gis = GIS(profile="your_organization_admin_profile")
+
+            >>> an_item = gis.content.get("<item_id>")
+            >>> sharing_mgr = an_item.sharing
+            >>> sharing_mgr
+
+            < <item_id> SharingManager >
         """
 
         return _sharing.SharingManager(item=self, gis=self._gis)
@@ -15967,9 +16038,138 @@ class Item(dict):
         build_initial_cache: bool = False,
         item_id: Optional[str] = None,
         geocode_service=None,
+        future: bool = False,
+    ) -> Item | concurrent.futures.Future:
+        """
+        The ``publish`` method is used to publish a hosted service based on an existing source item (this item).
+        Publishers can then create feature, tiled map, vector tile and scene services.
+        Feature services can be created from  input files of various types, including
+            1. csv files
+            2. shapefiles
+            3. service definition files
+            4. feature collection files
+            5. file geodatabase files
+        CSV files that contain location fields (i.e. address fields or XY fields) are spatially enabled during the process of publishing.
+        Shapefiles and file geodatabases should be packaged as *.zip files.
+
+        Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
+
+        Vector tile services can be created from vector tile package (*.vtpk) files.
+
+        Scene services can be created from scene layer package (*.spk, *.slpk) files.
+
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map
+        as well as its packaged data together with the definition of the geo-service to be created.
+
+        .. note::
+            ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
+
+        .. note::
+            ArcGIS for Enterprise for Kubernetes does not support publishing service definition file generated by ArcMap.
+
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        publish_parameters     Optional dictionary. containing publish instructions and customizations.
+                               Cannot be combined with overwrite.
+                               See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+                               in the ArcGIS REST API for details.
+        -------------------    ---------------------------------------------------------------
+        address_fields         Optional dictionary. containing mapping of df columns to address fields,
+        -------------------    ---------------------------------------------------------------
+        output_type            Optional string.  Only used when a feature service is published as a tile service.
+        -------------------    ---------------------------------------------------------------
+        overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
+                               Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
+        -------------------    ---------------------------------------------------------------
+        file_type              Optional string.  Some formats are not automatically detected,
+                               when this occurs, the file_type can be specified:
+                               serviceDefinition, shapefile, csv, excel, tilePackage,
+                               featureService, featureCollection, fileGeodatabase, geojson,
+                               scenepackage, vectortilepackage, imageCollection, mapService,
+                               and sqliteGeodatabase are valid entries. This is an
+                               optional parameter.
+        -------------------    ---------------------------------------------------------------
+        build_initial_cache    Optional boolean.  The boolean value (default False), if true
+                               and applicable for the file_type, the value will built cache
+                               for the service.
+        -------------------    ---------------------------------------------------------------
+        item_id                Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                               This parameter allows the desired item id to be specified during creation which
+                               can be useful for cloning and automated content creation scenarios.
+                               The specified id must be a 32 character GUID string without any special characters.
+
+                               If the `item_id` is already being used, an error will be raised
+                               during the `publish` process.
+
+        -------------------    ---------------------------------------------------------------
+        geocode_service        Optional Geocoder. When publishing a table of data, an optional
+                               `Geocoder` can be supplied in order to specify which service
+                               geocodes the information. If no geocoder is given, the first
+                               registered `Geocoder` is used.
+        ===================    ===============================================================
+
+        :return:
+            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
+
+        .. code-block:: python
+
+            # Publishing a Hosted Table Example
+
+            >>> csv_item = gis.content.get('<csv item id>')
+            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> publish_parameters = analyzed['publishParameters']
+            >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
+            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> published_item = csv_item.publish(publish_parameters)
+
+        .. code-block:: python
+
+            # Publishing a Tile Service Example
+
+            >>> item.publish(address_fields= { "CountryCode" : "Country"},
+            >>>               output_type="Tiles",
+            >>>               file_type="CSV",
+            >>>               item_id=9311d21a9a2047d19c0faaebd6f2cca6
+            >>>             )
+
+        .. note::
+            For publish_parameters, see `Publish Item
+            <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+            in the ArcGIS REST API for more details.
+        """
+        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+        params: dict[str, Any] = {
+            "publish_parameters": publish_parameters,
+            "address_fields": address_fields,
+            "output_type": output_type,
+            "overwrite": overwrite,
+            "file_type": file_type,
+            "build_initial_cache": build_initial_cache,
+            "item_id": item_id,
+            "geocode_service": geocode_service,
+        }
+        job: concurrent.futures.Future = tp.submit(self._publish, **params)
+        tp.shutdown(wait=True)
+        if future == False:
+            return job.result()
+        return job
+
+    # ----------------------------------------------------------------------
+    def _publish(
+        self,
+        publish_parameters: Optional[dict[str, Any]] = None,
+        address_fields: Optional[dict[str, str]] = None,
+        output_type: Optional[str] = None,
+        overwrite: bool = False,
+        file_type: Optional[str] = None,
+        build_initial_cache: bool = False,
+        item_id: Optional[str] = None,
+        geocode_service=None,
     ):
         """
-        The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
+        The ``_publish`` method is used to publish a hosted service based on an existing source item (this item).
         Publishers can then create feature, tiled map, vector tile and scene services.
         Feature services can be created from  input files of various types, including
             1. csv files
@@ -16067,7 +16267,17 @@ class Item(dict):
             in the ArcGIS REST API for more details.
         """
 
-        import time
+        from arcgis.geocoding._functions import Geocoder
+
+        if geocode_service and isinstance(geocode_service, str):
+            geocode_service = Geocoder(location=geocode_service, gis=self._gis)
+        elif geocode_service and isinstance(geocode_service, Geocoder):
+            ...
+        elif not geocode_service is None:
+            _log.warning(
+                "The `geocode_service` parameter is invalid, please ensure it is of type `Geocoder`"
+            )
+            _log.warning("Ignoring input `geocode_service`")
 
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
@@ -16137,7 +16347,11 @@ class Item(dict):
                 }
 
             elif fileType in ["csv", "excel"] and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type=fileType)
+                res = self._gis.content.analyze(
+                    item=self,
+                    file_type=fileType,
+                    geocoding_service=geocode_service,
+                )
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
@@ -16172,46 +16386,37 @@ class Item(dict):
                     # if source file type is CSV or Excel, blend publish parameters with analysis results
                     if fileType in ["csv", "excel"]:
                         publish_parameters_orig = publish_parameters
-                        path = "content/features/analyze"
-
-                        postdata = {
-                            "f": "pjson",
-                            "itemid": self.itemid,
-                            "filetype": fileType,
-                            "analyzeParameters": {
-                                "enableGlobalGeocoding": "true",
-                                "sourceLocale": "en-us",
-                                "sourceCountry": "",
-                                "sourceCountryHint": "",
-                            },
-                        }
-
+                        cm: ContentManager = self._gis.content
                         if address_fields is not None:
-                            postdata["analyzeParameters"]["locationType"] = "address"
-
-                        res = self._portal.con.post(path, postdata)
+                            location_type: str | None = "address"
+                        else:
+                            location_type: str | None = None
+                        res: dict[str, Any] = cm.analyze(
+                            item=self,
+                            file_type=fileType,
+                            source_locale="en-us",
+                            enable_global_geocoding=True,
+                            location_type=location_type,
+                            geocoding_service=geocode_service,
+                        )
                         publish_parameters = res["publishParameters"]
                         publish_parameters.update(publish_parameters_orig)
 
                 elif len(related_items) == 0:
                     # the CSV item was never published. Hence overwrite should work like first time publishing - analyze csv
-                    path = "content/features/analyze"
-                    postdata = {
-                        "f": "pjson",
-                        "itemid": self.itemid,
-                        "filetype": "csv",
-                        "analyzeParameters": {
-                            "enableGlobalGeocoding": "true",
-                            "sourceLocale": "en-us",
-                            "sourceCountry": "",
-                            "sourceCountryHint": "",
-                        },
-                    }
-
+                    cm: ContentManager = self._gis.content
                     if address_fields is not None:
-                        postdata["analyzeParameters"]["locationType"] = "address"
-
-                    res = self._portal.con.post(path, postdata)
+                        location_type: str | None = "address"
+                    else:
+                        location_type: str | None = None
+                    res: dict[str, Any] = cm.analyze(
+                        item=self,
+                        file_type=fileType,
+                        source_locale="en-us",
+                        enable_global_geocoding=True,
+                        location_type=location_type,
+                        geocoding_service=geocode_service,
+                    )
                     publish_parameters = res["publishParameters"]
                     if address_fields is not None:
                         publish_parameters.update({"addressFields": address_fields})
@@ -16219,7 +16424,6 @@ class Item(dict):
                     # use csv title for service name, after replacing non-alphanumeric characters with _
                     service_name = re.sub(r"[\W_]+", "_", self["title"])
                     publish_parameters.update({"name": service_name})
-
                 elif len(related_items) > 1:
                     # length greater than 1, then 1:many relationship
                     raise RuntimeError(

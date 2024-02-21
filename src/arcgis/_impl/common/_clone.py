@@ -129,6 +129,11 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
+        if self._clone_mapping.get("Item IDs") is not None:
+            raise Exception(
+                "The item_mapping parameter is not supported when cloning ArcGIS"
+                " Dashboards. Use item data to remap values and update item."
+            )
         if "desktopView" in dashboard_item.get_data():
             widgets = dashboard_item.get_data()["desktopView"]["widgets"]
         else:
@@ -1314,7 +1319,7 @@ class _DeepCloner:
                 [
                     node
                     for node in self._graph.values()
-                    if isinstance(node, _ProProjectPackageDefinition)
+                    if isinstance(node, (_ProProjectPackageDefinition, _FormDefinition))
                     and "copy-only" not in node.info["tags"]
                 ]
             )

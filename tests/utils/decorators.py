@@ -1,4 +1,4 @@
-from os import environ
+from os import environ, name as os_name
 from parameterized import parameterized, parameterized_class
 from unittest import SkipTest
 from .timeout_decorator import timeout as _timeout, timeout_class as _timeout_class
@@ -40,10 +40,13 @@ default_timeout_class = timeout_class(DEFAULT_TIMEOUT_SECONDS)
 extended_timeout_class = timeout_class(EXTENDED_TIMEOUT_SECONDS)
 maximum_timeout_class = timeout_class(MAXIMUM_TIMEOUT_SECONDS)
 
-# integration_test decorator marks a test as an integration test
-# currently only sets the default timeout for the test
-# call additional default decorators as needed
-integration_test = default_timeout_class
+def integration_test(cls):
+    """Mark a test case class as an integration test and apply default configuration"""
+    if os_name == "posix":
+        # apply default timeout on supported platforms
+        cls = default_timeout(cls)
+    # TODO find a way to apply default timeout on Windows
+    return cls
 
 _gis_by_profile = {}
 
