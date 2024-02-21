@@ -764,7 +764,7 @@ class JobManager:
                 },
             ]
 
-            workflow_manager.jobs.update(job_id, updates)
+            workflow_manager.jobs.update(job_id, updates, 'stepid123')
 
         """
         try:
