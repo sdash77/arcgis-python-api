@@ -5154,7 +5154,7 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -8292,6 +8292,18 @@ class Raster:
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
 
+                                STAC items from the following Static Catalogs (and their underying Child Catalogs) are supported:
+
+                                    - https://capella-open-data.s3.us-west-2.amazonaws.com/stac/catalog.json \
+                                        (Following product-types are supported: GEO, GEC, SICD)
+                                    - https://maxar-opendata.s3.amazonaws.com/events/catalog.json
+                                    - https://storage.googleapis.com/cfo-public/catalog.json
+                                    - https://nz-imagery.s3-ap-southeast-2.amazonaws.com/catalog.json
+                                    - https://raw.githubusercontent.com/m-mohr/oam-example/main/catalog.json
+                                    - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
+                                    - https://pta.data.lit.fmi.fi/stac/root.json
+                                    - https://datacloud.icgc.cat/stac-catalog/catalog.json
+
                               Example:
                                     "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
@@ -8331,6 +8343,7 @@ class Raster:
                                         gis=gis)
 
         """
+        is_pystac_item = False
         if isinstance(stac_item, str):
             if request_params is None:
                 request_params = {}
@@ -8347,6 +8360,8 @@ class Raster:
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
+                "text/plain; charset=utf-8",
+                "text/plain",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8358,6 +8373,7 @@ class Raster:
                 import pystac
 
                 json_data = stac_item.to_dict()
+                is_pystac_item = True
             except ImportError:
                 raise ImportError(
                     "pystac not found, parameter stac_item accepts either a STAC Item URL or a pystac.Item object"
@@ -8389,13 +8405,16 @@ class Raster:
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
 
         item = json_data
+        item_href = stac_item.self_href if is_pystac_item else stac_item
 
-        from ._util import _get_stac_metadata_file
+        from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
         from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
-            raise RuntimeError("STAC Item not supported")
+            item, metadata_file = _get_static_catalog_item_resources((item_href, item))
+            if not metadata_file:
+                raise RuntimeError("STAC Item not supported")
 
         ras = (
             composite_band(
@@ -9253,7 +9272,7 @@ class Raster:
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                                  (Available only when image_server engine is used)
 
@@ -12941,14 +12960,26 @@ class RasterCollection:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
-                              be the URL of the Static STAC (Catalog).
+        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Catalog>`__ / \
+                              `pystac.Collection <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Collection>`__ \
+                              object. If string, then it should be the URL of the Static STAC (Catalog).
 
                               .. note::
-                                Currently only Landsat-8 STAC (Catalogs) are supported for this method.
+
+                                The following Static Catalogs (and their underying Child Catalogs) are supported:
+
+                                    - https://capella-open-data.s3.us-west-2.amazonaws.com/stac/catalog.json \
+                                        (Following product-types are supported: GEO, GEC, SICD)
+                                    - https://maxar-opendata.s3.amazonaws.com/events/catalog.json
+                                    - https://storage.googleapis.com/cfo-public/catalog.json
+                                    - https://nz-imagery.s3-ap-southeast-2.amazonaws.com/catalog.json
+                                    - https://raw.githubusercontent.com/m-mohr/oam-example/main/catalog.json
+                                    - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
+                                    - https://pta.data.lit.fmi.fi/stac/root.json
+                                    - https://datacloud.icgc.cat/stac-catalog/catalog.json
 
                               Example:
-                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/catalog.json"
+                                    "https://maxar-opendata.s3.amazonaws.com/events/India-Floods-Oct-2023/collection.json"
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
                               (STAC Item) raster of the catalog. For each key-value pair, the key is
@@ -12998,7 +13029,7 @@ class RasterCollection:
                                     When using ``image_server`` engine, RasterRendering service should be enabled \
                                     in the active GIS connection.
         -----------------     --------------------------------------------------------------------
-        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
@@ -13018,6 +13049,13 @@ class RasterCollection:
                                                     gis=gis)
 
         """
+
+        from ._util import (
+            _get_stac_links,
+            _get_all_stac_catalog_items,
+            _get_static_catalog_item_resources,
+        )
+
         is_pystac_cat = False
         if isinstance(stac_catalog, str):
             if request_params is None:
@@ -13035,6 +13073,10 @@ class RasterCollection:
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
+                "binary/octet-stream",
+                "application/octet-stream",
+                "text/plain; charset=utf-8",
+                "text/plain",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"
@@ -13042,14 +13084,12 @@ class RasterCollection:
 
             json_data = data.json()
 
-            from ._util import _get_stac_links, _get_all_stac_catalog_items
-
-            if not _get_stac_links(json_data, "item") and not _get_stac_links(
-                json_data, "child"
-            ):
+            if not _get_stac_links(
+                json_data, stac_catalog, "item"
+            ) and not _get_stac_links(json_data, stac_catalog, "child"):
                 raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
 
-            items = _get_all_stac_catalog_items(json_data, request_params)
+            items = _get_all_stac_catalog_items(json_data, stac_catalog, request_params)
         else:
             try:
                 import pystac
@@ -13073,14 +13113,17 @@ class RasterCollection:
         if "Geometry" not in rc_attribute_dict:
             rc_attribute_dict["Geometry"] = []
 
-        from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
-        for item in items:
+        for item_resources in items:
             if is_pystac_cat:
-                item_dict = item.to_dict()
+                item_dict = item_resources.to_dict()
+                item_dict, item_product = _get_static_catalog_item_resources(
+                    (item_resources.self_href, item_dict)
+                )
             else:
-                item_dict = item
+                item_dict, item_product = item_resources
 
             for key in attribute_dict:
                 if isinstance(attribute_dict[key], list):
@@ -13095,11 +13138,18 @@ class RasterCollection:
                     else:
                         rc_attribute_dict[key].append(key)
 
-            metadata_file = _get_stac_metadata_file(item_dict)
-            if not metadata_file:
+            if not item_product:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in item_product
+                    ]
+                )
+                if isinstance(item_product, list)
+                else Raster(item_product, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:
