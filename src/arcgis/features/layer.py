@@ -4714,6 +4714,12 @@ class FeatureLayerCollection(_GISResource):
         .. note::
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
+        .. note::
+            Only arcobject Feature Services support this operation. If the service supports this operation, then
+            the `supportsQueryDomains` property in the service properties is True. If this value is False or not
+            present, then the service cannot use this operation. In addition, this is only availabel for arcobject and
+            hosted Feature Services in Enterprise, not for ArcGIS Online.
+
         ================================     ====================================================================
         **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
