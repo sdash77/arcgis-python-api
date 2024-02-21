@@ -725,7 +725,10 @@ class JobManager:
             self._handle_error(sys.exc_info())
 
     def update(
-        self, job_id: str, update_object: dict, allow_running_step_id: Optional[str] = None
+        self,
+        job_id: str,
+        update_object: dict,
+        allow_running_step_id: Optional[str] = None,
     ):
         """
         Updates a job object by ID
