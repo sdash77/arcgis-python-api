@@ -1105,7 +1105,7 @@ class ArcGISModel(object):
 
             return _emd_template
 
-        if self._backbone is None:
+        if self._backbone is None or type(self._backbone) is str:
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
@@ -2070,7 +2070,10 @@ class ArcGISModel(object):
 
         try:
             device = getattr(self, "_map_location", None)
+            if hasattr(self, "_is_mmsegdet"):
+                logging.disable(logging.INFO)
             self.learn.load(name, purge=False, device=device)
+            logging.disable(logging.NOTSET)
         except Exception as e:
             raise e
         finally:

@@ -1,3 +1,9 @@
+import sys
+
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+# sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
+# sys.path.insert(2, r"C:\SVN\geosaurus_master\tests\integration")
+# sys.path.insert(3, r"C:\SVN\geosaurus_master\tests\utils")
 from arcgis.gis import agoserver, server
 import unittest
 from utils.decorators import profiles, integration_test
@@ -55,7 +61,9 @@ class TestAGOLAdminServerTileManager(unittest.TestCase):
     def test_single_admin_servers(self):
         gis = self.gis
         assert gis.admin.servers.feature_server
-        assert isinstance(gis.admin.servers.tile_server[0], agoserver.AGOLServerManager)
+        assert isinstance(
+            gis.admin.servers.tile_server[0], agoserver.AGOLServerManager
+        )
 
     def test_services(self):
         gis = self.gis
