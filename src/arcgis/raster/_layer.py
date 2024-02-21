@@ -13029,7 +13029,7 @@ class RasterCollection:
                                     When using ``image_server`` engine, RasterRendering service should be enabled \
                                     in the active GIS connection.
         -----------------     --------------------------------------------------------------------
-        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
