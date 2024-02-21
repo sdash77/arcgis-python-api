@@ -20,6 +20,7 @@ def _search(
     group_id=None,
     as_dict=False,
     enrich=None,
+    filter=None,
 ):
     """
     Generalized advanced search method.  This method allows for the query and
@@ -79,6 +80,34 @@ def _search(
                         searching.
     ----------------    ---------------------------------------------------------------
     as_dict             Required Boolean. If True, the response comes back as a dictionary.
+    ----------------    ---------------------------------------------------------------
+    filter              Optional String. A filter to apply to the search.
+                        The following fields are supported for the filter parameter:
+
+                        For Users
+
+                        - username
+                        - firstname
+                        - lastname
+                        - fullname
+                        - email
+                        Example: filter=username:"jsmith"
+
+                        For Items
+
+                        - title
+                        - tags
+                        - typeKeywords
+                        - type
+                        - owner
+                        Example: filter=tags:"public"
+
+                        For Groups
+
+                        - title
+                        - typeKeywords
+                        - owner
+                        Example: filter=owner:"jsmith"
     ================    ===============================================================
 
     """
@@ -116,6 +145,8 @@ def _search(
         if isinstance(bbox, (tuple, list)):
             bbox = ",".join([str(b) for b in bbox])
         params["bbox"] = bbox
+    if filter:
+        params["filter"] = filter
     if stype in {"content", "item", "items"}:
         url = "{base}search".format(base=gis._portal.resturl)
         if enrich:
