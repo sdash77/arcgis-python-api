@@ -12940,14 +12940,12 @@ class RasterCollection:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
-                              be the URL of the Static STAC (Catalog).
-
-                              .. note::
-                                Currently only Landsat-8 STAC (Catalogs) are supported for this method.
+        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Catalog>`__ / \
+                              `pystac.Collection <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Collection>`__ \
+                              object. If string, then it should be the URL of the Static STAC (Catalog).
 
                               Example:
-                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/catalog.json"
+                                    "https://maxar-opendata.s3.amazonaws.com/events/India-Floods-Oct-2023/collection.json"
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
                               (STAC Item) raster of the catalog. For each key-value pair, the key is
