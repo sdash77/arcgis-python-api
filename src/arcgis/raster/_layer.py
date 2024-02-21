@@ -8323,6 +8323,7 @@ class Raster:
                                         gis=gis)
 
         """
+        is_pystac_item = False
         if isinstance(stac_item, str):
             if request_params is None:
                 request_params = {}
@@ -8352,6 +8353,7 @@ class Raster:
                 import pystac
 
                 json_data = stac_item.to_dict()
+                is_pystac_item = True
             except ImportError:
                 raise ImportError(
                     "pystac not found, parameter stac_item accepts either a STAC Item URL or a pystac.Item object"
@@ -8383,13 +8385,14 @@ class Raster:
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
 
         item = json_data
+        item_href = stac_item.self_href if is_pystac_item else stac_item
 
         from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
         from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
-            item, metadata_file = _get_static_catalog_item_resources((stac_item, item))
+            item, metadata_file = _get_static_catalog_item_resources((item_href, item))
             if not metadata_file:
                 raise RuntimeError("STAC Item not supported")
 
@@ -13014,6 +13017,13 @@ class RasterCollection:
                                                     gis=gis)
 
         """
+
+        from ._util import (
+            _get_stac_links,
+            _get_all_stac_catalog_items,
+            _get_static_catalog_item_resources,
+        )
+
         is_pystac_cat = False
         if isinstance(stac_catalog, str):
             if request_params is None:
@@ -13041,8 +13051,6 @@ class RasterCollection:
                 )
 
             json_data = data.json()
-
-            from ._util import _get_stac_links, _get_all_stac_catalog_items
 
             if not _get_stac_links(
                 json_data, stac_catalog, "item"
@@ -13079,6 +13087,9 @@ class RasterCollection:
         for item_resources in items:
             if is_pystac_cat:
                 item_dict = item_resources.to_dict()
+                item_dict, item_product = _get_static_catalog_item_resources(
+                    (item_resources.self_href, item_dict)
+                )
             else:
                 item_dict, item_product = item_resources
 
