@@ -296,6 +296,17 @@ class WebExperience(object):
                 temp_dict = json.load(f)
 
             temp_dict["attributes"]["portalUrl"] = self._gis.url
+            if self._gis._is_agol:
+                exb_version = self._gis._con.get("https://experience.arcgis.com/version.json", {"f": "json"})["exbVersion"]
+            else:
+                url = self._gis.url + "/apps/experiencebuilder/version.json"
+                exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+            
+            temp_dict["exbVersion"] = exb_version
+            if "widgets" in temp_dict:
+                for widget in temp_dict["widgets"].values():
+                    if "version" in widget:
+                        widget["version"] = exb_version
             # temp_dict["timestamp"]
             # create item and generate basic properties
             if name is None:
@@ -618,7 +629,7 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def upload(
         self,
-        gis: Optional[GIS] = None,
+        gis: Optional[_arcgis_gis.GIS] = None,
         publish=False,
         title=None,
         item_mapping: Optional[dict] = None,
