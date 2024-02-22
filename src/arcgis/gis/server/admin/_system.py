@@ -7,10 +7,14 @@ configuration store, Web Adaptors, and licenses.
 from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
+import time
 from .._common import BaseServer
 from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
-from typing import Optional
+from typing import Optional, Any
+from arcgis.auth import EsriSession
+from functools import lru_cache
+import requests
 
 
 ########################################################################
@@ -73,7 +77,9 @@ class SystemManager(BaseServer):
 
         """
         return ServerProperties(
-            url=self._url + "/properties", connection=self._con, initialize=True
+            url=self._url + "/properties",
+            connection=self._con,
+            initialize=True,
         )
 
     # ----------------------------------------------------------------------
@@ -617,7 +623,9 @@ class PlatformServiceManager(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         ==================     ====================================================================
         **Parameter**           **Description**
@@ -631,7 +639,9 @@ class PlatformServiceManager(BaseServer):
         ==================     ====================================================================
 
         """
-        super(PlatformServiceManager, self).__init__(connection=connection, url=url)
+        super(PlatformServiceManager, self).__init__(
+            connection=connection, url=url
+        )
         self._url = url
         self._con = connection
         if initialize:
@@ -680,7 +690,8 @@ class PlatformServiceManager(BaseServer):
             for ps in self._json_dict["platformservices"]:
                 if ps["type"].lower() == service.lower():
                     return PlatformService(
-                        url="%s/%s" % (self._url, ps["id"]), connection=self._con
+                        url="%s/%s" % (self._url, ps["id"]),
+                        connection=self._con,
                     )
         return None
 
@@ -699,7 +710,8 @@ class PlatformServiceManager(BaseServer):
                 for ps in self._json_dict["platformservices"]:
                     services.append(
                         PlatformService(
-                            url="%s/%s" % (self._url, ps["id"]), connection=self._con
+                            url="%s/%s" % (self._url, ps["id"]),
+                            connection=self._con,
                         )
                     )
         else:
@@ -732,7 +744,9 @@ class PlatformService(BaseServer):
     _con = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         Constructor
 
@@ -805,7 +819,9 @@ class ConfigurationStore(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         Constructor
 
@@ -821,7 +837,9 @@ class ConfigurationStore(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ConfigurationStore, self).__init__(connection=connection, url=url)
+        super(ConfigurationStore, self).__init__(
+            connection=connection, url=url
+        )
         self._url = url
         self._con = connection
         if initialize:
@@ -914,6 +932,66 @@ class ConfigurationStore(BaseServer):
         return res
 
 
+class AsyncJob:
+    """
+    A job represents the asynchronous execution of an operation. Progress
+    information can be acquired by periodically querying this resource.
+    """
+
+    url: str = None
+    session: EsriSession
+
+    def __init__(self, url: str, session: EsriSession):
+        """class initializer"""
+        self.url = url
+        self.session = session
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "< %s @ %s >" % (type(self).__name__, self.url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "< %s @ %s >" % (type(self).__name__, self.url)
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict[str, Any]:
+        """
+        returns the object properties
+        """
+        resp: requests.Response = self.session.get(
+            self.url,
+            params={
+                "f": 'json',
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    # ----------------------------------------------------------------------
+    def result(self) -> dict[str, Any]:
+        """
+        This operation will wait until the job has completed before
+        returning the results of the operation.
+        """
+
+        i: int = 1
+        max_wait: int = 5
+        while self.properties['status'] in ["EXECUTING", "CANCELLING"]:
+            time.sleep(i)
+            i += 1
+            if self.properties['status'] in [
+                'COMPLETED',
+                'FAILED',
+                'CANCELLED',
+            ]:
+                break
+            if i > max_wait:
+                i = max_wait
+        return self.properties
+
+
 ########################################################################
 class Jobs(BaseServer):
     """
@@ -930,7 +1008,9 @@ class Jobs(BaseServer):
     _url = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         Constructor
 
@@ -1097,7 +1177,9 @@ class ServerProperties(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         Constructor
 
@@ -1113,7 +1195,9 @@ class ServerProperties(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ServerProperties, self).__init__(connection=connection, url=url)
+        super(ServerProperties, self).__init__(
+            connection=connection, url=url
+        )
         if url.lower().endswith("/properties"):
             self._url = url
         else:
@@ -1325,7 +1409,12 @@ class DirectoryManager(object):
 
         """
         return self._system._register(
-            name, physicalPath, directoryType, maxFileAge, cleanupMode, description
+            name,
+            physicalPath,
+            directoryType,
+            maxFileAge,
+            cleanupMode,
+            description,
         )
 
 
@@ -1377,7 +1466,9 @@ class ServerDirectory(BaseServer):
     _virtualPath = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, connection: Connection, initialize: bool = False):
+    def __init__(
+        self, url: str, connection: Connection, initialize: bool = False
+    ):
         """
         Constructor
 

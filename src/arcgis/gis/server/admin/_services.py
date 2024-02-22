@@ -17,6 +17,7 @@ from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 from typing import Optional
 from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
+from ._system import AsyncJob
 
 
 ########################################################################
@@ -128,7 +129,9 @@ class ServiceManager(BaseServer):
         return self._folders
 
     # ----------------------------------------------------------------------
-    def list(self, folder: Optional[str] = None, refresh: bool = True) -> list:
+    def list(
+        self, folder: Optional[str] = None, refresh: bool = True
+    ) -> list:
         """
         returns a list of services in the specified folder
 
@@ -147,7 +150,11 @@ class ServiceManager(BaseServer):
         """
         if folder is None:
             folder = "/"
-        if folder != self._currentFolder or self._services is None or refresh:
+        if (
+            folder != self._currentFolder
+            or self._services is None
+            or refresh
+        ):
             self._currentFolder = folder
             self._folder = folder
             return self._services_list()
@@ -271,7 +278,9 @@ class ServiceManager(BaseServer):
         :return: Boolean
 
         """
-        return self._sm.publish_sd(sd_file, folder, service_config=service_config)
+        return self._sm.publish_sd(
+            sd_file, folder, service_config=service_config
+        )
 
     # ----------------------------------------------------------------------
     def _find_services(self, service_type: str = "*") -> list:
@@ -872,7 +881,9 @@ class ServiceManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _edit_folder(self, description: str, web_encrypted: bool = False) -> bool:
+    def _edit_folder(
+        self, description: str, web_encrypted: bool = False
+    ) -> bool:
         """
         This operation allows you to change the description of an existing
         folder or change the web encrypted property.
@@ -1319,7 +1330,9 @@ class ServiceWebHookManager(BaseServer):
         hooks.extend(
             [
                 ServiceWebHook(url, gis=self._con)
-                for url in ["%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]]
+                for url in [
+                    "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                ]
             ]
         )
 
@@ -1330,7 +1343,8 @@ class ServiceWebHookManager(BaseServer):
                 [
                     ServiceWebHook(url, gis=self._gis)
                     for url in [
-                        "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                        "%s/%s" % (self._url, wh["id"])
+                        for wh in res["webhooks"]
                     ]
                 ]
             )
@@ -1348,7 +1362,9 @@ class ServiceWebHookManager(BaseServer):
         """
         url: str = f"{self._url}/deactivateAll"
         params: dict[str, Any] = {"f": "json"}
-        return self._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._con.post(url, params).get("status", "failed") == "success"
+        )
 
     # ----------------------------------------------------------------------
     def delete_all_hooks(self) -> bool:
@@ -1360,7 +1376,9 @@ class ServiceWebHookManager(BaseServer):
         """
         url = f"{self._url}/deleteAll"
         params = {"f": "json"}
-        return self._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._con.post(url, params).get("status", "failed") == "success"
+        )
 
     # ----------------------------------------------------------------------
     def enable_hooks(self) -> bool:
@@ -1374,7 +1392,9 @@ class ServiceWebHookManager(BaseServer):
         """
         url: str = f"{self._url}/activateAll"
         params: dict[str, Any] = {"f": "json"}
-        return self._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._con.post(url, params).get("status", "failed") == "success"
+        )
 
 
 ########################################################################
@@ -1423,9 +1443,12 @@ class Service(BaseServer):
     _extensions = None
     _jm = None
     _whm = None
+    _gis = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS, initialize: bool = False, **kwargs):
+    def __init__(
+        self, url: str, gis: GIS, initialize: bool = False, **kwargs
+    ):
         """
         Constructor
 
@@ -1455,6 +1478,7 @@ class Service(BaseServer):
         self._url = url
         self._currentURL = url
         self._con = con
+        self._gis = gis
         # if url.lower().find('gpserver') > -1:
         #    self.jobs = self._jobs
         if initialize:
@@ -1539,7 +1563,9 @@ class Service(BaseServer):
         return self._extensions
 
     # ----------------------------------------------------------------------
-    def modify_extensions(self, extension_objects: Optional[list] = None) -> bool:
+    def modify_extensions(
+        self, extension_objects: Optional[list] = None
+    ) -> bool:
         """
         enables/disables a service extension type based on the name
 
@@ -1555,9 +1581,13 @@ class Service(BaseServer):
         """
         if extension_objects is None:
             extension_objects = []
-        if len(extension_objects) > 0 and isinstance(extension_objects[0], Extension):
+        if len(extension_objects) > 0 and isinstance(
+            extension_objects[0], Extension
+        ):
             self._extensions = extension_objects
-            self._json_dict["extensions"] = [x.value for x in extension_objects]
+            self._json_dict["extensions"] = [
+                x.value for x in extension_objects
+            ]
             res = self.edit(str(self._json_dict))
             self._json = None
             self._init()
@@ -1565,7 +1595,9 @@ class Service(BaseServer):
         return False
 
     # ----------------------------------------------------------------------
-    def _has_child_permissions_conflict(self, principal: str, permission: dict) -> dict:
+    def _has_child_permissions_conflict(
+        self, principal: str, permission: dict
+    ) -> dict:
         """
         You can invoke this operation on the resource (folder or service)
         to determine if this resource has a child resource with opposing
@@ -1831,7 +1863,9 @@ class Service(BaseServer):
         return open(f, "r").read()
 
     # ----------------------------------------------------------------------
-    def _add_permission(self, principal: str, is_allowed: bool = True) -> bool:
+    def _add_permission(
+        self, principal: str, is_allowed: bool = True
+    ) -> bool:
         """
         Assigns a new permission to a role (principal). The permission
         on a parent resource is automatically inherited by all child resources.
@@ -1860,7 +1894,9 @@ class Service(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def edit(self, service: dict) -> bool:
+    def edit(
+        self, service: dict, future: bool = False
+    ) -> tuple[bool, dict] | tuple[bool, AsyncJob]:
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -1874,7 +1910,7 @@ class Service(BaseServer):
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean and the Service Message or AsyncJob
 
 
         """
@@ -1884,11 +1920,19 @@ class Service(BaseServer):
             params["service"] = service
         elif isinstance(service, dict):
             params["service"] = json.dumps(service)
+        if future:
+            params['runAsync'] = future
         res = self._con.post(path=url, postdata=params)
-        if "status" in res:
-            self._properties = None
-            return res["status"] == "success"
-        return res
+        self._properties = None
+        if future and "jobid" in res:
+            job_url: str = (
+                f'{url.split("/services/")[0]}/system/jobs/{res["jobid"]}'
+            )
+            return True, AsyncJob(url=job_url, session=self._con._session)
+        elif "status" in res:
+            return res['status'] == "success", res
+        else:
+            return False, res
 
     # ----------------------------------------------------------------------
     @property
