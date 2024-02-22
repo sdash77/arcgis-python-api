@@ -9303,27 +9303,27 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         if output_dsm_mesh_name is not None:
             if isinstance(output_dsm_mesh_name, str):
-                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
+                output_dsm_mesh_dict = {"itemProperties": {"name": output_dsm_mesh_name, "title": output_dsm_mesh_name}}
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["dsm_mesh"] = output_dsm_mesh_dict
 
         if output_point_cloud_name is not None:
             if isinstance(output_point_cloud_name, str):
-                output_point_cloud_dict = {"name": output_point_cloud_name}
+                output_point_cloud_dict = {"itemProperties": {"name": output_point_cloud_name, "title": output_point_cloud_name}}
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["point_cloud"] = output_point_cloud_dict
 
         if output_mesh_name is not None:
             if isinstance(output_mesh_name, str):
-                output_mesh_dict = {"name": output_mesh_name}
+                output_mesh_dict = {"itemProperties": {"name": output_mesh_name, "title": output_mesh_name}}
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
             output_products["mesh"] = output_mesh_dict
 
         for product in ["dsm", "true_ortho"]:
-            if product in output_products and context:
+            if product in output_products and context and product in context:
                 output_products[product].update(context[product])
 
         job = self._tbx.reconstruct_surface(
@@ -9348,6 +9348,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if output_true_ortho_name is not None:
             items["true_ortho"] = json.loads(output_true_ortho_raster)
         final_job = None
+        job._is_reality = True
         print(f"passing items: {items}")
         final_job = RMJob(job, item=items)
         final_job._flight_details = flight_json_details
