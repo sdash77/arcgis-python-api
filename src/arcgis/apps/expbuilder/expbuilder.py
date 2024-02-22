@@ -6,6 +6,7 @@ from arcgis.auth.tools import LazyLoader
 import copy
 import os
 import importlib
+import warnings
 
 # from ._ref import template_list
 
@@ -44,6 +45,32 @@ template_list = [
     "indicator",
     "monitor",
     "reveal",
+    "kit",
+    "chronology",
+    "checkerboard",
+    "illustrator",
+    "voyage",
+    "data_collector",
+    "gear",
+    "showroom",
+    "route",
+    "vacation",
+    "dashboard",
+    "seeker",
+    "events",
+    "sketchbook",
+    "booking",
+    "multiverse",
+    "collage",
+    "avatarboard",
+    "mapflyer",
+    "leaflet",
+    "panorama",
+    "frame",
+    "comparatist",
+    "elevate",
+    "lens",
+    "pamphlet",
 ]
 
 
@@ -128,7 +155,6 @@ class Templates(Enum):
 
 
 class WebExperience(object):
-
     """
     A Web Experience is web-based application that provides viewers with an interactive
     interface to maps, data, feature layers, and other components of the creator's design.
@@ -297,16 +323,24 @@ class WebExperience(object):
 
             temp_dict["attributes"]["portalUrl"] = self._gis.url
             if self._gis._is_agol:
-                exb_version = self._gis._con.get("https://experience.arcgis.com/version.json", {"f": "json"})["exbVersion"]
+                exb_version = self._gis._con.get(
+                    "https://experience.arcgis.com/version.json", {"f": "json"}
+                )["exbVersion"]
             else:
                 url = self._gis.url + "/apps/experiencebuilder/version.json"
                 exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
-            
+
             temp_dict["exbVersion"] = exb_version
             if "widgets" in temp_dict:
                 for widget in temp_dict["widgets"].values():
                     if "version" in widget:
                         widget["version"] = exb_version
+
+            if "originExbVersion" in temp_dict:
+                if temp_dict["originExbVersion"] > exb_version:
+                    warnings.warn(
+                        "This template comes from a newer version of Experience Builder than the current portal has. Some widgets may not work as expected."
+                    )
             # temp_dict["timestamp"]
             # create item and generate basic properties
             if name is None:
