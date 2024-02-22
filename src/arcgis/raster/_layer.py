@@ -12854,6 +12854,9 @@ class RasterCollection:
             "planetarycomputer.microsoft.com/api/stac": 1000,
             "earth-search.aws.element84.com": 200,
             "services.sentinel-hub.com/api": 100,
+            "landsatlook.usgs.gov/stac-server": 2000,
+            "gpt.geocloud.com/sentinel/stac": 1000,
+            "geoportalstac.azurewebsites.net/stac": 10000,
         }
 
         stacs = list(max_limit_map.keys())

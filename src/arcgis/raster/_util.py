@@ -1719,11 +1719,17 @@ def _get_stac_metadata_file(item):
         **dict.fromkeys(["sentinel-2"], ("data", "productInfo.json")),
         **dict.fromkeys(["sentinel-1"], ("s3", "manifest.safe")),
     }
+    geoportal_azure_map = {
+        "sentinel": ("S2_Level-2A_Product_Metadata", "MTD_MSIL2A.xml")
+    }
 
     product_file_map = {
         "planetarycomputer.microsoft.com/api/stac": planetary_computer_map,
         "earth-search.aws.element84.com": earth_search_map,
         "services.sentinel-hub.com/api": sentinel_hub_map,
+        "landsatlook.usgs.gov/stac-server": "self_href",
+        "gpt.geocloud.com/sentinel/stac": "self_href",
+        "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
 
     stacs = list(product_file_map.keys())
@@ -1748,24 +1754,32 @@ def _get_stac_metadata_file(item):
         )
     )
 
-    target = product_file_map[item_stac].get(collection_id)
+    target = (
+        product_file_map[item_stac].get(collection_id)
+        if isinstance(product_file_map[item_stac], dict)
+        else product_file_map[item_stac]
+    )
 
     href = None
     if isinstance(target, str):
         href = (
-            [
-                cog["href"]
-                for cog in item["assets"].values()
-                if cog["href"].endswith((".tif", ".tiff"))
-            ]
-            if target == "All COGs"
-            else item["assets"][target]["href"]
+            f"StacItemHref/{self_link}"
+            if target == "self_href"
+            else (
+                [
+                    cog["href"]
+                    for cog in item["assets"].values()
+                    if cog["href"].endswith((".tif", ".tiff"))
+                ]
+                if target == "All COGs"
+                else item["assets"][target]["href"]
+            )
         )
     elif isinstance(target, int):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
-        if collection_id == "sentinel-s2-l2a":
+        if collection_id in ("sentinel", "sentinel-s2-l2a"):
             directory = os.path.dirname(directory)
         href = f"{directory}/{target[1]}"
 
@@ -1775,7 +1789,12 @@ def _get_stac_metadata_file(item):
         else href
     )
 
-    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
+    if (
+        collection_id.startswith(
+            ("sentinel-2", "sentinel-s2", "landsat-c2l2", "landsat-c2-", "sentinel_v1")
+        )
+        or collection_id == "sentinel"
+    ):
         href = rf"{href}\Multiband"
 
     return href
