@@ -1,13 +1,10 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import logging
 import unittest
 import concurrent.futures
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, UserManager, ContentManager, Item
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -22,7 +19,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_admin_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -46,7 +43,7 @@ class TestTransferContentAGOL(unittest.TestCase):
             email='testsadf@esri.com',
         )
 
-        cls.fp = r"\\qalab_server\pydata\v109\geosaurus\transfer_content\transfer_content.csv"
+        cls.fp = QALAB_ROOT_PATH + r"\transfer_content\transfer_content.csv"
         cls.item = cls.gis.content.add(
             item_properties={
                 "type": "CSV",
@@ -121,7 +118,7 @@ class TestTransferContentENT(unittest.TestCase):
             email='testsadf@esri.com',
         )
 
-        cls.fp = r"\\qalab_server\pydata\v109\geosaurus\transfer_content\transfer_content.csv"
+        cls.fp = QALAB_ROOT_PATH + r"\transfer_content\transfer_content.csv"
         cls.item = cls.gis.content.add(
             item_properties={
                 "type": "CSV",

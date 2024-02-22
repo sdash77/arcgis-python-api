@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Any, Union
 from arcgis.gis import Item
+import json
 
 
 class CategoryManager(object):
@@ -93,7 +94,7 @@ class CategoryManager(object):
         """
         params = {"f": "json"}
         if value is not None:
-            params["categorySchema"] = {"categorySchema": value}
+            params["categorySchema"] = json.dumps({"categorySchema": value})
             url = "%s/assignCategorySchema" % self._url
 
             self._con.post(path=url, postdata=params)

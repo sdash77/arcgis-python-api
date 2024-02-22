@@ -1,6 +1,7 @@
 """
 Holds Delegate and Accessor Logic
 """
+
 from __future__ import annotations
 import logging
 import pandas as pd
@@ -1398,8 +1399,8 @@ class GeoAccessor(object):
                                DataFrame.  If no geometry columns are present, a ``ValueError``
                                will be raised.
         ------------------     --------------------------------------------------------------------
-        **kwargs               Optional dict. Any additional kwargs that can be given to the
-                               `pyarrow.parquet.read_table` method.
+        **kwargs**             Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table <https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow-parquet-read-table>`_ method.
         ==================     ====================================================================
 
 
@@ -1509,6 +1510,11 @@ class GeoAccessor(object):
                         self._sr = _geometry.SpatialReference(g["spatialReference"])
                 except:
                     self._sr = _geometry.SpatialReference({"wkid": 4326})
+            else:
+                if isinstance(sr, int):
+                    self._sr = _geometry.SpatialReference({"wkid": sr})
+                elif isinstance(sr, _geometry.SpatialReference):
+                    self._sr = sr
             self._name = col
             # q = self._data[col].isna()
             # self._data.loc[q, "SHAPE"] = None
@@ -1541,6 +1547,7 @@ class GeoAccessor(object):
                 )
             )
 
+        self.sr = self._sr
         if not inplace:
             return self._data.copy()
 
@@ -2932,6 +2939,7 @@ class GeoAccessor(object):
         the GIS to which the geocoder belongs.
 
         """
+        orig_df = df.copy()
         import arcgis
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
         from arcgis.geometry import Geometry
@@ -2995,17 +3003,19 @@ class GeoAccessor(object):
                     piece_df["ResultID"] = df.index.tolist()
                     data.append(piece_df)
                 if len(data) == 1:
-                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
+                    merged = orig_df.merge(
+                        data[0], left_index=True, right_on="ResultID"
+                    )
                 else:
-                    merged = df.merge(
+                    merged = orig_df.merge(
                         pd.concat(data), left_index=True, right_on="ResultID"
                     )
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-
-                merged.spatial.set_geometry("SHAPE")
+                if "SHAPE" in merged.columns:
+                    merged.spatial.set_geometry("SHAPE")
             return merged
 
     # ----------------------------------------------------------------------
@@ -3431,8 +3441,8 @@ class GeoAccessor(object):
             _dtype(np.int16): "esriFieldTypeInteger",
             np.int32: "esriFieldTypeInteger",
             _dtype(np.int32): "esriFieldTypeInteger",
-            np.int64: "esriFieldTypeDouble",
-            _dtype(np.int64): "esriFieldTypeOID",
+            np.int64: "esriFieldTypeBigInteger",
+            _dtype(np.int64): "esriFieldTypeBigInteger",
             pd.Int64Dtype(): "esriFieldTypeBigInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
@@ -3453,6 +3463,9 @@ class GeoAccessor(object):
             pd.StringDtype(): "esriFieldTypeString",
             "<m8[ns]": "esriFieldTypeDouble",
             _dtype("<m8[ns]"): "esriFieldTypeDouble",
+            _dtype("<M8[s]"): "esriFieldTypeDateOnly",
+            _dtype("<m8[us]"): "esriFieldTypeTimeOnly",
+            _dtype("<M8[us]"): "esriFieldTypeTimestampOffset",
             "<M8[us]": "esriFieldTypeDate",
             np.dtype("<M8[ns]"): "esriFieldTypeDate",
             datetime: "esriFieldTypeDate",
@@ -3472,8 +3485,8 @@ class GeoAccessor(object):
             pd.UInt16Dtype(): "esriFieldTypeInteger",
             pd.UInt32Dtype: "esriFieldTypeInteger",
             pd.UInt32Dtype(): "esriFieldTypeInteger",
-            pd.UInt64Dtype: "esriFieldTypeInteger",
-            pd.UInt64Dtype(): "esriFieldTypeInteger",
+            pd.UInt64Dtype: "esriFieldTypeBigInteger",
+            pd.UInt64Dtype(): "esriFieldTypeBigInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
@@ -3521,7 +3534,10 @@ class GeoAccessor(object):
                 }
             if column["type"] == "esriFieldTypeString":
                 try:
-                    column["length"] = int(self._data[col].str.len().max())
+                    max_length = int(self._data[col].str.len().max())
+                    if max_length == 0:
+                        max_length = 256
+                    column["length"] = max_length
                 except:
                     column["length"] = 256
             if column and isinstance(dtype, pd.CategoricalDtype):
@@ -3541,14 +3557,12 @@ class GeoAccessor(object):
 
         for td in time_delta_fields:
             df[td] = df[td].dt.total_seconds() * 1000
-        for f in date_fields:
-            fn = (
-                lambda x: int(x.timestamp() * 1000)
-                if isinstance(x, pd.Timestamp)
-                else 0
-            )
 
-            df[f] = pd.to_datetime(df[date_fields[-1]]).apply(fn)
+        # define the function once
+        fn = lambda x,: int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else 0
+        for f in date_fields:
+            # apply function to each column in date_fields
+            df[f] = pd.to_datetime(df[f]).apply(fn)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
@@ -3652,9 +3666,11 @@ class GeoAccessor(object):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
                     self._data[self.name].apply(
-                        lambda x: x.update({"spatialReference": ref})
-                        if pd.notnull(x)
-                        else None
+                        lambda x: (
+                            x.update({"spatialReference": ref})
+                            if pd.notnull(x)
+                            else None
+                        )
                     )
 
     # ----------------------------------------------------------------------

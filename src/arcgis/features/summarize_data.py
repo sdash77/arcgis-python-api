@@ -6,6 +6,7 @@ aggregate_points calculates statistics about points that fall within specified a
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
+
 from __future__ import annotations
 from datetime import datetime
 from re import U
@@ -534,9 +535,9 @@ def summarize_center_and_dispersion(
     --------------------    --------------------------------------------------------------------------------------------
     ellipse_size            Optional string. The size of the output ellipse in standard deviations.
 
-                            Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
+                            Choice list: ['1 standard deviation', '2 standard deviations', '3 standard deviations']
 
-                            The default ellipse size is '1 standard deviations'.
+                            The default ellipse size is '1 standard deviation'.
     --------------------    --------------------------------------------------------------------------------------------
     weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
                             weight locations according to their relative importance.
@@ -889,6 +890,7 @@ def join_features(
                                                                                                     * ``MIN`` - Finds the smallest value of all the points in each polygon
                                                                                                     * ``MAX`` - Finds the largest value of all the points in each polygon
                                                                                                     * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
+                                                                                                    * ``COUNT`` - Finds the number of non-null values, used on numeric fields or strings.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     output_name                                                                                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                                                                                                     feature layer will cause the new layer to be appended to the Feature Service.
@@ -935,9 +937,19 @@ def join_features(
         accident_count_in_each_parcel = join_features(target_layer=parcel_lyr,
                                                       join_layer=traffic_accidents_lyr,
                                                       spatial_relationship='intersects',
-                                                      summary_fields=[{"statisticType": "Mean", "onStatisticField": "Population"},
+                                                      summary_fields=[{"statisticType": "Mean", "onStatisticField": "Population"}],
                                                       output_name='join features',
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To summarize into count using spatial relationship.
+        accident_count_in_each_parcel = join_features(target_layer=FeatureLayer(fs_url),
+                                                      join_layer=lyr_to_join,
+                                                      spatial_relationship='intersects',
+                                                      summary_fields = [{"statisticType":"COUNT","onStatisticField":None}],
+                                                      output_name='return join features in count')
+
     """
     kwargs = {
         "target_layer": target_layer,

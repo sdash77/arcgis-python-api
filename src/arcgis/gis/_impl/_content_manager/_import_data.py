@@ -2,18 +2,21 @@ import random
 from uuid import uuid4
 import string
 import os
-import pandas as pd
 import tempfile
 import shutil
-
-from arcgis.gis import Item, ItemDependency
+from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._utils import _date_handler
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth.tools import LazyLoader
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
-
+pd = LazyLoader("pandas")
 try:
     from arcgis.features.geo import _is_geoenabled
 except:
@@ -38,92 +41,119 @@ except ImportError:
     has_pyshp = False
 
 
+def _json_encode_params(postdata):
+    for k, v in postdata.items():
+        if isinstance(v, (dict, list, tuple, bool)):
+            postdata[k] = json.dumps(v, default=_date_handler)
+        elif isinstance(v, PropertyMap):
+            postdata[k] = json.dumps(dict(v), default=_date_handler)
+        elif isinstance(v, InsensitiveDict):
+            postdata[k] = v.json
+
+    return postdata
+
+
 def _create_file_item(gis, df, file_type, **kwargs):
-    # File Type Dictionary
-    ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
-
-    # Pop out kwargs, establish params to be used throughout
-    service_name = kwargs.pop("service_name", None)
-    if service_name is None:
-        service_name = "a" + uuid4().hex[:7]
-    temp_dir = os.path.join(tempfile.gettempdir(), service_name)
-    title = kwargs.pop("title", uuid4().hex)
-    capabilities = kwargs.pop("capabilities", "Query")
-    item_id = kwargs.pop("item_id", None)
-    tags = kwargs.pop("tags", file_type)
-    folder = kwargs.pop("folder", None)
-    name = "%s%s.%s" % (
-        random.choice(string.ascii_lowercase),
-        uuid4().hex[:5],
-        ftypes[file_type],
-    )
-
-    # Create the file to be added as an item
-    if file_type in ["File Geodatabase", "Shapefile"]:
-        # Working with feature layers
-        # set up temporary zip to be used in directory
-        os.makedirs(temp_dir)
-        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
-
-        # Create filegdb or shapefile
-        if file_type == "File Geodatabase":
-            # create empty filegdb
-            emtpy_fgdb = _tool_utils.run_and_hide(
-                fn=arcpy.CreateFileGDB_management,
-                **{"out_folder_path": temp_dir, "out_name": name},
-            )
-            fgdb = emtpy_fgdb[0]
-            location = os.path.join(fgdb, os.path.basename(temp_dir))
-            zip_loc = os.path.join(temp_dir, name)
-        else:
-            location = os.path.join(temp_dir, name)
-            zip_loc = temp_dir
-
-        # Writes the df to file as features
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
-        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
-
-        # zip it
-        file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-
-    elif file_type == "CSV":
-        # Table Workflow
-        file = tempfile.gettempdir() + "\\%s%s.csv" % (
-            random.choice(string.ascii_lowercase),
-            uuid4().hex[:5],
-        )
-        with open(file, "w") as my_csv:
-            df.to_csv(my_csv)
-            my_csv.close()
-
-    # add item to portal
-    file_item = gis.content.add(
-        item_properties={
-            "title": title,
-            "type": file_type,
-            "tags": tags,
-        },
-        data=file,
-        folder=folder,
-    )
-    shutil.rmtree(temp_dir, ignore_errors=True)
-
-    if file_type == "CSV":
-        # analyze the csv for publish params
-        publish_parameters = gis.content.analyze(item=file_item, file_type="csv")
-        publish_parameters["name"] = service_name
-        publish_parameters["locationType"] = None
-    else:
-        # start creating publish params from new file item
-        publish_parameters = {
-            "hasStaticData": True,
-            "name": os.path.splitext(file_item["name"])[0],
-            "maxRecordCount": 2000,
-            "layerInfo": {"capabilities": capabilities},
-            "targetSR": kwargs.pop("target_sr", 102100),
+    try:
+        # File Type Dictionary
+        ftypes = {
+            "File Geodatabase": "gdb",
+            "Shapefile": "shp",
+            "CSV": "csv",
         }
 
-    new_item = file_item.publish(publish_parameters=publish_parameters, item_id=item_id)
+        # Pop out kwargs, establish params to be used throughout
+        service_name = kwargs.pop("service_name", None)
+        if service_name is None:
+            service_name = "a" + uuid4().hex[:7]
+        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+        title = kwargs.pop("title", uuid4().hex)
+        capabilities = kwargs.pop("capabilities", "Query")
+        item_id = kwargs.pop("item_id", None)
+        tags = kwargs.pop("tags", file_type)
+        folder = kwargs.pop("folder", None)
+        name = "%s%s.%s" % (
+            random.choice(string.ascii_lowercase),
+            uuid4().hex[:5],
+            ftypes[file_type],
+        )
+
+        # Create the file to be added as an item
+        if file_type in ["File Geodatabase", "Shapefile"]:
+            # Working with feature layers
+            # set up temporary zip to be used in directory
+            os.makedirs(temp_dir)
+            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
+
+            # Create filegdb or shapefile
+            if file_type == "File Geodatabase":
+                # create empty filegdb
+                emtpy_fgdb = _tool_utils.run_and_hide(
+                    fn=arcpy.CreateFileGDB_management,
+                    **{"out_folder_path": temp_dir, "out_name": name},
+                )
+                fgdb = emtpy_fgdb[0]
+                location = os.path.join(fgdb, os.path.basename(temp_dir))
+                zip_loc = os.path.join(temp_dir, name)
+            else:
+                location = os.path.join(temp_dir, name)
+                zip_loc = temp_dir
+
+            # Writes the df to file as features
+            sanitize_columns = kwargs.pop("sanitize_columns", False)
+            df.spatial.to_featureclass(
+                location=location, sanitize_columns=sanitize_columns
+            )
+
+            # zip it
+            file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
+
+        elif file_type == "CSV":
+            # Table Workflow
+            file = tempfile.gettempdir() + "\\%s%s.csv" % (
+                random.choice(string.ascii_lowercase),
+                uuid4().hex[:5],
+            )
+            with open(file, "w") as my_csv:
+                df.to_csv(my_csv)
+                my_csv.close()
+
+        # add item to portal
+        file_item = gis.content.add(
+            item_properties={
+                "title": title,
+                "type": file_type,
+                "tags": tags,
+            },
+            data=file,
+            folder=folder,
+        )
+
+        if file_type == "CSV":
+            # analyze the csv for publish params
+            publish_parameters = gis.content.analyze(item=file_item, file_type="csv")
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = None
+        else:
+            # start creating publish params from new file item
+            publish_parameters = {
+                "hasStaticData": True,
+                "name": os.path.splitext(file_item["name"])[0],
+                "maxRecordCount": 2000,
+                "layerInfo": {"capabilities": capabilities},
+                "targetSR": kwargs.pop("target_sr", 102100),
+            }
+
+        new_item = file_item.publish(
+            publish_parameters=publish_parameters, item_id=item_id
+        )
+    finally:
+        # Clean up temporary files and directories
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+        if os.path.exists(file):
+            os.remove(file)
     return file_item, new_item
 
 
@@ -165,7 +195,7 @@ def _add_item_dependency(
 ):
     if file_type.lower() == "csv":
         source_info = gis.content.analyze(item=file_item)["publishParameters"]
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.tables[fl_index].append(
             item_id=file_item.id,
             upload_format=file_type.lower(),
@@ -180,7 +210,7 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
@@ -233,7 +263,7 @@ def import_as_item(gis, df, **kwargs):
             raise ValueError(
                 "The provided feature service id cannot be found. Please check it is correct and try again."
             )
-        elif isinstance(fs_id, Item):
+        elif isinstance(fs_id, _arcgis_gis.Item):
             fs_id = fs_id.itemid
 
         # Index passed in for overwrite, None for insert
@@ -259,6 +289,9 @@ def import_as_item(gis, df, **kwargs):
     # This pushes the features and adds new dependencies
     _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
 
+    # clean up
+    new_item.delete()
+
     return fs_item
 
 
@@ -280,11 +313,11 @@ def import_as_fc(gis, df, **kwargs):
             raise Exception("No batch geocoding service found.")
         geocode_url = locators[0]
 
-    path = "content/features/analyze"
+    path = gis._public_rest_url + "content/features/analyze"
 
     postdata = {
-        "f": "pjson",
-        "text": df.to_csv(),
+        "f": "json",
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "analyzeParameters": {
             "enableGlobalGeocoding": "true",
@@ -297,15 +330,17 @@ def import_as_fc(gis, df, **kwargs):
     if address_fields is not None:
         postdata["analyzeParameters"]["locationType"] = "address"
 
-    res = gis._con._session.post(path, postdata)
+    postdata = _json_encode_params(postdata)
+    resp = gis._con._session.post(url=path, data=postdata, timeout=600)
+    res = resp.json()
 
     # Step 2: Prep parameters to generate features
     if address_fields is not None:
         res["publishParameters"].update({"addressFields": address_fields})
-    path = "content/features/generate"
+    path = gis._public_rest_url + "content/features/generate"
     postdata = {
-        "f": "pjson",
-        "text": df.to_csv(),
+        "f": "json",
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "publishParameters": json.dumps(res["publishParameters"]),
     }
@@ -314,7 +349,9 @@ def import_as_fc(gis, df, **kwargs):
 
     if isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
         # Step 2: Generate features
-        res_generate = gis._con._session.post(path, postdata)
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(path, postdata)
+        res_generate = resp.json()
     elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
         isinstance(df, pd.DataFrame) and address_fields
     ):
@@ -336,9 +373,12 @@ def import_as_fc(gis, df, **kwargs):
             del update_dict[k]
         res["publishParameters"].update(update_dict)
 
-        res_generate = gis._con._session.post(
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(
             path, postdata
         )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+
+        res_generate = resp.json()
 
     # Step 3: Return
     if res_generate:

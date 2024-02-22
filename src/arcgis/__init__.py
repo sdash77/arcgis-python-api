@@ -1,4 +1,4 @@
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 from arcgis.auth.tools import LazyLoader
 
@@ -49,6 +49,7 @@ from arcgis.features.analysis import (
     merge_layers,
     overlay_layers,
     aggregate_points,
+    calculate_composite_index,
     join_features,
     summarize_center_and_dispersion,
     summarize_nearby,
@@ -90,6 +91,7 @@ __all__ = [
     "mapping",
     "learn",
     "aggregate_points",
+    "calculate_composite_index",
     "calculate_density",
     "connect_origins_to_destinations",
     "create_buffers",

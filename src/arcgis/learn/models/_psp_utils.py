@@ -415,6 +415,7 @@ def isin(target, keep_indices):
 
 
 def accuracy(input, target, ignore_mapped_class=[]):
+    """Computes per pixel accuracy."""
     if isinstance(input, tuple):  # while training
         input = input[0]
     if ignore_mapped_class == []:

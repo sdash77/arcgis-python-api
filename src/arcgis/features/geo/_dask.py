@@ -914,7 +914,7 @@ class GeoDaskSpatialAccessor:
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        df = self._data.compute()
+        df = self._data.compute().convert_dtypes()
         df.spatial.name
         return to_featureclass(
             geo=df.spatial,

@@ -5,13 +5,14 @@ notation with some required parameters to given unified deprecation warnings/exc
 
 Module is a fork of project: https://github.com/briancurtin/deprecation under Apache 2.0 License
 """
+
 import collections
 import functools
 import textwrap
 import warnings
 import re
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 # This is mostly here so automodule docs are ordered more ideally.
 __all__ = [

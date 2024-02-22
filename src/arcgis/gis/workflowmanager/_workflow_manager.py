@@ -500,7 +500,8 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         owner                       Optional string. Job Owner
         -------------------         --------------------------------------------------------------------
-        group                       Optional string Job Group
+        group                       Optional string. Job Assignment Group. The Assignment type of the job to be
+                                    created. Type of assignment designated Values: "User" | "Group" | "Unassigned"
         -------------------         --------------------------------------------------------------------
         assigned                    Optional string. Initial Job Assignee
         -------------------         --------------------------------------------------------------------
@@ -744,24 +745,21 @@ class JobManager:
             # USAGE EXAMPLE: Updating a Job's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> job = workflow_manager.jobs.get(job_id)
-            >>> job.priority = 'Updated'
+            updates = { 'priority': 'High' }
+            updates['extended_properties']: [
+                {
+                    "identifier": "table_name.prop1",
+                    "value": "updated_123"
+                },
+                {
+                    "identifier": "table_name.prop2",
+                    "value": "updated_456"
+                },
+            ]
 
-            >>> table_name = job.extended_properties[0]["tableName"]
-            >>> job.extended_properties = [
-                    {
-                        "identifier": table_name + ".prop1",
-                        "value": "updated_123"
-                    },
-                    {
-                        "identifier": table_name + ".prop2",
-                        "value": "updated_456"
-                    },
-                ]
-
-            >>> workflow_manager.jobs.update(job_id, vars(job))
+            workflow_manager.jobs.update(job_id, updates)
 
         """
         try:
@@ -2166,30 +2164,30 @@ class SavedSearchesManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a Job's properties
+            # USAGE EXAMPLE: Updating a search's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> workflow_manager.create_saved_search(name="name",
-                                                    definition={
-                                                        "start": 0,
-                                                        "fields": ["job_status"],
-                                                        "displayNames": ["Status"  ],
-                                                        "sortFields": [{"field": "job_status",
-                                                                        "sortOrder": "Asc:}]
-                                                                },
-                                                    search_type='Chart',
-                                                    color_ramp='Flower Field Inverse',
-                                                    sort_index=2000)
+            workflow_manager.create_saved_search(name="name",
+                                                 definition={
+                                                     "start": 0,
+                                                     "fields": ["job_status"],
+                                                     "displayNames": ["Status"  ],
+                                                     "sortFields": [{"field": "job_status",
+                                                                     "sortOrder": "Asc:}]
+                                                             },
+                                                 search_type='Chart',
+                                                 color_ramp='Flower Field Inverse',
+                                                 sort_index=2000)
 
-            >>> search_lst = workflow_manager.searches("All")
-            >>> search = [x for x in search_lst if x["searchId"] == searchid][0]
+            search_lst = workflow_manager.searches("All")
+            search = [x for x in search_lst if x["searchId"] == searchid][0]
 
-            >>> search["colorRamp"] = "Default"
-            >>> search["name"] = "Updated search"
+            search["colorRamp"] = "Default"
+            search["name"] = "Updated search"
 
-            >>> actual = workflow_manager.update_saved_search(search)
+            actual = workflow_manager.update_saved_search(search)
 
         """
         try:
@@ -2296,53 +2294,19 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = (
-            self.notes
-        ) = (
-            self.diagram_id
-        ) = (
-            self.end_date
-        ) = (
+        self.job_status = self.notes = self.diagram_id = self.end_date = (
             self.due_date
-        ) = (
-            self.description
-        ) = (
-            self.started_date
-        ) = (
-            self.current_steps
-        ) = (
+        ) = self.description = self.started_date = self.current_steps = (
             self.job_template_name
-        ) = (
-            self.job_template_id
-        ) = (
-            self.extended_properties
-        ) = (
-            self.holds
-        ) = (
+        ) = self.job_template_id = self.extended_properties = self.holds = (
             self.diagram_name
-        ) = (
-            self.parent_job
-        ) = (
-            self.job_name
-        ) = (
-            self.diagram_version
-        ) = (
+        ) = self.parent_job = self.job_name = self.diagram_version = (
             self.active_versions
-        ) = (
-            self.percent_complete
-        ) = (
-            self.priority
-        ) = (
-            self.job_id
-        ) = (
-            self.created_date
-        ) = (
+        ) = self.percent_complete = self.priority = self.job_id = self.created_date = (
             self.created_by
-        ) = (
-            self.closed
-        ) = (
-            self.owned_by
-        ) = self.start_date = self._location = self.related_properties = None
+        ) = self.closed = self.owned_by = self.start_date = self._location = (
+            self.related_properties
+        ) = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
@@ -2545,13 +2509,23 @@ class Job(object):
         step_id             Required String. Active Step ID
         ---------------     --------------------------------------------------------------------
         assigned_type       Required String. Type of assignment designated
-                            Values: "user" | "group" | "unassigned"
+                            Values: "User" | "Group" | "Unassigned"
         ---------------     --------------------------------------------------------------------
         assigned_to         Required String. User id to which the active step is assigned
         ===============     ====================================================================
 
         :return:
             success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+            job.update_step(step_id='123456', assigned_type='User', assigned_to='my_user')
 
         """
 
@@ -2600,6 +2574,133 @@ class Job(object):
 
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
         post_object = {"type": "SetCurrentStep", "stepIds": [step_id]}
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                params=post_object,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return_obj = {
+            _camelCase_to_underscore(k): v
+            for k, v in return_obj.items()
+            if v is not None and not k.startswith("_")
+        }
+        return return_obj
+
+    def add_hold(
+        self,
+        step_ids: Optional[list],
+        dependent_job_id: Optional[str] = None,
+        dependent_step_id: Optional[str] = None,
+        hold_scheduled_release: Optional[str] = None,
+    ):
+        """
+        Applies a hold or a dependency to a step. The Run and Finish actions cannot be performed
+        on the step until the dependent step is resolved, the ReleaseHold action is run or the holdScheduledReleased has
+        expired. If there is not a holdScheduledReleased timestamp, the ReleaseHold action is required to remove the
+        hold or dependency. If there are multiple holds or dependencies, they must all be released or expired for the
+        Run and Finish actions to be performed. Cannot be applied if the step is already running or job is closed.
+
+        ======================      ====================================================================
+        **Parameter**               **Description**
+        ----------------------      --------------------------------------------------------------------
+        step_ids                    Optional. The array of steps put on hold when adding a dependency hold.
+                                    If not specified, the dependency hold is applied to all the active steps in the job.
+        ----------------------      --------------------------------------------------------------------
+        dependent_job_id            Optional. A job that the current job is dependent on from being performed step actions
+                                    including Run and Finish
+        ----------------------      --------------------------------------------------------------------
+        dependent_step_id           Optional. The step in the job that the current job is dependent on from being performed
+                                    step actions including Run and Finish.
+        ----------------------      --------------------------------------------------------------------
+        hold_scheduled_release      Optional. The release timestamp for a scheduled hold. Once the current date and time
+                                    has passed the scheduled release timestamp, the hold will automatically release without
+                                    requiring the ReleaseHold action.
+        ======================      ====================================================================
+
+        :return:
+            success object
+
+        """
+
+        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+
+        post_object = {"type": "Hold"}
+
+        if step_ids is not None:
+            post_object["stepIds"] = step_ids
+        if dependent_job_id is not None:
+            post_object["dependentJobId"] = dependent_job_id
+        if dependent_step_id is not None:
+            post_object["dependentStepId"] = dependent_step_id
+        if hold_scheduled_release is not None:
+            post_object["holdScheduledRelease"] = hold_scheduled_release
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                params=post_object,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return_obj = {
+            _camelCase_to_underscore(k): v
+            for k, v in return_obj.items()
+            if v is not None and not k.startswith("_")
+        }
+        return return_obj
+
+    def release_hold(
+        self,
+        step_ids: Optional[list],
+        dependent_job_id: Optional[str] = None,
+        dependent_step_id: Optional[str] = None,
+    ):
+        """
+        Releases a hold from a step, allowing the Run and Finish actions to be once again performed on the step.
+
+        =================       ====================================================================
+        **Parameter**           **Description**
+        -----------------       --------------------------------------------------------------------
+        step_ids                Optional. The array of steps on hold to be released. If not specified the release
+                                is applied to all the steps on hold.
+        -----------------       --------------------------------------------------------------------
+        dependent_job_id        Optional. A job that the current job is dependent on from being performed step actions
+                                including Run and Finish.
+        -----------------       --------------------------------------------------------------------
+        dependent_step_id       Optional. The step in the job that the current job is dependent on from being performed
+                                step actions including Run and Finish.
+        =================       ====================================================================
+
+        :return:
+            success object
+
+        """
+
+        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+
+        post_object = {"type": "ReleaseHold"}
+
+        if step_ids is not None:
+            post_object["stepIds"] = step_ids
+        if dependent_job_id is not None:
+            post_object["dependentJobId"] = dependent_job_id
+        if dependent_step_id is not None:
+            post_object["dependentStepId"] = dependent_step_id
+
         return_obj = json.loads(
             self._gis._con.post(
                 url,
@@ -3091,7 +3192,7 @@ class JobTemplate(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Creating a automated creation for a job template
+            # USAGE EXAMPLE: Creating an automated creation for a job template
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)

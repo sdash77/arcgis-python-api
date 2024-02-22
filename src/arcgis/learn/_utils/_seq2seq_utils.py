@@ -160,7 +160,7 @@ class SequenceToSequenceLearner(Learner):
             items.append([txt_x, txt_y, txt_z])
         items = np.array(items)
         df = pd.DataFrame({n: items[:, i] for i, n in enumerate(names)}, columns=names)
-        with pd.option_context("display.max_colwidth", -1):
+        with pd.option_context("display.max_colwidth", 0):
             display(HTML(df.to_html(index=False)))
 
     def predict_batch(self, batch_text, num_beams, max_length, min_length):

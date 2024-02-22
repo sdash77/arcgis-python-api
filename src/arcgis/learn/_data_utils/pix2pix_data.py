@@ -1,12 +1,10 @@
-import mimetypes, os, random, sys, math
+import os, random, sys, math
 import json
 import numpy as np
 from pathlib import Path
 from fastai.data_block import get_files as gf
 import torch
-from torchvision import transforms
 from fastai.vision import (
-    open_image,
     open_mask,
     get_transforms,
     plt,
@@ -28,7 +26,9 @@ import types
 from functools import partial
 from .._data import _prepare_working_dir
 from .._utils.cyclegan import image_extensions
-from .._data import _get_batch_stats, _tensor_scaler
+from .._data import _tensor_scaler
+from .._utils.superres import show_batch
+import warnings
 
 stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
 
@@ -131,6 +131,31 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode="minmax"):
     min_values = min_values.view(-1, 1, 1).to(x.device)
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return x
+
+
+def _norm_stats(path):
+    emd_path = Path(os.path.abspath(path / "esri_model_definition.emd"))
+    with open(emd_path) as f:
+        emd_stats = json.load(f)
+
+    domain_stats1 = emd_stats.get("AllTilesStats")
+    domain_stats2 = emd_stats.get("AllTilesStats2", domain_stats1)
+
+    data_stats = [domain_stats1, domain_stats2]
+    batch_stats = [
+        {
+            "band_min_values": torch.tensor([i.get("Min") for i in stats]),
+            "band_max_values": torch.tensor([i.get("Max") for i in stats]),
+            "band_mean_values": torch.tensor([i.get("Mean") for i in stats]),
+            "band_std_values": torch.tensor([i.get("StdDev") for i in stats]),
+            "scaled_min_values": None,
+            "scaled_max_values": None,
+            "scaled_mean_values": None,
+            "scaled_std_values": None,
+        }
+        for stats in data_stats
+    ]
+    return batch_stats[0], batch_stats[1]
 
 
 def _batch_stats_json(
@@ -306,11 +331,21 @@ def concat_bands(image_A, image_B):
     return image_A, image_B
 
 
-def _get_transforms(transforms, flip_vert):
+def _get_transforms(transforms, model=None):
     if transforms is None:
-        flip_vert = False
-        transforms = get_transforms(flip_vert=flip_vert, max_lighting=0.3, max_warp=0.0)
-
+        if model:
+            transforms = get_transforms(
+                do_flip=True,
+                flip_vert=True,
+                max_rotate=90.0,
+                max_zoom=0,
+                max_lighting=None,
+                max_warp=None,
+                p_affine=0.75,
+                xtra_tfms=None,
+            )
+        else:
+            transforms = get_transforms(flip_vert=True, max_lighting=0.3, max_warp=0.0)
     elif transforms is False:
         transforms = ([], [])
 
@@ -345,9 +380,7 @@ class Pix2PixHDDataset(Dataset):
         self.image_list_B = image_list_B
         # self.image_list_inst = image_list_inst
 
-        self.train_tfms, self.val_tfms = _get_transforms(
-            transforms, flip_vert=flip_vert
-        )
+        self.train_tfms, self.val_tfms = _get_transforms(transforms)
         self.split = split
         self.norm_stats = norm_stats
         self.label_nc = label_nc
@@ -487,6 +520,83 @@ class Pix2PixHDDataset(Dataset):
         self.image_B.show(axes[1], rgb_bands=rgb_bands)
 
 
+class SR3Dataset(Pix2PixHDDataset):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._is_multispec = self._is_multispectral
+        self._n_channel = self.x_a[0].shape[0]
+        self.resize_to = self.x_b[0].data.shape[-1]
+        self._image_stats, self._image_stats2 = None, None
+        self.train_tfms, self.val_tfms = _get_transforms(transforms=None, model="SR3")
+
+    def __getitem__(self, idx):
+        min_vals_a = self.batch_stats_a["band_min_values"]
+        max_vals_a = self.batch_stats_a["band_max_values"]
+        min_vals_b = self.batch_stats_b["band_min_values"]
+        max_vals_b = self.batch_stats_b["band_max_values"]
+        if self._is_multispectral:
+            # to add mask loading
+            image_A = ArcGISMSImage.open(
+                self.image_list_A[idx], imagery_type=self.imagery_type
+            )
+            image_B = ArcGISMSImage.open(
+                self.image_list_B[idx], imagery_type=self.imagery_type
+            )
+
+            image_A, image_B = concat_bands(image_A, image_B)
+
+            image_A = _tensor_scaler_tfm(
+                image_A.data,
+                min_values=min_vals_a,
+                max_values=max_vals_a,
+                mode="minmax",
+            )
+            image_B = _tensor_scaler_tfm(
+                image_B.data,
+                min_values=min_vals_b,
+                max_values=max_vals_b,
+                mode="minmax",
+            )
+
+            image_A = ArcGISMSImage(image_A)
+            image_B = ArcGISMSImage(image_B)
+
+        else:
+            image_A = ArcGISMSImage.open(
+                self.image_list_A[idx],
+                imagery_type=self.imagery_type,
+                div=255,
+            )
+            image_B = ArcGISMSImage.open(
+                self.image_list_B[idx],
+                imagery_type=self.imagery_type,
+                div=255,
+            )
+
+        _resolve_tfms(self.train_tfms)
+        _resolve_tfms(self.val_tfms)
+
+        images = (image_A, image_B)
+        if self.split == "train":
+            images = apply_tfms(images, self.train_tfms, self.resize_to)
+        else:
+            images = apply_tfms(images, self.val_tfms, self.resize_to)
+        image_A, image_B = images
+
+        self.image_A = image_A
+        image_A = -1 + 2 * image_A.px  # normalize(image_A.px, *self.norm_stats)
+        image_A = image_A.data
+
+        self.image_B = image_B
+        image_B = -1 + 2 * image_B.px  # normalize(image_B.px, *self.norm_stats)
+        image_B = image_B.data
+        return (image_A, image_B), image_B
+
+    def __repr__(self):
+        item = self.__getitem__(0)
+        return f"{self.__class__.__name__}{(item[0][0].shape, item[0][1].shape)}, items_A:{len(self.image_list_A)}, items_B:{len(self.image_list_B)}"
+
+
 def create_train_val_sets(
     path,
     val_split_pct,
@@ -494,15 +604,22 @@ def create_train_val_sets(
     resize_to,
     norm_stats,
     flip_vert,
-    split_type="random",
     label_nc=False,
     _is_multispectral=False,
-    imagery_type="RGB",
     rgb_bands=None,
     norm_pct=1,
+    model_type="Pix2Pix",
+    **kwargs,
 ):
+    path_lr = kwargs.get("path_lr", None)
+    path_hr = kwargs.get("path_hr", None)
+
+    imagery_type = kwargs.get("imagery_type", "None")
     path = Path(path)
-    path_A, path_B = pix2pix_paths(path)
+    if model_type == "Pix2Pix":
+        path_A, path_B = pix2pix_paths(path)
+    else:
+        path_A, path_B = path_lr, path_hr
 
     images_A = get_files(path_A, extensions=image_extensions, recurse=True)
 
@@ -510,18 +627,21 @@ def create_train_val_sets(
 
     batch_stats_a, batch_stats_b = None, None
 
-    batch_stats_a = _batch_stats_json(
-        path,
-        ArcGISImageList(images_A),
-        norm_pct,
-        stats_file_name="esri_normalization_stats_a.json",
-    )
-    batch_stats_b = _batch_stats_json(
-        path,
-        ArcGISImageList(images_B),
-        norm_pct,
-        stats_file_name="esri_normalization_stats_b.json",
-    )
+    if model_type == "Pix2Pix":
+        batch_stats_a = _batch_stats_json(
+            path,
+            ArcGISImageList(images_A),
+            norm_pct,
+            stats_file_name="esri_normalization_stats_a.json",
+        )
+        batch_stats_b = _batch_stats_json(
+            path,
+            ArcGISImageList(images_B),
+            norm_pct,
+            stats_file_name="esri_normalization_stats_b.json",
+        )
+    else:
+        batch_stats_a, batch_stats_b = _norm_stats(path)
 
     total_num_images = len(images_B)
     val_num_images = int(total_num_images * val_split_pct)
@@ -538,7 +658,12 @@ def create_train_val_sets(
 
     val_images_A, val_images_B = (images_A[:val_num_images], images_B[:val_num_images])
 
-    train_dataset = Pix2PixHDDataset(
+    if model_type == "Pix2Pix":
+        datasetclass = Pix2PixHDDataset
+    else:
+        datasetclass = SR3Dataset
+
+    train_dataset = datasetclass(
         path,
         train_images_A,
         train_images_B,
@@ -554,7 +679,7 @@ def create_train_val_sets(
         batch_stats_b=batch_stats_b,
         rgb_bands=rgb_bands,
     )
-    val_dataset = Pix2PixHDDataset(
+    val_dataset = datasetclass(
         path,
         val_images_A,
         val_images_B,
@@ -588,12 +713,16 @@ def prepare_pix2pix_data(
     _is_multispectral,
     working_dir,
     seed,
+    dataset_type,
     **kwargs,
 ):
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
     flip_vert = kwargs.get("imagery_type", "satellite") != "oriented"
     split = kwargs.get("split", "random")
-    label_nc = is_thematic_data(path) or kwargs.get("label_nc", False)
+    if dataset_type == "Pix2Pix":
+        label_nc = is_thematic_data(path) or kwargs.get("label_nc", False)
+    else:
+        label_nc = False
     if label_nc:
         _is_multispectral = False
     imagery_type = kwargs.get("imagery_type")
@@ -607,16 +736,19 @@ def prepare_pix2pix_data(
         flip_vert=flip_vert,
         label_nc=label_nc,
         _is_multispectral=_is_multispectral,
-        imagery_type=imagery_type,
         rgb_bands=rgb_bands,
         norm_pct=norm_pct,
+        model_type=dataset_type,
+        **kwargs,
     )
 
-    databunch_kwargs = (
-        {"num_workers": 0}
-        if sys.platform == "win32"
-        else {"num_workers": os.cpu_count() - 4}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
     )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
 
     train_dl, valid_dl = create_dataloaders(datasets, batch_size, databunch_kwargs)
     device = get_device()
@@ -634,7 +766,7 @@ def prepare_pix2pix_data(
         data.path = Path(os.path.abspath(working_dir))
     data._temp_folder = _prepare_working_dir(data.path)
     data.show_batch = types.MethodType(show_batch, data)
-    data._dataset_type = "Pix2Pix"
+    data._dataset_type = dataset_type  # "Pix2Pix"
     data._downsampling_factor = kwargs.get("downsample_factor", None)
     data.val_split_pct = val_split_pct
     data.resize_to = resize_to
@@ -645,6 +777,16 @@ def prepare_pix2pix_data(
 
 
 def show_batch(self, rows=4, **kwargs):
+    """
+    This function randomly picks a few training chips and visualizes them.
+
+    =====================   ===========================================
+    **Parameter**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional int. Number of rows of results
+                            to be displayed.
+    =====================   ===========================================
+    """
     rgb_bands = kwargs.get("rgb_bands", None)
     fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
@@ -800,7 +942,9 @@ def rgb_or_ms(im_path):
     try:
         from osgeo import gdal
 
-        ds = gdal.Open(im_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
             return "ms"
         else:

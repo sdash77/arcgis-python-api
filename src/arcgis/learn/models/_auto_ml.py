@@ -27,7 +27,11 @@ try:
         add_h3,
         _extract_embeddings,
     )
-    from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.common import (
+        _get_emd_path,
+        check_path_or_url,
+        _get_hosted_dlpk,
+    )
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
     from sklearn.preprocessing import normalize
@@ -43,6 +47,16 @@ try:
     from sklearn import preprocessing
     import numpy as np
     import pandas as pd
+    from sklearn.pipeline import make_pipeline
+    from sklearn.compose import make_column_transformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import (
+        Normalizer,
+        LabelEncoder,
+        MinMaxScaler,
+        StandardScaler,
+        OrdinalEncoder,
+    )
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -113,37 +127,39 @@ class AutoML(object):
 
     **kwargs**
 
-    =====================   ===========================================
-    sensitive_variables     Optional. List of strings.
-                            Variables in the feature class/dataframe which are sensitive and prone to model bias.
-                            Ex - ['sex','race'] or ['nationality']
-    ---------------------   -------------------------------------------
-    fairness_metric         Optional. String.
-                            Name of fairness metric based on which fairness optimization should be done on the evaluated models.
-                            Available metrics for binary classification are 'demographic_parity_difference' , 'demographic_parity_ratio',
-                            'equalized_odds_difference', 'equalized_odds_ratio'.
-                            'demographic_parity_ratio' is the default.
-                            Available metrics for regression are 'group_loss_ratio' (Default) and 'group_loss_difference'.
-    ---------------------   -------------------------------------------
-    fairness_threshold      Optional. Float.
-                            Required when the chosen metric is group_loss_difference
-                            The treshold value for fairness metric. Default values are as follows:
-                            - for `demographic_parity_difference` the metric value should be below 0.1,
-                            - for `demographic_parity_ratio` the metric value should be above 0.8,
-                            - for `equalized_odds_difference` the metric value should be below 0.1,
-                            - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
-    ---------------------   -------------------------------------------
-    privileged_groups       Optional. List.
-                            List of previliged groups in the sensitive attribute.
-                            For example, in binary classification task, a privileged group is the one with the highest selection rate.
-                            Example value: [{"sex": "Male"}]
-    ---------------------   -------------------------------------------
-    unprivileged_groups     Optional. List.
-                            List of unpreviliged groups in the sensitive attribute.
-                            For example, in binary classification task, an unprivileged group is the one with the lowest selection rate.
-                            Example value: [{"sex": "Female"}]
-
-    =====================   ===========================================
+    =======================   ===========================================
+    sensitive_variables       Optional. List of strings.
+                              Variables in the feature class/dataframe which are sensitive and prone to model bias.
+                              Ex - ['sex','race'] or ['nationality']
+    -----------------------   -------------------------------------------
+    fairness_metric           Optional. String.
+                              Name of fairness metric based on which fairness optimization should be done on the evaluated models.
+                              Available metrics for binary classification are 'demographic_parity_difference' , 'demographic_parity_ratio',
+                              'equalized_odds_difference', 'equalized_odds_ratio'.
+                              'demographic_parity_ratio' is the default.
+                              Available metrics for regression are 'group_loss_ratio' (Default) and 'group_loss_difference'.
+    -----------------------   -------------------------------------------
+    fairness_threshold        Optional. Float.
+                              Required when the chosen metric is group_loss_difference
+                              The threshold value for fairness metric. Default values are as follows:
+                              - for `demographic_parity_difference` the metric value should be below 0.25,
+                              - for `demographic_parity_ratio` the metric value should be above 0.8,
+                              - for `equalized_odds_difference` the metric value should be below 0.25,
+                              - for `equalized_odds_ratio` the metric value should be above 0.8.
+                              - for `group_loss_ratio` the metric value should be above 0.8.
+                              - for `group_loss_difference` the metric value should be below 0.25,
+    -----------------------   -------------------------------------------
+    privileged_groups         Optional. List.
+                              List of previleged groups in the sensitive attribute.
+                              For example, in binary classification task, a privileged group is the one with the highest selection rate.
+                              Example value: [{"sex": "Male"}]
+    -----------------------   -------------------------------------------
+    underprivileged_groups    Optional. List.
+                              List of underprivileged groups in the sensitive attribute.
+                              For example, in binary classification task, an underprivileged group
+                              is the one with the lowest selection rate.
+                              Example value: [{"sex": "Female"}]
+    =======================   ===========================================
 
     :return: :class:`~arcgis.learn.AutoML` Object
     """
@@ -229,9 +245,10 @@ class AutoML(object):
                 + self._data._categorical_variables
                 + self._data._embedding_variables
             ]
+            self._all_data_df = self._impute_missing_values(data=self._all_data_df)
             self._all_labels = self._data._dataframe[
                 self._data._dependent_variable
-            ].values
+            ]  # .values
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
                 columns=self._data._continuous_variables
@@ -286,7 +303,13 @@ class AutoML(object):
             self._fairness_metric = kwargs.get("fairness_metric", "auto")
             self._fairness_threshold = kwargs.get("fairness_threshold", "auto")
             self._privileged_groups = kwargs.get("privileged_groups", [])
-            self._underprivileged_groups = kwargs.get("unprivileged_groups", [])
+            self._underprivileged_groups = kwargs.get("underprivileged_groups", [])
+
+            for grp in self._underprivileged_groups:
+                for key in grp:
+                    val = grp[key]
+                    if val == "":
+                        self._underprivileged_groups = []
 
             if (
                 self._fairness_metric == "group_loss_difference"
@@ -296,6 +319,11 @@ class AutoML(object):
                     "Fairness Threshold value is required to be passed when the chosen fairness metric is group_loss_difference."
                 )
                 # exit()
+
+            if self._fairness_metric == "equalised_odds_ratio":
+                self._fairness_metric = "equalized_odds_ratio"
+            if self._fairness_metric == "equalised_odds_difference":
+                self._fairness_metric = "equalized_odds_difference"
 
             self._model = base_AutoML(
                 results_path=result_path,
@@ -332,6 +360,29 @@ class AutoML(object):
                 return "auto"
         except:
             return "auto"
+
+    def _impute_missing_values(self, data=None):
+        original_dtype = data.dtypes
+        numerical_transformer = make_pipeline(SimpleImputer(strategy="median"))
+
+        categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
+
+        _procs = make_column_transformer(
+            (numerical_transformer, self._data._continuous_variables),
+            (categorical_transformer, self._data._categorical_variables),
+            (numerical_transformer, self._data._embedding_variables),
+        )
+        if data is None:
+            data = self._all_data_df
+        try:
+            processed_data = _procs.fit_transform(data)
+            processed_data_df = pd.DataFrame(
+                processed_data, columns=data.columns.values.tolist()
+            )
+            processed_data_df = processed_data_df.astype(original_dtype)
+        except:
+            processed_data_df = data
+        return processed_data_df
 
     def fit(self, sample_weight=None):
         """
@@ -427,12 +478,20 @@ class AutoML(object):
         :return:
             output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
+        col_type = str(self._validation_labels.dtype)
+        val_labels = self._validation_labels
+        if col_type == "object":
+            if isinstance(val_labels[0], float):
+                val_labels = val_labels.astype(float)
+            elif isinstance(val_labels[0], int):
+                val_labels = val_labels.astype(int)
+            else:
+                val_labels = self._validation_labels
+        val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
-                return self._model.score(
-                    self._validation_data_df, self._validation_labels
-                )
+                return self._model.score(self._validation_data_df, val_labels)
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
@@ -455,7 +514,7 @@ class AutoML(object):
         fairness_metrics        Allowed list of fairness metrics. List can
                                 have any of the metrics from the list below.
                                 Multiple metrics can be passed in the list.
-                                 1. For classification
+                                 1. For Binary classification
                                     [
                                      "equalized_odds_difference",
                                      "demographic_parity_difference",
@@ -464,9 +523,15 @@ class AutoML(object):
                                     ]
                                  2. for Regression
                                     [
-                                    "mean_absolute_error",
-                                    "mean_squared_error",
+                                    "MAE",
+                                    "MSE",
+                                    "RMSE",
+                                    "MAPE"
                                     ]
+                                 Metric should be one of the values mentioned in
+                                 the list.
+                                This method is not yet supported for multiclass
+                                classification.
         ---------------------   -------------------------------------------
         visualize               A boolean value to visualize plot of metrics
         =====================   ===========================================
@@ -481,7 +546,7 @@ class AutoML(object):
                 random_state=42,
             ).index.to_list()
         self.sensitive_feature_series = self._validation_data_df.loc[
-            :, sensitive_feature
+            :, [sensitive_feature]
         ]
         if self._sensitive_variables:
             return "Since AutoML was trained with fairness mitigation, the fairness score can be obtained by running the report() method."
@@ -494,10 +559,18 @@ class AutoML(object):
         y_true = self._data._dataframe.loc[validation_indexes][
             self._data._dependent_variable
         ]
+        y_true = y_true.reset_index(drop=True)
         y_pred = self.predict(
             self._data._dataframe.loc[validation_indexes], prediction_type="dataframe"
         )
-        y_pred = y_pred["prediction_results"].to_numpy()
+        y_pred = y_pred["prediction_results"]
+        y_pred = y_pred.reset_index(drop=True)
+
+        if self._data._is_classification:
+            le_1 = LabelEncoder()
+            le_1.fit(y_true)
+            y_true = le_1.transform(y_true)
+            y_pred = le_1.transform(y_pred)
 
         return calculate_metrics(
             self._data._is_classification,
@@ -672,12 +745,12 @@ class AutoML(object):
 
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
-                self._shap_predict, shap.sample(self._data._ml_data[0], 500)
+                self._shap_predict, shap.sample(self._all_data_df.values, 500)
             )
         else:
             explainer = shap.KernelExplainer(
                 self._shap_predict,
-                shap.sample(self._data._ml_data[0], 500),
+                shap.sample(self._all_data_df.values, 500),
                 link="logit",
             )
         filename = os.path.join(path, "model_explainer.sav")
@@ -753,10 +826,13 @@ class AutoML(object):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        emd_path_orig = Path(emd_path)
-        emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
+        is_hosted_dlpk = check_path_or_url(emd_path)
+        if is_hosted_dlpk:
+            success, emd_path = _get_hosted_dlpk(emd_path)
+
+        emd_path = _get_emd_path(emd_path)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -834,6 +910,7 @@ class AutoML(object):
             + self._data._categorical_variables
             + self._data._embedding_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict(data_df)
 
     def _shap_predict(self, data):
@@ -842,6 +919,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         if self._model._get_ml_task() == "regression":
             return self._model.predict(data_df)
         else:
@@ -853,6 +931,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_all(data_df)
 
     def _predict_proba(self, data):
@@ -861,6 +940,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_proba(data_df)
 
     def predict(

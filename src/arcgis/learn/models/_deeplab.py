@@ -506,9 +506,9 @@ class DeepLab(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
@@ -534,6 +534,7 @@ class DeepLab(ArcGISModel):
         return _emd_template
 
     def accuracy(self):
+        """Computes per pixel accuracy on validation set."""
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:

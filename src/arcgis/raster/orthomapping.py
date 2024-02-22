@@ -208,24 +208,19 @@ def _create_project(
     gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_" + name
-    if folder is not None:
-        if isinstance(folder, dict):
-            if "id" in folder:
-                folderId = folder["id"]
-                folder = folder["title"]
-        else:
-            owner = gis.properties.user.username
-            folderId = gis._portal.get_folder_id(owner, folder)
-        if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+        folder = "_orthomapping " + name
+    owner = gis.properties.user.username
+    try:
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
@@ -504,7 +499,7 @@ def _add_mission(
             else:
                 try:
                     lyr = output_collection.layers[0]
-                    cam_info = lyr._query_gps_info()
+                    cam_info = lyr.query_gps_info()
                     cam_props = cam_info["cameras"][0]
                 except:
                     # older servers may not have query gps info rest end point
@@ -517,14 +512,18 @@ def _add_mission(
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-        if "gps" in raster_type_params:
+        if (
+            raster_type_params is not None
+            and isinstance(raster_type_params, dict)
+            and "gps" in raster_type_params
+        ):
             for ele in raster_type_params["gps"]:
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
         if not gps_data:
             try:
                 lyr = output_collection.layers[0]
-                gps_info = lyr._query_gps_info()["images"]
+                gps_info = lyr.query_gps_info()["images"]
                 for img_info in gps_info:
                     from arcgis.raster._util import _to_datetime
 
@@ -688,7 +687,6 @@ def compute_sensor_model(
     mode: str = "Quick",
     location_accuracy: str = "High",
     context: Optional[dict[str, Any]] = None,
-    project: Optional[Item] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -705,14 +703,9 @@ def compute_sensor_model(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection on which to compute
                            the sensor model.
-                           The image_collection can be a portal Item or an image service URL or a URI
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
-
-                           If a project item is specified using the project parameter, then the image_collection
-                           parameter can be used to specify the flight name. If the value to the image_collection
-                           parameter is not specified, then the image collection of the last flight in the project
-                           will be used.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
@@ -860,12 +853,9 @@ def alter_processing_states(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or URI
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
-
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
     ------------------     --------------------------------------------------------------------
     new_states             Required dictionary. The state to set on the image_collection
 
@@ -942,12 +932,9 @@ def get_processing_states(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or URI
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
-
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -1082,12 +1069,9 @@ def match_control_points(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or a URI
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                            The image_collection must exist.
-                           
-                           Project item could also be specified. The image collection of the last flight will be used if the project item 
-                           is specified.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -1275,12 +1259,9 @@ def color_correction(
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. This is the image collection that will be adjusted.
 
-                                             The image_collection can be a portal Item or an image service URL or a URI
+                                             The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                                              The image_collection must exist.
-                                             
-                                             Project item could also be specified. The image collection of the last flight will be used if the project item 
-                                             is specified.
     ------------------------------------     --------------------------------------------------------------------
     color_correction_method                  Required string. This is the method that will be used for color
                                              correction computation. The available options are:
@@ -1459,12 +1440,9 @@ def compute_control_points(
     ------------------------------------    --------------------------------------------------------------------
     image_collection                        Required. This is the image collection that will be adjusted.
 
-                                            The image_collection can be a portal Item or an image service URL or a URI
+                                            The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                                             The image_collection must exist.
-                                            
-                                            Project item could also be specified. The image collection of the last flight will be used if the project item 
-                                            is specified.
     ------------------------------------    --------------------------------------------------------------------
     reference_image                         This is the reference image service that can be used to generate ground control 
                                             points set with the image service. 
@@ -1621,12 +1599,9 @@ def compute_seamlines(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           
-                           Project item could also be specified. The image collection of the last flight will be used if the project item 
-                           is specified.
+                           The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     seamlines_method       Required string. These are supported methods for generated seamlines for the image collection.
     
@@ -1748,11 +1723,9 @@ def edit_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
+                           The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -1897,12 +1870,9 @@ def generate_dem(
     ------------------     --------------------------------------------------------------------
     image_collection       Required. The input image collection that will be used
                            to generate the DEM from.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           
-                           Project item could also be specified. The image collection of the last flight will be used if the project item 
-                           is specified. Also the dem will be created in the project's folder.
+                           The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     out_dem                This is the output digital elevation model.
                            It can be a url, uri, portal item, or string representing the name of output dem 
@@ -2167,11 +2137,9 @@ def generate_orthomosaic(
     -----------------------------------    --------------------------------------------------------------------
     image_collection                       Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
-                                           The image_collection can be a portal Item or an image service URL or a URI
-                                           The image_collection must exist.
+                                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                                           is specified. Also the orthomosaic will be created in the project's folder.
+                                           The image_collection must exist.
     -----------------------------------    --------------------------------------------------------------------
     out_ortho                               Required. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
@@ -2254,6 +2222,8 @@ def generate_orthomosaic(
 
     update_flight_json = False
     from ._mission import Mission
+
+    flight_json_details = {}
 
     if isinstance(image_collection, Mission):
         mission = image_collection
@@ -2471,11 +2441,10 @@ def generate_report(
     -------------------    --------------------------------------------------------------------
     image_collection       Required. The input image collection that should be
                            used to generate a report from.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
 
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
+
+                           The image_collection must exist.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
     -------------------    --------------------------------------------------------------------
@@ -2616,12 +2585,9 @@ def query_control_points(
     image_collection       Required, the input image collection on which to query
                            the the control points.
 
-                           The image_collection can be a portal Item or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
-
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
 
@@ -2705,12 +2671,9 @@ def reset_image_collection(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to reset
-                           The image_collection can be a portal Item or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
-
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -2722,6 +2685,8 @@ def reset_image_collection(
 
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+
+    flight_json_details = {}
 
     if isinstance(image_collection, Mission):
         mission = image_collection
@@ -2735,7 +2700,10 @@ def reset_image_collection(
         }
 
     return gis._tools.orthomapping.reset_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=image_collection,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -2818,6 +2786,8 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = om_item
     ------------------------------------     --------------------------------------------------------------------
+    definition                               Optional dictionary. Custom project definition.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional  :class:`~arcgis.gis.GIS` . Repesents the GIS object of the Orthomapping
                                              Project item.
     ====================================     ====================================================================
@@ -2842,13 +2812,29 @@ class Project:
             try:
                 project = _create_project(name=project, definition=definition)
             except:
-                raise RuntimeError("Creation of orthompping project failed.")
+                raise RuntimeError("Creation of orthomapping project failed.")
 
-        self._project_item = project
-        self._project_name = self._project_item.name
+        if project.type == "Ortho Mapping Project":
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Ortho Mapping Project"
+            )
+        try:
+            self._project_name = self._project_item.title
+        except:
+            self._project_name = self._project_item.name
+
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
 
     @property
     def missions(self):
@@ -2880,6 +2866,24 @@ class Project:
         res_list = self._project_item.resources.list()
         return len(res_list)
 
+    @property
+    def item(self):
+        """
+        The ``item`` property returns the portal item associated with the Project.
+
+        :return: A portal item
+        """
+        return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
+
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
     #        project_item = _create_project(name=name,
@@ -2907,8 +2911,6 @@ class Project:
         ======================               ====================================================================
         **Parameter**                        **Description**
         ----------------------               --------------------------------------------------------------------
-        project_item                         Required Item. The orthomapping project item to which the flight has to be added
-        ----------------------               --------------------------------------------------------------------
         image_list                           Required, the list of input images to be added to
                                              the image collection being created. This parameter can
                                              be a list of image paths or a path to a folder containing the images
@@ -2916,7 +2918,7 @@ class Project:
                                              The function can create hosted imagery layers on enterprise from 
                                              local raster datasets by uploading the data to the server.    
         ----------------------               --------------------------------------------------------------------
-        mission_name                         Optional string. The name of the flight.
+        mission_name                         Optional string. The name of the mission.
         ----------------------               --------------------------------------------------------------------
         image_collection                     Optional string, the name of the image collection to create.
                   
@@ -2935,7 +2937,7 @@ class Project:
                                              by the create_project method
         ----------------------               --------------------------------------------------------------------
         raster_type_name                     Optional string. The name of the raster type to use for adding data to \
-                                             the image collection. Default is "UAV/UAS"
+                                             the image collection.
 
                                              Example:
 
@@ -3019,7 +3021,7 @@ class Project:
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
         ======================               ====================================================================
 
-        :return: The imagery layer item
+        :return: Mission object
 
         """
 
@@ -3051,7 +3053,7 @@ class Project:
         name                                 Required string. The name of the Mission.
         ==================                   ====================================================================
 
-        :return: The imagery layer url
+        :return: Mission object
 
 
         """

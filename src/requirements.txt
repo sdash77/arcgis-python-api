@@ -5,10 +5,10 @@ cryptography
 ipywidgets >7,<8
 widgetsnbextension >=3
 pandas >=2.0.0
-numpy >=1.21.6
+numpy >=1.21.6,<2
 matplotlib
 keyring >=23.3.0
-lerc
+pylerc
 ujson >=3
 jupyterlab
 python-certifi-win32;python_version<3.10
@@ -26,3 +26,5 @@ requests-gssapi
 dask  >=2023.3.2
 pyspnego >=0.8.0
 matplotlib-inline
+pyarrow >=12.0.0
+puremagic >=1.15,<2

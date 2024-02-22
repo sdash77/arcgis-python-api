@@ -3,7 +3,6 @@ import uuid
 import copy
 import shutil
 import tempfile
-import json
 import logging
 from arcgis._impl.common._clone import CloneNode, _deep_get
 from arcgis._impl.common._clone import (
@@ -229,6 +228,8 @@ class _StoryMapDefinition(CloneNode):
             webmap_mapper = {}
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
+                if not webmap_to_copy:
+                    continue
 
                 # check if webmap is in clone mapping
                 if wm in self._clone_mapping["Item IDs"]:
@@ -261,6 +262,10 @@ class _StoryMapDefinition(CloneNode):
                             webmap_to_copy.id
                         ][0]
                 # if nothing was cloned, means item exists. grab it
+                elif (
+                    getattr(webmap_to_copy, "groupDesignations", None) == "livingatlas"
+                ):
+                    continue
                 else:
                     exist_item = _search_org_for_existing_item(
                         self.target, webmap_to_copy
@@ -307,10 +312,19 @@ class _StoryMapDefinition(CloneNode):
                 new_item.resources.add(self.resources, archive=True)
             for resource in new_item.resources.list():
                 if ".json" in resource["resource"]:
-                    res = json.dumps(new_item.resources.get(resource["resource"]))
+                    s_res = json.dumps(
+                        new_item.resources.get(resource["resource"]), ensure_ascii=False
+                    )
                     for k, v in webmap_mapper.items():
-                        res = res.replace(k, v)
-                    new_item.resources.update(file_name=resource["resource"], text=res)
+                        s_res = s_res.replace(k, v)
+                    res = json.loads(s_res)
+                    tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
+                    json.dump(res, tfile)
+                    tfile.seek(0)
+                    new_item.resources.update(
+                        file_name=resource["resource"],
+                        file=tfile.name,
+                    )
             if new_item.url:
                 new_item.update(
                     {"url": new_item.url.replace(self.portal_item.id, new_item.id)}

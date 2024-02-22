@@ -43,7 +43,6 @@ except Exception as e:
 
 
 class PointCNN(ArcGISModel):
-
     """
     Model architecture from https://arxiv.org/abs/1801.07791.
     Creates a Point Cloud classification model.
@@ -91,6 +90,9 @@ class PointCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     sample_point_num        Optional integer. The number of points that the model
                             will actually process.
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss.
+                            Default: False
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.PointCNN`  Object
@@ -108,6 +110,7 @@ class PointCNN(ArcGISModel):
 
         self._backbone = None
         self.sample_point_num = kwargs.get("sample_point_num", data.max_point)
+        self._focal_loss = kwargs.get("focal_loss", False)
         self.learn = Learner(
             data,
             PointCNNSeg(
@@ -117,7 +120,7 @@ class PointCNN(ArcGISModel):
                 kwargs.get("encoder_params", None),
                 kwargs.get("dropout", None),
             ),
-            loss_func=CrossEntropyPC(data.c),
+            loss_func=CrossEntropyPC(data.c, data.device, self._focal_loss),
             metrics=[
                 AverageMetric(accuracy),
                 AverageMetric(precision),
@@ -348,11 +351,13 @@ class PointCNN(ArcGISModel):
         import random
 
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
+        _emd_template["ModelType"] = "PointCloudClassification"
         _emd_template["Framework"] = "N/A"
         _emd_template["ModelConfiguration"] = "N/A"
         _emd_template["ExtractBands"] = "N/A"
         _emd_template["ModelParameters"]["encoder_params"] = self.encoder_params
         _emd_template["ModelParameters"]["sample_point_num"] = self.sample_point_num
+        _emd_template["FocalLoss"] = self._focal_loss
 
         _emd_template["DataAttributes"]["block_size"] = self._data.block_size
         _emd_template["DataAttributes"]["max_point"] = self._data.max_point

@@ -1,6 +1,7 @@
 """
 Classes and objects used to manage published services.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import annotations
@@ -16,6 +17,7 @@ from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 from typing import Optional
 from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
+from ._system import AsyncJob
 
 
 ########################################################################
@@ -1422,6 +1424,7 @@ class Service(BaseServer):
     _extensions = None
     _jm = None
     _whm = None
+    _gis = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False, **kwargs):
@@ -1454,6 +1457,7 @@ class Service(BaseServer):
         self._url = url
         self._currentURL = url
         self._con = con
+        self._gis = gis
         # if url.lower().find('gpserver') > -1:
         #    self.jobs = self._jobs
         if initialize:
@@ -1700,7 +1704,10 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def webhook_manager(self) -> ServiceWebHookManager:
-        """Returns the Service Based Webhook Manager (ArcGIS Server 11.1+)"""
+        """Returns an instance of :class:`~arcgis.gis.server.ServiceWebHookManager`,
+        the feature service-based webhook manager available at
+        *ArcGIS Server 11.1* and later.
+        """
         if self._server_version() >= [11, 0]:
             url: str = f"{self._url}/webhooks"
             if self._whm is None:
@@ -1856,7 +1863,9 @@ class Service(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def edit(self, service: dict) -> bool:
+    def edit(
+        self, service: dict, future: bool = False
+    ) -> tuple[bool, dict] | tuple[bool, AsyncJob]:
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -1867,10 +1876,13 @@ class Service(BaseServer):
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service JSON as a dictionary.
+        ---------------     --------------------------------------------------------------------
+        future              Optional bool. Allows the operation to be run asynchronously when
+                            `True`, else the operation is run synchronously.
         ===============     ====================================================================
 
 
-        :return: Boolean
+        :return: Boolean and the Service Message when future='False' or AsyncJob when future=`True`
 
 
         """
@@ -1880,11 +1892,17 @@ class Service(BaseServer):
             params["service"] = service
         elif isinstance(service, dict):
             params["service"] = json.dumps(service)
+        if future:
+            params["runAsync"] = future
         res = self._con.post(path=url, postdata=params)
-        if "status" in res:
-            self._properties = None
-            return res["status"] == "success"
-        return res
+        self._properties = None
+        if future and "jobid" in res:
+            job_url: str = f'{url.split("/services/")[0]}/system/jobs/{res["jobid"]}'
+            return True, AsyncJob(url=job_url, session=self._con._session)
+        elif "status" in res:
+            return res["status"] == "success", res
+        else:
+            return False, res
 
     # ----------------------------------------------------------------------
     @property

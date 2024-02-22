@@ -40,17 +40,16 @@ import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/root/data_for_testing/test_automation/data/train_model_regression"
+    data_folder = r"/root/test_automation/data/test_train_model/train_model_regression"
 else:
-    data_folder = r"/root/data_for_testing/test_automation/data/train_model"
+    data_folder = r"/root/test_automation/data/test_train_model/train_model"
 data_folder_inference = (
-    r"/root/data_for_testing/test_automation/data/train_inference"
+    r"/root/test_automation/data/test_train_model/train_inference"
 )
 data_folder_ms = (
-    r"/root/data_for_testing/test_automation/data/train_model_ms"
+    r"/root/test_automation/data/test_train_model/train_model_ms"
 )
-authorization_path = r"/root/data_for_testing/test_automation/data/properties/properties.json"
-
+authorization_path = r"/root/test_automation/data/test_train_model/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],
@@ -767,24 +766,6 @@ data = {
         "datapath": "fcn_data",
         "model_test": "fcn_test",
         "prepare_tabular_data": {"explanatory_variables": X},
-        "gis_content_search": {
-            "query": "calgary_no_southland_solar owner:api_data_owner",
-            "item_type": "feature layer",
-        },
-        "should_test": True,
-        "test_feature_layer": True,
-        "regression_parameter": "score",
-        "regression_test_score": 0.40,
-        "regression_epochs": 15,
-        "inferencing_parameter": {"model_type": "prediction_layer"},
-        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
-    },
-    "ml": {
-        "model_name": "machine_learning",
-        "model": MLModel,
-        "datapath": "ml_data",
-        "model_test": "ml_test",
-        "prepare_tabular_data": {"explanatory_variables": X, "preprocessors": True},
         "gis_content_search": {
             "query": "calgary_no_southland_solar owner:api_data_owner",
             "item_type": "feature layer",
