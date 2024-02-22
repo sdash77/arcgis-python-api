@@ -623,9 +623,7 @@ class PlatformServiceManager(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         ==================     ====================================================================
         **Parameter**           **Description**
@@ -639,9 +637,7 @@ class PlatformServiceManager(BaseServer):
         ==================     ====================================================================
 
         """
-        super(PlatformServiceManager, self).__init__(
-            connection=connection, url=url
-        )
+        super(PlatformServiceManager, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
@@ -744,9 +740,7 @@ class PlatformService(BaseServer):
     _con = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -819,9 +813,7 @@ class ConfigurationStore(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -837,9 +829,7 @@ class ConfigurationStore(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ConfigurationStore, self).__init__(
-            connection=connection, url=url
-        )
+        super(ConfigurationStore, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
@@ -963,7 +953,7 @@ class AsyncJob:
         resp: requests.Response = self.session.get(
             self.url,
             params={
-                "f": 'json',
+                "f": "json",
             },
         )
         resp.raise_for_status()
@@ -978,13 +968,13 @@ class AsyncJob:
 
         i: int = 1
         max_wait: int = 5
-        while self.properties['status'] in ["EXECUTING", "CANCELLING"]:
+        while self.properties["status"] in ["EXECUTING", "CANCELLING"]:
             time.sleep(i)
             i += 1
-            if self.properties['status'] in [
-                'COMPLETED',
-                'FAILED',
-                'CANCELLED',
+            if self.properties["status"] in [
+                "COMPLETED",
+                "FAILED",
+                "CANCELLED",
             ]:
                 break
             if i > max_wait:
@@ -1008,9 +998,7 @@ class Jobs(BaseServer):
     _url = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1177,9 +1165,7 @@ class ServerProperties(BaseServer):
     _json_dict = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1195,9 +1181,7 @@ class ServerProperties(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ServerProperties, self).__init__(
-            connection=connection, url=url
-        )
+        super(ServerProperties, self).__init__(connection=connection, url=url)
         if url.lower().endswith("/properties"):
             self._url = url
         else:
@@ -1466,9 +1450,7 @@ class ServerDirectory(BaseServer):
     _virtualPath = None
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url: str, connection: Connection, initialize: bool = False
-    ):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
