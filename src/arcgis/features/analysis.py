@@ -10,6 +10,7 @@ from .analyze_patterns import (
     find_point_clusters,
     interpolate_points,
     summarize_center_and_dispersion,
+    calculate_composite_index,
 )
 from .use_proximity import (
     connect_origins_to_destinations,
