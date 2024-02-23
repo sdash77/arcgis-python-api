@@ -233,6 +233,19 @@ def model_pred(model, input):
     return pred
 
 
+def mask_iou(mask1, mask2):
+    mask1 = mask1.permute(0, 2, 3, 1)
+    mask2 = mask2.permute(0, 2, 3, 1)
+    mask1 = torch.reshape(mask1 > 0, (-1, mask1.shape[-1])).type(torch.float64)
+    mask2 = torch.reshape(mask2 > 0, (-1, mask2.shape[-1])).type(torch.float64)
+    area1 = torch.sum(mask1, dim=0)
+    area2 = torch.sum(mask2, dim=0)
+    intersection = torch.sum(mask1 * mask2, dim=0)
+    union = area1 + area2 - intersection
+    iou = intersection / (union + 1e-6)
+    return iou
+
+
 def intersect_and_union(pred_label, label, num_classes):
     intersect = pred_label[pred_label == label]
     area_intersect = torch.histc(

@@ -39,7 +39,8 @@ class MyFasterRCNN:
         import torchvision
         import fastai
 
-        tvisver = [int(x) for x in torchvision.__version__.split(".")]
+        tvers_split = torchvision.__version__.split(".")
+        tvisver = [int(tvers_split[0]), int(tvers_split[1])]
     except:
         pass
 
