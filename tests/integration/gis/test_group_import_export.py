@@ -63,7 +63,7 @@ class TestGroupImportExport(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=True
         )  # SHould Return an StatusJob
@@ -92,7 +92,7 @@ class TestGroupImportExport(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
 
         epk_file = new_group.migration.create(
             items=[pitem], future=False
@@ -128,7 +128,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -162,7 +162,7 @@ class TestImport2Group(unittest.TestCase):
             data=export_package_file,
         )
 
-        new_item.sharing._share(groups=[group_dest])
+        new_item.sharing.groups.add(group_dest)
         m = group_dest.migration
         print("inspecting")
         inspection = m.inspect(new_item)
@@ -198,7 +198,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -236,7 +236,7 @@ class TestImport2Group(unittest.TestCase):
         new_group = gis.groups.create(
             title="export_test_group", tags="a,b,c"
         )
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -254,7 +254,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group2342", tags="a,b,c"
         )
 
-        epk_file.sharing._share(groups=[new_group])
+        epk_file.sharing.groups.add(new_group)
         m = new_group.migration
         assert isinstance(m, GroupMigrationManager)
         res = m.inspect(epk_file)
