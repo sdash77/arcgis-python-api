@@ -374,10 +374,10 @@ class DeepSort(ArcGISModel):
 
         # TODO: if detect_interval == 1, check for track_status
         if np.size(outputs) > 0:
-            bbox_xywh = outputs[:, :4].astype(np.int)
-            track_identities = outputs[:, -3].astype(np.int)
+            bbox_xywh = outputs[:, :4].astype(int)
+            track_identities = outputs[:, -3].astype(int)
             track_scores = outputs[:, -2]
-            track_ages = outputs[:, -1].astype(np.int)
+            track_ages = outputs[:, -1].astype(int)
             for i in range(0, len(self.track_list)):
                 self.track_list[i].status = TrackStatus.lost.value
 
