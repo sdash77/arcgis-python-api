@@ -4,7 +4,7 @@ about:
   license: Esri Master License Agreement (MLA)
   summary: ArcGIS API for Python
 build:
-  number: '0'
+  number: {{ environ.get('BUILD_NUMBER', '0') }}
 package:
   name: arcgis
   version: 2.3.0
@@ -46,7 +46,9 @@ requirements:
   - matplotlib-inline
   - pyarrow >=11.0.0
 source:
-  path: ../../src
+  git_url: ../..
 test:
   imports:
   - arcgis.gis
+extra:
+  build_string: {{ GIT_BUILD_STR }}
