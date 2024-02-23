@@ -4,6 +4,7 @@ These tools are used to identify areas that meet a number of different criteria 
 find_similar_locations finds locations most similar to one or more reference locations based on
 criteria you specify.
 """
+
 from __future__ import annotations
 import json as _json
 import logging as _logging

@@ -1143,7 +1143,7 @@ def prepare_las_data(
                     block_size_,
                     2 * (xyz_max[0, -1] - xyz_min[0, -1]),
                 )
-                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(np.int)
+                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(int)
 
                 blocks, point_block_indices, block_point_counts = np.unique(
                     xyz_blocks, return_inverse=True, return_counts=True, axis=0
@@ -1194,7 +1194,7 @@ def prepare_las_data(
                             ],
                             axis=-1,
                         )
-                        block_point_indices[block_idx] = np.array([], dtype=np.int)
+                        block_point_indices[block_idx] = np.array([], dtype=int)
                         block_merge_count = block_merge_count + 1
                         break
 
@@ -1212,7 +1212,7 @@ def prepare_las_data(
                     block_points = xyz[point_indices]
                     block_min = np.amin(block_points, axis=0, keepdims=True)
                     xyz_grids = np.floor((block_points - block_min) / grid_size).astype(
-                        np.int
+                        int
                     )
                     grids, point_grid_indices, grid_point_counts = np.unique(
                         xyz_grids, return_inverse=True, return_counts=True, axis=0
@@ -1300,15 +1300,15 @@ def prepare_las_data(
                         data[idx_in_batch, 0:point_num, ...] = block_xzyrgbi[
                             start:end, :
                         ]
-                        unnormalized_data[
-                            idx_in_batch, 0:point_num, ...
-                        ] = unnormalized_block_xzyrgbi[start:end, :]
+                        unnormalized_data[idx_in_batch, 0:point_num, ...] = (
+                            unnormalized_block_xzyrgbi[start:end, :]
+                        )
                         data_num[idx_in_batch] = point_num
                         label[idx_in_batch] = dataset_idx  # won't be used...
                         label_seg[idx_in_batch, 0:point_num] = block_labels[start:end]
-                        indices_split_to_full[
-                            idx_in_batch, 0:point_num
-                        ] = point_indices[start:end]
+                        indices_split_to_full[idx_in_batch, 0:point_num] = (
+                            point_indices[start:end]
+                        )
 
                         if ((idx + 1) % batch_size == 0) or (
                             block_idx == idx_last_non_empty_block
@@ -2853,7 +2853,6 @@ def augment(points, xforms, range=None):
 
 
 class Transform3d(object):
-
     """
     Create transformations for 3D datasets, that can be used in
     :meth:`~arcgis.learn.prepare_data` to apply data augmentation

@@ -92,9 +92,9 @@ def cover(
             "title": orig_data["title"] if title is None else title,
             "summary": orig_data["summary"] if summary is None else summary,
             "byline": orig_data["byline"] if by_line is None else by_line,
-            "titlePanelPosition": orig_data["titlePanelPosition"]
-            if by_line is None
-            else "start",
+            "titlePanelPosition": (
+                orig_data["titlePanelPosition"] if by_line is None else "start"
+            ),
         },
     }
 
@@ -772,6 +772,8 @@ def _assign_node_class(story, node_id):
         node = Content.Timeline(story=story, node_id=node_id)
     elif node_type == "tour":
         node = Content.MapTour(story=story, node_id=node_id)
+    elif node_type == "expressmap":
+        node = Content.ExpressMap(story=story, node_id=node_id)
     elif node_type == "immersive":
         # immersive has subtype sidecar (more to add later)
         subtype = story._properties["nodes"][node_id]["data"]["type"]

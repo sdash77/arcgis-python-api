@@ -31,14 +31,17 @@ try:
     from fastai.vision import flatten_model
     from .._utils.segmentation_loss_functions import FocalLoss, MixUpCallback, DiceLoss
 
-    #
+    _segm_model = None
     try:
         from torchvision.models.segmentation.segmentation import _segm_model
     except:
-        from torchvision.models.segmentation.segmentation import (
-            _segm_resnet as _segm_model,
-        )
-    #
+        try:
+            from torchvision.models.segmentation.segmentation import (
+                _segm_resnet as _segm_model,
+            )
+        except:
+            pass
+
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
@@ -158,12 +161,23 @@ def _create_deeplab(
     """
     # model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
 
-    model = _segm_model("deeplabv3", "resnet101", 21, True, pretrained_backbone=False)
-    if pretrained:
-        state_dict = models.utils.load_state_dict_from_url(
-            models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+    model = None
+    if not _segm_model is None:
+        model = _segm_model(
+            "deeplabv3", "resnet101", 21, True, pretrained_backbone=False
         )
-        model.load_state_dict(state_dict)
+        if pretrained:
+            state_dict = models.utils.load_state_dict_from_url(
+                models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+            )
+            model.load_state_dict(state_dict)
+    else:
+        from torchvision.models.segmentation import deeplabv3_resnet101
+
+        model = deeplabv3_resnet101(
+            pretrained, True, 21, True, False
+        )  # vvit Vikash bug fix done
+
     model = _DeepLabOverride(
         chip_size,
         num_class,
@@ -506,9 +520,9 @@ class DeepLab(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation

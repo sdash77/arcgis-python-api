@@ -231,7 +231,7 @@ def get_true_positive(mask1, mask2, buffer):
                 max(indices[0][ind] - buffer, 0) : indices[0][ind] + buffer + 1,
                 max(indices[1][ind] - buffer, 0) : indices[1][ind] + buffer + 1,
             ]
-        ).astype(np.int)
+        ).astype(int)
     return tp
 
 
