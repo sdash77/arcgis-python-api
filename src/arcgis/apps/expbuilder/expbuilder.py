@@ -9,6 +9,7 @@ from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
 import tempfile
+from arcgis._impl.common._deprecate import deprecated
 
 try:
     import ujson as json
@@ -750,6 +751,12 @@ class WebExperience(object):
             return self._item.url
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version="2.3.0",
+        details="Pass in the Web Experience item to `gis.content.clone_items()` instead.",
+    )
     def clone(self, target, owner, **kwargs):
         """
         Clones the experience and all of it's data sources to a target GIS. User must
@@ -774,58 +781,11 @@ class WebExperience(object):
             The item corresponding to the cloned experience in the target GIS.
         """
 
-        def _clone_dict(data_dict, source, target, owner, **kwargs):
-            """
-            Helper function to clone items and update appropriate dict
-            """
-            new_dict = data_dict
-            new_dict["attributes"]["portalUrl"] = target.url
-            for k, v in new_dict["dataSources"].items():
-                if "itemId" not in v:
-                    continue
-                v["portalUrl"] = target.url
-                item = source.content.get(v["itemId"])
-                clone_result = target.content.clone_items([item], owner=owner, **kwargs)
-                if clone_result:
-                    v["itemId"] = clone_result[0].itemid
-                    if "url" in v:
-                        v["url"] = clone_result[0].url
-                else:
-                    targ_item = target.content.search(item.title)[0]
-                    v["itemId"] = targ_item.itemid
-                    if "url" in v:
-                        v["url"] = targ_item.url
-
-            return new_dict
-
         exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
         if exp_clone:
-            new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
-            target_exp = WebExperience(exp_clone[0], gis=target)
-            target_exp._expdict = new_dict
-            # Create a temporary file and write data to it
-            with tempfile.NamedTemporaryFile(
-                mode="w+", suffix=".json", delete=False
-            ) as tfile:
-                json.dump(self._expdict, tfile)
-                # Close the file explicitly
-                tfile.close()
-            target_exp._item.resources.update(
-                folder_name="config", file_name="config.json", file=tfile.name
-            )
-            keywords = target_exp._item.typeKeywords
-            for word in keywords:
-                if "status" in word:
-                    if "Published" in word or "Changed" in word:
-                        new_data = _clone_dict(
-                            self._item.get_data(), self._gis, target, owner, **kwargs
-                        )
-                        target_exp._item.update(item_properties={}, data=new_data)
-                    else:
-                        target_exp._item.update(
-                            item_properties={}, data={"__not_publish": True}
-                        )
-                    break
-            return target_exp._item
+            for cloned_item in exp_clone:
+                if cloned_item.type == "Web Experience":
+                    return cloned_item
+            return False
         else:
             return False
