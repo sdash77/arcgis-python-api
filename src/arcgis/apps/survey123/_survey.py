@@ -200,7 +200,7 @@ class SurveyManager:
             description=description,
             thumbnail=thumbnail,
         )
-        form_item = folder_obj.add(item_properties=form_properties).result()
+        form_item = folder_obj.add(item_properties=form_properties, text="{}").result()
 
         uid = "%s" % uuid.uuid4().hex
         service = self._gis.content.create_service(
