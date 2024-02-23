@@ -2216,15 +2216,15 @@ class NetworkDatasetLayer(NetworkLayer):
                 travel_mode = _utils.find_travel_mode(
                     gis=self._gis, travel_mode=travel_mode
                 )
-                params["travel_mode"] = travel_mode
+                params["travelMode"] = travel_mode
             elif isinstance(travel_mode, dict):
-                travel_mode = json.dumps(travel_mode)
-                params["travel_mode"] = travel_mode
+                # travel_mode = json.dumps(travel_mode)
+                params["travelMode"] = travel_mode
             else:
                 travel_mode = _utils.find_travel_mode(
                     gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
                 )
-                params["travel_mode"] = travel_mode
+                params["travelMode"] = travel_mode
 
         if barriers is not None:
             params["barriers"] = _handle_spatial_inputs(barriers)
@@ -2248,4 +2248,4 @@ class NetworkDatasetLayer(NetworkLayer):
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Locate")
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, params=params)
