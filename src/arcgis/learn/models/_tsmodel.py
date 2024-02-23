@@ -1213,6 +1213,8 @@ class TimeSeriesModel(ArcGISModel):
         """
         Prints the graph with predictions.
 
+        Experimental support for multivariate timeseries.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------

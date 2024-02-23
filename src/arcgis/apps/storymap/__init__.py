@@ -26,6 +26,9 @@ from .story_content import (
     Language,
     SlideLayout,
     SlideSubLayout,
+    Block,
+    Table,
+    ExpressMap,
 )
 
-__all__ = ["JournalStoryMap", "StoryMap", "Briefing"]
+__all__ = ["StoryMap", "Briefing"]
