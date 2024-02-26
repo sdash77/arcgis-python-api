@@ -4787,11 +4787,27 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                         This parameter is available in ArcGIS Enterprise 11.2 or higher.
         ----------------------------    ---------------------------------------------------------
-        time_field                      Optional string. The date field that will be used to calculate the time interval for the analysis.
+        time_field                      Optional string. Specifies the field in the `analysis_layer`
+                                        value that contains a timestamp for each feature. This parameter
+                                        is only available in ArcGIS Online.
+
+                                        Example: `time_field = "start_time"`
         ----------------------------    ---------------------------------------------------------
-        search_time_interval            Optional float. The time interval to consider. The Minimum Features per Cluster specified must be found within this time interval for cluster membership.
+        search_time_interval            Optional float. A value that will be used to determine
+                                        whether features form a space-time cluster. The search
+                                        time interval spans before and after the time of each feature.
+                                        This parameter is only available in ArcGIS Online.
+
+                                        Example: `search_time_interval = 4`
         ----------------------------    ---------------------------------------------------------
-        search_time_interval_unit       Optional string. The time unit to be used with the time interval value specified for ``search_time_interval``. You must provide a value if ``search_time_interval`` has been set.
+        search_time_interval_unit       Optional string. The unit that will be used with the time value
+                                        specified for `search_time_interval`. You must provide a value
+                                        if `search_time_interval` has been set. This parameter is
+                                        only available in ArcGIS Online.
+
+                                        Values: "Seconds" | "Minutes" | "Hours" | "Days" | "Weeks" | "Months" | "Years"
+
+                                        Example: `search_time_unit = "Minutes"`
         ============================    =========================================================
 
         :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
