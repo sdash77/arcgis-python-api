@@ -230,7 +230,7 @@ class DataPipelines:
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
+    url                 Required String. The `url` of the data pipeline endpoint.
     ---------------     --------------------------------------------------------------------
     gis                 Required GIS. The `GIS` object that represents the current organization.
     ===============     ====================================================================
