@@ -2075,6 +2075,24 @@ class Project:
                 self._spatial_reference = None
         
         return self._spatial_reference
+    
+    @property
+    def item(self):
+        """
+        The ``item`` property returns the portal item associated with the Project.
+
+        :return: A portal item
+        """
+        return self._project_item
+    
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

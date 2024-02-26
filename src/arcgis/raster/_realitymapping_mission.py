@@ -1,9 +1,12 @@
 from __future__ import annotations
+import logging
 from typing import Any, Optional
 from arcgis.gis import GIS, Item
 
 
 from arcgis.raster.realitymapping import Project
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Mission:
@@ -58,11 +61,14 @@ class Mission:
 
         self._project_item = project._project_item
         self._gis = project._gis
-        self._mission_json = self._get_mission_json(self._mission_name)
         self._workspace = self._mission_json.get("workspace", None)
         self._collection = None
         self._resource_info = self._resource_info(self._mission_name)
 
+    @property
+    def _mission_json(self):
+        return self._get_mission_json(self._mission_name)
+    
     @property
     def products(self):
         """
@@ -150,6 +156,157 @@ class Mission:
         except:
             pass
         return self._workspace
+    
+    def _update_mission_json(self, mission_json):
+        rm = self._project_item.resources
+        resource = self._resource_info
+        resource_name = resource["resource"]
+
+        resource_props = resource["properties"]
+        import json
+
+        properties = json.loads(resource["properties"])
+
+        import tempfile, uuid, os
+
+        fname = resource_name.split("/")[1]
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, fname)
+        with open(temp_file, "w") as writer:
+            json.dump(mission_json, writer)
+        del writer
+
+        try:
+            rm.update(
+                file=temp_file,
+                text=mission_json,
+                folder_name="flights",
+                file_name=fname,
+                properties=properties,
+            )
+        except:
+            raise RuntimeError("Error updating the mission resource")
+        
+    def delete_product(self, product):
+        """
+        The ``delete_product`` method deletes the product specified by the product parameter.
+
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        product                              Required string, the product that needs to be deleted from the mission.
+                                             It could be one of "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"
+        ==================                   ====================================================================
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        if product.lower() not in ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]:
+            raise RuntimeError("Invalid product type")
+        
+        product = product.lower()
+
+        mission_json = self._mission_json
+        if "items" in mission_json:
+            for key in mission_json["items"]:
+                if key == product:
+                    item_info = mission_json["items"][key]
+                    if isinstance(item_info, dict) and "itemId" in item_info:
+                        item_object = self._gis.content.get(item_info["itemId"])
+                        if item_object is None:
+                            return False
+                        deleted = item_object.delete()
+                        if deleted:
+                            mission_json["items"].update({key: {}})
+                            if key in mission_json["jobs"]:
+                                mission_json["jobs"].update({key: {"checked": False}})
+                            self._update_mission_json(mission_json)
+                            return True
+                    elif item_info is None:
+                        return False
+        return False
+
+    def _get_product_item(self, product):
+        item_id = None
+        item = None
+        item_dict = self._mission_json.get("items", {})
+
+        product_info = item_dict.get(product, {})
+        if isinstance(product_info, dict):
+            item_id = product_info.get("itemId", None)
+
+        if item_id is not None:
+            item = self._gis.content.get(item_id)
+
+        return item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the Mission and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        try:
+            gis = self._gis
+            project = self._project
+            project_item = project._project_item
+            resource_manager = project_item.resources
+            resource = self._resource_info
+            resource_name = resource["resource"]
+
+            # mission_json = self._get_mission_json(self._mission_name)
+            mission_json = self._mission_json
+            oid = mission_json["oid"]
+
+            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
+            items_list = []
+            image_collection_item = None
+            
+            for product in products_list:
+                item = self._get_product_item(product)
+                items_list.append(item)
+                # Store the image collection item separately as well since we need it below
+                if product == "imageCollection":
+                    image_collection_item = item
+            
+            prj_data = project_item.get_data()
+            flights_list = prj_data.get("flights", [])
+
+            flights_list = [flight for flight in flights_list if flight["oid"] != oid]
+            prj_data.update({"flights": flights_list})
+
+            image_count = image_collection_item.layers[0].query(return_count_only=True)
+
+            project_properties = project_item.properties
+            flight_count = project_properties.get("flightCount", 0)
+            flight_count = flight_count - 1
+
+            image_count_ex = project_properties.get("imageCount", 0)
+            image_count_ex = image_count_ex - image_count
+
+            project_properties.update(
+                {"flightCount": flight_count, "imageCount": image_count_ex}
+            )
+            import json
+
+            project_item.update(
+                item_properties={"properties": project_properties},
+                data=json.dumps(prj_data),
+            )
+
+            try:
+                resource_manager.remove(resource_name)
+            except:
+                raise RuntimeError("Error deleting the mission resource")
+        except:
+            raise RuntimeError("Error deleting the mission")
+
+        items_to_be_deleted = [item for item in items_list if item is not None]
+        try:
+            deleted = gis.content.delete_items(items_to_be_deleted)
+        except:
+            _LOGGER.warning("Failed to delete the products")
+
+        return True
 
     def add_image(
         self,
@@ -465,13 +622,34 @@ class Mission:
 
         if gpjob.done():
             try:
+                gps_data = []
+                gps_info_list = ["name", "lat", "long", "alt", "acq"]
+                if not gps_data:
+                    try:
+                        lyr = image_collection.layers[0]
+                        gps_info = lyr.query_gps_info()["images"]
+                        for img_info in gps_info:
+                            from arcgis.raster._util import _to_datetime
+
+                            acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
+                            gps = img_info["gps"]
+                            name = img_info["name"]
+                            lat = gps["latitude"]
+                            long = gps["longitude"]
+                            alt = gps["altitude"]
+                            gps_val = [name, lat, long, alt, acq]
+                            dict_gps = dict(zip(gps_info_list, gps_val))
+                            gps_data.append(dict_gps)
+                    except:
+                        gps_data = mission_json["sourceData"]["gps"]
+                
                 from datetime import datetime
 
                 lyr = image_collection.layers[0]
 
                 image_count = lyr.query(return_count_only=True)
                 mission_json = mission._mission_json
-                ##########mission_json["sourceData"]["gps"].append(gps_data)
+                mission_json["sourceData"]["gps"] = gps_data
                 mission_json["sourceData"]["imageCount"] = image_count
 
                 ## Set extent
