@@ -29,7 +29,7 @@ def list_runs(
     item: _arcgis_gis.Item, gis: _arcgis_gis.GIS | None = None
 ) -> Iterator[PipelineRun]:
     """
-    Returns all running pipelines for a given Item.
+    Returns all running data pipelines for a given Item.
 
     =================================================     ========================================================================
     **Parameter**                                         **Description**
