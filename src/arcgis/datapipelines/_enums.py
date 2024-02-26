@@ -14,12 +14,3 @@ class RunStatus(Enum):
     FAILED = "failed"
     TIMEDOUT = "timedOut"
     CANCELLED = "cancelled"
-
-
-class SessionStatus(Enum):
-    """The Pipeline Status values"""
-
-    CREATING = "creating"
-    RUNNING = "running"
-    COMPUTERESOURCEGONE = "computeResourceGone"
-    COMPUTERESOURCETERMINATED = "computeResourceTerminated"

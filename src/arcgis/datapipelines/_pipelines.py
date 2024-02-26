@@ -5,7 +5,8 @@ from typing import Any, Iterator
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 import requests
-from ._enums import RunStatus, SessionStatus
+from ._enums import RunStatus
+from cachetools import cached, TTLCache
 
 _arcgis_gis = LazyLoader("arcgis.gis")
 
@@ -107,6 +108,7 @@ class PipelineRun:
 
     # ---------------------------------------------------------------------
     @property
+    @cached(cache=TTLCache(maxsize=1024, ttl=5))
     def status(self) -> RunStatus | dict[str, Any]:
         """
         Checks the Job's status
@@ -221,296 +223,6 @@ class PipelineRuns:
 
 
 ###########################################################################
-class PipelineResource:
-    """
-    Represents a single resource on the data pipeline server.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
-    ---------------     --------------------------------------------------------------------
-    session             Required EsriSession. The connection object.
-    ===============     ====================================================================
-
-    """
-
-    url: str | None = None
-    session: EsriSession | None = None
-
-    # ---------------------------------------------------------------------
-    def __init__(self, url: str, session: EsriSession) -> None:
-        """initializer"""
-        self.url = url
-        self.session = session
-
-    # ---------------------------------------------------------------------
-    @property
-    def properties(self) -> dict[str, Any]:
-        """returns information about the current compute resource"""
-        url: str = f"{self.url}"
-        params: dict[str, Any] = {"f": "json"}
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        return data
-
-    # ---------------------------------------------------------------------
-    @property
-    def health(self) -> bool | dict[str, Any]:
-        """
-        Performs a health check on the compute resource
-
-        :return: dict[str,Any] or boolean
-        """
-        url: str = f"{self.url}/health"
-        params: dict[str, Any] = {"f": "json"}
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        if resp.status_code >= 200 and resp.status_code < 300:
-            return True
-        else:
-            return resp.json()
-
-    # ---------------------------------------------------------------------
-    def delete(self) -> bool:
-        """
-        Terminates the compute resource
-
-        :return: bool
-        """
-        url: str = f"{self.url}/terminate"
-        params: dict[str, Any] = {"f": "json"}
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        if resp.status_code >= 200 and resp.status_code < 300:
-            return True
-        else:
-            return resp.json()
-
-
-###########################################################################
-class PipelineResources:
-    """
-    The `PipelineResources` is a manager working with data pipeline resources.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
-    ---------------     --------------------------------------------------------------------
-    session             Required EsriSession. The connection object.
-    ===============     ====================================================================
-
-    """
-
-    url: str | None = None
-    session: EsriSession | None = None
-
-    def __init__(self, url: str, session: EsriSession) -> None:
-        """initializer"""
-        self.url = url
-        self.session = session
-
-    def query(self) -> Iterator[PipelineResource]:
-        """
-        Queries the compute resources and returns all results.
-
-        :return: Iterator[PipelineResource]
-        """
-        url: str = self.url
-        params = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.get(url=url, data=params)
-        resp.raise_for_status()
-        has_more: str = resp.headers.get("X-Esri-Continuation", None)
-        data: dict[str, Any] = resp.json()
-
-        for row in data.get("results", []):
-            rid: str = row.get("id")
-            r_url: str = f"{self.url}/{rid}"
-            yield PipelineResource(url=r_url, session=self.session)
-        while has_more:
-            resp: requests.Response = self.session.get(
-                url=url,
-                data=params,
-                headers={"X-Esri-Continuation": has_more},
-            )
-            resp.raise_for_status()
-            has_more: str = resp.headers.get("X-Esri-Continuation", None)
-            data: dict[str, Any] = resp.json()
-            for row in data.get("results", []):
-                rid: str = row.get("id")
-                r_url: str = f"{self.url}/{rid}"
-                yield PipelineResource(url=r_url, session=self.session)
-
-
-###########################################################################
-class PipelineSession:
-    """
-    The `PipelineSession` represents a current user session.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
-    ---------------     --------------------------------------------------------------------
-    session             Required EsriSession. The connection object.
-    ===============     ====================================================================
-
-    """
-
-    url: str | None = None
-    session: EsriSession | None = None
-
-    # ---------------------------------------------------------------------
-    def __init__(self, url: str, session: EsriSession) -> None:
-        self.url = url
-        self.session = session
-
-    # ---------------------------------------------------------------------
-    @property
-    def properties(self) -> dict[str, Any]:
-        """returns information about the current session"""
-        url: str = self.url
-        params = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        return resp.json()
-
-    # ---------------------------------------------------------------------
-    @property
-    def health(self) -> bool | dict[str, Any]:
-        """
-        Performs a health check on the current session
-
-        :return: bool | dict[str,Any]
-        """
-        url: str = f"{self.url}/health"
-        params: dict[str, Any] = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        if resp.status_code >= 200 and resp.status_code < 300:
-            return True
-        else:
-            return resp.json()
-
-    # ---------------------------------------------------------------------
-    @property
-    def status(self) -> SessionStatus:
-        """
-        Returns the status of the session
-
-        :return: SessionStatus
-        """
-        url: str = f"{self.url}/status"
-        params: dict[str, Any] = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.get(url=url, params=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        if data.get("status", None):
-            return SessionStatus(data.get("status", None))
-        return data
-
-    # ---------------------------------------------------------------------
-    def delete(self) -> bool | dict[str, Any]:
-        """
-        Terminate the current session.
-
-        :return: bool | dict[str,Any]
-        """
-        resp: requests.Response = self.session.delete(url=self.url)
-        resp.raise_for_status()
-        if resp.status_code >= 200 and resp.status_code < 300:
-            return True
-        else:
-            return resp.json()
-
-
-###########################################################################
-class PipelineSessions:
-    """
-    A manager to work with the `Data Pipeline` sessions.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
-    ---------------     --------------------------------------------------------------------
-    session             Required EsriSession. The connection object.
-    ===============     ====================================================================
-    """
-
-    url: str = None
-    session: EsriSession | None = None
-
-    def __init__(self, url: str, session: EsriSession) -> None:
-        """initializer"""
-        self.url = url
-        self.session = session
-
-    def create(self) -> PipelineSession | dict[str, Any]:
-        """
-        creates a pipeline session
-
-        :return: PipelineSession | dict[str,Any]
-        """
-        url: str = f"{self.url}"
-        params: dict[str, Any] = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.post(url=url, data=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        if data.get("computeResourceId", None):
-            rid: str = data.get("computeResourceId", None)
-            url: str = f"{self.url}/{rid}"
-            return PipelineSession(url=url, session=self.session)
-
-        return data
-
-    def query(self) -> Iterator[PipelineSession]:
-        """
-        Allows administrators to query the existing session pipelines
-
-        :return: Iterator[PipelineSession]
-        """
-        url: str = self.url
-        params = {
-            "f": "json",
-        }
-        resp: requests.Response = self.session.get(url=url, data=params)
-        resp.raise_for_status()
-        has_more: str = resp.headers.get("X-Esri-Continuation", None)
-        data: dict[str, Any] = resp.json()
-
-        for row in data.get("results", []):
-            rid: str = row.get("computeResourceId")
-            r_url: str = f"{self.url}/{rid}"
-            yield PipelineSession(url=r_url, session=self.session)
-        while has_more:
-            resp: requests.Response = self.session.get(
-                url=url,
-                data=params,
-                headers={"X-Esri-Continuation": has_more},
-            )
-            resp.raise_for_status()
-            has_more: str = resp.headers.get("X-Esri-Continuation", None)
-            data: dict[str, Any] = resp.json()
-            for row in data.get("results", []):
-                rid: str = row.get("computeResourceId")
-                r_url: str = f"{self.url}/{rid}"
-                yield PipelineSession(url=r_url, session=self.session)
-
-
-###########################################################################
 class DataPipelines:
     """
     The beta Python API for the ArcGIS Data Pipeline
@@ -528,8 +240,6 @@ class DataPipelines:
     _gis: _arcgis_gis.GIS
     url: str
     session: EsriSession | None = None
-    _cr: PipelineResources | None = None
-    _ss: PipelineSessions | None = None
     _runs: PipelineRuns | None = None
 
     def __init__(self, url: str, gis: _arcgis_gis.GIS):
@@ -550,21 +260,3 @@ class DataPipelines:
             url: str = f"{self.url}runs"
             self._runs = PipelineRuns(url=url, session=self.session)
         return self._runs
-
-    # ---------------------------------------------------------------------
-    @property
-    def _compute_resources(self) -> PipelineResources:
-        """private method to handle the pipelines compute resources"""
-        if self._cr is None:
-            self._cr = PipelineResources(
-                url=f"{self.url}computeresources", session=self.session
-            )
-        return self._cr
-
-    # ---------------------------------------------------------------------
-    @property
-    def _sessions(self) -> PipelineSessions:
-        """private method to manage the pipeline sessions"""
-        if self._ss is None:
-            self._ss = PipelineSessions(url=f"{self.url}sessions", session=self.session)
-        return self._ss
