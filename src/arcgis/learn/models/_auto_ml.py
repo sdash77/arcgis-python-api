@@ -8,8 +8,6 @@ import pickle
 import warnings
 import math
 import shutil
-import os
-import time
 from pathlib import Path
 import traceback
 import arcgis
@@ -42,6 +40,7 @@ except:
     HAS_FASTAI = False
 
 try:
+    # TODO: still failing
     import sklearn
     from sklearn import *
     from sklearn import preprocessing
