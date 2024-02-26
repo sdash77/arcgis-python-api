@@ -39,6 +39,12 @@ NetworkDataset
     :members:
     :undoc-members:
 
+NetworkDatasetLayer
+--------------
+.. autoclass:: arcgis.network.NetworkDatasetLayer
+    :members:
+    :undoc-members:
+
 ODCostMatrixLayer
 --------------
 .. autoclass:: arcgis.network.ODCostMatrixLayer

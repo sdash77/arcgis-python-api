@@ -7298,7 +7298,9 @@ class ContentManager(object):
                     item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
                     groups = item.shared_with["groups"]
-                    item.sharing._share(groups=groups)
+                    grp_share = item.sharing.groups
+                    for grp in groups:
+                        grp_share.add(grp)
             return item
         else:
             return None
@@ -15242,7 +15244,9 @@ class Item(dict):
                     self.sharing.sharing_level = "EVERYONE"
                 if access == "shared":
                     groups = self.shared_with["groups"]
-                    self.sharing._share(groups=groups)
+                    grp_share = self.sharing.groups
+                    for grp in groups:
+                        grp_share.add(grp)
 
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
@@ -15345,7 +15349,9 @@ class Item(dict):
                         self.sharing.sharing_level = "EVERYONE"
                     if access == "shared":
                         groups = self.shared_with["groups"]
-                        self.sharing._share(groups=groups)
+                        grp_share = self.sharing.groups
+                        for grp in groups:
+                            grp_share.add(grp)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
