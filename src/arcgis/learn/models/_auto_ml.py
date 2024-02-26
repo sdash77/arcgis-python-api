@@ -392,7 +392,7 @@ class AutoML(object):
             if isinstance(self._all_labels[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(np.float64)
+                self._all_labels = self._all_labels.astype(np.float64)#
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
                     self._sensitive_variables
