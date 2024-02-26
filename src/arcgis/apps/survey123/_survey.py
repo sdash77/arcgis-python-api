@@ -165,7 +165,7 @@ class SurveyManager:
         ------------   ------------------------------------------------
         title          Required string. Title for the form item.
         ------------   ------------------------------------------------
-        folder         Optional string. The folder ID of the folder to store the survey form item in your ArcGIS content.
+        folder         Optional string. The name of the folder to store the survey form item in your ArcGIS content.
         ------------   ------------------------------------------------
         tags           Optional string. Comma-separated tags for the form item.
         ------------   ------------------------------------------------
@@ -190,6 +190,13 @@ class SurveyManager:
             else:
                 folder_obj = existing_folder
                 folder = folder_obj.properties["id"]
+        else:
+            folder_obj = self._gis.content.folders.get(
+                folder=str(folder), owner=self._gis.users.me.username
+            )
+            if folder_obj is None:
+                raise RuntimeError("Folder name not found")
+            folder = folder_obj.properties["id"]
 
         form_properties = ItemProperties(
             title=title,
