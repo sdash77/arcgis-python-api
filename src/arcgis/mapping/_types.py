@@ -2179,10 +2179,25 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
+        .. note::
+            To create, edit, and manage offline map areas for a web map, you must be the owner
+            of the map and have privileges to create content.
+
+        .. note::
+            You cannot share a web map that contains an offline map area with a group that allows
+            members to update all items, and organization administrators cannot change ownership of a
+            web map that contains an offline map area.
+
         :return:
             The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
         """
-        return OfflineMapAreaManager(self.item, self._gis)
+        # Need to check that the owner of the map is the same as the logged in user
+        if self._gis.users.me.username == self.item.owner:
+            return OfflineMapAreaManager(self.item, self._gis)
+        else:
+            raise RuntimeError(
+                "You do not have permission to manage offline areas for this map. You must be the owner of the item."
+            )
 
     @property
     def pop_ups(self):
@@ -2970,13 +2985,37 @@ class PackagingJob(object):
 ###########################################################################
 class OfflineMapAreaManager(object):
     """
-    The ``OfflineMapAreaManager`` is a helper class to manage offline map areas attached to a web map item.
+    The ``OfflineMapAreaManager`` is a helper class to manage offline map areas
+    for a Web Map :class:`~arcgis.gis.Item`. Objects of this class should not
+    be initialized directly, but rather accessed using the
+    :attr:`~arcgis.mapping.WebMap.offline_areas` property on a
+    :class:`~arcgis.mapping.WebMap` object.
+
+    .. code-block:: python
+
+        >>> from arcgis.gis import GIS
+        >>> from arcgis.mapping import WebMap
+
+        >>> gis = GIS(profile="your_Web_GIS_profile")
+
+        >>> wm_item = gis.content.get("<web map id>")
+        >>> wm_obj = WebMap(wm_item)
+
+        >>> oma_mgr = wm_obj.offline_areas
+        <arcgis.mapping._types.OfflineMapAreaManager at <memory_addr>>
 
     .. note::
-        Users should not instantiate this class
-        directly, instead, should access the methods exposed by accessing the
-        :attr:`~arcgis.mapping.WebMap.offline_areas` property on the :class:`~arcgis.mapping.WebMap`
-        object.
+        There are important concepts to understand about offline mapping before
+        the properties and methods of this class will function properly. Both
+        reference basemaps and operational layers contained in a *Web Map* must
+        be configured very specifically before they can be taken offline. See the
+        documentation below for full details:
+
+        * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/use/take-maps-offline.htm>`_
+
+          * `Basemap Considerations for ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/11.2/use/take-maps-offline.htm#ESRI_SECTION2_384E9B7E99EC4460810B947DE70FB2DA>`_
+
+        * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/manage-data/take-maps-offline.htm>`_
     """
 
     _pm = None
@@ -3004,46 +3043,50 @@ class OfflineMapAreaManager(object):
     def offline_properties(self):
         """
         This property allows users to configure the offline properties
-        for a webmap.  The `offline_properties` allows for the definition
-        of how available offline editing, basemap, and read-only layers
-        behave in the web map application.
+        for a webmap.  The `offline_properties` allows for defining
+        how available offline editing, basemap, and read-only layers
+        behave in the web map application. For further reading about concepts
+        for working with web maps offline, see
+        `Configure the map to work offline <https://doc.arcgis.com/en/field-maps/latest/prepare-maps/configure-the-map.htm#ESRI_SECTION1_1822CD8DD1E74F08BC4308E03A5677F1>`_.
+        Also, see the *applicationProperties* object in the
+        `Web Map specification <https://developers.arcgis.com/web-map-specification/objects/applicationProperties>`_.
 
         ==================     ====================================================================
-        **Parameter**           **Description**
+        **Parameter**          **Description**
         ------------------     --------------------------------------------------------------------
-        values                 Required Dict.  The key/value object that defines the offline
+        values                 Required Dict.  The key/value pairs that define the offline
                                application properties.
         ==================     ====================================================================
 
-        The dictionary supports the following keys in the dictionary
+        The dictionary supports the following keys:
 
         ==================     ====================================================================
         **Key**                **Values**
         ------------------     --------------------------------------------------------------------
-        download               When editing layers, the edits are always sent to the server. This
-                               string value indicates which data is retrieved. For example, none
-                               indicates that only the schema is written since neither the features
-                               nor attachments are retrieved. For a full sync without downloading
-                               attachments, indicate features. Lastly, the default behavior is to
-                               have a full sync using `features_and_attachments` where both
-                               features and attachments are retrieved.
+        download               Optional string. Possible values:
 
-                               If property is present, must be one of the following values:
+                               - *None*
+                               - *features*
+                               - *features_and_attachments*
 
-                               Allowed Values:
+                               When editing layers, the edits are always sent to the server. This
+                               string argument indicates which data is retrieved from the server.
 
-                                    features, features_and_attachments, None
+                               * If argument is *None* - only the schema is written since neither
+                                 features nor attachments are retrieved
+                               * If argument is *features* - a full sync without downloading
+                                 attachments occurs
+                               * If argument is *features_and_attachments*, which is the Default -
+                                 both features and attachments are retrieved
         ------------------     --------------------------------------------------------------------
         sync                   `sync` applies to editing layers only.  This string value indicates
-                               how the data is synced.
+                               how the data is synced:
 
-                               Allowed Values:
-
-                                   ``sync_features_and_attachments``  - bidirectional sync
-                                   ``sync_features_upload_attachments`` - bidirectional sync for features but upload only for attachments
-                                   ``upload_features_and_attachments`` - upload only for both features and attachments (initial replica is just a schema)
-
-
+                               * ``sync_features_and_attachments``  - bidirectional sync
+                               * ``sync_features_upload_attachments`` - bidirectional sync for
+                                 features but upload only for attachments
+                               * ``upload_features_and_attachments`` - upload only for both features
+                                 and attachments (initial replica is just a schema)
         ------------------     --------------------------------------------------------------------
         reference_basemap      The filename of a basemap that has been copied to a mobile device.
                                This can be used instead of the default basemap for the map to
@@ -3054,6 +3097,20 @@ class OfflineMapAreaManager(object):
         ==================     ====================================================================
 
         :return: Dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.gis import GIS
+            >>> from arcgis.mapping import WebMap
+
+            >>> wm_item = gis.content.get("<web_map_id>")
+            >>> wm_obj = WebMap(wm_item)
+
+            >>> offline_mgr = wm_obj.offline_areas
+            >>> offline_mgr.offline_properties = {"download": "features",
+                                                  "sync": "sync_features_upload_attachments"}
 
         """
         dl_lu = {
@@ -3198,18 +3255,17 @@ class OfflineMapAreaManager(object):
                     )
                 },
             }
-        for r in remove:
-            if "sync" in remove and "download" in remove:
-                del v["offline"]["editableLayers"]
-            if "sync" in remove:
-                del v["offline"]["editableLayers"]["sync"]
-            if "download" in remove:
-                del v["offline"]["editableLayers"]["download"]
-            if "reference_basemap" in remove:
-                del v["offline"]["offlinebasemap"]
-            if "get_attachments" in remove:
-                del v["offline"]["readonlyLayers"]
-            del r
+        if "sync" in remove and "download" in remove:
+            del v["offline"]["editableLayers"]
+        if "sync" in remove:
+            del v["offline"]["editableLayers"]["sync"]
+        if "download" in remove:
+            del v["offline"]["editableLayers"]["download"]
+        if "reference_basemap" in remove:
+            del v["offline"]["offlinebasemap"]
+        if "get_attachments" in remove:
+            del v["offline"]["readonlyLayers"]
+        del remove
         update_items = {
             "clearEmptyFields": True,
             "text": json.dumps(self._web_map._webmapdict),
@@ -3251,38 +3307,54 @@ class OfflineMapAreaManager(object):
         future: bool = False,
     ):
         """
+        This method creates offline map area items and packages for ArcGIS
+        Runtime powered applications to use. The method creates two different
+        types of :class:`Items <arcgis.gis.Item>`
 
-        The ``create`` method creates offline map area items and packages for ArcGIS Runtime powered applications.
-        The ``create`` method creates two
-        different types of :class:`~arcgis.gis.Item` objects.
-        It first creates ``Map Area`` items for the specified extent or bookmark. Next, it
-        creates one or more map area packages corresponding to each layer type in the extent.
+        * ``Map Area`` items for the specified extent, bookmark, or polygon
+        * ``Map Area Packages`` corresponding to the operational layer(s) and
+          basemap layer(s) within the extent, bookmark or polygon area
 
         .. note::
-            - There can be only 1 map area item for an extent or bookmark.
-            - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
+            Packaging will fail if the size of the offline map area, when
+            packaged, is **larger than 2.5 GB**.
+
+            * If packaging fails, try using a smaller bookmark, extent or
+              geometry for the *area* argument.
+            * If the map contains feature layers that have attachments, you can
+              exclude attachments from the offline package to decrease the
+              package size.
+            * If the map includes tile layers, use the *tile_services* argument
+              to constrain the number of levels included in the resulting
+              packages. This is typically *required* to reduce the tile package
+              size for the basemap layer(s) in ArcGIS Enterprise.
+
+        .. note::
+            Only the owner of the Web Map item can create offline map areas.
 
         ==================     ====================================================================
-        **Parameter**           **Description**
+        **Parameter**          **Description**
         ------------------     --------------------------------------------------------------------
-        area                   Required object.  Bookmark or extent. Specify as either:
+        area                   Required *bookmark*, *extent*, or :class:`~arcgis.geometry.Polygon`
+                               object. Specify as either:
 
                                + bookmark name
 
                                  .. code-block:: python
 
-                                    >>> area = 'Bookmark1'
+                                    >>> wm_item = gis.content.get("<web map id>")
+                                    >>> wm_obj = WebMap(wm_item)
 
-                                 .. note:: :attr:`~arcgis.mapping.WebMap.bookmarks` returns list of bookmarks.
+                                    >>> wm_bookmarks = wm_obj.bookmarks
+                                    >>> area = wm_bookmarks[0]
 
-
-                               + list of coordinate pairs:
+                               + extent: as a list of coordinate pairs:
 
                                  .. code-block:: python
 
                                     >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
 
-                               + dictionary:
+                               + extent: as a dictionary:
 
                                  .. code-block:: python
 
@@ -3294,18 +3366,30 @@ class OfflineMapAreaManager(object):
                                                 'spatialReference' : {'wkid' : <value>}
                                                }
 
+                               + polygon: as a :class:`~arcgis.gis.Polygon` object
+
+
                                .. note::
-                                    If spatial reference is not specified, it is assumed 'wkid': 4326.
+                                    If spatial reference is not specified,
+                                    it is assumed {'wkid': 4326}.
 
         ------------------     --------------------------------------------------------------------
         item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------
         folder                 Optional string. Specify a folder name if you want the offline map
                                area item and the packages to be created inside a folder.
+
+                               .. note::
+                                   These items will not display when viewing the content folder in
+                                   a web browser. They will display in the *Portal* tab of the
+                                   Content Pane in ArcGIS Pro.
         ------------------     --------------------------------------------------------------------
         min_scale              Optional integer. Specify the minimum scale to cache tile and vector
                                tile layers. When zoomed out beyond this scale, cached layers would
                                not display.
+
+                               .. note::
+                                   The ``min_scale`` value is always larger than the ``max_scale``.
         ------------------     --------------------------------------------------------------------
         max_scale              Optional integer. Specify the maximum scale to cache tile and vector
                                tile layers. When zoomed in beyond this scale, cached layers would
@@ -3315,8 +3399,8 @@ class OfflineMapAreaManager(object):
                                packages. You can get the list of layers in a web map by calling
                                the `layers` property on the `WebMap` object.
         ------------------     --------------------------------------------------------------------
-        refresh_schedule       Optional string. Allows for the scheduling of refreshes at given times.
-
+        refresh_schedule       Optional string. Allows for the scheduling of refreshes at given
+                               times.
 
                                The following are valid variables:
 
@@ -3339,10 +3423,11 @@ class OfflineMapAreaManager(object):
                                    }
 
                                - hour - a value between 0-23 (integers)
-                               - minute a value between 0-60 (integers)
-                               - nthday - this is used for monthly only. This say the refresh will occur
-                                 on the 'x' day of the month.
-                               - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
+                               - minute - a value between 0-60 (integers)
+                               - nthday - this is used for monthly only. Thw refresh will occur
+                                 on the 'n' day of the month.
+                               - day_of_week - a value between 0-6 where 0 is Sunday and 6 is
+                                 Saturday.
 
                                .. code-block:: python
 
@@ -3375,10 +3460,10 @@ class OfflineMapAreaManager(object):
                                                        ]
 
         ------------------     --------------------------------------------------------------------
-        tile_services          Optional List.  An array of JSON objects that contains additional
-                               export tiles enabled tile services for which tile packages (.tpk or
-                               .vtpk) need to be created. Each tile service is specified with its
-                               URL and desired level of details.
+        tile_services          Optional List. An list of Python dictionary objects that contains
+                               information about the *export tiles-enabled* services for which
+                               tile packages (.tpk or .vtpk) need to be created. Each tile service
+                               is specified with its *url* and desired level of details.
 
                                .. code-block:: python
 
@@ -3387,14 +3472,18 @@ class OfflineMapAreaManager(object):
                                                          "url": "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
                                                          "levels": "17,18,19"
                                                         }
-                                                       ]
-        ------------------     --------------------------------------------------------------------
-        future                 Optional boolean. If True, a future object will be returned and the process
-                               will not wait for the task to complete. The default is False, which means wait for results.
-        ==================     ====================================================================
 
-        .. note::
-            Your ``min_scale`` value is always bigger in value than your ``max_scale``.
+                               .. note::
+                                   This argument **should** be specified when using ArcGIS
+                                   Enterprise items. The number of levels included greatly
+                                   impacts the overall size of the resulting packages to
+                                   keep them under the 2.5 GB limit.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If *True*, a future object will be returned and the
+                               process will return control to the user before the task completes.
+                               If *False*, control returns once the operation completes. The default
+                               is *False*.
+        ==================     ====================================================================
 
         Key:Value Dictionary options for argument ``item_properties``
 
@@ -3405,47 +3494,108 @@ class OfflineMapAreaManager(object):
         -----------------  ---------------------------------------------------------------------
         title              Optional string. Name label of the item.
         -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of
-                           strings. Used for searches on items.
+        tags               Optional string of comma-separated values, or a list of
+                           strings for each tag.
         -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters)
-                           of the what the item is.
+        snippet            Optional string. Provide a short summary (limit to max 250
+                           characters) of the what the item is.
         =================  =====================================================================
 
         :return:
-            :class:`~arcgis.gis.Item` object for the offline map area item that was created.
-            If Future==True, then the result is a  :class:`~arcgis.mapping.PackagingJob` object.
+            Map Area :class:`~arcgis.gis.Item`, or if *future=True*, a
+            :class:`~arcgis.mapping.PackagingJob` object to further query for
+            results.
 
         .. code-block:: python
 
-            USAGE EXAMPLE: Creating offline map areas
+            # USAGE EXAMPLE #1: Creating offline map areas using *scale* argument
 
-            wm = WebMap(wm_item)
+            >>> from arcgis.gis import GIS
+            >>> from arcgis.mapping import WebMap
 
-            # create offline areas ignoring a layer and for certain min, max scales for other layers
-            item_prop = {'title': 'Clear lake hyperspectral field campaign',
-                        'snippet': 'Offline package for field data collection using spectro-radiometer',
-                        'tags': ['python api', 'in-situ data', 'field data collection']}
+            >>> gis = GIS(profile="your_online_organization_profile")
 
-            aviris_layer = wm.layers[-1]
+            >>> wm_item = gis.content.get("<web_map_id>")
+            >>> wm_obj = WebMap(wm_item)
 
-            north_bed = wm.definition.bookmarks[-1]['name']
-            wm.offline_areas.create(area=north_bed, item_properties=item_prop,
-                                  folder='clear_lake', min_scale=9000, max_scale=4500,
-                                   layers_to_ignore=[aviris_layer])
+            >>> item_prop = {"title": "Clear lake hyperspectral field campaign",
+                             "snippet": "Offline package for field data collection using spectro-radiometer",
+                             "tags": ["python api", "in-situ data", "field data collection"]}
+
+            >>> aviris_layer = wm_item.layers[-1]
+
+            >>> north_bed = wm_obj.bookmarks[-1]['name']
+            >>> wm.offline_areas.create(area=north_bed,
+                                        item_properties=item_prop,
+                                        folder="clear_lake",
+                                        min_scale=9000,
+                                        max_scale=4500,
+                                        layers_to_ignore=[aviris_layer])
+
+            # USAGE Example #2: ArcGIS Enterprise web map specifying *tile_services*
+
+            >>> gis = GIS(profile="your_enterprise_profile")
+
+            >>> wm_item = gis.content.get("<item_id>")
+            >>> wm_obj = WebMap(wm_item)
+
+            # Enterprise: Get the url for tile services from basemap
+            >>> basemap_lyrs = wm_obj.definition["baseMap"]["baseMapLayers"]
+            >>> basemap_lyrs
+
+                [
+                 {'id': '18d9e5e151c-layer-2',
+                  'title': 'Light_Gray_Export_AGOL_Group',
+                  'itemId': '042f5e5aadcb8dbd910ae310b1f26d18',
+                  'layerType': 'VectorTileLayer',
+                  'styleUrl': 'https:/example.com/portal/sharing/servers/042f5e5aadcb8dbd910ae310b1f26d1/rest/services/World_Basemap_Export_v2/VectorTileServer/resources/styles/root.json'}
+                ]
+
+            # Get the specific Tile Layer item to see options for levels
+            >>> vtl_item = gis.content.get(basemap_lyrs[0]["itemId"])
+            >>> vtl_lyr = vtl_item.layers[0]
+            >>> print(f"min levels: {vtl_lyr.properties['minLOD']}")
+            >>> print(f"max levels: {vtl_lyr.properties['maxLOD']}")
+
+                min levels: 0
+                max levels: 16
+
+            >>> vtl_svc_url = vtl_item.layers[0].url
+            >>> vtl_svc_url
+            https:/example.com/portal/sharing/servers/042f5e5aadcb8dbd910ae310b1f26d1/rest/services/World_Basemap_Export_v2/VectorTileServer
+
+            # Get a list of bookmark names to iterate through
+            >>> bookmarks = wm_obj.bookmarks
+            >>> bkmrk_names = [bookmark["name"] for bookmark in bookmarks]
+            >>> bname = bkmrk_names[1]
+
+            >>> oma = offline_mgr.create(area=bname,
+                                         item_properties={"title": bname + "_OMA",
+                                                          "tags": "offline_mapping,administrative boundaries,parks",
+                                                          "snippet": bname + " in County",
+                                                          "description": "Offline mapping area in " + bname + " for sync"},
+                                         tile_services=[{"url": vtl_svc_url,
+                                                         "levels": "6,7,8,9,10,11,12,13"}])
+            >>> oma
+            <Item title:"County_OMA" type:Map Area owner:gis_user>
+
+            >>> # List packages created:
+            >>> for oma_pkg in oma.related_items("Area2Package", "forward"):
+            >>>     print(f"{oma_pkg.title:60}{oma_pkg.type}")
+
+            <County_Layer-<id_string>                SQLite Geodatabase
+            <VectorTileServe-<id_string>             Vector Tile Package
 
         .. note::
             This method executes silently. To view informative status messages, set the verbosity environment variable
-            as shown below:
+            as shown below prior to running the method:
 
             .. code-block:: python
 
-               USAGE EXAMPLE: setting verbosity
+                # USAGE EXAMPLE: setting verbosity
 
-               from arcgis import env
-               env.verbose = True
-
-
+                >>> from arcgis import env
+                >>> env.verbose = True
         """
         if future:
             inputs = {
@@ -3495,150 +3645,7 @@ class OfflineMapAreaManager(object):
         future=False,
     ):
         """
-        Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
-        different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
-        creates one or more map area packages corresponding to each layer type in the extent.
-
-        .. note::
-            - Offline map area functionality is only available if your GIS is ArcGIS Online.
-            - There can be only 1 map area item for an extent or bookmark.
-            - You need to be the owner of the web map or an administrator of your GIS.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        area                   Required object. You can specify the name of a web map bookmark or a
-                               desired extent.
-
-                               To get the bookmarks from a web map, query the `definition.bookmarks`
-                               property.
-
-                               You can specify the extent as a list or dictionary of 'xmin', 'ymin',
-                               'xmax', 'ymax' and spatial reference. If spatial reference is not
-                               specified, it is assumed to be 'wkid' : 4326.
-        ------------------     --------------------------------------------------------------------
-        item_properties        Required dictionary. See table below for the keys and values.
-        ------------------     --------------------------------------------------------------------
-        folder                 Optional string. Specify a folder name if you want the offline map
-                               area item and the packages to be created inside a folder.
-        ------------------     --------------------------------------------------------------------
-        min_scale              Optional number. Specify the minimum scale to cache tile and vector
-                               tile layers. When zoomed out beyond this scale, cached layers would
-                               not display.
-        ------------------     --------------------------------------------------------------------
-        max_scale              Optional number. Specify the maximum scale to cache tile and vector
-                               tile layers. When zoomed in beyond this scale, cached layers would
-                               not display.
-        ------------------     --------------------------------------------------------------------
-        layers_to_ignore       Optional List of layer objects to exclude when creating offline
-                               packages. You can get the list of layers in a web map by calling
-                               the `layers` property on the `WebMap` object.
-        ------------------     --------------------------------------------------------------------
-        refresh_schedule       Optional string. Allows for the scheduling of refreshes at given times.
-
-
-                               The following are valid variables:
-
-                                    + Never - never refreshes the offline package (default)
-                                    + Daily - refreshes everyday
-                                    + Weekly - refreshes once a week
-                                    + Monthly - refreshes once a month
-
-        ------------------     --------------------------------------------------------------------
-        refresh_rates          Optional dict. This parameter allows for the customization of the
-                               scheduler.  The dictionary accepts the following:
-
-                                {
-                                    "hour" : 1
-                                    "minute" = 0
-                                    "nthday" = 3
-                                    "day_of_week" = 0
-                                }
-
-                               - hour - a value between 0-23 (integers)
-                               - minute a value between 0-60 (integers)
-                               - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
-                               - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
-
-                               Example **Daily**:
-
-                                {
-                                    "hour": 10,
-                                    "minute" : 30
-                                }
-
-                               This means every day at 10:30 AM UTC
-
-                               Example **Weekly**:
-
-                                {
-                                    "hour" : 23,
-                                    "minute" : 59,
-                                    "day_of_week" : 4
-                                }
-
-                               This means every Wednesday at 11:59 PM UTC
-        ------------------     --------------------------------------------------------------------
-        enable_updates         Optional Boolean.
-        ------------------     --------------------------------------------------------------------
-        ignore_layers
-        ------------------     --------------------------------------------------------------------
-        tile_services
-        ------------------     --------------------------------------------------------------------
-
-        ==================     ====================================================================
-
-        *Hint: Your min_scale is always bigger in value than your max_scale*
-
-        *Key:Value Dictionary Options for Argument item_properties*
-
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        description        Optional string. Description of the item.
-        -----------------  ---------------------------------------------------------------------
-        title              Optional string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of
-                           strings. Used for searches on items.
-        -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters)
-                           of the what the item is.
-        =================  =====================================================================
-
-        :return:
-            Item object for the offline map area item that was created.
-
-        .. code-block:: python
-
-            USAGE EXAMPLE: Creating offline map areas
-
-            wm = WebMap(wm_item)
-
-            # create offline areas ignoring a layer and for certain min, max scales for other layers
-            item_prop = {'title': 'Clear lake hyperspectral field campaign',
-                        'snippet': 'Offline package for field data collection using spectro-radiometer',
-                        'tags': ['python api', 'in-situ data', 'field data collection']}
-
-            aviris_layer = wm.layers[-1]
-
-            north_bed = wm.definition.bookmarks[-1]['name']
-            wm.offline_areas.create(area=north_bed, item_properties=item_prop,
-                                  folder='clear_lake', min_scale=9000, max_scale=4500,
-                                   layers_to_ignore=[aviris_layer])
-
-        .. note::
-            This method executes silently. To view informative status messages, set the verbosity environment variable
-            as shown below:
-
-            .. code-block:: python
-
-               USAGE EXAMPLE: setting verbosity
-
-               from arcgis import env
-               env.verbose = True
-
-
+        See create method for docstring.
         """
         _dow_lu = {
             0: "SUN",
@@ -4219,29 +4226,53 @@ class OfflineMapAreaManager(object):
     # ----------------------------------------------------------------------
     def list(self):
         """
-        The ``list`` method retrieves a list of ``Map Area`` items related to the current ``WebMap`` object.
+        Retrieves a list of all *Map Area* items for the
+        :class:`~arcgis.mapping.WebMap` object.
 
         .. note::
-            ``Map Area`` items and the corresponding offline packages cached for each share a relationship of type
-            ``Area2Package``. You can use this relationship to get the list of package items cached for a particular
-            ``Map Area`` item. Refer to the Python snippet below for the steps:
+            *Map Area* items and the corresponding offline packages share a relationship
+            of type *Area2Package*. You can use this relationship to get the list of
+            package items cached for each *map area* item. Refer to the Python snippet
+            below for the steps:
 
-            .. code-block:: python
+        .. code-block:: python
 
-               USAGE EXAMPLE: Finding packages cached for a Map Area item
+            # USAGE EXAMPLE: Listing Map Area Items
 
-               from arcgis.mapping import WebMap
-               wm = WebMap(a_web_map_item_object)
-               all_map_areas = wm.offline_areas.list()  # get all the offline areas for that web map
+            >>> from arcgis.gis import GIS
+            >>> from arcgis.mapping import WebMap
 
-               area1 = all_map_areas[0]
-               area1_packages = area1.related_items('Area2Package','forward')
+            >>> wm_item = gis.content.search("*", "Web Map")[0]
+            >>> wm_obj = WebMap(wm_item)
 
-               for pkg in area1_packages:
-                    print(pkg.homepage)  # get the homepage url for each package item.
+            >>> all_map_areas = wm.offline_areas.list()
+            >>> all_map_areas
+
+            [<Item title:"Ballerup_OMA", type:Map Area owner:gis_user1>,
+             <Item title:"Viborg_OMA", type:Map Area owner:gis_user1>]
+
+            # USAGE Example: Inspecting Map Area packages
+
+            >>> area1 = all_map_areas[0]
+            >>> area1_packages = area1.related_items("Area2Package","forward")
+
+            >>> for pkg in area1_packages:
+            >>>     print(f"{pkg.title}")
+            <<<     print(f"{' ' * 2}{pkg.type}")
+            >>>     print(f"{' ' * 2}{pkg.homepage}")
+
+            VectorTileServe-<value_string>
+              Vector Tile Package
+              https://<organziation_url>/home/item.html?id=<item_id>
+
+
+            DK_lau_data-<value_string>
+              SQLite Geodatabase
+              https://organization_url/home/item.html?id=<item_id>
 
         :return:
-            A List of ``Map Area`` items related to the current ``WebMap`` object
+            A List of *Map Area* :class`items <arcgis.gis.Item>` related to the
+            *Web Map* item.
         """
         return self._item.related_items("Map2Area", "forward")
 
@@ -4252,24 +4283,27 @@ class OfflineMapAreaManager(object):
         future: bool = False,
     ):
         """
-        The ``update`` method refreshes existing map area packages associated with the list of ``Map Area`` items
-        specified.
-        This process updates the packages with changes made on the source data since the last time those packages were
-        created or refreshed.
-
-        .. note::
-            - Offline map area functionality is only available if your :class:`~arcgis.gis.GIS` is ArcGIS Online.
-            - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
+        The ``update`` method refreshes existing map area packages associated
+        with each of the ``Map Area`` items specified. This process updates the
+        packages with changes made on the source data since the last time those
+        packages were created or refreshed. See `Refresh Map Area Package
+        <https://developers.arcgis.com/rest/packaging/api-reference/refresh-map-area-package.htm>`_
+        for more information.
 
         ============================     ====================================================================
         **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
-        offline_map_area_items           Optional list. Specify one or more Map Area items for which the packages need
-                                         to be refreshed. If not specified, this method updates all the packages
+        offline_map_area_items           Optional list. Specify one or more Map Area
+                                         :class:`items <arcgis.gis.Item>` for which the packages need to be
+                                         refreshed. If not specified, this method updates all the packages
                                          associated with all the map area items of the web map.
 
-                                         To get the list of ``Map Area`` items related to the ``WebMap`` object, call
-                                         the :attr:`~arcgis.mapping.OfflineMapAreaManager.list` method.
+                                         .. note::
+                                             To get the list of ``Map Area`` items related to the *WebMap*
+                                             object, call the
+                                             :meth:`~arcgis.mapping.OfflineMapAreaManager.list` method on
+                                             the :class:`~arcgis.mapping.OfflineMapAreaManager` for the
+                                             *WebMap*.
         ----------------------------     --------------------------------------------------------------------
         future                           Optional Boolean.
         ============================     ====================================================================
@@ -4278,8 +4312,9 @@ class OfflineMapAreaManager(object):
             Dictionary containing update status.
 
         .. note::
-            This method executes silently. To view informative status messages, set the verbosity environment variable
-            as shown below:
+            This method executes silently. To view informative status messages,
+            set the verbosity environment variable as shown below before running
+            the code:
 
             .. code-block:: python
 

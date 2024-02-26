@@ -8,8 +8,6 @@ import pickle
 import warnings
 import math
 import shutil
-import os
-import time
 from pathlib import Path
 import traceback
 import arcgis
@@ -27,7 +25,11 @@ try:
         add_h3,
         _extract_embeddings,
     )
-    from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.common import (
+        _get_emd_path,
+        check_path_or_url,
+        _get_hosted_dlpk,
+    )
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
     from sklearn.preprocessing import normalize
@@ -38,6 +40,7 @@ except:
     HAS_FASTAI = False
 
 try:
+    # TODO: still failing
     import sklearn
     from sklearn import *
     from sklearn import preprocessing
@@ -388,7 +391,7 @@ class AutoML(object):
             if isinstance(self._all_labels[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(np.float)
+                self._all_labels = self._all_labels.astype(float)
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
                     self._sensitive_variables
@@ -822,10 +825,13 @@ class AutoML(object):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        emd_path_orig = Path(emd_path)
-        emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
+        is_hosted_dlpk = check_path_or_url(emd_path)
+        if is_hosted_dlpk:
+            success, emd_path = _get_hosted_dlpk(emd_path)
+
+        emd_path = _get_emd_path(emd_path)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")

@@ -500,7 +500,8 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         owner                       Optional string. Job Owner
         -------------------         --------------------------------------------------------------------
-        group                       Optional string Job Group
+        group                       Optional string. Job Assignment Group. The Assignment type of the job to be
+                                    created. Type of assignment designated Values: "User" | "Group" | "Unassigned"
         -------------------         --------------------------------------------------------------------
         assigned                    Optional string. Initial Job Assignee
         -------------------         --------------------------------------------------------------------
@@ -723,17 +724,25 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update(self, job_id: str, update_object):
+    def update(
+        self,
+        job_id: str,
+        update_object: dict,
+        allow_running_step_id: Optional[str] = None,
+    ):
         """
         Updates a job object by ID
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        job_id              Required string. ID for the job to update
-        ---------------     --------------------------------------------------------------------
-        update_object       Required object. An object containing the fields and new values to add to the job
-        ===============     ====================================================================
+        ===============             ====================================================================
+        **Parameter**               **Description**
+        ---------------             --------------------------------------------------------------------
+        job_id                      Required string. ID for the job to update
+        ---------------             --------------------------------------------------------------------
+        update_object               Required dictionary. A dictionary containing the fields and new values to add to the
+                                    job
+        ---------------             --------------------------------------------------------------------
+        allow_running_step_id       Optional string. Allow updating job properties when the specified step is running
+        ===============             ====================================================================
 
         :return:
             success object
@@ -758,13 +767,15 @@ class JobManager:
                 },
             ]
 
-            workflow_manager.jobs.update(job_id, updates)
+            workflow_manager.jobs.update(job_id, updates, 'stepid123')
 
         """
         try:
             current_job = self.get(job_id).__dict__
             for k in update_object.keys():
                 current_job[k] = update_object[k]
+            if allow_running_step_id is not None:
+                current_job["allowRunningStepId"] = allow_running_step_id
             url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=job_id)
             new_job = Job(current_job, self._gis, url)
             # remove existing properties if not updating.
@@ -2293,19 +2304,33 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = self.notes = self.diagram_id = self.end_date = (
-            self.due_date
-        ) = self.description = self.started_date = self.current_steps = (
-            self.job_template_name
-        ) = self.job_template_id = self.extended_properties = self.holds = (
-            self.diagram_name
-        ) = self.parent_job = self.job_name = self.diagram_version = (
-            self.active_versions
-        ) = self.percent_complete = self.priority = self.job_id = self.created_date = (
-            self.created_by
-        ) = self.closed = self.owned_by = self.start_date = self._location = (
-            self.related_properties
-        ) = None
+        self.job_status = None
+        self.notes = None
+        self.diagram_id = None
+        self.end_date = None
+        self.due_date = None
+        self.description = None
+        self.started_date = None
+        self.current_steps = None
+        self.job_template_name = None
+        self.job_template_id = None
+        self.extended_properties = None
+        self.holds = None
+        self.diagram_name = None
+        self.parent_job = None
+        self.job_name = None
+        self.diagram_version = None
+        self.active_versions = None
+        self.percent_complete = None
+        self.priority = None
+        self.job_id = None
+        self.created_date = None
+        self.created_by = None
+        self.closed = None
+        self.owned_by = None
+        self.start_date = None
+        self._location = None
+        self.related_properties = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
@@ -2508,13 +2533,23 @@ class Job(object):
         step_id             Required String. Active Step ID
         ---------------     --------------------------------------------------------------------
         assigned_type       Required String. Type of assignment designated
-                            Values: "user" | "group" | "unassigned"
+                            Values: "User" | "Group" | "Unassigned"
         ---------------     --------------------------------------------------------------------
         assigned_to         Required String. User id to which the active step is assigned
         ===============     ====================================================================
 
         :return:
             success object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+            job.update_step(step_id='123456', assigned_type='User', assigned_to='my_user')
 
         """
 
