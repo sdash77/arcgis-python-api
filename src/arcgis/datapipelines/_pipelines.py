@@ -186,7 +186,7 @@ class PipelineRuns:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required Item. The `Data Pipeline` to examine.
+        item                Required Item. The `Data Pipeline` type item to run.
         ===============     ====================================================================
 
         :returns: Iterator[PipelineRun]
