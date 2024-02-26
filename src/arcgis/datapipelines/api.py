@@ -55,7 +55,7 @@ def run_data_pipeline(
 ) -> PipelineRun:
     """
 
-    Allows a user to execute a given pipline from a pipeline item
+    Allows a user to run a given data pipeline from a data pipeline item
 
     =================================================     ========================================================================
     **Parameter**                                         **Description**
