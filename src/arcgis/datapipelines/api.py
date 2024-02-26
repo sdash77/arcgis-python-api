@@ -34,7 +34,7 @@ def list_runs(
     =================================================     ========================================================================
     **Parameter**                                         **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
-    item                                                  Required Item. The `Data Pipeline` type item to examine.
+    item                                                  Required Item. The `Data Pipeline` type item to run.
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional GIS. The WebGIS connection class used to run the `run_data_pipeline`
                                                           operation.  If the value is `None`, then the item's GIS object will be
