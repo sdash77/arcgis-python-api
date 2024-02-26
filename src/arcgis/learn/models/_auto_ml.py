@@ -487,7 +487,7 @@ class AutoML(object):
                 val_labels = val_labels.astype(int)
             else:
                 val_labels = self._validation_labels
-        val_labels = self._validation_labels.astype(int)
+        #val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
