@@ -6418,7 +6418,9 @@ def _share_item_with_groups(item, sharing, group_mapping):
             sharing_level = SharingLevel.EVERYONE
 
         item.sharing.sharing_level = sharing_level
-        item.sharing._share(groups=groups)
+        grp_share = item.sharing.groups
+        for grp in groups:
+            grp_share.add(grp)
 
 
 def _wgs84_envelope(envelope):

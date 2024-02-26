@@ -1,4 +1,6 @@
 #!/bin/bash
+cd src
+
 DEPENDENCY_HOST=http://geosaurus.esri.com
 DEPENDENCY_PATH=build/geosaurus2/linux/py${PY_VER}
 DEPENDENCY_ROOT_URL=$DEPENDENCY_HOST/$DEPENDENCY_PATH
