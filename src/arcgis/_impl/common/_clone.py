@@ -1313,7 +1313,7 @@ class _DeepCloner:
                 [
                     node
                     for node in self._graph.values()
-                    if isinstance(node, _ProProjectPackageDefinition)
+                    if isinstance(node, (_ProProjectPackageDefinition, _FormDefinition))
                     and "copy-only" not in node.info["tags"]
                 ]
             )
@@ -5303,6 +5303,20 @@ class _FormDefinition(_ItemDefinition):
                             data = re.sub(key, value["url"], data, 0, re.IGNORECASE)
                         with(open(os.path.join(zip_dir, path), "w")) as file:
                             file.write(form_json)
+                        for new_id in clone_mapping["Item IDs"].values():
+                            new_flayer = target.content.get(new_id)
+                            if new_flayer.title == self.portal_item.title and new_flayer.type == "Feature Service":
+                                with tempfile.NamedTemporaryFile(
+                                    mode="w+", suffix=".json", delete=False
+                                ) as tfile:
+                                    json.dump(json.loads(form_json), tfile)
+                                    tfile.close()
+                                new_flayer.resources.update(
+                                    folder_name="surveyDraft",
+                                    file_name="form.json",
+                                    file=tfile.name,
+                                )
+                                break
 
                 elif os.path.splitext(path)[1].lower() == ".xlsx":
                     xlsx = zipfile.ZipFile(os.path.join(zip_dir, path))
