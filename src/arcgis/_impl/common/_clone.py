@@ -5301,11 +5301,14 @@ class _FormDefinition(_ItemDefinition):
                             )
                         for key, value in clone_mapping["Services"].items():
                             data = re.sub(key, value["url"], data, 0, re.IGNORECASE)
-                        with(open(os.path.join(zip_dir, path), "w")) as file:
+                        with open(os.path.join(zip_dir, path), "w") as file:
                             file.write(form_json)
                         for new_id in clone_mapping["Item IDs"].values():
                             new_flayer = target.content.get(new_id)
-                            if new_flayer.title == self.portal_item.title and new_flayer.type == "Feature Service":
+                            if (
+                                new_flayer.title == self.portal_item.title
+                                and new_flayer.type == "Feature Service"
+                            ):
                                 with tempfile.NamedTemporaryFile(
                                     mode="w+", suffix=".json", delete=False
                                 ) as tfile:
@@ -5387,7 +5390,9 @@ class _FormDefinition(_ItemDefinition):
                             shutil.rmtree(xlsx_dir)
 
             # Add a relationship between the new survey and the service
-            service_related = self.portal_item.related_items("Survey2Service", "forward")
+            service_related = self.portal_item.related_items(
+                "Survey2Service", "forward"
+            )
             data_related = self.portal_item.related_items("Survey2Data", "forward")
             for related_item in self.related_items:
                 if related_item in service_related:
@@ -5426,7 +5431,9 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
-            new_form = shutil.copy2(form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip"))
+            new_form = shutil.copy2(
+                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+            )
             new_item.update(data=new_form)
         except Exception as ex:
             raise Exception(
