@@ -1413,6 +1413,10 @@ class RMJob(GPJob):
     # ----------------------------------------------------------------------
     def _get_items(self, mission, item_name):
         items = {}
+        
+        if self._item is None:
+            return items
+        
         if isinstance(self._item, dict):
             for name, item in self._item.items():
                 parsed_item = self._parse_item(mission, item)
@@ -1425,10 +1429,10 @@ class RMJob(GPJob):
 
     # ----------------------------------------------------------------------
     def _parse_item(self, mission, item):
-        
         url = ""
         itemid = ""
         parsed_item = {}
+        
         try:
             item_props = json.loads(item)
         except:
@@ -1465,6 +1469,9 @@ class RMJob(GPJob):
         items = {}
         scene_layers = set(["mesh", "dsm_mesh", "point_cloud"])
         op_dict = self._op
+
+        if self._op is None:
+            return items
 
         if self._op.__class__.__name__ == "FunctionOutput":
             op_dict = self._op._asdict()

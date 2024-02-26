@@ -138,7 +138,6 @@ def _update_flight_info(
 
 
 def _create_project(
-    self,
     name: str,
     definition: Optional[dict[str, Any]] = None,
     *,
@@ -2096,7 +2095,12 @@ class Project:
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
-        self._project_item = project
+        if project.type == "Ortho Mapping Project": # Reality Mapping Project
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Reality Mapping Project."
+            )
         try:
             self._project_name = self._project_item.title
         except:
@@ -2105,6 +2109,13 @@ class Project:
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
 
     @property
     def missions(self):
