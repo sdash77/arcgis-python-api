@@ -137,6 +137,77 @@ def _update_flight_info(
         raise RuntimeError("Error updating the flight resource")
 
 
+def _create_project(
+    self,
+    name: str,
+    definition: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    **kwargs,
+):
+    """
+    Creates a new realitymapping project item on your enterprise.
+    This project item can be specified as input to the realitymapping functions as value to the
+    image_collection parameter.
+
+    The realitymapping project item can be opened in Reality Maker web app.
+    The Project includes all project inputs, ancillary data such as image footprints and block adjustment reports,
+    intermediate products such as image collections, quick block adjustment results, final products,
+    and status at each stage of processing.
+
+    The create_project method also creates a new folder and adds the realitymapping project item to it.
+    All the realitymapping products such as the image collection, orthomosaic products etc will be added in the
+    same folder. The folder name will be same the project name with the prefix "_realitymapping_"
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    name                   Required string. The name of the project item to be created.
+    ------------------     --------------------------------------------------------------------
+    definition             Optional dictionary.  The project definition dictionary.
+                        the definition contais the template informatios such as adjustSettings,
+                        processingStates, rasterType, information about the flights.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        The realitymapping project item
+
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+    folder = None
+    folderId = None
+
+    if folder is None:
+        folder = "_realitymapping_" + name
+    owner = gis.properties.user.username
+    try:
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
+
+    item_properties = {
+        "title": name,
+        "type": "Ortho Mapping Project", # "Reality Mapping Project",
+        "properties": {"flightCount": 0, "status": "inProgress"},
+    }
+    if definition is None:
+        definition = {}
+    if "spatialReference" in definition:
+        self._spatial_reference = definition["spatialReference"]
+
+    item_properties["text"] = json.dumps(definition)
+    item = gis.content.add(item_properties, folder=folder)
+    return item
+
+
 def _add_mission(
     project,
     image_list: list,
@@ -2021,7 +2092,7 @@ class Project:
     ):
         if not isinstance(project, Item):
             try:
-                project = self._create_project(name=project, definition=definition)
+                project = _create_project(name=project, definition=definition)
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
@@ -2103,83 +2174,7 @@ class Project:
     #        return True
     #    except:
     #        raise RuntimeError("Creation of realitymapping project failed.")
-
     
-    def _create_project(
-        self,
-        name: str,
-        definition: Optional[dict[str, Any]] = None,
-        *,
-        gis: Optional[GIS] = None,
-        **kwargs,
-    ):
-        """
-        Creates a new realitymapping project item on your enterprise.
-        This project item can be specified as input to the realitymapping functions as value to the
-        image_collection parameter.
-
-        The realitymapping project item can be opened in Reality Maker web app.
-        The Project includes all project inputs, ancillary data such as image footprints and block adjustment reports,
-        intermediate products such as image collections, quick block adjustment results, final products,
-        and status at each stage of processing.
-
-        The create_project method also creates a new folder and adds the realitymapping project item to it.
-        All the realitymapping products such as the image collection, orthomosaic products etc will be added in the
-        same folder. The folder name will be same the project name with the prefix "_realitymapping_"
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        name                   Required string. The name of the project item to be created.
-        ------------------     --------------------------------------------------------------------
-        definition             Optional dictionary.  The project definition dictionary.
-                            the definition contais the template informatios such as adjustSettings,
-                            processingStates, rasterType, information about the flights.
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
-
-        :return:
-            The realitymapping project item
-
-        """
-
-        gis = arcgis.env.active_gis if gis is None else gis
-        folder = None
-        folderId = None
-        if kwargs is not None:
-            if "folder" in kwargs:
-                folder = kwargs["folder"]
-
-        if folder is None:
-            folder = "_realitymapping_" + name
-        if folder is not None:
-            if isinstance(folder, dict):
-                if "id" in folder:
-                    folderId = folder["id"]
-                    folder = folder["title"]
-            else:
-                owner = gis.properties.user.username
-                folderId = gis._portal.get_folder_id(owner, folder)
-            if folderId is None:
-                folder_dict = gis.content.folders.create(folder, owner)
-                folder = folder_dict.name
-                folderId = folder_dict._folder_id
-
-        item_properties = {
-            "title": name,
-            "type": "Ortho Mapping Project", # "Reality Mapping Project",
-            "properties": {"flightCount": 0, "status": "inProgress"},
-        }
-        if definition is None:
-            definition = {}
-        if "spatialReference" in definition:
-            self._spatial_reference = definition["spatialReference"]
-
-        item_properties["text"] = json.dumps(definition)
-        item = gis.content.add(item_properties, folder=folder)
-        return item
-
 
     def add_mission(
         self,
