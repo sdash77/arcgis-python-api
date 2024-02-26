@@ -136,7 +136,7 @@ class PipelineRuns:
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required String. The `url` of the pipeline endpoint.
+    url                 Required String. The `url` of the data pipeline endpoint.
     ---------------     --------------------------------------------------------------------
     session             Required EsriSession. The connection object.
     ===============     ====================================================================
