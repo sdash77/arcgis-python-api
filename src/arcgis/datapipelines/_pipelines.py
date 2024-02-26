@@ -65,7 +65,7 @@ class PipelineRun:
     def result(self) -> dict[str, Any]:
         """
         Gets the run results. This operation will pause the thread when called
-        until the pipeline finishes.
+        until the data pipeline run finishes.
 
         :returns: dict[str,Any]
         """
