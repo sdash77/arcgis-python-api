@@ -16,7 +16,7 @@ _log = logging.getLogger()
 ###########################################################################
 class PipelineRun:
     """
-    Represents a **single** run of a `Data Pipeline` process execution.
+    Represents a **single** run of a `Data Pipeline` process.
 
     ===============     ====================================================================
     **Parameter**        **Description**
