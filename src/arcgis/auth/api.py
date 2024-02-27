@@ -33,11 +33,7 @@ from requests.adapters import HTTPAdapter
 
 
 from urllib3 import Retry
-from urllib3 import __version__ as __URLLIB3VERSION__
 
-__URLLIB3VERSION__ = [
-    int(i) if i.isdigit() else i for i in __URLLIB3VERSION__.split(".")
-]
 
 from ._version import __version__
 
@@ -226,52 +222,28 @@ class EsriSession:
             self.proxies = proxies
 
         if "retries" in kwargs and kwargs.get("retries"):
-            if __URLLIB3VERSION__[0] <= 1:
-                r = Retry(
-                    total=kwargs.get("retries", 5),
-                    read=kwargs.get("retries", 5),
-                    connect=kwargs.get("retries", 5),
-                    status_forcelist=kwargs.get(
-                        "status_to_retry", (413, 429, 503, 500, 502, 504)
+            r = Retry(
+                total=kwargs.get("retries", 5),
+                read=kwargs.get("retries", 5),
+                connect=kwargs.get("retries", 5),
+                status_forcelist=kwargs.get(
+                    "status_to_retry", (413, 429, 503, 500, 502, 504)
+                ),
+                allowed_methods=kwargs.get(
+                    "method_whitelist",
+                    frozenset(
+                        [
+                            "POST",
+                            "DELETE",
+                            "GET",
+                            "HEAD",
+                            "OPTIONS",
+                            "PUT",
+                            "TRACE",
+                        ]
                     ),
-                    method_whitelist=kwargs.get(
-                        "method_whitelist",
-                        frozenset(
-                            [
-                                "POST",
-                                "DELETE",
-                                "GET",
-                                "HEAD",
-                                "OPTIONS",
-                                "PUT",
-                                "TRACE",
-                            ]
-                        ),
-                    ),
-                )
-            else:
-                r = Retry(
-                    total=kwargs.get("retries", 5),
-                    read=kwargs.get("retries", 5),
-                    connect=kwargs.get("retries", 5),
-                    status_forcelist=kwargs.get(
-                        "status_to_retry", (413, 429, 503, 500, 502, 504)
-                    ),
-                    allowed_methods=kwargs.get(
-                        "method_whitelist",
-                        frozenset(
-                            [
-                                "POST",
-                                "DELETE",
-                                "GET",
-                                "HEAD",
-                                "OPTIONS",
-                                "PUT",
-                                "TRACE",
-                            ]
-                        ),
-                    ),
-                )
+                ),
+            )
             if isinstance(self.auth, EsriPKIAuth):
                 from .tools._pki_adaptor import PKIAdapter
 
