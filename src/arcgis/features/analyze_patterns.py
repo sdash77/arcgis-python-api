@@ -332,15 +332,15 @@ def find_point_clusters(
     noise. Multiple clusters will be assigned each color. Colors will be assigned
     and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-    This task uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters. If the method
-    is not specified and the searchDistance value is not provided, the HDBSCAN method will
-    be used. If the method is not specified and searchDistance value is provided, the
-    DBSCAN algorithm will be used. DBSCAN will return clusters with similar densities
-    and is only appropriate if there is a clear search distance to use for the analysis.
-    HDBSCAN will use a range of distances to separate clusters of varying densities from
-    sparser noise resulting in more data-driven clusters. OPTICS will use the distances
-    between neighboring features to create a reachability plot, and use it to separate
-    clusters of varying densities from noise.
+    This method uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters.
+    If the method is not specified and the `search_distance` value is not provided,
+    the HDBSCAN method will be used. If the method is not specified and `search_distance` value is provided,
+    the DBSCAN algorithm will be used. DBSCAN will use distance, and optionally time, to return
+    clusters with similar densities. It is only appropriate if there is a clear search
+    distance to use for the analysis. HDBSCAN will use a range of distances to separate
+    clusters of varying densities from sparser noise resulting in more data-driven clusters.
+    OPTICS will use the distances, and optionally time, between neighboring features to
+    create a reachability plot, and use it to separate clusters of varying densities from noise.
 
     ============================    =========================================================
     **Parameter**                   **Description**
@@ -392,17 +392,15 @@ def find_point_clusters(
                                                         "outSR": {"wkid": 3857},
                                                         "overwrite": True}
     ----------------------------    ---------------------------------------------------------
-    gis                             Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
+    gis                             Optional, the GIS on which this tool runs. If not
                                     specified, the active GIS is used.
     ----------------------------    ---------------------------------------------------------
     estimate                        Optional Boolean. If True, the number of credits to run the operation will be returned.
     ----------------------------    ---------------------------------------------------------
-    future                          Optional, If True, a future object will be returned and the process
-                                    will not wait for the task to complete.
-                                    The default is False, which means wait for results.
+    future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ----------------------------    ---------------------------------------------------------
-    method                          Optional string. Specifies the method that will be used
-                                    to find clusters. If the method is not specified and the
+    method                          Optional string. Specifies the method that will be used to
+                                    find clusters. If the method is not specified and the
                                     search_distance value is not provided, the HDBSCAN algorithm
                                     will be used. If the method is not specified and the search_distance
                                     value is provided, the DBSCAN algorithm will be used.
@@ -411,21 +409,35 @@ def find_point_clusters(
 
                                     Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
     ----------------------------    ---------------------------------------------------------
-    sensitivity                     Optional float. A double value between 0 and 100 that
-                                    determines the compactness of the clusters.
+    sensitivity                     Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
 
                                     This parameter is available in ArcGIS Enterprise 11.2 or higher.
     ----------------------------    ---------------------------------------------------------
-    time_field                      Optional string. The date field that will be used to
-                                    calculate the time interval between features.
-                                    Only available for ArcGIS Online or Enterprise 11.3+.
+    time_field                      Optional string. Specifies the field in the `analysis_layer`
+                                    value that contains a timestamp for each feature. This parameter
+                                    is only available in ArcGIS Online.
+
+                                    Example: `time_field = "start_time"`
+
+                                    .. note::
+                                        Time related parameters can only be used when the `method` is
+                                        DBSCAN or OPTICS.
     ----------------------------    ---------------------------------------------------------
-    search_time_interval            Optional integer. The time interval used to calculate the
-                                    distance between features. The default value is 0.
-                                    Only available for ArcGIS Online or Enterprise 11.3+.
+    search_time_interval            Optional float. A value that will be used to determine
+                                    whether features form a space-time cluster. The search
+                                    time interval spans before and after the time of each feature.
+                                    This parameter is only available in ArcGIS Online.
+
+                                    Example: `search_time_interval = 4`
     ----------------------------    ---------------------------------------------------------
-    search_time_interval_units      Optional string. The units of the time interval value.
-                                    You must provide a value if search_time_interval has been set.
+    search_time_interval_unit       Optional string. The unit that will be used with the time value
+                                    specified for `search_time_interval`. You must provide a value
+                                    if `search_time_interval` has been set. This parameter is
+                                    only available in ArcGIS Online.
+
+                                    Values: "Seconds" | "Minutes" | "Hours" | "Days" | "Weeks" | "Months" | "Years"
+
+                                    Example: `search_time_unit = "Minutes"`
     ============================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
