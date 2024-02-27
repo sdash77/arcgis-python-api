@@ -4714,6 +4714,12 @@ class FeatureLayerCollection(_GISResource):
         .. note::
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
+        .. note::
+            Only arcobject Feature Services support this operation. If the service supports this operation, then
+            the `supportsQueryDomains` property in the service properties is True. If this value is False or not
+            present, then the service cannot use this operation. In addition, this is only availabel for arcobject and
+            hosted Feature Services in Enterprise, not for ArcGIS Online.
+
         ================================     ====================================================================
         **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
@@ -5862,154 +5868,7 @@ class FeatureLayerCollection(_GISResource):
         out_path=None,
     ):
         """
-        The synchronizeReplica operation is performed on a feature service resource. This operation
-        synchronizes changes between the feature service and a client based on the replicaID
-        provided by the client. Requires the sync capability. See Sync overview for more information
-        on sync.
-        The client obtains the replicaID by first calling the _create_replica operation.
-        Synchronize applies the client's data changes by importing them into the server's
-        geodatabase. It then exports the changes from the server geodatabase that have taken place
-        since the last time the client got the data from the server. Edits can be supplied in the
-        edits parameter, or, alternatively, by using the editsUploadId and editUploadFormat to
-        identify a file containing the edits that were previously uploaded using the upload_item
-        operation.
-        The response for this operation includes the replicaID, new replica generation number, or
-        the layer's generation numbers. The response has edits or layers according to the
-        syncDirection/syncLayers. Presence of layers and edits in the response is indicated by the
-        responseType.
-        If the responseType is esriReplicaResponseTypeEdits or esriReplicaResponseTypeEditsAndData,
-        the result of this operation can include arrays of edit results for each layer/table edited
-        as specified in edits. Each edit result identifies a single feature on a layer or table and
-        indicates if the edits were successful or not. If an edit is not successful, the edit result
-        also includes an error code and an error description.
-        If syncModel is perReplica and syncDirection is download or bidirectional, the
-        _synchronize_replica operation's response will have edits. If syncDirection is snapshot, the
-        response will have replacement data.
-        If syncModel is perLayer, and syncLayers have syncDirection as download or bidirectional,
-        the response will have edits. If syncLayers have syncDirection as download or bidirectional
-        for some layers and snapshot for some other layers, the response will have edits and data.
-        If syncDirection for all the layers is snapshot, the response will have replacement data.
-        When syncModel is perReplica, the createReplica and synchronizeReplica operations' responses
-        contain replicaServerGen. When syncModel is perLayer, the createReplica and
-        synchronizeReplica operations' responses contain layerServerGens.
-        You can provide arguments to the synchronizeReplica operation as defined in the parameters
-        table below.
-
-        ===============                 ====================================================================
-        **Parameter**                    **Description**
-        ---------------                 --------------------------------------------------------------------
-        replica_id                      The ID of the replica you want to synchronize.
-        ---------------                 --------------------------------------------------------------------
-        transport_type
-        ---------------                 --------------------------------------------------------------------
-        replica_server_gen              Is a generation number that allows the server to keep track of what
-                                        changes have already been synchronized. A new replicaServerGen is sent with the response
-                                        to the synchronizeReplica operation. Clients should persist this value and use it with the
-                                        next synchronizeReplica call.
-                                        It applies to replicas with syncModel = perReplica.
-                                        For replicas with syncModel = perLayer, layer generation numbers are specified using
-                                        parameter: syncLayers; and replicaServerSibGen is not needed.
-        ---------------                 --------------------------------------------------------------------
-        return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
-                                        synchronize will be returned to the client in the addResults sections of the response.
-                                        Otherwise, the IDs are not returned. The default is false.
-
-                                        Values: true | false
-        ---------------                 --------------------------------------------------------------------
-        edits                           The edits the client wants to apply to the service. Alternatively, the
-                                        edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
-                                        The edits are described using an array where an element in the array includes:
-                                        - The layer or table ID
-                                        - The feature or row edits to apply listed as inserts, updates, and deletes
-                                        - The attachments to apply listed as inserts, updates, and deletes
-                                        For features, adds and updates are specified as feature objects that include geometry and
-                                        attributes.
-                                        Deletes can be specified using globalIDs for features and attachments.
-                                        For attachments, updates and adds are specified using the following set of properties for
-                                        each attachment. If embedding the attachment, set the data property; otherwise, set the url
-                                        property. All other properties are required:
-                                        - globalid - The globalID of the attachment that is to be added or updated.
-                                        - parentGlobalid - The globalID of the feature associated with the attachment.
-                                        - contentType - Describes the file type of the attachment (for example, image/jpeg).
-                                        - name - The file name (for example, hydrant.jpg).
-                                        - data - The base 64 encoded data if embedding the data. Only required if the attachment
-                                            is embedded.
-                                        - url - The location where the service will upload the attachment file (for example,
-                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
-                                            embedded.
-        ---------------                 --------------------------------------------------------------------
-        return_attachment_databy_url    If true, a reference to a URL will be provided for each
-                                        attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
-                                        response. The default is true. Applies only if attachments are included in the replica.
-        ---------------                 --------------------------------------------------------------------
-        asynchronous                    If true, the request is processed as an asynchronous job and a URL is
-                                        returned that a client can visit to check the status of the job. See the topic on
-                                        asynchronous usage for more information. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        sync_direction                  Determines whether to upload, download, or upload and download on sync. By
-                                        default, a replica is synchronized bi-directionally. Only applicable when
-                                        syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
-                                        syncLayers.
-
-                                        Values: download | upload | bidirectional | snapshot
-
-                                        - download-The changes that have taken place on the server since last download are
-                                            returned. Client does not need to send any changes. If the changes are sent, service
-                                            will ignore them.
-                                        - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
-                                            parameters are applied, and no changes are downloaded from the server.
-                                        - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
-                                            parameters are applied, and changes on the server are downloaded. This is the default
-                                            value.
-                                        - snapshot-The current state of the features is downloaded from the server. If any edits
-                                            are specified, they will be ignored.
-        ---------------                 --------------------------------------------------------------------
-        sync_layers                     Allows a client to specify layer-level generation numbers for a sync
-                                        operation. It can also be used to specify sync directions at layer-level. This parameter
-                                        is needed for replicas with syncModel = perLayer. It is ignored for replicas with
-                                        syncModel = perReplica.
-                                        serverGen is required for layers with syncDirection = bidirectional or download.
-                                        serverSibGen is needed only for replicas where the targetType = server. For replicas with
-                                        syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
-                                        replicaServerSibGen does in the case of syncModel = perReplica. See the
-                                        replicaServerSibGen parameter for more information.
-                                        If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
-                                        syncModel is perLayer, the layers that do not have syncDirection values will use the value
-                                        of the syncDirection parameter. If the syncDirection parameter is not specified, the
-                                        default value of bidirectional is used.
-
-                                        Values: download | upload | bidirectional | snapshot
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_id                 The ID for the uploaded item that contains the edits the client wants to
-                                        apply to the service. Used in conjunction with editsUploadFormat.
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_format             The data format of the uploaded data reference in edit_upload_id.
-                                        data_format="json"
-        ---------------                 --------------------------------------------------------------------
-        data_format                     The format of the replica geodatabase returned in the response. The
-                                        default is json.
-
-                                        Values: filegdb, json, sqlite, shapefile
-        ---------------                 --------------------------------------------------------------------
-        rollback_on_failure             Determines the behavior when there are errors while importing edits
-                                        on the server during synchronization. This only applies in cases where edits are being
-                                        uploaded to the server (syncDirection = upload or bidirectional). See the
-                                        RollbackOnFailure and Sync Models topic for more details.
-                                        When true, if an error occurs while importing edits on the server, all edits are rolled
-                                        back (not applied), and the operation returns an error in the response. Use this setting
-                                        when the edits are such that you will either want all or none applied.
-                                        When false, if an error occurs while importing an edit on the server, the import process
-                                        skips the edit and continues. All edits that were skipped are returned in the edits
-                                        results with information describing why the edits were skipped.
-        ---------------                 --------------------------------------------------------------------
-        close_replica                   If true, the replica will be unregistered when the synchronize completes.
-                                        This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
-                                        replica can continue to be synchronized. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        out_path                        Folder path to save the file
-        ===============                 ====================================================================
-
-        :returns:
+        Docstring in SyncManager.synchronize.
         """
 
         url = "{url}/synchronizeReplica".format(url=self._url)
