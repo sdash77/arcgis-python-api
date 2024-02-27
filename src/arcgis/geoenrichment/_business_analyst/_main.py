@@ -2061,9 +2061,10 @@ class BusinessAnalyst(object):
                 # peel off just the id's for this batch
                 batch_id_lst = geographies[idx : idx + batch_size]
 
-                if isinstance(batch_id_lst[0], NamedArea):
-                    # get just the area ids in each named area
-                    batch_id_lst = [b._areaid for b in batch_id_lst]
+                # get just the area ids in each named area
+                batch_id_lst = [
+                    b._areaid if isinstance(b, NamedArea) else b for b in batch_id_lst
+                ]
 
                 # create the param payload
                 params["studyAreas"] = json.dumps(
