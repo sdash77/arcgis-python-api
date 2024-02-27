@@ -313,7 +313,7 @@ class LocationTrackingManager:
                     }
                 }
             )
-        item.sharing._share(groups=[group])
+        item.sharing.groups.add(group)
         if group.owner != self.item.owner:
             group.reassign_to(self.item.owner)
             group.remove_users([self._gis.users.me])
