@@ -28,6 +28,7 @@ time = LazyLoader("time")
 template_list = [
     "blank_fullscreen",
     "blank_scrolling",
+    "blank_scrollable",
     "foldable",
     "launchpad",
     "jewelrybox",
@@ -83,6 +84,7 @@ template_list = [
 class Templates(Enum):
     BLANKFULLSCREEN = "blank_fullscreen"
     BLANKSCROLLING = "blank_scrolling"
+    BLANKSCROLLABLE = "blank_scrollable"
     FOLDABLE = "foldable"
     LAUNCHPAD = "launchpad"
     JEWELERYBOX = "jewelrybox"
@@ -316,18 +318,29 @@ class WebExperience(object):
 
             temp_low = template.lower()
             temp_low.replace(" ", "_")
-            if temp_low in template_list:
-                json_temp = temp_low + ".json"
+            if temp_low not in template_list:
+                temp_low = "blank_fullscreen"
+            if temp_low == "blank_scrolling":
+                temp_low = "blank_scrollable"
+            temp_low.replace("_", "")
+            if temp_low != "dash":
+                temp_url = (
+                    "https://experiencedev.arcgis.com/cdn/2400/templates/app/"
+                    + temp_low
+                    + "/config.json"
+                )
+                temp_dict = self._gis._con.get(temp_url, {"f": "json"})
             else:
-                json_temp = "blank_fullscreen.json"
-            json_path = os.path.join(
-                os.path.dirname(__file__), "_ref", "templates", json_temp
-            )
+                json_path = os.path.join(
+                    os.path.dirname(__file__), "_ref", "templates", "dash.json"
+                )
+                with open(json_path, "r") as f:
+                    temp_dict = json.load(f)
 
-            with open(json_path, "r") as f:
-                temp_dict = json.load(f)
-
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
+            if "attributes" in temp_dict:
+                temp_dict["attributes"]["portalUrl"] = self._gis.url
+            else:
+                temp_dict["attributes"] = {"portalUrl": self._gis.url}
             if self._gis._is_agol:
                 exb_version = self._gis._con.get(
                     "https://experience.arcgis.com/version.json", {"f": "json"}
@@ -337,16 +350,17 @@ class WebExperience(object):
                 exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
 
             temp_dict["exbVersion"] = exb_version
+            temp_dict["originExbVersion"] = exb_version
             if "widgets" in temp_dict:
                 for widget in temp_dict["widgets"].values():
                     if "version" in widget:
                         widget["version"] = exb_version
 
-            if "originExbVersion" in temp_dict:
-                if temp_dict["originExbVersion"] > exb_version:
-                    warnings.warn(
-                        "This template comes from a newer version of Experience Builder than the current portal has. Some widgets may not work as expected."
-                    )
+            # if "originExbVersion" in temp_dict:
+            #     if temp_dict["originExbVersion"] > exb_version:
+            #         warnings.warn(
+            #             "This template comes from a newer version of Experience Builder than the current portal has. Some widgets may not work as expected."
+            #         )
             # temp_dict["timestamp"]
             # create item and generate basic properties
             if name is None:
