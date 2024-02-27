@@ -1,5 +1,6 @@
 import os
 from fastai.vision.transform import rotate, brightness, contrast
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
@@ -34,7 +35,7 @@ from arcgis.learn import (
     PSETAE,
     RandLANet,
     SQNSeg,
-    MMDetection3D
+    MMDetection3D,
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
@@ -43,13 +44,11 @@ if os.environ.get("run_nightly") == "1":
     data_folder = r"/root/test_automation/data/test_train_model/train_model_regression"
 else:
     data_folder = r"/root/test_automation/data/test_train_model/train_model"
-data_folder_inference = (
-    r"/root/test_automation/data/test_train_model/train_inference"
+data_folder_inference = r"/root/test_automation/data/test_train_model/train_inference"
+data_folder_ms = r"/root/test_automation/data/test_train_model/train_model_ms"
+authorization_path = (
+    r"/root/test_automation/data/test_train_model/properties/properties.json"
 )
-data_folder_ms = (
-    r"/root/test_automation/data/test_train_model/train_model_ms"
-)
-authorization_path = r"/root/test_automation/data/test_train_model/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],
@@ -77,20 +76,22 @@ X = [
     "vp__Pa_",
 ]
 
-class_mapping_psetae={204:'Pistachios', 
-                    2:'Cotton', 
-                    176:'Grassland/Pasture',
-                    195:'Herbaceous Wetlands',
-                    225:'Dbl Crop WinWht/Corn',
-                    24:'Winter Wheat',
-                    61:'Fallow/Idle Cropland', 
-                    75:'Almonds', 
-                    54:'Tomatoes', 
-                    36:'Alfalfa', 
-                    37:'Other Hay/Non Alfalfa',
-                    69:'Grapes',
-                    67:'Peaches',
-                    121:'Developed'}
+class_mapping_psetae = {
+    204: "Pistachios",
+    2: "Cotton",
+    176: "Grassland/Pasture",
+    195: "Herbaceous Wetlands",
+    225: "Dbl Crop WinWht/Corn",
+    24: "Winter Wheat",
+    61: "Fallow/Idle Cropland",
+    75: "Almonds",
+    54: "Tomatoes",
+    36: "Alfalfa",
+    37: "Other Hay/Non Alfalfa",
+    69: "Grapes",
+    67: "Peaches",
+    121: "Developed",
+}
 
 
 def setuposenviron():
@@ -786,7 +787,7 @@ data = {
         "model_test": "pix2pix_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": None
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -999,7 +1000,7 @@ data = {
             "model_args": {"batch_size": 1, "padding": 56},
         },
     },
-        "maxdeeplab": {
+    "maxdeeplab": {
         "model_name": "maxdeeplab",
         "datapath": "panoptic_rgb",
         "datapath_ms": "panoptic_ms",
@@ -1008,14 +1009,14 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "panoptic_rgb"),
             "batch_size": None,
-             "n_masks":38,
-             "resize_to":256
+            "n_masks": 38,
+            "resize_to": 256,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "panoptic_ms"),
             "batch_size": None,
-             "n_masks":38,
-             "resize_to":256,
+            "n_masks": 38,
+            "resize_to": 256,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -1037,12 +1038,12 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "rgb_small"),
             "batch_size": None,
-             "chip_size":256
+            "chip_size": 256,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ms_small"),
             "batch_size": None,
-             "chip_size":256,
+            "chip_size": 256,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -1259,7 +1260,6 @@ data = {
         },
         "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
     },
-
     "mlmodel": {
         "model_name": "mlmodel",
         "datapath": "automl_data",
@@ -1310,8 +1310,7 @@ data = {
             "path": os.path.join(data_folder, "psetae_data"),
             "batch_size": 64,
             "dataset_type": "PSETAE",
-            "class_mapping": class_mapping_psetae
-
+            "class_mapping": class_mapping_psetae,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1338,7 +1337,6 @@ data = {
             "label_columns": "sentiment",
             "remove_html_tags": True,
             "remove_urls": True,
-            
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1360,12 +1358,12 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
             "batch_size": None,
-            "min_points":100,
+            "min_points": 100,
             "classes_of_interest": [5],
             "remap_classes": {},
-            "extra_features": ['intensity', 'numberOfReturns', 'returnNumber'],
-            "class_mapping":{},
-            "dataset_type": "PointCloud"
+            "extra_features": ["intensity", "numberOfReturns", "returnNumber"],
+            "class_mapping": {},
+            "dataset_type": "PointCloud",
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1390,9 +1388,9 @@ data = {
             "min_points": 100,
             "classes_of_interest": [5],
             "remap_classes": {},
-            "extra_features": ['intensity', 'numberOfReturns', 'returnNumber'],
-            "class_mapping":{},
-            "dataset_type": "PointCloud"
+            "extra_features": ["intensity", "numberOfReturns", "returnNumber"],
+            "class_mapping": {},
+            "dataset_type": "PointCloud",
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1414,7 +1412,7 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
             "batch_size": None,
-            "dataset_type": "PointCloudOD"
+            "dataset_type": "PointCloudOD",
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1427,7 +1425,7 @@ data = {
             "sample_input": "pass",
         },
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
-    }
+    },
 }
 
 
