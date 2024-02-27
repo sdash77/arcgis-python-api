@@ -1751,17 +1751,23 @@ def _get_stac_metadata_file(item, context=None):
         "gpt.geocloud.com/sentinel/stac": "self_href",
         "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
-
+    processing_template = None
     if isinstance(context, dict) and context:
         context_lower = {k.lower(): v for k, v in context.items()}
-        hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
-        href_list = [href for href in hrefs.values() if href is not None]
-        if not href_list:
-            raise RuntimeError(
-                "No valid asset hrefs found. Please review the assetManagement parameter."
-            )
-        else:
-            return href_list if len(href_list) != 1 else href_list[0]
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return href_list
 
     stacs = list(product_file_map.keys())
 
@@ -1819,14 +1825,15 @@ def _get_stac_metadata_file(item, context=None):
         if href is not None and isinstance(href, str) and href.startswith("s3")
         else href
     )
-
-    if (
+    if processing_template is None and (
         collection_id.startswith(
             ("sentinel-2", "sentinel-s2", "landsat-c2l2", "landsat-c2-", "sentinel_v1")
         )
         or collection_id == "sentinel"
     ):
-        href = rf"{href}\Multiband"
+        processing_template = "Multiband"
+
+    href += rf"\{processing_template}" if processing_template is not None else ""
 
     return href
 
@@ -1941,7 +1948,7 @@ def _get_static_catalog_item_resources(request_link, request_params={}):
 def _find_stac_asset_hrefs(assets, context):
     hrefs = {}
     asset_management = context.get("assetmanagement", {})
-    if isinstance(asset_management, str):
+    if not isinstance(asset_management, list):
         asset_management = [asset_management]
     for asset_info in asset_management:
         if isinstance(asset_info, str):
