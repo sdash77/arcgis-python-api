@@ -1862,7 +1862,7 @@ def _get_stac_links(stac_json, cat_filename, rel):
     return all_links
 
 
-def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
+def _get_all_stac_catalog_items(stac_json, filename, request_params={}, context=None):
     """
     This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
     :param stac_json: input Static STAC (Catalog - JSON dictionary)
@@ -1874,7 +1874,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             urljoin(*item_link) if not isinstance(item_link, str) else item_link
         )
         item_resources = _get_static_catalog_item_resources(
-            request_link, request_params
+            request_link, request_params, context
         )
         yield item_resources
 
@@ -1888,6 +1888,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
             "binary/octet-stream",
             "application/octet-stream",
             "text/plain; charset=utf-8",
@@ -1895,10 +1896,12 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
-        yield from _get_all_stac_catalog_items(child_json, request_link, request_params)
+        yield from _get_all_stac_catalog_items(
+            child_json, request_link, request_params, context
+        )
 
 
-def _get_static_catalog_item_resources(request_link, request_params={}):
+def _get_static_catalog_item_resources(request_link, request_params={}, context=None):
 
     if isinstance(request_link, str):
         item_res = _requests.get(request_link, **request_params)
@@ -1906,15 +1909,37 @@ def _get_static_catalog_item_resources(request_link, request_params={}):
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
             "application/octet-stream",
             "text/plain; charset=utf-8",
             "text/plain",
+            "binary/octet-stream",
         ]:
             raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
         item = item_res.json()
     else:
         request_link, item = request_link
+
     assets = item["assets"]
+
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(assets, context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return item, href_list
+
     product_file = None
     self_link_products = [
         "https://maxar-opendata.s3.amazonaws.com/events",
@@ -1975,11 +2000,15 @@ def _find_stac_asset_href(assets, asset_info):
                     return None
         if href_key in value:
             href = value[href_key]
-            href = (
-                rf"/vsis3{href[4:]}"
-                if href is not None and isinstance(href, str) and href.startswith("s3")
-                else href
-            )
+            if href is not None and isinstance(href, str):
+                if href.startswith("s3"):
+                    href = rf"/vsis3{href[4:]}"
+                elif ".blob.core.windows.net" in href or ".amazonaws.com" in href:
+                    pass
+                elif href.lower().startswith(
+                    ("https://", "http://")
+                ) and href.lower().endswith((".tiff", ".tif")):
+                    href = f"/vsicurl/{href}"
             return href
     else:
         for value in assets.values():

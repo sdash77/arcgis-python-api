@@ -8358,11 +8358,13 @@ class Raster:
             data = _requests.get(stac_item, **request_params)
             if data.status_code != 200 or data.headers.get("content-type") not in [
                 "application/json",
+                "application/json; charset=utf-8",
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
                 "text/plain; charset=utf-8",
                 "text/plain",
+                "binary/octet-stream",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8413,7 +8415,9 @@ class Raster:
 
         metadata_file = _get_stac_metadata_file(item, context)
         if not metadata_file:
-            item, metadata_file = _get_static_catalog_item_resources((item_href, item))
+            item, metadata_file = _get_static_catalog_item_resources(
+                (item_href, item), request_params, context
+            )
             if not metadata_file:
                 raise RuntimeError("STAC Item not supported")
 
@@ -12956,6 +12960,7 @@ class RasterCollection:
         attribute_dict: Optional[dict[str, Any]] = None,
         request_params: Optional[dict[str, Any]] = None,
         engine: Optional[str] = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -13079,6 +13084,7 @@ class RasterCollection:
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
+                "application/json; charset=utf-8",
                 "binary/octet-stream",
                 "application/octet-stream",
                 "text/plain; charset=utf-8",
@@ -13095,7 +13101,9 @@ class RasterCollection:
             ) and not _get_stac_links(json_data, stac_catalog, "child"):
                 raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
 
-            items = _get_all_stac_catalog_items(json_data, stac_catalog, request_params)
+            items = _get_all_stac_catalog_items(
+                json_data, stac_catalog, request_params, context
+            )
         else:
             try:
                 import pystac
@@ -13126,7 +13134,7 @@ class RasterCollection:
             if is_pystac_cat:
                 item_dict = item_resources.to_dict()
                 item_dict, item_product = _get_static_catalog_item_resources(
-                    (item_resources.self_href, item_dict)
+                    (item_resources.self_href, item_dict), context=context
                 )
             else:
                 item_dict, item_product = item_resources
