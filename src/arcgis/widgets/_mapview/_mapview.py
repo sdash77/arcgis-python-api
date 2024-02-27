@@ -1520,6 +1520,9 @@ class MapView(widgets.DOMWidget):
               reproject accurately to Web Mercator (what the ``MapView``
               widget uses).
 
+        .. note::
+            3DTiles Services are not supported on a Scene at the moment.
+
         .. code-block:: python
 
             # USAGE EXAMPLE: Add a feature layer with smart mapping renderer and
@@ -1584,7 +1587,12 @@ class MapView(widgets.DOMWidget):
                             self.add_layer(layer, options)
                             # self._add_layer_to_widget(layer, options)
             except KeyError:
-                log.warning("No 'layers' in Item: will not be added to map")
+                if item.type == "3DTiles Service":
+                    log.warning(
+                        "3D Tiles Service are not supported on a Scene at the moment."
+                    )
+                else:
+                    log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
             if isinstance(item, FeatureCollection):
                 # Need to do extra processing when plotting Feature Collection
