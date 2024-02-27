@@ -1,4 +1,4 @@
-urllib3<2
+urllib3 >=2,<3
 cachetools
 lxml
 cryptography

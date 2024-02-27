@@ -154,6 +154,7 @@ jobs:
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
+          conda install -c main "urllib3>=2,<3" --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save Cache
         id: save-cache
