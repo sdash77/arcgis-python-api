@@ -1593,7 +1593,7 @@ def _get_stac_api_search_items(
     return all_items
 
 
-def _get_stac_metadata_file(item):
+def _get_stac_metadata_file(item, context=None):
     """
     This method is used to retrieve the metadata file of a valid STAC item.
     :param item: input STAC Item (JSON dictionary)
@@ -1751,6 +1751,17 @@ def _get_stac_metadata_file(item):
         "gpt.geocloud.com/sentinel/stac": "self_href",
         "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
+
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
+        href_list = [href for href in hrefs.values() if href is not None]
+        if not href_list:
+            raise RuntimeError(
+                "No valid asset hrefs found. Please review the assetManagement parameter."
+            )
+        else:
+            return href_list if len(href_list) != 1 else href_list[0]
 
     stacs = list(product_file_map.keys())
 
@@ -1925,6 +1936,51 @@ def _get_static_catalog_item_resources(request_link, request_params={}):
         ]
 
     return item, product_file
+
+
+def _find_stac_asset_hrefs(assets, context):
+    hrefs = {}
+    asset_management = context.get("assetmanagement", {})
+    if isinstance(asset_management, str):
+        asset_management = [asset_management]
+    for asset_info in asset_management:
+        if isinstance(asset_info, str):
+            asset_key = asset_info
+            asset_info = {"key": asset_key}
+        else:
+            asset_key = asset_info["key"]
+        hrefs[asset_key] = _find_stac_asset_href(assets, asset_info)
+    return hrefs
+
+
+def _find_stac_asset_href(assets, asset_info):
+    asset_key = asset_info["key"]
+    href_key = asset_info.get("hrefKey", "href")
+    asset_path = asset_info.get("path")
+
+    if asset_key in assets:
+        value = assets[asset_key]
+        if asset_path:
+            for key in asset_path:
+                if key in value:
+                    value = value[key]
+                else:
+                    return None
+        if href_key in value:
+            href = value[href_key]
+            href = (
+                rf"/vsis3{href[4:]}"
+                if href is not None and isinstance(href, str) and href.startswith("s3")
+                else href
+            )
+            return href
+    else:
+        for value in assets.values():
+            if isinstance(value, dict):
+                href = _find_stac_asset_href(value, asset_info)
+                if href:
+                    return href
+    return None
 
 
 def _lookup_datastore(datastore_type, gis=None):

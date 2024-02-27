@@ -8257,6 +8257,7 @@ class Raster:
         stac_item: Union[str, Item],
         request_params: Optional[dict[str, Any]] = None,
         engine: Optional[dict[str, Any]] = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -8410,7 +8411,7 @@ class Raster:
         from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
         from arcgis.raster.functions import composite_band
 
-        metadata_file = _get_stac_metadata_file(item)
+        metadata_file = _get_stac_metadata_file(item, context)
         if not metadata_file:
             item, metadata_file = _get_static_catalog_item_resources((item_href, item))
             if not metadata_file:
@@ -12631,6 +12632,7 @@ class RasterCollection:
         request_method: str = "POST",
         request_params: Optional[dict[str, Any]] = None,
         engine: str = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -12866,7 +12868,8 @@ class RasterCollection:
         )
 
         if search_stac is None:
-            raise RuntimeError("STAC API not supported")
+            if context is None:
+                raise RuntimeError("STAC API not supported")
 
         get_all_items = False
 
@@ -12912,7 +12915,7 @@ class RasterCollection:
 
         raster_list = []
         for item in items:
-            metadata_file = _get_stac_metadata_file(item)
+            metadata_file = _get_stac_metadata_file(item, context)
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
             ras = (
