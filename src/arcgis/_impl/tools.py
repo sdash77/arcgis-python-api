@@ -4866,12 +4866,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
         noise. Multiple clusters will be assigned each color. Colors will be assigned
         and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-        This method utilizes two related algorithms. By default the HDBSCAN algorithm is
-        used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
-        is used. DBSCAN is only appropriate if there is a very clear search distance to use
-        for your analysis and will return clusters with similar densities. When
-        no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
-        of varying densities from sparser noise resulting in more data-driven clusters.
+        This method uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters.
+        If the method is not specified and the `search_distance` value is not provided,
+        the HDBSCAN method will be used. If the method is not specified and `search_distance` value is provided,
+        the DBSCAN algorithm will be used. DBSCAN will use distance, and optionally time, to return
+        clusters with similar densities. It is only appropriate if there is a clear search
+        distance to use for the analysis. HDBSCAN will use a range of distances to separate
+        clusters of varying densities from sparser noise resulting in more data-driven clusters.
+        OPTICS will use the distances, and optionally time, between neighboring features to
+        create a reachability plot, and use it to separate clusters of varying densities from noise.
 
         ============================    =========================================================
         **Parameter**                   **Description**
@@ -4949,6 +4952,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         is only available in ArcGIS Online.
 
                                         Example: `time_field = "start_time"`
+
+                                        .. note::
+                                            Time related parameters can only be used when the `method` is
+                                            DBSCAN or OPTICS.
         ----------------------------    ---------------------------------------------------------
         search_time_interval            Optional float. A value that will be used to determine
                                         whether features form a space-time cluster. The search
