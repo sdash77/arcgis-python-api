@@ -5306,7 +5306,7 @@ class _FormDefinition(_ItemDefinition):
                                 re.IGNORECASE,
                             )
                         for key, value in clone_mapping["Services"].items():
-                            data = re.sub(key, value["url"], data, 0, re.IGNORECASE)
+                            form_json = re.sub(key, value["url"], form_json, 0, re.IGNORECASE)
                         with open(os.path.join(zip_dir, path), "w") as file:
                             file.write(form_json)
                         for new_id in clone_mapping["Item IDs"].values():
