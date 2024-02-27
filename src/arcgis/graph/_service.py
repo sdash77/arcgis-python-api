@@ -1272,10 +1272,10 @@ class KnowledgeGraph:
         """
 
         self._validate_import()
-        split_url = self._url.split("rest")
+        split_url = self._url.split("/rest/")
         url = (
             split_url[0]
-            + "rest/admin"
+            + "/rest/admin/"
             + split_url[1]
             + "/dataModel/constraintRules/add"
         )
@@ -1332,10 +1332,10 @@ class KnowledgeGraph:
 
         """
         self._validate_import()
-        split_url = self._url.split("rest")
+        split_url = self._url.split("/rest/")
         url = (
             split_url[0]
-            + "rest/admin"
+            + "/rest/admin/"
             + split_url[1]
             + "/dataModel/constraintRules/delete"
         )
