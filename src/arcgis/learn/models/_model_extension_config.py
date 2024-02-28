@@ -127,6 +127,11 @@ class MMSegmentationConfig:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
+        if kwargs.get("train"):
+            self.model.train_val = False
+        else:
+            self.model.train_val = True
+        learn.model.train()
         batch_shape = model_input_batch.permute(0, 2, 3, 1).shape
         gt_batch = []
         for gt_sem_seg in model_target_batch:
@@ -134,10 +139,8 @@ class MMSegmentationConfig:
                 batch_shape, gt_sem_seg=gt_sem_seg, model_type="Segmentation"
             )
             gt_batch.append(data_sample)
-        if self.model.training:
-            model_input = [model_input_batch, gt_batch]
-        else:
-            model_input = [[model_input_batch, gt_batch]]
+
+        model_input = [model_input_batch, gt_batch]
         return model_input, model_target_batch
 
     def transform_input(self, xb):
@@ -154,22 +157,6 @@ class MMSegmentationConfig:
         return self.transform_input(xb)
 
     def loss(self, model_output, *model_target):
-        if not self.model.training:
-            if self.cfg.model.type == "CascadeEncoderDecoder":
-                losses = 0.0
-                for i in range(self.cfg.model.num_stages):
-                    _losses = self.model.decode_head[i].loss_by_feat(
-                        model_output, model_target[0]
-                    )
-                    losses += _losses.get("loss_ce", _losses.get("loss_seg"))
-                return losses
-            _losses = self.model.decode_head.loss_by_feat(model_output, model_target[0])
-            loss_dice = _losses.get("loss_dice")
-            if loss_dice:
-                return loss_dice
-            else:
-                return _losses.get("loss_ce", _losses.get("loss_seg"))
-
         return model_output[1]
 
     def post_process(self, pred, thres=0.5, thinning=True, prob_raster=False):
