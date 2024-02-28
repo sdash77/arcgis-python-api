@@ -8406,6 +8406,7 @@ class Raster:
             naip_pc_ras = Raster.from_stac_item(
                 stac_item="https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
             )
+
             # Usage Example 2: Construct a raster object from a pystac.Item object created using
             # Sentinel-2 L2A data accesible through Earth Search STAC API
 
@@ -8425,6 +8426,7 @@ class Raster:
 
             # Usage Example 4: Construct a collection from Landsat C2-L2 data accesible through USGS
             # LandsatLook STAC API (with custom asset selection) - Requires a registered cloudStore.
+
             rad_landsat_ras = Raster.from_stac_item(
                 stac_item="https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2alb-st/items/LC09_L2SP_072022_20230729_20230801_02_A1_ST",
                 gis=gis,
@@ -13320,6 +13322,7 @@ class RasterCollection:
         .. code-block:: python
 
             # Usage Example 1: Construct a collection from Maxar STAC
+            
             maxar_rc = RasterCollection.from_stac_catalog(
                 stac_catalog="https://maxar-opendata.s3.amazonaws.com/events/Emilia-Romagna-Italy-flooding-may23/ard/acquisition_collections/103005009DF96A00_collection.json",
                 attribute_dict={
@@ -13352,7 +13355,7 @@ class RasterCollection:
 
             # Usage Example 3: Construct a collection from UMBRA STAC (with custom asset selection)
 
-            rc = RasterCollection.from_stac_catalog(
+            umbra_rc = RasterCollection.from_stac_catalog(
                 stac_catalog="https://s3.us-west-2.amazonaws.com/umbra-open-data-catalog/stac/2024/2024-02/2024-02-19/catalog.json",
                 attribute_dict={
                     "Name": "id",
