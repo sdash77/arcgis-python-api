@@ -8288,7 +8288,10 @@ class Raster:
                                         noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, sentinel-3-olci-wfr-l2-netcdf, \
                                         noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, sentinel-3-olci-lfr-l2-netcdf, \
                                         sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, sentinel-3-synergy-syn-l2-netcdf, \
-                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061, modis-17A2H-061, \
+                                        modis-11A2-061, modis-17A2HGF-061, modis-17A3HGF-061, modis-09A1-061, modis-16A3GF-061, modis-21A2-061, modis-43A4-061, \
+                                        modis-09Q1-061, modis-14A1-061, modis-13Q1-061, modis-14A2-061, modis-15A2H-061, modis-11A1-061, modis-15A3H-061, \
+                                        modis-13A1-061, modis-10A2-061, modis-10A1-061, aster-l1t)
                                     - https://earth-search.aws.element84.com/v0 (All collections are suported)
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
@@ -12666,7 +12669,10 @@ class RasterCollection:
                                         noaa-cdr-sea-surface-temperature-whoi, noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, \
                                         sentinel-3-olci-wfr-l2-netcdf, noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, \
                                         sentinel-3-olci-lfr-l2-netcdf, sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, \
-                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061,
+                                        modis-17A2H-061, modis-11A2-061, modis-17A2HGF-061, modis-17A3HGF-061, modis-09A1-061, modis-16A3GF-061, modis-21A2-061, modis-43A4-061, \
+                                        modis-09Q1-061, modis-14A1-061, modis-13Q1-061, modis-14A2-061, modis-15A2H-061, modis-11A1-061, modis-15A3H-061, \
+                                        modis-13A1-061, modis-10A2-061, modis-10A1-061, aster-l1t)
                                     - https://earth-search.aws.element84.com/v0 (All collections are suported)
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
@@ -12761,6 +12767,64 @@ class RasterCollection:
                               
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
                                 in the active GIS connection.
+        -----------------     --------------------------------------------------------------------
+        context               Optional dictionary. Additional properties to control the creation of RasterCollection.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your RasterCollection.
+                                    If multiple assets are selected, the collection will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    Else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the individual rasters in the collection.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================

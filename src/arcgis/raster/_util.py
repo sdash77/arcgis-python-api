@@ -1833,7 +1833,8 @@ def _get_stac_metadata_file(item, context=None):
     ):
         processing_template = "Multiband"
 
-    href += rf"\{processing_template}" if processing_template is not None else ""
+    if href is not None and processing_template is not None:
+        href += rf"\{processing_template}"
 
     return href
 
