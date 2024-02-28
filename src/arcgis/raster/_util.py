@@ -1833,7 +1833,7 @@ def _get_stac_metadata_file(item, context=None):
     ):
         processing_template = "Multiband"
 
-    if href is not None and processing_template is not None:
+    if isinstance(href, str) and isinstance(processing_template, str):
         href += rf"\{processing_template}"
 
     return href
@@ -1968,6 +1968,8 @@ def _get_static_catalog_item_resources(request_link, request_params={}, context=
             if cog["href"].endswith((".tif", ".tiff"))
         ]
 
+    if isinstance(product_file, str) and isinstance(processing_template, str):
+        product_file += rf"\{processing_template}"
     return item, product_file
 
 

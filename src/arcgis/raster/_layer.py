@@ -8295,6 +8295,7 @@ class Raster:
                                     - https://earth-search.aws.element84.com/v0 (All collections are suported)
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+                                    - https://landsatlook.usgs.gov/stac-server (All collections are suported)
 
                                 STAC items from the following Static Catalogs (and their underying Child Catalogs) are supported:
 
@@ -8334,6 +8335,64 @@ class Raster:
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
                                 in the active GIS connection.
         -----------------     --------------------------------------------------------------------
+        context               Optional dictionary. Additional properties to control the creation of the Raster object.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your Raster object.
+                                    If multiple assets are selected, the raster will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    Else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the raster.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
+        -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
 
@@ -8341,10 +8400,49 @@ class Raster:
 
         .. code-block:: python
 
-            # Usage Example: Creating a Raster object from a STAC Item.
+            # Usage Example 1: Construct a raster object from NAIP data accesible through
+            # Planetary Computer STAC API
 
-            ras = Raster.from_stac_item(stac_item=stac_item_url,
-                                        gis=gis)
+            naip_pc_ras = Raster.from_stac_item(
+                stac_item="https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
+            )
+            # Usage Example 2: Construct a raster object from a pystac.Item object created using
+            # Sentinel-2 L2A data accesible through Earth Search STAC API
+
+            item_url = "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_37TCM_20240219_0_L2A"
+            item = pystac.Item.from_file(item_url)
+            pystac_s2_ras = Raster.from_stac_item(stac_item=item, gis=gis)
+
+            # Usage Example 3: Construct a collection from Landsat C2-L2 data accesible through USGS
+            # LandsatLook STAC API (with custom processing template selection) - Requires a registered cloudStore.
+
+            qa_landsat_ras = Raster.from_stac_item(
+                stac_item="https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2-sr/items/LC09_L2SP_088084_20230729_20230801_02_T2_SR",
+                context={
+                    "processingTemplate": "QA",
+                },
+            )
+
+            # Usage Example 4: Construct a collection from Landsat C2-L2 data accesible through USGS
+            # LandsatLook STAC API (with custom asset selection) - Requires a registered cloudStore.
+            rad_landsat_ras = Raster.from_stac_item(
+                stac_item="https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2alb-st/items/LC09_L2SP_072022_20230729_20230801_02_A1_ST",
+                gis=gis,
+                context={
+                    "assetManagement": [
+                        {"key": "TRAD", "path": ["alternate", "s3"]},
+                        {"key": "DRAD", "path": ["alternate", "s3"]},
+                    ],
+                },
+            )
+
+            # Usage Example 5: Construct a raster object from CBERS data accesible through
+            # CBERS/AMAZONIA on AWS (static) STAC (with custom asset selection) - Requires a registered cloudStore.
+
+            cbers_ras = Raster.from_stac_item(
+                stac_item="https://br-eo-stac-1-0-0.s3.amazonaws.com/CBERS4/MUX/043/076/CBERS_4_MUX_20230630_043_076_L2.json",
+                context={"assetManagement": ["B7", "B6", "B5"]},
+            )
 
         """
         is_pystac_item = False
@@ -8402,8 +8500,8 @@ class Raster:
         ]
 
         if "type" not in json_data or (
-            json_data["type"] != "Feature"
-            and (
+            json_data["type"] not in ["Feature", "Collection"]
+            or (
                 json_data["type"] == "Collection"
                 and json_data["id"] not in zarr_datasets
             )
@@ -12669,13 +12767,14 @@ class RasterCollection:
                                         noaa-cdr-sea-surface-temperature-whoi, noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, \
                                         sentinel-3-olci-wfr-l2-netcdf, noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, \
                                         sentinel-3-olci-lfr-l2-netcdf, sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, \
-                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061,
+                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061, \
                                         modis-17A2H-061, modis-11A2-061, modis-17A2HGF-061, modis-17A3HGF-061, modis-09A1-061, modis-16A3GF-061, modis-21A2-061, modis-43A4-061, \
                                         modis-09Q1-061, modis-14A1-061, modis-13Q1-061, modis-14A2-061, modis-15A2H-061, modis-11A1-061, modis-15A3H-061, \
                                         modis-13A1-061, modis-10A2-061, modis-10A1-061, aster-l1t)
                                     - https://earth-search.aws.element84.com/v0 (All collections are suported)
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+                                    - https://landsatlook.usgs.gov/stac-server (All collections are suported)
 
 
                               Example:
@@ -12779,7 +12878,7 @@ class RasterCollection:
 
                                     Format:
                                     When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
-                                    Else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
                                     can either be strings representing the asset key directly, or dictionaries providing
                                     additional details for locating the asset.
 
@@ -12833,26 +12932,77 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example: Creating a RasterCollection object from making a query to a STAC API.
+            # Usage Example 1: Construct a collection from the Sentinel-2 L2A data accesible through
+            # Earth Search STAC API
 
-            rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
-                                                query={
-                                                        "collections": ["sentinel-2-l2a"],
-                                                        "bbox": [-110, 39.5, -105, 40.5],
-                                                        "query": {"eo:cloud_cover": {"lt": 0.5}},
-                                                        "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
-                                                        "limit": 100
-                                                      },
-                                                attribute_dict={
-                                                                "Name":"id",
-                                                                "Sensor":"platform",
-                                                                "StdTime":"datetime",
-                                                                "Cloud Cover":"eo:cloud_cover",
-                                                                "Spatial Reference":"proj:epsg",
-                                                                "Extent":"bbox"
-                                                               },
-                                                request_method="POST",
-                                                gis=gis)
+            sentinel_2_aws_rc = RasterCollection.from_stac_api(
+                stac_api="https://earth-search.aws.element84.com/v1",
+                query={
+                    "collections": ["sentinel-2-l2a"],
+                    "bbox": [-110, 39.5, -105, 40.5],
+                    "query": {"eo:cloud_cover": {"lt": 0.5}},
+                    "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
+                    "limit": 100,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "StdTime": "datetime",
+                    "Cloud Cover": "eo:cloud_cover",
+                    "Spatial Reference": "proj:epsg",
+                    "Extent": "bbox",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 2: Construct a collection from the NAIP data accesible through
+            # Planetary Computer STAC API
+
+            naip_pc_rc = RasterCollection.from_stac_api(
+                stac_api="https://planetarycomputer.microsoft.com/api/stac/v1",
+                query={
+                    "collections": ["naip"],
+                    "bbox": [-122.2751, 47.5469, -121.9613, 47.7458],
+                    "datetime": "2018-12-01/2020-12-31",
+                    "limit": 5,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "GSD": "gsd",
+                    "StdTime": "datetime",
+                    "State": "naip:state",
+                    "Spatial Reference": "proj:epsg",
+                    "Extent": "bbox",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 3: Construct a collection from the Landsat-9 C2-L2 data accesible through
+            # Digital Earth Africa STAC API (with custom asset selection) - Requires a registered cloudStore.
+
+            landsat_dea_rc = RasterCollection.from_stac_api(
+                stac_api="https://explorer.digitalearth.africa/stac",
+                query={
+                    "collections": ["ls9_sr"],
+                    "bbox": [
+                        25.982987096443583,
+                        29.249912751222965,
+                        28.30879111403085,
+                        31.348538968581714,
+                    ],
+                    "datetime": "2020-12-01/2023-12-31",
+                    "limit": 20,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "Cloud Cover": "eo:cloud_cover",
+                    "Row": "landsat:wrs_row",
+                    "Path": "landsat:wrs_path",
+                },
+                context={"assetManagement": ["SR_B4", "SR_B3", "SR_B2"]},  # rgb
+                gis=gis,
+            )
 
         """
 
@@ -13104,6 +13254,64 @@ class RasterCollection:
                                     When using ``image_server`` engine, RasterRendering service should be enabled \
                                     in the active GIS connection.
         -----------------     --------------------------------------------------------------------
+        context               Optional dictionary. Additional properties to control the creation of RasterCollection.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your RasterCollection.
+                                    If multiple assets are selected, the collection will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the individual rasters in the collection.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
+        -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
@@ -13111,17 +13319,51 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example: Creating a RasterCollection object from a Static STAC.
+            # Usage Example 1: Construct a collection from Maxar STAC
+            maxar_rc = RasterCollection.from_stac_catalog(
+                stac_catalog="https://maxar-opendata.s3.amazonaws.com/events/Emilia-Romagna-Italy-flooding-may23/ard/acquisition_collections/103005009DF96A00_collection.json",
+                attribute_dict={
+                    "Name": "id",
+                    "Platform": "platform",
+                    "StdTime": "datetime",
+                    "Data Area": "tile:data_area",
+                    "Clouds Percent": "tile:clouds_percent",
+                    "Spatial Reference": "proj:epsg",
+                },
+                gis=gis,
+            )
 
-            rc = RasterCollection.from_stac_catalog(stac_catalog=stac_catalog_url,
-                                                    attribute_dict={
-                                                                    "Name":"id",
-                                                                    "Sensor":"collection",
-                                                                    "StdTime":"datetime",
-                                                                    "Cloud Cover":"eo:cloud_cover",
-                                                                    "Extent":"bbox"
-                                                                   },
-                                                    gis=gis)
+            # Usage Example 2: Construct a collection from a pystac.Collection object created using
+            # California Forest Observatory STAC
+
+            collection_url = "https://storage.googleapis.com/cfo-public/wildfire/collection.json"
+            cat = pystac.Collection.from_file(collection_url)
+
+            wildfire_rc = RasterCollection.from_stac_catalog(
+                stac_catalog=cat,
+                attribute_dict={
+                    "Name": "id",
+                    "StdTime": "datetime",
+                    "Metric": "metric",
+                    "GSD": "gsd",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 3: Construct a collection from UMBRA STAC (with custom asset selection)
+
+            rc = RasterCollection.from_stac_catalog(
+                stac_catalog="https://s3.us-west-2.amazonaws.com/umbra-open-data-catalog/stac/2024/2024-02/2024-02-19/catalog.json",
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "StdTime": "datetime",
+                    "Polarizations": "sar:polarizations",
+                    "Extent": "bbox",
+                },
+                context={"assetManagement": ["GEC"]},
+                gis=gis,
+            )
 
         """
 
