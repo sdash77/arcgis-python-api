@@ -724,6 +724,76 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def statistics(
+        self,
+        query: Optional[str] = None,
+        search_str: Optional[str] = None,
+        group_by: Optional[str] = None,
+        spatial_extent: Optional[str] = None,
+        has_location: Optional[bool] = None,
+    ):
+        """
+        Runs a search against the jobs stored inside the Workflow Manager instance
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        query               Optional string. The SQL query for the search you want total number of records for.
+                            (e.g. "priority='High'") Must specify either query or search_str as a parameter.
+        ---------------     --------------------------------------------------------------------
+        search_str          Optional string. The match criteria for a simple search. (e.g. "High")
+                            Must specify either search_str or query as a parameter.
+        ---------------     --------------------------------------------------------------------
+        group_by            Optional string. The search field that is used to separate counts by value.
+        ---------------     --------------------------------------------------------------------
+        spatial_extent      Optional string. Spatial extent string to filter jobs by their locations
+        ---------------     --------------------------------------------------------------------
+        has_location        Optional boolean. If set to true jobs with defined location in jobLocation are returned
+        ===============     ====================================================================
+
+        :return:
+            An object representing Workflow Manager job statistics
+
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            # create a Workflow Manager object from the workflow item
+            workflow_manager = WorkflowManager(wf_item)
+
+            user_query = "diagramId='99o2QTePTqq-BHRHK_Aeag' "
+            workflow_manager.jobs.statistics(query=user_query, group_by="assignedTo")
+
+
+            # Example returned Job Statistics Object:
+
+            {
+              "total": 2,
+              "groupBy": "assignedTo",
+              "groupedValues": [ { "value": "assignedTo", count": 2 } ]
+            }
+
+        """
+        try:
+            search_object = {}
+
+            if query is not None:
+                search_object["q"] = query
+            if search_str is not None:
+                search_object["search"] = search_str
+            if group_by is not None:
+                search_object["groupBy"] = group_by
+            if spatial_extent is not None:
+                search_object["spatialExtent"] = spatial_extent
+            if has_location is not None:
+                search_object["hasLocation"] = has_location
+
+            url = "{base}/jobs/statistics".format(base=self._url)
+            return Job.search(self, self._gis, url, search_object)
+        except:
+            self._handle_error(sys.exc_info())
+
     def update(
         self,
         job_id: str,

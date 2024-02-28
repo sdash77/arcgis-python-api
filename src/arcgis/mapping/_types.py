@@ -456,8 +456,11 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
         Get/Set the BaseMap Title.
         Required string title for the basemap that can be used in a table of contents.
-        If None is specified, it takes the title of the first `basemap` in the array.
+        If None is specified, the current title is returned.
         """
+        if title is None:
+            return self._webmapdict["baseMap"]["title"]
+
         self._webmapdict["baseMap"]["title"] = title
         self.definition = _mixins.PropertyMap(self._webmapdict)
         return self.basemap
