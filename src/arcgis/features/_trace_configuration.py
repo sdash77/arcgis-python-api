@@ -324,13 +324,22 @@ class TraceConfiguration:
                                                     include_containers property and no-ops if include_containers
                                                     is false. If includeContainers is true and this property
                                                     is true, containment associations up to and including the
-                                                    first spatial container are returned; otherwise, all c
-                                                    ontainment associations are returned. The default is false.
+                                                    first spatial container are returned; otherwise, all
+                                                    containment associations are returned. The default is false.
     ----------------------------------------        ----------------------------------------------------------
     allow_indeterminate_flow                        Optional property specifying whether network features
                                                     with indeterminate flow stop traversability or are included
                                                     in the trace results. This property is only honored when
                                                     running an upstream, downstream, or isolation trace.
+    ----------------------------------------        ----------------------------------------------------------
+    use_digitized_direction                         Optional boolean. Introduced at Enterprise 11.3, this property
+                                                    specifies whether the direction of flow will be based on the
+                                                    digitized direction of the... #TODO
+    ----------------------------------------        ----------------------------------------------------------
+    synthesize_geometry                             Optional boolean. Introduced at Enterprise 11.3, this property
+                                                    specifies whether the geometries will be inferred and created
+                                                    (synthesized) for associated network features that do not
+                                                    have a geometry. #TODO
     ========================================        ==========================================================
     """
 
@@ -363,6 +372,8 @@ class TraceConfiguration:
     ignore_barriers_at_starting_points: bool = False
     include_up_to_first_spatial_container: bool = False
     allow_indeterminate_flow: bool | None = None
+    use_digitized_direction: bool | None = None
+    synthesize_geometry: bool | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):

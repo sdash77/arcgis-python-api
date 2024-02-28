@@ -489,6 +489,8 @@ class UtilityNetworkManager(object):
         out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
         ------------------------------------        --------------------------------------------------------------------
         pbf                                         Optional Boolean. If true, the response will be in PBF format.
+                                                    The default from the REST is False. In Pro, starting at 3.3, the default is True so make
+                                                    sure to set `pbf` to True if you want to mimic that response.
         ====================================        ====================================================================
 
         :return:
