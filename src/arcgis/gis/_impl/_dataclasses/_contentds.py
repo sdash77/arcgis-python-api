@@ -165,7 +165,7 @@ class ItemTypeEnum(Enum):
     SURVEY123_ADD_IN = "Survey123 Add In"
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
     TILES_LAYER_3D = "3DTiles Layer"
-    PACKAGE_TILES_3D = "3DTiles Package"
+    TILES_PACKAGE_3D = "3DTiles Package"
 
 
 ###########################################################################
