@@ -546,8 +546,6 @@ class ArcGISModel(object):
 
         if backbone is None:
             self._backbone = models.resnet34
-        if backbone == "llm":
-            self._backbone = "llm"
         elif type(backbone) is str:
             if hasattr(models, backbone):
                 self._backbone = getattr(models, backbone)
@@ -749,7 +747,6 @@ class ArcGISModel(object):
                                 The default value is 'True'.
         =====================   ===========================================
         """
-
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
@@ -874,8 +871,6 @@ class ArcGISModel(object):
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        if self._backbone == "llm":
-            return ["accuracy"]
         metrics = ["valid_loss"]
         for m in self.learn.metrics:
             if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
@@ -950,7 +945,6 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
-
         if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
 
@@ -1476,57 +1470,24 @@ class ArcGISModel(object):
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
+        temp = self.learn.path
+        temp1 = self.learn.model_dir
         self._framework = framework
-
-        if self._backbone != "llm":
-            temp = self.learn.path
-            temp1 = self.learn.model_dir
-        else:
-            temp = ""
-            temp1 = ""
-
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
             # to make fastai save to both path and with name
-            if self.learn is not None:
-                self.learn.path = path
-                self.learn.model_dir = ""
-                if not os.path.exists(self.learn.path):
-                    os.makedirs(self.learn.path)
-            else:
-                if not os.path.exists(name_or_path):
-                    os.makedirs(name_or_path)
+            self.learn.path = path
+            self.learn.model_dir = ""
+            if not os.path.exists(self.learn.path):
+                os.makedirs(self.learn.path)
         else:
             # fixing fastai bug
             # self.learn.path = self.learn.path.parent
-            if self._backbone != "llm":
-                self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
-                if not os.path.exists(self.learn.path / self.learn.model_dir):
-                    os.makedirs(self.learn.path / self.learn.model_dir)
-                name = name_or_path
-            else:
-                # first check the data associated path. if it is not there then we shall create a models directory
-
-                if hasattr(self._data, "working_dir"):
-                    if self._data.working_dir is not None:
-                        temp_path = self._data.working_dir
-                    else:
-                        temp_path = os.getcwd()
-
-                elif hasattr(self._data, "path"):
-                    if self._data.path is not None:
-                        temp_path = self._data.path
-                    else:
-                        temp_path = os.getcwd()
-                else:
-                    temp_path = os.getcwd()
-
-                if not os.path.exists(os.path.join(temp_path, "models", name_or_path)):
-                    os.makedirs(os.path.join(temp_path, "models", name_or_path))
-                t = os.path.join(temp_path, "models", name_or_path)
-                # print(f"The path we prepared {t}")
-                name = name_or_path
+            self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
+            if not os.path.exists(self.learn.path / self.learn.model_dir):
+                os.makedirs(self.learn.path / self.learn.model_dir)
+            name = name_or_path
 
         script_paths = []
         onnx_paths = []
@@ -1542,7 +1503,7 @@ class ArcGISModel(object):
                     supported_models = [
                         "FeatureClassifier",
                     ]
-                    if type(self).__name__ in supported_models:
+                    if (type(self).__name__) in supported_models:
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             tflite_paths = self._save_pytorch_tflite(name)
@@ -1558,7 +1519,7 @@ class ArcGISModel(object):
                         "RetinaNet",
                         "SiamMask",
                     ]
-                    if type(self).__name__ in supported_models:
+                    if (type(self).__name__) in supported_models:
                         if type(self).__name__ != "SiamMask":
                             with warnings.catch_warnings():
                                 warnings.simplefilter("ignore")
@@ -1567,65 +1528,35 @@ class ArcGISModel(object):
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
                         )
-                if self._backbone != "llm":
-                    if isinstance(self.learn.model, DistributedDataParallel):
-                        if not int(os.environ.get("RANK", 0)):
-                            saved_path = self.learn.save(
-                                name, return_path=True, with_opt=save_optimizer
-                            )
-                        return
-                if self._backbone != "llm":
-                    saved_path = self.learn.save(
-                        name, return_path=True, with_opt=save_optimizer
-                    )
-                else:  # In this case, we need to handle the saving of the model by ourselves
-                    if not os.path.isabs(name_or_path):
-                        if hasattr(self._data, "working_dir"):
-                            if self._data.working_dir is not None:
-                                temp_path = self._data.working_dir
-                            else:
-                                temp_path = os.getcwd()
 
-                        elif hasattr(self._data, "path"):
-                            if self._data.path is not None:
-                                temp_path = self._data.path
-                            else:
-                                temp_path = os.getcwd()
-                        else:
-                            temp_path = os.getcwd()
-                        # temp_path = os.getcwd()
-                        saved_path = Path(
-                            os.path.join(
-                                temp_path, "models", name_or_path, name_or_path
-                            )
+                if isinstance(self.learn.model, (DistributedDataParallel)):
+                    if not int(os.environ.get("RANK", 0)):
+                        saved_path = self.learn.save(
+                            name, return_path=True, with_opt=save_optimizer
                         )
-                        # print(f"Save path {saved_path}")
-                        # f" \n {name_or_path}")
-                    else:
-                        base_name = os.path.basename(name_or_path)
-                        saved_path = Path(os.path.join(Path(name_or_path), base_name))
+                    return
+
+                saved_path = self.learn.save(
+                    name, return_path=True, with_opt=save_optimizer
+                )
 
             # undoing changes to self.learn.path
         except Exception as e:
             raise e
         finally:
-            if self._backbone != "llm":
-                self.learn.path = temp
-                self.framework = framework
-                self.learn.model_dir = temp1
+            self.learn.path = temp
+            self.framework = framework
+            self.learn.model_dir = temp1
 
-        if type(self).__name__ == "EfficientDet":
+        if (type(self).__name__) == "EfficientDet":
             _emd_template = self._create_emd_template(
                 saved_path, compute_metrics, save_inference_file
-            )
-        elif self._backbone == "llm":
-            _emd_template = self._create_emd_template_llm(
-                compute_metrics, save_inference_file
             )
         else:
             _emd_template = self._create_emd_template(
                 saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
             )
+
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
 
@@ -1777,6 +1708,7 @@ class ArcGISModel(object):
                         "[Functions]System\\DeepLearning\\ArcGISLearn\\"
                         + _emd_template["InferenceFunction"]
                     )
+
         ArcGISModel._write_emd(_emd_template, saved_path.with_suffix(".emd"))
         zip_name = saved_path.stem
 
@@ -1811,9 +1743,6 @@ class ArcGISModel(object):
         if arcgis.env.verbose:
             print("Created model files at {spp}".format(spp=saved_path.parent))
 
-        if self._backbone == "llm":
-            print(f"Model has been saved to {saved_path.parent}")
-
         if publish:
             self._publish_dlpk(
                 (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
@@ -1822,43 +1751,6 @@ class ArcGISModel(object):
             )
 
         return saved_path.parent
-
-    def _create_emd_template_llm(self, compute_metrics, save_inference_file):
-        _emd_template = self._get_emd_params(save_inference_file)
-        _emd_template["Architecture"] = "llm"
-        _emd_template["PretrainedModel"] = self._submodel
-        _emd_template["ModelType"] = "llm"
-        _emd_template["SequenceLength"] = None
-        _emd_template["IsMultilabelClassificationProblem"] = None
-        _emd_template["LearningRate"] = None
-        if not _emd_template.get("ModelName"):
-            _emd_template["ModelName"] = type(self).__name__
-        if self._backend == "tensorflow" and self._framework == "tflite":
-            _emd_template["ModelFormat"] = "NHWC"
-        if getattr(self, "_data", None) is not None:
-            _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
-                "MinCellSize", None
-            )
-            _emd_template["MaxCellSize"] = getattr(self._data, "_emd", {}).get(
-                "MaxCellSize", None
-            )
-        model_params = {"backbone": self._submodel, "backend": self._backend}
-        if _emd_template.get("ModelParameters", None) is None:
-            _emd_template["ModelParameters"] = model_params
-        else:
-            for _key in model_params:
-                _emd_template["ModelParameters"][_key] = model_params[_key]
-        _emd_template["SupportsVariableTileSize"] = _emd_template.get(
-            "SupportsVariableTileSize", False
-        )
-        _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
-        if compute_metrics:
-            if self._model_metrics_cache == None:
-                print("Computing model metrics...")
-                self._model_metrics_cache = self._model_metrics
-            _emd_template.update(self._model_metrics_cache)
-
-        return _emd_template
 
     def _save_tflite(self, name, post_processed=True, quantized=False):
         if post_processed or quantized:

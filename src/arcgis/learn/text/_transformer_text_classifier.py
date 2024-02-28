@@ -64,10 +64,6 @@ backbone_models_map = {
         "funnel-transformer/medium",
         "funnel-transformer/medium-base",
     ),
-    "llm": (
-        "gpt-3.5",
-        # "GPT-4"
-    ),
 }
 
 transformer_architectures = [
@@ -85,7 +81,6 @@ transformer_architectures = [
     "Longformer",
     "MobileBERT",
     "Funnel",
-    "LLM",
 ]
 
 backbone_models_reverse_map = {

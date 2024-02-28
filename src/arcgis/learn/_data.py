@@ -971,7 +971,6 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
-
             _prepare_working_dir(path)
 
             return data

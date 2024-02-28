@@ -74,7 +74,6 @@ _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
-
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.auth.tools._util import create_base_url as _create_base_url
 
