@@ -15,7 +15,7 @@ from arcgis.gis import (
     Item,
     ItemProperties,
 )
-from integration.config import (QALAB_ROOT_PATH)
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
