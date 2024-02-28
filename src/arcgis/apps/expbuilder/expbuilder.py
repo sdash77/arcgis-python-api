@@ -317,17 +317,16 @@ class WebExperience(object):
             if template is None:
                 template = "blank_fullscreen"
 
-            temp_low = template.lower()
-            temp_low.replace(" ", "_")
+            temp_low = template.lower().replace(" ", "_")
             if temp_low not in template_list:
                 temp_low = "blank_fullscreen"
             if temp_low == "blank_scrolling":
                 temp_low = "blank_scrollable"
-            temp_low.replace("_", "")
-            if temp_low != "dash":
+            no_space = temp_low.replace("_", "")
+            if no_space != "dash":
                 temp_url = (
                     "https://experiencedev.arcgis.com/cdn/2400/templates/app/"
-                    + temp_low
+                    + no_space
                     + "/config.json"
                 )
                 temp_dict = self._gis._con.get(temp_url, {"f": "json"})
