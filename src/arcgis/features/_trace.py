@@ -145,7 +145,7 @@ class TraceNetworkManager(object):
 
                                 .. code-block::
                                     [{
-                                        "type" : "elements" | "aggregatedGeometry" | "connectivity",
+                                        "type" : "elements" | "aggregatedGeometry" | "connectivity" | "features" | "associations",
                                         "includeGeometry" : true | false,
                                         "includePropagatedValues": true | false,
                                         "networkAttributeNames" :["attribute1Name","attribute2Name",...],
