@@ -8,8 +8,6 @@ import pickle
 import warnings
 import math
 import shutil
-import os
-import time
 from pathlib import Path
 import traceback
 import arcgis
@@ -42,6 +40,7 @@ except:
     HAS_FASTAI = False
 
 try:
+    # TODO: still failing
     import sklearn
     from sklearn import *
     from sklearn import preprocessing
@@ -392,7 +391,7 @@ class AutoML(object):
             if isinstance(self._all_labels[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(np.float)
+                self._all_labels = self._all_labels.astype(np.float64)  #
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
                     self._sensitive_variables
@@ -487,7 +486,7 @@ class AutoML(object):
                 val_labels = val_labels.astype(int)
             else:
                 val_labels = self._validation_labels
-        val_labels = self._validation_labels.astype(int)
+        # val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)

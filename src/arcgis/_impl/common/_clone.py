@@ -1319,7 +1319,7 @@ class _DeepCloner:
                 [
                     node
                     for node in self._graph.values()
-                    if isinstance(node, _ProProjectPackageDefinition)
+                    if isinstance(node, (_ProProjectPackageDefinition, _FormDefinition))
                     and "copy-only" not in node.info["tags"]
                 ]
             )
@@ -6418,7 +6418,9 @@ def _share_item_with_groups(item, sharing, group_mapping):
             sharing_level = SharingLevel.EVERYONE
 
         item.sharing.sharing_level = sharing_level
-        item.sharing._share(groups=groups)
+        grp_share = item.sharing.groups
+        for grp in groups:
+            grp_share.add(grp)
 
 
 def _wgs84_envelope(envelope):
