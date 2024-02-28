@@ -391,7 +391,7 @@ class AutoML(object):
             if isinstance(self._all_labels[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(float)
+                self._all_labels = self._all_labels.astype(np.float64)  #
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
                     self._sensitive_variables
@@ -486,7 +486,7 @@ class AutoML(object):
                 val_labels = val_labels.astype(int)
             else:
                 val_labels = self._validation_labels
-        val_labels = self._validation_labels.astype(int)
+        # val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
@@ -566,6 +566,11 @@ class AutoML(object):
         y_pred = y_pred.reset_index(drop=True)
 
         if self._data._is_classification:
+            y_true_unique = y_true.nunique()
+            if y_true_unique > 2:
+                raise Exception(
+                    "This method is available only for Binary classification and Regression.It does not support multi class classification yet"
+                )
             le_1 = LabelEncoder()
             le_1.fit(y_true)
             y_true = le_1.transform(y_true)

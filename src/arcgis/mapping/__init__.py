@@ -28,6 +28,7 @@ from .forms import (
 from arcgis.mapping._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
+    Tiles3DLayer,
     Point3DLayer,
     VoxelLayer,
 )
