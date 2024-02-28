@@ -9198,6 +9198,7 @@ class Raster:
         build_transpose: Optional[bool] = None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate:bool = False,
         **kwargs,
     ):
         """
@@ -9297,6 +9298,7 @@ class Raster:
             build_transpose,
             gis,
             future,
+            estimate,
             **kwargs,
         )
 
@@ -10734,6 +10736,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -10755,6 +10758,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             build_transpose=build_transpose,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
 
@@ -11623,6 +11627,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate:bool=False,
         **kwargs,
     ):
         """
