@@ -215,6 +215,7 @@ class MMSegmentation(ModelExtension):
         "fcn",
         "gcnet",
         "hrnet",
+        "mask2former",
         "mobilenet_v2",
         "nonlocal_net",
         "ocrnet",
@@ -227,6 +228,11 @@ class MMSegmentation(ModelExtension):
     ]
     """
     List of models supported by this class.
+    """
+
+    supported_transformer_models = ["mask2former"]
+    """
+    List of transformer based models supported by this class.
     """
 
     @classmethod
