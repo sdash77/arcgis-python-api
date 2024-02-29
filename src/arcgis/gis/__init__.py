@@ -60,7 +60,7 @@ from cachetools import cached, TTLCache
 
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
-import datetime as _dt
+
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
@@ -74,6 +74,7 @@ _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
+_dt = LazyLoader("datetime")
 _log = logging.getLogger(__name__)
 
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
