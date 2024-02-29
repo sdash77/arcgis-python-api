@@ -546,7 +546,7 @@ class ArcGISModel(object):
 
         if backbone is None:
             self._backbone = models.resnet34
-        if backbone == "llm":
+        elif backbone == "llm":
             self._backbone = "llm"
         elif type(backbone) is str:
             if hasattr(models, backbone):
