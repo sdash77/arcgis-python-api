@@ -164,7 +164,7 @@ class ItemTypeEnum(Enum):
     EXPLORER_ADD_IN = "Explorer Add In"
     SURVEY123_ADD_IN = "Survey123 Add In"
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
-    TILES_LAYER_3D = "3DTiles Layer"
+    TILES_SERVICE_3D = "3DTiles Service"
     TILES_PACKAGE_3D = "3DTiles Package"
 
 
