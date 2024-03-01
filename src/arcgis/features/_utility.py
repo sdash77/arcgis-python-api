@@ -514,6 +514,17 @@ class UtilityNetworkManager(object):
         url = "%s/exportSubnetwork" % self._url
         if isinstance(trace_configuration, TraceConfiguration):
             trace_configuration = trace_configuration.to_dict()
+
+        # if 'supportFlowDirections' is False, remove `use_digitized_direction` from the trace configuration
+        if (
+            "supportFlowDirections" in self.properties
+            and not self.properties["supportFlowDirections"]
+        ):
+            if "use_digitized_direction" in trace_configuration:
+                del trace_configuration["use_digitized_direction"]
+            elif "useDigitizedDirection" in trace_configuration:
+                del trace_configuration["useDigitizedDirection"]
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -757,6 +768,17 @@ class UtilityNetworkManager(object):
 
         """
         url = "%s/updateSubnetwork" % self._url
+
+        # if 'supportFlowDirections' is False, remove `use_digitized_direction` from the trace configuration
+        if (
+            "supportFlowDirections" in self.properties
+            and not self.properties["supportFlowDirections"]
+        ):
+            if "use_digitized_direction" in trace_configuration:
+                del trace_configuration["use_digitized_direction"]
+            elif "useDigitizedDirection" in trace_configuration:
+                del trace_configuration["useDigitizedDirection"]
+
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -1061,7 +1083,7 @@ class UtilityNetworkManager(object):
                                                        "none" | "inError" | "notInError"
         ------------------------------------        --------------------------------------------------------------------
         stop_at_first_spatial                       Optional Bool. Specify whether to stop the traversal of associations
-                                                    from nonspatial objext to feature when a spatial feature is encountered.
+                                                    from nonspatial object to feature when a spatial feature is encountered.
                                                     The traversal will stop at the feature and will not traverse to the
                                                     next nonspatial object.
         ------------------------------------        --------------------------------------------------------------------
@@ -1142,7 +1164,7 @@ class UtilityNetworkManager(object):
         attachment_associations                     Optional Boolean. Whether to synthesize the geometry representing the
                                                     structural attachment associations.
         ------------------------------------        --------------------------------------------------------------------
-        conectivity_associations                    Optional Boolean. Whether to synthesize the geometry representing the
+        connectivity_associations                   Optional Boolean. Whether to synthesize the geometry representing the
                                                     connectivity associations.
         ------------------------------------        --------------------------------------------------------------------
         containment_associations                    Optional Boolean. Whether to synthesize the geometry representing the

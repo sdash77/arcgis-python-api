@@ -419,6 +419,8 @@ class TraceConfiguration:
             "ignoreBarriersAtStartingPoints": self.ignore_barriers_at_starting_points,
             "includeUpToFirstSpatialContainer": self.include_up_to_first_spatial_container,
             "allowIndeterminateFlow": self.allow_indeterminate_flow,
+            "useDigitizedDirection": self.use_digitized_direction,
+            "synthesizeGeometry": self.synthesize_geometry,
         }
 
     def to_dict(self):
@@ -450,6 +452,8 @@ class TraceConfiguration:
             "ignoreBarriersAtStartingPoints": self.ignore_barriers_at_starting_points,
             "includeUpToFirstSpatialContainer": self.include_up_to_first_spatial_container,
             "allowIndeterminateFlow": self.allow_indeterminate_flow,
+            "useDigitizedDirection": self.use_digitized_direction,
+            "synthesizeGeometry": self.synthesize_geometry,
         }
 
     @classmethod
@@ -489,4 +493,6 @@ class TraceConfiguration:
                 "includeUpToFirstSpatialContainer"
             ],
             allow_indeterminate_flow=config["allowIndeterminateFlow"],
+            use_digitized_direction=config["useDigitizedDirection"],
+            synthesize_geometry=config["synthesizeGeometry"],
         )
