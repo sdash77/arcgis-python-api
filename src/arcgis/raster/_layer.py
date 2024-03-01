@@ -8296,6 +8296,8 @@ class Raster:
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
                                     - https://landsatlook.usgs.gov/stac-server (All collections are suported)
+                                    - https://geoportalstac.azurewebsites.net/stac (All collections are suported)
+                                    - https://gpt.geocloud.com/sentinel/stac (All collections are suported)
 
                                 STAC items from the following Static Catalogs (and their underying Child Catalogs) are supported:
 
@@ -8308,6 +8310,7 @@ class Raster:
                                     - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
                                     - https://pta.data.lit.fmi.fi/stac/root.json
                                     - https://datacloud.icgc.cat/stac-catalog/catalog.json
+                                    - https://bdc-sentinel-2.s3.us-west-2.amazonaws.com/catalog.json
 
                               Example:
                                     "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
@@ -8414,7 +8417,7 @@ class Raster:
             item = pystac.Item.from_file(item_url)
             pystac_s2_ras = Raster.from_stac_item(stac_item=item, gis=gis)
 
-            # Usage Example 3: Construct a collection from Landsat C2-L2 data accesible through USGS
+            # Usage Example 3: Construct a raster object from Landsat C2-L2 data accesible through USGS
             # LandsatLook STAC API (with custom processing template selection) - Requires a registered cloudStore.
 
             qa_landsat_ras = Raster.from_stac_item(
@@ -8424,7 +8427,7 @@ class Raster:
                 },
             )
 
-            # Usage Example 4: Construct a collection from Landsat C2-L2 data accesible through USGS
+            # Usage Example 4: Construct a raster object from Landsat C2-L2 data accesible through USGS
             # LandsatLook STAC API (with custom asset selection) - Requires a registered cloudStore.
 
             rad_landsat_ras = Raster.from_stac_item(
@@ -12777,6 +12780,8 @@ class RasterCollection:
                                     - https://earth-search.aws.element84.com/v1 (All collections are suported)
                                     - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
                                     - https://landsatlook.usgs.gov/stac-server (All collections are suported)
+                                    - https://geoportalstac.azurewebsites.net/stac (All collections are suported)
+                                    - https://gpt.geocloud.com/sentinel/stac (All collections are suported)
 
 
                               Example:
@@ -13204,6 +13209,7 @@ class RasterCollection:
                                     - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
                                     - https://pta.data.lit.fmi.fi/stac/root.json
                                     - https://datacloud.icgc.cat/stac-catalog/catalog.json
+                                    - https://bdc-sentinel-2.s3.us-west-2.amazonaws.com/catalog.json
 
                               Example:
                                     "https://maxar-opendata.s3.amazonaws.com/events/India-Floods-Oct-2023/collection.json"

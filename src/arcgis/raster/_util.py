@@ -1945,6 +1945,7 @@ def _get_static_catalog_item_resources(request_link, request_params={}, context=
     self_link_products = [
         "https://maxar-opendata.s3.amazonaws.com/events",
         "https://capella-open-data.s3.us-west-2.amazonaws.com/stac",
+        "https://bdc-sentinel-2.s3.us-west-2.amazonaws.com",
     ]
     cog_composite_products = [
         "https://pta.data.lit.fmi.fi/stac",
