@@ -61,6 +61,7 @@ from cachetools import cached, TTLCache
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 
+
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
@@ -73,7 +74,9 @@ _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
+_dt = LazyLoader("datetime")
 _log = logging.getLogger(__name__)
+
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.auth.tools._util import create_base_url as _create_base_url
 
@@ -6802,6 +6805,8 @@ class ContentManager(object):
                 filetype = "Rule Package"
             elif extn == ".MAPX":
                 filetype = "Pro Map"
+            elif extn == ".3TZ":
+                filetype = "3DTiles Package"
 
             if _is_shapefile(data):
                 filetype = "Shapefile"
@@ -6813,6 +6818,15 @@ class ContentManager(object):
                     raise RuntimeError("Specify type in item_properties")
             if not "title" in item_properties:
                 item_properties["title"] = title
+
+        # For 3D Tiles Service the typeKeywords determine if Integrated Mesh or 3D Object
+        # As of R1.2024 only Integrated Mesh allowed
+        if filetype == "3DTiles Package":
+            if "typeKeywords" in item_properties:
+                item_properties["typeKeywords"].append("IntegratedMesh")
+            else:
+                item_properties["typeKeywords"] = ["IntegratedMesh"]
+
         if (
             "type" in item_properties
             and item_properties["type"] == "WMTS"
@@ -7298,7 +7312,9 @@ class ContentManager(object):
                     item.sharing.sharing_level = "PRIVATE"
                 elif item_properties["access"] == "shared":
                     groups = item.shared_with["groups"]
-                    item.sharing._share(groups=groups)
+                    grp_share = item.sharing.groups
+                    for grp in groups:
+                        grp_share.add(grp)
             return item
         else:
             return None
@@ -11290,9 +11306,10 @@ class User(dict):
     def report(
         self,
         report_type: str,
-        start_time: Optional[datetime],
         *,
-        duration: Optional[str] = "weekly",
+        start_time: _dt.datetime | None = None,
+        duration: str = "weekly",
+        time_aggregate: str | None = None,
     ) -> Item:
         """
 
@@ -11312,11 +11329,13 @@ class User(dict):
                           generate. The allowed arguments are:
 
                           * *credits*
-                          * *content*
-                          * *users*
+                          * *content* (does not honor start_time)
+                          * *users* (does not honor start_time)
                           * *activity*
+                          * *serviceUsages*
+                          * *itemUsages*
         ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The time from which the report
+        start_time        Optional Datetime. The time from which the report
                           generates information.
 
                           * If *duration* is *weekly*, the day component must
@@ -11340,10 +11359,18 @@ class User(dict):
                           * *monthly*
                           * *weekly*
                           * *daily* - only available if *report_type* is *activity*
+                          * *yearly*
+                          * *quarterly*
 
                           .. note::
                               Argument is required when setting *report_type*
                               argument to *activity* or *credits*.
+
+                          .. note::
+                              The yearly value is only available when reportSubType is set to itemUsages.
+        ----------------  --------------------------------------------------------
+        time_aggregate    Optional String.  When the `report_type` is `itemUsages`, the records can be aggregated on
+                          specific time groups.  These are `day`, `week`, or `month`.
         ================  ========================================================
 
 
@@ -11379,8 +11406,23 @@ class User(dict):
 
         import datetime as _dt
 
-        assert report_type in ["users", "credits", "activity", "content"]
-        assert duration in ["monthly", "weekly", "daily"]
+        assert report_type in [
+            "users",
+            "credits",
+            "activity",
+            "content",
+            "serviceUsages",
+            "itemUsages",
+        ]
+        assert duration in [
+            "monthly",
+            "weekly",
+            "daily",
+            "quarterly",
+            "yearly",
+        ]
+        if report_type == "itemUsages" and time_aggregate:
+            assert time_aggregate in ["day", "week", "month"]
 
         def weeknumber(dayname):
             if dayname == "Monday":
@@ -11429,15 +11471,23 @@ class User(dict):
             start_time = now + _dt.timedelta(days=dow)
             start_time = int(start_time.timestamp() * 1000)
         elif start_time is None and duration in ["daily"]:
-            start_time = _dt.datetime.now(_dt.timezone.utc)
+            start_time = int(_dt.datetime.now(_dt.timezone.utc).totimestamp() * 1000)
         params = {
             "f": "json",
             "reportType": "org",
             "reportSubType": report_type,
             "timeDuration": duration,
-            "startTime": start_time,
+            "startTime": start_time or "",
+            "timeAggregate": "" or time_aggregate,
         }
 
+        if report_type in ["content", "users"] and start_time:
+            del params["startTime"]
+            _log.warning(
+                "`start_time` is not honored with report type of content and users."
+            )
+        if report_type != "itemUsages":
+            del params["timeAggregate"]
         url = "%s/sharing/rest/community/users/%s/report" % (
             self._gis._url,
             self._user_id,
@@ -13300,7 +13350,11 @@ class Item(dict):
             FeatureLayerCollection,
             Table,
         )
-        from arcgis.mapping import VectorTileLayer, MapImageLayer, SceneLayer
+        from arcgis.mapping import (
+            VectorTileLayer,
+            MapImageLayer,
+            SceneLayer,
+        )
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
 
@@ -13338,7 +13392,6 @@ class Item(dict):
 
             elif self.type == "Vector Tile Service":
                 layers.append(VectorTileLayer(self.url, self._gis))
-
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -15242,7 +15295,9 @@ class Item(dict):
                     self.sharing.sharing_level = "EVERYONE"
                 if access == "shared":
                     groups = self.shared_with["groups"]
-                    self.sharing._share(groups=groups)
+                    grp_share = self.sharing.groups
+                    for grp in groups:
+                        grp_share.add(grp)
 
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
@@ -15345,7 +15400,9 @@ class Item(dict):
                         self.sharing.sharing_level = "EVERYONE"
                     if access == "shared":
                         groups = self.shared_with["groups"]
-                        self.sharing._share(groups=groups)
+                        grp_share = self.sharing.groups
+                        for grp in groups:
+                            grp_share.add(grp)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -16205,7 +16262,8 @@ class Item(dict):
         -------------------    ---------------------------------------------------------------
         address_fields         Optional dictionary. containing mapping of df columns to address fields,
         -------------------    ---------------------------------------------------------------
-        output_type            Optional string.  Only used when a feature service is published as a tile service.
+        output_type            Optional string.  Only used when a feature service is published as a tile service or 3D tile service.
+                               Values: "Tiles" | "3DTilesService"
         -------------------    ---------------------------------------------------------------
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
@@ -16317,6 +16375,10 @@ class Item(dict):
                 fileType = "scenePackage"
             elif self["type"] == "Tile Package":
                 fileType = "tilePackage"
+            elif self["type"] == "3DTiles Package":
+                fileType = "3dtilespackage"
+                if output_type is None:
+                    output_type = "3DTilesService"
             elif self["type"] == "SQLite Geodatabase":
                 fileType = "sqliteGeodatabase"
             elif self["type"] in ["GeoJson", "geojson"]:
@@ -16441,6 +16503,13 @@ class Item(dict):
                 buildInitialCache = True
                 publish_parameters = {"name": name, "maxRecordCount": 2000}
                 output_type = "sceneService"
+
+            elif fileType == "3dtilespackage":
+                name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters = {"name": name, "maxRecordCount": 2000}
+                output_type = "3DTilesService"
+                buildInitialCache = True
+
             elif fileType == "featureService":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 c = self._gis.content
