@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
 
 import unittest
 
