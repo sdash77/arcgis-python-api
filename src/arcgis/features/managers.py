@@ -2864,7 +2864,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         _log.error("Unable to parse the view_tables parameter")
 
-        fs_view.manager.add_to_definition(add_def)
+        fs_view.manager.add_to_definition(add_def, future=True).result()
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
                 vw_lyr.manager.update_definition(
@@ -2919,7 +2919,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc = FeatureLayerCollection.fromitem(item)
                 lyr = flc.layers[0]
                 mgr = lyr.manager
-                mgr.update_definition(values)
+                res = mgr.update_definition(values, future=True).result()
         return item
 
     # ----------------------------------------------------------------------
