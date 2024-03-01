@@ -581,7 +581,7 @@ class EntityRecognizer:
             if data:
                 data_obj = data.get_data_object()
             model = _SpacyEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
-        if backbone == "llm":
+        elif backbone == "llm":
             emd_json.update(kwargs.get("llm_params", {}))
             model = _LlmEntityRecognizer.from_model(data, backup_backbone, emd_json)
             clas_object = cls(data=None, backbone=backbone, create_empty=True)

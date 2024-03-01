@@ -60,6 +60,23 @@ class TestAGOLDatastoreMetrics(unittest.TestCase):
             )
             assert isinstance(res, list)
 
+    def test_average_cpu(self):
+        from arcgis.gis.admin._dsmgr import (
+            DataStoreMetricsManager,
+            DataStoreAggregation,
+            DataStoreTimeUnit,
+            DataStoreMetric,
+        )
+        import datetime as _dt
+
+        dmm: DataStoreMetricsManager = self.gis.admin.datastore_metrics
+        result = dmm.query(
+            metric=DataStoreMetric.AVG_CPU,
+            bin_size=3,
+            bin_unit=DataStoreTimeUnit.HOUR,
+        )
+        assert result
+
     def test_query_datetimes(self):
         dmm = self.gis.admin.datastore_metrics
         from arcgis.gis.admin._dsmgr import (
