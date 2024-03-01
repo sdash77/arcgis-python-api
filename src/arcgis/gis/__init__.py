@@ -15176,7 +15176,9 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
+            return self._portal.delete_item(
+                self.itemid, self._user_id, folder, force, permanent
+            )
 
     # ----------------------------------------------------------------------
     def update(
