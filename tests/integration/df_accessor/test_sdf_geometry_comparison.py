@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, r"C:\workspace\geosaurus\src")
 
 import unittest
@@ -67,7 +68,7 @@ class TestSRCompareOnSeDF(unittest.TestCase):
         sdf1 = pd.DataFrame(data1)
         sdf2 = pd.DataFrame(data2)
 
-        assert sdf1.spatial.compare(sdf2.spatial) #dict
+        assert sdf1.spatial.compare(sdf2.spatial)  # dict
 
     # ----------------------------------------------------------------------
     def test_sedf_series_equal(self):
@@ -78,21 +79,71 @@ class TestSRCompareOnSeDF(unittest.TestCase):
         gis = GIS(profile="your_online_profile")
 
         # Create first GeoSeriesAccessor
-        addresses = ['123 Main St, New York, NY', '456 Elm St, Los Angeles, CA', '789 Oak St, Chicago, IL']
-        data = {'address': addresses}
+        addresses = [
+            "123 Main St, New York, NY",
+            "456 Elm St, Los Angeles, CA",
+            "789 Oak St, Chicago, IL",
+        ]
+        data = {"address": addresses}
         df = pd.DataFrame(data)
         sdf = GeoAccessor.from_df(df)
         geo_series_accessor = sdf["SHAPE"].geom
 
         # Create second GeoSeriesAccessor
-        addresses = ['456 Main St, New York, NY', '789 Elm St, Los Angeles, CA', '100 Oak St, Chicago, IL']
-        data = {'address': addresses}
+        addresses = [
+            "456 Main St, New York, NY",
+            "789 Elm St, Los Angeles, CA",
+            "100 Oak St, Chicago, IL",
+        ]
+        data = {"address": addresses}
         df = pd.DataFrame(data)
         sdf2 = GeoAccessor.from_df(df)
         geo_series_accessor2 = sdf2["SHAPE"].geom
         # Test if equal
         assert geo_series_accessor.equals(geo_series_accessor2) is False
         assert geo_series_accessor2.equals(geo_series_accessor2)
+
+        # Test with two geometries
+        spatial_reference = {"wkid": 102100, "latestWkid": 3857}
+        df1 = pd.DataFrame(
+            [
+                {
+                    "SHAPE": {
+                        "x": -7000000,
+                        "y": 5000000,
+                        "spatialReference": spatial_reference,
+                    }
+                },
+                {
+                    "SHAPE": {
+                        "x": -7000001,
+                        "y": 5000001,
+                        "spatialReference": spatial_reference,
+                    }
+                },
+            ]
+        )
+        df2 = pd.DataFrame(
+            [
+                {
+                    "SHAPE": {
+                        "x": -7000000,
+                        "y": 5000000,
+                        "spatialReference": spatial_reference,
+                    }
+                },
+                {
+                    "SHAPE": {
+                        "x": -7000002,
+                        "y": 5000002,
+                        "spatialReference": spatial_reference,
+                    }
+                },
+            ]
+        )
+        assert df1[df1.spatial.name].geom.equals(df2[df2.spatial.name])[0] == True
+        assert df1[df1.spatial.name].geom.equals(df2[df2.spatial.name])[1] == False
+
 
 if __name__ == "__main__":
     unittest.main()
