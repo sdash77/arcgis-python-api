@@ -87,7 +87,12 @@ def set_segmentor_parms(data, cfg, **kwargs):
             dcd_head.loss_decode.class_weight = class_weight
     else:
         cfg.model.decode_head.num_classes = data.c
-        cfg.model.decode_head.loss_decode.class_weight = class_weight
+        if hasattr(cfg.model.decode_head, "loss_cls"):
+            cfg.model.decode_head.loss_cls.class_weight = (
+                class_weight if class_weight else [1.0] * data.c
+            ) + [0.1]
+        else:
+            cfg.model.decode_head.loss_decode.class_weight = class_weight
 
     if hasattr(cfg.model, "auxiliary_head"):
         if isinstance(cfg.model.auxiliary_head, list):
