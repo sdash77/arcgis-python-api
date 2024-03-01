@@ -221,52 +221,42 @@ class EsriSession:
         if proxies:
             self.proxies = proxies
 
-        if "retries" in kwargs and kwargs.get("retries"):
-            r = Retry(
-                total=kwargs.get("retries", 5),
-                read=kwargs.get("retries", 5),
-                connect=kwargs.get("retries", 5),
-                status_forcelist=kwargs.get(
-                    "status_to_retry", (413, 429, 503, 500, 502, 504)
+        retry = Retry(
+            total=kwargs.get("retries", 5),
+            read=kwargs.get("retries", 5),
+            connect=kwargs.get("retries", 5),
+            status_forcelist=kwargs.get(
+                "status_to_retry", (413, 429, 503, 500, 502, 504)
+            ),
+            allowed_methods=kwargs.get(
+                "method_whitelist",
+                frozenset(
+                    [
+                        "POST",
+                        "DELETE",
+                        "GET",
+                        "HEAD",
+                        "OPTIONS",
+                        "PUT",
+                        "TRACE",
+                    ]
                 ),
-                allowed_methods=kwargs.get(
-                    "method_whitelist",
-                    frozenset(
-                        [
-                            "POST",
-                            "DELETE",
-                            "GET",
-                            "HEAD",
-                            "OPTIONS",
-                            "PUT",
-                            "TRACE",
-                        ]
-                    ),
-                ),
-            )
-            if isinstance(self.auth, EsriPKIAuth):
-                from .tools._pki_adaptor import PKIAdapter
-
-                adapter = PKIAdapter(
-                    pki_data=cert,
-                    pki_password=kwargs.pop("pki_password", None),
-                    max_retries=r,
-                )
-                self._session.cert = None
-                self.auth = None
-            else:
-                adapter = HTTPAdapter(max_retries=r)
-            self._session.mount("http://", adapter)
-            self._session.mount("https://", adapter)
-        if isinstance(self.auth, EsriPKIAuth) and not "retries" in kwargs:
+            ),
+        )
+        if isinstance(self.auth, EsriPKIAuth):
             from .tools._pki_adaptor import PKIAdapter
 
             adapter = PKIAdapter(
                 pki_data=cert,
                 pki_password=kwargs.pop("pki_password", None),
+                max_retries=retry,
             )
-            self._session.mount("http://", adapter)
-            self._session.mount("https://", adapter)
+            self._session.cert = None
+            self.auth = None
+        else:
+            adapter = HTTPAdapter(max_retries=retry)
+        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
 
     # ----------------------------------------------------------------------
     def close(self):
