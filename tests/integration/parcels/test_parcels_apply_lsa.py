@@ -10,7 +10,7 @@ import arcgis.features
 import parcel_fabric_utils as pfutils
 
 
-class TestAnalyzeLSA(unittest.TestCase):
+class TestApplyLSA(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
 
     gis = None
