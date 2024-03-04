@@ -41,7 +41,7 @@ class TestTransferParcels(unittest.TestCase):
 
     def test_scenario_1(self):
         fq_version_name = pfutils.create_version(
-            self.vms, "api-transfer1_area"
+            self.vms, f"api-{int(time.time())}"
         )
         transfer_parcel = {
             "id": "{D664B654-D8F2-453C-966F-6FA66E1AE2E2}",
