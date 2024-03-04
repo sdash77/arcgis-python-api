@@ -4852,7 +4852,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         sensitivity=None,
         time_field=None,
         search_time_interval=None,
-        search_time_interval_unit=None,
+        search_time_unit=None,
     ):
         """
         The ``find_point_clusters`` method finds clusters of point features within surrounding
@@ -4964,7 +4964,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                         Example: `search_time_interval = 4`
         ----------------------------    ---------------------------------------------------------
-        search_time_interval_unit       Optional string. The unit that will be used with the time value
+        search_time_unit                Optional string. The unit that will be used with the time value
                                         specified for `search_time_interval`. You must provide a value
                                         if `search_time_interval` has been set. This parameter is
                                         only available in ArcGIS Online.
@@ -5037,7 +5037,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             sensitivity=sensitivity,
             time_field=time_field,
             search_time_interval=search_time_interval,
-            search_time_interval_unit=search_time_interval_unit,
+            search_time_unit=search_time_unit,
         )
         gpjob._is_fa = True
         if future:
