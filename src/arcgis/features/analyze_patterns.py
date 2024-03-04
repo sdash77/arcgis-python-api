@@ -316,7 +316,7 @@ def find_point_clusters(
     sensitivity: Optional[float] = None,
     time_field: Optional[str] = None,
     search_time_interval: Optional[int] = None,
-    search_time_interval_units: Optional[str] = None,
+    search_time_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
@@ -430,7 +430,7 @@ def find_point_clusters(
 
                                     Example: `search_time_interval = 4`
     ----------------------------    ---------------------------------------------------------
-    search_time_interval_unit       Optional string. The unit that will be used with the time value
+    search_time_unit                Optional string. The unit that will be used with the time value
                                     specified for `search_time_interval`. You must provide a value
                                     if `search_time_interval` has been set. This parameter is
                                     only available in ArcGIS Online.
@@ -469,7 +469,7 @@ def find_point_clusters(
         "sensitivity": sensitivity,
         "time_field": time_field,
         "search_time_interval": search_time_interval,
-        "search_time_interval_units": search_time_interval_units,
+        "search_time_unit": search_time_unit,
     }
     params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_point_clusters, **kwargs
