@@ -1995,6 +1995,24 @@ def reconstruct_surface(
                                                                                     processing instances:
 
                                                                                         {"parallelProcessingFactor": "60%"}
+
+                                                                                - Output DSM product settings: controls
+                                                                                the environment variables for creating the DSM product.
+
+                                                                                    Example:
+
+                                                                                    Syntax example with a specified number of processing instances:
+
+                                                                                        {"dsm": {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
+
+                                                                                - Output True Ortho product settings: controls
+                                                                                the environment variables for creating the DSM product.
+
+                                                                                    Example:
+
+                                                                                    Syntax example with a specified number of processing instances:
+
+                                                                                        {"true_ortho": {"outputType": "Mosaic", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------

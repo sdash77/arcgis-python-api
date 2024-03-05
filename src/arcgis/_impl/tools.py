@@ -9365,7 +9365,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param["context"]
+            context = json.loads(context_param["context"])
 
         if scenario is not None:
             scenario_allowed_values = self._tbx.choice_list.reconstruct_surface[
@@ -9446,7 +9446,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_products["dsm"] = output_dsm_raster
+            output_products["dsm"] = json.loads(output_dsm_raster)
 
         if output_true_ortho_name is not None:
             (
@@ -9457,7 +9457,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_products["true_ortho"] = output_true_ortho_raster
+            output_products["true_ortho"] = json.loads(output_true_ortho_raster)
 
         if output_dsm_mesh_name is not None:
             if isinstance(output_dsm_mesh_name, str):
@@ -9484,6 +9484,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             if product in output_products and context and product in context:
                 output_products[product].update(context[product])
 
+        if context:
+            context = json.dumps(context)
+
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,
             output_products=output_products,
@@ -9507,7 +9510,6 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             items["true_ortho"] = json.loads(output_true_ortho_raster)
         final_job = None
         job._is_reality = True
-        print(f"passing items: {items}")
         final_job = RMJob(job, item=items)
         final_job._flight_details = flight_json_details
         if future:
