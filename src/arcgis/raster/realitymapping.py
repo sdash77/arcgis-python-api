@@ -199,8 +199,6 @@ def _create_project(
     }
     if definition is None:
         definition = {}
-    if "spatialReference" in definition:
-        self._spatial_reference = definition["spatialReference"]
 
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
@@ -411,7 +409,7 @@ def _add_mission(
             props = None
             # Get the project item data to update the SR for the portal item
             project_data = project_item.get_data()
-            project_data.update({"spatialReference": project._spatial_reference})
+            project_data.update(project._spatial_reference)
             
             if "wkid" in project._spatial_reference:
                 wkid = project._spatial_reference["wkid"]
