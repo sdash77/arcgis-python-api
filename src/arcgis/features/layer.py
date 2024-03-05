@@ -3869,10 +3869,10 @@ class FeatureLayer(Layer):
 
             params = {
                 "f": "json",
-                "assetHashes": asset_hashes,
+                "assetHashes": str(asset_hashes),
                 "transportType": transport_type,
             }
-            resp = self._gis._con.get(url, params=params)
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
