@@ -3872,7 +3872,7 @@ class FeatureLayer(Layer):
                 "assetHashes": asset_hashes,
                 "transportType": transport_type,
             }
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._con.get(url, params=params)
             return resp
         else:
             return None
