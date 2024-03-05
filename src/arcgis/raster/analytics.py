@@ -1128,15 +1128,11 @@ def generate_raster(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
-    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                             not exist, with the given folder name and persists the output in this folder.
-                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
-
-                                             Example:
-
-                                                | {'username': 'user1',
-                                                | 'id': '6a3b77c187514ef7873ba73338cf1af8',
-                                                | 'title': 'trial'}
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     ------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
@@ -1295,6 +1291,9 @@ def convert_feature_to_raster(
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
@@ -1346,7 +1345,6 @@ def copy_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -1668,7 +1666,6 @@ def copy_raster(
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
         md_to_upload=source_mosaic_dataset,
-        estimate=estimate,
         **kwargs,
     )
 
@@ -1883,6 +1880,9 @@ def summarize_raster_within(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -2037,6 +2037,9 @@ def convert_raster_to_feature(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -2246,6 +2249,9 @@ def calculate_density(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -2573,6 +2579,9 @@ def create_viewshed(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -2816,6 +2825,9 @@ def interpolate_points(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -3006,6 +3018,9 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
@@ -3200,6 +3215,9 @@ def segment(
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
+    --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
                                          The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -3339,6 +3357,9 @@ def train_classifier(
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
     ================================     ====================================================================
 
     :return:
@@ -4408,6 +4429,9 @@ def delete_image(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return: The imagery layer url
@@ -4461,6 +4485,9 @@ def delete_image_collection(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return: Boolean value indicating whether the deletion was successful or not.
@@ -4797,6 +4824,9 @@ def list_datastore_content(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return:
@@ -4871,6 +4901,9 @@ def build_footprints(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -4947,6 +4980,9 @@ def build_overview(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -5029,6 +5065,9 @@ def calculate_statistics(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -5429,6 +5468,9 @@ def generate_multidimensional_anomaly(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -5536,6 +5578,9 @@ def build_multidimensional_transpose(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: output_raster : Imagery Layer URL
@@ -5855,6 +5900,9 @@ def aggregate_multidimensional_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -6109,6 +6157,9 @@ def generate_trend_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -6303,6 +6354,9 @@ def predict_using_trend_raster(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -6565,6 +6619,9 @@ def find_argument_statistics(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -6735,6 +6792,9 @@ def linear_spectral_unmixing(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -6977,6 +7037,9 @@ def subset_multidimensional_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -7206,6 +7269,9 @@ def define_nodata(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: The imagery layer url
@@ -7335,6 +7401,9 @@ def optimal_path_as_line(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -7510,6 +7579,9 @@ def optimal_region_connections(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -7790,6 +7862,9 @@ def analyze_changes_using_ccdc(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -8177,6 +8252,9 @@ def detect_change_using_change_analysis_raster(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -8312,6 +8390,9 @@ def manage_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: output_raster : Imagery Layer URL
@@ -8489,6 +8570,9 @@ def sample(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -8652,6 +8736,9 @@ def merge_multidimensional_rasters(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
@@ -8922,6 +9009,9 @@ def analyze_changes_using_landtrendr(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -9220,6 +9310,9 @@ def zonal_statistics_as_table(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -9443,6 +9536,9 @@ def compute_change_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
@@ -9577,6 +9673,9 @@ def summarize_categorical_raster(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -9749,6 +9848,9 @@ def train_random_trees_regression_model(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -9830,6 +9932,9 @@ def export_to_tile_package(
     ---------------     --------------------------------------------------------------------
     future              Optional Boolean. If True, the result will be a GPJob object and
                         results will be returned asynchronously.
+    ---------------     --------------------------------------------------------------------
+    estimate            Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                        Available only on ArcGIS Online.
     ===============     ====================================================================
 
     :return: The exported tile package item
@@ -9950,6 +10055,9 @@ def derive_continuous_flow(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================     
 
     """
@@ -10067,6 +10175,9 @@ def mosaic_image(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -10228,6 +10339,9 @@ def multidimensional_principal_components(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: Named Tuple
@@ -10347,6 +10461,15 @@ def predict_using_regression_model(
 
                                                 Example:
                                                     {'resamplingMethod': "NEAREST"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: The imagery layer item
@@ -10672,6 +10795,15 @@ def locate_regions(
                                                     "spatialReference": {"wkid": 4326}}}
 
                                                 - Mask (mask): Only cells that fall within the analysis mask will be considered in the operation.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: The imagery layer item

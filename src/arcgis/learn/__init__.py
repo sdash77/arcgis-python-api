@@ -331,6 +331,9 @@ def detect_objects(
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     ------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -512,6 +515,9 @@ def classify_pixels(
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     ------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
@@ -817,6 +823,9 @@ def export_training_data(
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
+    ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -1063,6 +1072,9 @@ def classify_objects(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1187,6 +1199,9 @@ def compute_accuracy_for_object_detection(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1557,6 +1572,9 @@ def detect_change_using_deep_learning(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.

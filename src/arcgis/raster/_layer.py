@@ -5048,10 +5048,10 @@ class ImageryLayer(Layer):
         process_as_multidimensional: Optional[bool] = None,
         build_transpose: Optional[bool] = None,
         context: Optional[dict] = None,
-        estimate: Optional[bool] = False,
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: Optional[bool] = False,
         **kwargs,
     ):
         """
@@ -5152,6 +5152,9 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
@@ -5364,6 +5367,9 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
@@ -9386,6 +9392,9 @@ class Raster:
                                                  results will be returned asynchronously. Keyword only parameter.
 
                                                  (Available only when image_server engine is used)
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
