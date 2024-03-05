@@ -105,6 +105,9 @@ class StoryMap(object):
         # Get the story url
         self._url = self._get_url()
 
+        #  Assign resources to item
+        self._resources = self._item.resources.list()
+
     # ----------------------------------------------------------------------
     def _setup_existing_storymap(self, item):
         saved_drafts = [
@@ -172,9 +175,6 @@ class StoryMap(object):
         utils._add_resource(
             self, resource_name=draft, text=json.dumps(template), access="private"
         )
-
-        # Step 12: Assign resources to item
-        self._resources = self._item.resources.list()
 
     def _get_storymap_template(self):
         return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
@@ -505,6 +505,54 @@ class StoryMap(object):
         # call method to update cover
         utils.cover(self, title, type, summary, by_line, image)
         return True
+
+    # ----------------------------------------------------------------------
+    @property
+    def logo(self):
+        """
+        Get the logo for the story. The logo is seen in the header of the story.
+        """
+        # logo is found in story node (i.e. root node id)
+        root = self._properties["root"]
+        logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
+        return self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+    # ----------------------------------------------------------------------
+    def set_logo(
+        self,
+        image: Optional[str] = None,
+        link: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
+        """
+        Set the logo for the story. The logo is seen in the header of the story.
+
+        .. note::
+            To remove the logo, link, or alt text, pass in an empty string. If they are None, nothing
+            will be changed for that parameter. For example if you only want to update the link but leave
+            the image and alt text as is, pass in None for the image and alt text. Pass in the new link
+            for the link parameter.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        image               Required string. The file path to the image to be used as the
+                            logo.
+        ---------------     --------------------------------------------------------------------
+        link                Optional string. The url to link to when the logo is clicked.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. The alt text to be used for screen readers.
+        ===============     ====================================================================
+
+        :return: True if successful.
+
+        .. code-block:: python
+
+            story = StoryMap("<story item>")
+            story.set_logo("<image-path>.jpg/jpeg/png/gif")
+        """
+        # call method to update logo
+        return utils.set_logo(self, image, link, alt_text)
 
     # ----------------------------------------------------------------------
     def navigation(
