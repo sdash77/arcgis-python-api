@@ -3559,7 +3559,9 @@ class GeoAccessor(object):
             df[td] = df[td].dt.total_seconds() * 1000
 
         # define the function once
-        fn = lambda x,: int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else 0
+        fn = lambda x,: (
+            int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else None
+        )
         for f in date_fields:
             # apply function to each column in date_fields
             df[f] = pd.to_datetime(df[f]).apply(fn)
