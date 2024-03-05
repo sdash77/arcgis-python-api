@@ -1593,6 +1593,7 @@ def detect_change_using_deep_learning(
         model_arguments=model_arguments,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
