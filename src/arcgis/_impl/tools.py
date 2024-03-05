@@ -1071,6 +1071,163 @@ class _FeatureAnalysisTools(BaseAnalytics):
         return ret
 
     # ----------------------------------------------------------------------
+    def calculate_composite_index(
+        self,
+        input_layer=None,
+        input_variables=None,
+        index_method=None,
+        output_index_reverse=False,
+        output_index_min_max=None,
+        output_name=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+        """
+        The Calculate Composite Index task combines multiple numeric variables to create a single index. This task is only available in ArcGIS Online and Enterprise 11.3+.
+
+        =====================================       =========================================================
+        **Parameter**                               **Description**
+        -------------------------------------       ---------------------------------------------------------
+        input_layer                                 Required layer. The input table or features containing the variables that will be combined into the index.
+
+                                                    Syntax: As described in detail in the Feature input topic, this parameter can be one of the following:
+
+                                                    A URL to a feature service layer with an optional filter to select specific features
+                                                    A feature collection
+                                                    Examples:
+
+                                                    {"url": <feature service layer url>, "filter": <where clause>}
+                                                    {"layerDefinition": {}, "featureSet": {}, "filter": <where clause>}
+        -------------------------------------       ---------------------------------------------------------
+        input_variables                             Required list of dictionaries. The variables that will be combined to create the index.
+                                                    Provide at least two variables. For each variable, specify the following:
+
+                                                    * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
+                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to False. When True the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
+                                                    * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
+
+                                                    Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
+        -------------------------------------       ---------------------------------------------------------
+        index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
+                                                    the scaled variables to create the index.
+
+                                                    Scaling is a type of preprocessing that ensures the variables are on a compatible scale before they are combined. These scaled variables are then combined to create a single index value. The following options are available:
+
+                                                    * `meanScaled` the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the mean of the scaled values. This method is useful for creating an index that is easy to interpret. The shape of the distribution and outliers in the input variables will impact the index.
+                                                    * `meanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values. The shape of the distribution and outliers in the input variables will not impact the index.
+                                                    * `meanRaw` creates the index by calculating the mean of the raw input variables. This option is useful when variables are already on a compatible scale.
+                                                    * `geomeanScaled` creates the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the geometric mean of the scaled values. High values will not cancel low values, so this option is useful for creating an index in which higher index values will occur only when there are high values in multiple variables.
+                                                    * `geomeanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the geometric mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values and when high variable values should not cancel out low variable values.
+                                                    * `geomeanRaw` creates the index by calculating the geometric mean of the raw input variables. This option is useful when variables are already on a compatible scale and when high variable values should not cancel out low variable values.
+                                                    * `sumFlagsPercentile` creates the index by counting the number of input variables with values greater than or equal to the 90th percentile. This method is useful for identifying locations that may be considered the most extreme or the most in need.
+
+                                                    Values: "meanScaled" | "meanPercentile" | "meanRaw" | "geomeanScaled" | "geomeanPercentile" | "geomeanRaw" | "sumFlagsPercentile"
+
+                                                    Default: "meanScaled"
+        -------------------------------------       ---------------------------------------------------------
+        output_index_reverse                        Optional boolean. Specifies whether the output index values will
+                                                    be reversed in direction. When checked, high index values will be treated
+                                                    as low index values and vice versa. Reversing is applied after combining
+                                                    the scaled variables. The default is False.
+        -------------------------------------       ---------------------------------------------------------
+        output_index_min_max                        Optional list of one dictionary. The minimum and maximum of the output index values.
+                                                    Specifying a minimum and maximum value will apply minimum-maximum scaling to the combined variables.
+
+                                                    Example: [{'min': 0, 'max': 100}]
+        -------------------------------------       ---------------------------------------------------------
+        output_name                                 Optional dictionary. If provided, the task will create a feature service of the results. You define the name of the service. If an outputName value is not provided, the task will return a feature collection.
+
+                                                    Syntax:
+                                                    ```
+                                                    {
+                                                    "serviceProperties": {
+                                                        "name": "<service name>"
+                                                    }
+                                                    }
+                                                    ```
+
+                                                    You can overwrite an existing feature service by providing the itemId value of the existing feature service and setting the overwrite property to True. Including the serviceProperties parameter is optional. As described in the Feature output topic, you must either be the owner of the feature service or have administrative privileges to perform the overwrite.
+                                                    Syntax:
+                                                    ```
+                                                    {
+
+                                                    "itemProperties": {
+                                                                "itemId": "<itemID of the existing feature service>",
+                                                                "overwrite": True
+                                                        }
+                                                    }
+                                                    ```
+
+                                                    or
+                                                    ```
+                                                    {
+                                                    "serviceProperties": {
+                                                        "name": "<existing service name>"
+                                                    },
+                                                    "itemProperties": {
+                                                                    "itemId": "<itemID of the existing feature service>",
+                                                                    "overwrite": True
+                                                        }
+                                                    }
+                                                    ```
+        -------------------------------------       ---------------------------------------------------------
+        context                                     Optional dict. The Context parameter contains the following additional settings that affect task operation:
+
+                                                    * Extent (extent)—A bounding box that defines the analysis area. Only input features that intersect the bounding box will be analyzed.
+                                                    * Output spatial reference (outSR)—The output features will be projected into the output spatial reference.
+
+                                                    Syntax:
+                                                    ```
+                                                    {
+                                                    "extent" : {extent},
+                                                    "outSR" : {spatial reference}
+                                                    }
+                                                    ```
+        -------------------------------------       ---------------------------------------------------------
+        future                                      Optional boolean. If True, the task will be performed asynchronously.
+        =====================================       =========================================================
+
+        :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+
+        """
+        if not self._gis._is_agol and self._gis.version < [2024, 1]:
+            raise Exception(
+                "This tool is only available in ArcGIS Online and Enterprise 11.3+."
+            )
+
+        if input_layer is None or input_variables is None:
+            raise Exception(
+                "User must provide the `input_layer` and `input_variables` to use this tool."
+            )
+
+        input_layer = self._feature_input(input_layer)
+        output_name = self._output_name_dict(output_name, False)
+        if index_method is None:
+            index_method = "meanScaled"
+
+        gpjob = self._tbx.calculate_composite_index(
+            input_layer=input_layer,
+            input_variables=input_variables,
+            index_method=index_method,
+            output_index_reverse=output_index_reverse,
+            output_index_min_max=output_index_min_max,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        ret = gpjob.result()
+        if isinstance(ret, FeatureCollection):
+            return ret
+        elif "index_result_layer" in ret and output_name:
+            return ret["index_result_layer"]
+        return ret
+
+    # ----------------------------------------------------------------------
     def choose_best_facilities(
         self,
         goal="Allocate",
@@ -4693,6 +4850,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
         method=None,
         sensitivity=None,
+        time_field=None,
+        search_time_interval=None,
+        search_time_unit=None,
     ):
         """
         The ``find_point_clusters`` method finds clusters of point features within surrounding
@@ -4706,84 +4866,113 @@ class _FeatureAnalysisTools(BaseAnalytics):
         noise. Multiple clusters will be assigned each color. Colors will be assigned
         and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-        This method utilizes two related algorithms. By default the HDBSCAN algorithm is
-        used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
-        is used. DBSCAN is only appropriate if there is a very clear search distance to use
-        for your analysis and will return clusters with similar densities. When
-        no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
-        of varying densities from sparser noise resulting in more data-driven clusters.
+        This method uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters.
+        If the method is not specified and the `search_distance` value is not provided,
+        the HDBSCAN method will be used. If the method is not specified and `search_distance` value is provided,
+        the DBSCAN algorithm will be used. DBSCAN will use distance, and optionally time, to return
+        clusters with similar densities. It is only appropriate if there is a clear search
+        distance to use for the analysis. HDBSCAN will use a range of distances to separate
+        clusters of varying densities from sparser noise resulting in more data-driven clusters.
+        OPTICS will use the distances, and optionally time, between neighboring features to
+        create a reachability plot, and use it to separate clusters of varying densities from noise.
 
-        ====================    =========================================================
-        **Parameter**            **Description**
-        --------------------    ---------------------------------------------------------
-        analysis_layer          Required layer. The point feature layer for which
-                                density-based clustering will be calculated.
-                                See :ref:`Feature Input<FeatureInput>`.
-        --------------------    ---------------------------------------------------------
-        min_features_cluster    Required integer. The minimum number of features to be
-                                considered a cluster. Any cluster with fewer features
-                                than the number provided will be considered noise.
-        --------------------    ---------------------------------------------------------
-        search_distance         Optional float. The maximum distance to consider. The
-                                Minimum Features per Cluster specified must be found
-                                within this distance for cluster membership. Individual
-                                clusters will be separated by at least this distance. If
-                                a feature is located further than this distance from the
-                                next closest feature in the cluster, it will not be
-                                included in the cluster.
-        --------------------    ---------------------------------------------------------
-        search_distance_unit    Optional string. The linear unit to be used with the distance
-                                value specified for ``search_distance``. You must provide a
-                                value if ``search_distance`` has been set.
+        ============================    =========================================================
+        **Parameter**                   **Description**
+        ----------------------------    ---------------------------------------------------------
+        analysis_layer                  Required layer. The point feature layer for which
+                                        density-based clustering will be calculated.
+                                        See :ref:`Feature Input<FeatureInput>`.
+        ----------------------------    ---------------------------------------------------------
+        min_features_cluster            Required integer. The minimum number of features to be
+                                        considered a cluster. Any cluster with fewer features
+                                        than the number provided will be considered noise.
+        ----------------------------    ---------------------------------------------------------
+        search_distance                 Optional float. The maximum distance to consider. The
+                                        Minimum Features per Cluster specified must be found
+                                        within this distance for cluster membership. Individual
+                                        clusters will be separated by at least this distance. If
+                                        a feature is located further than this distance from the
+                                        next closest feature in the cluster, it will not be
+                                        included in the cluster.
+        ----------------------------    ---------------------------------------------------------
+        search_distance_unit            Optional string. The linear unit to be used with the distance
+                                        value specified for ``search_distance``. You must provide a
+                                        value if ``search_distance`` has been set.
 
-                                Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
+                                        Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
 
-                                The default is 'Miles'.
-        --------------------    ---------------------------------------------------------
-        output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                                feature layer will cause the new layer to be appended to the Feature Service.
-                                If overwrite is True in context, new layer will overwrite existing layer.
-                                If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-        --------------------    ---------------------------------------------------------
-        context                 Optional dict. Additional settings such as processing extent and output spatial reference.
-                                For find_point_clusters, there are three settings.
+                                        The default is 'Miles'.
+        ----------------------------    ---------------------------------------------------------
+        output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                        feature layer will cause the new layer to be appended to the Feature Service.
+                                        If overwrite is True in context, new layer will overwrite existing layer.
+                                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+        ----------------------------    ---------------------------------------------------------
+        context                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                        For find_point_clusters, there are three settings.
 
-                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
+                                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
-                                    .. code-block:: python
+                                            .. code-block:: python
 
-                                        # Example Usage
-                                        context = {"extent": {"xmin": 3164569.408035,
-                                                            "ymin": -9187921.892449,
-                                                            "xmax": 3174104.927313,
-                                                            "ymax": -9175500.875353,
-                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                    "outSR": {"wkid": 3857},
-                                                    "overwrite": True}
-        --------------------    ---------------------------------------------------------
-        gis                     Optional, the GIS on which this tool runs. If not
-                                specified, the active GIS is used.
-        --------------------    ---------------------------------------------------------
-        estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
-        --------------------    ---------------------------------------------------------
-        future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-        --------------------    ---------------------------------------------------------
-        method                  Optional string. Specifies the method that will be used to
-                                find clusters. If the method is not specified and the
-                                search_distance value is not provided, the HDBSCAN algorithm
-                                will be used. If the method is not specified and the search_distance
-                                value is provided, the DBSCAN algorithm will be used.
+                                                # Example Usage
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                    "ymin": -9187921.892449,
+                                                                    "xmax": 3174104.927313,
+                                                                    "ymax": -9175500.875353,
+                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                            "outSR": {"wkid": 3857},
+                                                            "overwrite": True}
+        ----------------------------    ---------------------------------------------------------
+        gis                             Optional, the GIS on which this tool runs. If not
+                                        specified, the active GIS is used.
+        ----------------------------    ---------------------------------------------------------
+        estimate                        Optional Boolean. If True, the number of credits to run the operation will be returned.
+        ----------------------------    ---------------------------------------------------------
+        future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ----------------------------    ---------------------------------------------------------
+        method                          Optional string. Specifies the method that will be used to
+                                        find clusters. If the method is not specified and the
+                                        search_distance value is not provided, the HDBSCAN algorithm
+                                        will be used. If the method is not specified and the search_distance
+                                        value is provided, the DBSCAN algorithm will be used.
 
-                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
+                                        This parameter is available in ArcGIS Enterprise 11.2 or higher.
 
-                                Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
-        --------------------    ---------------------------------------------------------
-        sensitivity             Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
+                                        Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
+        ----------------------------    ---------------------------------------------------------
+        sensitivity                     Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
 
-                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
-        ====================    =========================================================
+                                        This parameter is available in ArcGIS Enterprise 11.2 or higher.
+        ----------------------------    ---------------------------------------------------------
+        time_field                      Optional string. Specifies the field in the `analysis_layer`
+                                        value that contains a timestamp for each feature. This parameter
+                                        is only available in ArcGIS Online.
+
+                                        Example: `time_field = "start_time"`
+
+                                        .. note::
+                                            Time related parameters can only be used when the `method` is
+                                            DBSCAN or OPTICS.
+        ----------------------------    ---------------------------------------------------------
+        search_time_interval            Optional float. A value that will be used to determine
+                                        whether features form a space-time cluster. The search
+                                        time interval spans before and after the time of each feature.
+                                        This parameter is only available in ArcGIS Online.
+
+                                        Example: `search_time_interval = 4`
+        ----------------------------    ---------------------------------------------------------
+        search_time_unit                Optional string. The unit that will be used with the time value
+                                        specified for `search_time_interval`. You must provide a value
+                                        if `search_time_interval` has been set. This parameter is
+                                        only available in ArcGIS Online.
+
+                                        Values: "Seconds" | "Minutes" | "Hours" | "Days" | "Weeks" | "Months" | "Years"
+
+                                        Example: `search_time_unit = "Minutes"`
+        ============================    =========================================================
 
         :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
 
@@ -4801,12 +4990,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
             overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
-        if self._gis.version >= [2023, 2] or self._gis._is_agol:
-            method = method
-            sensitivity = sensitivity
-        else:
+        if not self._gis.version >= [2023, 2] or not self._gis._is_agol:
             method = None
             sensitivity = None
+
+        if not self._gis.version >= [2024, 1] or not self._gis._is_agol:
+            # Enterprise 11.3+ or Online
+            time_field = None
+            search_time_interval = None
+            search_time_interval_unit = None
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -4823,6 +5015,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["method"] = method
             if sensitivity is not None:
                 params["sensitivity"] = sensitivity
+            if time_field is not None:
+                params["timeField"] = time_field
+            if search_time_interval is not None:
+                params["searchTimeInterval"] = search_time_interval
+            if search_time_interval_unit is not None:
+                params["searchTimeIntervalUnit"] = search_time_interval_unit
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
@@ -4837,6 +5035,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             future=True,
             method=method,
             sensitivity=sensitivity,
+            time_field=time_field,
+            search_time_interval=search_time_interval,
+            search_time_unit=search_time_unit,
         )
         gpjob._is_fa = True
         if future:
@@ -7716,7 +7917,8 @@ class _OrthoMappingTools:
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9194,7 +9396,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -9265,7 +9468,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, user)
+                folder_item = gis.content.folders.create(folder, user)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -16597,7 +16801,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -16704,7 +16909,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             out_accuracy_table_name = json.dumps(
@@ -17160,7 +17366,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_name = json.dumps(
@@ -17562,7 +17769,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
                 if folderId is None:
-                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder_item = gis.content.folders.create(folder, owner)
+                    folder_dict = folder_item.properties
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
@@ -17723,7 +17931,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_item = gis.content.folders.create(folder, owner)
+                folder_dict = folder_item.properties
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
             output_summary_table_name = json.dumps(

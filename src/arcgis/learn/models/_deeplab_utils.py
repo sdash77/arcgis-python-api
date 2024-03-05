@@ -219,6 +219,20 @@ class Deeplab(nn.Module):
                 return result
 
 
+def model_pred(model, input):
+    model.learn.model.eval()
+    if getattr(model, "_is_model_extension", False):
+        if model._is_multispectral:
+            pred = model.learn.model(
+                model._model_conf.transform_input_multispectral(input)
+            )
+        else:
+            pred = model.learn.model(model._model_conf.transform_input(input))
+    else:
+        pred = pred = model.learn.model(input)
+    return pred
+
+
 def mask_iou(mask1, mask2):
     mask1 = mask1.permute(0, 2, 3, 1)
     mask2 = mask2.permute(0, 2, 3, 1)
@@ -232,41 +246,66 @@ def mask_iou(mask1, mask2):
     return iou
 
 
-def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
-    ious = []
-    model.learn.model.eval()
+def intersect_and_union(pred_label, label, num_classes):
+    intersect = pred_label[pred_label == label]
+    area_intersect = torch.histc(
+        intersect.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_pred_label = torch.histc(
+        pred_label.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_label = torch.histc(
+        label.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_union = area_pred_label + area_label - area_intersect
+    return area_intersect, area_union, area_pred_label, area_label
+
+
+def total_intersect_and_union(
+    model, dl, num_classes, show_progress=True, ignore_mapped_class=[]
+):
+    total_area_intersect = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_union = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_pred_label = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_label = torch.zeros((num_classes,), dtype=torch.float64)
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            if getattr(model, "_is_model_extension", False):
-                if model._is_multispectral:
-                    pred = model.learn.model(
-                        model._model_conf.transform_input_multispectral(input)
-                    )
-                else:
-                    pred = model.learn.model(model._model_conf.transform_input(input))
-            else:
-                pred = model.learn.model(input)
-            target = target.squeeze(1)
+            pred = model_pred(model, input)
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:
                     pred[:, k] = pred.min() - 1
                 pred = pred.argmax(dim=1)
             else:
                 pred = pred.argmax(dim=1)
-            mask1 = []
-            mask2 = []
-            for i in range(pred.shape[0]):
-                mask1.append(
-                    pred[i].to(model._device)
-                    == num_classes[:, None, None].to(model._device)
-                )
-                mask2.append(
-                    target[i].to(model._device)
-                    == num_classes[:, None, None].to(model._device)
-                )
-            mask1 = torch.stack(mask1)
-            mask2 = torch.stack(mask2)
-            iou = mask_iou(mask1, mask2)
-            ious.append(iou.tolist())
+            pred = pred.squeeze().detach().cpu()
+            target = target.squeeze(1).detach().cpu()
+            (
+                area_intersect,
+                area_union,
+                area_pred_label,
+                area_label,
+            ) = intersect_and_union(pred, target, num_classes)
+            total_area_intersect += area_intersect
+            total_area_union += area_union
+            total_area_pred_label += area_pred_label
+            total_area_label += area_label
+        return (
+            total_area_intersect,
+            total_area_union,
+            total_area_pred_label,
+            total_area_label,
+        )
 
-    return np.mean(ious, 0)
+
+def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
+    (
+        total_area_intersect,
+        total_area_union,
+        _,
+        _,
+    ) = total_intersect_and_union(
+        model, dl, len(num_classes), show_progress, ignore_mapped_class
+    )
+
+    iou = total_area_intersect.numpy() / (total_area_union.numpy() + 1e-7)
+    return iou
