@@ -53,9 +53,11 @@ def _common_query(
     time_reference_unknown_client: Optional[bool] = None,
     **kwargs,
 ):
+    raw = False
     # get url
     if layer._is_3d:
         url = layer._url + "/query3D"
+        raw = True
     elif layer._dynamic_layer is None:
         url = layer._url + "/query"
     else:
@@ -120,7 +122,7 @@ def _common_query(
     if as_df:
         return _query_df(layer, url, params)
     else:
-        return _query(layer, url, params)
+        return _query(layer, url, params, raw)
 
 
 def _create_parameters(
@@ -213,7 +215,7 @@ def _create_parameters(
         if layer._is_3d:
             # for 3D feature query
             if format_3d_objects:
-                params["formatFor3DObjects"] = format_3d_objects
+                params["formatOf3DObjects"] = format_3d_objects
 
     # convert out_fields to a comma separated string
     if isinstance(out_fields, (list, tuple)):
