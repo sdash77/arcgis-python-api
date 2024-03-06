@@ -507,15 +507,16 @@ class StoryMap(object):
         return True
 
     # ----------------------------------------------------------------------
-    @property
-    def logo(self):
+    def get_logo(self):
         """
-        Get the logo for the story. The logo is seen in the header of the story.
+        Get the logo image for the story. The logo is seen in the header of the story.
         """
         # logo is found in story node (i.e. root node id)
         root = self._properties["root"]
         logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
-        return self._properties["resources"][logo_resource]["data"]["resourceId"]
+        resource = self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+        return self._item.resources.get(resource)
 
     # ----------------------------------------------------------------------
     def set_logo(
