@@ -2665,10 +2665,11 @@ class FeatureLayer(Layer):
         upload_formats = self.properties.supportedAppendFormats
         if upload_format not in upload_formats:
             raise ValueError(
-                "Invalid append format: %s. This layer supports these append formats: %s"
-                % upload_format,
-                upload_formats,
+                "Invalid append format: {}. This layer supports these append formats: {}".format(
+                    upload_format, upload_formats
+                )
             )
+
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
