@@ -4857,12 +4857,12 @@ class ImageryLayer(Layer):
         in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
                               If in_sr is not specified, the geometry is assumed to be in the spatial reference of the service.
         -----------------     --------------------------------------------------------------------
-        object_ids            Optional string. The object IDs of this raster catalog to be
+        object_ids            Optional string or list. The object IDs of this raster catalog to be
                               queried. When this parameter is specified, any other filter
                               parameters (including where) are ignored.
 
-                              Syntax: objectIds=<objectId1>, <objectId2>
-                              Example: objectIds="37, 462"
+                              Syntax: object_ids="<objectId1>, <objectId2>" or [<objectId1>, <objectId2>]
+                              Example: object_ids="37, 462" or object_ids = [37, 462]
         -----------------     --------------------------------------------------------------------
         where                 Optional string. A where clause on this layer to filter the imagery
                               layer by the selection sql statement.
