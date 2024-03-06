@@ -105,6 +105,9 @@ class StoryMap(object):
         # Get the story url
         self._url = self._get_url()
 
+        #  Assign resources to item
+        self._resources = self._item.resources.list()
+
     # ----------------------------------------------------------------------
     def _setup_existing_storymap(self, item):
         saved_drafts = [
@@ -172,9 +175,6 @@ class StoryMap(object):
         utils._add_resource(
             self, resource_name=draft, text=json.dumps(template), access="private"
         )
-
-        # Step 12: Assign resources to item
-        self._resources = self._item.resources.list()
 
     def _get_storymap_template(self):
         return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
