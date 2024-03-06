@@ -1,4 +1,5 @@
 import sys, uuid
+
 import unittest
 from arcgis.gis import GIS, GroupManager, Group, User
 import arcgis.geoanalytics
@@ -22,6 +23,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
+                role="org_user"
             )
             gm = gis.groups
 
@@ -56,6 +58,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
+                role="org_user"
             )
             gm = gis.groups
 
