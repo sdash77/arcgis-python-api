@@ -1128,8 +1128,15 @@ def generate_raster(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
-                                             results will be returned asynchronously.
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
+
+                                             Example:
+
+                                                | {'username': 'user1',
+                                                | 'id': '6a3b77c187514ef7873ba73338cf1af8',
+                                                | 'title': 'trial'}
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
                                              Available only on ArcGIS Online.
@@ -8736,7 +8743,7 @@ def merge_multidimensional_rasters(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
                                              Available only on ArcGIS Online.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -9848,7 +9855,7 @@ def train_random_trees_regression_model(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
                                              Available only on ArcGIS Online.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
