@@ -570,7 +570,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
                     "png file does not download with custom name",
                 )
                 self.assertTrue(
-                    out_folder in fld_png, "png file does not download to custom dir"
+                    output_folder in fld_png, "png file does not download to custom dir"
                 )
 
                 self.assertTrue(
