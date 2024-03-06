@@ -4855,7 +4855,7 @@ class UserManager(object):
         if query is None:
             query = "*"
         if exclude:
-            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav ({query})"
+            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav -username:esri_webstyles ({query})"
         count = self.advanced_search(query, return_count=True)
 
         url = f"{self._gis._portal.resturl}/portals/self/users/search"
