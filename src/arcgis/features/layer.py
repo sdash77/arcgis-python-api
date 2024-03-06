@@ -4244,6 +4244,7 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
+            raw=True,
         )
 
 
