@@ -18,6 +18,8 @@ class PipelineRun:
     """
     Represents a **single** run of a `Data Pipeline` process.
 
+    NOTE: This class is experimental. All properties, methods, and responses are subject to change.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -32,6 +34,7 @@ class PipelineRun:
     url: str
     sesssion: EsriSession
     _properties: dict[str, Any] | None = None
+    _result: dict[str, Any] | None = None
 
     # ---------------------------------------------------------------------
     def __init__(self, url: str, session: EsriSession) -> None:
@@ -58,10 +61,10 @@ class PipelineRun:
             resp.raise_for_status()
             res: dict[str, Any] = resp.json()
             self._properties = res
-        return self._properties
+
+        return self._parse_properties(self._properties)
 
     # ---------------------------------------------------------------------
-    @property
     def result(self) -> dict[str, Any]:
         """
         Gets the run results. This operation will pause the thread when called
@@ -89,7 +92,9 @@ class PipelineRun:
         params: dict[str, Any] = {"f": "json"}
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
-        return resp.json()
+
+        self._result = resp.json()
+        return self._parse_result(self._result)
 
     # ---------------------------------------------------------------------
     def cancel(self) -> bool:
@@ -127,11 +132,104 @@ class PipelineRun:
             return RunStatus.FAILED
         return resp.json()
 
+    # ---------------------------------------------------------------------
+    def _parse_properties(self, properties: dict[str, Any]) -> dict[str, Any]:
+        """Parses the Data Pipeline run properties."""
+        keep_properties = {
+            "id",
+            "itemId",
+            "status",
+            "createdAt",
+            "runningAt",
+            "terminatedAt",
+            "startedAt",
+            "endedAt",
+        }
+        return {k: v for k, v in properties.items() if k in keep_properties}
+
+    def _parse_result(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Parses the Data Pipeline result object."""
+        parsed = {
+            "id": result.get("id", None),
+            "status": result.get("status", None),
+        }
+
+        if "failure" in result:
+            parsed["failure"] = self._parse_failure(result["failure"])
+        if "results" in result:
+            outputs = result["results"].get("outputs", None)
+            if isinstance(outputs, list):
+                parsed["outputs"] = [{"itemId": o.get("itemId", None)} for o in outputs]
+            else:
+                # Unknown results, return the whole object
+                parsed["results"] = result["results"]
+
+        parsed["messages"] = (
+            [self._parse_message(m) for m in result.get("messages", [])],
+        )
+
+        return parsed
+
+    def _parse_failure(self, failure: dict[str, Any]) -> dict[str, Any]:
+        """Parses a failure message into a dictionary."""
+        parsed = self._parse_message(failure)
+        parsed["details"] = failure.get("details", [])
+        parsed["detailProperties"] = [
+            self._parse_message(d) for d in failure.get("detailProperties", [])
+        ]
+        return parsed
+
+    def _parse_message(self, message: dict[str, Any]) -> dict[str, Any]:
+        """Parses a message into (Node ID, Parameter Path) properties."""
+        # Note, the REST API properties may change. This implementation uses fallbacks
+        # and is generally defensive to try and maintain forwards compatibility.
+        parsed = {
+            "message": message.get("message", None),
+            "messageCode": message.get("messageCode", None),
+            "level": message.get("level", None) or message.get("type", None),
+        }
+
+        # Parse the message `nodeId` and `parameter`
+        if "nodeId" in message:
+            parsed["nodeId"] = message["nodeId"]
+            parsed["parameter"] = message.get("parameter", None)
+            parsed["path"] = message.get("path", None)
+        elif "path" in message:
+            node_id, parameter, path = self._parse_message_path(message["path"])
+            parsed["nodeId"] = node_id
+            parsed["parameter"] = parameter
+            parsed["path"] = path
+
+        return {k: v for k, v in parsed.items() if v is not None}
+
+    def _parse_message_path(
+        self, path: str
+    ) -> tuple[str | None, str | None, str | None]:
+        """Parses a message path into (Node ID, Parameter Path) properties."""
+        # If the message path starts with a pipeline property, then the message is for the
+        # data pipeline itself, not a specific node.
+        pipeline_properties = {"inputs", "tools", "outputs", "version", "meta"}
+
+        segments = path.split(".")
+        root_parameter = segments[0].split("[")[0]
+        if root_parameter in pipeline_properties:
+            node_id = None
+            parameter = None
+            pipeline_path = path
+        else:
+            node_id = segments[0]
+            parameter = ".".join(segments[1:])
+            pipeline_path = None
+
+        return (node_id, parameter or None, pipeline_path or None)
+
 
 ###########################################################################
 class PipelineRuns:
     """
-    Manager class used to work with data pipeline runs
+    Manager class used to work with data pipeline runs.
+
+    NOTE: This class is experimental. All properties, methods, and responses are subject to change.
 
     ===============     ====================================================================
     **Parameter**        **Description**
@@ -225,7 +323,9 @@ class PipelineRuns:
 ###########################################################################
 class DataPipelines:
     """
-    The beta Python API for the ArcGIS Data Pipeline
+    The Python API for the ArcGIS Data Pipeline.
+
+    NOTE: This class is experimental. All properties, methods, and responses are subject to change.
 
     ===============     ====================================================================
     **Parameter**        **Description**
