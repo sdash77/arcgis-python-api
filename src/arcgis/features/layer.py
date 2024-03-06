@@ -2524,6 +2524,10 @@ class FeatureLayer(Layer):
                                    featureCollection.
                                    Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
                                    'geojson' | 'csv' | 'excel'
+
+                                   .. note::
+                                        You can find the Feature Layer's supported formats by checking
+                                        the `featureLayer.properties.supportedAppendFormats` property.
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
