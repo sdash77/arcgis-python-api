@@ -82,7 +82,7 @@ class PipelineRun:
             RunStatus.RUNNING,
         ]:
             _log.warning(
-                f"Waiting for the `Run` to resolve it's finalized status: {self.status.value}"
+                f"Waiting for the run to complete. Current status: `{self.status.value}`."
             )
             time.sleep(i * 2)
             if i <= 5:
