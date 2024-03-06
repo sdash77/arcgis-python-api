@@ -1,8 +1,4 @@
 import sys
-
-# insert local geosaurus repo src directory path
-# insert local geosaurus repo tests directory path
-
 import logging
 import unittest
 import uuid
