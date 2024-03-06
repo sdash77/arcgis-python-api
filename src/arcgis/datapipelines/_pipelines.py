@@ -32,7 +32,7 @@ class PipelineRun:
     """
 
     url: str
-    sesssion: EsriSession
+    session: EsriSession
     _properties: dict[str, Any] | None = None
     _result: dict[str, Any] | None = None
 
@@ -108,6 +108,8 @@ class PipelineRun:
             "f": "json",
         }
         resp: requests.Response = self.session.post(url=url, data=params)
+        if resp.status_code == 412:
+            return False  # The run already completed
         resp.raise_for_status()
         return resp.json().get("status", False)
 
@@ -147,25 +149,25 @@ class PipelineRun:
         }
         return {k: v for k, v in properties.items() if k in keep_properties}
 
-    def _parse_result(self, result: dict[str, Any]) -> dict[str, Any]:
+    def _parse_result(self, response: dict[str, Any]) -> dict[str, Any]:
         """Parses the Data Pipeline result object."""
         parsed = {
-            "id": result.get("id", None),
-            "status": result.get("status", None),
+            "id": response.get("id", None),
+            "status": response.get("status", None),
         }
 
-        if "failure" in result:
-            parsed["failure"] = self._parse_failure(result["failure"])
-        if "results" in result:
-            outputs = result["results"].get("outputs", None)
+        if "failure" in response:
+            parsed["failure"] = self._parse_failure(response["failure"])
+        if "results" in response:
+            outputs = response["results"].get("outputs", None)
             if isinstance(outputs, list):
                 parsed["outputs"] = [{"itemId": o.get("itemId", None)} for o in outputs]
             else:
                 # Unknown results, return the whole object
-                parsed["results"] = result["results"]
+                parsed["results"] = response["results"]
 
         parsed["messages"] = [
-            self._parse_message(m) for m in result.get("messages", [])
+            self._parse_message(m) for m in response.get("messages", [])
         ]
 
         return parsed
@@ -186,7 +188,7 @@ class PipelineRun:
         parsed = {
             "message": message.get("message", None),
             "messageCode": message.get("messageCode", None),
-            "level": message.get("level", None) or message.get("type", None),
+            "type": message.get("type", None) or message.get("level", None),
         }
 
         # Parse the message `nodeId` and `parameter`
