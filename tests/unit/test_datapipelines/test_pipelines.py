@@ -17,7 +17,7 @@ class TestPipelineRunParsing(unittest.TestCase):
         self.assertEqual(
             message,
             {
-                "level": "info",
+                "type": "info",
                 "messageCode": "ADP_102093",
                 "message": "Creating new services.",
                 "nodeId": "18706e1a0243",
