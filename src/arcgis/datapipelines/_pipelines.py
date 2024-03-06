@@ -111,7 +111,7 @@ class PipelineRun:
         if resp.status_code == 412:
             return False  # The run already completed
         resp.raise_for_status()
-        return resp.json().get("status", False)
+        return True
 
     # ---------------------------------------------------------------------
     @property
