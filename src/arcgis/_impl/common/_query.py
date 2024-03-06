@@ -53,11 +53,10 @@ def _common_query(
     time_reference_unknown_client: Optional[bool] = None,
     **kwargs,
 ):
-    raw = False
+    raw = kwargs.pop("raw", False)
     # get url
     if layer._is_3d:
         url = layer._url + "/query3D"
-        raw = True
     elif layer._dynamic_layer is None:
         url = layer._url + "/query"
     else:
