@@ -164,9 +164,7 @@ class PipelineRun:
                 # Unknown results, return the whole object
                 parsed["results"] = result["results"]
 
-        parsed["messages"] = (
-            [self._parse_message(m) for m in result.get("messages", [])],
-        )
+        parsed["messages"] = [self._parse_message(m) for m in result.get("messages", [])]
 
         return parsed
 
