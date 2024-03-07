@@ -13,8 +13,6 @@ from pathlib import Path
 import datetime
 import tempfile
 
-
-
 # region PreCondition check
 test_skip = False
 class_skip = False
