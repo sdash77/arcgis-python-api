@@ -64,7 +64,7 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3>=1.21.1,<3",
+        "urllib3>=1.26.1,<3",
         "cachetools",
         "lxml",
         "notebook",
