@@ -1,5 +1,4 @@
 import sys, uuid
-
 import unittest
 from arcgis.gis import GIS, GroupManager, Group, User
 import arcgis.geoanalytics

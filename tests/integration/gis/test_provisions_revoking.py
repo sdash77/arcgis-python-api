@@ -1,5 +1,3 @@
-# use sys.path.insert() to add path to your local geosaurus src directory and geosaurus tests directory
-
 import uuid
 import unittest
 from arcgis.gis import GIS, UserManager
