@@ -5051,6 +5051,7 @@ class ImageryLayer(Layer):
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: Optional[bool] = False,
         **kwargs,
     ):
         """
@@ -5152,6 +5153,9 @@ class ImageryLayer(Layer):
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
         ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
+        ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
                                                  The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -5245,6 +5249,7 @@ class ImageryLayer(Layer):
                             other_outputs=self._other_outputs,
                             gis=g,
                             future=future,
+                            estimate=estimate,
                             **kwargs,
                         )
                     else:
@@ -5256,6 +5261,7 @@ class ImageryLayer(Layer):
                             gis=g,
                             future=future,
                             context=context,
+                            estimate=estimate,
                             **kwargs,
                         )
                 except Exception:
@@ -5284,6 +5290,7 @@ class ImageryLayer(Layer):
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -5360,6 +5367,9 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
@@ -5390,6 +5400,7 @@ class ImageryLayer(Layer):
             gis=g,
             future=future,
             context=context,
+            estimate=estimate,
             **kwargs,
         )
 
@@ -9323,6 +9334,7 @@ class Raster:
         build_transpose: Optional[bool] = None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -9381,6 +9393,9 @@ class Raster:
 
                                                  (Available only when image_server engine is used)
         ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
+        ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
                                                  The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
@@ -9422,6 +9437,7 @@ class Raster:
             build_transpose,
             gis,
             future,
+            estimate,
             **kwargs,
         )
 
@@ -10859,6 +10875,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -10880,6 +10897,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             build_transpose=build_transpose,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
 
@@ -11748,6 +11766,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """

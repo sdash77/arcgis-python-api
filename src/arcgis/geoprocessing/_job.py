@@ -490,6 +490,11 @@ class GPJob(object):
                     return dict_output
                 except:
                     return value
+            elif isinstance(value, dict) and "credits" in value:
+                try:
+                    return float(value["credits"])
+                except:
+                    return value
             elif isinstance(value, dict) and "result" in value:
                 return value["result"]
             elif isinstance(value, dict) and "items" in value:
