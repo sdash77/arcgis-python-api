@@ -259,6 +259,7 @@ def detect_objects(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -330,6 +331,9 @@ def detect_objects(
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -352,6 +356,7 @@ def detect_objects(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -450,6 +455,7 @@ def classify_pixels(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -510,6 +516,9 @@ def classify_pixels(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
                                              To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
@@ -533,6 +542,7 @@ def classify_pixels(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -601,6 +611,7 @@ def export_training_data(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -812,6 +823,9 @@ def export_training_data(
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
+    ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -852,6 +866,7 @@ def export_training_data(
         min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -990,6 +1005,7 @@ def classify_objects(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -1056,6 +1072,9 @@ def classify_objects(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1074,6 +1093,7 @@ def classify_objects(
         process_all_raster_items=process_all_raster_items,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1091,6 +1111,7 @@ def compute_accuracy_for_object_detection(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -1178,6 +1199,9 @@ def compute_accuracy_for_object_detection(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1217,6 +1241,7 @@ def compute_accuracy_for_object_detection(
         out_accuracy_report_name=out_accuracy_report_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1477,6 +1502,7 @@ def detect_change_using_deep_learning(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -1547,6 +1573,9 @@ def detect_change_using_deep_learning(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
                                              The dictionary returned by the gis.content.create_folder() can also be passed in as input.
@@ -1582,6 +1611,7 @@ def detect_change_using_deep_learning(
         model_arguments=model_arguments,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
