@@ -22,6 +22,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
+                role="org_user"
             )
             gm = gis.groups
 
@@ -56,6 +57,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
+                role="org_user"
             )
             gm = gis.groups
 
