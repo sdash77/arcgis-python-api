@@ -430,7 +430,8 @@ class TaskManager(object):
         active            Optional Bool. Queries tasks based on active status.
         ----------------  -------------------------------------------------------------------------------
         types             Optional String. The type of notebook execution for the item.  This can be
-                          ``ExecuteNotebook``, or ``UpdateInsightsWorkbook``.
+                          ''ExecuteNotebook'', ''UpdateInsightsWorkbook'', ''ExecuteSceneCook'',
+                          ''ExecuteWorkflowManager''. ''ExecuteReport'', or ''GPService''.
         ================  ===============================================================================
 
         :return: List of :class:`~arcgis.gis.tasks.Task` objects
@@ -475,6 +476,7 @@ class TaskManager(object):
         end_date: datetime.datetime | None = None,
         title: str | None = None,
         parameters: dict | None = None,
+        task_url: str | None = None,
     ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.
@@ -521,7 +523,9 @@ class TaskManager(object):
                                    |    "update_mode": "PARTIAL_UPDATE_NODES"
                                    | }
 
-
+        ------------------     --------------------------------------------------------------------
+        task_url               Optional String. The URL of the task of an asynchronous
+                               geoprocessing service on any of the federated servers of your portal.
         ==================     ====================================================================
 
         :return:
@@ -554,6 +558,8 @@ class TaskManager(object):
             "dayOfWeek": None,
             "maxOccurrences": occurences,
         }
+        if task_url:
+            params["taskURL"] = task_url
         if isinstance(item, Item):
             params["itemId"] = item.itemid
         else:
