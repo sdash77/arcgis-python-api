@@ -75,6 +75,13 @@ IntegratedMeshLayer
     :undoc-members:
     :show-inheritance:
 
+Tiles3DLayer
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.mapping.Tiles3DLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Object3DLayer
 ^^^^^^^^^^^^^
 .. autoclass:: arcgis.mapping.Object3DLayer

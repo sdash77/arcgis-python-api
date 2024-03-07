@@ -1169,6 +1169,58 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Statistics
+
+    def test_job_statistics_successfully_returns(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "99o2QTePTqq-BHRHK_Aeag"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] > 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] == 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        try:
+            actual = self.connection.workflow_manager.jobs.statistics(
+                query=user_query, group_by="wrong_string"
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
     # region Settings
 
     def test_get_valid_settings(self):
@@ -1513,6 +1565,25 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(
+            job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update"
+        )
+
+    def test_update_job_with_allow_running_step_id_successfully_returns(self):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.priority = "Updated"
+        delattr(job, "related_properties")
+        delattr(job, "extended_properties")
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(
+            job_id, vars(job), "123456"
+        )
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")

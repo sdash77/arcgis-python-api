@@ -1510,6 +1510,11 @@ class GeoAccessor(object):
                         self._sr = _geometry.SpatialReference(g["spatialReference"])
                 except:
                     self._sr = _geometry.SpatialReference({"wkid": 4326})
+            else:
+                if isinstance(sr, int):
+                    self._sr = _geometry.SpatialReference({"wkid": sr})
+                elif isinstance(sr, _geometry.SpatialReference):
+                    self._sr = sr
             self._name = col
             # q = self._data[col].isna()
             # self._data.loc[q, "SHAPE"] = None
@@ -1542,6 +1547,7 @@ class GeoAccessor(object):
                 )
             )
 
+        self.sr = self._sr
         if not inplace:
             return self._data.copy()
 
@@ -3553,7 +3559,9 @@ class GeoAccessor(object):
             df[td] = df[td].dt.total_seconds() * 1000
 
         # define the function once
-        fn = lambda x,: int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else 0
+        fn = lambda x,: (
+            int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else None
+        )
         for f in date_fields:
             # apply function to each column in date_fields
             df[f] = pd.to_datetime(df[f]).apply(fn)

@@ -1978,7 +1978,7 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClipType": 1 if clip_outside else 2,
+            "ClippingType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }

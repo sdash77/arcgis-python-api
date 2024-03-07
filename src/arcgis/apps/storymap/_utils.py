@@ -772,6 +772,8 @@ def _assign_node_class(story, node_id):
         node = Content.Timeline(story=story, node_id=node_id)
     elif node_type == "tour":
         node = Content.MapTour(story=story, node_id=node_id)
+    elif node_type == "expressmap":
+        node = Content.ExpressMap(story=story, node_id=node_id)
     elif node_type == "immersive":
         # immersive has subtype sidecar (more to add later)
         subtype = story._properties["nodes"][node_id]["data"]["type"]
