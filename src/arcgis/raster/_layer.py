@@ -4833,9 +4833,9 @@ class ImageryLayer(Layer):
         max_count: Optional[int] = None,
     ):
         """
-        The function will locates all images that contain to_geometry and sort them
+        The function locates all images that contain to_geometry and sort them
         accordingly. For example, in the image inspection workflow, in most cases,
-        from_geometry is the viewing camera position, and to_geometry is the target
+        ``from_geometry`` is the viewing camera position, and ``to_geometry`` is the target
         point (where user clicked on the map). The images found are sorted in
         ascending order based on the angle between the vector from viewing camera
         position to target point, and that from the image camera GPS location to
@@ -4948,7 +4948,7 @@ class ImageryLayer(Layer):
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         raster_id                       Required integer. Specifies the objectId of the image service’s raster catalog.
-                                        The raster_id value identifies which raster of the mosaic dataset
+                                        The ``raster_id`` value identifies which raster of the mosaic dataset
                                         will be used.
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
@@ -4958,10 +4958,12 @@ class ImageryLayer(Layer):
                                         The spatial reference of the returned geometry.
         ----------------------------    --------------------------------------------------------------------
         options                         Optional dict. Supports DOff and Adjust keys.
+
                                          - DOff - The DOff key is the depth offset value, and has a numeric value.
-                                                  DOff is introduced to resolve Z-fighting, setting the depth offset to
-                                                  that the geometries the user sketched can draw on top of mesh instead
-                                                  of burying inside of it.
+                                           DOff is introduced to resolve Z-fighting, setting the depth offset to
+                                           that the geometries the user sketched can draw on top of mesh instead
+                                           of burying inside of it.
+
                                          - Adjust is a boolean value. If Adjust is set to True, the "background" vertices will be adjusted to the foreground.
 
                                          Syntax: {"DOff":<depth offset value>, "Adjust": True/False}
@@ -5041,13 +5043,13 @@ class ImageryLayer(Layer):
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         raster_id                       Required integer. Specifies the objectId of the image service’s raster catalog.
-                                        The raster_id value identifies which raster of the mosaic dataset
+                                        The ``raster_id`` value identifies which raster of the mosaic dataset
                                         will be used as part of the calculation.
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
         ----------------------------    --------------------------------------------------------------------
-        in_sr                           Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
+        in_sr                           Optional integer, string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
         ----------------------------    --------------------------------------------------------------------
         options                         Optional dict. It has VisibleOnly key.
                                          - VisibleOnly is a boolean value. If it's true, method will return an empty geometry if vertices are behind the depths
@@ -5125,8 +5127,8 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         image_uri             Required string. URI of the image to be accessed. The find_images operation returns the image_uri.
         -----------------     --------------------------------------------------------------------
-        raster_id             Required integer. Specifies the objectId of the image service’s raster catalog.
-                              The url will be returned only if it belongs to the raster_id specified.
+        raster_id             Required integer. Specifies the objectId of the image service's raster catalog.
+                              The url will be returned only if it belongs to the ``raster_id`` specified.
         =================     ====================================================================
 
         :return: A dictionary containing the accessible url to the image.
@@ -5235,7 +5237,7 @@ class ImageryLayer(Layer):
         from_geometry         Required :class:`~arcgis.geometry.Geometry` or dictionary.
                               A geometry defines the from location of the measurement.
                               If the spatial reference is missing, the coordinate is assumed to be
-                              in image space set through rasterId parameter. If the spatial reference
+                              in image space set through ``raster_id`` parameter. If the spatial reference
                               exists, it will be used for the geometry's coordinates.
 
                               Possible geometry types are: Point, Polyline, Polygon
@@ -5249,7 +5251,7 @@ class ImageryLayer(Layer):
                               Possible geometry types are: Point, Polyline, Polygon
         -----------------     --------------------------------------------------------------------
         raster_id             Optional integer. Specifies the objectId of the raster item.
-                              The from_geometry and to_geometry in this operation use the image coordinate system of the specified raster item.
+                              The ``from_geometry`` and ``to_geometry`` in this operation use the image coordinate system of the specified raster item.
         =================     ====================================================================
 
         :return: A dictionary
@@ -5258,9 +5260,9 @@ class ImageryLayer(Layer):
 
             # Example Usage
             img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
-            measured = img_layer.measure(from_geometry=point1,
-                                         to_geometry=point2,
-                                         raster_id=2)
+            measured = img_layer.measure_from_image(from_geometry=point1,
+                                                    to_geometry=point2,
+                                                    raster_id=2)
         """
         if self.tiles_only:
             try:
