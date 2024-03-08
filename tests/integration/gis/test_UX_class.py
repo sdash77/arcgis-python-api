@@ -15,6 +15,7 @@ from arcgis.gis.admin import (
 )
 import tempfile
 import requests
+from random import randrange
 
 # Download Image to Temp File to be used for logo, background, etc.
 image_url = "https://previews.123rf.com/images/stephane106/stephane1060705/stephane106070500053/927250-isolated-earth-globe-on-white-background-the-map-is-public-domain-from-nasa-visibleearth-nasa-gov-.jpg"
@@ -177,21 +178,20 @@ class Test_UXClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ux = gis.admin.ux
 
-                # get gallery group
-                gall_grp = ux.gallery_group
-                if gall_grp:
-                    assert gall_grp
-                else:
-                    assert gall_grp == ""
+                # store original setting
+                original_gallery_group = ux.gallery_group
                 # set new group
-                group_id = gis.groups.search()[10].id
-                ux.gallery_group = group_id
-                assert ux.gallery_group == gis.groups.search()[10]
-                # reset
-                if gall_grp:
-                    ux.gallery_group = gall_grp.id
-                else:
-                    ux.gallery_group = gall_grp
+                groups = gis.groups.search()
+                if not groups:
+                    self.skipTest("No groups configured, cannot test")
+                # get a random group
+                group = groups[randrange(len(groups))]
+                # set group by id
+                ux.gallery_group = group.id
+                # gallery_group should return the group object
+                assert ux.gallery_group == group
+                # reset to original setting
+                ux.gallery_group = original_gallery_group.id if original_gallery_group else original_gallery_group
 
 
 class Test_HomePageSettingsClass(unittest.TestCase):
