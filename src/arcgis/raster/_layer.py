@@ -4828,7 +4828,7 @@ class ImageryLayer(Layer):
         from_geometry: Union[dict[str, Any], Point] = None,
         to_geometry: Union[dict[str, Any], Point] = None,
         in_sr: Optional[dict] = None,
-        object_ids: Optional[str] = None,
+        object_ids: Optional[list] = None,
         where: Optional[str] = None,
         max_count: Optional[int] = None,
     ):
@@ -4854,10 +4854,10 @@ class ImageryLayer(Layer):
         to_geometry           Required dictionary or :class:`~arcgis.geometry.Point` object.
                               A point geometry that defines the to location.
         -----------------     --------------------------------------------------------------------
-        in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
+        in_sr                 Optional integer, string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
                               If in_sr is not specified, the geometry is assumed to be in the spatial reference of the service.
         -----------------     --------------------------------------------------------------------
-        object_ids            Optional string or list. The object IDs of this raster catalog to be
+        object_ids            Optional list or string. The object IDs of this raster catalog to be
                               queried. When this parameter is specified, any other filter
                               parameters (including where) are ignored.
 
@@ -4954,7 +4954,7 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         needs to be converted from image space to map space.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
+        out_sr                          Optional integer, string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
                                         The spatial reference of the returned geometry.
         ----------------------------    --------------------------------------------------------------------
         options                         Optional dict. Supports DOff and Adjust keys.
@@ -5131,7 +5131,7 @@ class ImageryLayer(Layer):
                               The url will be returned only if it belongs to the ``raster_id`` specified.
         =================     ====================================================================
 
-        :return: A dictionary containing the accessible url to the image.
+        :return: A string representing the accessible url to the image.
 
         .. code-block:: python
 
@@ -5186,9 +5186,9 @@ class ImageryLayer(Layer):
         geometries                      Required dictionary with the value being the list of geometries and key being "geometries".
                                         All geometries in this list should be of the type defined by ``geometryType``
         ----------------------------    --------------------------------------------------------------------
-        raster_ids                      Required string. The object IDs of a raster catalog items.
+        raster_ids                      Required list. The object IDs of a raster catalog items.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
+        out_sr                          Optional integer string, dictionary, :class:`~arcgis.geometry.SpatialReference`.
         ============================    ====================================================================
 
         :return: A dictionary
