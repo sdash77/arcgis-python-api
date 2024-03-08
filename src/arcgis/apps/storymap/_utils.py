@@ -355,21 +355,15 @@ def duplicate(story, title: Optional[str] = None):
     # get the item to copy
     item = story._gis.content.get(story._itemid)
 
-    # enterprise copy_item starting at 10.8.1
-    if item._portal.is_arcgisonline is False and story._gis.version < [8, 2]:
-        clone = story._gis.content.clone_items(items=[item])
-    else:
-        clone = item.copy_item(
-            title="(Copy) " + story._item.title if title is None else title,
-            include_resources=True,
-            include_private=True,
-        )
+    title = title if title is not None else item.title + " Copy"
+    clone = story._gis.content.clone_items(items=[item])
     # save to update keywords
     if isinstance(story, briefing.Briefing):
         clone_story = briefing.Briefing(clone.id)
     else:
         clone_story = storymap.StoryMap(clone.id)
-    return clone_story.save()
+
+    return clone_story.save(title=title)
 
 
 # ----------------------------------------------------------------------
