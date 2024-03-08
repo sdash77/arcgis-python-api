@@ -14,7 +14,7 @@ requirements:
   - setuptools
   run:
   - python
-  - urllib3 <2
+  - urllib3 >=1.26.1,<3
   - pillow
   - cachetools
   - notebook
