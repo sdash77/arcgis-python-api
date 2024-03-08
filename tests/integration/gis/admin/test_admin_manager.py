@@ -104,7 +104,7 @@ class TestAdminManager(unittest.TestCase):
         """
         tests if receive scheduled tasks, if any
         """
-        tasks = self.admin.scheduled_tasks()
+        tasks = list(self.admin.scheduled_tasks())
         assert isinstance(tasks, list)
 
     def test_get_history_csv(self):
