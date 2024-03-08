@@ -9089,7 +9089,7 @@ def transfer_files(
     ====================================     ====================================================================
     **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_files                              Required str or list, input files or folders that will be copied to the output folder.
+    input_files                              Required string or list, input files or folders that will be copied to the output folder.
                                              It can be a string specifying the datastore path.
 
                                              Example:
@@ -9097,18 +9097,18 @@ def transfer_files(
                                              "/fileShares/testfolder/raster.tif"
                                              "/cloudStores/testcloud/raster.tif"
     ------------------------------------     --------------------------------------------------------------------
-    output_datastore                         Optional str, datastore path of the output folder where the files will be copied.
+    output_datastore                         Optional string, datastore path of the output folder where the files will be copied.
                                              If not specified, the data is copied to the rasterstore.
 
                                              Example:
                                              "/rasterStores/s3cloudstore/datafolder"
     ------------------------------------     --------------------------------------------------------------------
-    filter                                   Optional str, to specify the filter while transfering files.
+    filter                                   Optional string, to specify the filter while transfering files.
 
                                              Example:
                                              "*.tif"
     ------------------------------------     --------------------------------------------------------------------
-    return_first_file                        Optional bool. Available in ArcGIS Image Server 10.8.1 and higher.
+    return_first_file                        Optional boolean. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
 
