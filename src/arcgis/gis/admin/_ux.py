@@ -2017,17 +2017,12 @@ class MapSettings(object):
             if bing_key == "":
                 bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
-        if share_public:
+        if share_public is not None:
             self._gis.update_properties({"canShareBingPublic": share_public})
-        bing_dict = {
-            "key": (
-                self._gis.properties["bingKey"]
-                if "bingKey" in self._gis.properties
-                else None
-            ),
-            "public": self._gis.properties["canShareBingPublic"],
+        return {
+            "key": self._gis.properties.get("bingKey"),
+            "public": self._gis.properties.get("canShareBingPublic"),
         }
-        return bing_dict
 
     # ----------------------------------------------------------------------
     @property

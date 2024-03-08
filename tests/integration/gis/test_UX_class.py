@@ -372,11 +372,14 @@ class Test_MapSettingsClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ms = gis.admin.ux.map_settings
 
-                key = ms.bing_map()
-                assert key
+                bing_config = ms.bing_map()
+                assert bing_config
+                assert 'key' in bing_config
+                assert 'public' in bing_config
                 assert ms.bing_map(bing_key="abcde")
                 assert ms.bing_map()["key"] == "abcde"
-                ms.bing_map(bing_key="REMOVE")
+                # revert to original config
+                ms.bing_map(bing_key=bing_config["key"], public=bing_config["public"])
 
 
 class Test_ItemSettingsClass(unittest.TestCase):
