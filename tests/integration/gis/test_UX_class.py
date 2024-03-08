@@ -258,20 +258,23 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 hps = gis.admin.ux.homepage_settings
 
-                # get contact email, if none then None is returned
+                # get contact email, if using legacy homepage then None is returned
                 contact_email = hps.get_contact_email()
-                if contact_email:
-                    assert contact_email["email"]
-                else:
-                    continue
+                if contact_email is None:
+                    self.skipTest("Portal is configured with legacy homepage, contact email not implemented")
+                assert 'email' in contact_email
+                assert 'show_email' in contact_email
+
                 # set contact email
                 assert hps.set_contact_email("test@esri.com", show_email=True)
                 assert hps.get_contact_email()["email"] == "test@esri.com"
-                # reset email
-                if contact_email:
-                    assert hps.set_contact_email(contact_email["email"])
-                else:
-                    assert hps.set_contact_email(contact_email)
+                assert hps.get_contact_email()["show_email"] == True
+
+                # reset email to original value
+                reset_contact_email = hps.set_contact_email(email=contact_email["email"], show_email=contact_email["show_email"])
+                assert reset_contact_email
+                assert reset_contact_email["email"] == contact_email["email"]
+                assert reset_contact_email["show_email"] == contact_email["show_email"]
 
 
 class Test_MapSettingsClass(unittest.TestCase):
