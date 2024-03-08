@@ -4,7 +4,7 @@ import logging
 import shutil
 import unittest
 from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
+from arcgis.gis import GIS, Group
 from arcgis.gis.admin import (
     UX,
     HomePageSettings,
@@ -189,7 +189,9 @@ class Test_UXClass(unittest.TestCase):
                 # set group by id
                 ux.gallery_group = group.id
                 # gallery_group should return the group object
-                assert ux.gallery_group == group
+                assert isinstance(ux.gallery_group, Group)
+                # verify gallery_group now has the same id that was set
+                assert ux.gallery_group.id == group.id
                 # reset to original setting
                 ux.gallery_group = original_gallery_group.id if original_gallery_group else original_gallery_group
 
@@ -273,6 +275,7 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                 # reset email to original value
                 reset_contact_email = hps.set_contact_email(email=contact_email["email"], show_email=contact_email["show_email"])
                 assert reset_contact_email
+                reset_contact_email = hps.get_contact_email()
                 assert reset_contact_email["email"] == contact_email["email"]
                 assert reset_contact_email["show_email"] == contact_email["show_email"]
 
@@ -287,11 +290,16 @@ class Test_MapSettingsClass(unittest.TestCase):
                 ms = gis.admin.ux.map_settings
                 assert isinstance(ms, MapSettings)
 
-    def test_propeties(self):
+    def test_properties(self):
+        # TODO: split test for each property
         for profile in PROFILES:
             with self.subTest(msg=profile):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ms = gis.admin.ux.map_settings
+                groups = gis.groups.search()
+                if not groups:
+                    self.skipTest("No groups configured, cannot test")
+                group = groups[randrange(len(groups))]
 
                 # default extent
                 extent = ms.default_extent
@@ -326,9 +334,8 @@ class Test_MapSettingsClass(unittest.TestCase):
                 # basemap gallery group
                 bsmap_gall_group = ms.basemap_gallery_group
                 assert bsmap_gall_group
-                group_id = gis.groups.search()[10].id
-                ms.basemap_gallery_group = group_id
-                assert ms.basemap_gallery_group == gis.groups.search()[10]
+                ms.basemap_gallery_group = group.id
+                assert ms.basemap_gallery_group == group
                 if bsmap_gall_group:
                     ms.basemap_gallery_group = bsmap_gall_group.id
                 else:
@@ -345,9 +352,8 @@ class Test_MapSettingsClass(unittest.TestCase):
                 # config apps group
                 config_apps_group = ms.config_apps_group
                 assert config_apps_group
-                group_id = gis.groups.search()[10].id
-                ms.config_apps_group = group_id
-                assert ms.config_apps_group == gis.groups.search()[10]
+                ms.config_apps_group = group.id
+                assert ms.config_apps_group == group
                 if config_apps_group:
                     ms.config_apps_group = config_apps_group.id
                 else:
@@ -359,9 +365,8 @@ class Test_MapSettingsClass(unittest.TestCase):
                     assert analysis_layer_group
                 else:
                     assert analysis_layer_group == ""
-                group_id = gis.groups.search()[10].id
-                ms.analysis_layer_group = group_id
-                assert ms.analysis_layer_group == gis.groups.search()[10]
+                ms.analysis_layer_group = group.id
+                assert ms.analysis_layer_group == group
                 if len(analysis_layer_group) > 0:
                     ms.analysis_layer_group = gis.groups.search(
                         analysis_layer_group.id
@@ -382,7 +387,7 @@ class Test_MapSettingsClass(unittest.TestCase):
                 assert ms.bing_map(bing_key="abcde")
                 assert ms.bing_map()["key"] == "abcde"
                 # revert to original config
-                ms.bing_map(bing_key=bing_config["key"], public=bing_config["public"])
+                ms.bing_map(bing_key=bing_config["key"], share_public=bing_config["public"])
 
 
 class Test_ItemSettingsClass(unittest.TestCase):
