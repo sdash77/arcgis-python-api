@@ -244,7 +244,7 @@ def _v2_create_project(gis, summary, title):
     project_items = [workforce_service_item, workers_webmap, dispatchers_webmap]
     # share and protect items
     for i in project_items:
-        i.sharing._share(groups=[group])
+        i.sharing.groups.add(group)
         i.protect()
 
     # set fs item properties / thumbnail
@@ -748,7 +748,7 @@ def _v1_create_project(gis, summary, title):
     ]
     # share and protect items
     for i in project_items:
-        i.sharing._share(groups=[group])
+        i.sharing.groups.add(group)
         i.protect()
 
     my_path = os.path.abspath(os.path.dirname(__file__))

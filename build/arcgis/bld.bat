@@ -1,3 +1,5 @@
+cd src
+
 set DEPENDENCY_ROOT_PATH=\\geosaurus.esri.com\Public\build\geosaurus2\windows\py%PY_VER%
 
 set TRACKER_PATH=%DEPENDENCY_ROOT_PATH%\tracking-engine

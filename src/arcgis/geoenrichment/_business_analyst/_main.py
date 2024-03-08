@@ -1922,6 +1922,8 @@ class BusinessAnalyst(object):
         **kwargs,
     ) -> pd.DataFrame:
         """Web GIS implementation for _enrich"""
+        from arcgis.geoenrichment.enrichment import NamedArea
+
         # before going any further, make sure can enrich using current user (if any)
         if self.source.users.me is not None:
             has_ge = (
@@ -2058,6 +2060,11 @@ class BusinessAnalyst(object):
             for idx in range(0, len(geographies), batch_size):
                 # peel off just the id's for this batch
                 batch_id_lst = geographies[idx : idx + batch_size]
+
+                # get just the area ids in each named area
+                batch_id_lst = [
+                    b._areaid if isinstance(b, NamedArea) else b for b in batch_id_lst
+                ]
 
                 # create the param payload
                 params["studyAreas"] = json.dumps(
