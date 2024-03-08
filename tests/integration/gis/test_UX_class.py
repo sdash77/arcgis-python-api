@@ -335,11 +335,9 @@ class Test_MapSettingsClass(unittest.TestCase):
                 bsmap_gall_group = ms.basemap_gallery_group
                 assert bsmap_gall_group
                 ms.basemap_gallery_group = group.id
-                assert ms.basemap_gallery_group == group
-                if bsmap_gall_group:
-                    ms.basemap_gallery_group = bsmap_gall_group.id
-                else:
-                    ms.basemap_gallery_group = bsmap_gall_group
+                assert isinstance(ms.basemap_gallery_group, Group)
+                assert ms.basemap_gallery_group.id == group.id
+                ms.basemap_gallery_group = bsmap_gall_group.id if bsmap_gall_group else bsmap_gall_group
 
                 # map viewer
                 mv = ms.default_mapviewer
@@ -353,20 +351,15 @@ class Test_MapSettingsClass(unittest.TestCase):
                 config_apps_group = ms.config_apps_group
                 assert config_apps_group
                 ms.config_apps_group = group.id
-                assert ms.config_apps_group == group
-                if config_apps_group:
-                    ms.config_apps_group = config_apps_group.id
-                else:
-                    ms.config_apps_group = config_apps_group
+                assert isinstance(ms.config_apps_group, Group)
+                assert ms.config_apps_group.id == group.id
+                ms.config_apps_group = config_apps_group.id if config_apps_group else config_apps_group
 
                 # analysis group layer
                 analysis_layer_group = ms.analysis_layer_group
-                if analysis_layer_group:
-                    assert analysis_layer_group
-                else:
-                    assert analysis_layer_group == ""
                 ms.analysis_layer_group = group.id
-                assert ms.analysis_layer_group == group
+                assert isinstance(ms.analysis_layer_group, Group)
+                assert ms.analysis_layer_group.id == group.id
                 if len(analysis_layer_group) > 0:
                     ms.analysis_layer_group = gis.groups.search(
                         analysis_layer_group.id
