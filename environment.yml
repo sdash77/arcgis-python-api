@@ -8,7 +8,7 @@ channels:
 - conda-forge
 dependencies:
 - ipywidgets >=7,<8
-- pandas >=2
+- pandas >=2,<3
 - ujson >=3
 - numpy>=1.21.6,<2
 - pip
