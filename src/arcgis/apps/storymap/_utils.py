@@ -359,9 +359,9 @@ def duplicate(story, title: Optional[str] = None):
     clone = story._gis.content.clone_items(items=[item])
     # save to update keywords
     if isinstance(story, briefing.Briefing):
-        clone_story = briefing.Briefing(clone.id)
+        clone_story = briefing.Briefing(clone[0].id)
     else:
-        clone_story = storymap.StoryMap(clone.id)
+        clone_story = storymap.StoryMap(clone[0].id)
 
     return clone_story.save(title=title)
 
