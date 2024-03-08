@@ -2602,9 +2602,7 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        if "allowedRedirectUris" in self._gis.properties:
-            return self._gis.properties["allowedRedirectUris"]
-        return None
+        return self._gis.properties.get("allowedRedirectUris", [])
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
