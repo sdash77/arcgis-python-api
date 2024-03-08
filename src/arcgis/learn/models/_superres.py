@@ -1,31 +1,25 @@
 from ._codetemplate import super_resolution
-import json
-import traceback
-from ._arcgis_model import _EmptyData
-from .._data import _raise_fastai_import_error
+import torch, json, traceback
+from ... import __version__ as ArcGISLearnVersion
+from .._data import prepare_data, _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family, _get_device
+    from ._arcgis_model import ArcGISModel, _resnet_family, _EmptyData, _get_device
     from ._superres_utils import (
-        FeatureLoss,
-        gram_matrix,
         compute_metrics,
-        get_resize,
         create_loss,
+        UNetSR,
     )
-    from fastai.vision.learner import unet_learner
-    from fastai.vision import (
-        nn,
-        ImageImageList,
-        get_transforms,
-        imagenet_stats,
-        NormType,
-        open_image,
-    )
+    from ._SR3_utils import UNet, GaussianDiffusion, init_weights, l1Loss, UViT
+    from fastai.vision.learner import unet_learner, cnn_config
+    from fastai.vision import nn, NormType, Learner, optim
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
-    from .._utils.common import _get_emd_path
+    from .._utils.common import _get_emd_path, ArcGISMSImage
     from .._utils.env import is_arcgispronotebook
+    from fastai.core import ifnone
+    from .._utils.superres import show_results
+    from .._data_utils.pix2pix_data import normalize, denormalize, prepare_pix2pix_data
 
     HAS_FASTAI = True
 except Exception as e:
@@ -36,10 +30,9 @@ except Exception as e:
 
 
 class SuperResolution(ArcGISModel):
-
     """
     Creates a model object which increases the resolution and improves the quality of images.
-    Based on Fast.ai MOOC Lesson 7.
+    Based on Fast.ai MOOC Lesson 7 and https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement.
 
     =====================   ===========================================
     **Parameter**            **Description**
@@ -47,32 +40,182 @@ class SuperResolution(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the :class:`~arcgis.learn.SuperResolution`, which
+    backbone                Optional string. Backbone CNN model to be used for
+                            creating the base of the
+                            :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
+                            Compatible backbones: 'SR3_UNet', 'SR3_UViT',
+                            'resnet18', 'resnet34', 'resnet50', 'resnet101',
+                            'resnet152'.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    =====================   ===========================================
+
+    In addition to explicitly named parameters, the SuperResolution model with 'SR3_UNet' backbone
+    supports the optional key word arguments:
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Parameter**            **Description**
+    ---------------------   -------------------------------------------
+    inner_channel           Optional int. Channel dimension.
+                            Default: 64.
+    ---------------------   -------------------------------------------
+    norm_groups             Optional int. Group normalization.
+                            Default: 32
+    ---------------------   -------------------------------------------
+    channel_mults           Optional int. Depth or channel multipliers.
+                            Default: [1, 2, 4, 4, 8, 8]
+    ---------------------   -------------------------------------------
+    attn_res                Optional int. Number of attention in residual blocks.
+                            Default: 16
+    ---------------------   -------------------------------------------
+    res_blocks              Optional int. Number of resnet block.
+                            Default: 3
+    ---------------------   -------------------------------------------
+    dropout                 Optional bool. Dropout.
+                            Default: 0
+    ---------------------   -------------------------------------------
+    schedule                Optional int. Type of noise schedule. available types
+                            are "linear", 'warmup10', 'warmup50', 'const', 'jsd',
+                            'cosine'. Default: 'linear'
+    ---------------------   -------------------------------------------
+    n_timestep              Optional int. Number of time-steps.
+                            Default: 1000
+    ---------------------   -------------------------------------------
+    linear_start            Optional bool. Schedule start.
+                            Default: 1e-06
+    ---------------------   -------------------------------------------
+    linear_end              Optional bool. Schedule end.
+                            Default: 1e-02
+    =====================   ===========================================
+
+    And, with 'SR3_UViT' backbone supports the below optional key word arguments:
+
+    =====================   ===========================================
+    patch_size              Optional int. Patch size for generating patch embeddings.
+                            Default: 16
+    ---------------------   -------------------------------------------
+    embed_dim               Optional int. Dimension of embeddings.
+                            Default: 768
+    ---------------------   -------------------------------------------
+    depth                   Optional int. Depth of model.
+                            Default: 17
+    ---------------------   -------------------------------------------
+    num_heads               Optional int. Number of attention heads.
+                            Default: 12
+    ---------------------   -------------------------------------------
+    mlp_ratio               Optional bool. Ratio of MLP.
+                            Default: 4.0
+    ---------------------   -------------------------------------------
+    qkv_bias                Optional bool. Addition of bias in QK Vector.
+                            Default: False
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.SuperResolution` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, backbone, **kwargs)
-        self._check_dataset_support(data)
-        feat_loss = create_loss(self._device.type)
-        data.c = 3
-        self.learn = unet_learner(
-            data,
-            arch=self._backbone,
-            wd=1e-3,
-            loss_func=feat_loss,
-            callback_fns=LossMetrics,
-            blur=True,
-            norm_type=NormType.Weight,
-        )
+        self._learn_version = kwargs.get("ArcGISLearnVersion", ArcGISLearnVersion)
+        if backbone and backbone.startswith("SR3"):
+            data_bunch = None
+            if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
+                downsampling_factor = data._downsampling_factor
+                val_split_pct = data.val_split_pct
+            else:
+                downsampling_factor = data.downsample_factor
+                val_split_pct = data._val_split_pct
+
+            if isinstance(data.train_ds, list):
+                data_bunch = data
+            else:
+                data_bunch = prepare_data(
+                    path=data.train_ds.path,
+                    batch_size=data.batch_size,
+                    downsample_factor=downsampling_factor,
+                    val_split_pct=val_split_pct,
+                    seed=data.seed,
+                    dataset_type="SR3",
+                )
+            super().__init__(data_bunch, backbone, **kwargs)
+            self.kwargs = kwargs
+            self._data = data_bunch if data_bunch else data
+            if backbone == "SR3_UViT":
+                denoiseUnet = UViT(
+                    img_size=self._data.chip_size,
+                    in_chans=self._data._n_channel,  # 3,
+                    **kwargs
+                )
+            else:
+                denoiseUnet = UNet(
+                    in_channel=(self._data._n_channel) * 2,
+                    out_channel=self._data._n_channel,
+                    image_size=self._data.chip_size,
+                    with_noise_level_emb=True,
+                    **kwargs
+                )
+            sr3model = GaussianDiffusion(
+                denoiseUnet,
+                image_size=self._data.chip_size,
+                channels=self._data._n_channel,
+                device=self._device.type,
+            )
+            init_weights(sr3model, init_type="orthogonal")
+            sr3model.set_new_noise_schedule(self._device.type, **kwargs)
+            self.learn = Learner(
+                self._data,
+                sr3model,
+                loss_func=l1Loss(self._device.type),
+                opt_func=optim.Adam,
+            )
+            self.model_type = "SR3"
+        else:
+            data_bunch = None
+            if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
+                data_bunch = prepare_data(
+                    path=data.path,
+                    batch_size=data.batch_size,
+                    downsample_factor=data._downsampling_factor,
+                    val_split_pct=data.val_split_pct,
+                    seed=data.seed,
+                    dataset_type="superres",
+                )
+            super().__init__(data, backbone, **kwargs)
+            self._data = data_bunch if data_bunch else data
+            self._data._extract_bands = list(range(self._data._n_channel))
+            feat_loss = create_loss(self._data._n_channel, self._device.type)
+            self._check_dataset_support(self._data)
+            if self._data._is_multispec:
+                model = UNetSR(
+                    self._data,
+                    arch=self._backbone,
+                    norm_type=NormType.Weight,
+                )
+                self.learn = Learner(
+                    self._data,
+                    model,
+                    wd=1e-3,
+                    loss_func=feat_loss,
+                    callback_fns=LossMetrics,
+                )
+                self.learn.split(ifnone(None, cnn_config(self._backbone)["split"]))
+            else:
+                attention = True if self._learn_version > "2.1.0.3" else False
+                self._data.c = self._data._n_channel
+                self.learn = unet_learner(
+                    self._data,
+                    arch=self._backbone,
+                    wd=1e-3,
+                    loss_func=feat_loss,
+                    callback_fns=LossMetrics,
+                    blur=True,
+                    self_attention=attention,
+                    norm_type=NormType.Weight,
+                )
+            self.model_type = "UNet"
+        self.learn.data = self._data
         self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -98,7 +241,7 @@ class SuperResolution(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        return ["SR3_UNet", "SR3_UViT", *_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -141,41 +284,54 @@ class SuperResolution(ArcGISModel):
 
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
-
         model_file = Path(emd["ModelFile"])
-
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-
+        modtype = emd.get("ModelArch", "UNet")
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
+        n_channel = emd.get("n_channel", 3)
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
+        kwargs = emd.get("Kwargs", {})
+        kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
+
         if data is None:
-            data = (
-                ImageImageList.from_folder(emd_path.parent.parent)
-                .split_none()
-                .label_from_func(lambda x: x)
-                .transform(
-                    get_transforms(do_flip=False),
-                    size=(chip_size, chip_size),
-                    tfm_y=True,
+            if modtype == "SR3":
+                data = _EmptyData(
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
-                .databunch(bs=2, no_check=True)
-                .normalize(imagenet_stats, do_y=True)
-            )
+                data._val_split_pct = 0.1
+                data._image_stats = emd.get("image_stats")
+                data._image_stats2 = emd.get("image_stats2", None)
+            else:
+                if emd.get("is_multispec", False):
+                    data = _EmptyData(
+                        path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
+                    )
+                    data._train_tail = False
+                    data._image_stats = emd.get("image_stats")
+                    data._image_stats2 = emd.get("image_stats2", None)
+                else:
+                    data = _EmptyData(
+                        path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
+                    )
+            data._is_multispec = emd.get("is_multispec", False)
+            data._n_channel = n_channel
             data._is_empty = True
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
             data.emd = emd
+            data._extract_bands = emd.get("extract_bands", None)
+            data._bands = emd.get("bands", None)
             data.device = _get_device()
+        backbone = "SR3" if modtype == "SR3" else model_params.get("backbone")
         data.resize_to = resize_to
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, backbone=backbone, pretrained_path=str(model_file), **kwargs)
 
     @property
     def _model_metrics(self):
@@ -188,24 +344,42 @@ class SuperResolution(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
-        _emd_template["ModelType"] = "SuperResolution"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
+            )
         _emd_template["downsample_factor"] = self._data.downsample_factor
+        _emd_template["n_channel"] = self._data._n_channel
+        _emd_template["is_multispec"] = self._data._is_multispec
+        _emd_template["ModelType"] = "SuperResolution"
+
+        if self._data.train_ds.__class__.__name__ == "SR3Dataset":
+            _emd_template["ModelArch"] = "SR3"
+            _emd_template["image_stats"] = {
+                i: j.tolist() for i, j in self._data.batch_stats_a.items() if j != None
+            }
+            _emd_template["image_stats2"] = {
+                i: j.tolist() for i, j in self._data.batch_stats_b.items() if j != None
+            }
+            _emd_template["Kwargs"] = self.kwargs
+        else:
+            _emd_template["ModelArch"] = "UNet"
+            _emd_template["image_stats"] = self._data._image_stats
+            _emd_template["image_stats2"] = self._data._image_stats2
+            _emd_template["extract_bands"] = self._data._extract_bands
+            _emd_template["bands"] = self._data._bands
         return _emd_template
 
-    def compute_metrics(self, accuracy=True, show_progress=True):
+    def compute_metrics(self, accuracy=True, show_progress=True, **kwargs):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
 
         """
         self._check_requisites()
-        psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
+        psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress, **kwargs)
         return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
 
-    def show_results(self, rows=5):
+    def show_results(self, rows=None, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -216,18 +390,34 @@ class SuperResolution(ArcGISModel):
                                 to be displayed.
         =====================   ===========================================
 
+        **kwargs**
+
+        =====================   ===========================================
+        sampling_type           Optional string. Type of sampling.
+                                Default: 'ddim'. keyword arguments applicable for
+                                SR3 model type only.
+        ---------------------   -------------------------------------------
+        n_timestep              Optional int. Number of time-steps for the sampling process.
+                                Default: 200
+        =====================   ===========================================
+
         """
+        if not rows:
+            if self.model_type == "UNet":
+                rows = 5
+            else:
+                rows = 1
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
         self._check_requisites()
-        self.learn.show_results(rows=rows)
+        show_results(self, rows, **kwargs)
         if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()
 
-    def predict(self, img_path, width=None, height=None):
+    def predict(self, img_path):
         """
         Predicts and display the image.
 
@@ -235,41 +425,33 @@ class SuperResolution(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
-        ---------------------   -------------------------------------------
-        width                   Optional int. Width of the predicted
-                                output image.
-        ---------------------   -------------------------------------------
-        height                  Optional int. Height of the predicted
-                                output image.
         =====================   ===========================================
 
         """
+        from ..models._inferencing.util import mean, std
+
         img_path = Path(img_path)
-        img = open_image(img_path)
-        temp_databunch = self.learn.data
-        if width is not None or height is not None:
-            if width is None:
-                width = height
-            elif height is None:
-                height = width
-        elif width is None and height is None:
-            _, width, height = img.shape
+        raw_img = ArcGISMSImage.open(img_path)
+        raw_img = raw_img.resize(self._data.chip_size)
+        d_mean, d_std = mean, std
 
-        y_new, z_new = width, height
-        pred_databunch = (
-            ImageImageList.from_folder(img_path.parent)
-            .split_none()
-            .label_from_func(lambda x: x)
-            .transform(get_transforms(do_flip=False), size=(height, width), tfm_y=True)
-            .databunch(bs=2, no_check=True)
-            .normalize(imagenet_stats, do_y=True)
-        )
+        if self._data._is_multispec:
+            mean, std = self._data._image_stats[0], self._data._image_stats[1]
+            d_mean, d_std = (
+                self._data._image_stats2[0],
+                self._data._image_stats2[1],
+            )
 
-        self.learn.data = pred_databunch
+        raw_img_tensor = normalize(raw_img.px, mean, std)
+        raw_img_tensor = raw_img_tensor[None].to(self._device)
 
-        pred_img = self.learn.predict(img)[0]
-        self.learn.data = temp_databunch
-        return pred_img
+        self.learn.model.eval()
+        with torch.no_grad():
+            prediction = self.learn.model(raw_img_tensor)[0].detach()[0].cpu()
+
+        pred_denorm = ArcGISMSImage(denormalize(prediction, d_mean, d_std))
+        # pred_denorm = pred_denorm.show()
+        return pred_denorm
 
     @property
     def supported_datasets(self):

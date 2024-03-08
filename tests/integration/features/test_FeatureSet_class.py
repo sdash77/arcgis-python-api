@@ -6,9 +6,11 @@ import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 import os
+import tempfile
 
 # region PreCondition check
 test_skip = False
@@ -35,6 +37,7 @@ except ImportError:
     print("API import error. Quitting test")
     raise (exit())
 # endregion PreCondition Check
+
 
 # TestModule
 @unittest.skipIf(
@@ -68,20 +71,20 @@ class Test_Feature_class(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureSet_cls"]
         )
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_ent_admin_profile").url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_ent_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(
-            profile="your_ent_admin_profile", verify_cert=False
-        )
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -112,22 +115,21 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
             gis = GIS()
-            # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get("c6b6cebc24ea4c619fbf4f5ed124fefa") # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
+            # using Living Atlas curated content Transportation item
+            content = gis.content.get("f42ecc08a3634182b8678514af35fac3") 
 
             layer = content.layers[0]
-            features_req = layer.query(where="OBJECTID = 1")
+            features_req = layer.query(where="BASENAME = '20'")
 
             csv_file = r"generatedCSVfile.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -145,23 +147,22 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
 
             gis = GIS()
-            # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get("c6b6cebc24ea4c619fbf4f5ed124fefa")
+            # using Living Atlas curated content Transportation item
+            content = gis.content.get("f42ecc08a3634182b8678514af35fac3")
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = -1")
 
             csv_file = r"generatedCSVfile_nofeat.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -368,8 +369,25 @@ class Test_Feature_class(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_create_featureSet_with_one_feature(self):
+        line_fs = features.FeatureSet.from_dict(
+            {
+                "features": [
+                    {
+                        "geometry": {"paths": [[[-80.7, 35.1], [-80.8, 35.2]]]},
+                        "attributes": {"ObjectID": 1}}
+                ],
+                "objectIdFieldName": "ObjectID",
+                "spatialReference": {"wkid": 4326},
+        #         "geometryType": "esriGeometryPolyline",
+                "fields": [{"name": "ObjectID", "alias": "ObjectID", "type": "esriFieldTypeOID", "sqlType": "sqlTypeOther"}]
+            }
+        )
+        assert line_fs.geometry_type
+
     def tearDown(self):
         print("------------------------------------------------------------------\n")
+
 
 if __name__ == "__main__":
     unittest.main()

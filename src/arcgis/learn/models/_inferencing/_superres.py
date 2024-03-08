@@ -96,9 +96,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -127,7 +127,7 @@ class ChildImageClassifier:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -150,10 +150,12 @@ class ChildImageClassifier:
             )
 
         self.superres = SuperResolution.from_emd(data=None, emd_path=model)
+        self._learnmodel = self.superres
         self.model = self.superres.learn.model.to(self.device)
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
+        modelarch = self.json_info.get("ModelArch", None)
         required_parameters.extend(
             [
                 {
@@ -174,6 +176,46 @@ class ChildImageClassifier:
                 },
             ]
         )
+        if modelarch:
+            if modelarch == "SR3":
+                required_parameters.extend(
+                    [
+                        {
+                            "name": "sampling_type",
+                            "dataType": "string",
+                            "required": False,
+                            "domain": ("ddim", "ddpm"),
+                            "value": "ddim",
+                            "displayName": "Sampling_type",
+                            "description": "Type of sampling",
+                        },
+                        {
+                            "name": "schedule",
+                            "dataType": "string",
+                            "required": False,
+                            "domain": (
+                                "linear",
+                                "warmup10",
+                                "warmup50",
+                                "const",
+                                "jsd",
+                                "cosine",
+                            ),
+                            "value": self.json_info["Kwargs"].get("schedule", "linear"),
+                            "displayName": "schedule",
+                            "description": "Type of scheduler",
+                        },
+                        {
+                            "name": "n_timestep",
+                            "dataType": "numeric",
+                            "required": False,
+                            "value": 200,
+                            "displayName": "n_timestep",
+                            "description": "Number of timesteps",
+                        },
+                    ]
+                )
+
         return required_parameters
 
     def getConfiguration(self, **scalars):
@@ -195,6 +237,9 @@ class ChildImageClassifier:
             self.rectangle_height,
             self.rectangle_width,
         )
+        self.sampling = scalars.get("sampling_type", None)
+        nstp = scalars.get("n_timestep", None)
+        self.n_timestep = int(nstp) if nstp else nstp
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 
@@ -212,7 +257,7 @@ class ChildImageClassifier:
         )
 
         superres_prediction = util.pixel_classify_superres_image(
-            self.model, batch, self.device
+            self.model, batch, self.device, self.json_info, None, None
         )
         superres_prediction = batch_to_tile(
             superres_prediction.unsqueeze(dim=1).detach().cpu().numpy(),

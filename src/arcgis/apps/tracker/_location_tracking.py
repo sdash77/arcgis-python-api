@@ -161,7 +161,7 @@ class LocationTrackingManager:
                 "snippet": f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Service",
             }
         )
-        item.share(org=True)
+        item.sharing.sharing_level = "ORGANIZATION"
         self._gis.update_properties(
             {"locationTrackingService": {"url": item.url, "id": item.itemid}}
         )
@@ -313,7 +313,7 @@ class LocationTrackingManager:
                     }
                 }
             )
-        item.share(groups=[group])
+        item.sharing.groups.add(group)
         if group.owner != self.item.owner:
             group.reassign_to(self.item.owner)
             group.remove_users([self._gis.users.me])

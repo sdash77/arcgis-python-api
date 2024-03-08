@@ -108,7 +108,7 @@ class Page(OrderedDict):
         =====================     ====================================================================
 
         To find the list of applicable options for argument page_properties -
-        https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -173,16 +173,7 @@ class Page(OrderedDict):
         resources = self.item.resources.list()
         for resource in resources:
             if "draft-" in resource["resource"]:
-                path = (
-                    self._gis.url
-                    + "/sharing/rest/content/items/"
-                    + self.itemid
-                    + "/resources/"
-                    + resource["resource"]
-                    + "?token="
-                    + self._gis._con.token
-                )
-                self.item.resources.remove(file=path)
+                self.item.resources.remove(file=resource["resource"])
         # Update the data of the page
         self.definition["values"]["layout"] = layout._json()
         return self.item.update(item_properties={"text": self.definition})
@@ -316,7 +307,8 @@ class PageManager(object):
 
         # share page with content and core team groups
         if collab_group:
-            item.share(groups=[collab_group])
+            i = self._gis.content.get(item.get("id"))
+            i.sharing.groups.add(collab_group)
 
         # protect page from accidental deletion
         item.protect(enable=True)
@@ -481,6 +473,12 @@ class PageManager(object):
     def unlink(self, page: Page, site=None) -> bool:
         """
         Unlinks the page from the specific site.
+
+        .. note::
+
+            This method will only detach the page from the site. In order to remove links to this
+            page from the site's UI, you will have to manually remove it from the site through
+            the site's Layout Editior.
 
         =======================    =============================================================
         **Parameter**               **Description**

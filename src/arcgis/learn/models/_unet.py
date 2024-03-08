@@ -452,9 +452,9 @@ class UnetClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True
@@ -532,6 +532,7 @@ class UnetClassifier(ArcGISModel):
             plt.show()
 
     def accuracy(self):
+        """Computes per pixel accuracy on validation set."""
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
@@ -693,6 +694,7 @@ class UnetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`

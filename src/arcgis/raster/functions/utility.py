@@ -24,6 +24,7 @@ _aggregating_functions = [
     "variety",
     "geometric_median",
     "minority",
+    "merge_rasters",
 ]
 
 
@@ -326,7 +327,7 @@ def _get_raster_url(raster, layer):
     if isinstance(raster, (ImageryLayer, Raster)):
         if raster._fn is not None:
             if raster._datastore_raster and layer._datastore_raster:
-                if raster._uri == layer._uri:
+                if raster._uri == layer._uri or isinstance(raster._uri, bytes):
                     raster = raster._fn
                 else:
                     raster = _replace_raster_url(raster._fn, raster._uri)
@@ -698,3 +699,16 @@ def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
             function_chain_ra["rasterFunctionArguments"][
                 "UnionDimension"
             ] = union_dimension
+
+
+def _get_dimension_names(lyr):
+    dim_list = []
+    if isinstance(lyr, Raster):
+        if hasattr(lyr, "_engine_obj"):
+            lyr = lyr._engine_obj
+    md_info = lyr.multidimensional_info
+    if md_info:
+        for ele in md_info["multidimensionalInfo"]["variables"]:
+            for ele_dim in ele["dimensions"]:
+                dim_list.append(ele_dim["name"])
+    return dim_list

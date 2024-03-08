@@ -55,7 +55,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -153,9 +153,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -231,7 +231,7 @@ class ChildObjectDetector:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         import arcgis
@@ -257,6 +257,7 @@ class ChildObjectDetector:
             )
 
         self.model = YOLOv3.from_model(emd_path=model)
+        self._learnmodel = self.model
         self.model.learn.model = self.model.learn.model.to(self.device)
         self.model.learn.model.eval()
 
@@ -414,8 +415,8 @@ class ChildObjectDetector:
         batch_size = self.batch_size
         side = math.sqrt(batch_size)
 
-        bounding_boxes = np.zeros(shape=(num_boxes, 4), dtype=np.float)
-        scores = np.zeros(shape=(num_boxes), dtype=np.float)
+        bounding_boxes = np.zeros(shape=(num_boxes, 4), dtype=float)
+        scores = np.zeros(shape=(num_boxes), dtype=float)
         classes = np.zeros(shape=(num_boxes), dtype=np.uint8)
 
         idx = 0

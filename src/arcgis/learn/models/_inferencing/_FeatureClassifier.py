@@ -55,6 +55,7 @@ class ChildObjectDetector:
 
         # Using arcgis.learn FeatureClassifer from_model function.
         self.cf = FeatureClassifier.from_model(emd_path=model)
+        self._learnmodel = self.cf
         self.model = self.cf.learn.model
         self.model = self.cf.learn.model.to(self.device)
         self.model.eval()
@@ -80,9 +81,11 @@ class ChildObjectDetector:
                 "name": "test_time_augmentation",
                 "dataType": "string",
                 "required": False,
-                "value": "False"
-                if "test_time_augmentation" not in self.emd
-                else str(self.emd["test_time_augmentation"]),
+                "value": (
+                    "False"
+                    if "test_time_augmentation" not in self.emd
+                    else str(self.emd["test_time_augmentation"])
+                ),
                 "displayName": "Perform test time augmentation while predicting",
                 "description": "If True, will merge predictions from flipped and rotated images.",
             }

@@ -11,10 +11,12 @@ from xml.etree import ElementTree
 from typing import Tuple
 import concurrent.futures
 from arcgis import gis
+from arcgis.gis._impl._content_manager import SharingLevel
 from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+from arcgis.apps.survey123 import SurveyManager
 import copy
 import urllib
 import time
@@ -43,6 +45,8 @@ _TEXT_BASED_ITEM_TYPES = [
     "Network Analysis Service",
     "Workflow Manager Service",
     "StoryMap",
+    "Web Scene",
+    "Data Pipeline",
 ]
 
 # Regular expressions for finding fields in json
@@ -54,7 +58,6 @@ URL_PARAMS = re.compile(r"(?<=[&?])(.+?)(?==)", re.IGNORECASE)
 SURVEY_123 = re.compile(r"(?<=[&?]field:)(.+?)(?==)", re.IGNORECASE)
 ORDER_BY = re.compile(r"^.+(?= (?:a|de)sc$)", re.IGNORECASE)
 XML_SURVEY = re.compile(r"""(?<=/)\w.+?\b""", re.IGNORECASE)
-
 
 # region Group and Item Definition Classes
 
@@ -80,6 +83,7 @@ class _DeepCloner:
         owner=None,
         preserve_item_id=False,
         from_dash=False,
+        wab_code_attach=True,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -94,6 +98,8 @@ class _DeepCloner:
         self._copy_data = copy_data
         self._copy_global_ids = copy_global_ids
         self._search_existing_items = search_existing_items
+        self._print_warning = False
+        self._wab_code_attach = wab_code_attach
         self._clone_mapping = {
             "Item IDs": {},
             "Group IDs": {},
@@ -108,17 +114,26 @@ class _DeepCloner:
 
         self._cloned_items = []
         for index, item in enumerate(self._items):
-            if item["type"] == "Dashboard" and not from_dash:
-                if len(self._items) > 1:
-                    self._items.pop(index)
+            if (
+                item["type"] == "Dashboard"
+                and "desktopView" in item.get_data()
+                and not from_dash
+            ):
+                self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
-                for cloned_item in dash_list:
-                    self._cloned_items.append(cloned_item)
+                if len(dash_list) > 0:
+                    for cloned_item in dash_list:
+                        self._cloned_items.append(cloned_item)
 
         # parse the config and get values
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
+        if self._clone_mapping.get("Item IDs") is not None:
+            raise Exception(
+                "The item_mapping parameter is not supported when cloning ArcGIS"
+                " Dashboards. Use item data to remap values and update item."
+            )
         if "desktopView" in dashboard_item.get_data():
             widgets = dashboard_item.get_data()["desktopView"]["widgets"]
         else:
@@ -137,30 +152,61 @@ class _DeepCloner:
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
-            clone_result = self.target.content.clone_items([item])
-            if len(clone_result) > 0:
+            clone_result = self.target.content.clone_items(
+                [item],
+                search_existing_items=self._search_existing_items,
+                folder=self.folder,
+                owner=self.owner,
+                use_org_basemap=self._use_org_basemap,
+                copy_data=self._copy_data,
+                copy_global_ids=self._copy_global_ids,
+                item_extent=self._item_extent,
+                preserve_item_id=self._preserve_item_id,
+            )
+            if clone_result:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
-            new_item = self.target.content.search(item.title)[0]
+                    if cloned_item.title == item.title:
+                        new_item = cloned_item
+            else:
+                new_item = _search_org_for_existing_item(self.target, item)
+                logging.info(
+                    item.title + " not cloned; already existent in target org."
+                )
+                if not self._print_warning:
+                    self._print_warning = True
+                    print(
+                        "Already existent or Living Atlas items excluded from cloning. Check info-level logs for details."
+                    )
+
             map_dict[item_id] = new_item.itemid
 
-        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
-        cloned_item_list.append(cloned_db)
-        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+        cloned_db_list = self.target.content.clone_items(
+            [dashboard_item],
+            folder=self.folder,
+            owner=self.owner,
+            search_existing_items=self._search_existing_items,
+            preserve_item_id=self._preserve_item_id,
+            from_dash=True,
+        )
+        if cloned_db_list:
+            cloned_db = cloned_db_list[0]
+            cloned_item_list.append(cloned_db)
+            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 
-        for widget in cloned_widgets:
-            for k, v in widget.items():
-                if k == "itemId":
-                    widget["itemId"] = map_dict[v]
-                if k == "datasets":
-                    for dataset in v:
-                        dataset["dataSource"]["itemId"] = map_dict[
-                            dataset["dataSource"]["itemId"]
-                        ]
+            for widget in cloned_widgets:
+                for k, v in widget.items():
+                    if k == "itemId":
+                        widget["itemId"] = map_dict[v]
+                    if k == "datasets":
+                        for dataset in v:
+                            dataset["dataSource"]["itemId"] = map_dict[
+                                dataset["dataSource"]["itemId"]
+                            ]
 
-        new_data = cloned_db.get_data()
-        new_data["desktopView"]["widgets"] = cloned_widgets
-        cloned_db.update(item_properties={}, data=new_data)
+            new_data = cloned_db.get_data()
+            new_data["desktopView"]["widgets"] = cloned_widgets
+            cloned_db.update(item_properties={}, data=new_data)
 
         return cloned_item_list
 
@@ -312,6 +358,16 @@ class _DeepCloner:
             return None
         from arcgis.gis.clone import clone_registry
 
+        # check if living atlas item, if so don't process it
+        if getattr(item, "groupDesignations", None) == "livingatlas":
+            logging.info(item.title + " not cloned; part of Living Atlas.")
+            if not self._print_warning:
+                self._print_warning = True
+                print(
+                    "Already existent or Living Atlas items excluded from cloning. Check info-level logs for details."
+                )
+            return None
+
         # if the item is in the clone_registry then use the item definition.
         if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
@@ -397,7 +453,7 @@ class _DeepCloner:
                 item_definition.add_child(self._get_item_definitions(item))
 
         # If the item is a web map find all the feature service layers and tables that make up the map
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
 
@@ -1114,9 +1170,9 @@ class _DeepCloner:
                     "relationship_field_mapping": relationship_field_mapping,
                 }
             elif new_item.type == "Geoprocessing Service":
-                self._clone_mapping["Web Tools"][
-                    original_item["url"].rstrip("/")
-                ] = new_item["url"].rstrip("/")
+                self._clone_mapping["Web Tools"][original_item["url"].rstrip("/")] = (
+                    new_item["url"].rstrip("/")
+                )
 
     def _clone_synchronous(self):
         """
@@ -1243,6 +1299,10 @@ class _DeepCloner:
                     created_items = self._get_created_items()
                     for item in reversed(created_items):
                         if item:
+                            if isinstance(item, gis.Item):
+                                item.protect(False)
+                            elif isinstance(item, gis.Group):
+                                item.protected = False
                             item.delete()
                     raise ex
 
@@ -1259,7 +1319,7 @@ class _DeepCloner:
                 [
                     node
                     for node in self._graph.values()
-                    if isinstance(node, _ProProjectPackageDefinition)
+                    if isinstance(node, (_ProProjectPackageDefinition, _FormDefinition))
                     and "copy-only" not in node.info["tags"]
                 ]
             )
@@ -1409,6 +1469,7 @@ class _DeepCloner:
                 search_existing=self._search_existing_items,
                 owner=self.owner,
                 preserve_item_id=self._preserve_item_id,
+                code_attach=self._wab_code_attach,
             )
 
         elif item["type"] == "Operation View":
@@ -1442,7 +1503,7 @@ class _DeepCloner:
             )
 
         # If the item is a web map get the WebMapDefintion
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             webmap_json = item.get_data()
             return _WebMapDefinition(
                 self.target,
@@ -1478,6 +1539,7 @@ class _DeepCloner:
         # If the item is a survey get the FormDefintion
         elif item["type"] == "Form":
             related_items = item.related_items("Survey2Service", "forward")
+            related_items.extend(item.related_items("Survey2Data", "forward"))
             return _FormDefinition(
                 self.target,
                 self._clone_mapping,
@@ -1666,14 +1728,15 @@ class _DeepCloner:
             )
 
             return _WebExperience(
-                self.target,
-                self._clone_mapping,
-                dict(item),
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
                 data=None,
                 thumbnail=None,
                 folder=self.folder,
                 search_existing=self._search_existing_items,
                 owner=self.owner,
+                resources=item.resources.export(),
                 portal_item=item,
                 preserve_item_id=self._preserve_item_id,
             )
@@ -2179,7 +2242,11 @@ class _ItemDefinition(CloneNode):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties, data)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2216,7 +2283,11 @@ class _TextItemDefinition(_ItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2297,7 +2368,11 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2391,7 +2466,11 @@ class _FeatureServiceRefDef(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2848,6 +2927,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         layer_id_mapping,
                         relationship_field_mapping,
                     ) = _compare_service(new_item, self.portal_item, currentVersion)
+                    logging.info(
+                        self.portal_item.title
+                        + " not cloned; already existent in target org."
+                    )
 
             if not new_item:
                 # Get the definition of the original feature service
@@ -3095,10 +3178,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 os.path.basename(os.path.dirname(k))
                                                 == name
                                             ):
-                                                related_table[
-                                                    "sourceServiceName"
-                                                ] = os.path.basename(
-                                                    os.path.dirname(v["url"])
+                                                related_table["sourceServiceName"] = (
+                                                    os.path.basename(
+                                                        os.path.dirname(v["url"])
+                                                    )
                                                 )
                                                 if (
                                                     "sourceLayerId" in related_table
@@ -3181,20 +3264,20 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     # retain this previous logic when admin_layer_info is not already avalible
                                     admin_layer_info = {}
                                     view_layer_definition = {}
-                                    view_layer_definition[
-                                        "sourceServiceName"
-                                    ] = os.path.basename(
-                                        os.path.dirname(new_service["url"])
+                                    view_layer_definition["sourceServiceName"] = (
+                                        os.path.basename(
+                                            os.path.dirname(new_service["url"])
+                                        )
                                     )
-                                    view_layer_definition[
-                                        "sourceLayerId"
-                                    ] = new_service["layer_id_mapping"][
-                                        int(original_id)
-                                    ]
+                                    view_layer_definition["sourceLayerId"] = (
+                                        new_service["layer_id_mapping"][
+                                            int(original_id)
+                                        ]
+                                    )
                                     view_layer_definition["sourceLayerFields"] = "*"
-                                    admin_layer_info[
-                                        "viewLayerDefinition"
-                                    ] = view_layer_definition
+                                    admin_layer_info["viewLayerDefinition"] = (
+                                        view_layer_definition
+                                    )
                                     layer["adminLayerInfo"] = admin_layer_info
                                     break
 
@@ -3332,9 +3415,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         and new_editor_field_name is not None
                                         and new_editor_field_name != ""
                                     ):
-                                        field_mapping[
-                                            original_editor_field_name
-                                        ] = new_editor_field_name
+                                        field_mapping[original_editor_field_name] = (
+                                            new_editor_field_name
+                                        )
                                         # Delete old editor tracking fields
                                         if self.is_view == False:
                                             try:
@@ -3464,11 +3547,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 "viewDefinitionQuery"
                             ]
                             if layer_id in layer_field_mapping:
-                                update_definition[
-                                    "viewDefinitionQuery"
-                                ] = _find_and_replace_fields_sql(
-                                    update_definition["viewDefinitionQuery"],
-                                    layer_field_mapping[layer_id],
+                                update_definition["viewDefinitionQuery"] = (
+                                    _find_and_replace_fields_sql(
+                                        update_definition["viewDefinitionQuery"],
+                                        layer_field_mapping[layer_id],
+                                    )
                                 )
 
                         if len(self.view_sources[layer_id]) == 1:
@@ -3735,9 +3818,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     old_group_id = item_properties["properties"][
                         "workforceProjectGroupId"
                     ]
-                    item_properties["properties"][
-                        "workforceProjectGroupId"
-                    ] = self._clone_mapping["Group IDs"][old_group_id]
+                    item_properties["properties"]["workforceProjectGroupId"] = (
+                        self._clone_mapping["Group IDs"][old_group_id]
+                    )
 
                     # set up dispatcher webmap properties
                     old_dispatcher_webmap_id = item_properties["properties"][
@@ -3970,7 +4053,6 @@ class _WebMapDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the web map in the target organization."""
-
         try:
             new_item = None
             original_item = self.info
@@ -4114,10 +4196,10 @@ class _WebMapDefinition(_TextItemDefinition):
                                 portal_url = "http://www.arcgis.com/"
                                 if self.target.properties.isPortal:
                                     portal_url = _get_org_url(self.target)
-                                basemap_layer[
-                                    "styleUrl"
-                                ] = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
-                                    portal_url, new_id
+                                basemap_layer["styleUrl"] = (
+                                    "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(
+                                        portal_url, new_id
+                                    )
                                 )
                                 basemap_layer["itemId"] = new_id
 
@@ -4147,6 +4229,11 @@ class _WebMapDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
 
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
@@ -4206,7 +4293,11 @@ class _OperationViewDefintion(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -4343,7 +4434,11 @@ class _DashboardDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -4581,6 +4676,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         folder=None,
         search_existing=True,
         owner=None,
+        code_attach=True,
         **kwargs,
     ):
         super().__init__(
@@ -4600,6 +4696,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
         self._source_app_title = source_app_title
         self._update_url = update_url
+        self._code_attach = code_attach
 
     @property
     def source_app_title(self):
@@ -4708,11 +4805,11 @@ class _ApplicationDefinition(_TextItemDefinition):
                                             )
                                         app_json["values"]["webmap"] = new_webmap_ids
                                     else:
-                                        app_json["values"][
-                                            "webmap"
-                                        ] = self._clone_mapping["Item IDs"][
-                                            app_json["values"]["webmap"]
-                                        ]
+                                        app_json["values"]["webmap"] = (
+                                            self._clone_mapping["Item IDs"][
+                                                app_json["values"]["webmap"]
+                                            ]
+                                        )
                             if self.source_app_title is not None:
                                 search_query = 'title:"{0}" AND owner:{1} AND type:Web Mapping Application'.format(
                                     self.source_app_title, "esri_en"
@@ -4866,7 +4963,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                     new_item.update(item_properties)
 
                 # Add a code attachment if the application is Web AppBuilder so that it can be downloaded
-                if is_web_appbuilder:
+                if is_web_appbuilder and self._code_attach:
                     url = "{0}sharing/rest/content/items/{1}/package".format(
                         org_url[org_url.find("://") + 1 :], new_item["id"]
                     )
@@ -4898,7 +4995,11 @@ class _ApplicationDefinition(_TextItemDefinition):
                     new_item = self.target.content.get(new_item["id"])
                     if new_item["url"] != url:
                         new_item.update({"url": url})
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5019,9 +5120,11 @@ class _FormDefinition(_ItemDefinition):
                 )
 
         # Replace the "field names"
-        for instance in xml.find("h:head/model/instance/", namespace):
-            for child in instance.iter():
-                child.tag = lookup.get(child.tag, child.tag)
+        instances = xml.find("h:head/model/instance/", namespace)
+        if instances:
+            for instance in instances:
+                for child in instance.iter():
+                    child.tag = lookup.get(child.tag, child.tag)
 
         # Add all original namespaces back
         with open(xml_file_path, "w") as xml_file:
@@ -5058,6 +5161,11 @@ class _FormDefinition(_ItemDefinition):
                 # Update Survey123 form data
                 original_item = self.info
                 self.update_form(self.target, new_item, self._clone_mapping)
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5083,9 +5191,11 @@ class _FormDefinition(_ItemDefinition):
 
         original_item = self.info
         temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
+        # temp_dir = os.path.join(self._temp_dir.name, new_item["id"])
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
+        # form_zip = self.portal_item.download(temp_dir, new_item["id"])
         form_zip = self.portal_item.download(temp_dir)
         zip_file = zipfile.ZipFile(form_zip)
         org_url = _get_org_url(self.target)
@@ -5140,8 +5250,16 @@ class _FormDefinition(_ItemDefinition):
                     for key, value in clone_mapping["Item IDs"].items():
                         url = "{0}sharing/rest/content/items/{1}".format(org_url, value)
                         data = re.sub(
-                            '(?<=")([^<]+?{0})(?=")'.format(key),
+                            '(?<=action=")([^<]+?{0})(?=")'.format(key),
                             url,
+                            data,
+                            0,
+                            re.IGNORECASE,
+                        )
+
+                        data = re.sub(
+                            '(?<=(map=|ode=))({0})(?=")'.format(key),
+                            value,
                             data,
                             0,
                             re.IGNORECASE,
@@ -5168,41 +5286,9 @@ class _FormDefinition(_ItemDefinition):
                                             field_mapping,
                                         )
 
-                elif os.path.splitext(path)[1].lower() == ".webform":
-                    try:
-                        with open(os.path.join(zip_dir, path)) as file:
-                            payload = json.loads(file.read())
-                    except UnicodeDecodeError:
-                        with open(os.path.join(zip_dir, path), "rb") as file:
-                            payload = json.load(file)
-
-                    file_changed = False
-
-                    # Find related service mapping and replace in webform
-                    for related_item in self.related_items:
-                        for key, value in clone_mapping["Services"].items():
-                            if _compare_url(related_item["url"], key):
-                                for layer_id in value["layer_field_mapping"]:
-                                    field_mapping = value["layer_field_mapping"][
-                                        layer_id
-                                    ]
-                                    model = payload["model"]
-                                    form = payload["form"]
-                                    _find_and_replace_fields_json(
-                                        payload, field_mapping, [XML_SURVEY]
-                                    )
-
-                                    payload["model"] = self._replace_model(
-                                        model, field_mapping
-                                    )
-                                    payload["form"] = self._replace_form(
-                                        form, field_mapping
-                                    )
-                                    file_changed = True
-
-                    if file_changed:
-                        with open(os.path.join(zip_dir, path), "w") as writer:
-                            json.dump(payload, writer, indent="  ")
+                        SurveyManager._xform2webform(
+                            os.path.join(zip_dir, path), self.target.url
+                        )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
                     with open(os.path.join(zip_dir, path), "w") as file:
@@ -5211,6 +5297,37 @@ class _FormDefinition(_ItemDefinition):
                 elif path.lower() == "form.json":
                     with open(os.path.join(zip_dir, path), "r") as file:
                         form_json = file.read()
+                        for key, value in clone_mapping["Item IDs"].items():
+                            form_json = re.sub(
+                                key,
+                                value,
+                                form_json,
+                                0,
+                                re.IGNORECASE,
+                            )
+                        for key, value in clone_mapping["Services"].items():
+                            form_json = re.sub(
+                                key, value["url"], form_json, 0, re.IGNORECASE
+                            )
+                        with open(os.path.join(zip_dir, path), "w") as file:
+                            file.write(form_json)
+                        for new_id in clone_mapping["Item IDs"].values():
+                            new_flayer = target.content.get(new_id)
+                            if (
+                                new_flayer.title == self.portal_item.title
+                                and new_flayer.type == "Feature Service"
+                            ):
+                                with tempfile.NamedTemporaryFile(
+                                    mode="w+", suffix=".json", delete=False
+                                ) as tfile:
+                                    json.dump(json.loads(form_json), tfile)
+                                    tfile.close()
+                                new_flayer.resources.update(
+                                    folder_name="surveyDraft",
+                                    file_name="form.json",
+                                    file=tfile.name,
+                                )
+                                break
 
                 elif os.path.splitext(path)[1].lower() == ".xlsx":
                     xlsx = zipfile.ZipFile(os.path.join(zip_dir, path))
@@ -5233,9 +5350,17 @@ class _FormDefinition(_ItemDefinition):
                             url = "{0}sharing/rest/content/items/{1}".format(
                                 org_url, value
                             )
+                            check = "(?<=>)([^<]+?{0})(?=<)".format(key)
+                            # data = re.sub(
+                            #     check,
+                            #     url,
+                            #     data,
+                            #     0,
+                            #     re.IGNORECASE,
+                            # )
                             data = re.sub(
-                                "(?<=>)([^<]+?{0})(?=<)".format(key),
-                                url,
+                                key,
+                                value,
                                 data,
                                 0,
                                 re.IGNORECASE,
@@ -5249,15 +5374,15 @@ class _FormDefinition(_ItemDefinition):
                             file.write(data)
 
                         # Find related service mapping and replace in excel file
-                        for related_item in self.related_items:
-                            for key, value in clone_mapping["Services"].items():
-                                if _compare_url(related_item["url"], key):
-                                    for layer_id in value["layer_field_mapping"]:
-                                        field_mapping = value["layer_field_mapping"][
-                                            layer_id
-                                        ]
-                                        e = _ExcelHelper(xlsx_dir, field_mapping)
-                                        e.main()
+                        # for related_item in self.related_items:
+                        #     for key, value in clone_mapping["Services"].items():
+                        #         if _compare_url(related_item["url"], key):
+                        #             for layer_id in value["layer_field_mapping"]:
+                        #                 field_mapping = value["layer_field_mapping"][
+                        #                     layer_id
+                        #                 ]
+                        # e = _ExcelHelper(xlsx_dir, field_mapping)
+                        # e.main()
 
                         xlsx = zipfile.ZipFile(
                             os.path.join(zip_dir, path),
@@ -5273,12 +5398,19 @@ class _FormDefinition(_ItemDefinition):
                             shutil.rmtree(xlsx_dir)
 
             # Add a relationship between the new survey and the service
+            service_related = self.portal_item.related_items(
+                "Survey2Service", "forward"
+            )
+            data_related = self.portal_item.related_items("Survey2Data", "forward")
             for related_item in self.related_items:
-                for key, value in clone_mapping["Services"].items():
-                    if _compare_url(related_item["url"], key):
-                        feature_service = target.content.get(value["id"])
-                        new_item.add_relationship(feature_service, "Survey2Service")
-                        break
+                if related_item in service_related:
+                    new_id = clone_mapping["Services"][related_item["url"]]["id"]
+                    feature_service = target.content.get(new_id)
+                    new_item.add_relationship(feature_service, "Survey2Service")
+                if related_item in data_related:
+                    new_id = clone_mapping["Item IDs"][related_item["id"]]
+                    data_item = target.content.get(new_id)
+                    new_item.add_relationship(data_item, "Survey2Data")
 
             # If the survey was authored on the web add the web_json to the metadata table in the service
             if form_json is not None and feature_service_url is not None:
@@ -5307,7 +5439,10 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
-            new_item.update(data=form_zip)
+            new_form = shutil.copy2(
+                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+            )
+            new_item.update(data=new_form)
         except Exception as ex:
             raise Exception(
                 "Failed to update {0} {1}: {2}".format(
@@ -5386,11 +5521,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                 feature_service_item_id
                                 in self._clone_mapping["Item IDs"]
                             ):
-                                datasource[
-                                    "featureServiceItemId"
-                                ] = self._clone_mapping["Item IDs"][
-                                    feature_service_item_id
-                                ]
+                                datasource["featureServiceItemId"] = (
+                                    self._clone_mapping["Item IDs"][
+                                        feature_service_item_id
+                                    ]
+                                )
                         if "url" in datasource and datasource["url"] is not None:
                             feature_service_url = os.path.dirname(datasource["url"])
                             for (
@@ -5447,13 +5582,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                                     datasourceid
                                                 ]
                                             ):
-                                                fieldinfo[
-                                                    "fieldName"
-                                                ] = datasourceid_field_mapping[
-                                                    datasourceid
-                                                ][
-                                                    fieldname
-                                                ]
+                                                fieldinfo["fieldName"] = (
+                                                    datasourceid_field_mapping[
+                                                        datasourceid
+                                                    ][fieldname]
+                                                )
 
                 # Set the admin email
                 admin_email = _deep_get(qc_json, "preferences", "adminEmail")
@@ -5472,7 +5605,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                     file.write(json.dumps(qc_json))
 
                 new_item.resources.update(qc_json_file, None, "qc.project.json")
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5569,7 +5706,11 @@ class _NotebookDefinition(_ItemDefinition):
 
                 # Update python notebook
                 new_item.update(data=new_notebook)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5738,7 +5879,11 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 item_properties["text"] = json.dumps(workforce_json)
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5812,9 +5957,9 @@ class _ProMapDefinition(_ItemDefinition):
                                     ]
                                     layer_id = int(data_connection["dataset"])
                                     new_id = new_service["layer_id_mapping"][layer_id]
-                                    data_connection[
-                                        "workspaceConnectionString"
-                                    ] = "URL={0}".format(new_service["url"])
+                                    data_connection["workspaceConnectionString"] = (
+                                        "URL={0}".format(new_service["url"])
+                                    )
                                     data_connection["dataset"] = new_id
 
                 new_mapx_dir = os.path.join(os.path.dirname(mapx), "new_mapx")
@@ -5825,6 +5970,11 @@ class _ProMapDefinition(_ItemDefinition):
                 self._data = new_mapx
 
                 new_item = super().clone()
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -6039,6 +6189,11 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                         pass
 
                 new_item = super().clone()
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -6186,9 +6341,9 @@ def _compare_service(new_item, original_item, currentVersion):
                                     and new_editor_field_name is not None
                                     and new_editor_field_name != ""
                                 ):
-                                    field_mapping[
-                                        original_editor_field_name
-                                    ] = new_editor_field_name
+                                    field_mapping[original_editor_field_name] = (
+                                        new_editor_field_name
+                                    )
 
                 original_oid_field = _deep_get(layer, "objectIdField")
                 new_oid_field = _deep_get(new_layer, "objectIdField")
@@ -6314,7 +6469,18 @@ def _share_item_with_groups(item, sharing, group_mapping):
         if "access" in item and item["access"] is not None:
             everyone = item["access"] == "public"
             org = item["access"] == "org"
-        item.share(everyone, org, ",".join(groups))
+
+        if org and not everyone:
+            sharing_level = SharingLevel.ORG
+        elif not org and not everyone:
+            sharing_level = SharingLevel.PRIVATE
+        elif not org and everyone:
+            sharing_level = SharingLevel.EVERYONE
+
+        item.sharing.sharing_level = sharing_level
+        grp_share = item.sharing.groups
+        for grp in groups:
+            grp_share.add(grp)
 
 
 def _wgs84_envelope(envelope):
@@ -6626,11 +6792,11 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
             "parameterizedExpression" in layer["definitionEditor"]
             and layer["definitionEditor"]["parameterizedExpression"] is not None
         ):
-            layer["definitionEditor"][
-                "parameterizedExpression"
-            ] = _find_and_replace_fields_sql(
-                layer["definitionEditor"]["parameterizedExpression"],
-                field_mapping,
+            layer["definitionEditor"]["parameterizedExpression"] = (
+                _find_and_replace_fields_sql(
+                    layer["definitionEditor"]["parameterizedExpression"],
+                    field_mapping,
+                )
             )
 
 
@@ -6706,9 +6872,9 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
 
                 expression = _deep_get(label_info, "labelExpressionInfo", "expression")
                 if expression is not None:
-                    label_info["labelExpressionInfo"][
-                        "expression"
-                    ] = _find_and_replace_fields_arcade(str(expression), field_mapping)
+                    label_info["labelExpressionInfo"]["expression"] = (
+                        _find_and_replace_fields_arcade(str(expression), field_mapping)
+                    )
 
 
 def _update_layer_related_fields(layer, relationship_field_mapping):

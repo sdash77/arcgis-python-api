@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import datetime
 from arcgis.gis import GIS
@@ -15,12 +17,12 @@ class TestIssue3115(unittest.TestCase):
         profiles = {"your_online_profile"}
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
-            items = gis.content.search("*", item_type="Feature Layer")
+            items = gis.content.search("*, owner:{username}".format(username=gis.users.me.username), item_type="Feature Layer")
             if len(items) > 0:
                 item_id = items[0].itemid
-                osm_basemap = gis.content.get(item_id)
-                assert isinstance(osm_basemap, Item)
-                assert osm_basemap.shared_with
+                item = gis.content.get(item_id)
+                assert isinstance(item, Item)
+                assert item.shared_with
                 if gis.users.me.role == "org_admin":
                     if len(gis.groups.search("sample_share123")) > 0:
                         for grp in gis.groups.search("sample_share123"):
@@ -28,8 +30,8 @@ class TestIssue3115(unittest.TestCase):
                                 grp.delete()
                                 break
                     grp = gis.groups.create("sample_share123", "tags")
-                    osm_basemap.share(groups=[grp])
-                    assert len(osm_basemap.shared_with["groups"]) > 0
+                    item.sharing.groups.add(grp)
+                    assert len(item.shared_with["groups"]) > 0
                     um = gis.users
                     isinstance(um, UserManager)
                     dt = datetime.datetime.now()

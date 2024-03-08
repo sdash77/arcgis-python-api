@@ -18,10 +18,12 @@ from re import S
 from typing import Optional, Union
 
 
+from ._arcgis_model import SaveModelCallback
 from .._utils.env import HAS_TENSORFLOW, ARCGIS_ENABLE_TF_BACKEND
 
 try:
     import os
+    from types import MethodType
     import numpy as np
     from fastai.basics import *
     import tensorflow as tf
@@ -31,11 +33,7 @@ try:
 
     absl.logging.set_verbosity(absl.logging.ERROR)
     from fastai.vision.data import ImageDataBunch
-    from fastai.callbacks import (
-        TrackerCallback,
-        EarlyStoppingCallback,
-        OneCycleScheduler,
-    )
+    from fastai.callbacks import EarlyStoppingCallback, OneCycleScheduler
     from fastai.callback import annealing_cos
     from fastai.core import ifnone
     import tensorflow as tf
@@ -50,6 +48,7 @@ try:
     from tensorflow_examples.lite.model_maker.core import compat
     from tensorflow_examples.lite.model_maker.core.data_util import (
         object_detector_dataloader,
+        dataloader,
     )
     from tensorflow_examples.lite.model_maker.core.task import model_spec as ms
     from tensorflow_examples.lite.model_maker.core.task.model_spec import (
@@ -57,6 +56,7 @@ try:
     )
     from tensorflow_examples.lite.model_maker.third_party.efficientdet.keras import (
         train,
+        util_keras,
     )
     from tensorflow_examples.lite.model_maker.core.data_util.object_detector_dataloader import (
         DataLoader as tflite_data_loader,
@@ -74,6 +74,12 @@ except:
 def check_data_sanity(data, dataset_types=[]):
     try:
         if isinstance(data, ImageDataBunch):
+            for k, v in data.class_mapping.items():
+                if k == 0 and v != "background":
+                    import warnings
+
+                    warnings.warn("class 0 is reserved only for background\n")
+                    return False
             return True
         else:
             return False
@@ -82,10 +88,13 @@ def check_data_sanity(data, dataset_types=[]):
 
 
 def _get_image_tensor(image):
-    return tf.expand_dims(tf.convert_to_tensor(image), axis=0)
+    return tf.expand_dims(tf.convert_to_tensor(np.array(image)), axis=0)
 
 
 def _get_ann_files(data):
+    if data._is_empty:
+        return [None, None]
+
     val_split_pct = data._val_split_pct
     labels_path = os.path.join(data.orig_path, "labels")
     if not os.path.isdir(labels_path):
@@ -93,7 +102,7 @@ def _get_ann_files(data):
     else:
         tot_files = len(os.listdir(labels_path))
         files = sorted(os.listdir(labels_path))
-        files = [f[:-4] for f in files]
+        files = [f[:-4] for f in files if os.path.isfile(os.path.join(labels_path, f))]
         num_val_files = min(
             max(math.floor((val_split_pct * tot_files)), 1), tot_files - 1
         )
@@ -103,10 +112,27 @@ def _get_ann_files(data):
         return [train_files, val_files]
 
 
+def _calculate_avg_loss(avg_loss, loss, beta=0.98):
+    return beta * avg_loss + (1 - beta) * loss
+
+
+def _calculate_smoothed_loss(avg_loss, iteration, beta=0.98):
+    return avg_loss / (1 - beta**iteration)
+
+
+class EmptyLoader(dataloader.DataLoader):
+    def __init__(self, label_map):
+        super(EmptyLoader, self).__init__(dataset=None, size=1)
+        self.label_map = label_map
+
+
 def _get_tf_data_loader(data, ann_files=None):
     dataset_type = None
     if hasattr(data, "dataset_type"):
         dataset_type = getattr(data, "dataset_type")
+        if data._is_empty:
+            return EmptyLoader(label_map=data.class_mapping)
+
         if dataset_type == "PASCAL_VOC_rectangles":
             try:
                 return tflite_data_loader.from_pascal_voc(
@@ -134,10 +160,10 @@ def _get_tf_data_loader(data, ann_files=None):
 
 
 class ConstantLrSchedule(tf.optimizers.schedules.LearningRateSchedule):
-    """Annealed learning rate schedule."""
+    """Constant learning rate schedule."""
 
     def __init__(self, lr):
-        """Build a AnnealedLrSchedule."""
+        """Build a ConstantLrSchedule."""
         super().__init__()
         self.default_lr = defaults.lr
         self.lr = lr
@@ -199,8 +225,9 @@ def _get_optimizer(params):
             learning_rate = AnnealedLrSchedule(
                 (params["start_lr"], params["end_lr"]), params["num_it"]
             )
+            learning_rate = params["start_lr"]
         else:
-            learning_rate = ConstantLrSchedule(params["constant_lr"])
+            learning_rate = params["constant_lr"]
 
     momentum = params["momentum"]
     if params["optimizer"].lower() == "sgd":
@@ -268,6 +295,7 @@ class EfficientDetTrainer(ObjectDetector):
         representative_data: Optional[object_detector_dataloader.DataLoader] = None,
     ) -> None:
         self._data = representative_data
+        self._config = None
         self._ann_files = _get_ann_files(self._data)
         self._data_loader = _get_tf_data_loader(representative_data, self._ann_files[0])
         self._val_loader = _get_tf_data_loader(representative_data, self._ann_files[1])
@@ -284,24 +312,29 @@ class EfficientDetTrainer(ObjectDetector):
         self._valid_steps_per_epoch = None
         self._validation_steps = None
         with self.model_spec.ds_strategy.scope():
-            self._train_ds, self._steps_per_epoch, _ = self._get_dataset_and_steps(
-                self._data_loader, batch_size, is_training=True
-            )
-            (
-                self._valid_ds,
-                self._validation_steps,
-                val_json_file,
-            ) = self._get_dataset_and_steps(
-                self._val_loader, batch_size, is_training=False
-            )
-            self._config.update(
-                dict(
-                    steps_per_epoch=self._steps_per_epoch,
-                    eval_samples=batch_size * self._validation_steps,
-                    batch_size=batch_size,
-                    val_json_file=val_json_file,
+            if not self._data._is_empty:
+                self._train_ds, self._steps_per_epoch, _ = self._get_dataset_and_steps(
+                    self._data_loader, batch_size, is_training=True
                 )
-            )  # validation
+                (
+                    self._valid_ds,
+                    self._validation_steps,
+                    val_json_file,
+                ) = self._get_dataset_and_steps(
+                    self._val_loader, batch_size, is_training=False
+                )
+                self._config.update(
+                    dict(
+                        steps_per_epoch=self._steps_per_epoch,
+                        eval_samples=batch_size * self._validation_steps,
+                        batch_size=batch_size,
+                        val_json_file=val_json_file,
+                    )
+                )  # validation
+            else:
+                self._config.update(
+                    dict(batch_size=batch_size, steps_per_epoch=batch_size)
+                )
             _setup_model(self.model, self._config, self._build_model)
             self._build_model = False
             train.init_experimental(self._config)
@@ -337,6 +370,10 @@ class EfficientDetTrainer(ObjectDetector):
         freeze_model: bool = True,
         one_cycle: bool = False,
     ) -> None:
+        if self._data._is_empty:
+            print("\n\nInvalid Fit\n\n")
+            return
+
         self._lr_decay_method = self.model_spec.config.lr_decay_method
         if annealed_schedule is True:
             self.model_spec.config.lr_decay_method = "annealed"
@@ -345,7 +382,7 @@ class EfficientDetTrainer(ObjectDetector):
             self.model_spec.config.num_it = num_it
         elif one_cycle:
             self.model_spec.config.lr_decay_method = "constant"
-            self.model_spec.config.constant_lr = defaults.lr
+            self.model_spec.config.constant_lr = lr
 
         if freeze_model is False:
             self.model.config.var_freeze_expr = None
@@ -356,6 +393,11 @@ class EfficientDetTrainer(ObjectDetector):
                 "(efficientnet|fpn_cells|resample_p6)"
             )
 
+        num_epochs = self.model_spec.config.num_epochs
+        learning_rate = self.model_spec.config.learning_rate
+        self.model_spec.config.num_epochs = epochs
+        self.model_spec.config.learning_rate = lr
+
         self.setup_model()
 
         with self.model_spec.ds_strategy.scope():
@@ -363,11 +405,14 @@ class EfficientDetTrainer(ObjectDetector):
                 self._train_ds,
                 epochs=epochs,
                 steps_per_epoch=self._steps_per_epoch,
+                verbose=0,
                 callbacks=callbacks,
                 validation_data=self._valid_ds,
                 validation_steps=self._validation_steps,
             )
         self.model_spec.config.lr_decay_method = self._lr_decay_method
+        self.model_spec.config.num_epochs = num_epochs
+        self.model_spec.config.learning_rate = learning_rate
 
     def _export_saved_model(self, saved_model_dir: str) -> None:
         model = self.model
@@ -378,8 +423,13 @@ class EfficientDetTrainer(ObjectDetector):
 
         model.optimizer = original_optimizer
 
-    def _save_tflite(self, name, path, model_dir, quantized=False, **kwargs):
+    def _save_weights(
+        self, name, path, model_dir, quantized=False, tflite=True, **kwargs
+    ):
         import os
+
+        if self._data._is_empty:
+            quantized = False
 
         model_save_path = path / model_dir / f"{name}.tflite"
         tflite_filename = f"{name}.tflite"
@@ -390,23 +440,41 @@ class EfficientDetTrainer(ObjectDetector):
 
         if quantized is False:
             kwargs["quantized_config"] = None
+            if self._data._is_empty:
+                kwargs["quantization_config"] = None
         else:
             kwargs["quantized_config"] = "default"
+            kwargs["quantization_config"] = "default"
 
         tflite_filepath = os.path.join(export_dir, tflite_filename)
         export_tflite_kwargs, kwargs = _get_params(self._export_tflite, **kwargs)
-        self._export_tflite(tflite_filepath, **export_tflite_kwargs)
+
+        if tflite:
+            self._export_tflite(tflite_filepath, **export_tflite_kwargs)
+        else:
+            model_save_path = path / model_dir / f"{name}.pb"
 
         saved_model_dir = os.path.join(export_dir, saved_model_dir)
         export_saved_model_kwargs, kwargs = _get_params(
             self._export_saved_model, **kwargs
         )
         self._export_saved_model(saved_model_dir, **export_saved_model_kwargs)
+        if not tflite:
+            import shutil
+
+            shutil.copyfile(
+                os.path.join(saved_model_dir, "saved_model.pb"),
+                os.path.join(export_dir, f"{name}.pb"),
+            )
+
         return model_save_path
 
     def compute_metrics(self):
         metrics = self.evaluate(self._val_loader)
-        metrics.update((key, value * 1.0) for key, value in metrics.items())
+        metrics.update(
+            (key, value * 1.0) if value >= 0.0 else (key, np.float64(0.0))
+            for key, value in metrics.items()
+        )
         return metrics
 
     def _get_processed_output(self, output, thresh=0.4):
@@ -435,7 +503,7 @@ class EfficientDetTrainer(ObjectDetector):
         for i in range(boxes.shape[0]):
             if scores_ is None or scores_[i] > thresh:
                 ymin, xmin, ymax, xmax = boxes[i].tolist()
-                box = [xmin, ymin, xmin + xmax, ymin + ymax]
+                box = [xmin, ymin, xmax - xmin, ymax - ymin]
                 predictions.append(box)
                 labels.append(classes[i])
                 scores.append(scores_[i])
@@ -485,9 +553,91 @@ class EfficientDetTrainer(ObjectDetector):
         object_detector = cls(spec, train_data.class_mapping, train_data)
         with object_detector.model_spec.ds_strategy.scope():
             object_detector.create_model()
-
+        object_detector.model.train_step = MethodType(train_step, object_detector.model)
         object_detector.setup_model()
         return object_detector
+
+
+def train_step(self, data):
+    """Train step.
+
+    Args:
+        data: Tuple of (images, labels). Image tensor with shape [batch_size,
+        height, width, 3]. The height and width are fixed and equal.Input labels
+        in a dictionary. The labels include class targets and box targets which
+        are dense label maps. The labels are generated from get_input_fn
+        function in data/dataloader.py.
+
+    Returns:
+        A dict record loss info.
+    """
+    images, labels = data
+    if self.config.img_summary_steps:
+        with self.summary_writer.as_default():
+            tf.summary.image("input_image", images)
+    with tf.GradientTape() as tape:
+        if len(self.config.heads) == 2:
+            cls_outputs, box_outputs, seg_outputs = util_keras.fp16_to_fp32_nested(
+                self(images, training=True)
+            )
+            loss_dtype = cls_outputs[0].dtype
+        elif "object_detection" in self.config.heads:
+            cls_outputs, box_outputs = util_keras.fp16_to_fp32_nested(
+                self(images, training=True)
+            )
+            loss_dtype = cls_outputs[0].dtype
+        elif "segmentation" in self.config.heads:
+            (seg_outputs,) = util_keras.fp16_to_fp32_nested(self(images, training=True))
+            loss_dtype = seg_outputs.dtype
+        else:
+            raise ValueError("No valid head found: {}".format(self.config.heads))
+        labels = util_keras.fp16_to_fp32_nested(labels)
+
+        total_loss = 0
+        loss_vals = {}
+        if "object_detection" in self.config.heads:
+            det_loss = self._detection_loss(cls_outputs, box_outputs, labels, loss_vals)
+            total_loss += det_loss
+        if "segmentation" in self.config.heads:
+            seg_loss_layer = self.loss[
+                tf.keras.losses.SparseCategoricalCrossentropy.__name__
+            ]
+            seg_loss = seg_loss_layer(labels["image_masks"], seg_outputs)
+            total_loss += seg_loss
+            loss_vals["seg_loss"] = seg_loss
+
+        reg_l2_loss = self._reg_l2_loss(self.config.weight_decay)
+        loss_vals["reg_l2_loss"] = reg_l2_loss
+        total_loss += tf.cast(reg_l2_loss, loss_dtype)
+        if isinstance(self.optimizer, tf.keras.mixed_precision.LossScaleOptimizer):
+            scaled_loss = self.optimizer.get_scaled_loss(total_loss)
+            optimizer = self.optimizer.inner_optimizer
+        else:
+            scaled_loss = total_loss
+            optimizer = self.optimizer
+    loss_vals["loss"] = total_loss
+    if isinstance(
+        optimizer.learning_rate, tf.optimizers.schedules.LearningRateSchedule
+    ):
+        loss_vals["learning_rate"] = optimizer.learning_rate(optimizer.iterations)
+    else:
+        loss_vals["learning_rate"] = optimizer.learning_rate
+
+    trainable_vars = self._freeze_vars()
+    scaled_gradients = tape.gradient(scaled_loss, trainable_vars)
+    if isinstance(self.optimizer, tf.keras.mixed_precision.LossScaleOptimizer):
+        gradients = self.optimizer.get_unscaled_gradients(scaled_gradients)
+    else:
+        gradients = scaled_gradients
+    if self.config.clip_gradients_norm > 0:
+        clip_norm = abs(self.config.clip_gradients_norm)
+        gradients = [
+            tf.clip_by_norm(g, clip_norm) if g is not None else None for g in gradients
+        ]
+        gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
+        loss_vals["gradient_norm"] = tf.linalg.global_norm(gradients)
+    self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+    return loss_vals
 
 
 from .._utils.fastai_tf_fit import (
@@ -506,6 +656,7 @@ from tensorflow_examples.lite.model_maker.third_party.efficientdet.keras import 
 class EfficientDetLearner(TfLearner):
     _trainer: EfficientDetTrainer = None
     tf_dataset: tf.data.Dataset = None
+    _compute_mean_avp = False
 
     def __post_init__(self) -> None:
         "Setup path,metrics, callbacks and ensure model directory exists."
@@ -516,7 +667,7 @@ class EfficientDetLearner(TfLearner):
         (self.path / self.model_dir).mkdir(parents=True, exist_ok=True)
         self.metrics = listify(self.metrics)
         self._freeze_model = True
-        self.recorder = TFRecorder()
+        self.recorder = TFRecorder(0, 0)
         if not self.layer_groups:
             self.layer_groups = tf_flatten_model(self.model)
 
@@ -524,10 +675,16 @@ class EfficientDetLearner(TfLearner):
         raise NotImplementedError
 
     def _save_tflite(self, name, post_processed=True, quantized=False, **kwargs):
-        return self._trainer._save_tflite(name, self.path, self.model_dir, quantized)
+        return self._trainer._save_weights(name, self.path, self.model_dir, quantized)
 
     def compute_metrics(self):
         return self._trainer.compute_metrics()
+
+    def save(self, name, return_path=True, **kwargs):
+        "Save model with `name` to `self.model_dir`."
+        return self._trainer._save_weights(
+            name, self.path, self.model_dir, tflite=False
+        )
 
     def load(self, file, device=None, **kwargs):
         weights_save_path = str(
@@ -553,6 +710,8 @@ class EfficientDetLearner(TfLearner):
                 callbacks[i] = tf.keras.callbacks.EarlyStopping(
                     min_delta=0.001, patience=5
                 )
+            if isinstance(callbacks[i], SaveModelCallback):
+                callbacks[i] = CheckPointCallback(callback=callbacks[i])
             try:
                 from .._utils.tensorboard_utils import ArcGISTBCallback
 
@@ -562,7 +721,8 @@ class EfficientDetLearner(TfLearner):
             except:
                 pass
 
-        callbacks.append(self.recorder)
+        self.recorder = TFRecorder(epochs, len(self.data.train_dl))
+        callbacks = [self.recorder] + callbacks
         self._trainer.fit(
             epochs,
             lr,
@@ -633,30 +793,121 @@ class EfficientDetLearner(TfLearner):
         return batches
 
 
+from time import time
+from fastprogress.fastprogress import master_bar, progress_bar
+
+
+def get_monitor_value(self):
+    "Pick the monitored value."
+    if self.monitor == "trn_loss" and len(self.learn.recorder.losses) == 0:
+        return None
+    elif len(self.learn.recorder.val_losses) == 0:
+        return None
+    values = {
+        "train_loss": self.learn.recorder.losses[-1],
+        "valid_loss": self.learn.recorder.val_losses[-1],
+    }
+    if values["valid_loss"] is None:
+        return
+    from warnings import warn
+
+    if values.get(self.monitor) is None:
+        warn(
+            f'{self.__class__} conditioned on metric `{self.monitor}` which is not available. Available metrics are: {", ".join(map(str, self.learn.recorder.names[1:-1]))}'
+        )
+    return values.get(self.monitor)
+
+
+class CheckPointCallback(tf.keras.callbacks.Callback):
+    def __init__(self, callback):
+        self._callback = callback
+        self._callback.get_monitor_value = MethodType(get_monitor_value, self._callback)
+
+    def on_train_begin(self, logs=None):
+        self._callback.on_train_begin()
+
+    def on_epoch_end(self, epoch, logs=None):
+        self._callback.on_epoch_end(epoch, stop_training=self.model.stop_training)
+
+
 class TFRecorder(tf.keras.callbacks.Callback):
-    def __init__(self):
+    def __init__(self, epochs, num_batches):
         super(TFRecorder, self).__init__()
-        self.losses = []
-        self.val_loss = []
-        self.lrs = []
+        self._iteration = 0
+        self.epochs = epochs
+        self.batches_per_epoch = num_batches
+        self.silent = False
+        self.add_time = True
+        self.pbar_iter = None
+        self.mbar_iter = None
 
     def on_train_begin(self, logs=None):
         "Initialize optimizer and learner hyperparameters."
-        # setattr(pbar, "clean_on_interrupt", True)
         self.losses = []
+        self.epoch_losses = []
+        self.val_losses = []
         self.lrs = []
+        self.nb_batches = []
+        self.avg_loss = 0.0
+        self.smoothed_loss = 0.0
+        self.num_batch = 0
+        self.pbar = master_bar(range(self.epochs))
+        self.pbar_iter = iter(self.pbar)
+        self.names = ["epoch", "train_loss", "valid_loss", "time"]
+        self.pbar.write(self.names, table=True)
+
+    def on_epoch_begin(self, epoch, logs=None):
+        next(self.pbar_iter)
+        self.start_epoch = time()
+        self.mbar = progress_bar(range(self.batches_per_epoch), parent=self.pbar)
+        self.mbar_iter = iter(self.mbar)
+
+    def on_train_batch_begin(self, batch, logs=None):
+        lr = 0.0
+        next(self.mbar_iter)
+        if isinstance(
+            self.model.optimizer.learning_rate,
+            tf.optimizers.schedules.LearningRateSchedule,
+        ):
+            lr = (float)(
+                tf.keras.backend.get_value(
+                    self.model.optimizer.lr(self.model.optimizer.iterations)
+                )
+            )
+        else:
+            lr = (float)(tf.keras.backend.get_value(self.model.optimizer.lr))
+        self.lrs.append(lr)
+
+    def on_train_batch_end(self, batch, logs=None):
+        "Determine if loss has runaway and we should stop."
+        loss = logs.get("loss")
+        self.avg_loss = _calculate_avg_loss(self.avg_loss, loss)
+        self.smoothed_loss = _calculate_smoothed_loss(
+            self.avg_loss, self._iteration + 1
+        )
+        self.losses.append(self.smoothed_loss)
+        self._iteration = self._iteration + 1
+        self.num_batch = batch + 1
+        if self.pbar is not None and hasattr(self.pbar, "child"):
+            self.pbar.child.comment = f"{self.smoothed_loss:.4f}"
 
     def on_epoch_end(self, epoch, logs=None):
         "Record at end of epoch."
-        self.losses.append(logs.get("loss"))
-        self.val_loss.append(logs.get("val_loss"))
-        lr = 0.0
-        lr = (float)(
-            tf.keras.backend.get_value(
-                self.model.optimizer.learning_rate(self.model.optimizer.iterations)
-            )
-        )
-        self.lrs.append(lr)
+        self.val_losses.append(logs.get("val_loss"))
+        self.epoch_losses.append(self.smoothed_loss)
+        self.nb_batches.append(self.num_batch)
+        self.format_stats([epoch, self.smoothed_loss, logs.get("val_loss")])
+
+        try:
+            next(self.mbar_iter)
+        except:
+            pass
+
+    def on_train_end(self, logs=None):
+        try:
+            next(self.pbar_iter)
+        except:
+            pass
 
 
 class EfficientLRFinder(tf.keras.callbacks.Callback):
@@ -677,6 +928,7 @@ class EfficientLRFinder(tf.keras.callbacks.Callback):
         # during the call to fit.
         import copy
 
+        self.sched = AnnealedLrSchedule((start_lr, end_lr), num_it)
         self.valid_dl = copy.deepcopy(learn.data.valid_dl)
         self.data.valid_dl = None
         self._iteration = 0
@@ -684,21 +936,30 @@ class EfficientLRFinder(tf.keras.callbacks.Callback):
     def on_train_begin(self, logs=None):
         "Initialize optimizer and learner hyperparameters."
         self.model.save_weights("tmp")
-        self.stop, self.best_loss = False, np.Inf
+        self.stop, self.best_loss, self.avg_loss = False, np.Inf, 0.0
+        tf.keras.backend.set_value(self.model.optimizer.lr, self.sched(0))
 
     def on_train_batch_end(self, batch, logs=None):
         "Determine if loss has runaway and we should stop."
         loss = logs.get("loss")
-        if self._iteration == 0 or loss < self.best_loss:
-            self.best_loss = loss
+        self.avg_loss = _calculate_avg_loss(self.avg_loss, loss)
+        smoothed_loss = _calculate_smoothed_loss(self.avg_loss, self._iteration + 1)
+        if self._iteration == 0 or smoothed_loss < self.best_loss:
+            self.best_loss = smoothed_loss
 
-        sched = self.model.optimizer.learning_rate
-        sched.step()
-        if sched.is_done or (
-            self.stop_div and (loss > 4 * self.best_loss or np.isnan(loss))
+        self.sched.step()
+        tf.keras.backend.set_value(
+            self.model.optimizer.lr, tf.keras.backend.get_value(self.sched(0))
+        )
+
+        if self.sched.is_done or (
+            self.stop_div
+            and (smoothed_loss > 4 * self.best_loss or np.isnan(smoothed_loss))
         ):
+            self.stop = self._iteration
             # We use the smoothed loss to decide on the stopping since it's less shaky.
             self.model.stop_training = True
+
         self._iteration += 1
 
     def on_train_end(self, logs=None) -> None:
@@ -712,6 +973,10 @@ class EfficientLRFinder(tf.keras.callbacks.Callback):
         print(
             "LR Finder is complete, type {learner_name}.recorder.plot() to see the graph."
         )
+
+    def on_epoch_end(self, epoch, logs=None):
+        if self.stop:
+            self.model.stop_training = True
 
 
 def efficient_lr_find(
@@ -751,7 +1016,7 @@ class TFOneCycleScheduler(tf.keras.callbacks.Callback):
 
     def jump_to_epoch(self, epoch: int):
         for _ in range(len(self.learn.data.train_dl) * epoch):
-            self.on_train_batch_end(0)
+            self.on_train_batch_end(epoch)
 
     def on_train_begin(self, logs=None):
         "Initialize our optimization params based on our annealing schedule."
@@ -775,9 +1040,13 @@ class TFOneCycleScheduler(tf.keras.callbacks.Callback):
         self._scheduler.mom_scheds = self._scheduler.steps(
             self._scheduler.moms, (self._scheduler.moms[1], self._scheduler.moms[0])
         )
-        self.model.optimizer.learning_rate.lr = self._scheduler.lr_scheds[0].start
         tf.keras.backend.set_value(
-            self.model.optimizer.momentum, self._scheduler.mom_scheds[0].start
+            self.model.optimizer.lr,
+            tf.keras.backend.get_value(self._scheduler.lr_scheds[0].start),
+        )
+        tf.keras.backend.set_value(
+            self.model.optimizer.momentum,
+            tf.keras.backend.get_value(self._scheduler.mom_scheds[0].start),
         )
         self._scheduler.idx_s = 0
 
@@ -788,14 +1057,19 @@ class TFOneCycleScheduler(tf.keras.callbacks.Callback):
         if self._scheduler.idx_s >= len(self._scheduler.lr_scheds):
             self.model.stop_training = True
             return
-
-        self.model.optimizer.learning_rate.lr = self._scheduler.lr_scheds[
-            self._scheduler.idx_s
-        ].step()
+        tf.keras.backend.set_value(
+            self.model.optimizer.lr,
+            tf.keras.backend.get_value(
+                self._scheduler.lr_scheds[self._scheduler.idx_s].step()
+            ),
+        )
         tf.keras.backend.set_value(
             self.model.optimizer.momentum,
-            self._scheduler.mom_scheds[self._scheduler.idx_s].step(),
+            tf.keras.backend.get_value(
+                self._scheduler.mom_scheds[self._scheduler.idx_s].step()
+            ),
         )
+
         # when the current schedule is complete we move onto the next
         # schedule. (in 1-cycle there are two schedules)
         if self._scheduler.lr_scheds[self._scheduler.idx_s].is_done:
@@ -833,11 +1107,16 @@ def tf_fit_one_cycle(
         tot_epochs=tot_epochs,
         start_epoch=start_epoch,
     )
-    # TODO: call fit with initial epoch
     callbacks.append(TFOneCycleScheduler(learn, scheduler=cyclic_scheduler))
 
     learn.fit(cyc_len, max_lr, wd=wd, callbacks=callbacks, one_cycle=True)
 
 
+from fastai.basic_train import Recorder
+
+TFRecorder.plot_losses = Recorder.plot_losses
+TFRecorder._split_list = Recorder._split_list
+TFRecorder._split_list_val = Recorder._split_list
+TFRecorder.format_stats = Recorder.format_stats
 EfficientDetLearner.fit_one_cycle = tf_fit_one_cycle
 EfficientDetLearner.lr_find = efficient_lr_find

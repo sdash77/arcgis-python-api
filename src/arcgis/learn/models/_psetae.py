@@ -25,7 +25,6 @@ except Exception as e:
 
 
 class PSETAE(ArcGISModel):
-
     """
     Creates a Pixel-Set encoder + Temporal Attention Encoder sequence classifier.
 
@@ -120,9 +119,9 @@ class PSETAE(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTsClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
+            )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data._class_map_dict
         if self._data._num_class_map_dict:
@@ -134,6 +133,17 @@ class PSETAE(ArcGISModel):
         _emd_template["ImageHeight"] = 256
         _emd_template["ImageWidth"] = 256
         _emd_template["ImageSpaceUsed"] = self._data._imagespace
+        _emd_template["convertmap"] = (
+            self._data._convertmap if self._data._convertmap else None
+        )
+        _emd_template["bandindex"] = (
+            self._data._bandindex if self._data._bandindex else None
+        )
+        _emd_template["timeindex"] = (
+            self._data._timeindex if self._data._timeindex else None
+        )
+        _emd_template["timestep_infer"] = self._data._timestep_infer
+        _emd_template["channels_infer"] = self._data._channels_infer
         _emd_template["mean_norm_stats"] = {
             "mean_stats": [
                 list(i) for i in (self._data._mean_norm_stats).astype(np.float64)
@@ -194,6 +204,7 @@ class PSETAE(ArcGISModel):
             data._std_norm_stats = emd.get("std_norm_stats", None)
             data._class_map_dict = emd.get("Class_mapping", None)
             data._date_positions = emd.get("date_positions", None)
+            data._convertmap = emd.get("convertmap", None)
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
@@ -243,7 +254,9 @@ class PSETAE(ArcGISModel):
             if self._data._num_class_map_dict
             else self._data._class_map_dict
         )
-        mats, miou = model_eval(self._data.valid_ds, self.learn.model, class_dict)
+        mats, miou = model_eval(
+            self._data, self.learn.model, class_dict, self._data._convertmap
+        )
         return {
             "mIOU": "{}".format(miou),
             "Accuracy (OA)": "{}".format(mats[1]["Accuracy"]),
@@ -261,7 +274,9 @@ class PSETAE(ArcGISModel):
             if self._data._num_class_map_dict
             else self._data._class_map_dict
         )
-        mats, miou = model_eval(self._data.valid_ds, self.learn.model, class_dict)
+        mats, miou = model_eval(
+            self._data, self.learn.model, class_dict, self._data._convertmap
+        )
         return {"Accuracy (OA)": "{}".format(mats[1]["Accuracy"])}
 
     def mIOU(self):
@@ -276,7 +291,9 @@ class PSETAE(ArcGISModel):
             if self._data._num_class_map_dict
             else self._data._class_map_dict
         )
-        mats, miou = model_eval(self._data.valid_ds, self.learn.model, class_dict)
+        mats, miou = model_eval(
+            self._data, self.learn.model, class_dict, self._data._convertmap
+        )
         return {"mIOU": "{}".format(miou)}
 
     def per_class_metrics(self):
@@ -291,7 +308,9 @@ class PSETAE(ArcGISModel):
             if self._data._num_class_map_dict
             else self._data._class_map_dict
         )
-        mats, _ = model_eval(self._data.valid_ds, self.learn.model, class_dict)
+        mats, _ = model_eval(
+            self._data, self.learn.model, class_dict, self._data._convertmap
+        )
 
         mat_types = ["IoU", "Precision", "Recall", "F1-score"]
 

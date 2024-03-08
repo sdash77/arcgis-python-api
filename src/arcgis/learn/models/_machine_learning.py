@@ -16,8 +16,22 @@ from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
 try:
     import sklearn
     from sklearn import *
+    from sklearn.preprocessing import LabelEncoder
     import pandas as pd
     import warnings
+    from .._fairlearn import _fairlearn
+    from .._fairlearn import _reweigh
+    from fairlearn.postprocessing import ThresholdOptimizer
+
+    from fairlearn.reductions import (
+        ExponentiatedGradient,
+        DemographicParity,
+        EqualizedOdds,
+        BoundedGroupLoss,
+        ZeroOneLoss,
+        SquareLoss,
+        GridSearch,
+    )
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -37,6 +51,9 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
+_FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
+_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
 
 
 def _get_model_type(model_type):
@@ -133,6 +150,35 @@ class MLModel(object):
 
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
     ---------------------   -------------------------------------------
+    Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
+
+                                                A dictionary to provide fairness args. Following are allowed keys and values
+                                                Keyword Args:                   Value Args:
+                                                <sensitive_feature> str:        Protected class column or feature name. Ony categorical variable is allowed.
+                                                <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
+                                                                                `grid_search` or `exponentiated_gradient` (For Regression)
+                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' (For Classification)
+                                                                                and `ZeroOneLoss` or `SquareLoss` (For Regression)
+
+
+                            For example:
+                                                For classification :
+                                                fairness_args = {
+                                                            'sensitive_feature': 'Gender',
+                                                            'mitigation_type': "threshold_optimizer",
+                                                            'mitigation_constraint':'demographic_parity'
+
+                                                            }
+
+                                                For Regression :
+
+                                                fairness_args = {
+                                                            'sensitive_feature': 'Gender',
+                                                            'mitigation_type': "grid_search",
+                                                            'mitigation_constraint':'ZeroOneLoss'
+
+                                                            }
+    ---------------------   -------------------------------------------
     ``**kwargs``            model_type specific arguments.
                             Refer Parameters section
 
@@ -153,7 +199,8 @@ class MLModel(object):
     :return: :class:`~arcgis.learn.MLModel` Object
     """
 
-    def __init__(self, data, model_type, **kwargs):
+    # TODO Add fairness
+    def __init__(self, data, model_type, fairness_args=None, **kwargs):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
@@ -167,16 +214,36 @@ class MLModel(object):
                 # data._categorical_variables.remove(zone)
             data._cell_sizes = None
 
+        self._fairness = False
         self._model_type = model_type
         self._data = data
+
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
+
         (
             self._training_data,
             self._training_labels,
             self._validation_data,
             self._validation_labels,
         ) = self._data._ml_data
+
         if kwargs.get("pretrained_model"):
             self._model = kwargs.get("pretrained_model")
+
+            self._fairness = kwargs.get("fairness")
+            self.mitigation_method = kwargs.get("mitigation_method")
+            self.protected_class = kwargs.get("protected_class")
+
+            if self._fairness and self._data._is_classification:
+                self.fairness_label_encoder = LabelEncoder()
+                self._training_labels = self.fairness_label_encoder.fit_transform(
+                    self._training_labels
+                )
+                self._validation_labels = self.fairness_label_encoder.transform(
+                    self._validation_labels
+                )
+
         else:
             model = _get_model_type(model_type)
 
@@ -189,6 +256,133 @@ class MLModel(object):
 
             self._model = model(**kwargs)
 
+        self._training_df = pd.DataFrame(
+            self._training_data,
+            columns=self._data._continuous_variables
+            + self._data._categorical_variables,
+        )
+
+        self._validation_df = pd.DataFrame(
+            self._validation_data,
+            columns=self._data._continuous_variables
+            + self._data._categorical_variables,
+        )
+
+        if fairness_args is not None:
+            self.initialize_fair_model(fairness_args)
+
+    def initialize_fair_model(self, fairness_args):
+        if not isinstance(fairness_args, dict):
+            raise ValueError(_FAIRNESS_ARGS_NOT_DICT)
+
+        if "sensitive_feature" not in fairness_args:
+            raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
+        self.protected_class = fairness_args["sensitive_feature"]
+
+        if "mitigation_type" not in fairness_args:
+            raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
+        self.mitigation_method = fairness_args["mitigation_type"]
+
+        self._fairness = True
+
+        if self._data._is_classification:
+            if "mitigation_constraint" not in fairness_args:
+                self.constraint = "demographic_parity"
+            else:
+                self.constraint = fairness_args["mitigation_constraint"]
+
+            if self.constraint not in ["demographic_parity", "equalized_odds"]:
+                raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
+            self.fairness_label_encoder = LabelEncoder()
+            self._training_labels = self.fairness_label_encoder.fit_transform(
+                self._training_labels
+            )
+            self._validation_labels = self.fairness_label_encoder.transform(
+                self._validation_labels
+            )
+
+            self.instance_weights = None
+
+            if self.mitigation_method == "reweighing":
+                self._training_label_df = pd.DataFrame(
+                    self._training_labels,
+                    columns=[self._data._dependent_variable],
+                )
+                self._all_training_df = pd.concat(
+                    [self._training_df, self._training_label_df], axis=1
+                )
+
+                self.instance_weights_train = _reweigh.assign_weights(
+                    self._all_training_df,
+                    self._data._dependent_variable,
+                    self.protected_class,
+                )
+
+            elif self.mitigation_method == "exponentiated_gradient":
+                if self.constraint == "demographic_parity":
+                    mitigation_constraint = DemographicParity()
+                elif self.constraint == "equalized_odds":
+                    mitigation_constraint = EqualizedOdds()
+
+                self._model = ExponentiatedGradient(
+                    estimator=self._model,
+                    constraints=mitigation_constraint,
+                    sample_weight_name="sample_weight",
+                )
+
+            elif self.mitigation_method == "threshold_optimizer":
+                if self.constraint not in [
+                    "demographic_parity",
+                    "selection_rate_parity",
+                    "false_positive_rate_parity",
+                    "true_negative_rate_parity",
+                    "equalized_odds",
+                ]:
+                    raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
+                self._model = ThresholdOptimizer(
+                    estimator=self._model,
+                    constraints=self.constraint,
+                    objective="accuracy_score",
+                    predict_method="predict_proba",
+                )
+            else:
+                raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+        else:
+            print("Initializing for Regression ")
+            if "mitigation_constraint" not in fairness_args:
+                self.constraint = "ZeroOneLoss"
+            else:
+                self.constraint = fairness_args["mitigation_constraint"]
+
+            if self.constraint == "ZeroOneLoss":
+                mitigation_constraint = ZeroOneLoss()
+            elif self.constraint == "SquareLoss":
+                mitigation_constraint = SquareLoss(min_val=0.001, max_val=0.1)
+            else:
+                raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
+            if self.mitigation_method == "grid_search":
+                self._model = GridSearch(
+                    self._model,
+                    constraints=BoundedGroupLoss(
+                        mitigation_constraint, upper_bound=0.1
+                    ),
+                )
+            elif self.mitigation_method == "exponentiated_gradient":
+                self._model = ExponentiatedGradient(
+                    estimator=self._model,
+                    constraints=BoundedGroupLoss(
+                        mitigation_constraint, upper_bound=0.1
+                    ),
+                    sample_weight_name="sample_weight",
+                )
+            else:
+                raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
+
     def fit(self):
         if (
             not self._data._is_unsupervised
@@ -200,9 +394,98 @@ class MLModel(object):
             self._model.fit(self._training_data)
         else:
             try:
-                self._model.fit(self._training_data, self._training_labels)
+                if self._fairness:
+                    if self.mitigation_method == "reweighing":
+                        print(f"Fitting with {self.mitigation_method}")
+                        self._model.fit(
+                            self._training_data,
+                            self._training_labels,
+                            sample_weight=self.instance_weights_train,
+                        )
+                    else:
+                        try:
+                            print(f"Fitting with {self.mitigation_method}")
+                            self._model.fit(
+                                self._training_df,
+                                self._training_labels,
+                                sensitive_features=self._training_df.loc[
+                                    :, self.protected_class
+                                ],
+                            )
+                        except ValueError as val:
+                            val_error_message = val.args[0]
+                            if (
+                                "Degenerate labels for sensitive feature"
+                                in val_error_message
+                            ):
+                                raise Exception(_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE)
+                            else:
+                                raise Exception(val)
+
+                else:
+                    self._model.fit(self._training_data, self._training_labels)
+
             except:
                 raise Exception("Model is incompatible with the training data")
+
+    def fairness_score(
+        self,
+        sensitive_feature,
+        fairness_metrics=None,
+        visualize=False,
+    ):
+        """
+        Shows sample fairness score and plots for the model.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        sensitive_feature        Column name of the protected class.
+        fairness_metrics         Allowed list of fairness metrics
+                                 1. for classification
+                                    [
+                                     "equalized_odds_difference",
+                                     "demographic_parity_difference",
+                                     "equalized_odds_ratio",
+                                     "demographic_parity_ratio"
+                                    ]
+                                 2. for Regression
+                                    [
+                                    "MAE",
+                                    "MSE",
+                                    "RMSE",
+                                    "MAPE"
+                                    ]
+                                 Metric should be one of the values mentioned in
+                                 the list.
+
+        visualize                A boolean value to visualize plot of metrics
+        =====================   ===========================================
+        :return: dataframe
+        """
+
+        self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
+        if not self._fairness and self._data._is_classification:
+            labelEncoder = LabelEncoder()
+            train_labels = labelEncoder.fit_transform(self._training_labels)
+            y_true = labelEncoder.transform(self._validation_labels)
+            y_pred = self._predict(self._validation_df)
+
+            y_pred = labelEncoder.transform(y_pred)
+        else:
+            y_true = self._validation_labels
+            y_pred = self._predict(self._validation_df, self.group_validation)
+
+        return _fairlearn.calculate_metrics(
+            self._data._is_classification,
+            self._data,
+            y_true,
+            y_pred,
+            self.group_validation,
+            sensitive_feature,
+            fairness_metrics,
+            visualize,
+        )
 
     def show_results(self, rows=5):
         """
@@ -229,10 +512,17 @@ class MLModel(object):
 
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
-        validation_data_batch = self._validation_data.take(sample_batch, axis=0)
-        sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
 
-        output_labels = self._predict(validation_data_batch)
+        if self._fairness and self.mitigation_method == "threshold_optimizer":
+            validation_df_batch = self._validation_df.iloc[sample_batch, :]
+            sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
+            group_df = validation_df_batch.loc[:, self.protected_class]
+            output_labels = self._predict(validation_df_batch, group_df)
+        else:
+            validation_data_batch = self._validation_data.take(sample_batch, axis=0)
+            sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
+            output_labels = self._predict(validation_data_batch)
+
         pd.options.mode.chained_assignment = None
 
         # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
@@ -267,7 +557,23 @@ class MLModel(object):
 
             raise Exception("Score function not applicable for unsupervised data")
 
-        return self._model.score(self._validation_data, self._validation_labels)
+        if self._fairness:
+            if self.mitigation_method == "threshold_optimizer":
+                group_df = self._validation_df.loc[:, self.protected_class]
+                output_labels = self._predict(self._validation_df, group_df)
+                return _fairlearn.score(
+                    self._data._is_classification,
+                    self._validation_labels,
+                    output_labels,
+                )
+            else:
+                return _fairlearn.score(
+                    self._data._is_classification,
+                    self._validation_labels,
+                    self._predict(self._validation_df),
+                )
+        else:
+            return self._model.score(self._validation_data, self._validation_labels)
 
     def decision_function(self):
         """
@@ -493,7 +799,20 @@ class MLModel(object):
         )
         emd_params["ModelName"] = type(self._model).__name__
         emd_params["ModelFile"] = base_file_name + ".pkl"
-        emd_params["ModelParameters"] = self._model.get_params()
+
+        if self._fairness:
+            _mparams = self._model.get_params()
+            _mparams["estimator"] = self._model_type
+            _mparams["constraints"] = self.constraint
+            emd_params["ModelParameters"] = _mparams
+            emd_params["mitigation_method"] = self.mitigation_method
+            emd_params["fairness"] = True
+            emd_params["protected_class"] = self.protected_class
+
+        else:
+            emd_params["ModelParameters"] = self._model.get_params()
+            emd_params["fairness"] = False
+
         emd_params["categorical_variables"] = self._data._categorical_variables
 
         if self._data._dependent_variable:
@@ -549,6 +868,12 @@ class MLModel(object):
         dependent_variable = emd.get("dependent_variable", None)
         continuous_variables = emd["continuous_variables"]
         model_parameters = emd["ModelParameters"]
+        model_parameters["fairness"] = emd["fairness"]
+        fairness = model_parameters["fairness"]
+        if fairness:
+            model_parameters["mitigation_method"] = emd["mitigation_method"]
+            model_parameters["protected_class"] = emd["protected_class"]
+
         cell_sizes = emd.get("cell_sizes", None)
 
         if (
@@ -605,7 +930,9 @@ class MLModel(object):
 
         return cls(data, emd["ModelName"], pretrained_model=model, **model_parameters)
 
-    def _predict(self, data):
+    def _predict(self, data, group_data=None):
+        if self._fairness and self.mitigation_method == "threshold_optimizer":
+            return self._model.predict(data, sensitive_features=group_data)
         return self._model.predict(data)
 
     @staticmethod
@@ -1003,8 +1330,22 @@ class MLModel(object):
             processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
             fit=False,
         )
-        predictions = self._predict(processed_numpy)
+
+        if self._fairness:
+            processed_df = processed_numpy[self._validation_df.columns]
+            group_data = processed_df.loc[:, self.protected_class]
+            predictions = self._predict(processed_df, group_data)
+        else:
+            predictions = self._predict(processed_numpy)
+
         dataframe["prediction_results"] = predictions
+
+        if self._fairness and self._data._is_classification:
+            pred_transformed = self.fairness_label_encoder.inverse_transform(
+                dataframe["prediction_results"]
+            )
+            dataframe["prediction_results"] = pred_transformed
+
         if explain:
             if explain_index is None:
                 random_index = True

@@ -10,6 +10,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
+
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
@@ -148,6 +149,7 @@ def _clone_layer(
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -210,6 +212,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -318,6 +321,9 @@ def _clone_layer_raster(
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
     # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
@@ -445,7 +451,10 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    newlyr._engine_obj.extent = layer.extent
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
@@ -1969,21 +1978,18 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClippingGeometry": geometry,
-            "ClipType": 1 if clip_outside else 2,
+            "ClippingType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
+
+    if geometry is not None:
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = geometry
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     extent_envelope = None
-
-    if clipping_raster is not None and isinstance(
-        clipping_raster, (Raster, ImageryLayer)
-    ):
-        extent_envelope = dict(clipping_raster.extent)
 
     try:
         from arcgis.geometry import Envelope, Geometry
@@ -7072,6 +7078,7 @@ def remap(
     no_data_ranges: Optional[list[float]] = None,
     allow_unmatched: Optional[bool] = None,
     astype: Optional[str] = None,
+    replacement_value: Optional[float] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
@@ -7097,6 +7104,8 @@ def remap(
     allow_unmatched                         Boolean, specify whether to keep the unmatched values or turn into nodata.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when `allow_unmatched` is set to False.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7125,6 +7134,8 @@ def remap(
         template_dict["rasterFunctionArguments"]["NoDataRanges"] = no_data_ranges
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
+    if replacement_value is not None:
+        template_dict["rasterFunctionArguments"]["ReplacementValue"] = replacement_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -8167,7 +8178,11 @@ def vector_field(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def complex(raster: Union[Raster, ImageryLayer]):
+def complex(
+    raster: Union[Raster, ImageryLayer],
+    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    value_type: str = "AMPLITUDE",
+):
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8181,21 +8196,48 @@ def complex(raster: Union[Raster, ImageryLayer]):
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                             The imaginary raster input
+    --------------------------------     --------------------------------------------------------------------
+    value_type                               Optional string. Specifies which value type to calculate:
+
+                                                 - AMPLITUDE - Produces an output containing the amplitude values. This is the default.
+                                                 - PHASE - Produces an output containing the phase values.
+                                                 - COMPLEX - Produces an output containing the complex values.
     ================================     ====================================================================
 
     :return: The output raster.
 
     """
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster1, raster_ra1 = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Complex",
         "rasterFunctionArguments": {
-            "Raster": raster,
+            "Raster": raster1,
         },
     }
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    layer2 = None
+    if imaginary_raster is not None:
+        layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
+        template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
+
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
+
+    value_types = ["AMPLITUDE", "PHASE", "COMPLEX"]
+    if value_type is not None:
+        if value_type.upper() not in value_types:
+            raise RuntimeError(
+                "value_type should be one of the following " + str(value_types)
+            )
+        template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 
 def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
@@ -8729,9 +8771,9 @@ def pansharpen(
     }
 
     if type is not None:
-        template_dict["rasterFunctionArguments"][
-            "PansharpeningType"
-        ] = pansharpening_types[type]
+        template_dict["rasterFunctionArguments"]["PansharpeningType"] = (
+            pansharpening_types[type]
+        )
 
     if ir_raster is not None:
         template_dict["rasterFunctionArguments"]["InfraredImage"] = ir_raster_1
@@ -10750,12 +10792,12 @@ def aggregate(
                 percentile_interpolation_type = 2
             elif percentile_interpolation_type.upper() == "LINEAR":
                 percentile_interpolation_type = 3
-            template_dict["rasterFunctionArguments"][
-                "AggregationFunction"
-            ] = _local_function_template(
-                operation_number=opnum,
-                percentile_value=percentile_value,
-                percentile_interpolation_type=percentile_interpolation_type,
+            template_dict["rasterFunctionArguments"]["AggregationFunction"] = (
+                _local_function_template(
+                    operation_number=opnum,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                )
             )
         if (
             "type"
@@ -12736,9 +12778,9 @@ def dimensional_moving_statistics(
                 "nodata_handling parameter value should be one of the following "
                 + str(nodata_handling_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "NoDataHandling"
-        ] = nodata_handling_types[nodata_handling.upper()]
+        template_dict["rasterFunctionArguments"]["NoDataHandling"] = (
+            nodata_handling_types[nodata_handling.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13188,9 +13230,9 @@ def surface_parameters(
                 "parameter_type should be one of the following "
                 + str(parameter_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "SurfaceCalculation"
-        ] = parameter_types[parameter_type.upper()]
+        template_dict["rasterFunctionArguments"]["SurfaceCalculation"] = (
+            parameter_types[parameter_type.upper()]
+        )
 
     surface_types = {
         "QUADRATIC": 1,
@@ -13280,9 +13322,9 @@ def surface_parameters(
                 "use_equatorial_aspect should be one of the following "
                 + str(eq_aspect_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "UseEquatorialAspect"
-        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+        template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = (
+            eq_aspect_types[use_equatorial_aspect.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13372,6 +13414,243 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
+    """
+    The merge_rasters function groups or merges a collection of rasters.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
+                                         combined datasets. The options include the following:
+
+                                         - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
+
+                                         - "LAST" - The pixel value in the overlapping areas is the value from the last raster in the list of input rasters.
+
+                                         - "MIN" - The pixel value in the overlapping areas is the minimum value of the overlapping pixels.
+
+                                         - "MAX" - The pixel value in the overlapping areas is the maximum value of the overlapping pixels.
+
+                                         - "MEAN" - The pixel value in the overlapping areas is the average of the overlapping pixels.
+
+                                         - "SUM" - The pixel value in the overlapping areas is the total sum of the overlapping pixels.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
+
+        merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
+
+    in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
+
+    template_dict = {
+        "rasterFunction": "MergeRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if resolve_overlap_method is not None:
+        template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
+    """
+    The region_pixel_count function returns an image where each pixel contains the number of pixels within a connected region.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    max_region_size                      Optional integer. The maximum number of pixels a region can contain. The default is 100.
+    --------------------------------     --------------------------------------------------------------------
+    pixel_neighborhood                   Optional integer. The number of neighborhoods to be used (4 or 8) when assessing pixel connectivity. The default is 4.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Generate the raster where each pixel contains the number of pixels within a connected region of the input raster.
+
+        op_lyr = region_pixel_count(raster=img_lyr, max_region_size=100, pixel_neighborhood=4)
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "RegionPixelCount",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    pixel_neighborhood_types = {4: 0, 8: 1}
+
+    if (
+        isinstance(pixel_neighborhood, int)
+        and pixel_neighborhood in pixel_neighborhood_types
+    ):
+        in_pixel_neighborhood = pixel_neighborhood_types[pixel_neighborhood]
+    else:
+        raise ValueError(
+            "Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8"
+        )
+
+    if max_region_size is not None:
+        template_dict["rasterFunctionArguments"]["MaxRegionSize"] = max_region_size
+
+    if pixel_neighborhood is not None:
+        template_dict["rasterFunctionArguments"][
+            "PixelNeighborhood"
+        ] = in_pixel_neighborhood
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
+    """
+    Compute gradient along a specified dimension.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    gradient_dimension                   | Optional string. The gradient dimension. The default is 'X'.
+                                           The dimensions that are available to calculate gradient on.
+                                         
+                                         | For non-multidimensional input, X, Y and XY are available.
+                                         
+                                         | For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                           If there are two or more dimensions, gradient will be calculated on the gradient dimension
+                                           for all slices in other dimensions.
+                                         
+                                         | XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                           and bands 2 and 3 represents the gradient along Y dimension.
+    --------------------------------     --------------------------------------------------------------------
+    denominator_unit                     Optional string. The default is "DEFAULT".
+                                         The unit of the denominator. Depends on the selected Gradient Dimension.
+
+                                         For X, Y, XY, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent cells. This is the default.
+                                         - CELLSIZE : Output is the difference between adjacent cells divided by the cellsize\
+                                                      of the input. The output unit is the same as the unit of the X/Y coordinates\
+                                                      of the input. If the data is in a geographic coordinate system,\
+                                                      it will be converted to meters.
+
+                                         For StdTime, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - PER_HOUR : Output is the difference between adjacent slices divided by the difference\
+                                                      between their time values and converted to per hour rate.
+                                         - PER_DAY : Output is the difference between adjacent slices divided by the difference\
+                                                     between their time values and converted to per day rate.
+                                         - PER_MONTH : Output is the difference between adjacent slices divided by the\
+                                                       difference between their time values and converted to per month rate.
+                                         - PER_YEAR : Output is the difference between adjacent slices divided by the\
+                                                      difference between their time values and converted to per year rate.
+                                         - PER_DECADE : Output is the difference between adjacent slices divided by the difference\
+                                                        between their time values and converted to per decade rate.
+
+                                         For non-time dimension, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - DIMENSION_INTERVAL : Output is the difference between adjacent slices divided by\
+                                                                the difference between their dimension values.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: This example calculates the gradient along X and Y dimensions of a raster.
+
+        gradient_raster = gradient(raster=img_lyr, gradient_dimension="XY", denominator_unit="CELLSIZE")
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Gradient",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    if gradient_dimension is not None:
+        complete_dim_list = None
+        try:
+            from .utility import _get_dimension_names
+
+            dim_list = _get_dimension_names(layer)
+            complete_dim_list = ["X", "Y", "XY"]
+            complete_dim_list.extend(dim_list)
+        except:
+            pass
+        if complete_dim_list:
+            if gradient_dimension not in complete_dim_list:
+                raise RuntimeError(
+                    "gradient_dimension should be one of the following "
+                    + str(complete_dim_list)
+                )
+        template_dict["rasterFunctionArguments"][
+            "GradientDimension"
+        ] = gradient_dimension
+
+    denominator_unit_list = [
+        "DEFAULT",
+        "CELLSIZE",
+        "PER_HOUR",
+        "PER_DAY",
+        "PER_MONTH",
+        "PER_YEAR",
+        "PER_DECADE",
+        "DIMENSION_INTERVAL",
+    ]
+    if denominator_unit is not None:
+        if denominator_unit.upper() not in denominator_unit_list:
+            raise RuntimeError(
+                "denominator_unit should be one of the following "
+                + str(denominator_unit_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "DenominatorUnit"
+        ] = denominator_unit.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 class RFT:
@@ -14218,16 +14497,20 @@ class RFT:
                             else:  # when gdict["arguments"]["value"]["elements"]=[]
                                 _raster_function_traversal(
                                     gdict["arguments"],
-                                    function_arg_type=gdict["arguments"]["type"]
-                                    if "type" in gdict["arguments"]
-                                    else None,
+                                    function_arg_type=(
+                                        gdict["arguments"]["type"]
+                                        if "type" in gdict["arguments"]
+                                        else None
+                                    ),
                                 )
                     else:
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
 
                 else:
@@ -14238,9 +14521,11 @@ class RFT:
                     ):  # Aspect function with only raster parameter
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
             _function_traversal(gdict["arguments"])
         return key_value_dict, raster_dictionary

@@ -90,7 +90,7 @@ def show_text_xys(self, xs, ys, max_len: int = max_len):
     dataframe_style = (
         df.style.set_table_styles([dict(selector="th", props=[("text-align", "left")])])
         .set_properties(**{"text-align": "left"})
-        .hide_index()
+        .hide(axis="index")
     )
     display(dataframe_style)
 
@@ -112,7 +112,7 @@ def show_text_xyzs(self, xs, ys, zs, max_len: int = max_len):
     dataframe_style = (
         df.style.set_table_styles([dict(selector="th", props=[("text-align", "left")])])
         .set_properties(**{"text-align": "left"})
-        .hide_index()
+        .hide(axis="index")
     )
     display(dataframe_style)
 
@@ -329,7 +329,7 @@ class TextDataObject:
                     label
                 ) in unique_labels:  # duplicating datapoints with unique classes.
                     idx = y[y == label].index.tolist()[0]
-                    train_df = train_df.append(train_df.iloc[idx])
+                    train_df = train_df._append(train_df.iloc[idx])
                 train_df.reset_index(drop=True, inplace=True)
                 x, y = train_df[text_cols], train_df[label_col]
                 X_train, X_test, y_train, y_test = train_test_split(
@@ -718,7 +718,7 @@ class TextDataObject:
                 [dict(selector="th", props=[("text-align", "left")])]
             )
             .set_properties(**{"text-align": "left"})
-            .hide_index()
+            .hide(axis="index")
         )
 
     def create_empty_object_for_ner(

@@ -1,6 +1,7 @@
 """
 Types and functions for geocoding.
 """
+
 from __future__ import annotations
 import copy
 from typing import Any, Optional, Union
@@ -44,7 +45,9 @@ class Geocoder(_GISResource):
         """
         super(Geocoder, self).__init__(location, gis)
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -245,7 +248,7 @@ class Geocoder(_GISResource):
         if not distance is None:
             params["distance"] = distance
         if not out_sr is None:
-            params["outSr"] = out_sr
+            params["outSR"] = out_sr
         if not category is None:
             params["category"] = category
         if out_fields is None:
@@ -273,7 +276,10 @@ class Geocoder(_GISResource):
                 geom = c["location"]
                 geom["spatialReference"] = sr
                 features.append(
-                    {"geometry": Geometry(geom), "attributes": c["attributes"]}
+                    {
+                        "geometry": Geometry(geom),
+                        "attributes": c["attributes"],
+                    }
                 )
 
             return FeatureSet(
@@ -337,7 +343,12 @@ class Geocoder(_GISResource):
             geom = copy.copy(resp["location"])
             del resp["location"]
             fs = FeatureSet(
-                features=[{"geometry": Geometry(geom), "attributes": resp["address"]}]
+                features=[
+                    {
+                        "geometry": Geometry(geom),
+                        "attributes": resp["address"],
+                    }
+                ]
             )
             return fs
         return resp
@@ -462,7 +473,10 @@ class Geocoder(_GISResource):
                         geom["spatialReference"] = sr
                     att = location["attributes"]
                     if geom:
-                        matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                        matches[idx] = {
+                            "geometry": Geometry(geom),
+                            "attributes": att,
+                        }
                     else:
                         matches[idx] = {"geometry": None, "attributes": att}
                 return FeatureSet(features=matches, spatial_reference=sr)

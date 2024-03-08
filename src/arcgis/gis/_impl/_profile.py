@@ -148,7 +148,9 @@ class ServerProfileManager(object):
                 "If you would like to store your password in the {0} "
                 "profile, run GIS(profile = '{0}', password = ...). "
                 "See the API doc for more details. "
-                "(http://bit.ly/2CK2wG8)".format(profile)
+                "(https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#gis)".format(
+                    profile
+                )
             )
         return password
 
@@ -199,7 +201,7 @@ class ServerProfileManager(object):
             "wide steps must be taken on a Linux machine to use the python "
             "keyring module securely. Read more about this at the "
             "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "
-            "for Python doc (http://bit.ly/2CK2wG8)."
+            "for Python doc (https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#gis)."
             "".format(keyring.get_keyring())
         )
 
@@ -222,9 +224,9 @@ class ServerProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
@@ -683,7 +685,9 @@ class ProfileManager(object):
                 "If you would like to store your password in the {0} "
                 "profile, run GIS(profile = '{0}', password = ...). "
                 "See the API doc for more details. "
-                "(http://bit.ly/2CK2wG8)".format(profile)
+                "(https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#gis)".format(
+                    profile
+                )
             )
         return password
 
@@ -747,7 +751,7 @@ class ProfileManager(object):
             "wide steps must be taken on a Linux machine to use the python "
             "keyring module securely. Read more about this at the "
             "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "
-            "for Python doc (http://bit.ly/2CK2wG8)."
+            "for Python doc (https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#gis)."
             "".format(keyring.get_keyring())
         )
 
@@ -770,9 +774,9 @@ class ProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)

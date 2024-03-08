@@ -28,6 +28,7 @@ exception_models = [
     "MaXDeepLab",
     "CycleGAN",
     "ConnectNet",
+    "Pix2PixHD",
 ]
 
 unsupported_models = [
@@ -57,7 +58,7 @@ unsupported_models = [
 ]
 
 
-def estimate_batch_size(model, mode="train"):
+def estimate_batch_size(model, mode="train", **kwargs):
     """
     Function to calculate estimated batch size based on GPU capacity, size of model and data.
 
@@ -86,12 +87,13 @@ def estimate_batch_size(model, mode="train"):
     mode = mode.lower()
     exception = None
     channel = 3
+    verbose = kwargs.get("verbose", True)
 
     if model.__class__.__name__ in unsupported_models:
         raise Exception("unsupported model {}".format(model.__class__.__name__))
 
     if hasattr(model._data, "_is_multispectral") and model._data._is_multispectral:
-        channel = len(model._data._bands)
+        channel = len(model._data._band_max_values)
 
     height, width = model._data.chip_size, model._data.chip_size
     if (
@@ -147,6 +149,17 @@ def estimate_batch_size(model, mode="train"):
                                 x[0].to(model._device),
                                 x[0].to(model._device),
                             )
+                        elif model.__class__.__name__ == "Pix2PixHD":
+                            from ..models._pix2pix_hd_utils import encode_input
+
+                            x[0], _, x[1], _ = encode_input(
+                                x[0], label_nc=model._data.label_nc, real_image=x[1]
+                            )
+                            model.learn.model.set_input(x)
+                            model.learn.loss_func.set_input(x)
+                            out = model.learn.model(
+                                x[0].to(model._device), x[1].to(model._device)
+                            )
                         else:
                             out = model.learn.model(
                                 x[0].to(model._device), x[1].to(model._device)
@@ -164,7 +177,7 @@ def estimate_batch_size(model, mode="train"):
                 elif mode == "eval":
                     if model.__class__.__name__ in point_cloud_models:
                         height = model.sample_point_num
-                        channel = model._data.train_ds.total_dim
+                        channel = model._data.extra_dim + 3
                         blank_img = np.ones(
                             (
                                 max_batchsize,
@@ -238,6 +251,17 @@ def estimate_batch_size(model, mode="train"):
                                 x[0].to(nonemodel._device),
                                 x[0].to(nonemodel._device),
                             )
+                        elif model.__class__.__name__ == "Pix2PixHD":
+                            from ..models._pix2pix_hd_utils import encode_input
+
+                            x[0], _, x[1], _ = encode_input(
+                                x[0], label_nc=nonemodel._data.label_nc, real_image=x[1]
+                            )
+                            nonemodel.learn.model.set_input(x)
+                            nonemodel.learn.loss_func.set_input(x)
+                            out = nonemodel.learn.model(
+                                x[0].to(nonemodel._device), x[1].to(nonemodel._device)
+                            )
                         else:
                             out = nonemodel.learn.model(
                                 x[0].to(nonemodel._device), x[1].to(nonemodel._device)
@@ -264,12 +288,16 @@ def estimate_batch_size(model, mode="train"):
                     or "non-contiguous" in str(E)
                     or "INTERNAL ASSERT FAILED" in str(E)
                 ):
-                    print("Out of memory with batch size:", max_batchsize)
+                    if verbose:
+                        print("Out of memory with batch size:", max_batchsize)
 
                     gc.collect()
                     torch.cuda.empty_cache()
-                    max_batchsize = int(max_batchsize // 2)
-                    continue
+                    if max_batchsize > 2:
+                        max_batchsize = int(max_batchsize // 2)
+                        continue
+                    else:
+                        raise Exception(E)
                 else:
                     exception = str(E)
                     breakwhile = True
@@ -286,7 +314,11 @@ def estimate_batch_size(model, mode="train"):
     output = namedtuple("batch_size", ["recommended_batchsize", "max_batchsize"])
     if model.__class__.__name__ in exception_models:
         max_batchsize = max_batchsize // 2
-        if model.__class__.__name__ == "MaXDeepLab":
+        if (
+            model.__class__.__name__ == "MaXDeepLab"
+            or model.__class__.__name__ == "Pix2PixHD"
+            or model.__class__.__name__ == "ChangeDetector"
+        ):
             max_batchsize = max_batchsize // 2
 
     if mode == "train" or mode == "none":

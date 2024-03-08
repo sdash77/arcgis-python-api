@@ -1,6 +1,7 @@
 """
 Controls the local portal's security settings
 """
+
 from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
@@ -44,11 +45,36 @@ class PasswordPolicy(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
+    def lockout_policy(self):
+        """gets/sets the current security policy"""
+        if self._properties is None:
+            self._init()
+        return self._properties["lockoutLoginPolicy"]
+
+    # ----------------------------------------------------------------------
+    @lockout_policy.setter
+    def lockout_policy(self, value=None) -> None:
+        """
+        Gets/Sets the lockout policy for the organization
+        """
+        url: str = f"{self._url}/lockoutLoginPolicy/update"
+        params: dict[str, str] = {
+            "f": "json",
+        }
+        if value is None:
+            value = {}
+        params.update(value)
+        res: dict = self._con.post(url, params)
+        if "success" in res:
+            self._properties = None
+
+    # ----------------------------------------------------------------------
+    @property
     def policy(self):
         """gets/sets the current security policy"""
         if self._properties is None:
             self._init()
-        return self._properties
+        return self._properties["passwordPolicy"]
 
     # ----------------------------------------------------------------------
     @policy.setter
@@ -82,6 +108,7 @@ class PasswordPolicy(BasePortalAdmin):
         url = "%s/reset" % self._url
         params = {"f": "json"}
         res = self._con.post(url, params)
+        self._properties = None
         if "success" in res:
             return res["success"]
         return res
@@ -276,7 +303,9 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def update_identity_store(
-        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+        self,
+        user_config: Optional[dict] = None,
+        group_config: Optional[dict] = None,
     ):
         """
         You can use this operation to change the identity provider and
@@ -321,7 +350,9 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def test_identity_store(
-        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+        self,
+        user_config: Optional[dict] = None,
+        group_config: Optional[dict] = None,
     ):
         """
         This operation can be used to test the connection to a user or
@@ -360,7 +391,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
     def ssl(self):
         """
         .. note::
@@ -429,7 +460,11 @@ class OAuth(BasePortalAdmin):
         :return: Boolean. True if successful else False
 
         """
-        params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
+        params = {
+            "f": "json",
+            "currentAppID": current_id,
+            "newAppID": new_id,
+        }
         url = "%s/changeAppID" % self._url
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
@@ -497,7 +532,11 @@ class SSLCertificates(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def update(
-        self, alias: str, protocols: str, cipher_suites: str, HSTS: bool = False
+        self,
+        alias: str,
+        protocols: str,
+        cipher_suites: str,
+        HSTS: bool = False,
     ):
         """
         Use this operation to configure the web server certificate, SSL
@@ -1256,7 +1295,11 @@ class EnterpriseUsers(BasePortalAdmin):
 
         """
         url = "%s/updateEnterpriseUser" % self._url
-        params = {"f": "json", "username": username, "idpUsername": idp_username}
+        params = {
+            "f": "json",
+            "username": username,
+            "idpUsername": idp_username,
+        }
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
             return res["status"] == "success"

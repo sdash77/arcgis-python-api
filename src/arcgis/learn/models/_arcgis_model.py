@@ -44,6 +44,7 @@ try:
     import math
     import warnings
     from fastai.distributed import *
+    from fastai.torch_core import distrib_barrier
     import argparse
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.segmentation_loss_functions import dice
@@ -332,8 +333,10 @@ class SaveModelCallback(TrackerCallback):
             try:
                 self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
-                # logging this to notify about possible errors.
-                print("Could not load the best model.")
+                # don't show message in child process in case of multigpu
+                if not int(os.environ.get("RANK", 0)):
+                    # logging this to notify about possible errors.
+                    print("Could not load the best model.")
 
             try:
                 self.model.save(
@@ -543,6 +546,8 @@ class ArcGISModel(object):
 
         if backbone is None:
             self._backbone = models.resnet34
+        elif backbone == "llm":
+            self._backbone = "llm"
         elif type(backbone) is str:
             if hasattr(models, backbone):
                 self._backbone = getattr(models, backbone)
@@ -607,17 +612,25 @@ class ArcGISModel(object):
         self._model_metrics_cache = None
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
-        self._check_data_support_with_pretrained_path()
+        if hasattr(self._data, "arcgis_init_kwargs"):
+            self._check_data_support_with_pretrained_path()
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
-            if not getattr(data, "_is_empty", False) and data._estimate_batch:
-                try:
-                    data._estimate_batch = False
-                    batch_size = estimate_batch_size(self, mode="none")
-                    self._data.train_dl.batch_size = batch_size.recommended_batchsize
-                    self._data.valid_dl.batch_size = batch_size.recommended_batchsize
-                except Exception as e:
-                    data._estimate_batch = True
+            if not getattr(data, "_is_empty", False) and hasattr(
+                data, "_estimate_batch"
+            ):
+                if data._estimate_batch:
+                    try:
+                        data._estimate_batch = False
+                        batch_size = estimate_batch_size(self, mode="none")
+                        self._data.train_dl.batch_size = (
+                            batch_size.recommended_batchsize
+                        )
+                        self._data.valid_dl.batch_size = (
+                            batch_size.recommended_batchsize
+                        )
+                    except Exception as e:
+                        data._estimate_batch = True
 
     def _check_data_support_with_pretrained_path(self):
         if self._data is not None and self._pretrained_path is not None:
@@ -656,9 +669,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(
-                    params_iterator
-                ).requires_grad = True  # make first conv weights learnable
+                next(params_iterator).requires_grad = (
+                    True  # make first conv weights learnable
+                )
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
@@ -736,6 +749,7 @@ class ArcGISModel(object):
                                 The default value is 'True'.
         =====================   ===========================================
         """
+
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
@@ -744,9 +758,21 @@ class ArcGISModel(object):
             try:
                 metrics = self.learn.metrics
                 self.learn.metrics = []
-                with tempfile.TemporaryDirectory(prefix="arcgisTemp_") as _tempfolder:
-                    self.learn.path = Path(_tempfolder)
+                # ddp training
+                if getattr(self, "_multigpu_training", False):
                     self.learn.lr_find()
+                    distrib_barrier()
+                    # remove tmp.pth created during lr_find in parent process
+                    if not int(os.environ.get("RANK", 0)):
+                        os.remove(
+                            Path(self.learn.path) / self.learn.model_dir / "tmp.pth"
+                        )
+                else:
+                    with tempfile.TemporaryDirectory(
+                        prefix="arcgisTemp_"
+                    ) as _tempfolder:
+                        self.learn.path = Path(_tempfolder)
+                        self.learn.lr_find()
             except Exception as e:
                 # if some error comes in lr_find
                 raise e
@@ -848,6 +874,8 @@ class ArcGISModel(object):
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
+        if self._backbone == "llm":
+            return ["accuracy"]
         metrics = ["valid_loss"]
         for m in self.learn.metrics:
             if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
@@ -922,8 +950,12 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
+
         if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
+
+        if getattr(self, "_is_mm3d", False):
+            self.learn.model.prediction = False
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -943,9 +975,11 @@ class ArcGISModel(object):
                 and (
                     dice.__qualname__
                     not in [
-                        metric.func.__qualname__
-                        if hasattr(metric, "func")
-                        else metric.__qualname__
+                        (
+                            metric.func.__qualname__
+                            if hasattr(metric, "func")
+                            else metric.__qualname__
+                        )
                         for metric in self.learn.metrics
                     ]
                 )
@@ -955,7 +989,10 @@ class ArcGISModel(object):
             if arcgis.env.verbose:
                 logger.info("Fitting the model.")
 
-            if getattr(self, "_backend", "pytorch") == "tensorflow":
+            if (
+                not (type(self).__name__) == "EfficientDet"
+                and getattr(self, "_backend", "pytorch") == "tensorflow"
+            ):
                 checkpoint = False
 
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
@@ -1074,7 +1111,7 @@ class ArcGISModel(object):
 
             return _emd_template
 
-        if self._backbone is None:
+        if self._backbone is None or type(self._backbone) is str:
             backbone = self._backbone
         else:
             if self._backend == "tensorflow":
@@ -1151,6 +1188,8 @@ class ArcGISModel(object):
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
+        elif getattr(self, "model_type", False) == "SR3":
+            model_params = {"backbone": "SR3", "backend": self._backend}
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:
@@ -1178,22 +1217,23 @@ class ArcGISModel(object):
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
                 _emd_template["ExtractBands"] = self._data._extract_bands
-            _emd_template["NormalizationStats"] = {
-                "band_min_values": self._data._band_min_values,
-                "band_max_values": self._data._band_max_values,
-                "band_mean_values": self._data._band_mean_values,
-                "band_std_values": self._data._band_std_values,
-                "scaled_min_values": self._data._scaled_min_values,
-                "scaled_max_values": self._data._scaled_max_values,
-                "scaled_mean_values": self._data._scaled_mean_values,
-                "scaled_std_values": self._data._scaled_std_values,
-            }
-            for _stat in _emd_template["NormalizationStats"]:
-                if _emd_template["NormalizationStats"][_stat] is not None:
-                    _emd_template["NormalizationStats"][_stat] = _emd_template[
-                        "NormalizationStats"
-                    ][_stat].tolist()
-            _emd_template["DoNormalize"] = self._data._do_normalize
+            if not getattr(self._data, "_dataset_type", None) == "SuperResolution":
+                _emd_template["NormalizationStats"] = {
+                    "band_min_values": self._data._band_min_values,
+                    "band_max_values": self._data._band_max_values,
+                    "band_mean_values": self._data._band_mean_values,
+                    "band_std_values": self._data._band_std_values,
+                    "scaled_min_values": self._data._scaled_min_values,
+                    "scaled_max_values": self._data._scaled_max_values,
+                    "scaled_mean_values": self._data._scaled_mean_values,
+                    "scaled_std_values": self._data._scaled_std_values,
+                }
+                for _stat in _emd_template["NormalizationStats"]:
+                    if _emd_template["NormalizationStats"][_stat] is not None:
+                        _emd_template["NormalizationStats"][_stat] = _emd_template[
+                            "NormalizationStats"
+                        ][_stat].tolist()
+                _emd_template["DoNormalize"] = self._data._do_normalize
         if (
             getattr(self._data, "_dataset_type", None) == "Pix2Pix"
             or getattr(self._data, "_dataset_type", None) == "CycleGAN"
@@ -1239,9 +1279,9 @@ class ArcGISModel(object):
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template[
-                            "per_class_metrics"
-                        ] = self.per_class_metrics().to_json()
+                        _emd_template["per_class_metrics"] = (
+                            self.per_class_metrics().to_json()
+                        )
         return _emd_template
 
     @staticmethod
@@ -1433,30 +1473,60 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
-        if (type(self).__name__) == "EfficientDet":
-            framework = "tflite"
-
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
-        temp = self.learn.path
-        temp1 = self.learn.model_dir
         self._framework = framework
+
+        if self._backbone != "llm":
+            temp = self.learn.path
+            temp1 = self.learn.model_dir
+        else:
+            temp = ""
+            temp1 = ""
+
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
             # to make fastai save to both path and with name
-            self.learn.path = path
-            self.learn.model_dir = ""
-            if not os.path.exists(self.learn.path):
-                os.makedirs(self.learn.path)
+            if self.learn is not None:
+                self.learn.path = path
+                self.learn.model_dir = ""
+                if not os.path.exists(self.learn.path):
+                    os.makedirs(self.learn.path)
+            else:
+                if not os.path.exists(name_or_path):
+                    os.makedirs(name_or_path)
         else:
             # fixing fastai bug
             # self.learn.path = self.learn.path.parent
-            self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
-            if not os.path.exists(self.learn.path / self.learn.model_dir):
-                os.makedirs(self.learn.path / self.learn.model_dir)
-            name = name_or_path
+            if self._backbone != "llm":
+                self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
+                if not os.path.exists(self.learn.path / self.learn.model_dir):
+                    os.makedirs(self.learn.path / self.learn.model_dir)
+                name = name_or_path
+            else:
+                # first check the data associated path. if it is not there then we shall create a models directory
+
+                if hasattr(self._data, "working_dir"):
+                    if self._data.working_dir is not None:
+                        temp_path = self._data.working_dir
+                    else:
+                        temp_path = os.getcwd()
+
+                elif hasattr(self._data, "path"):
+                    if self._data.path is not None:
+                        temp_path = self._data.path
+                    else:
+                        temp_path = os.getcwd()
+                else:
+                    temp_path = os.getcwd()
+
+                if not os.path.exists(os.path.join(temp_path, "models", name_or_path)):
+                    os.makedirs(os.path.join(temp_path, "models", name_or_path))
+                t = os.path.join(temp_path, "models", name_or_path)
+                # print(f"The path we prepared {t}")
+                name = name_or_path
 
         script_paths = []
         onnx_paths = []
@@ -1472,7 +1542,7 @@ class ArcGISModel(object):
                     supported_models = [
                         "FeatureClassifier",
                     ]
-                    if (type(self).__name__) in supported_models:
+                    if type(self).__name__ in supported_models:
                         with warnings.catch_warnings():
                             warnings.simplefilter("ignore")
                             tflite_paths = self._save_pytorch_tflite(name)
@@ -1488,7 +1558,7 @@ class ArcGISModel(object):
                         "RetinaNet",
                         "SiamMask",
                     ]
-                    if (type(self).__name__) in supported_models:
+                    if type(self).__name__ in supported_models:
                         if type(self).__name__ != "SiamMask":
                             with warnings.catch_warnings():
                                 warnings.simplefilter("ignore")
@@ -1497,35 +1567,65 @@ class ArcGISModel(object):
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
                         )
+                if self._backbone != "llm":
+                    if isinstance(self.learn.model, DistributedDataParallel):
+                        if not int(os.environ.get("RANK", 0)):
+                            saved_path = self.learn.save(
+                                name, return_path=True, with_opt=save_optimizer
+                            )
+                        return
+                if self._backbone != "llm":
+                    saved_path = self.learn.save(
+                        name, return_path=True, with_opt=save_optimizer
+                    )
+                else:  # In this case, we need to handle the saving of the model by ourselves
+                    if not os.path.isabs(name_or_path):
+                        if hasattr(self._data, "working_dir"):
+                            if self._data.working_dir is not None:
+                                temp_path = self._data.working_dir
+                            else:
+                                temp_path = os.getcwd()
 
-                if isinstance(self.learn.model, (DistributedDataParallel)):
-                    if not int(os.environ.get("RANK", 0)):
-                        saved_path = self.learn.save(
-                            name, return_path=True, with_opt=save_optimizer
+                        elif hasattr(self._data, "path"):
+                            if self._data.path is not None:
+                                temp_path = self._data.path
+                            else:
+                                temp_path = os.getcwd()
+                        else:
+                            temp_path = os.getcwd()
+                        # temp_path = os.getcwd()
+                        saved_path = Path(
+                            os.path.join(
+                                temp_path, "models", name_or_path, name_or_path
+                            )
                         )
-                    return
-
-                saved_path = self.learn.save(
-                    name, return_path=True, with_opt=save_optimizer
-                )
+                        # print(f"Save path {saved_path}")
+                        # f" \n {name_or_path}")
+                    else:
+                        base_name = os.path.basename(name_or_path)
+                        saved_path = Path(os.path.join(Path(name_or_path), base_name))
 
             # undoing changes to self.learn.path
         except Exception as e:
             raise e
         finally:
-            self.learn.path = temp
-            self.framework = framework
-            self.learn.model_dir = temp1
+            if self._backbone != "llm":
+                self.learn.path = temp
+                self.framework = framework
+                self.learn.model_dir = temp1
 
-        if (type(self).__name__) == "EfficientDet":
+        if type(self).__name__ == "EfficientDet":
             _emd_template = self._create_emd_template(
-                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+                saved_path, compute_metrics, save_inference_file
+            )
+        elif self._backbone == "llm":
+            _emd_template = self._create_emd_template_llm(
+                compute_metrics, save_inference_file
             )
         else:
             _emd_template = self._create_emd_template(
                 saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
             )
-
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
 
@@ -1677,7 +1777,6 @@ class ArcGISModel(object):
                         "[Functions]System\\DeepLearning\\ArcGISLearn\\"
                         + _emd_template["InferenceFunction"]
                     )
-
         ArcGISModel._write_emd(_emd_template, saved_path.with_suffix(".emd"))
         zip_name = saved_path.stem
 
@@ -1712,6 +1811,9 @@ class ArcGISModel(object):
         if arcgis.env.verbose:
             print("Created model files at {spp}".format(spp=saved_path.parent))
 
+        if self._backbone == "llm":
+            print(f"Model has been saved to {saved_path.parent}")
+
         if publish:
             self._publish_dlpk(
                 (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
@@ -1720,6 +1822,43 @@ class ArcGISModel(object):
             )
 
         return saved_path.parent
+
+    def _create_emd_template_llm(self, compute_metrics, save_inference_file):
+        _emd_template = self._get_emd_params(save_inference_file)
+        _emd_template["Architecture"] = "llm"
+        _emd_template["PretrainedModel"] = self._submodel
+        _emd_template["ModelType"] = "llm"
+        _emd_template["SequenceLength"] = None
+        _emd_template["IsMultilabelClassificationProblem"] = None
+        _emd_template["LearningRate"] = None
+        if not _emd_template.get("ModelName"):
+            _emd_template["ModelName"] = type(self).__name__
+        if self._backend == "tensorflow" and self._framework == "tflite":
+            _emd_template["ModelFormat"] = "NHWC"
+        if getattr(self, "_data", None) is not None:
+            _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
+                "MinCellSize", None
+            )
+            _emd_template["MaxCellSize"] = getattr(self._data, "_emd", {}).get(
+                "MaxCellSize", None
+            )
+        model_params = {"backbone": self._submodel, "backend": self._backend}
+        if _emd_template.get("ModelParameters", None) is None:
+            _emd_template["ModelParameters"] = model_params
+        else:
+            for _key in model_params:
+                _emd_template["ModelParameters"][_key] = model_params[_key]
+        _emd_template["SupportsVariableTileSize"] = _emd_template.get(
+            "SupportsVariableTileSize", False
+        )
+        _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
+        if compute_metrics:
+            if self._model_metrics_cache == None:
+                print("Computing model metrics...")
+                self._model_metrics_cache = self._model_metrics
+            _emd_template.update(self._model_metrics_cache)
+
+        return _emd_template
 
     def _save_tflite(self, name, post_processed=True, quantized=False):
         if post_processed or quantized:
@@ -1809,6 +1948,7 @@ class ArcGISModel(object):
             "<TextClassifier>",
             "<TransformerEntityRecognizer>",
             "<SequenceToSequence>",
+            "<TimeSeriesModel>",
         ]:
             pass
         elif hasattr(self, "show_results"):
@@ -1903,7 +2043,7 @@ class ArcGISModel(object):
                 from onnx_tf.backend import prepare
         except:
             raise Exception(
-                'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".'
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/."
             )
 
         batch_size = int(math.sqrt(int(batch_size))) ** 2
@@ -2038,7 +2178,10 @@ class ArcGISModel(object):
 
         try:
             device = getattr(self, "_map_location", None)
+            if hasattr(self, "_is_mmsegdet"):
+                logging.disable(logging.INFO)
             self.learn.load(name, purge=False, device=device)
+            logging.disable(logging.NOTSET)
         except Exception as e:
             raise e
         finally:

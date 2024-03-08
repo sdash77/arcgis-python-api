@@ -104,7 +104,13 @@ class Run(BaseTask):
 
         """
         params = {"f": "json"}
-        status_values = ["scheduled", "executing", "succeeded", "failed", "skipped"]
+        status_values = [
+            "scheduled",
+            "executing",
+            "succeeded",
+            "failed",
+            "skipped",
+        ]
         if status is None and description is None:
             return False
         if status and status.lower() in status_values:
@@ -243,7 +249,15 @@ class Task(BaseTask):
         ------------------     --------------------------------------------------------------------
         cron                   Optional String. The executution time syntax.
         ------------------     --------------------------------------------------------------------
-        task_type              Optional String. The type of task. Two valid options are
+        task_type              Required String. The type of task, either executing a notebook or
+                               updating an Insights workbook, that will be executed against the
+                               specified item.  For notebook server tasks use ``ExecuteNotebook``,
+                               for Insights notebook use: ``UpdateInsightsWorkbook``. Use
+                               ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
+                               to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
+                               `GPService`ns are
                                ``ExecuteNotebook`` or ``UpdateInsightsWorkbook``
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The maximum number of occurrences this task should execute.
@@ -416,7 +430,8 @@ class TaskManager(object):
         active            Optional Bool. Queries tasks based on active status.
         ----------------  -------------------------------------------------------------------------------
         types             Optional String. The type of notebook execution for the item.  This can be
-                          ``ExecuteNotebook``, or ``UpdateInsightsWorkbook``.
+                          ''ExecuteNotebook'', ''UpdateInsightsWorkbook'', ''ExecuteSceneCook'',
+                          ''ExecuteWorkflowManager''. ''ExecuteReport'', or ''GPService''.
         ================  ===============================================================================
 
         :return: List of :class:`~arcgis.gis.tasks.Task` objects
@@ -461,6 +476,7 @@ class TaskManager(object):
         end_date: datetime.datetime | None = None,
         title: str | None = None,
         parameters: dict | None = None,
+        task_url: str | None = None,
     ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.
@@ -482,6 +498,9 @@ class TaskManager(object):
                                for Insights notebook use: ``UpdateInsightsWorkbook``. Use
                                ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
                                to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`,
+                               `GPService`, or `RunDataPipeline`.
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------
@@ -504,7 +523,9 @@ class TaskManager(object):
                                    |    "update_mode": "PARTIAL_UPDATE_NODES"
                                    | }
 
-
+        ------------------     --------------------------------------------------------------------
+        task_url               Optional String. The URL of the task of an asynchronous
+                               geoprocessing service on any of the federated servers of your portal.
         ==================     ====================================================================
 
         :return:
@@ -537,6 +558,8 @@ class TaskManager(object):
             "dayOfWeek": None,
             "maxOccurrences": occurences,
         }
+        if task_url:
+            params["taskURL"] = task_url
         if isinstance(item, Item):
             params["itemId"] = item.itemid
         else:

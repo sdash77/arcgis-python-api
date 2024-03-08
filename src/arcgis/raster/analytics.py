@@ -5,6 +5,7 @@ The Hosted Imagery & Raster Analysis capabilities are available both on ArcGIS E
 Refer https://doc.arcgis.com/en/arcgis-online/analyze/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Online.
 Refer https://enterprise.arcgis.com/en/portal/latest/use/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Enterprise.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 
@@ -42,19 +43,10 @@ def is_supported(gis: Optional[GIS] = None):
     checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if (
-        gis is not None
-        and hasattr(gis.properties, "helperServices")
-        and "rasterAnalytics" in gis.properties.helperServices
-    ):
-        user = gis.users.me
-        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
-            if (
-                "portal:publisher:publishDynamicImagery" in user.privileges
-                or "portal:publisher:publishTiledImagery" in user.privileges
-            ):
-                return True
-    return False
+    if "rasterAnalytics" in gis.properties.helperServices:
+        return True
+    else:
+        return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
@@ -154,11 +146,12 @@ def _flow_direction_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
-    input_surface_raster = (
-        forceFlow
-    ) = flowDirectionType = output_flow_direction_raster = output_drop_name = None
+    input_surface_raster = forceFlow = flowDirectionType = (
+        output_flow_direction_raster
+    ) = output_drop_name = None
 
     input_surface_raster = raster_function["rasterFunctionArguments"][
         "in_surface_raster"
@@ -180,6 +173,7 @@ def _flow_direction_analytics_converter(
         output_drop_name,
         gis=gis,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -190,6 +184,7 @@ def _calculate_travel_cost_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     input_source = None
@@ -288,6 +283,7 @@ def _calculate_travel_cost_analytics_converter(
         output_allocation_name,
         gis=gis,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -298,6 +294,7 @@ def _calculate_distance_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     input_source = None
@@ -357,6 +354,7 @@ def _calculate_distance_analytics_converter(
         distance_method,
         gis=gis,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -665,7 +663,8 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_item = gis.content.folders.create(folder, owner)
+            folder_dict = folder_item.properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 
@@ -710,6 +709,7 @@ def _save_ra(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     if raster_function["rasterFunctionArguments"]["toolName"] == "FlowDirection_sa":
@@ -719,6 +719,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
     if (
@@ -731,6 +732,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
     if raster_function["rasterFunctionArguments"]["toolName"] == "CalculateDistance_sa":
@@ -740,6 +742,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
     if (
@@ -750,6 +753,8 @@ def _save_ra(
             raster_function,
             output_name=output_name,
             other_outputs=other_outputs,
+            future=future,
+            estimate=estimate,
             gis=gis,
             **kwargs,
         )
@@ -761,6 +766,8 @@ def _save_ra(
             raster_function,
             output_name=output_name,
             other_outputs=other_outputs,
+            future=future,
+            estimate=estimate,
             gis=gis,
             **kwargs,
         )
@@ -997,6 +1004,7 @@ def generate_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -1122,13 +1130,16 @@ def generate_raster(
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
                                                 | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
+    ------------------------------------     ------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
@@ -1168,6 +1179,7 @@ def generate_raster(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1181,6 +1193,7 @@ def convert_feature_to_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -1277,13 +1290,16 @@ def convert_feature_to_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
                                                 | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
@@ -1316,6 +1332,7 @@ def convert_feature_to_raster(
         value_field=value_field,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1346,7 +1363,7 @@ def copy_raster(
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     Multiple images are mosaicked into a single dataset to create one layer.
     
-    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.17)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ================================     ====================================================================
@@ -1524,8 +1541,10 @@ def copy_raster(
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the 
                                          portal, if it does not exist, with the given folder name and persists 
-                                         the output in this folder. The dictionary returned by the 
-                                         :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         the output in this folder. The properties property on the Folder object 
+                                         returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be 
+                                         passed in as input.
+
 
                                          Example:
 
@@ -1674,6 +1693,7 @@ def summarize_raster_within(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -1702,50 +1722,56 @@ def summarize_raster_within(
 
                                              Default: "Value"
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string - statistic to calculate.
-                                             You can calculate statistics of any numerical attribute of the points, lines, or areas within the input area
-                                             layer. 
-                                             
-                                             statistic_type can be one of the following:
-                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety', 'Percentile']
+    statistic_type                           Optional string - Statistic type to be calculated. Default is MEAN.
 
-                                             - Mean: Calculates the average of all cells in the value raster that belongs to \
+                                             - MEAN: Calculates the average of all cells in the value raster that belongs to \
                                              the same zone as the output cell. This is the default.
 
-                                             - Majority: Determines the majority value of all cells in the value raster that belongs to \
+                                             - MAJORITY: Determines the majority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Maximum: Determines the largest value of all cells in the value raster that belongs to \
+                                             - MAJORITY_COUNT: Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT: Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
+                                             - MAXIMUM: Determines the largest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Median: Finds the median value of all cells in the value raster that belongs to \
+                                             - MEDIAN: Calculates the median value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Minimum: Finds the smallest value of all cells in the value raster that belongs to \
+                                             - MINIMUM: Determines the smallest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Minority: Determines the minority value of all cells in the value raster that belongs to \
+                                             - MINORITY: Determines the minority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             - Range: Finds the range of all cells in the value that belongs to \
-                                             the same zone as the output zone.
+                                             - MINORITY_COUNT: Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - Sum: Adds the total value of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
+                                             - MINORITY_PERCENT: Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
-                                             - STD: Finds the standard deviation of all cells in the value raster that belongs to \
-                                             the same zone as the output cell.
-
-                                             - Variety: Finds the variety of all cells in the value raster that belong to \
-                                             the same zone as the output cell.
-
-                                             - Percentile: Finds a percentile of all cells in the value raster that \
+                                             - PERCENTILE: Calculates a percentile of all cells in the value raster that \
                                              belong to the same zone as the output cell. The 90th percentile \
                                              is calculated by default. You can specify other values (from 0 to 100) \
                                              using the percentile_value parameter.
 
-                                             If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
-                                             for Majority, Median, Mean, and Variety cannot be computed.
+                                             - RANGE: Calculates the range of all cells in the value that belongs to \
+                                             the same zone as the output zone.
+
+                                             - SUM: Calculates the total value of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
+
+                                             - STD: Calculates the standard deviation of all cells in the value raster that belongs to \
+                                             the same zone as the output cell.
+
+                                             - VARIETY: Calculates the variety of all cells in the value raster that belong to \
+                                             the same zone as the output cell.
+
+                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     ignore_missing_values                    Optional bool, If you choose to ignore missing values, only the cells that 
                                              have a value in the layer to be summarized will be
@@ -1861,9 +1887,12 @@ def summarize_raster_within(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -1921,6 +1950,7 @@ def summarize_raster_within(
         circular_calculation=circular_calculation,
         circular_wrap_value=circular_wrap_value,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -1937,6 +1967,7 @@ def convert_raster_to_feature(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -2014,9 +2045,12 @@ def convert_raster_to_feature(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -2026,7 +2060,7 @@ def convert_raster_to_feature(
     ====================================     ====================================================================
 
     :return:
-    output_raster : Imagery layer item
+    output_feature: Feature layer item
 
     .. code-block:: python
 
@@ -2051,6 +2085,7 @@ def convert_raster_to_feature(
         create_multipart_features=create_multipart_features,
         max_vertices_per_feature=max_vertices_per_feature,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -2067,6 +2102,7 @@ def calculate_density(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -2221,9 +2257,12 @@ def calculate_density(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`~arcgis.gis.ContentManager.create_folder` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -2267,6 +2306,7 @@ def calculate_density(
         context=context,
         future=future,
         input_barriers=input_barriers,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -2289,9 +2329,16 @@ def create_viewshed(
     above_ground_level_output_name: Optional[str] = None,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    vertical_error: Optional[dict[str, Any]] = None,
+    refractivity_coefficient: Optional[float] = 0.13,
+    horizontal_start_angle: Optional[Union[str, float]] = 0,
+    horizontal_end_angle: Optional[Union[str, float]] = 360,
+    vertical_upper_angle: Optional[Union[str, float]] = 90,
+    vertical_lower_angle: Optional[Union[str, float]] = -90,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -2435,6 +2482,52 @@ def create_viewshed(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_error                           Optional dict. The amount of uncertainty (the Root Mean Square error, or RMSE) in the surface elevation values.
+
+                                             Supported units: Meters | Kilometers | Feet | Yards | Miles
+
+                                             Example:
+
+                                                 {"distance":"2","units":"Meters"}
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    refractivity_coefficient                 Optional double. The coefficient of the refraction of visible light in air.
+
+                                             Example:
+
+                                                 0.13
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    horizontal_start_angle                   Optional string or double. The start angle of the horizontal scan range. It is a string
+                                             representing a numerical value or field. The value should be in degrees from 0 to 360,
+                                             with 0 oriented to north. The default value is 0.
+
+                                             Example:
+
+                                                 "azimuth1"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    horizontal_end_angle                     Optional string or double. The end angle of the horizontal scan range. It is a string
+                                             representing a numerical value or field. The value should be in degrees from 0 to 360,
+                                             with 0 oriented to north. The default value is 360.
+
+                                             Example:
+
+                                                 "azimuth2"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_upper_angle                     Optional string or double. The upper vertical angle limit of the scan relative to the horizontal plane.
+                                             It is a string representing a numerical value or field. The allowed range is from above -90 up to
+                                             and including 90. The default value is 90 (straight up).
+
+                                             Example:
+
+                                                 "vert1"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_lower_angle                     Optional string or double. The lower vertical angle limit of the scan relative to the horizontal plane.
+                                             It is a string representing a numerical value or field. The allowed range is from -90 up to
+                                             but not including 90. The default value is -90 (straight down).
+
+                                             Example:
+
+                                                 "vert2"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
@@ -2493,9 +2586,12 @@ def create_viewshed(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -2550,8 +2646,15 @@ def create_viewshed(
         target_height=target_height,
         target_height_field=target_height_field,
         above_ground_level_output_name=above_ground_level_output_name,
+        vertical_error=vertical_error,
+        refractivity_coefficient=refractivity_coefficient,
+        horizontal_start_angle=horizontal_start_angle,
+        horizontal_end_angle=horizontal_end_angle,
+        vertical_upper_angle=vertical_upper_angle,
+        vertical_lower_angle=vertical_lower_angle,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -2570,6 +2673,7 @@ def interpolate_points(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -2728,9 +2832,12 @@ def interpolate_points(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -2792,6 +2899,7 @@ def interpolate_points(
         output_prediction_error=output_prediction_error,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -2805,6 +2913,7 @@ def classify(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -2818,7 +2927,7 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object.
     --------------------------------     --------------------------------------------------------------------
-    input_classifier_definition          Required dict.
+    input_classifier_definition          Required dict or ECD Portal item.
 
                                          The classifier definition dictionary generated from the train_classifier function.
 
@@ -2917,9 +3026,12 @@ def classify(
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
+    --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                          Example:
 
@@ -2971,6 +3083,7 @@ def classify(
         additional_input_raster=additional_input_raster,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -2987,6 +3100,7 @@ def segment(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -3108,9 +3222,12 @@ def segment(
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
+    --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                          Example:
 
@@ -3151,6 +3268,7 @@ def segment(
         remove_tiling_artifacts=remove_tiling_artifacts,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -3162,9 +3280,11 @@ def train_classifier(
     segmented_raster=None,
     segment_attributes="COLOR;MEAN",
     dimension_value_field=None,
+    output_ecd_item_name=None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -3236,15 +3356,21 @@ def train_classifier(
 
                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     --------------------------------     --------------------------------------------------------------------
+    output_ecd_item_name                 Optional String or Item. The output ECD Portal item to be created.
+                                         If an Item is provided, the given item will be overwritten with the ECD instead.
+    --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    estimate                             Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                         Available only on ArcGIS Online.
     ================================     ====================================================================
 
     :return:
-       Returns .ecs file in dictionary format
+       Named Tuple
 
     .. code-block:: python
 
@@ -3268,6 +3394,8 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
+        estimate=estimate,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
@@ -3300,7 +3428,7 @@ def create_image_collection(
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     A collection can be created from multiple input rasters.
     
-    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.17)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ======================               ====================================================================
@@ -3328,6 +3456,8 @@ def create_image_collection(
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
                                          - Path to local raster dataset(s)
+                                         - :class:`~arcgis.raster.RasterCollection` object created from a list of datastore\
+                                            rasters or using the :meth:`~arcgis.raster.RasterCollection.from_stac_api` method.
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
@@ -3491,7 +3621,7 @@ def create_image_collection(
     ----------------------               --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                          Example:
 
@@ -4282,6 +4412,7 @@ def delete_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4305,6 +4436,9 @@ def delete_image(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return: The imagery layer url
@@ -4319,7 +4453,11 @@ def delete_image(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.delete_image(
-        image_collection=image_collection, where=where, future=future, **kwargs
+        image_collection=image_collection,
+        where=where,
+        future=future,
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -4327,7 +4465,12 @@ def delete_image(
 ## Delete image collection
 ###################################################################################################
 def delete_image_collection(
-    image_collection: Item, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    image_collection: Item,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    estimate: Optional[bool] = False,
+    **kwargs,
 ):
     """
     .. image:: _static/images/delete_image_collection/delete_image_collection.png
@@ -4349,6 +4492,9 @@ def delete_image_collection(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return: Boolean value indicating whether the deletion was successful or not.
@@ -4363,7 +4509,7 @@ def delete_image_collection(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.delete_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=image_collection, future=future, estimate=estimate, **kwargs
     )
 
 
@@ -4376,6 +4522,7 @@ def _flow_direction(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -4422,6 +4569,7 @@ def _flow_direction(
         flow_direction_type=flow_direction_type,
         output_drop_name=output_drop_name,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -4447,6 +4595,7 @@ def _calculate_travel_cost(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -4528,6 +4677,7 @@ def _calculate_travel_cost(
         output_allocation_name=output_allocation_name,
         allocation_field=allocation_field,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -4613,7 +4763,7 @@ def optimum_travel_cost_network(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -4644,6 +4794,7 @@ def list_datastore_content(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4680,6 +4831,9 @@ def list_datastore_content(
     ------------------     --------------------------------------------------------------------
     future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
+    ------------------     --------------------------------------------------------------------
+    estimate               Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                           Available only on ArcGIS Online.
     ==================     ====================================================================
 
     :return:
@@ -4694,7 +4848,11 @@ def list_datastore_content(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.list_datastore_content(
-        data_store_name=datastore, filter=filter, future=future, **kwargs
+        data_store_name=datastore,
+        filter=filter,
+        future=future,
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -4706,6 +4864,7 @@ def build_footprints(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4749,6 +4908,9 @@ def build_footprints(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -4773,6 +4935,7 @@ def build_footprints(
         value_range=value_range,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -4784,6 +4947,7 @@ def build_overview(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4823,6 +4987,9 @@ def build_overview(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -4844,6 +5011,7 @@ def build_overview(
         cell_size=cell_size,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -4855,6 +5023,7 @@ def calculate_statistics(
     *,
     gis=None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -4903,6 +5072,9 @@ def calculate_statistics(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -4924,6 +5096,7 @@ def calculate_statistics(
         skip_factors=skip_factors,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -5014,7 +5187,7 @@ def determine_travel_costpath_as_polyline(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
                                                 | {'username': 'user1',
@@ -5057,6 +5230,7 @@ def _calculate_distance(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     """
@@ -5150,6 +5324,7 @@ def _calculate_distance(
         input_barrier_raster_or_features=input_barrier_data,
         output_back_direction_name=output_back_direction_name,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -5166,6 +5341,7 @@ def generate_multidimensional_anomaly(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -5299,9 +5475,12 @@ def generate_multidimensional_anomaly(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -5349,6 +5528,7 @@ def generate_multidimensional_anomaly(
         context=context,
         reference_mean_raster=reference_mean_raster,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -5360,6 +5540,7 @@ def build_multidimensional_transpose(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -5404,6 +5585,9 @@ def build_multidimensional_transpose(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: output_raster : Imagery Layer URL
@@ -5424,6 +5608,7 @@ def build_multidimensional_transpose(
         context=context,
         delete_transpose=delete_transpose,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -5448,6 +5633,7 @@ def aggregate_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -5721,9 +5907,12 @@ def aggregate_multidimensional_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -5812,6 +6001,7 @@ def aggregate_multidimensional_raster(
         percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -5834,6 +6024,7 @@ def generate_trend_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -5973,9 +6164,12 @@ def generate_trend_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -6028,6 +6222,7 @@ def generate_trend_raster(
         slope_p_value=slope_p_value,
         seasonal_period=seasonal_period,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -6046,6 +6241,7 @@ def predict_using_trend_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -6166,9 +6362,12 @@ def predict_using_trend_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -6230,6 +6429,7 @@ def predict_using_trend_raster(
         interval_unit=interval_unit,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -6253,6 +6453,7 @@ def find_argument_statistics(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -6425,9 +6626,12 @@ def find_argument_statistics(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -6495,6 +6699,7 @@ def find_argument_statistics(
         argument_value=argument_value,
         comparison=comparison,
         occurrence=occurrence,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -6508,6 +6713,7 @@ def linear_spectral_unmixing(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -6520,7 +6726,7 @@ def linear_spectral_unmixing(
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Required Dict or String. The class spectral profile information.
+    input_spectral_profile                   Required Dict, String or ECD Portal item. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional List of string(s). Specifies the options to define the output pixel values.
 
@@ -6594,9 +6800,12 @@ def linear_spectral_unmixing(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -6652,6 +6861,7 @@ def linear_spectral_unmixing(
         value_option=value_option,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -6672,6 +6882,7 @@ def subset_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -6833,9 +7044,12 @@ def subset_multidimensional_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -6884,6 +7098,7 @@ def subset_multidimensional_raster(
         iteration_unit=iteration_unit,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -6977,7 +7192,7 @@ def costpath_as_polyline(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -7013,6 +7228,7 @@ def define_nodata(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -7060,6 +7276,9 @@ def define_nodata(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: The imagery layer url
@@ -7098,6 +7317,7 @@ def define_nodata(
         num_of_bands=num_of_bands,
         composite_value=composite_value,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7114,6 +7334,7 @@ def optimal_path_as_line(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -7188,9 +7409,12 @@ def optimal_path_as_line(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -7228,6 +7452,7 @@ def optimal_path_as_line(
         context=context,
         create_network_paths=create_network_paths,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7244,6 +7469,7 @@ def optimal_region_connections(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -7361,9 +7587,12 @@ def optimal_region_connections(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -7402,6 +7631,7 @@ def optimal_region_connections(
         output_neighbor_connections_name=output_neighbor_connections_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7428,6 +7658,7 @@ def _distance_accumulation(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7451,6 +7682,7 @@ def _distance_accumulation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7478,6 +7710,7 @@ def _distance_allocation(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7502,6 +7735,7 @@ def _distance_allocation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7518,6 +7752,7 @@ def analyze_changes_using_ccdc(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -7635,9 +7870,12 @@ def analyze_changes_using_ccdc(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -7695,6 +7933,7 @@ def analyze_changes_using_ccdc(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -7725,6 +7964,7 @@ def detect_change_using_change_analysis_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8019,9 +8259,12 @@ def detect_change_using_change_analysis_raster(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -8083,6 +8326,7 @@ def detect_change_using_change_analysis_raster(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -8099,6 +8343,7 @@ def manage_multidimensional_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8152,6 +8397,9 @@ def manage_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return: output_raster : Imagery Layer URL
@@ -8198,6 +8446,7 @@ def manage_multidimensional_raster(
         dimension_description=dimension_description,
         dimension_unit=dimension_unit,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -8219,6 +8468,7 @@ def sample(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8327,9 +8577,12 @@ def sample(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -8375,6 +8628,7 @@ def sample(
         generate_feature_class=generate_feature_class,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -8387,6 +8641,7 @@ def merge_multidimensional_rasters(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8489,6 +8744,9 @@ def merge_multidimensional_rasters(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
@@ -8498,7 +8756,7 @@ def merge_multidimensional_rasters(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -8534,6 +8792,7 @@ def merge_multidimensional_rasters(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -8557,6 +8816,7 @@ def analyze_changes_using_landtrendr(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8757,9 +9017,12 @@ def analyze_changes_using_landtrendr(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -8803,6 +9066,7 @@ def analyze_changes_using_landtrendr(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -8914,6 +9178,7 @@ def zonal_statistics_as_table(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -8943,13 +9208,7 @@ def zonal_statistics_as_table(
                                              perform statistical calculations for all the cells in that zone; \
                                              therefore, the entire zone will receive the NoData value on the output raster.
     ------------------------------------     --------------------------------------------------------------------
-    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
-                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
-                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
-                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
-
-                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
-                                             RANGE, STD, and SUM.
+    statistic_type                           Optional string. Statistic type to be calculated. Default is ALL. 
 
                                              - ALL - All of the statistics will be calculated. \
                                              This is the default.
@@ -8960,10 +9219,16 @@ def zonal_statistics_as_table(
                                              - MAJORITY - Determines the value that occurs most often of all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
+                                             - MAJORITY_COUNT - Calculates the frequency of all cells that contain the majority \
+                                             value in the value raster that belong to the same zone as the output cell.
+
+                                             - MAJORITY_PERCENT - Calculates the percentage of cells that contain the majority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
                                              - MAXIMUM - Determines the largest value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
-                                             - MEDIAN - Determines the median value of all cells in the raster layer \
+                                             - MEDIAN - Calculates the median value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
                                              - MINIMUM - Determines the smallest value of all cells in the raster \
@@ -8972,6 +9237,12 @@ def zonal_statistics_as_table(
                                              - MINORITY - Determines the value that occurs least often of all cells in \
                                              the raster layer to be summarized that belong to the same zone as the \
                                              output cell.
+
+                                             - MINORITY_COUNT - Calculates the frequency of all cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
+
+                                             - MINORITY_PERCENT - Calculates the percentage of cells that contain the minority value in \
+                                             the value raster that belong to the same zone as the output cell.
 
                                              - PERCENTILE - Calculates a percentile of all cells in the value raster \
                                              that belong to the same zone as the output cell. The 90th percentile is calculated by default. \
@@ -8996,6 +9267,13 @@ def zonal_statistics_as_table(
                                              are calculated.
 
                                              - MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+
+                                             - MAJORITY_VALUE_COUNT_PERCENT - Calculates the majority value, count, and percentage statistics.
+
+                                             - MINORITY_VALUE_COUNT_PERCENT - Calculates the minority value, count, and percentage statistics.
+
+                                             MAJORITY_COUNT, MAJORITY_PERCENT, MINORITY_COUNT, MINORITY_PERCENT, MAJORITY_VALUE_COUNT_PERCENT, MINORITY_VALUE_COUNT_PERCENT \
+                                             statistic types are available in ArcGIS Enterprise 11.3 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_values                        Optional list of double values.
                                              The percentile to calculate. The default is 90, for the 90th percentile.
@@ -9043,9 +9321,12 @@ def zonal_statistics_as_table(
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -9087,6 +9368,7 @@ def zonal_statistics_as_table(
         circular_wrap_value=circular_wrap_value,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -9106,6 +9388,7 @@ def compute_change_raster(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -9264,6 +9547,9 @@ def compute_change_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
@@ -9273,7 +9559,7 @@ def compute_change_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -9312,6 +9598,7 @@ def compute_change_raster(
         output_name=output_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -9326,6 +9613,7 @@ def summarize_categorical_raster(
     *,
     gis=None,
     future=False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -9397,9 +9685,12 @@ def summarize_categorical_raster(
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -9440,6 +9731,7 @@ def summarize_categorical_raster(
         output_summary_table_name=output_summary_table_name,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -9459,15 +9751,16 @@ def train_random_trees_regression_model(
     percent_samples_for_testing=10,
     output_importance_table_name=None,
     context=None,
+    output_ecd_item_name=None,
     *,
     gis=None,
     future=False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
-
 
     ====================================     =============================================================================================================================================
     **Parameter**                             **Description**
@@ -9553,23 +9846,26 @@ def train_random_trees_regression_model(
 
                                                Example:
 
+                                                    {"parallelProcessingFactor": "2"}
+
                                                Syntax example with a specified number of processing instances:
 
-                                                {"parallelProcessingFactor": "2"}
-
-                                               Syntax example with a specified percentage of total
-                                               processing instances:
-
-                                                {"parallelProcessingFactor": "60%"}
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    output_ecd_item_name                     Optional String or Item. The output ECD Portal item to be created.
+                                             If an Item is provided, the given item will be overwritten with the ECD instead.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                              Example:
 
@@ -9578,8 +9874,7 @@ def train_random_trees_regression_model(
                                                 | 'title': 'trial'}
     ====================================     =============================================================================================================================================
 
-
-    :return: Dictionary
+    :return: Named Tuple
 
     .. code-block:: python
 
@@ -9620,12 +9915,14 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
+        estimate=estimate,
         **kwargs,
     )
 
 
 def export_to_tile_package(
-    input_data, output_name=None, *, gis=None, future=False, **kwargs
+    input_data, output_name=None, *, gis=None, future=False, estimate=False, **kwargs
 ):
     """
 
@@ -9646,6 +9943,9 @@ def export_to_tile_package(
     ---------------     --------------------------------------------------------------------
     future              Optional Boolean. If True, the result will be a GPJob object and
                         results will be returned asynchronously.
+    ---------------     --------------------------------------------------------------------
+    estimate            Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                        Available only on ArcGIS Online.
     ===============     ====================================================================
 
     :return: The exported tile package item
@@ -9663,6 +9963,7 @@ def export_to_tile_package(
         input_imagery_layer=input_data,
         output_tile_package=output_name,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -9679,6 +9980,7 @@ def derive_continuous_flow(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -9764,6 +10066,9 @@ def derive_continuous_flow(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================     
 
     """
@@ -9779,6 +10084,7 @@ def derive_continuous_flow(
         force_flow=force_flow,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs,
     )
 
@@ -9793,6 +10099,7 @@ def mosaic_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
+    estimate: Optional[bool] = False,
 ):
     """
     Merges multiple existing raster datasets into an existing raster dataset. 
@@ -9879,6 +10186,9 @@ def mosaic_image(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -9905,4 +10215,636 @@ def mosaic_image(
         context=context,
         gis=gis,
         future=future,
+        estimate=estimate,
+    )
+
+
+def multidimensional_principal_components(
+    input_multidimensional_raster,
+    mode="DIMENSION_REDUCTION",
+    dimension=None,
+    output_principal_components_name: Optional[str] = None,
+    output_loadings_name: Optional[str] = None,
+    output_eigen_values_table_name: Optional[str] = None,
+    variable: Optional[str] = None,
+    number_of_principal_components: Optional[str] = "95%",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    estimate: Optional[bool] = False,
+    **kwargs,
+):
+    """
+    Transforms multidimensional rasters into their principal components, loadings, and eigenvalues. It transforms
+    the data into a reduced number of components that account for the variance of the data, so that spatial and
+    temporal patterns can be readily identified.
+
+    .. note::
+           Function available in ArcGIS Image Server 11.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+    ------------------------------------     --------------------------------------------------------------------
+    mode                                     Required String. Specifies the method that will be used to
+                                             perform principal component analysis.
+
+                                             - DIMENSION_REDUCTION : The input time series data will be treated as a set of images. Principal components that extract prevalent patterns over time will be computed. This is the default.
+
+                                             - SPATIAL_REDUCTION : The input time series data will be treated as a set of pixels. Principal components that extract prevalent patterns and locations over time will be computed as a set of one-dimensional arrays stored in a table.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The dimension name used to process the principal components.
+    ------------------------------------     --------------------------------------------------------------------
+    output_principal_components_name         | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a multiband raster with the components as bands. The first band is the first principal component with the largest eigenvalue, the second band has the principal component with the second largest eigenvalue, and so on.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a table
+                                             | containing a set of time series data representing the principal components.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_loadings_name                     | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a table containing the weights that each input raster contributed to the principal components. These weights define the correlations of the input data and the output principal components.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a raster where pixel values are the weights contributing to the principal components. Pixels with larger values are more corelated to the principal components. This output may have a larger cell size than the input raster because a random reprojection is applied to reduce the computation complexity.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_eigen_values_table_name           Optional String. The name for the output eigen values table.
+
+                                             You can pass in an existing Item from your GIS to use
+                                             that instead.
+
+                                             Alternatively, you can pass in the name of the output
+                                             that should be created by this method to be used as the output for
+                                             the tool.
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    variable                                 Optional String. The variable of the input multidimensional raster
+                                             used in computation. If the input raster is multidimensional and no
+                                             variable is specified, only the first variable will be analyzed, by default.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_principal_components           Optional String. The number of principal components to compute, usually
+                                             fewer than the number of input rasters. This parameter also takes the
+                                             form of percentage (%). For example, 90% means the number of components
+                                             that can explain 90% of variance in the data will be computed.
+                                             The default is "95%".
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its
+                                                cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be
+                                                resampled to method specified.
+                                                The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ====================================     ====================================================================
+
+    :return: Named Tuple
+
+    .. code-block:: python
+
+        # Usage Example
+
+        input_mdim_raster = gis.content.search("my_multidimensional_raster", item_type="Imagery Layer")[0].layers[0]
+        mdim_pc_op = multidimensional_principal_components(input_multidimensional_raster=input_mdim_raster,
+                                                           mode="DIMENSION_REDUCTION",
+                                                           output_principal_components_name="op_principal_components",
+                                                           output_loadings_name="op_loadings")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.multidimensional_principal_components(
+        input_multidimensional_raster=input_multidimensional_raster,
+        mode=mode,
+        dimension=dimension,
+        output_principal_components_name=output_principal_components_name,
+        output_loadings_name=output_loadings_name,
+        output_eigen_values_table_name=output_eigen_values_table_name,
+        variable=variable,
+        number_of_principal_components=number_of_principal_components,
+        context=context,
+        future=future,
+        estimate=estimate,
+        **kwargs,
+    )
+
+
+def predict_using_regression_model(
+    input_rasters,
+    input_regression_definition,
+    output_predicted_raster_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    estimate: Optional[bool] = False,
+    **kwargs,
+):
+    """
+    Predicts data values using the regression model which is output from the TrainRandomTreesRegressionModel tool.
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+                                             multiband rasters, or mosaic datasets, containing explanatory variables.
+    ------------------------------------     --------------------------------------------------------------------
+    input_regression_definition              Required String or ECD Item. The JSON string or ECD portal item
+                                             that contains the attribute information, statistics or other information
+                                             from the regression model. This JSON is the output of the Train Random
+                                             Trees Regression model tool.
+    ------------------------------------     --------------------------------------------------------------------
+    output_predicted_raster_name             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                  projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Snap Raster (snapRaster): The output raster will have its
+                                                  cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Cell Alignment (cellAlignment): Adjusts the cell alignent of the output to match
+                                                  that of the specified processing extent.
+                                                  The supported values are: "Default", "Align with input", "Align with Processing Extent"
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                                - Resampling Method (resamplingMethod): The output raster will be
+                                                  resampled to method specified.
+                                                  The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ====================================     ====================================================================
+
+    :return: The imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        my_raster_1 = gis.content.search("raster_1", item_type="Imagery Layer")[0].layers[0]
+        my_raster_2 = gis.content.search("raster_2", item_type="Imagery Layer")[0].layers[0]
+        input_rasters = [my_raster_1, my_raster_2]
+
+        # Use an ECD portal item
+        input_regression_definition = gis.content.search("regression_definiton_ecd")[0]
+
+        predict_using_regression_model_op = predict_using_regression_model(input_rasters=input_rasters,
+                                                                           input_regression_definition=input_regression_definition,
+                                                                           gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.predict_using_regression_model(
+        input_rasters=input_rasters,
+        input_regression_definition=input_regression_definition,
+        output_predicted_raster_name=output_predicted_raster_name,
+        context=context,
+        future=future,
+        estimate=estimate,
+        **kwargs,
+    )
+
+
+def locate_regions(
+    input_raster,
+    input_existing_regions: Optional[Union[ImageryLayer, FeatureLayer]] = None,
+    total_area: Optional[float] = None,
+    area_units: Optional[str] = None,
+    number_of_regions: Optional[int] = 1,
+    region_shape: Optional[str] = "CIRCLE",
+    region_orientation: Optional[float] = 0,
+    shape_tradeoff: Optional[float] = 50,
+    evaluation_method: Optional[str] = "HIGHEST_AVERAGE_VALUE",
+    minimum_area: Optional[float] = None,
+    maximum_area: Optional[float] = None,
+    minimum_distance: Optional[float] = None,
+    maximum_distance: Optional[float] = None,
+    distance_units: Optional[str] = None,
+    number_of_neighbors: Optional[str] = None,
+    no_islands: Optional[bool] = None,
+    region_seeds: Optional[str] = "AUTO",
+    region_resolution: Optional[str] = "AUTO",
+    selection_method: Optional[str] = "AUTO",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    estimate: Optional[bool] = False,
+    **kwargs,
+):
+    """
+    Function identifies the best regions, or groups of contiguous cells, from an input utility (suitability) raster that satisfy a specified evaluation criterion and that meet identified shape, size, number, and interregion distance constraints.
+
+    .. note::
+           Function available in ArcGIS Image Server 11.2 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required ImageryLayer object. The input utility raster from which the regions will be derived.
+                                             The higher the value in the input raster, the greater the utility.
+    ------------------------------------     --------------------------------------------------------------------
+    input_existing_regions                   Optional ImageryLayer or FeatureLayer object. A dataset identifying where regions already exist.
+                                             The input can be a raster or a feature layer. If the input is a raster, any location in the raster with a valid value is considered already allocated. All other locations are set to NoData.
+
+                                             In the parameterized region-growing algorithm, no region will grow from any location containing an existing region.
+                                             Existing regions will be used in the growth and evaluation of the minimum_distance and maximum_distance as described
+                                             in the corresponding parameter descriptions below.
+    ------------------------------------     --------------------------------------------------------------------
+    total_area                               Optional float. The total amount of area for all regions.
+                                             The default is 10 percent of the input cells within the processing extent.
+    ------------------------------------     --------------------------------------------------------------------
+    area_units                               Optional string. Defines the area units used for the ``total_area``, ``minimum_area``, and ``maximum_area`` parameters.
+
+                                             | The available options and their corresponding units are the following:
+
+                                             - SQUARE_MAP_UNITS - For the square of the linear units of the output spatial reference.
+
+                                             - SQUARE_MILES - For miles.
+
+                                             - SQUARE_KILOMETERS - For kilometers.
+
+                                             - ACRES - For acres.
+
+                                             - HECTARES - For hectares.
+
+                                             - SQUARE_METERS - For meters.
+
+                                             - SQUARE_YARDS - For yards.
+
+                                             - SQUARE_FEET - For feet.
+
+                                             | The default is based on the input raster.
+                                             If the input raster is in feet, yards, miles or any other imperial unit, Square miles will be used.
+                                             If the input raster is in meters, kilometers, or any other metric unit, Square kilometers will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_regions                        Optional integer. Determines how many regions the ``total_area`` will be distributed across.
+
+                                             The maximum number of regions that can be specified is 30. The default is 1.
+    ------------------------------------     --------------------------------------------------------------------
+    region_shape                             Optional string. Defines the shape characteristics for the output regions.
+
+                                             | The regions start out from seed cell locations and grow outward with preference given to the cells that maintain the desired shape.
+
+                                             The available shape options are the following:
+
+                                             - CIRCLE - Cells that maintain circular regions will receive a greater weight. This is the default.
+
+                                             - ELLIPSE - Cells that maintain elliptical-shaped regions will receive a greater weight.
+
+                                             - TRIANGLE - Cells that maintain equilateral triangular-shaped regions will receive a greater weight.
+
+                                             - SQUARE - Cells that maintain square-shaped regions will receive a greater weight.
+
+                                             - PENTAGON - Cells that maintain pentagon-shaped regions will receive a greater weight.
+
+                                             - HEXAGON - Cells that maintain hexagon-shaped regions will receive a greater weight.
+
+                                             - OCTAGON - Cells that maintain octagon-shaped regions will receive a greater weight.
+    ------------------------------------     --------------------------------------------------------------------
+    region_orientation                       Optional float. Defines the orientation of the defined shape. Regions are grown out from the seed locations with preference
+                                             given to the cells that maintain the desired orientation of the region shapes.
+
+                                             | The orientation values are in compass degrees ranging from 0 to 360, increasing clockwise starting from north. The default is 0.
+
+                                             The default of 0 orients the shapes in the following manner:
+
+                                             - CIRCLE - no effect.
+
+                                             - ELLIPSE - the minor axis is orientated north-south.
+
+                                             - TRIANGLE - one point is straight up.
+
+                                             - SQUARE - one flat side is oriented east-west.
+
+                                             - PENTAGON - one point is straight up.
+
+                                             - HEXAGON - one flat side is oriented east-west.
+
+                                             - OCTAGON - one flat side is oriented east-west.
+    ------------------------------------     --------------------------------------------------------------------
+    shape_tradeoff                           Optional float. Identifies the weight for the cells when growing the candidate regions in the parameterized
+                                             region-growing algorithm. The weighting is a tradeoff between a cell's contribution for maintaining the region
+                                             shape relative to the utility contribution of the cell's attribute value.
+
+                                             Higher values indicates maintaining the shape of the region is more important than selecting higher utility values.
+                                             The acceptable percent values are 0 to 100, inclusively. The default is 50.
+
+                                             This parameter is used to identify the feasible candidate regions. The candidate regions that will be selected are
+                                             controlled by the ``evaluation_method`` parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    evaluation_method                        Optional string. The evaluation criteria to be used for determining which of the candidate regions identified in the
+                                             parameterized region-growing algorithm are most preferred. The preference can be specified based on a particular statistic
+                                             of the utility values, or spatial arrangement of the cells within the regions.
+
+                                             The available options are the following:
+
+                                             - HIGHEST_AVERAGE_VALUE - Selects regions based on the highest average value. This is the default.
+
+                                             - HIGHEST_SUM - Selects regions based on the highest sum.
+
+                                             - HIGHEST_MEDIAN_VALUE - Selects regions based on the highest median value.
+
+                                             - HIGHEST_VALUE - Selects regions based on the highest individual cell value contained within the region. This option ensures the best individual cells are selected.
+
+                                             - LOWEST_VALUE - Selects regions based on the highest lowest individual cell value contained within the region. This option ensures the selected regions contain cells with really low utility.
+
+                                             - GREATEST_CORE_AREA - Selects regions based on the greatest core area.Any cell that is farther than one cell from the edge of a region is considered to be part of the core.
+                                               The edge distance can be controlled by the analysis cell size. Setting a smaller cell size can increase the core area.
+
+                                             - HIGHEST_CORE_SUM - Selects regions based on the highest cumulative sum of the utility values for the core area. The edge distance can be controlled by the analysis cell size.
+
+                                             - GREATEST_EDGE - Selects regions based on the greatest amount of edge using the P1 ratio, which is the ratio of the perimeter of the shape to the perimeter of a circle of the same area. The P1 ratio for a circle is 1.
+    ------------------------------------     --------------------------------------------------------------------
+    minimum_area                             Optional float. Define the minimum area allowed for each region.
+
+                                             The units specified by ``area_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    maximum_area                             Optional float. Define the maximum area allowed for each region.
+
+                                             The units specified by ``area_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    minimum_distance                         | Optional float. Define the minimum distance allowed between regions. No two regions can be within this distance.
+
+                                             This parameter influences the parameterized region-growing (PRG) algorithm. If a cell has the potential of being
+                                             added to a candidate region, but it is within this distance from any individual region in the ``input_existing_regions``,
+                                             it will not be considered for the candidate region. The minimum distance setting is not applied to
+                                             excluded locations (NoData cells).
+
+                                             The units specified by ``distance_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    maximum_distance                         Optional float. Define the maximum distance allowed between regions. No region can be farther apart than this distance from at least one other region.
+
+                                             When sequentially selecting regions, if the next best region is farther than this distance from any of the already selected regions,
+                                             it will not be considered at this time, but it may be selected later when more regions are selected.
+
+                                             The maximum distance is applied to ``input_existing_regions``; that is, at least one of the selected regions must be within the maximum distance from existing regions.
+                                             The maximum distance setting is not applied to excluded areas (NoData cells), and has no effect on the PRG algorithm.
+
+                                             The units specified by ``distance_units`` will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    distance_units                           | Optional string. Defines the distance units that will be used for the ``minimum_distance`` and ``maximum_distance`` parameters.
+
+                                             The available options and their corresponding units are the following:
+
+                                             - MAP_UNITS - For the linear units of the output spatial reference
+                                             - MILES - For miles
+                                             - KILOMETERS - For kilometers
+                                             - METERS - For meters
+                                             - YARDS - For yards
+                                             - FEET - For feet
+
+                                             The default is based on the input raster. If the input raster is in feet, yards, miles, or any other imperial unit, MILES will be used.
+                                             If the input raster is in meters, kilometers, or any other metric unit, KILOMETERS will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_neighbors                      | Optional string. Defines which neighboring cells to use in the growth of the regions.
+
+                                             The available options are the following:
+
+                                             - FOUR - Only the four direct (orthogonal) neighbors of the region cells will be considered in the region growth.
+
+                                             - EIGHT - The eight nearest neighbors (orthogonal and diagonal) will be considered in the region growth. This is the default.
+    ------------------------------------     --------------------------------------------------------------------
+    no_islands                               Optional boolean. Defines whether or not islands will be allowed within the potential regions.
+
+                                             - True - A value of True specifies that there will be no islands within a region. A flood field algorithm is implemented as a
+                                               postprocess once the regions are created but before the regions are selected. If there are islands within a region,
+                                               they will be filled in and the cells will join the region. Since the fill process occurs before the selection process,
+                                               the utility of the island cells will be added to the region, and their values will be included in the selection process
+                                               of the regions and in the statistics of the output regions. As a result of the fill process, it is likely that the total
+                                               area allocated will exceed the target specified by the ``total_area`` parameter.
+
+                                             - False - A value of False specifies that there will be islands within a region.
+    ------------------------------------     --------------------------------------------------------------------
+    region_seeds                             Optional string. Defines the number of seeds from which to grow the potential regions.
+
+                                             The available options are the following:
+
+                                             - AUTO - The number of seeds will be based on the number of cells in the input raster. When the input raster has 100,000 cells or fewer, the default is MAXIMUM.
+                                               When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
+
+                                             - SMALL - The number of seeds will be equal to 10 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 1,600 seeds.
+
+                                             - MEDIUM - The number of seeds will be equal to 20 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 2,500 seeds.
+
+                                             - LARGE - The number of seeds will be equal to 30 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 3,600 seeds.
+
+                                             - MAXIMUM - The region growth will occur at each available cell within the input raster. Available cells are all cells that are not NoData and not identified as an existing region.
+    ------------------------------------     --------------------------------------------------------------------
+    region_resolution                        Optional string. Sets the resolution at which region growth occurs.
+
+                                             The available options are the following:
+
+                                             - AUTO - The resolution will be based on the number of cells in the input raster. When the input raster has 500,000 cells or fewer, the default is MAXIMUM.
+                                               When the input raster has more than 500,000 cells, the default is LOW. This is the default.
+
+                                             - LOW - The analysis will be performed on an intermediate raster containing 147,356 (384 x 384) cells distributed in the same x and y ratio as the input raster.
+
+                                             - MEDIUM - The analysis will be performed on an intermediate raster containing 262,144 (512 x 512) cells distributed in the same x and y ratio as the input raster.
+
+                                             - HIGH - The analysis will be performed on an intermediate raster containing 589,824 (768 x 768) cells distributed in the same x and y ratio as the input raster.
+
+                                             - MAXIMUM - The analysis will be performed on all cells in the input raster.
+    ------------------------------------     --------------------------------------------------------------------
+    selection_method                         Optional string. Identifies how the regions will be selected.
+
+                                             The available options are the following:
+
+                                             - AUTO - The selection method is based on the Number of regions parameter. If the Number of regions is eight or less, the COMBINATORIAL selection method is used.
+                                               If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
+
+                                             - COMBINATORIAL - Selects the best regions based on the specified evaluation method, while honoring the spatial constraints, by testing all
+                                               combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
+
+                                             - SEQUENTIAL - Sequentially selects the best regions based on the evaluation method and that meets the spatial constraints until the desired number of regions is reached.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                  projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Snap Raster (snapRaster): The output raster will have its
+                                                  cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Mask (mask): Only cells that fall within the analysis mask will be considered in the operation.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ====================================     ====================================================================
+
+    :return: The imagery layer item
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.locate_regions(
+        input_raster=input_raster,
+        input_existing_regions=input_existing_regions,
+        total_area=total_area,
+        area_units=area_units,
+        number_of_regions=number_of_regions,
+        region_shape=region_shape,
+        region_orientation=region_orientation,
+        shape_tradeoff=shape_tradeoff,
+        evaluation_method=evaluation_method,
+        minimum_area=minimum_area,
+        maximum_area=maximum_area,
+        minimum_distance=minimum_distance,
+        maximum_distance=maximum_distance,
+        distance_units=distance_units,
+        number_of_neighbors=number_of_neighbors,
+        no_islands=no_islands,
+        region_seeds=region_seeds,
+        region_resolution=region_resolution,
+        selection_method=selection_method,
+        output_name=output_name,
+        context=context,
+        future=future,
+        estimate=estimate,
+        **kwargs,
     )

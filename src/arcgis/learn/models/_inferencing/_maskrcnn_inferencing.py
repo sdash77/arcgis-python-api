@@ -60,7 +60,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -125,9 +125,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -156,7 +156,7 @@ class ChildInstanceDetector:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -244,6 +244,7 @@ class ChildInstanceDetector:
         self.mask_rcnn = MaskRCNN.from_model(
             emd_path=self.model_emd, chip_size=self.tytx
         )
+        self._learnmodel = self.mask_rcnn
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 

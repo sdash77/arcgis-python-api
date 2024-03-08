@@ -1,13 +1,26 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
+from __future__ import annotations
+import json
+import tempfile
+
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any, Iterator
 from .._impl._con import Connection
 from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
+from ._dsmgr import DataStoreMetricsManager
+from ._partnercollab import PartneredCollabManager
+from arcgis.auth.tools import LazyLoader
+import urllib.parse
+
+_pd = LazyLoader("pandas")
+
+_utils = LazyLoader("arcgis._impl.common._utils")
 
 
 ########################################################################
@@ -24,6 +37,7 @@ class AGOLAdminManager(object):
     :param collaborations: the CollaborationManager object (optional)
     """
 
+    _collabmgr: PartneredCollabManager | None = None
     _con = None
     _gis = None
     _ux = None
@@ -39,6 +53,7 @@ class AGOLAdminManager(object):
     _category_schema = None
     _certificates = None
     _servers = None
+    _dmm = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
@@ -51,16 +66,22 @@ class AGOLAdminManager(object):
         self.resources = PortalResourceManager(gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
-        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
+    def __str__(self) -> str:
+        return "< %s @ %s >" % (
+            type(self).__name__,
+            self._gis._portal.resturl,
+        )
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
-        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
+    def __repr__(self) -> str:
+        return "< %s @ %s >" % (
+            type(self).__name__,
+            self._gis._portal.resturl,
+        )
 
     # ----------------------------------------------------------------------
     @property
-    def ux(self):
+    def ux(self) -> "UX":
         """returns a UX/UI manager
 
         :return:
@@ -72,6 +93,33 @@ class AGOLAdminManager(object):
 
             self._ux = UX(gis=self._gis)
         return self._ux
+
+    # ----------------------------------------------------------------------
+    @property
+    def partnered_collaboration(self) -> PartneredCollabManager:
+        """
+        Returns a manager to work with partnered collaborations
+
+        :return:
+            :class:`~arcgis.gis.admin.PartneredCollabManager`
+        """
+        if self._collabmgr is None:
+            url: str = self._gis.resturl + "portal/self/tustedOrgs"
+            self._collabmgr = PartneredCollabManager(url=url, gis=self._gis)
+        return self._collabmgr
+
+    # ----------------------------------------------------------------------
+    @property
+    def datastore_metrics(self) -> DataStoreMetricsManager:
+        """
+        Provides administrators information about the datastore on ArcGIS Online.
+
+         :return:
+            :class:`~arcgis.gis.admin.DataStoreMetricsManager` object
+        """
+        if self._dmm is None:
+            self._dmm = DataStoreMetricsManager(gis=self._gis)
+        return self._dmm
 
     # ----------------------------------------------------------------------
     @property
@@ -128,6 +176,57 @@ class AGOLAdminManager(object):
         return self._collaborations
 
     # ----------------------------------------------------------------------
+    def content(
+        self,
+        item_type: "ItemTypeEnum" | None = None,
+        sort_field: str | None = "created",
+        order: str | None = "asc",
+    ) -> Iterator[dict[str, Any]]:
+        """
+        The portal content operation allows an administrator to return a
+        list of all items in the organization. Only available to
+        administrators with a privilege to view all items in the
+        organization.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        item_type                       Optional ItemTypeEnum. The item type to filter by.
+        ---------------------------     --------------------------------------------------------------------
+        sort_field                      Optional String. Field to sort by.
+        ---------------------------     --------------------------------------------------------------------
+        order                           Optional String. The sort order of the return data.
+        ===========================     ====================================================================
+
+        """
+        params: dict = {
+            "sortField": sort_field or "",
+            "sortOrder": order or "",
+            "f": "json",
+            "start": 1,
+            "num": 100,
+        }
+
+        if item_type:
+            params["types"] = item_type.value
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
+        session = self._gis._con._session
+        resp = session.get(url=url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while data["items"]:
+            for i in data["items"]:
+                yield Item(gis=self._gis, itemid=i["id"], itemdict=i)
+            if data.get("nextStart") == -1:
+                break
+            params["start"] = data["nextStart"]
+            resp = session.get(url=url, params=params)
+            data: dict = resp.json()
+
+    # ----------------------------------------------------------------------
     @property
     def category_schema(self):
         """
@@ -173,8 +272,8 @@ class AGOLAdminManager(object):
         """
         return LocationTrackingManager(self._gis)
 
-    @property
     # ----------------------------------------------------------------------
+    @property
     def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers
@@ -410,9 +509,7 @@ class AGOLAdminManager(object):
         :return: string or pd.DataFrame or dict
 
         """
-        import tempfile, json
-        from arcgis._impl.common._utils import _date_handler
-
+        _date_handler = _utils._date_handler
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         if num == 0:
@@ -422,7 +519,7 @@ class AGOLAdminManager(object):
             "f": data_format,
             "num": num,
             #'start' : "",
-            "all": all_events,
+            "all": json.dumps(all_events),
             "id": event_ids,
             "types": event_types,
             "actors": actors,
@@ -442,7 +539,7 @@ class AGOLAdminManager(object):
         if data_format == "csv":
             params["f"] = "csv"
             params["num"] = 10000
-            params["all"] = True
+            params["all"] = "true"
             return self._gis._con.post(
                 url,
                 params,
@@ -451,12 +548,12 @@ class AGOLAdminManager(object):
                 try_json=False,
             )
         elif data_format in ["df"]:
-            import pandas as _pd
-
+            if event_ids or event_types or actors or owners or actions:
+                params["all"] = "true"
             params["f"] = "json"
             data = []
 
-            res = self._gis._con.post(url, params)
+            res = self._gis._con.get(url, params)
             data.extend(res["items"])
             while len(res["items"]) > 0 and "nextKey" in res:
                 params["start"] = res["nextKey"]
@@ -467,15 +564,20 @@ class AGOLAdminManager(object):
                     break
             return _pd.DataFrame(data)
         elif data_format in ["raw", "json"]:
+            if event_ids or event_types or actors or owners or actions:
+                params["all"] = "true"
             params["f"] = "json"
             data = []
 
-            res = self._gis._con.post(url, params)
+            res = self._gis._con.get(url, params)
             data.extend(res["items"])
             while len(res["items"]) > 0 and "nextKey" in res:
                 params["start"] = res["nextKey"]
-                res = self._gis._con.post(url, params)
-                data.extend(res["items"])
+                res = self._gis._con.get(url, params)
+                new_data = res["items"]
+                if len(new_data) == 0:
+                    break
+                data.extend(new_data)
                 if num > 0 and len(data) >= num:
                     data = data[:num]
                     break

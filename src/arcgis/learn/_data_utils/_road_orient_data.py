@@ -235,16 +235,20 @@ class RoadOrientation:
                 [
                     # Pairwise Transforms
                     [
-                        pytorch_tfms.RandomCrop(
-                            size=self.base.chip_size,
-                            padding_mode="constant",
-                            pad_if_needed=True,
-                        )
-                        if self.base.chip_size
-                        else None,
-                        pytorch_tfms.Resize(size=self.base.resize_to)
-                        if self.base.resize_to
-                        else None,
+                        (
+                            pytorch_tfms.RandomCrop(
+                                size=self.base.chip_size,
+                                padding_mode="constant",
+                                pad_if_needed=True,
+                            )
+                            if self.base.chip_size
+                            else None
+                        ),
+                        (
+                            pytorch_tfms.Resize(size=self.base.resize_to)
+                            if self.base.resize_to
+                            else None
+                        ),
                         pytorch_tfms.RandomHorizontalFlip(),
                         pytorch_tfms.RandomVerticalFlip(),
                         pytorch_tfms.Normalize(
@@ -261,9 +265,11 @@ class RoadOrientation:
                 [
                     # Pairwise Transforms
                     [
-                        pytorch_tfms.Resize(size=self.base.resize_to)
-                        if self.base.resize_to
-                        else None
+                        (
+                            pytorch_tfms.Resize(size=self.base.resize_to)
+                            if self.base.resize_to
+                            else None
+                        )
                     ],
                     # Image Transforms
                     [pytorch_tfms.ToTensor()],
@@ -483,7 +489,7 @@ class RoadOrientDataset(Dataset):
         from skimage import filters
 
         if self.is_gaussian_mask:
-            new_label = (np.array(label).astype(np.float)) / 255.0
+            new_label = (np.array(label).astype(float)) / 255.0
         else:
             try:
                 new_label = self._createGaussianMask(label)

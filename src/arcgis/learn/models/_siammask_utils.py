@@ -809,9 +809,7 @@ class Anchors:
 
         self.__dict__.update(cfg)
 
-        self.anchor_num = (
-            len(self.scales) * len(self.ratios) * (self.anchor_density**2)
-        )
+        self.anchor_num = len(self.scales) * len(self.ratios) * (self.anchor_density**2)
         self.anchors = None  # in single position (anchor_num*4)
         self.all_anchors = None  # in all position 2*(4*anchor_num*h*w)
         self.generate_anchors()
@@ -1678,7 +1676,7 @@ def siamese_track(
             b = (out_sz[1] - 1) / bbox[3]
             c = -a * bbox[0]
             d = -b * bbox[1]
-            mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+            mapping = np.array([[a, 0, c], [0, b, d]]).astype(float)
             crop = cv2.warpAffine(
                 image,
                 mapping,

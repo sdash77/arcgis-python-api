@@ -1,4 +1,5 @@
 """set of common utilities"""
+
 import os
 import sys
 import time
@@ -127,7 +128,7 @@ def _date_handler(obj):
     if type(obj) is datetime.date:
         import datetime as _dt
 
-        obj = _dt.datetime.combine(obj.today(), _dt.datetime.min.time())
+        obj = _dt.datetime.combine(obj, _dt.datetime.min.time())
     if isinstance(obj, datetime.datetime) or isinstance(obj, date):
         try:
             return local_time_to_online(obj)
@@ -337,3 +338,10 @@ def chunks(l, n):
     """yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i : i + n]
+
+
+# --------------------------------------------------------------------------
+def is_pdf_file(file_path):
+    """check the file first bytes to match with pdf signature"""
+    with open(file_path, "rb") as f:
+        return f.read(4) == b"%PDF"

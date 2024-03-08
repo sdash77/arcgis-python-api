@@ -7,6 +7,7 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
+
 from __future__ import annotations
 from datetime import datetime
 import logging
@@ -1336,7 +1337,7 @@ def plan_routes(
                                     |                            |                                                                                                          |
                                     |                            | Five of the six stops are clustered near the starting location, but one stop is set apart                |
                                     |                            | and requires a much longer drive to be reached. Dividing the stops equally between the two               |
-                                    |                            | routes ( ``max_stops_per_route`` =3) causes unbalanced travel times.                                       |
+                                    |                            | routes ( ``max_stops_per_route`` =3) causes unbalanced travel times.                                     |
                                     +----------------------------+----------------------------------------------------------------------------------------------------------+
                                     | |unbalanced|               | Unbalanced stops per route but balanced travel times:                                                    |
                                     |                            |                                                                                                          |

@@ -1180,6 +1180,7 @@ class ParcelFabricManager(object):
         divide_distribute_remainder: bool,
         default_area_unit: int | str | None = None,
         divide_cogo_line_bearing: float = None,
+        divide_associated_lines: bool = False,
         future: bool = False,
     ):
         """
@@ -1257,7 +1258,12 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction
                                     (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
-        -----------------------     --------------------------------------------------------------------
+        --------------------------- --------------------------------------------------------------------
+        divide_associated_lines     Optional boolean. If true, boundary lines of divided parcels will be split.
+                                    The original parent lines will be set as historic.
+
+                                    The default is `False`.
+        --------------------------- --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1294,6 +1300,7 @@ class ParcelFabricManager(object):
             "divideDistributeRemainder": divide_distribute_remainder,
             "defaultAreaUnit": default_area_unit,
             "divideCogoLineBearing": divide_cogo_line_bearing,
+            "divideAssociatedLines": divide_associated_lines,
             "async": future,
             "f": "json",
         }
@@ -1470,6 +1477,7 @@ class ParcelFabricManager(object):
                                     Only one parcel can be specified as the transfer parcel.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
@@ -1479,6 +1487,7 @@ class ParcelFabricManager(object):
                                     parcel and will become larger.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
@@ -1492,6 +1501,7 @@ class ParcelFabricManager(object):
                                     domain.
 
                                     .. code-block:: python
+
                                         #Example Usage:
 
                                         #Square feet
@@ -1505,6 +1515,7 @@ class ParcelFabricManager(object):
                                     become smaller.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]

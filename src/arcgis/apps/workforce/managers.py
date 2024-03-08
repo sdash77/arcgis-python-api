@@ -944,7 +944,7 @@ class AssignmentIntegrationManager:
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. ArcGIS where clause - version 2 projects
                                only. Defaults to "1=1"
-        ------------------     --------------------------------------------------------------------
+        ==================     ====================================================================
 
         :returns: :class:`List` A list of the integrations.
         """

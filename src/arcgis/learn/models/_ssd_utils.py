@@ -518,7 +518,7 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes, mode_3d=False):
     idx = p_scores.argsort(descending=True)
     tps, fps, clas = tps[idx], fps[idx], clas[idx]
     aps = []
-    for cls in range(1, n_classes + 1):
+    for n_gts_idx, cls in enumerate(range(1, n_classes + 1)):
         if mode_3d:
             cls -= 1
         tps_cls, fps_cls = (
@@ -527,7 +527,7 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes, mode_3d=False):
         )
         if tps_cls.numel() != 0 and tps_cls[-1] != 0:
             precision = tps_cls / (tps_cls + fps_cls + 1e-8)
-            recall = tps_cls / (n_gts[cls - 1] + 1e-8)
+            recall = tps_cls / (n_gts[n_gts_idx] + 1e-8)
             aps.append(compute_ap(precision, recall))
         else:
             aps.append(0.0)
@@ -585,7 +585,7 @@ def kmeans(bboxes, num_anchor):
             return centroids
 
         centroid_sums = np.zeros(
-            (num_points, dim), np.float
+            (num_points, dim), float
         )  # num_points needs to be num_anchors
         for i in range(num_points):
             centroid_sums[cur_centroids[i]] += bboxes[i]

@@ -30,7 +30,6 @@ except Exception as e:
 
 
 class Pix2Pix(ArcGISModel):
-
     """
     Creates a model object which generates fake images of type B from type A.
 
@@ -44,6 +43,12 @@ class Pix2Pix(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     ---------------------   -------------------------------------------
+    backbone                Optional function. Backbone CNN model to be used for
+                            creating the base of the :class:`~arcgis.learn.Pix2Pix`, which
+                            is UNet with vanilla encoder by default.
+                            Compatible backbones as encoder: 'resnet18', 'resnet34',
+                            'resnet50', "resnet101", "resnet152", 'resnext50', 'wide_resnet50'
+    ---------------------   -------------------------------------------
     perceptual_loss         Optional boolean. True when Perceptual loss is used.
                             Default set to False.
     =====================   ===========================================
@@ -52,13 +57,31 @@ class Pix2Pix(ArcGISModel):
     """
 
     def __init__(
-        self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
+        self,
+        data,
+        pretrained_path=None,
+        backbone=None,
+        perceptual_loss=False,
+        *args,
+        **kwargs
     ):
-        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
+        super().__init__(data, backbone, **kwargs)
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
+            bnds = ["o" for i in range(self._data.n_channel)]
+            if not hasattr(self._data, "_bands"):
+                self._data._bands = bnds
+            else:
+                if not self._data._bands:
+                    self._data._bands = bnds
+            self._data._extract_bands = list(range(self._data.n_channel))
             pix2pix_gan = pix2pix_model(
-                self._data.n_channel, self._data.n_channel, perceptual_loss
+                self._data,
+                self._data.n_channel,
+                self._data.n_channel,
+                self._backbone if backbone else None,
+                perceptual_loss,
+                self._data.chip_size,
             )
             if perceptual_loss:
                 self.learn = Learner(
@@ -80,6 +103,7 @@ class Pix2Pix(ArcGISModel):
             self.learn.model = self.learn.model.to(self._device)
             self._slice_lr = False
             self.perceptual_loss = perceptual_loss
+            self.backbone = backbone.lower() if backbone else backbone
             if pretrained_path is not None:
                 self.load(pretrained_path)
             self._code = image_translation_prf
@@ -159,10 +183,10 @@ class Pix2Pix(ArcGISModel):
             data._is_empty = True
             data.resize_to = chip_size
 
-        if emd.get("perceptual_loss", False):
-            model_params["perceptual_loss"] = emd.get("perceptual_loss")
-            return cls(data, **model_params, pretrained_path=str(model_file))
-        model_params["perceptual_loss"] = False
+        model_params["backbone"] = emd.get("backbone", None)
+        model_params["perceptual_loss"] = emd.get("perceptual_loss", False)
+        data._extract_bands = emd.get("extract_bands", None)
+        data._bands = emd.get("bands", None)
         return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
@@ -174,15 +198,15 @@ class Pix2Pix(ArcGISModel):
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_pix2pix"
         _emd_template["perceptual_loss"] = self.perceptual_loss
+        _emd_template["backbone"] = self.backbone
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            )
         _emd_template["ModelType"] = "Pix2Pix"
         _emd_template["n_intput_channel"] = self._data.n_channel
-        # if self._data._is_multispectral:
         _emd_template["NormalizationStats_b"] = {
             "band_min_values": self._data._band_min_values_b,
             "band_max_values": self._data._band_max_values_b,
@@ -201,6 +225,8 @@ class Pix2Pix(ArcGISModel):
         _emd_template["n_channel"] = len(
             _emd_template["NormalizationStats_b"]["band_min_values"]
         )
+        _emd_template["extract_bands"] = self._data._extract_bands
+        _emd_template["bands"] = self._data._bands
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
@@ -266,3 +292,22 @@ class Pix2Pix(ArcGISModel):
     @staticmethod
     def _supported_datasets():
         return ["Pix2Pix", "Export_Tiles"]
+
+    @property
+    def supported_backbones(self):
+        """
+        Supported backbones for this model.
+        """
+        return Pix2Pix._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [
+            "resnet18",
+            "resnet34",
+            "resnet50",
+            "resnet101",
+            "resnet152",
+            "resnext50",
+            "wide_resnet50",
+        ]

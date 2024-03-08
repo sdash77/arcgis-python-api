@@ -691,7 +691,9 @@ class ImageryLayer(Layer):
         self._fn = None
         self._fnra = None
         self._filtered = False
-        self._mosaic_rule = None
+        self._mosaic_rule = self._set_mosaic_rule()
+        if self._mosaic_rule:
+            self._using_default_mosaic_rule = True
         self._extent = None
         self._uses_gbl_function = False
         self._other_outputs = {}
@@ -838,7 +840,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 if "renderingRule" in options_dict["imageServiceParameters"]:
                     del options_dict["imageServiceParameters"]["renderingRule"]
-                options_dict["imageServiceParameters"]["raster"] = self._fn
+                options_dict["imageServiceParameters"]["raster"] = self._fnra
 
         if options_dict["imageServiceParameters"] != {}:
             lyr_dict.update({"options": json.dumps(options_dict)})
@@ -2294,7 +2296,7 @@ class ImageryLayer(Layer):
                 import lerc
             except ImportError:
                 raise ImportError(
-                    "lerc not found. Install lerc to export image service as numpy array"
+                    "lerc not found. Install lerc to export image service as numpy array (pip install pylerc)"
                 )
 
             if not isinstance(res, bytes):
@@ -4708,6 +4710,119 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def query_gps_info(
+        self,
+        where: Optional[str] = None,
+        object_ids: Optional[list[int]] = None,
+        time_filter: Optional[
+            Union[datetime.date, datetime.datetime, list[int], str]
+        ] = None,
+        geometry_filter: Optional[dict] = None,
+    ):
+        """
+        The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
+        the user. The result of this operation is the gps and orientation information for image collections created by
+        OrthoMapping REST/Python API or Ortho Maker.
+
+        .. note::
+            The ``query_gps_info`` operation is supported at 11.2 and later.
+
+        ==============================  ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------  --------------------------------------------------------------------
+        where                           Optional string. A where clause on this layer to filter the imagery
+                                        layer by the selection sql statement. Any legal SQL where clause
+                                        operating on the fields in the raster
+        ------------------------------  --------------------------------------------------------------------
+        object_ids                      Optional list of objectids, use the raster id list to define a
+                                        subset of rasters.
+        ------------------------------  --------------------------------------------------------------------
+        time_filter                     Optional datetime.date, datetime.datetime or timestamp in
+                                        milliseconds. The time instant or the time extent to query.
+
+                                        Syntax: time_filter=<timeInstant>
+
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ------------------------------  --------------------------------------------------------------------
+        geometry_filter                 Optional arcgis.geometry.filters. Spatial filter from
+                                        arcgis.geometry.filters module to filter results by a spatial
+                                        relationship with another geometry.
+        ==============================  ====================================================================
+
+        :return: A dict containing the gps and camera information for the image collection.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
+
+            # Usage Example 2
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            aoi_intersects = arcgis.geometry.filters.intersects(geometry=geometry_obj)
+            gps_info = img_lyr.query_gps_info(geometry_filter=aoi_intersects)
+
+        """
+
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        if self._datastore_raster:
+            raise RuntimeError(
+                "This operation cannot be performed on a datastore raster"
+            )
+
+        params = {"f": "json"}
+        if object_ids:
+            params["objectIds"] = object_ids
+
+        if where is not None:
+            params["where"] = where
+        elif self._where_clause is not None:
+            params["where"] = self._where_clause
+        else:
+            params["where"] = "1=1"
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = "null"
+                if endtime is None:
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
+            else:
+                params["time"] = _date_handler(time_filter)
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
+
+        if not geometry_filter is None and isinstance(geometry_filter, dict):
+            gf = geometry_filter
+            params["geometry"] = gf["geometry"]
+            params["geometryType"] = gf["geometryType"]
+            params["spatialRel"] = gf["spatialRel"]
+            if "inSR" in gf:
+                params["inSR"] = gf["inSR"]
+
+        url = self._url + "/queryGPSInfo"
+        res = self._con.post(path=url, postdata=params, timeout=None)
+
+        return res
+
     def _compute_multidimensional_info(
         self,
         where=None,
@@ -4936,6 +5051,7 @@ class ImageryLayer(Layer):
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: Optional[bool] = False,
         **kwargs,
     ):
         """
@@ -5037,9 +5153,12 @@ class ImageryLayer(Layer):
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
         ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
+        ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -5130,6 +5249,7 @@ class ImageryLayer(Layer):
                             other_outputs=self._other_outputs,
                             gis=g,
                             future=future,
+                            estimate=estimate,
                             **kwargs,
                         )
                     else:
@@ -5141,6 +5261,7 @@ class ImageryLayer(Layer):
                             gis=g,
                             future=future,
                             context=context,
+                            estimate=estimate,
                             **kwargs,
                         )
                 except Exception:
@@ -5169,6 +5290,7 @@ class ImageryLayer(Layer):
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -5245,6 +5367,9 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, a future object will be returned and the process
                                                  will not wait for the task to complete. The default is False, which means wait for results.
+        ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
@@ -5275,6 +5400,7 @@ class ImageryLayer(Layer):
             gis=g,
             future=future,
             context=context,
+            estimate=estimate,
             **kwargs,
         )
 
@@ -6427,8 +6553,8 @@ class ImageryLayer(Layer):
         variables: list[str] = [],
         bands: list[int] = [0],
         time_extent: Optional[list[datetime.datetime]] = None,
-        dimension: Optional[list[float]] = None,
-        dimension_values: list = [],
+        dimension: Optional[list[str]] = None,
+        dimension_values: Optional[list[float]] = [],
         show_values: bool = False,
         trend_type: Optional[str] = None,
         trend_order: Optional[int] = None,
@@ -6465,19 +6591,19 @@ class ImageryLayer(Layer):
                                                  If not specified the time field is obtained from the timeInfo of
                                                  the image service.
         ------------------------------------     --------------------------------------------------------------------
-        variables                                Required list of variable names.
+        variables                                Required list of strings. The variables that will be used for plotting temporal profile.
                                                  For non multidimensional data, the variable would be name of the Sensor.
                                                  To plot the graph against all sensors specify - "ALL_SENSORS"
         ------------------------------------     --------------------------------------------------------------------
-        bands                                    Optional list of band indices. By default takes the
-                                                 first band (band index - 0).
+        bands                                    Optional list of integers. Band indices to be used for plotting temporal profile.
+                                                 By default takes the first band (band index - 0).
                                                  For a multiband data, you can compare the time change of different
                                                  bands over different locations.
         ------------------------------------     --------------------------------------------------------------------
-        time_extent                              Optional list of date time object. This represents the time extent
+        time_extent                              Optional list of datetime objects. This represents the time extent.
         ------------------------------------     --------------------------------------------------------------------
-        dimension                                Optional list of dimension names. This option works specifically on
-                                                 multidimensional data containing a time dimension and other dimensions.
+        dimension                                Optional list of strings. The dimension names that will be used for plotting temporal profile.
+                                                 This option works specifically on multidimensional data containing a time dimension and other dimensions.
 
                                                  The temporal profile is created based on the specific values in other
                                                  dimensions, such as depth at the corresponding time value. For example,
@@ -6485,7 +6611,7 @@ class ImageryLayer(Layer):
                                                  dimension below the earth's surface, resulting in a temporal profile
                                                  at 0.1, 0.2, and 0.3 meters below the ground.
         ------------------------------------     --------------------------------------------------------------------
-        dimension_values                         Optional list of dimension values. This parameter can be used to specify
+        dimension_values                         Optional list of floats. This parameter can be used to specify
                                                  the values of dimension parameter other than the time dimension (dimension
                                                  name specified using dimension parameter)
         ------------------------------------     --------------------------------------------------------------------
@@ -6493,7 +6619,7 @@ class ImageryLayer(Layer):
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
-                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 Set the trend_type parameter to either linear or harmonic to draw the trend line.
                                                  linear : Fits the pixel values for a variable along a linear trend line.
                                                  harmonic : Fits the pixel values for a variable along a harmonic trend line.
         ------------------------------------     --------------------------------------------------------------------
@@ -6571,6 +6697,7 @@ class ImageryLayer(Layer):
             colStart = math.floor(
                 (dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw
             )
+            colStart = 0 if colStart < 0 else colStart
             colEnd = math.ceil(
                 (dataSourceExtent["xmax"] - origin["x"] - resolution["x"])
                 / resolution["x"]
@@ -6579,6 +6706,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor(
                 (origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th
             )
+            rowStart = 0 if rowStart < 0 else rowStart
             rowEnd = math.ceil(
                 (origin["y"] - dataSourceExtent["ymin"] - resolution["y"])
                 / resolution["y"]
@@ -6643,8 +6771,14 @@ class ImageryLayer(Layer):
                             band_arr = numarray[:, :, i]
 
                         # percent clip stretching
-                        p005 = np.percentile(band_arr, 0.5)
-                        p995 = np.percentile(band_arr, 99.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p005 = np.percentile(band_arr_new, 0.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
                         out[band_arr < p005] = 0
@@ -6654,6 +6788,8 @@ class ImageryLayer(Layer):
                     if num_bands == 1 and numarray.ndim == 2:
                         stretched_img = band_arr_list[0]
                     else:
+                        if num_bands == 2:
+                            band_arr_list.append(band_arr_list[1])
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
@@ -6720,7 +6856,7 @@ class ImageryLayer(Layer):
                 import lerc
             except:
                 _LOGGER.warning(
-                    "lerc needs to be installed, to render Tiled Imagery Layer"
+                    "lerc needs to be installed, to render Tiled Imagery Layer (pip install pylerc)"
                 )
             if not isinstance(res, bytes):
                 raise RuntimeError(res)
@@ -6735,9 +6871,7 @@ class ImageryLayer(Layer):
             data = ma.masked_array(data, valid_mask)
             if data.shape[0] > 3 and len(data.shape) == 3:
                 data = data[0:3]  # Extract first 3 bands
-            if len(data) == 2:
-                data = np.expand_dims(data, axis=2)
-            elif len(data) == 3:
+            if len(data) == 2 or len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
             # data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
@@ -6979,6 +7113,76 @@ class ImageryLayer(Layer):
             plot_properties=plot_properties,
         )
 
+    def dimension_profile(
+        self,
+        points: list[Point],
+        dimension: str,
+        time: datetime.datetime,
+        variables: list[str] = [],
+        show_values: bool = False,
+        show_trend_line: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+        """
+        Dimension profile chart visualizes change along a vertical dimension, such as depth or height,
+        using a multidimensional raster dataset with a z-dimension.
+        Dimension Profile is only available for multidimensional datasets that contain a z-dimension.
+
+        Change is plotted in the form of a line graph for a given location and date or time. This allows
+        trends in two variables to be displayed and compared simultaneously, while taking into account
+        different unit scales.
+
+        The x-axis of the dimension profile displays the values of the variable. Default minimum and
+        maximum x-axis bounds are set based on the range of data values represented on the axis.
+
+        The y-axis of the dimension profile displays the vertical dimension value.
+
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Required string. The dimension name that will be used for plotting dimension profile. Use this parameter to set the field that
+                                                 represents the dimension field in the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        time                                     Required datetime object or timestamp in milliseconds. The time slice that will be used for plotting dimension profile.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of strings. The variables that will be used for plotting dimension profile.
+                                                 The dimension profile chart allows a maximum of two variables to be displayed.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional boolean. Default value is False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        show_trend_line                          Optional boolean. Default value is False.
+                                                 Set this parameter to True to add a linear trend line to the dimension profile chart.
+                                                 One trend line will be drawn for each location when charting multiple locations,
+                                                 or each variable when charting multiple variables.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import dimension_profile
+
+        return dimension_profile(
+            self,
+            points=points,
+            dimension=dimension,
+            time=time,
+            variables=variables,
+            show_values=show_values,
+            show_trend_line=show_trend_line,
+            plot_properties=plot_properties,
+        )
+
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
             return self._repr_svg_()
@@ -7016,6 +7220,67 @@ class ImageryLayer(Layer):
             return svg_graph
         else:
             return None
+
+    def _set_mosaic_rule(self):
+        mosaic_method_mapping = {
+            "none": "esriMosaicNone",
+            "center": "esriMosaicCenter",
+            "northwest": "esriMosaicNorthwest",
+            "nadir": "esriMosaicNadir",
+            "viewpoint": "esriMosaicViewpoint",
+            "byattribute": "esriMosaicAttribute",
+            "lockraster": "esriMosaicLockRaster",
+            "seamline": "esriMosaicSeamline",
+        }
+
+        mosaic_rule = {}
+        try:
+            if type(self) == ImageryLayer:
+                if (
+                    "capabilities" in self.properties
+                    and str(self.properties["capabilities"]).lower().find("catalog")
+                    == -1
+                ):
+                    return None
+                if (
+                    "defaultMosaicMethod" in self.properties.keys()
+                ) and self.properties["defaultMosaicMethod"] != None:
+                    if (
+                        self.properties["defaultMosaicMethod"].lower()
+                        in mosaic_method_mapping.keys()
+                    ):
+                        mosaic_rule.update(
+                            {
+                                "mosaicMethod": mosaic_method_mapping[
+                                    self.properties["defaultMosaicMethod"].lower()
+                                ]
+                            }
+                        )
+                if ("sortField" in self.properties.keys()) and self.properties[
+                    "sortField"
+                ] != None:
+                    mosaic_rule.update({"sortField": self.properties["sortField"]})
+                if ("sortValue" in self.properties.keys()) and self.properties[
+                    "sortValue"
+                ] != None:
+                    mosaic_rule.update({"sortValue": self.properties["sortValue"]})
+                if ("mosaicOperator" in self.properties.keys()) and self.properties[
+                    "mosaicOperator"
+                ] != None:
+                    mosaic_rule.update(
+                        {
+                            "mosaicOperation": "MT_"
+                            + self.properties["mosaicOperator"].upper()
+                        }
+                    )
+                if ("sortAscending" in self.properties.keys()) and self.properties[
+                    "sortAscending"
+                ] != None:
+                    mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+        except:
+            pass
+
+        return mosaic_rule
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -8003,6 +8268,7 @@ class Raster:
         stac_item: Union[str, Item],
         request_params: Optional[dict[str, Any]] = None,
         engine: Optional[dict[str, Any]] = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -8018,11 +8284,47 @@ class Raster:
                               API Item URL.
 
                               .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
-                                are supported for this method (Available in 11.0 onwards).
+
+                                STAC items from the following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: daymet-annual-pr, daymet-daily-hi, \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, gridmet, daymet-annual-na, daymet-monthly-na, daymet-annual-hi, \
+                                        daymet-monthly-hi, daymet-monthly-pr, hgb, cop-dem-glo-30, cop-dem-glo-90, terraclimate, gnatsgo-rasters, 3dep-lidar-hag, \
+                                        3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, mobi, landsat-c2-l2, \
+                                        chloris-biomass, daymet-daily-pr, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, daymet-daily-na, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, noaa-climate-normals-netcdf, \
+                                        noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, noaa-cdr-sea-surface-temperature-whoi, \
+                                        noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, sentinel-3-olci-wfr-l2-netcdf, \
+                                        noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, sentinel-3-olci-lfr-l2-netcdf, \
+                                        sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, sentinel-3-synergy-syn-l2-netcdf, \
+                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061, modis-17A2H-061, \
+                                        modis-11A2-061, modis-17A2HGF-061, modis-17A3HGF-061, modis-09A1-061, modis-16A3GF-061, modis-21A2-061, modis-43A4-061, \
+                                        modis-09Q1-061, modis-14A1-061, modis-13Q1-061, modis-14A2-061, modis-15A2H-061, modis-11A1-061, modis-15A3H-061, \
+                                        modis-13A1-061, modis-10A2-061, modis-10A1-061, aster-l1t)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+                                    - https://landsatlook.usgs.gov/stac-server (All collections are suported)
+                                    - https://geoportalstac.azurewebsites.net/stac (All collections are suported)
+                                    - https://gpt.geocloud.com/sentinel/stac (All collections are suported)
+
+                                STAC items from the following Static Catalogs (and their underying Child Catalogs) are supported:
+
+                                    - https://capella-open-data.s3.us-west-2.amazonaws.com/stac/catalog.json \
+                                        (Following product-types are supported: GEO, GEC, SICD)
+                                    - https://maxar-opendata.s3.amazonaws.com/events/catalog.json
+                                    - https://storage.googleapis.com/cfo-public/catalog.json
+                                    - https://nz-imagery.s3-ap-southeast-2.amazonaws.com/catalog.json
+                                    - https://raw.githubusercontent.com/m-mohr/oam-example/main/catalog.json
+                                    - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
+                                    - https://pta.data.lit.fmi.fi/stac/root.json
+                                    - https://datacloud.icgc.cat/stac-catalog/catalog.json
+                                    - https://bdc-sentinel-2.s3.us-west-2.amazonaws.com/catalog.json
 
                               Example:
-                                    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -8047,6 +8349,64 @@ class Raster:
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
                                 in the active GIS connection.
         -----------------     --------------------------------------------------------------------
+        context               Optional dictionary. Additional properties to control the creation of the Raster object.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your Raster object.
+                                    If multiple assets are selected, the raster will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    Else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the raster.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
+        -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
 
@@ -8054,12 +8414,54 @@ class Raster:
 
         .. code-block:: python
 
-            # Usage Example: Creating a Raster object from a STAC Item.
+            # Usage Example 1: Construct a raster object from NAIP data accesible through
+            # Planetary Computer STAC API
 
-            ras = Raster.from_stac_item(stac_item=stac_item_url,
-                                        gis=gis)
+            naip_pc_ras = Raster.from_stac_item(
+                stac_item="https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
+            )
+
+            # Usage Example 2: Construct a raster object from a pystac.Item object created using
+            # Sentinel-2 L2A data accesible through Earth Search STAC API
+
+            item_url = "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_37TCM_20240219_0_L2A"
+            item = pystac.Item.from_file(item_url)
+            pystac_s2_ras = Raster.from_stac_item(stac_item=item, gis=gis)
+
+            # Usage Example 3: Construct a raster object from Landsat C2-L2 data accesible through USGS
+            # LandsatLook STAC API (with custom processing template selection) - Requires a registered cloudStore.
+
+            qa_landsat_ras = Raster.from_stac_item(
+                stac_item="https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2-sr/items/LC09_L2SP_088084_20230729_20230801_02_T2_SR",
+                context={
+                    "processingTemplate": "QA",
+                },
+            )
+
+            # Usage Example 4: Construct a raster object from Landsat C2-L2 data accesible through USGS
+            # LandsatLook STAC API (with custom asset selection) - Requires a registered cloudStore.
+
+            rad_landsat_ras = Raster.from_stac_item(
+                stac_item="https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2alb-st/items/LC09_L2SP_072022_20230729_20230801_02_A1_ST",
+                gis=gis,
+                context={
+                    "assetManagement": [
+                        {"key": "TRAD", "path": ["alternate", "s3"]},
+                        {"key": "DRAD", "path": ["alternate", "s3"]},
+                    ],
+                },
+            )
+
+            # Usage Example 5: Construct a raster object from CBERS data accesible through
+            # CBERS/AMAZONIA on AWS (static) STAC (with custom asset selection) - Requires a registered cloudStore.
+
+            cbers_ras = Raster.from_stac_item(
+                stac_item="https://br-eo-stac-1-0-0.s3.amazonaws.com/CBERS4/MUX/043/076/CBERS_4_MUX_20230630_043_076_L2.json",
+                context={"assetManagement": ["B7", "B6", "B5"]},
+            )
 
         """
+        is_pystac_item = False
         if isinstance(stac_item, str):
             if request_params is None:
                 request_params = {}
@@ -8073,8 +8475,13 @@ class Raster:
             data = _requests.get(stac_item, **request_params)
             if data.status_code != 200 or data.headers.get("content-type") not in [
                 "application/json",
+                "application/json; charset=utf-8",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
+                "text/plain; charset=utf-8",
+                "text/plain",
+                "binary/octet-stream",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8086,6 +8493,7 @@ class Raster:
                 import pystac
 
                 json_data = stac_item.to_dict()
+                is_pystac_item = True
             except ImportError:
                 raise ImportError(
                     "pystac not found, parameter stac_item accepts either a STAC Item URL or a pystac.Item object"
@@ -8093,17 +8501,50 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
-        if "type" not in json_data or json_data["type"] != "Feature":
+        zarr_datasets = [
+            "daymet-annual-pr",
+            "daymet-daily-hi",
+            "gridmet",
+            "daymet-annual-na",
+            "daymet-monthly-na",
+            "daymet-annual-hi",
+            "daymet-monthly-hi",
+            "daymet-monthly-pr",
+            "terraclimate",
+            "daymet-daily-pr",
+            "daymet-daily-na",
+        ]
+
+        if "type" not in json_data or (
+            json_data["type"] not in ["Feature", "Collection"]
+            or (
+                json_data["type"] == "Collection"
+                and json_data["id"] not in zarr_datasets
+            )
+        ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
+
         item = json_data
+        item_href = stac_item.self_href if is_pystac_item else stac_item
 
-        from ._util import _get_stac_metadata_file
+        from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
+        from arcgis.raster.functions import composite_band
 
-        metadata_file = _get_stac_metadata_file(item)
+        metadata_file = _get_stac_metadata_file(item, context)
         if not metadata_file:
-            raise RuntimeError("STAC Item not supported")
+            item, metadata_file = _get_static_catalog_item_resources(
+                (item_href, item), request_params, context
+            )
+            if not metadata_file:
+                raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, engine=engine, gis=gis)
+        ras = (
+            composite_band(
+                rasters=[Raster(file, engine=engine, gis=gis) for file in metadata_file]
+            )
+            if isinstance(metadata_file, list)
+            else Raster(metadata_file, engine=engine, gis=gis)
+        )
         return ras
 
     def get_raster_bands(self, band_ids_or_names: Optional[list[str]] = None):
@@ -8893,6 +9334,7 @@ class Raster:
         build_transpose: Optional[bool] = None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -8951,9 +9393,12 @@ class Raster:
 
                                                  (Available only when image_server engine is used)
         ------------------------------------     --------------------------------------------------------------------
+        estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                                 Available only on ArcGIS Online.
+        ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
 
                                                  (Available only when image_server engine is used)
 
@@ -8992,6 +9437,7 @@ class Raster:
             build_transpose,
             gis,
             future,
+            estimate,
             **kwargs,
         )
 
@@ -10429,6 +10875,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -10450,6 +10897,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             build_transpose=build_transpose,
             gis=gis,
             future=future,
+            estimate=estimate,
             **kwargs,
         )
 
@@ -10693,7 +11141,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             adjust_aspect_ratio,
             lerc_version,
         )
-        if f == "image":
+        if f == "image" and save_folder is None and save_file is None:
             from IPython.display import Image
 
             return Image(result)
@@ -11318,6 +11766,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         build_transpose=None,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -12312,6 +12761,7 @@ class RasterCollection:
         request_method: str = "POST",
         request_params: Optional[dict[str, Any]] = None,
         engine: str = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -12327,11 +12777,34 @@ class RasterCollection:
                               the search needs to be performed.
 
                               .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
-                                are supported for this method (Available in 11.0 onwards).
+
+                                The following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, hgb, cop-dem-glo-30, cop-dem-glo-90, gnatsgo-rasters, \
+                                        3dep-lidar-hag, 3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, \
+                                        chloris-biomass, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        mobi, landsat-c2-l2, noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, \
+                                        noaa-climate-normals-netcdf, noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, \
+                                        noaa-cdr-sea-surface-temperature-whoi, noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, \
+                                        sentinel-3-olci-wfr-l2-netcdf, noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, \
+                                        sentinel-3-olci-lfr-l2-netcdf, sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, \
+                                        sentinel-3-synergy-syn-l2-netcdf, sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover, modis-64A1-061, \
+                                        modis-17A2H-061, modis-11A2-061, modis-17A2HGF-061, modis-17A3HGF-061, modis-09A1-061, modis-16A3GF-061, modis-21A2-061, modis-43A4-061, \
+                                        modis-09Q1-061, modis-14A1-061, modis-13Q1-061, modis-14A2-061, modis-15A2H-061, modis-11A1-061, modis-15A3H-061, \
+                                        modis-13A1-061, modis-10A2-061, modis-10A1-061, aster-l1t)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+                                    - https://landsatlook.usgs.gov/stac-server (All collections are suported)
+                                    - https://geoportalstac.azurewebsites.net/stac (All collections are suported)
+                                    - https://gpt.geocloud.com/sentinel/stac (All collections are suported)
+
 
                               Example:
-                                    "https://earth-search.aws.element84.com/v0"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1"
         -----------------     --------------------------------------------------------------------
         query                 Optional dictionary. The GET/POST request query dictionary that can be
                               used to query a STAC API's search endpoint. (keys/values would depend
@@ -12342,10 +12815,17 @@ class RasterCollection:
                               and :class:`~arcgis.geometry.Polygon`
                               objects are also accepted (in any spatial reference).
 
+                              .. note:: 
+
+                                ``limit`` key of the query should be explicitly set as ``None`` when \
+                                trying to create a RasterCollection from all the matched items \
+                                (retrieving them from all the pages). By default, the RasterCollection \
+                                is created from the first page of matches.
+
                               Example:
                                     | {
-                                    |   "collections": ["sentinel-s2-l2a-cogs"],
-                                    |   "bbox": [-110,39.5,-105,40.5],
+                                    |   "collections": ["sentinel-2-l2a"],
+                                    |   "bbox": [-110, 39.5, -105, 40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 0.5}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                     |   "limit": 100
@@ -12413,6 +12893,64 @@ class RasterCollection:
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
                                 in the active GIS connection.
         -----------------     --------------------------------------------------------------------
+        context               Optional dictionary. Additional properties to control the creation of RasterCollection.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your RasterCollection.
+                                    If multiple assets are selected, the collection will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the individual rasters in the collection.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
+        -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
@@ -12420,28 +12958,82 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example: Creating a RasterCollection object from making a query to a STAC API.
+            # Usage Example 1: Construct a collection from the Sentinel-2 L2A data accesible through
+            # Earth Search STAC API
 
-            rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
-                                                query={
-                                                        "collections": ["sentinel-s2-l2a-cogs"],
-                                                        "bbox": [-110,39.5,-105,40.5],
-                                                        "query": {"eo:cloud_cover": {"lt": 0.5}},
-                                                        "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
-                                                        "limit": 100
-                                                      },
-                                                attribute_dict={
-                                                                "Name":"id",
-                                                                "Sensor":"platform",
-                                                                "StdTime":"datetime",
-                                                                "Cloud Cover":"eo:cloud_cover",
-                                                                "Spatial Reference":"proj:epsg",
-                                                                "Extent":"bbox"
-                                                               },
-                                                request_method="POST",
-                                                gis=gis)
+            sentinel_2_aws_rc = RasterCollection.from_stac_api(
+                stac_api="https://earth-search.aws.element84.com/v1",
+                query={
+                    "collections": ["sentinel-2-l2a"],
+                    "bbox": [-110, 39.5, -105, 40.5],
+                    "query": {"eo:cloud_cover": {"lt": 0.5}},
+                    "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
+                    "limit": 100,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "StdTime": "datetime",
+                    "Cloud Cover": "eo:cloud_cover",
+                    "Spatial Reference": "proj:epsg",
+                    "Extent": "bbox",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 2: Construct a collection from the NAIP data accesible through
+            # Planetary Computer STAC API
+
+            naip_pc_rc = RasterCollection.from_stac_api(
+                stac_api="https://planetarycomputer.microsoft.com/api/stac/v1",
+                query={
+                    "collections": ["naip"],
+                    "bbox": [-122.2751, 47.5469, -121.9613, 47.7458],
+                    "datetime": "2018-12-01/2020-12-31",
+                    "limit": 5,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "GSD": "gsd",
+                    "StdTime": "datetime",
+                    "State": "naip:state",
+                    "Spatial Reference": "proj:epsg",
+                    "Extent": "bbox",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 3: Construct a collection from the Landsat-9 C2-L2 data accesible through
+            # Digital Earth Africa STAC API (with custom asset selection) - Requires a registered cloudStore.
+
+            landsat_dea_rc = RasterCollection.from_stac_api(
+                stac_api="https://explorer.digitalearth.africa/stac",
+                query={
+                    "collections": ["ls9_sr"],
+                    "bbox": [
+                        25.982987096443583,
+                        29.249912751222965,
+                        28.30879111403085,
+                        31.348538968581714,
+                    ],
+                    "datetime": "2020-12-01/2023-12-31",
+                    "limit": 20,
+                },
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "Cloud Cover": "eo:cloud_cover",
+                    "Row": "landsat:wrs_row",
+                    "Path": "landsat:wrs_path",
+                },
+                context={"assetManagement": ["SR_B4", "SR_B3", "SR_B2"]},  # rgb
+                gis=gis,
+            )
 
         """
+
+        from ._util import _get_stac_metadata_file, _get_stac_api_search_items
+
         if not isinstance(stac_api, str):
             raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
         api_search_endpoint = (
@@ -12491,11 +13083,12 @@ class RasterCollection:
                         raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
-                    bbox_list = []
-                    bbox_list.append(projected_envelope[0]["xmin"])
-                    bbox_list.append(projected_envelope[0]["ymin"])
-                    bbox_list.append(projected_envelope[0]["xmax"])
-                    bbox_list.append(projected_envelope[0]["ymax"])
+                    bbox_list = [
+                        projected_envelope[0]["xmin"],
+                        projected_envelope[0]["ymin"],
+                        projected_envelope[0]["xmax"],
+                        projected_envelope[0]["ymax"],
+                    ]
 
                     if request_method.upper() == "GET":
                         bbox_str = ",".join(str(e) for e in bbox_list)
@@ -12503,28 +13096,45 @@ class RasterCollection:
                     else:
                         new_query["bbox"] = bbox_list
 
-        if request_method.upper() == "GET":
-            data = _requests.get(
-                api_search_endpoint, params=new_query, **request_params
-            )
-        else:
-            data = _requests.post(api_search_endpoint, json=new_query, **request_params)
+        max_limit_map = {
+            "planetarycomputer.microsoft.com/api/stac": 1000,
+            "earth-search.aws.element84.com": 200,
+            "services.sentinel-hub.com/api": 100,
+            "landsatlook.usgs.gov/stac-server": 2000,
+            "gpt.geocloud.com/sentinel/stac": 1000,
+            "geoportalstac.azurewebsites.net/stac": 10000,
+        }
 
-        if data.status_code != 200 or data.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-        ]:
-            raise RuntimeError(
-                f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
-            )
+        stacs = list(max_limit_map.keys())
 
-        json_data = data.json()
-        if "type" not in json_data or json_data["type"] != "FeatureCollection":
-            raise RuntimeError(
-                f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}"
-            )
-        items = json_data["features"]
+        search_stac = next(
+            (stac for stac in stacs if stac in api_search_endpoint), None
+        )
+
+        if search_stac is None:
+            if context is None:
+                raise RuntimeError("STAC API not supported")
+
+        get_all_items = False
+
+        if (
+            new_query is not None
+            and "limit" in new_query
+            and new_query["limit"] is None
+        ):
+            new_query["limit"] = max_limit_map[search_stac]
+            get_all_items = True
+
+        items = _get_stac_api_search_items(
+            api_search_endpoint,
+            new_query,
+            request_method,
+            request_params,
+            get_all_items,
+        )
+
+        if len(items) < 1:
+            raise RuntimeError(f"No STAC items found. Please specify a better query")
 
         rc_attribute_dict = {}
         attribute_dict = {} if attribute_dict is None else attribute_dict
@@ -12533,23 +13143,34 @@ class RasterCollection:
                 rc_attribute_dict[key] = attribute_dict[key]
             else:
                 rc_attribute_dict[key] = [
-                    item[attribute_dict[key]]
-                    if attribute_dict[key] in item
-                    else item["properties"][attribute_dict[key]]
-                    if attribute_dict[key] in item["properties"]
-                    else key
+                    (
+                        item[attribute_dict[key]]
+                        if attribute_dict[key] in item
+                        else (
+                            item["properties"][attribute_dict[key]]
+                            if attribute_dict[key] in item["properties"]
+                            else key
+                        )
+                    )
                     for item in items
                 ]
 
-        from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
         for item in items:
-            metadata_file = _get_stac_metadata_file(item)
+            metadata_file = _get_stac_metadata_file(item, context)
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
-
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in metadata_file
+                    ]
+                )
+                if isinstance(metadata_file, list)
+                else Raster(metadata_file, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:
@@ -12579,6 +13200,7 @@ class RasterCollection:
         attribute_dict: Optional[dict[str, Any]] = None,
         request_params: Optional[dict[str, Any]] = None,
         engine: Optional[str] = None,
+        context: Optional[dict] = None,
         *,
         gis: Optional[GIS] = None,
     ):
@@ -12589,14 +13211,27 @@ class RasterCollection:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
-                              be the URL of the Static STAC (Catalog).
+        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Catalog>`__ / \
+                              `pystac.Collection <https://pystac.readthedocs.io/en/stable/api/pystac.html#pystac.Collection>`__ \
+                              object. If string, then it should be the URL of the Static STAC (Catalog).
 
                               .. note::
-                                Currently only Landsat-8 STAC (Catalogs) are supported for this method.
+
+                                The following Static Catalogs (and their underying Child Catalogs) are supported:
+
+                                    - https://capella-open-data.s3.us-west-2.amazonaws.com/stac/catalog.json \
+                                        (Following product-types are supported: GEO, GEC, SICD)
+                                    - https://maxar-opendata.s3.amazonaws.com/events/catalog.json
+                                    - https://storage.googleapis.com/cfo-public/catalog.json
+                                    - https://nz-imagery.s3-ap-southeast-2.amazonaws.com/catalog.json
+                                    - https://raw.githubusercontent.com/m-mohr/oam-example/main/catalog.json
+                                    - https://dop-stac.opengeodata.lgln.niedersachsen.de/catalog.json
+                                    - https://pta.data.lit.fmi.fi/stac/root.json
+                                    - https://datacloud.icgc.cat/stac-catalog/catalog.json
+                                    - https://bdc-sentinel-2.s3.us-west-2.amazonaws.com/catalog.json
 
                               Example:
-                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/catalog.json"
+                                    "https://maxar-opendata.s3.amazonaws.com/events/India-Floods-Oct-2023/collection.json"
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
                               (STAC Item) raster of the catalog. For each key-value pair, the key is
@@ -12646,26 +13281,126 @@ class RasterCollection:
                                     When using ``image_server`` engine, RasterRendering service should be enabled \
                                     in the active GIS connection.
         -----------------     --------------------------------------------------------------------
-        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        context               Optional dictionary. Additional properties to control the creation of RasterCollection.
+
+                              Possible options:
+                                - ``assetManagement``: Specifies how to manage and select assets for your RasterCollection.
+                                    If multiple assets are selected, the collection will be composed of multiband rasters
+                                    from those selected asset types.
+                                    
+                                    Type: List, String or Dictionary
+
+                                    Format:
+                                    When working with individual assets, the asset key can be specified directly (Eg: "B02", {"key": "B02"})
+                                    else it could be a list. Each item in the list represents an asset key or identifier. Items inside the list
+                                    can either be strings representing the asset key directly, or dictionaries providing
+                                    additional details for locating the asset.
+
+                                    The following keys could be used to provide the additional information of the assets (through individual dictionaries):
+
+                                        - ``key``: A string representing the unique identifier for an asset. For example: "red".
+                                    
+                                        - ``path``: A dictionary representing the hierarchy of keys to navigate to the asset. \
+                                            For example: ["alternate", "s3"]
+                                                        
+                                        - ``hrefKey``: A string representing the key to access the asset URL. If different from the default "href" key, \
+                                            it should be specified here. For example: "msft:https-url".
+                                    
+                                    Usage examples:
+                                        - "red"
+                                        - ["red", "green", "blue"]
+                                        - {"key": "tasmin", "hrefKey": "msft:https-url"}
+                                        - [{"key": "TRAD", "path": ["alternate", "s3"]}, {"key": "DRAD", "path": ["alternate", "s3"]}]
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "assetManagement": [
+                                                "red",
+                                                "blue"
+                                            ]
+                                        }
+
+                                - ``processingTemplate``: Specifies the processing template to be applied to the individual rasters in the collection.
+                                    Supported for selected collections and raster types. Read more about this in the
+                                    `Satellite sensor raster types <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/satellite-sensor-raster-types.htm>`__ documentation.
+
+                                    Type: String
+
+                                    Default: "Multiband" (for supported raster types only else None)
+
+                                    Example:
+
+                                    .. code-block:: python
+
+                                        {
+                                            "processingTemplate": "Surface Reflectance"
+                                        }
+        -----------------     --------------------------------------------------------------------
+        gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
 
         .. code-block:: python
 
-            # Usage Example: Creating a RasterCollection object from a Static STAC.
+            # Usage Example 1: Construct a collection from Maxar STAC
+            
+            maxar_rc = RasterCollection.from_stac_catalog(
+                stac_catalog="https://maxar-opendata.s3.amazonaws.com/events/Emilia-Romagna-Italy-flooding-may23/ard/acquisition_collections/103005009DF96A00_collection.json",
+                attribute_dict={
+                    "Name": "id",
+                    "Platform": "platform",
+                    "StdTime": "datetime",
+                    "Data Area": "tile:data_area",
+                    "Clouds Percent": "tile:clouds_percent",
+                    "Spatial Reference": "proj:epsg",
+                },
+                gis=gis,
+            )
 
-            rc = RasterCollection.from_stac_catalog(stac_catalog=stac_catalog_url,
-                                                    attribute_dict={
-                                                                    "Name":"id",
-                                                                    "Sensor":"collection",
-                                                                    "StdTime":"datetime",
-                                                                    "Cloud Cover":"eo:cloud_cover",
-                                                                    "Extent":"bbox"
-                                                                   },
-                                                    gis=gis)
+            # Usage Example 2: Construct a collection from a pystac.Collection object created using
+            # California Forest Observatory STAC
+
+            collection_url = "https://storage.googleapis.com/cfo-public/wildfire/collection.json"
+            cat = pystac.Collection.from_file(collection_url)
+
+            wildfire_rc = RasterCollection.from_stac_catalog(
+                stac_catalog=cat,
+                attribute_dict={
+                    "Name": "id",
+                    "StdTime": "datetime",
+                    "Metric": "metric",
+                    "GSD": "gsd",
+                },
+                gis=gis,
+            )
+
+            # Usage Example 3: Construct a collection from UMBRA STAC (with custom asset selection)
+
+            umbra_rc = RasterCollection.from_stac_catalog(
+                stac_catalog="https://s3.us-west-2.amazonaws.com/umbra-open-data-catalog/stac/2024/2024-02/2024-02-19/catalog.json",
+                attribute_dict={
+                    "Name": "id",
+                    "Sensor": "platform",
+                    "StdTime": "datetime",
+                    "Polarizations": "sar:polarizations",
+                    "Extent": "bbox",
+                },
+                context={"assetManagement": ["GEC"]},
+                gis=gis,
+            )
 
         """
+
+        from ._util import (
+            _get_stac_links,
+            _get_all_stac_catalog_items,
+            _get_static_catalog_item_resources,
+        )
+
         is_pystac_cat = False
         if isinstance(stac_catalog, str):
             if request_params is None:
@@ -12682,6 +13417,12 @@ class RasterCollection:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
+                "application/json; charset=utf-8",
+                "binary/octet-stream",
+                "application/octet-stream",
+                "text/plain; charset=utf-8",
+                "text/plain",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"
@@ -12689,14 +13430,14 @@ class RasterCollection:
 
             json_data = data.json()
 
-            from ._util import _get_stac_links, _get_all_stac_catalog_items
-
-            if not _get_stac_links(json_data, "item") and not _get_stac_links(
-                json_data, "child"
-            ):
+            if not _get_stac_links(
+                json_data, stac_catalog, "item"
+            ) and not _get_stac_links(json_data, stac_catalog, "child"):
                 raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
 
-            items = _get_all_stac_catalog_items(json_data, request_params)
+            items = _get_all_stac_catalog_items(
+                json_data, stac_catalog, request_params, context
+            )
         else:
             try:
                 import pystac
@@ -12720,14 +13461,17 @@ class RasterCollection:
         if "Geometry" not in rc_attribute_dict:
             rc_attribute_dict["Geometry"] = []
 
-        from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
-        for item in items:
+        for item_resources in items:
             if is_pystac_cat:
-                item_dict = item.to_dict()
+                item_dict = item_resources.to_dict()
+                item_dict, item_product = _get_static_catalog_item_resources(
+                    (item_resources.self_href, item_dict), context=context
+                )
             else:
-                item_dict = item
+                item_dict, item_product = item_resources
 
             for key in attribute_dict:
                 if isinstance(attribute_dict[key], list):
@@ -12742,11 +13486,18 @@ class RasterCollection:
                     else:
                         rc_attribute_dict[key].append(key)
 
-            metadata_file = _get_stac_metadata_file(item_dict)
-            if not metadata_file:
+            if not item_product:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in item_product
+                    ]
+                )
+                if isinstance(item_product, list)
+                else Raster(item_product, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:
@@ -15370,10 +16121,11 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        from arcgis.raster.functions import raster_collection_function
+        from arcgis.raster.functions import merge_rasters
 
-        ras = raster_collection_function(self)
-        ras._engine_obj.mosaic_by(op=mosaic_method)
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
         return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
@@ -15663,11 +16415,12 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             for i in range(0, len(df.index)):
                 # self._do_not_hydrate=True
                 rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
-                df.loc[i, "Raster"] = Raster(rft)
+                df.loc[i, "Raster"] = Raster(rft, gis=self._gis)
                 df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
                 df.loc[i, "Raster"]._engine_obj._tiles_only = False
+                df.loc[i, "Raster"]._engine_obj._lazy_token = self._lazy_token
 
         return df
 
@@ -16445,7 +17198,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        raise RuntimeError("Local RasterCollection does not support mosaic function")
+        from arcgis.raster.functions import merge_rasters
+
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
+        return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick

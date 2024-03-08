@@ -94,7 +94,7 @@ class _TSInceptionTime(nn.Module):
             x = self.inception_layers[d](x)
             if d % 3 == 2:
                 res = self.residual_layers[d](res)
-                x += res
+                x = x + res
                 res = x
                 x = self.act_fn(x)
 

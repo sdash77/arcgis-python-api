@@ -65,6 +65,7 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
+    from ._utils.superres import show_batch as show_batch_sr_img2img
     from .models._max_deeplab_utils import show_batch_panoptic
     from ._utils.wnet_cgan import prepare_data_wnetcgan
     from ._utils.wnet_cgan import show_batch_wnet as show_batch_img2depth
@@ -150,7 +151,7 @@ def _raise_conda_import_error(import_exception=import_exception):
         "-deep-learning-dependencies\n"
     )
     raise Exception(
-        f"{import_exception} \n\nThis module requires conda, python 3.7 "
+        f"{import_exception} \n\nThis module requires conda, python >=3.9 "
         f"and is currently supported on Windows.\n{installation_steps}\n"
     )
 
@@ -774,6 +775,8 @@ def prepare_textdata(
     ---------------------   -------------------------------------------
     text_columns            Optional string.
                             This parameter is mandatory when task is "classification" or "sequence_translation".
+                            This parameter is mandatory when task is `entity_recognition` task with input dataset_type
+                            as `csv`.
                             The column that will contain the input text.
     ---------------------   -------------------------------------------
     label_columns           Optional list.
@@ -834,7 +837,7 @@ def prepare_textdata(
     dataset_type            Optional list.
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
-                            for this model are - 'ner_json','BIO' or 'LBIOU'
+                            for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
@@ -939,9 +942,14 @@ def prepare_textdata(
                 remove_urls=remove_urls,
             )
     elif task.lower() == "entity_recognition":
-        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
             from ._utils._ner_utils import _NERData
 
+            if dataset_type == "csv" and text_columns is None:
+                raise Exception(
+                    f"For entity_recognition task `text_columns` parameter  is required when the dataset_type parameter"
+                    f" is `csv`."
+                )
             if batch_size == 64:
                 batch_size = 8
             encoding = kwargs.get("encoding", "UTF-8")
@@ -954,6 +962,7 @@ def prepare_textdata(
                 val_split_pct=val_split_pct,
                 batch_size=batch_size,
                 encoding=encoding,
+                text_columns=text_columns,
             )
             if working_dir is not None:
                 data.working_dir = path = Path(os.path.abspath(working_dir))
@@ -962,16 +971,19 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
+
             _prepare_working_dir(path)
 
             return data
         else:
             logger = logging.getLogger()
             logger.error(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
             raise Exception(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
 
     else:
@@ -1016,9 +1028,11 @@ def prepare_tabulardata(
                             This contains features denoting the value of the dependent variable.
                             Leave empty for using rasters with MLModel.
     ---------------------   -------------------------------------------
-    variable_predict        Optional String, denoting the field_name of
+    variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
-                            Keep none for unsupervised training using MLModel.
+                            Keep none for unsupervised training using ML Model. For timeseries it
+                            will work for continuous variable.
+                            As of now we support only binary classification in fairness evaluation.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -1027,13 +1041,16 @@ def prepare_tabulardata(
 
                             1. field to be taken as input from the input_features.
                             2. True/False denoting Categorical/Continuous variable.
-
+                            If the field is text, the value should be 'text'
+                                and if the field is image path, the value should be 'image'.
                             For example:
 
                                 ["Field_1", ("Field_2", True)]
+                                or
+                                ["Field_1", ("Field_3", 'text')]
 
                             Here Field_1 is treated as continuous and
-                            Field_2 as categorical.
+                            Field_2 as categorical and Field_3 as Text
     ---------------------   -------------------------------------------
     explanatory_rasters     Optional list containing Raster objects.
                             By default the rasters are continuous.
@@ -1146,6 +1163,16 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to classification problems.
+    ---------------------   -------------------------------------------
+    random_split            Optional boolean. sets the behaviour of train and validation
+                            split to random or last n steps. If set to True then random
+                            sampling will be performed. Otherwise, last n steps will be
+                            used as validation. val_split_pct will determine the number
+                            the records for validation.
+                            Default value is True
+
+                            .. note::
+                                Applies to timeseries
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1200,7 +1227,7 @@ def prepare_tabulardata(
                     for step in transform[1].steps:
                         column_transforms_mapping[column].append(step[1])
                 else:
-                    column_transforms_mapping[column].append(transform[1])
+                    column_transforms_mapping[column].append(transform[1].__class__())
 
     data = TabularDataObject.prepare_data_for_layer_learner(
         input_features,
@@ -1217,6 +1244,7 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
+        **kwargs,
     )
 
     if working_dir is None:
@@ -1256,12 +1284,6 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
 
-    - For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    - For feature categorization use Labelled Tiles or Imagenet format.
-    - For pixel classification, use Classified Tiles format.
-    - For DeepSort, use Imagenet format.
-    - For panoptic segmentation, use Panoptic_Segmentation format.
-
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
@@ -1294,7 +1316,7 @@ def prepare_data(
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use
+                            If the dataset_type is 'PointCloud' and 'PointCloudOD', use
                             :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
@@ -1307,16 +1329,12 @@ def prepare_data(
                             function will infer the `dataset_type` on its own if
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
-                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
-                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
+                            'KITTI_rectangles', 'Imagenet'.
+                            This parameter is mandatory for dataset
                             'PointCloud', 'PointCloudOD', 'ImageCaptioning',
-                            'ChangeDetection', 'superres', 'CycleGAN', 'Pix2Pix',
-                            'WNet_cGAN', 'Panoptic_Segmentation', and 'ObjectTracking'.
-                            This parameter is mandatory for data which are not
-                            exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'PointCloudOD','ImageCaptioning',
-                            'ChangeDetection', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN'
-                            and 'ObjectTracking'.
+                            'ChangeDetection', 'WNet_cGAN' and 'ObjectTracking'.
+                            Note:
+                            For details on dataset_type please refer to this `link <https://pro.arcgis.com/en/pro-app/latest/tool-reference/image-analyst/export-training-data-for-deep-learning.htm>`_.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1351,13 +1369,15 @@ def prepare_data(
                             it will create label images of size 128x128.
                             Default is 4
     ---------------------   -------------------------------------------
-    min_points              Optional int. Filtering based on minimum number
+    min_points              For dataset_type='PointCloud' and 'PointCloudOD':
+                            Optional int. Filtering based on minimum number
                             of points in a block. Set `min_points=1000` to
                             filter out blocks with less than 1000 points.
+
+                            For dataset_type='PSETAE':
                             Optional int. Number of pixels equal to or multiples
                             of 64 to sample from the each masked region of training
-                            data i.e. 64, 128 etc. Applicable only for
-                            dataset_type='PointCloud', 'PointCloudOD', and 'PSETAE'.
+                            data i.e. 64, 128 etc.
     ---------------------   -------------------------------------------
     extra_features          Optional List. Contains a list of strings
                             which mentions extra features to be used for
@@ -1368,17 +1388,23 @@ def prepare_data(
                             For example: ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
     ---------------------   -------------------------------------------
-    remap_classes           Optional dictionary {int:int}. Mapping from
-                            class values to user defined values.
-                            Applicable with dataset_type='PointCloud'
-                            for remapping LAS classcode structure.
-                            And with dataset_type='PointCloudOD' for
-                            remapping object class structure.
-                            When this parameter is set as `remap_classes={5:3}`,
-                            then '5' class value will be considered as '3',
-                            in both training and validation blocks.
+    remap_classes           Optional dictionary {int:int}.
+                            Mapping from class values to user defined values,
+                            in both training and validation data.
+
+                            For dataset_type='PointCloud':
+                            It will remap LAS classcode structure.
+                            For example: {1:3, 2:4} will remap LAS classcode 1 to 3
+                            and classcode 2 to 4.
+
+                            For dataset_type='PointCloudOD':
+                            It will remap  object class ids. When this
+                            parameter is set as `remap_classes={5:3, 2:4}`,
+                            then '5' and 2 class values will be considered as '3', and
+                            '4', respectively.
     ---------------------   -------------------------------------------
     classes_of_interest     Optional list of int.
+
                             For dataset_type='PointCloud':
                             This will filter training blocks based on
                             `classes_of_interest`. If we have "1, 3, 5, 7"
@@ -1427,18 +1453,9 @@ def prepare_data(
                             Default value feature classification is True.
                             Default value pixel classification is False.
 
-                            .. note::
-                                Applies to single label feature classification,
-                                object detection and pixel classification.
-    ---------------------   -------------------------------------------
-    bands_of_interest       Optional list. List of spectral bands of interest.
-                            This will filter bands based on `bands_of_interest`.
-                            If we have bands [1, 2, 3, 4] in our dataset,
-                            but we are mainly interested in 2 and 3,
-                            Set `bands_of_interest=[2,3]`. Only those spectral bands
-                            will be considered for training, rest of the bands will
-                            be filtered out. Applicable only for
-                            dataset_type='PSETAE'.
+                            Note:
+                            Applies to single label feature classification,
+                            object detection and pixel classification.
     ---------------------   -------------------------------------------
     timesteps_of_interest   Optional list. List of time steps of interest.
                             This will filter multi-temporal timesereis based
@@ -1449,9 +1466,9 @@ def prepare_data(
                             rest of the time-steps will be filtered out.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
-    channels_of_interest    Optional list. List of bands/channels of interest.
+    channels_of_interest    Optional list. List of spectral bands/channels of interest.
                             This will filter out bands from rasters of
-                            multi-temporal timesereis based on
+                            multi-temporal timeseries based on
                             `channels_of_interest` list. If we have bands
                             [0,1,2,3,4] in our dataset, but we are mainly
                             interested in 0, 1 and 2, Set
@@ -1705,6 +1722,7 @@ def prepare_data(
             "ChangeDetection",
             "ObjectTracking",
             "PSETAE",
+            "SR3",
         ]
         and has_esri_files
     ):
@@ -1732,6 +1750,8 @@ def prepare_data(
             chip_size = img_size
         if dataset_type != "Imagenet":
             right = line.split()[1].split(".")[-1].lower()
+        if dataset_type == "RCNN_Masks":
+            right = line.split()[-1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
@@ -1842,7 +1862,9 @@ def prepare_data(
             from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
-            ds = gdal.Open(_im_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(_im_path)
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2495,6 +2517,9 @@ def prepare_data(
         databunch_kwargs["collate_fn"] = collate_fn
 
     elif dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]:
+        assert (
+            batch_size >= 2
+        ), f"dataset_type({dataset_type}) does not support a batch_size of less than 2."
         if dataset_type == "Labeled_Tiles":
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
         elif dataset_type == "MultiLabeled_Tiles":
@@ -2633,57 +2658,143 @@ def prepare_data(
 
             transforms = (train_tfms, val_tfms)
 
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
         path_hr = path / "images"
         path_lr = path / "labels"
-        il = ArcGISImageList.from_folder(path_hr)
-        hr_suffix = il.items[0].suffix
-        img_size = il[0].shape[1]
+        path_addras_lr = path / "images2"
+        image_stats2 = None
+        _is_multispec = False
+
+        def check_ms(il, il2):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                    il2.items[0].__str__()
+                )
+            if (
+                il[0].shape[0] != 3
+                or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
+                or il2[0].shape[0] != 3
+                or samp_img2.GetRasterBand(1).DataType != gdal.GDT_Byte
+            ):
+                return "MULTISPECTRAL", True
+            else:
+                return "RGB", False
+
+        if has_esri_files:
+            json_file = path / "esri_model_definition.emd"
+            with open(json_file) as f:
+                emd = json.load(f)
+            stats_fields = ["AllTilesStats", "AllTilesStats2"]
+            image_stats = []
+            for field in stats_fields:
+                if field in emd:
+                    means, stds = [i.get("Mean") for i in emd[field]], [
+                        i.get("StdDev") for i in emd[field]
+                    ]
+                    image_stats.append((means, stds))
+
+        if "AllTilesStats2" in emd:
+            path_hr = path / "labels"
+            path_lr = path / "images"
+            image_stats2 = image_stats[1]
+            image_stats = image_stats[0]
+
+        if isinstance(image_stats, list):
+            image_stats = image_stats[0]
         downsample_factor = kwargs.get("downsample_factor", None)
         if downsample_factor is None:
             downsample_factor = 4
-        path_lr_check = path / f"esri_superres_labels_downsample_factor.txt"
-        prepare_label = False
-        if path_lr_check.exists():
-            with open(path_lr_check) as f:
-                label_downsample_ratio = float(f.read())
-            if label_downsample_ratio != downsample_factor:
-                prepare_label = True
-        else:
-            prepare_label = True
-        if prepare_label:
-            parallel(
-                partial(
-                    resize_one,
-                    path_lr=path_lr,
-                    size=img_size / downsample_factor,
-                    path_hr=path_hr,
-                    img_size=img_size,
-                ),
-                il.items,
-                max_workers=databunch_kwargs.get("num_workers"),
-            )
-            with open(path_lr_check, "w") as f:
+        path_hr_check = path / f"esri_superres_labels_downsample_factor.txt"
+
+        if os.path.isdir(path_addras_lr):
+            os.rename(path_addras_lr, path_hr)
+            with open(path_hr_check, "w") as f:
                 f.write(str(downsample_factor))
+            il, il2 = ArcGISImageList.from_folder(path_hr), ArcGISImageList.from_folder(
+                path_lr
+            )
+            hr_suffix = il.items[0].suffix
+            img_size = il[0].shape[1]
+            imagery_type, _is_multispec = check_ms(il, il2)
+        else:
+            il = ArcGISImageList.from_folder(path_hr)
+            hr_suffix = il.items[0].suffix
+            img_size = il[0].shape[1]
+            prepare_label = False
+            if path_hr_check.exists():
+                with open(path_hr_check) as f:
+                    label_downsample_ratio = float(f.read())
+                if label_downsample_ratio != downsample_factor:
+                    prepare_label = True
+            else:
+                prepare_label = True
+
+            if prepare_label:
+                parallel(
+                    partial(
+                        resize_one,
+                        path_lr=path_lr,
+                        size=img_size / downsample_factor,
+                        path_hr=path_hr,
+                        img_size=img_size,
+                    ),
+                    il.items,
+                    max_workers=databunch_kwargs.get("num_workers"),
+                )
+                with open(path_hr_check, "w") as f:
+                    f.write(str(downsample_factor))
+            il2 = ArcGISImageList.from_folder(path_lr)
+            imagery_type, _is_multispec = check_ms(il, il2)
+
+        if dataset_type == "SR3":
+            from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+            kwargs["path_hr"], kwargs["path_lr"], kwargs["imagery_type"] = (
+                path_hr,
+                path_lr,
+                imagery_type,
+            )
+            data = prepare_pix2pix_data(
+                path=path,
+                batch_size=batch_size,
+                val_split_pct=val_split_pct,
+                transforms=transforms,
+                resize_to=resize_to,
+                norm_pct=norm_pct,
+                _is_multispectral=_is_multispec,
+                working_dir=working_dir,
+                seed=seed,
+                dataset_type=dataset_type,
+                **kwargs,
+            )
+            if data._is_multispectral:
+                # data._imagery_type = _imagery_type
+                data._bands = _bands
+                # data._norm_pct = norm_pct
+                data._extract_bands = None
+                data._do_normalize = False
+            data.downsample_factor = downsample_factor
+            return data
 
         data = (
-            ImageImageListSR.from_folder(path_lr)
+            ImageImageListSR.from_folders(path, path_lr, image_stats, _is_multispec)
             .split_by_rand_pct(val_split_pct, seed=seed)
             .label_from_func(
                 lambda x: path_hr / x.with_suffix(hr_suffix).name,
                 label_cls=ImageImageListSR.label_cls,
             )
         )
+
         if resize_to is None:
             kwargs_transforms["size"] = img_size
         kwargs_transforms["tfm_y"] = True
 
-        if has_esri_files:
-            json_file = path / "esri_model_definition.emd"
-            with open(json_file) as f:
-                emd = json.load(f)
-
-    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
         from ._utils._ner_utils import _NERData
 
         if batch_size == 64:
@@ -2737,10 +2848,15 @@ def prepare_data(
         return data
 
     elif dataset_type == "PointCloudOD":
-        from ._utils.pointcloud_od import pointcloud_od
+        from ._utils.pointcloud_od import pointcloud_od, ODTransform3D
+
+        if transforms is None:
+            transform_fn = ODTransform3D()
+        else:
+            transform_fn = transforms
 
         data = pointcloud_od(
-            path, class_mapping, batch_size, databunch_kwargs, **kwargs
+            path, class_mapping, batch_size, transform_fn, databunch_kwargs, **kwargs
         )
         data._data_path = data.path
         if working_dir is not None:
@@ -2831,6 +2947,8 @@ def prepare_data(
             norm_pct=norm_pct,
             _is_multispectral=_is_multispectral,
             working_dir=working_dir,
+            seed=seed,
+            dataset_type=dataset_type,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -2882,7 +3000,9 @@ def prepare_data(
         )
         img_type = "RGB"
         _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
-        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
         if (
             msimage_list_a[0].shape[0] > 3
             or msimage_list_b[0].shape[0] > 3
@@ -2928,11 +3048,13 @@ def prepare_data(
                     emd = json.load(f)
             data = None
             if emd is not None and emd["MetaDataMode"] == "RCNN_Masks":
-                data = prepare_pro_data(path, batch_size, val_split_pct)
+                data = prepare_pro_data(path, batch_size, val_split_pct, **kwargs)
             else:
                 raise Exception(f"Check MetaDataMode for the exported training data.")
         else:
-            data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+            data = prepare_object_tracking_data(
+                path, batch_size, val_split_pct, **kwargs
+            )
 
         data._is_multispectral = False
         data._extract_bands = None
@@ -3119,11 +3241,31 @@ def prepare_data(
         data._imagery_type_b = imagery_type_b
         data.show_batch = types.MethodType(show_batch_img2img, data)
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data = (
-            data.transform(get_transforms(), **kwargs_transforms)
-            .databunch(**databunch_kwargs)
-            .normalize(imagenet_stats, do_y=True)
+        ms_kwargs_transforms, ms_kwargs_norm = {}, {}
+        ms_kwargs_transforms["flip_vert"], ms_kwargs_transforms["p_lighting"] = (
+            True,
+            0,
         )
+        if _is_multispec:
+            ms_kwargs_norm["do_x"], ms_kwargs_norm["do_y"] = False, True
+            ms_kwargs_norm["stats"] = image_stats2 if image_stats2 else image_stats
+        else:
+            ms_kwargs_norm["do_y"] = True
+            ms_kwargs_norm["stats"] = imagenet_stats
+        data = (
+            data.transform(get_transforms(**ms_kwargs_transforms), **kwargs_transforms)
+            .databunch(**databunch_kwargs)
+            .normalize(**ms_kwargs_norm)
+        )
+        data._image_stats = imagenet_stats
+        data.seed = seed
+        data._is_multispec = _is_multispec
+        data._n_channel = il[0].shape[0]
+        data._image_stats2 = ms_kwargs_norm["stats"]
+        if _is_multispec:
+            data._image_stats = image_stats
+        data.path = data.train_ds.path / "models"
+        data.show_batch = types.MethodType(show_batch_sr_img2img, data)
     elif dataset_type == "CycleGAN":
         data = data.transform(get_transforms(), **kwargs_transforms).databunch(
             **databunch_kwargs
@@ -3205,13 +3347,21 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
+        "SR3",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
         data._dataset_type = dataset_type
 
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data._dataset_type = "SuperResolution"
+    if (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
+        if dataset_type == "SR3":
+            data._dataset_type = "SR3"
+        else:
+            data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}

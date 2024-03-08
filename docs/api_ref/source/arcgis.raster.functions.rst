@@ -299,6 +299,10 @@ gndvi
 ____
 .. autofunction:: arcgis.raster.functions.gndvi
 
+gradient
+________
+.. autofunction:: arcgis.raster.functions.gradient
+
 grayscale
 _________
 .. autofunction:: arcgis.raster.functions.grayscale
@@ -402,6 +406,10 @@ ____
 med
 ___
 .. autofunction:: arcgis.raster.functions.med
+
+merge_rasters
+_____________
+.. autofunction:: arcgis.raster.functions.merge_rasters
 
 min
 ___
@@ -530,6 +538,10 @@ _________________
 rasterize_features
 _________________
 .. autofunction:: arcgis.raster.functions.rasterize_features
+
+region_pixel_count
+__________________
+.. autofunction:: arcgis.raster.functions.region_pixel_count
 
 remap
 _____

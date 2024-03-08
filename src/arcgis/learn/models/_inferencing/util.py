@@ -59,7 +59,9 @@ def scale_batch(
     return img_scaled
 
 
-def normalize_batch(image_batch, model_info=None, normalization_stats=None):
+def normalize_batch(
+    image_batch, model_info=None, normalization_stats=None, prithvi=False
+):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
     scaled_mean_values = np.array(normalization_stats["scaled_mean_values"])[
@@ -68,9 +70,13 @@ def normalize_batch(image_batch, model_info=None, normalization_stats=None):
     scaled_std_values = np.array(normalization_stats["scaled_std_values"])[
         model_info["ExtractBands"]
     ].reshape(1, -1, 1, 1)
-    img_scaled = scale_batch(image_batch, model_info)
-    img_normed = (img_scaled - scaled_mean_values) / scaled_std_values
-    return img_normed
+    if prithvi:
+        img_normed = (image_batch - scaled_mean_values) / scaled_std_values
+        return img_normed
+    else:
+        img_scaled = scale_batch(image_batch, model_info)
+        img_normed = (img_scaled - scaled_mean_values) / scaled_std_values
+        return img_normed
 
 
 def ts_normalization(x, m, s):
@@ -358,8 +364,8 @@ def detect_objects_image_space(
     for batch_idx in range(batch_size):
         num_boxes = num_boxes + len(preds[batch_idx])
 
-    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=np.float)
-    scores = np.empty(shape=(num_boxes), dtype=np.float)
+    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=float)
+    scores = np.empty(shape=(num_boxes), dtype=float)
     classes = np.empty(shape=(num_boxes), dtype=np.uint8)
 
     idx = 0
@@ -458,16 +464,89 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
     return semantic_predictions
 
 
-def pixel_classify_superres_image(model, tiles, device):
-    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    tiles = tensor(tiles)
-    img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
-    superres_predictions = superres_image(model, img_normed, device)
-    superres_predictions = (
-        superres_predictions
-        * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(superres_predictions)
-    ) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(superres_predictions)
-    superres_predictions = superres_predictions.clamp(0, 1)
+def pixel_classify_superres_image(
+    model, tiles, device, model_info, sampling, n_timestep
+):
+    import numpy as np
+
+    tiles, is_multispec = tensor(tiles), model_info.get("is_multispec")
+    modarch = model_info.get("ModelArch", "UNet")
+    if modarch == "SR3":
+        norm_stats_a = model_info.get("image_stats", None)
+        norm_stats_b = model_info.get("image_stats2", None)
+        model_info["ExtractBands"] = list(range(tiles.shape[1]))
+
+        if model_info.get("is_multispec"):
+            img_scaled = scale_batch(tiles, model_info, norm_stats_a)
+        else:
+            img_scaled = tiles / 255
+        img_normed = -1 + 2 * img_scaled
+
+        kwargs = model_info.get("Kwargs")
+
+        if sampling == "ddim":
+            nstp = {"n_timestep": kwargs.get("n_timestep", 1000)}
+        else:
+            nstp = {"n_timestep": n_timestep}
+        combkwargs = {**kwargs, **nstp}
+        model.set_new_noise_schedule(device, **combkwargs)
+
+        model = model.to(device)
+        normed_batch_tensor = tensor(img_normed).to(device).float()
+
+        if sampling == "ddim":
+            superres_predictions = model.super_resolution(
+                x_in=normed_batch_tensor,
+                continous=False,
+                sampling_timesteps=n_timestep,
+                ddim_sampling_eta=1,
+                sampling="ddim",
+            )
+        else:
+            superres_predictions = (
+                model.super_resolution(x_in=normed_batch_tensor, continous=True)
+            )[-normed_batch_tensor.shape[0] :]
+
+        min_values = (
+            torch.tensor(norm_stats_b["band_min_values"], device=device)
+            .unsqueeze(0)
+            .unsqueeze(-1)
+            .unsqueeze(-1)
+        )
+        max_values = (
+            torch.tensor(norm_stats_b["band_max_values"], device=device)
+            .unsqueeze(0)
+            .unsqueeze(-1)
+            .unsqueeze(-1)
+        )
+
+        superres_predictions = (
+            superres_predictions.add_(1)
+            .div_(2)
+            .mul_(max_values - min_values)
+            .add_(min_values)
+        )
+    else:
+        if is_multispec:
+            n_mean, n_std = np.array(
+                model_info.get("image_stats")[0], dtype=np.float32
+            ), np.array(model_info.get("image_stats")[1], dtype=np.float32)
+            dn_mean, dn_std = (
+                model_info.get("image_stats2")[0],
+                model_info.get("image_stats2")[1],
+            )
+            nrm = lambda x, m, s: (x - m) / s
+            img_normed = nrm(tiles.permute(0, 2, 3, 1), n_mean, n_std).permute(
+                0, 3, 1, 2
+            )
+        else:
+            img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+            dn_mean, dn_std = imagenet_stats[0], imagenet_stats[1]
+        superres_predictions = superres_image(model, img_normed, device)
+        superres_predictions = (
+            superres_predictions
+            * torch.tensor(dn_std).view(1, -1, 1, 1).to(superres_predictions)
+        ) + torch.tensor(dn_mean).view(1, -1, 1, 1).to(superres_predictions)
     return superres_predictions
 
 
@@ -532,19 +611,40 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
     )
     ntemp = int(model_info.get("n_temporal", None))
     nchannel = int(model_info.get("n_channel", None))
+    ntemp_infer = model_info.get("timestep_infer", None)
+    nchannel_infer = model_info.get("channels_infer", None)
     class_dict = model_info.get("Class_mapping", None)
     num_class_dict = model_info.get("Num_class_mapping", None)
+    convertmap = model_info.get("convertmap", None)
+    bandidx = model_info.get("bandindex", None)
+    timeidx = model_info.get("timeindex", None)
 
     if num_class_dict:
         pixel_num_class_mapping = num_class_dict
     else:
         pixel_num_class_mapping = class_dict
-    final = tile_stack(
-        [
-            torch.reshape(time_arr, (1, time_arr.shape[0], ntemp, nchannel))
-            for time_arr in timeseries_arr
-        ]
-    )
+
+    if bandidx or timeidx:
+        final = tile_stack(
+            [
+                torch.reshape(
+                    time_arr, (1, time_arr.shape[0], ntemp_infer, nchannel_infer)
+                )
+                for time_arr in timeseries_arr
+            ]
+        )
+        if bandidx:
+            final = final[:, :, :, np.array(bandidx) - 1]
+        if timeidx:
+            final = final[:, :, np.array(timeidx) - 1, :]
+
+    else:
+        final = tile_stack(
+            [
+                torch.reshape(time_arr, (1, time_arr.shape[0], ntemp, nchannel))
+                for time_arr in timeseries_arr
+            ]
+        )
 
     def ts_normalization(x, m, s):
         x = np.rollaxis(x, 2)  # TxCxS -> SxTxC
@@ -568,9 +668,16 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
         pred_out = prediction.argmax(dim=1).cpu()
         pred_list.append(pred_out)
 
+    if convertmap:
+        convmap = {int(value): int(key) for key, value in convertmap.items()}
+        pixel_num_class_mapping = {
+            convmap.get(int(key)): int(value)
+            for key, value in pixel_num_class_mapping.items()
+        }
+
     remap_pred_list = [
         torch.tensor(
-            [pixel_num_class_mapping.get(str(item.numpy())) for item in tile_pred_list]
+            [pixel_num_class_mapping.get(int(item.numpy())) for item in tile_pred_list]
         )
         for tile_pred_list in pred_list
     ]
@@ -589,6 +696,7 @@ def pixel_classify_pix2pix_image(model, tiles, device, model_info):
     num_channel_tar = model_info.get("n_channel", None)
 
     norm_stats_a = model_info.get("NormalizationStats", None)
+    model_info["ExtractBands"] = list(range(tiles.shape[1]))
     img_scaled = scale_batch(tiles, model_info, norm_stats_a)
     img_normed = -1 + 2 * img_scaled
 
@@ -967,7 +1075,14 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
             self.model, patches, self.device, model_info=self.json_info
         )
     elif model_name == "SuperResolution":
-        prediction = pixel_classify_superres_image(self.model, patches, self.device)
+        prediction = pixel_classify_superres_image(
+            self.model,
+            patches,
+            self.device,
+            self.json_info,
+            getattr(self, "sampling", None),
+            getattr(self, "n_timestep", None),
+        )
     elif model_name == "WNetcGAN":
         prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info

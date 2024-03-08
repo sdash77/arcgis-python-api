@@ -199,3 +199,17 @@ Mode
     :members:
     :undoc-members:
     :show-inheritance:
+    
+ServiceWebHook
+----------------
+.. autoclass:: arcgis.gis.server.ServiceWebHook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ServiceWebHookManager
+---------------------
+.. autoclass:: arcgis.gis.server.ServiceWebHookManager
+    :members:
+    :undoc-members:
+    :show-inheritance:

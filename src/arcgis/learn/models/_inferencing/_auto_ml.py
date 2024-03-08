@@ -24,7 +24,7 @@ class ChildImageClassifier:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -47,6 +47,7 @@ class ChildImageClassifier:
             )
 
         self.automl = AutoML.from_model(emd_path=model)
+        self._learnmodel = self.automl
         # self.model = self.pix2pix_hd.learn.model.to(self.device)
         # self.model.eval()
 

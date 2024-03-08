@@ -1,4 +1,5 @@
 import os
+import torch
 import json
 import traceback
 
@@ -63,6 +64,10 @@ backbone_models_map = {
         "funnel-transformer/medium",
         "funnel-transformer/medium-base",
     ),
+    "llm": (
+        "gpt-3.5",
+        # "GPT-4"
+    ),
 }
 
 transformer_architectures = [
@@ -80,6 +85,7 @@ transformer_architectures = [
     "Longformer",
     "MobileBERT",
     "Funnel",
+    "LLM",
 ]
 
 backbone_models_reverse_map = {
@@ -282,3 +288,52 @@ class TransformerForTextClassification(ArcGISTransformer):
             clas = self._config.id2label[torch.argmax(logits, dim=1)[0].item()]
             score = results[torch.argmax(logits, dim=1)[0]]
             return clas, score.item()
+
+    def predict_class_batch(
+        self, text_batch, device, is_multilabel_problem=False, thresh=None
+    ):
+        """
+        Method to predict the class labels for an input text
+
+        =====================   ==============================================
+        **Parameter**            **Description**
+        ---------------------   ----------------------------------------------
+        text_batch              Required list. The list of text for which we wish to
+                                predict the class
+        ---------------------   ----------------------------------------------
+
+        :return: the predicted label and the corresponding confidence score.
+        """
+        # device_type = next(self._transformer.parameters()).device.type
+        # device = torch.device("cuda:0" if device_type == "cuda" else "cpu")
+        encodings = self._tokenizer.batch_encode_plus(
+            text_batch, max_length=self._max_seq_len, padding=True, truncation=True
+        )
+        batch_token_ids = encodings["input_ids"]
+        results_list = []
+        sequence = torch.tensor(batch_token_ids).to(device)
+        with torch.no_grad():
+            logits = self._transformer(sequence)[0]
+
+        if is_multilabel_problem:
+            results = torch.sigmoid(logits)
+            for res in results:
+                category, raw_pred = [], []
+                for idx, x in enumerate(res):
+                    pred = 0
+                    if x.item() > thresh:
+                        pred = 1
+                        category.append(self._config.id2label[idx])
+                    raw_pred.append(pred)
+                results_list.append(
+                    (";".join(category), raw_pred, [round(x, 4) for x in res.tolist()])
+                )
+        else:
+            results = torch.softmax(logits, dim=1).cpu()
+            res_class = [
+                self._config.id2label[i] for i in torch.argmax(results, dim=1).numpy()
+            ]
+            res_score = torch.max(results, dim=1).values.numpy()
+            return list(zip(res_class, res_score))
+
+        return results_list

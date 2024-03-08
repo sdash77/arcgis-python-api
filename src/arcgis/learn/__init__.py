@@ -12,6 +12,11 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
+from .models._timm_utils import load_timm_bckbn_pretrained
+
+# from timm.models import helpers
+
+# helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import (
@@ -56,6 +61,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         SQNSeg,
         PSETAE,
         MMDetection3D,
+        SamLoRA,
     )
 
     from ._object_tracker import ObjectTracker
@@ -64,6 +70,12 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 from ._utils.evaluate_batchsize import estimate_batch_size
+
+
+_point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
+
+
+_point_cloud_detection_model_list = ["MMDetection3D"]
 
 
 def _set_param(gis, params, param_name, input_param):
@@ -247,7 +259,8 @@ def detect_objects(
     *,
     gis=None,
     future=False,
-    **kwargs
+    estimate=False,
+    **kwargs,
 ):
     """
     Function can be used to generate feature service that contains polygons on detected objects
@@ -318,6 +331,9 @@ def detect_objects(
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
     ====================================     ====================================================================
 
     :return:
@@ -340,7 +356,8 @@ def detect_objects(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
-        **kwargs
+        estimate=estimate,
+        **kwargs,
     )
 
     """
@@ -438,7 +455,8 @@ def classify_pixels(
     *,
     gis=None,
     future=False,
-    **kwargs
+    estimate=False,
+    **kwargs,
 ):
     """
     Function to classify input imagery data using a deep learning model.
@@ -498,6 +516,9 @@ def classify_pixels(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online.
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
                                              To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
@@ -521,7 +542,8 @@ def classify_pixels(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
-        **kwargs
+        estimate=estimate,
+        **kwargs,
     )
 
     """
@@ -589,7 +611,8 @@ def export_training_data(
     *,
     gis=None,
     future=False,
-    **kwargs
+    estimate=False,
+    **kwargs,
 ):
     """
     Function is designed to generate training sample image chips from the input imagery data with
@@ -800,6 +823,9 @@ def export_training_data(
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
+    ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -840,7 +866,8 @@ def export_training_data(
         min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
-        **kwargs
+        estimate=estimate,
+        **kwargs,
     )
 
     """
@@ -978,7 +1005,8 @@ def classify_objects(
     *,
     gis=None,
     future=False,
-    **kwargs
+    estimate=False,
+    **kwargs,
 ):
     """
     Function can be used to output feature service with assigned class label for each feature based on
@@ -1044,6 +1072,9 @@ def classify_objects(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1062,7 +1093,8 @@ def classify_objects(
         process_all_raster_items=process_all_raster_items,
         context=context,
         future=future,
-        **kwargs
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -1079,7 +1111,8 @@ def compute_accuracy_for_object_detection(
     *,
     gis=None,
     future=False,
-    **kwargs
+    estimate=False,
+    **kwargs,
 ):
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
@@ -1166,6 +1199,9 @@ def compute_accuracy_for_object_detection(
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
     ====================================     ====================================================================
 
     :return:
@@ -1205,7 +1241,8 @@ def compute_accuracy_for_object_detection(
         out_accuracy_report_name=out_accuracy_report_name,
         context=context,
         future=future,
-        **kwargs
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -1227,7 +1264,7 @@ def train_model(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used to train a deep learning model using the output from the
@@ -1451,7 +1488,131 @@ def train_model(
         overwrite_model=overwrite_model,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
+    )
+
+
+def detect_change_using_deep_learning(
+    from_raster,
+    to_raster,
+    model,
+    output_classified_raster=None,
+    model_arguments=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    estimate=False,
+    **kwargs,
+):
+    """
+    Runs a trained deep learning model to detect change between two rasters.
+    Function available in ArcGIS Image Server 11.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    from_raster                              Required ImageryLayer object. The previous raster to use for change detection.
+    ------------------------------------     --------------------------------------------------------------------
+    to_raster                                Required ImageryLayer object. The recent raster to use for change detection.
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required. The deep learning model to be used for the change detection.
+                                             It can be passed as a dlpk portal item, datastore path to the Esri Model Definition (EMD)
+                                             file or the EMD JSON string.
+    ------------------------------------     --------------------------------------------------------------------
+    output_classified_raster                 Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+
+                                             eg: {"name1":"value1", "name2": "value2"}
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Keyword only parameter. Optional Boolean. If True, the number of credits needed to run the operation will be returned as a float.
+                                             Available only on ArcGIS Online
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1:
+
+        from_raster = gis.content.search("from_raster", item_type="Imagery Layer")[0].layers[0]
+        to_raster = gis.content.search("to_raster", item_type="Imagery Layer")[0].layers[0]
+        change_detection_model = gis.content.search("my_detection_model")[0]
+
+        detect_change_op = detect_change_using_deep_learning(from_raster=from_raster,
+                                                             to_raster=to_raster,
+                                                             model=change_detection_model,
+                                                             gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.detect_change_using_deep_learning(
+        from_raster=from_raster,
+        to_raster=to_raster,
+        model=model,
+        output_classified_raster=output_classified_raster,
+        model_arguments=model_arguments,
+        context=context,
+        future=future,
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -1731,56 +1892,13 @@ def export_point_dataset(
     block_size=50.0,
     max_points=8192,
     extra_features=[],
-    **kwargs
+    **kwargs,
 ):
     """
-    Exports the las files into h5 blocks.
-
-    .. note::
-      This function has been deprecated starting from `ArcGIS API for
-      Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
-      in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
-
-
-    ==================     =======================================================================================================
-    **Parameter**           **Description**
-    ------------------     -------------------------------------------------------------------------------------------------------
-    data_path              Required string. Folder containing two folders with
-                           las files.
-
-                           Folder structure:
-                            ``train/``
-                             ``*.las``
-                            ``val/``
-                             ``*.las``
-    ------------------     -------------------------------------------------------------------------------------------------------
-    output_path            Required string. Path where exported files will be
-                           dumped. This directory either should be empty or
-                           be a totally new directory.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    block_size             Optional float. Size of the h5 block file.
-                           The unit of this parameter is the same as that of the
-                           dataset's coordinate system. Default: 50.0 Units.
-                           The default value is based on the assumption that
-                           dataset's coordinate system is in metric units.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    max_points             Optional integer. Maximum number of points to be
-                           included in each h5 block file.
-                           Default: 8192 points.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    extra_features         Optional list of tuple. Extra features to read
-                           from las files. The length of tuple is 3, which
-                           contain feature name, max, and min values
-                           respectively. For example:
-                           If you want extra features like `intensity` or
-                           `number of returns` to be considered while
-                           training, set this parameter like:
-                           `extra_features=[('intensity', 5000, 0),
-                           ('num_returns', 5, 0)]`.
-                           The default behavior has changed from v1.8.0.
-                           Default: [].
-    ==================     =======================================================================================================
-
+    Note:
+    This function has been deprecated starting from `ArcGIS API for
+    Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
+    in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
 
     """
 

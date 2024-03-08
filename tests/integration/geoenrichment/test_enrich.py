@@ -13,7 +13,7 @@ from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
 
-from integration.geoenrichment.configtest import (
+from configtest import (
     does_not_raise,
     skip_if_no_local,
     skip_if_no_agol,
@@ -41,6 +41,7 @@ def enrich_check(
     prx_val: Union[int, float] = None,
     prx_mtrc: str = None,
     output_spatial_reference: int = 4326,
+    sanitize_columns: bool = True,
 ) -> None:
     with expectation:
 
@@ -53,6 +54,7 @@ def enrich_check(
             proximity_value=prx_val,
             proximity_metric=prx_mtrc,
             output_spatial_reference=output_spatial_reference,
+            sanitize_columns=sanitize_columns,
         )
 
         assert isinstance(enrich_res, pd.DataFrame)
@@ -63,7 +65,10 @@ def enrich_check(
             enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(
                 enrich_vars
             )
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars["name"]]
+        if sanitize_columns:
+            enrich_var_cols = [pep8ify(val) for val in enrich_vars["name"]]
+        else:
+            enrich_var_cols = [val for val in enrich_vars["name"]]
         enrich_res_cols = list(enrich_res.columns)
         assert all([(enrich_col in enrich_res_cols) for enrich_col in enrich_var_cols])
 
@@ -390,6 +395,17 @@ class TestEnrichLocal(unittest.TestCase):
         )
 
     @skip_if_no_local
+    def test_enrich_local_save_original_column_names(self):
+        usa_local_inst = usa_local()
+        enrich_check(
+            usa_local_inst,
+            self.polygon_df_inst,
+            ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"],
+            does_not_raise(),
+            sanitize_columns=False,
+        )
+
+    @skip_if_no_local
     def test_enrich_usa_after_can_variable_name_list_local(self):
         import arcpy
 
@@ -656,6 +672,38 @@ class TestEnrichOnline(unittest.TestCase):
             assert isinstance(enrich_res, pd.DataFrame)
 
     @skip_if_no_agol
+    def test_enrich_mix_point_poly(self):
+
+        from arcgis.geoenrichment import enrich
+
+        with does_not_raise():
+            raw_json = [
+                {
+                    "geometry": {"x": -122.435, "y": 37.785},
+                    "attributes": {"id": "1"},
+                },
+                {
+                    "geometry": {
+                        "rings": [
+                            [
+                                [-117.185412, 34.063170],
+                                [-122.81, 37.81],
+                                [-117.200570, 34.057196],
+                                [-117.185412, 34.063170],
+                            ]
+                        ],
+                        "spatialReference": {"wkid": 4326},
+                    },
+                    "attributes": {
+                        "id": "3",
+                        "name": "optional polygon area name",
+                    },
+                },
+            ]
+            enrich_res = enrich(raw_json, gis=self.usa_agol_inst._gis)
+            assert isinstance(enrich_res, pd.DataFrame)
+
+    @skip_if_no_agol
     def test_single_address_string_agol(self):
 
         with does_not_raise():
@@ -697,7 +745,7 @@ class TestEnrichOnline(unittest.TestCase):
             assert _is_geoenabled(counties_df)
 
     @skip_if_no_agol
-    def test_enrich_buffer_study_areas(self):
+    def test_enrich_buffer_study_area_driving_time_ge_format(self):
         from arcgis.geoenrichment import enrich, BufferStudyArea
 
         with does_not_raise():
@@ -706,10 +754,72 @@ class TestEnrichOnline(unittest.TestCase):
                 radii=[3],
                 units="Miles",
                 overlap=False,
+                travel_mode="driving",
             )
             buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
             assert isinstance(buffer_df, pd.DataFrame)
             assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Drive Distance Miles"
+
+    @skip_if_no_agol
+    def test_enrich_buffer_study_area_walking_time_ge_format(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[30],
+                units="Minutes",
+                overlap=False,
+                travel_mode="walking",
+            )
+            buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
+            assert isinstance(buffer_df, pd.DataFrame)
+            assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Walk Time Minutes"
+
+    @skip_if_no_agol
+    def test_enrich_buffer_study_area_trucking_distance_ge_format(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[3],
+                units="Miles",
+                overlap=False,
+                travel_mode="trucking",
+            )
+            buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
+            assert isinstance(buffer_df, pd.DataFrame)
+            assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Truck Distance Miles"
+
+    @skip_if_no_agol
+    def test_enrich_buffer_study_area_walking_time(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[30],
+                units="Minutes",
+                overlap=False,
+                travel_mode="walking_time",
+            )
+            buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
+            assert isinstance(buffer_df, pd.DataFrame)
+            assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Walk Time Minutes"
+
+    @skip_if_no_agol
+    def test_travel_modes(self):
+        with does_not_raise():
+            # One named area
+            usa = Country.get("US")
+            travel_modes = usa.travel_modes
+
+            assert isinstance(travel_modes, pd.DataFrame)
     
     @skip_if_no_agol
     def test_analysis_variables(self):
@@ -723,6 +833,25 @@ class TestEnrichOnline(unittest.TestCase):
             assert enriched_areas
             assert isinstance(enriched_areas, pd.DataFrame)
             assert _is_geoenabled(enriched_areas)
+
+    @skip_if_no_agol
+    def test_enrich_save_original_column_names(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[3],
+                units="Miles",
+                overlap=False,
+                travel_mode="driving",
+            )
+            enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, sanitize_columns=False)
+            assert isinstance(enrich_res, pd.DataFrame)
+            assert _is_geoenabled(enrich_res)
+            enrich_res_cols = list(enrich_res.columns)
+            sanitized_enrich_var_cols = [pep8ify(val) for val in enrich_res_cols if pep8ify(val) != val]
+            assert all([(enrich_col not in enrich_res_cols) for enrich_col in sanitized_enrich_var_cols])
 
 
 if __name__ == "__main__":

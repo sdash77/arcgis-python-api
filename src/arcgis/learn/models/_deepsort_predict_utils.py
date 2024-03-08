@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 # based on https://github.com/ZQPei/deep_sort_pytorch
 from __future__ import absolute_import
 import traceback
@@ -80,7 +81,7 @@ def non_max_suppression(boxes, max_bbox_overlap, scores=None):
     if len(boxes) == 0:
         return []
 
-    boxes = boxes.astype(np.float)
+    boxes = boxes.astype(float)
     pick = []
 
     x1 = boxes[:, 0]
@@ -1225,7 +1226,7 @@ class Detection(object):
     """
 
     def __init__(self, tlwh, confidence, feature, label):
-        self.tlwh = np.asarray(tlwh, dtype=np.float)
+        self.tlwh = np.asarray(tlwh, dtype=float)
         self.confidence = float(confidence)
         self.feature = np.asarray(feature, dtype=np.float32)
         self.label = label
@@ -1307,7 +1308,7 @@ class DeepSortPredictor(object):
             outputs.append(
                 np.array(
                     [x1, y1, x2 - x1, y2 - y1, track_id, track_score, track_age],
-                    dtype=np.float,
+                    dtype=float,
                 )
             )
         if len(outputs) > 0:

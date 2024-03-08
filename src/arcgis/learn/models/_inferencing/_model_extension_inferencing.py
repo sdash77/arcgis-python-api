@@ -77,7 +77,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -142,9 +142,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -219,7 +219,7 @@ class ChildObjectDetector:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -243,6 +243,7 @@ class ChildObjectDetector:
 
         self.json_emd_file = Path(model).parent
         self.model_extension = ModelExtension.from_model(emd_path=model)
+        self._learnmodel = self.model_extension
         self.model = self.model_extension.learn.model.to(self.device)
         self.model.eval()
 
@@ -411,8 +412,8 @@ def detect_object(
     for batch_idx in range(batch_size):
         num_boxes = num_boxes + preds[batch_idx][0].size(0)
 
-    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=np.float)
-    scores = np.empty(shape=(num_boxes), dtype=np.float)
+    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=float)
+    scores = np.empty(shape=(num_boxes), dtype=float)
     classes = np.empty(shape=(num_boxes), dtype=np.uint8)
 
     idx = 0
@@ -438,7 +439,7 @@ class ChildImageClassifier:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -488,9 +489,11 @@ class ChildImageClassifier:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "False"
-                    if "test_time_augmentation" not in self.json_info
-                    else str(self.json_info["test_time_augmentation"]),
+                    "value": (
+                        "False"
+                        if "test_time_augmentation" not in self.json_info
+                        else str(self.json_info["test_time_augmentation"])
+                    ),
                     "displayName": "Perform test time augmentation while predicting",
                     "description": "If True, will merge predictions from flipped and rotated images.",
                 },
@@ -772,9 +775,30 @@ class ChildImageClassifier:
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         input_image_tensor = torch.tensor(input_image).to(self.device).float()
 
+        prithvimod = [
+            "prithvi100m_burn_scar",
+            "prithvi100m_crop_classification",
+            "prithvi100m_sen1floods",
+            "prithvi100m",
+        ]
+
+        prithvi = (
+            True
+            if model_info.get("Kwargs", {}).get("model", None) in prithvimod
+            else False
+        )
+        # For all Prithvi models excluding the Crop classification model
+        if (
+            prithvi
+            and model_info.get("Kwargs", {}).get("model", None)
+            != "prithvi100m_crop_classification"
+            and input_image_tensor.max() > 1
+        ):
+            input_image_tensor = input_image_tensor / 10000
+
         if "NormalizationStats" in model_info:
             normalized_image_tensor = normalize_batch(
-                input_image_tensor.cpu(), model_info
+                input_image_tensor.cpu(), model_info, prithvi=prithvi
             )
             normalized_image_tensor = normalized_image_tensor.float().to(
                 input_image_tensor.device

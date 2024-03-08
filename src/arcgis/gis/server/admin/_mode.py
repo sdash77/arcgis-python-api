@@ -6,6 +6,7 @@ will continue to function as they did previously. Note that certain
 administrative operations such as adding and removing machines from a
 site are still available in READ_ONLY mode.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -48,7 +49,7 @@ class Mode(BaseServer):
     @deprecated(
         deprecated_in="1.7.1",
         removed_in=None,
-        current_version="2.2.0",
+        current_version="2.3.0",
         details="Use `Mode.update_mode` instead.",
     )
     def update(self, siteMode: str, runAsync: bool = False) -> bool:

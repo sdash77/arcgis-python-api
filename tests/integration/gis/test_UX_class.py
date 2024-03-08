@@ -1,7 +1,5 @@
 import sys
 
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import logging
 import shutil
 import unittest
@@ -37,7 +35,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROFILES = ["your_online_profile", "your_enterprise_profile", "your_dev_profile"]
+PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 

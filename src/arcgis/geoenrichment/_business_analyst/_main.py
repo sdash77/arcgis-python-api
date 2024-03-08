@@ -1351,9 +1351,11 @@ class BusinessAnalyst(object):
 
         # calculate impedance categories for ease of filtering in some workflows
         trvl_df["impedance_category"] = trvl_df["impedance"].apply(
-            lambda val: ("temporal" if val.endswith("Time") else "distance")
-            if pd.notna(val)
-            else val
+            lambda val: (
+                ("temporal" if val.endswith("Time") else "distance")
+                if pd.notna(val)
+                else val
+            )
         )
 
         # reorganize the column order
@@ -1539,6 +1541,9 @@ class BusinessAnalyst(object):
             if isinstance(first_geo, dict):
                 geo_is_dict = True
 
+        if geo_is_df and output_spatial_reference is None:
+            output_spatial_reference = geographies.spatial.sr
+
         # check if a spatially enabled dataframe, if standard geography identifiers are not provided
         if geo_is_df and standard_geography_id_column is None and not geo_is_dict:
             assert geographies.spatial.validate(), (
@@ -1551,8 +1556,6 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
-        if geo_is_df and output_spatial_reference is None:
-            output_spatial_reference = geographies.spatial.sr
         elif geo_is_dict and output_spatial_reference is None:
             if "spatialReference" in first_geo:
                 output_spatial_reference = first_geo["spatialReference"]
@@ -1789,7 +1792,9 @@ class BusinessAnalyst(object):
 
         # if a proximity type is provided, validate
         if proximity_type is not None:
-            proximity_type = validate_network_travel_mode(country, proximity_type)
+            proximity_type = validate_network_travel_mode(
+                country, proximity_type, proximity_metric
+            )
 
             # provide defaults if nothing provided for any of the proximity metrics
             proximity_type = (
@@ -1856,17 +1861,26 @@ class BusinessAnalyst(object):
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
-            "SHAPE"
-        ]
+
+        column_candidates_to_remove = ["Shape_Area", "Shape_Length"]
+        # default value set to True to keep backward compatibility
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
+        if sanitize_columns:
+            enrich_df.columns = [
+                pep8ify(c) for c in enrich_df.columns if c != "SHAPE"
+            ] + ["SHAPE"]
+            column_candidates_to_remove = [
+                pep8ify(c) for c in column_candidates_to_remove
+            ]
 
         # start creating a list of columns to remove - beginning with the OBJECTID field
-        drop_cols = [
-            c for c in enrich_df.columns if c in ["shape_area", "shape_length"]
-        ]
+        drop_cols = [c for c in enrich_df.columns if c in column_candidates_to_remove]
 
         if not use_arrow:
-            drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
+            if sanitize_columns:
+                drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
+            else:
+                drop_cols.append(arcpy.Describe(enrich_res).OIDFieldName)
 
         if not use_arrow:
             # get rid of the temporary output to save memory
@@ -1908,6 +1922,8 @@ class BusinessAnalyst(object):
         **kwargs,
     ) -> pd.DataFrame:
         """Web GIS implementation for _enrich"""
+        from arcgis.geoenrichment.enrichment import NamedArea
+
         # before going any further, make sure can enrich using current user (if any)
         if self.source.users.me is not None:
             has_ge = (
@@ -2044,6 +2060,11 @@ class BusinessAnalyst(object):
             for idx in range(0, len(geographies), batch_size):
                 # peel off just the id's for this batch
                 batch_id_lst = geographies[idx : idx + batch_size]
+
+                # get just the area ids in each named area
+                batch_id_lst = [
+                    b._areaid if isinstance(b, NamedArea) else b for b in batch_id_lst
+                ]
 
                 # create the param payload
                 params["studyAreas"] = json.dumps(
@@ -2183,9 +2204,13 @@ class BusinessAnalyst(object):
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [
-            pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
-        ]
+
+        # default value set to True to keep backward compatibility
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
+        if sanitize_columns:
+            enrich_df.columns = [
+                pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
+            ]
 
         # stash useful pieces for potential later access in metadata
         enrich_df.attrs["arcgis_ba"] = self

@@ -28,7 +28,8 @@ class AGOLNotebookManager:
     def containers(self) -> ContainerManager:
         """
         Provides the ability to manage containers and the notebooks within them
-        :returns: ContainerManager
+
+        :returns: :class:`~arcgis.gis.agonb.ContainerManager`
         """
         if self._container is None:
             self._container = ContainerManager(
@@ -41,7 +42,7 @@ class AGOLNotebookManager:
         """
         Provides information about the available instances for notebooks
 
-        :returns: InstancePreference
+        :returns: :class:`~arcgis.gis.agonb.InstancePreference`
         """
         if self._istpref is None:
             url = f"{self._url}/notebooks/instancePreferences"
@@ -50,14 +51,21 @@ class AGOLNotebookManager:
 
     @property
     def _machines(self) -> dict[K, V]:
-        """Returns information about the machines running on notebook server"""
+        """
+        Returns information about the machines running on notebook server
+        :returns: Dict
+        """
         url = f"{self._url}/machines"
         params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     @property
     def runtimes(self) -> RuntimeManager:
-        """Provides information about the available runtimes on the notebook server"""
+        """
+        Provides information about the available runtimes on the notebook server
+
+        :returns: :class:`~arcgis.gis.agonb.RuntimeManager`
+        """
         if self._runtimes is None:
             url = f"{self._url}/notebooks/runtimes"
             self._runtimes = RuntimeManager(url=url, gis=self._gis)
@@ -68,7 +76,7 @@ class AGOLNotebookManager:
         """
         Returns tools to work with snapshots on notebooks
 
-        :returns: SnapshotManager
+        :returns: :class:`~arcgis.gis.agonb.SnapshotManager`
         """
         if self._snapshot is None:
             url = f"{self._url}/notebooks/snapshots"
@@ -80,7 +88,7 @@ class AGOLNotebookManager:
         """
         Manages the run and execution of notebooks
 
-        :returns: NotebookManager
+        :returns: :class:`~arcgis.gis.agonb.NotebookManager`
         """
         if self._nbm is None:
             url = f"{self._url}/notebooks"

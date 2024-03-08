@@ -76,6 +76,8 @@ class TestLoginWithAPIKey(unittest.TestCase):
                     == gis.users.me.username
                 )
 
+        assert k.delete()
+
 
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")

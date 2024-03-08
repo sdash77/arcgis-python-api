@@ -13,7 +13,6 @@ from arcgis.gis import ProfileManager
 
 
 def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
-
     # Important note: code is based off of current rpublicservers page. If
     # page format or data gets changed, row parameter may have to be altered.
     # currently set up to find 1110publdapwa server.
@@ -22,8 +21,9 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     links = list(table[row].iterlinks())
-    server_url = links[0][2]
+    server_url = links[1][2]
     return server_url
+
 
 # scrape credentials page for Kubernetes credentials
 # https://ragsreports.ags.esri.com/information/11.1_users.htm is mirrored
@@ -52,6 +52,7 @@ def setup_profiles(
     ent_name="your_enterprise_profile",
     ent_admin_name="your_ent_admin_profile",
     kube_name="your_kubernetes_profile",
+    kube_admin_name="your_kubernetes_admin_profile",
     reset=False,
 ):
     """create profiles"""
@@ -105,7 +106,7 @@ def setup_profiles(
     if not ent_name in updated_list:
         pm.create(
             ent_name,
-            url="https://pythonapi.playground.esri.com/portal/",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
@@ -114,21 +115,29 @@ def setup_profiles(
     if not ent_admin_name in updated_list:
         pm.create(
             ent_admin_name,
-            url="https://pythonapi.playground.esri.com/portal/",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
             username="arcgispyapibot",
             password="geosaurus_automation123",
         )
         print(f"Created profile {ent_admin_name}")
 
     if not kube_name in updated_list:
-        kube_credentials = get_kube_credentials()
         pm.create(
             kube_name,
-            url=get_kube_server(),
-            username=kube_credentials[0],
-            password=kube_credentials[1],
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusaccnt",
+            password="geosaurus_automation123",
         )
         print(f"Created profile {kube_name}")
+    
+    if not kube_admin_name in updated_list:
+        pm.create(
+            kube_admin_name,
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusadmin",
+            password="geosaurus_automation123",
+        )
+        print(f"Created profile {kube_admin_name}")
 
     print(pm.get(online_name))
     print(pm.get(online_admin_name))

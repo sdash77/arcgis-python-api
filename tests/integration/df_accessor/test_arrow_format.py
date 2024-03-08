@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import uuid
 import tempfile
 import unittest
@@ -87,7 +87,7 @@ class TestEWKTFunctions(unittest.TestCase):
         self.assertTrue(
             g.EWKT
             in [
-                "SRID=102100;POINT (-6244244.6061965786 -1760180.1804674473)",
+                "SRID=102100;POINT (-6244244.606196579 -1760180.180467447)",
                 'SRID=102100;POINT (-6244244.6061965785920620 -1760180.1804674472659826)',
             ]
         )

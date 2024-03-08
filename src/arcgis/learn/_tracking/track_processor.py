@@ -32,7 +32,6 @@ def get_default_tracker_options():
 
 
 class TrackProcessor:
-
     """
     Creates TrackProcessor Object.
 

@@ -31,8 +31,15 @@ from fastai.torch_core import data_collate
 import types
 from functools import partial
 from ._pointcnn_utils import get_indices
-from .._utils.nearest_neighbors import knn_batch as knn_search
+
+try:
+    from .._utils.nearest_neighbors import knn_batch as knn_search
+except Exception:
+    raise Exception(
+        f"The arcgis package was not installed, correctly(knn). Use deep learning essentials metapackage from https://github.com/Esri/deep-learning-frameworks"
+    )
 from functools import partial
+import random
 
 knn_search = partial(knn_search, omp=True)
 
@@ -101,7 +108,7 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
     return input_dict(input_list, cfg, is_sqn)
 
 
-def transform_data(input, target, sample_point_num, cfg, **kwargs):
+def transform_data(input, target, sample_point_num, cfg, transform_fn=False, **kwargs):
     (
         input,
         point_nums,
@@ -128,20 +135,32 @@ def transform_data(input, target, sample_point_num, cfg, **kwargs):
             .view(batch, sample_point_num)
             .contiguous()
         )  ## batch, sample_point_num
+        if transform_fn:
+            if random.random() > 0.5:
+                input[:, :, :3] = transform_fn._transform_tool(input)
 
     return batch_preprocess_dict(input, cfg, **kwargs), target
 
 
 def prepare_data_dict(data, sample_point_num, cfg, **kwargs):
-    def collate_fn(self, batch, sample_point_num, cfg, **kwargs):
+    def collate_fn(self, batch, sample_point_num, cfg, transform_fn=False, **kwargs):
         batch = data_collate(batch)
-        return transform_data(batch[0], batch[1], sample_point_num, cfg, **kwargs)
+        return transform_data(
+            batch[0], batch[1], sample_point_num, cfg, transform_fn, **kwargs
+        )
 
-    collate_fn = partial(
+    collate_fn_train = partial(
+        collate_fn,
+        sample_point_num=sample_point_num,
+        cfg=cfg,
+        transform_fn=data.transform_fn,
+        **kwargs,
+    )
+    collate_fn_val = partial(
         collate_fn, sample_point_num=sample_point_num, cfg=cfg, **kwargs
     )
-    data.train_dl.dl.collate_fn = types.MethodType(collate_fn, data.train_dl.dl)
-    data.valid_dl.dl.collate_fn = types.MethodType(collate_fn, data.valid_dl.dl)
+    data.train_dl.dl.collate_fn = types.MethodType(collate_fn_train, data.train_dl.dl)
+    data.valid_dl.dl.collate_fn = types.MethodType(collate_fn_val, data.valid_dl.dl)
 
     return data
 
@@ -395,7 +414,7 @@ class SharedMLP(nn.Sequential):
         preact: bool = False,
         first: bool = False,
         name: str = "",
-        instance_norm: bool = False
+        instance_norm: bool = False,
     ):
         super().__init__()
 
@@ -406,9 +425,9 @@ class SharedMLP(nn.Sequential):
                     args[i],
                     args[i + 1],
                     bn=(not first or not preact or (i != 0)) and bn,
-                    activation=activation
-                    if (not first or not preact or (i != 0))
-                    else None,
+                    activation=(
+                        activation if (not first or not preact or (i != 0)) else None
+                    ),
                     preact=preact,
                     instance_norm=instance_norm,
                 ),
@@ -521,7 +540,7 @@ class Conv1d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -557,7 +576,7 @@ class Conv2d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -588,7 +607,7 @@ class FC(nn.Sequential):
         bn: bool = False,
         init=None,
         preact: bool = False,
-        name: str = ""
+        name: str = "",
     ):
         super().__init__()
 
