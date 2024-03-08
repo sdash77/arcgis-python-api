@@ -365,7 +365,10 @@ def duplicate(story, title: Optional[str] = None):
             include_private=True,
         )
     # save to update keywords
-    clone_story = briefing.Briefing(clone.id)
+    if isinstance(story, briefing.Briefing):
+        clone_story = briefing.Briefing(clone.id)
+    else:
+        clone_story = storymap.StoryMap(clone.id)
     return clone_story.save()
 
 
