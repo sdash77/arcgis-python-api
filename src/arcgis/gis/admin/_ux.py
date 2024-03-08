@@ -1560,9 +1560,7 @@ class HomePageSettings(object):
             hp["footer"]["contact"] = email
         if show_email is not None:
             hp["footer"]["showContact"] = show_email
-        return self._portal_resources.add(
-            key="home.page.json", text=json.dumps(hp)
-        )
+        return self._portal_resources.add(key="home.page.json", text=json.dumps(hp))
 
     # ----------------------------------------------------------------------
     def get_contact_email(self):
