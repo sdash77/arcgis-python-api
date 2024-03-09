@@ -93,7 +93,9 @@ def cover(
             "summary": orig_data["summary"] if summary is None else summary,
             "byline": orig_data["byline"] if by_line is None else by_line,
             "titlePanelPosition": (
-                orig_data["titlePanelPosition"] if by_line is None else "start"
+                orig_data["titlePanelPosition"]
+                if by_line is None and "titlePanelPosition" in orig_data
+                else "start"
             ),
         },
     }
