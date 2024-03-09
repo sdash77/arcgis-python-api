@@ -626,6 +626,11 @@ def _query_df(layer, url, params, **kwargs):
 
     if "SHAPE" in result:
         df.spatial.set_geometry("SHAPE")
+
+    # set based on layer
+    df.spatial.renderer = layer.renderer
+    df.spatial._meta.source = layer
+
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:
             try:
