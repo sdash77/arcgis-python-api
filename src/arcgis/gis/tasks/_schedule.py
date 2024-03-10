@@ -492,7 +492,7 @@ class TaskManager(object):
 
                                Example to run a task weekly, use: `0 0 * * 0`.
 
-                               .. note:
+                               .. note::
                                    See `cron <https://en.wikipedia.org/wiki/Cron#Overview>`_ for
                                    details on valid values and meanings for symbols.
         ------------------     --------------------------------------------------------------------
@@ -526,12 +526,16 @@ class TaskManager(object):
                                .. code-block:: python
 
                                    >>> task_mgr = gis.users.me.tasks
-                                   >>> task_output = task_mgr.create{
-                                                             "service_url": <scene service URL>,
-                                                             "num_of_caching_service_instances": 2, (2 instances are required)
-                                                             "layer": "{<list of scene layers to cook>}", //The default is all layers
-                                                             "update_mode": "PARTIAL_UPDATE_NODES"
-                                                            }
+                                   >>> task_output = task_mgr.create(
+                                                             ...
+                                                             parameters = {
+                                                                   "service_url": <scene service URL>,
+                                                                   "num_of_caching_service_instances": 2, (2 instances are required)
+                                                                   "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                                                   "update_mode": "PARTIAL_UPDATE_NODES"
+                                                                },
+                                                            ...
+                                                        )
         ------------------     --------------------------------------------------------------------
         task_url               Optional String. The URL of the task of an asynchronous
                                geoprocessing service on any of the federated servers of your portal.
