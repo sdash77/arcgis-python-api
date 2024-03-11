@@ -2971,15 +2971,15 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         # setup QALAB_ROOT_PATH
         if cls.gis is None:
             cls.class_skip = True
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
+        _conf_reader = ConfigParser()
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_data_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_dataprep"]
         )
         cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_Item_cls"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_Item_cls"]
         )
 
         # region publish necessary web layers
