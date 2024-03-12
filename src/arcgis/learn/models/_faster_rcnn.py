@@ -39,7 +39,8 @@ class MyFasterRCNN:
         import torchvision
         import fastai
 
-        tvisver = [int(x) for x in torchvision.__version__.split(".")]
+        tvers_split = torchvision.__version__.split(".")
+        tvisver = [int(tvers_split[0]), int(tvers_split[1])]
     except:
         pass
 
@@ -187,14 +188,14 @@ class MyFasterRCNN:
         # torchvision FasterRCNN model gives losses only on training mode that is why set your model in train mode
         # such that you can get losses for your validation datset as well after each epoch.
         train = kwargs.get("train")
-        learn.model.train()
+        self.model.train()
         if train:
             self.model.roi_heads.train_val = False
             self.model.rpn.train_val = False
             self.model.train_val = False
             self.model.transform.train_val = False
         else:
-            learn.model.backbone.eval()  # to get feature in eval mode for evaluation
+            self.model.backbone.eval()  # to get feature in eval mode for evaluation
             self.model.roi_heads.train_val = True
             self.model.rpn.train_val = True
             self.model.train_val = True

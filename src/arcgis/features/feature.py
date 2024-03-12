@@ -2,6 +2,7 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
+
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
@@ -482,8 +483,17 @@ class FeatureSet(object):
         if len(features) > 0:
             feat_geom = None
             feature = features[0]
+            # Check if first feature has it, else we will enter while loop
+            if (
+                "geometry" in feature.as_dict
+            ):  # can construct features out of tables with just attributes, no geometry
+                feat_geom = feature.geometry
+            elif isinstance(feature, dict):
+                if "geometry" in feature:
+                    feat_geom = feature["geometry"]
+
             i = 1
-            while feat_geom is None and i <= len(features):
+            while feat_geom is None and i < len(features):
                 # while feat_geom is none and we haven't gone through all features, keep going
                 if (
                     "geometry" in feature.as_dict
@@ -1135,21 +1145,31 @@ class FeatureSet(object):
             fields=fields,
             has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
             has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
-            geometry_type=featureset_dict["geometryType"]
-            if "geometryType" in featureset_dict
-            else None,
-            object_id_field_name=featureset_dict["objectIdFieldName"]
-            if "objectIdFieldName" in featureset_dict
-            else None,
-            global_id_field_name=featureset_dict["globalIdFieldName"]
-            if "globalIdFieldName" in featureset_dict
-            else None,
-            display_field_name=featureset_dict["displayFieldName"]
-            if "displayFieldName" in featureset_dict
-            else None,
-            spatial_reference=featureset_dict["spatialReference"]
-            if "spatialReference" in featureset_dict
-            else None,
+            geometry_type=(
+                featureset_dict["geometryType"]
+                if "geometryType" in featureset_dict
+                else None
+            ),
+            object_id_field_name=(
+                featureset_dict["objectIdFieldName"]
+                if "objectIdFieldName" in featureset_dict
+                else None
+            ),
+            global_id_field_name=(
+                featureset_dict["globalIdFieldName"]
+                if "globalIdFieldName" in featureset_dict
+                else None
+            ),
+            display_field_name=(
+                featureset_dict["displayFieldName"]
+                if "displayFieldName" in featureset_dict
+                else None
+            ),
+            spatial_reference=(
+                featureset_dict["spatialReference"]
+                if "spatialReference" in featureset_dict
+                else None
+            ),
         )
 
     # ----------------------------------------------------------------------

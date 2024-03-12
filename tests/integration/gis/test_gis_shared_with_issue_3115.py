@@ -30,7 +30,7 @@ class TestIssue3115(unittest.TestCase):
                                 grp.delete()
                                 break
                     grp = gis.groups.create("sample_share123", "tags")
-                    item.share(groups=[grp])
+                    item.sharing.groups.add(grp)
                     assert len(item.shared_with["groups"]) > 0
                     um = gis.users
                     isinstance(um, UserManager)

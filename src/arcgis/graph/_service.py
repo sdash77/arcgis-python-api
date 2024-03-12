@@ -82,6 +82,20 @@ class KnowledgeGraph:
             self._properties = _isd.InsensitiveDict(resp)
         return self._properties
 
+    def _validate_response(self, response):
+        if response.status_code != 200:
+            response.raise_for_status()
+        headers = response.headers
+        if (
+            "Content-Type" not in headers
+            or headers["Content-Type"] != "application/x-protobuf"
+        ):
+            err_message = (
+                "Improper response type from server. See error below.\n"
+                + response.content.decode()
+            )
+            raise Exception(err_message)
+
     def search(self, search: str, category: str = "both") -> List[dict]:
         """
         Allows for the searching of the properties of entities,
@@ -146,6 +160,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         rows = []
         query_dec = _kgparser.GraphQueryDecoder()
         query_dec.data_model = self._datamodel
@@ -214,6 +230,7 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
         content = response.content
         dec = _kgparser.GraphUpdateSearchIndexResponseDecoder()
         dec.decode(content)
@@ -253,6 +270,7 @@ class KnowledgeGraph:
         }
 
         data = self._gis._con.get(url, params, return_raw_response=True, try_json=False)
+        self._validate_response(data)
         buffer_dm = data.content
         gqd = _kgparser.GraphQueryDecoder()
         gqd.push_buffer(buffer_dm)
@@ -428,6 +446,8 @@ class KnowledgeGraph:
             headers=headers,
         )
 
+        self._validate_response(response)
+
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
@@ -446,6 +466,7 @@ class KnowledgeGraph:
         r_dm = self._gis._con.get(
             url, params=params, return_raw_response=True, try_json=False
         )
+        self._validate_response(r_dm)
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm
@@ -463,9 +484,37 @@ class KnowledgeGraph:
         r_dm = self._gis._con.get(
             url, params=params, return_raw_response=True, try_json=False
         )
+        self._validate_response(r_dm)
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
+
+    def sync_data_model(self):
+        """
+        Synchronizes the Knowledge Graph Service's data model with any changes made
+        in the database. Will return any errors or warnings from the sync.
+
+        .. code-block:: python
+
+            # Synchronize the data model
+            sync_result = knowledge_graph.sync_data_model()
+
+
+        """
+        url = self._url + "/dataModel/syncDataModel"
+        session = self._gis._con._session
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+        response = session.post(url=url, params=params, headers=headers, stream=True)
+        self._validate_response(response)
+        sync_response = response.content
+        dec = _kgparser.SyncDataModelResponseDecoder()
+        dec.decode(sync_response)
+        results = dec.get_results()
+        return results
 
     def apply_edits(
         self,
@@ -593,6 +642,8 @@ class KnowledgeGraph:
             data=res.byte_buffer,
             stream=True,
         )
+
+        self._validate_response(request_response)
         apply_edits_response = request_response.content
 
         dec = _kgparser.GraphApplyEditsDecoder()
@@ -680,6 +731,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -760,6 +813,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -800,6 +855,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -883,6 +940,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -980,6 +1039,8 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
@@ -1031,9 +1092,280 @@ class KnowledgeGraph:
             stream=True,
             headers={"Content-Type": "application/octet-stream"},
         )
+
+        self._validate_response(response)
         r_response = response.content
 
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
+        return results_dict
+
+    def graph_property_index_adds(
+        self, type_name: str, field_indexes: list[dict[str, Any]]
+    ) -> dict:
+        """
+        Adds indexes to a field or multiple fields associated with a named type in the data model.
+
+        `Learn more about adding graph property indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type to add the
+                            indexes to.
+        ----------------    ---------------------------------------------------------------
+        field_indexes       Required list of dicts. The indexes to add for the type.
+                            See below for an example of the structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Add a list of index dicts to fields for a Knowledge Graph type
+            add_result = knowledge_graph.graph_property_index_adds(
+                "Project", [
+                    {
+                        "name" : "title",
+                        "isAscending": True,
+                        "isUnique": True,
+                        "fields": ["title"]
+                    }
+                ]
+            )
+
+
+        :return: A `dict` showing the results of adding the indexes.
+
+        """
+        self._validate_import()
+        url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/add"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphIndexAddsRequestEncoder()
+        enc.add_field_indexes(field_indexes)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        self._validate_response(response)
+        response_content = response.content
+        dec = _kgparser.GraphIndexAddsResponseDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
+
+    def graph_property_index_deletes(
+        self, type_name: str, field_indexes: list[str]
+    ) -> dict:
+        """
+        Deletes indexes from fields associated with a named type in the data model.
+
+        `Learn more about deleting graph property indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type to delete the
+                            field indexes from.
+        ----------------    ---------------------------------------------------------------
+        field_indexes       Required list of strings. The field indexes to delete from the
+                            type. See below for an example of the structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a list of field index dicts from a Knowledge Graph type
+            delete_result = knowledge_graph.graph_property_index_deletes("Project", ["title"])
+
+
+        :return: A `dict` showing the results of deleting the indexes.
+
+        """
+        self._validate_import()
+        url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/delete"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphIndexDeleteRequestEncoder()
+        enc.add_field_index_names(field_indexes)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        self._validate_response(response)
+        response_content = response.content
+        dec = _kgparser.GraphIndexDeleteResponseDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
+
+    def constraint_rule_adds(self, rules: list[dict[str, Any]]) -> dict:
+        """
+        Adds constraint rules for entities & relationships to the data model.
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        rules               Required list of dicts. The dictionaries defining the
+                            constraint rules to be added. See below for an example of the
+                            structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Create a constraint rule and add it to the Knowledge Graph's data model.
+            person = {"set": ["Person"]}
+
+            works_at = {"set": ["WorksAt"]}
+
+            company = {"set_complement": ["Company"]}
+
+            relationship_exclusion_rule = {
+                "origin_entity_types": person,
+                "relationship_types": works_at,
+                "destination_entity_types": company
+            }
+
+            constraint_rule = {
+                "name": "PersonCS",
+                "alias": "officespace",
+                "disabled": False,
+                "relationship_exclusion_rule": relationship_exclusion_rule
+            }
+
+            knowledge_graph.constraint_rule_adds([constraint_rule])
+
+
+        :return: A `dict` showing the results of adding the rule(s).
+
+        """
+
+        self._validate_import()
+        split_url = self._url.split("/rest/")
+        url = (
+            split_url[0]
+            + "/rest/admin/"
+            + split_url[1]
+            + "/dataModel/constraintRules/add"
+        )
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphAddConstraintRulesEncoder()
+        for rule in rules:
+            enc.add_constraint_rule(rule)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        self._validate_response(response)
+        response_content = response.content
+        dec = _kgparser.GraphAddConstraintRulesDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
+
+    def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
+        """
+        Deletes existing constraint rules for entities & relationships from the data model.
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        rule_names          Required list of strings. The names of the constraint rules to
+                            be deleted, as defined in a rule's 'name' attribute.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a constraint rule from the Knowledge Graph's data model.
+            knowledge_graph.constraint_rule_deletes(["constraint_rule_1"])
+
+
+        :return: A `dict` showing the results of deleting the rule(s).
+
+        """
+        self._validate_import()
+        split_url = self._url.split("/rest/")
+        url = (
+            split_url[0]
+            + "/rest/admin/"
+            + split_url[1]
+            + "/dataModel/constraintRules/delete"
+        )
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphDeleteConstraintRulesEncoder()
+        enc.add_constraint_rule_names(rule_names)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        self._validate_response(response)
+        response_content = response.content
+        dec = _kgparser.GraphDeleteConstraintRulesDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
         return results_dict

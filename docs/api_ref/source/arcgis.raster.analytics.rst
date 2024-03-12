@@ -219,3 +219,11 @@ multidimensional_principal_components
 predict_using_regression_model
 ------------------------------
 .. autofunction:: arcgis.raster.analytics.predict_using_regression_model
+
+locate_regions
+--------------
+.. autofunction:: arcgis.raster.analytics.locate_regions
+
+transfer_files
+--------------
+.. autofunction:: arcgis.raster.analytics.transfer_files

@@ -1,6 +1,7 @@
 """
 Tests the functionality of the knowledge graph
 """
+
 import sys
 
 sys.path.insert(0, r"YOUR PATH HERE")
@@ -14,7 +15,7 @@ import requests
 # server_url should point to existent testing graph, if applicable
 domain = "dev0025246.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
+server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
 portal_url = "https://dev0025246.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
@@ -71,7 +72,7 @@ try:
         print("Accessed existent testing graph")
         SKIP = False
     except:
-        new_kg = create_new_kg(domain, username, password, "python_testing")
+        new_kg = create_new_kg(domain, username, password, "python_unit_testing")
         kg = KnowledgeGraph(new_kg, gis=gis)
         print("Created new testing graph")
         SKIP = False
@@ -199,14 +200,14 @@ class TestKGMethods(unittest.TestCase):
             assert len(list(gen2)) > 0
 
         with self.subTest(msg="Simple object bind test"):
-            bind = {"simple" : {"name" : "Snorlax"}}
+            bind = {"simple": {"name": "Snorlax"}}
             query = """MATCH (n) WHERE n.name = $simple.name RETURN n"""
             gen = kg.query_streaming(query=query, bind_param=bind)
             assert isinstance(gen, Generator)
             assert len(list(gen)) > 0
 
         with self.subTest(msg="List bind test"):
-            bind = {"list" : ['Snorlax', 'Articuno']}
+            bind = {"list": ["Snorlax", "Articuno"]}
             query = """MATCH (n) where n.name IN $list RETURN n"""
             gen = kg.query_streaming(query=query, bind_param=bind)
             assert isinstance(gen, Generator)
@@ -261,6 +262,67 @@ class TestKGMethods(unittest.TestCase):
                 "Document"
             ]["property_names"]
         )
+
+    def test_update_graph_property_index(self):
+        # setup
+        kg.named_object_type_adds(
+            entity_types=[
+                {
+                    "name": "PokeCenter",
+                    "alias": "PokeCenter",
+                    "role": "esriGraphNamedObjectRegular",
+                    "strict": False,
+                    "properties": {
+                        "name": {
+                            "name": "name",
+                            "role": "esriGraphPropertyRegular",
+                        },
+                        "shape": {
+                            "name": "shape",
+                            "fieldType": "esriFieldTypeGeometry",
+                            "geometryType": "esriGeometryPolygon",
+                            "role": "esriGraphPropertyRegular",
+                        },
+                        "city": {
+                            "name": "city",
+                            "role": "esriGraphPropertyRegular",
+                        },
+                    },
+                }
+            ]
+        )
+
+        assert "city" not in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
+
+        with self.subTest(msg="Add test"):
+            res = kg.graph_property_index_adds(
+                "PokeCenter",
+                [
+                    {
+                        "name": "city",
+                        "isAscending": True,
+                        "isUnique": True,
+                        "fields": ["city"],
+                    }
+                ],
+            )
+
+            assert res
+            assert res["indexAddResults "] == [{"name": "city"}]
+            assert "city" in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
+
+        with self.subTest(msg="Delete test"):
+            res = kg.graph_property_index_deletes(
+                "PokeCenter",
+                ["city"],
+            )
+
+            assert res
+            assert res["indexDeleteResults "] == [{"name": "city"}]
+            assert (
+                "city"
+                not in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
+            )
 
     def test_apply_edits(self):
         import time
@@ -362,6 +424,39 @@ class TestKGMethods(unittest.TestCase):
             )
             # call should have deleted both entities, making it equal to initial again
             assert final_amount == initial_amount
+
+    def test_constraint_rules(self):
+
+        with self.subTest(msg="Add test"):
+
+            pokemon = {"set": ["Pokemon"]}
+
+            healed_at = {"set": ["HealedAt"]}
+
+            pokecenter = {"set_complement": ["PokeCenter"]}
+
+            relationship_exclusion_rule = {
+                "origin_entity_types": pokemon,
+                "relationship_types": healed_at,
+                "destination_entity_types": pokecenter,
+            }
+
+            constraint_rule = {
+                "name": "PokemonCS",
+                "alias": "pokecenterdata",
+                "disabled": False,
+                "relationship_exclusion_rule": relationship_exclusion_rule,
+            }
+
+            res = kg.constraint_rule_adds([constraint_rule])
+            assert isinstance(res, dict)
+            assert "PokemonCS" in kg.datamodel["constraint_rules"]
+
+        with self.subTest(msg="Delete Test"):
+
+            res = kg.constraint_rule_deletes(["PokemonCS"])
+            assert isinstance(res, dict)
+            assert "PokemonCS" not in kg.datamodel["constraint_rules"]
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
