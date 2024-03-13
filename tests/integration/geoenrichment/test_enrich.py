@@ -13,7 +13,7 @@ from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
 
-from configtest import (
+from .configtest import (
     does_not_raise,
     skip_if_no_local,
     skip_if_no_agol,
