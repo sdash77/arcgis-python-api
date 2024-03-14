@@ -7,7 +7,7 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 """
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import arcgis
 import json
 from arcgis.gis import GIS, Item
