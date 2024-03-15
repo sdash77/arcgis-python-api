@@ -16655,12 +16655,13 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
-        elif (
-            "success" in ret[0]
-            and ret[0]["success"] == False
-            and ret[0].get("error", None)
-        ):
-            raise Exception(ret[0].get("error"))
+        elif "success" in ret[0] and ret[0]["success"] == False:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                )
+            )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
             return Item(self._gis, ret[0]["serviceItemId"])
         else:
