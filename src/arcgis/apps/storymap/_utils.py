@@ -358,14 +358,15 @@ def duplicate(story, title: Optional[str] = None):
     item = story._gis.content.get(story._itemid)
 
     title = title if title is not None else item.title + " Copy"
-    clone = story._gis.content.clone_items(items=[item])
+
+    copy = item.copy_item(title=title, include_resources=True, include_private=True)
     # save to update keywords
     if isinstance(story, briefing.Briefing):
-        clone_story = briefing.Briefing(clone[0].id)
+        copied_story = briefing.Briefing(copy.id)
     else:
-        clone_story = storymap.StoryMap(clone[0].id)
+        copied_story = storymap.StoryMap(copy.id)
 
-    return clone_story.save(title=title)
+    return copied_story.save(title=title)
 
 
 # ----------------------------------------------------------------------
