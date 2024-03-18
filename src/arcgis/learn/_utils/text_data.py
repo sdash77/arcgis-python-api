@@ -42,11 +42,13 @@ except Exception as e:
 
 HAS_BEAUTIFULSOUP = True
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 except:
     HAS_BEAUTIFULSOUP = False
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="bs4")
+
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 HAS_NUMPY = True
 try:

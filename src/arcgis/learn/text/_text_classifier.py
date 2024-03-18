@@ -86,7 +86,7 @@ class TextClassifier(ArcGISModel):
                             Hugging Face Transformer model fine-tuned on classification task.
                             In this case the model should be used directly for inference.
     ---------------------   -------------------------------------------
-    backbone                Optional string. Specify `gpt-3.5` or the HuggingFace
+    backbone                Optional string. Specify or the HuggingFace
                             transformer model name to be used to train the
                             classifier. Default set to `bert-base-cased`.
 
@@ -98,8 +98,6 @@ class TextClassifier(ArcGISModel):
                             on Text Classification Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=text-classification
 
-                            To learn more about GPT-3.5
-                            https://platform.openai.com/docs/models
     =====================   ===========================================
 
     **kwargs**
@@ -131,46 +129,6 @@ class TextClassifier(ArcGISModel):
     pretrained_path         Optional String. Path where pre-trained model
                             is saved. Accepts a Deep Learning Package
                             (DLPK) or Esri Model Definition(EMD) file.
-    ---------------------   -------------------------------------------
-    prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
-                            LLM family.
-
-                            This parameter use to describe the task and guardrails for the task.
-    ---------------------   -------------------------------------------
-    examples                Optional dictionary. The dictionary's keys represent labels or classes, with the
-                            corresponding values being lists of sentences belonging to each class.
-
-
-                            This parameter is applicable if the selected model backbone is from the LLM family.
-
-                            Pydantic notation
-
-                            Optional[Dict[str, List]]
-
-                            Example:
-
-                            |   {
-                            |    "Label_1" :[example 1, example 2],
-                            |    "Label_2" : [example 1, example 2]
-                            |   }
-
-
-                            If examples are not supplied, a data object must be provided.
-    ---------------------   -------------------------------------------
-    llm_params              Optional Dictionary. This parameter is applicable if the selected model backbone is from
-                            the LLM family.
-                            This parameter is used to configure the LLM.
-
-                            Required keys: `api_key` and `api_type`
-
-                            supported value for `api_type` is `openai`.
-
-                            Example:
-
-                                    |   llm_params = {
-                                    |    "api_key" : "YOUR_SECRET_OPENAI_KEY",
-                                    |    "api_type" : "openai"
-                                    |            }
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.text.TextClassifier` Object
@@ -384,9 +342,6 @@ class TextClassifier(ArcGISModel):
                                 the available models or choose models that are
                                 suitable for your dataset, kindly visit:-
                                 https://huggingface.co/transformers/pretrained_models.html
-
-                                To learn more about `llm` and GPT-3.5
-                                https://platform.openai.com/docs/models
         =====================   ===========================================
 
         :return: a tuple containing the available models for the given transformer backbone
@@ -412,7 +367,7 @@ class TextClassifier(ArcGISModel):
         Train the model for the specified number of epochs and using the
         specified learning rates.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -483,7 +438,7 @@ class TextClassifier(ArcGISModel):
         """
         Freeze up to last layer group to train only the last layer group of the model.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
         """
         if self._backbone == "llm":
             raise Exception(
@@ -496,7 +451,7 @@ class TextClassifier(ArcGISModel):
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -520,7 +475,7 @@ class TextClassifier(ArcGISModel):
         Creates an TextClassifier model object from an already fine-tuned
         Hugging Face Transformer backbone.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -576,27 +531,6 @@ class TextClassifier(ArcGISModel):
         data                    Required fastai Databunch or None. Returned data
                                 object from :class:`~arcgis.learn.prepare_textdata` function or None for
                                 inferencing.
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Parameter**            **Description**
-        ---------------------   -------------------------------------------
-        llm_params              Optional Dictionary. This parameter is applicable if the selected model backbone is from
-                                the LLM family.
-                                This parameter is used to configure the LLM.
-
-                                Required keys: `api_key` and `api_type`
-
-                                supported value for `api_type` is `openai`.
-
-                                Example:
-
-                                        |   llm_params = {
-                                        |    "api_key" : "YOUR_SECRET_OPENAI_KEY",
-                                        |    "api_type" : "openai"
-                                        |            }
         =====================   ===========================================
         :return: :class:`~arcgis.learn.text.TextClassifier` model Object
         """
@@ -658,7 +592,7 @@ class TextClassifier(ArcGISModel):
         """
         Loads a saved TextClassifier model from disk.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -1243,7 +1177,7 @@ samples. Metrics are only being calculated for classes present in the validation
 
     def get_misclassified_records(self):
         """
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         :return: get misclassified records for this classification model.
         """
@@ -1377,7 +1311,7 @@ samples. Metrics are only being calculated for classes present in the validation
         """
         Plot validation and training losses after fitting the model.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         """
         if self._backbone != "llm":
@@ -1391,7 +1325,7 @@ samples. Metrics are only being calculated for classes present in the validation
         """
         Unfreezes the earlier layers of the model for fine-tuning.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
         """
         if self._backbone != "llm":
             super().unfreeze()

@@ -47,7 +47,7 @@ MAPPING_DICT = {
 }
 
 
-def extract_entities(tokens, labels):
+def extract_entities_from_file(tokens, labels):
     prev_label, token_list, entities = labels[0], [tokens[0]], []
     prev_label = prev_label.split("-")[-1]
     for token_index, (token, label) in enumerate(list(zip(tokens[1:], labels[1:]))):
@@ -145,7 +145,7 @@ def data_sanity_llm(data, **kwargs):
             for i, j in zip(data._train_tokens, data._train_tags):
                 sentence = process_text(" ".join(i))
                 annotation_dict_temp = {}
-                entities = extract_entities(i, j)
+                entities = extract_entities_from_file(i, j)
                 _ = [
                     annotation_dict_temp.setdefault(x[1], []).append(
                         process_text(" ".join(x[0]))
