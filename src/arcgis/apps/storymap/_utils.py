@@ -360,12 +360,20 @@ def duplicate(story, title: Optional[str] = None):
     title = title if title is not None else item.title + " Copy"
 
     copy = item.copy_item(title=title, include_resources=True, include_private=True)
-    # save to update keywords
-    if isinstance(story, briefing.Briefing):
-        copied_story = briefing.Briefing(copy.id)
-    else:
-        copied_story = storymap.StoryMap(copy.id)
 
+    # save to update keywords
+    try:
+        # the draft json resource is not always found on first call. Occurs in GUI as well.
+        if isinstance(story, briefing.Briefing):
+            copied_story = briefing.Briefing(copy.id)
+        else:
+            copied_story = storymap.StoryMap(copy.id)
+    except:
+        # Try second time if draft not found
+        if isinstance(story, briefing.Briefing):
+            copied_story = briefing.Briefing(copy.id)
+        else:
+            copied_story = storymap.StoryMap(copy.id)
     return copied_story.save(title=title)
 
 
