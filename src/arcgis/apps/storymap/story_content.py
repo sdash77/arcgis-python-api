@@ -223,7 +223,8 @@ class Image:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Image: {self.caption}"
         else:
             return "Image"
@@ -300,7 +301,10 @@ class Image:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -308,7 +312,6 @@ class Image:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -325,7 +328,11 @@ class Image:
         :return:
             The alternate text that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
+        if self._existing is True:
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -598,7 +605,8 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Video: {self.caption}"
         else:
             return "Video"
@@ -679,7 +687,10 @@ class Video:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -687,7 +698,6 @@ class Video:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -705,7 +715,10 @@ class Video:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -934,7 +947,8 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Audio: {self.caption}"
         else:
             return "Audio"
@@ -1011,7 +1025,10 @@ class Audio:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1037,7 +1054,10 @@ class Audio:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -1296,7 +1316,10 @@ class Embed:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1322,7 +1345,10 @@ class Embed:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -1836,7 +1862,10 @@ class Map:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1862,7 +1891,10 @@ class Map:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -2834,7 +2866,11 @@ class Gallery:
         :return:
             The caption that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
+        if self._existing is True:
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -2858,7 +2894,11 @@ class Gallery:
         :return:
             The alternate text that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
+        if self._existing is True:
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -3093,7 +3133,8 @@ class Swipe:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
         else:
             return None
 
@@ -3120,7 +3161,8 @@ class Swipe:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
         else:
             return None
 

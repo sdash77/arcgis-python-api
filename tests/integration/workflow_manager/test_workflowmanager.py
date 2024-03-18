@@ -3,7 +3,7 @@ import datetime
 import re
 from pprint import pprint
 from arcgis.geometry import Geometry
-import workflowmanager_setup
+from . import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH

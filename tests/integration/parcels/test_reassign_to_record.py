@@ -1,11 +1,8 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
-import parcel_fabric_utils as pfutils
+from . import parcel_fabric_utils as pfutils
 
 
 class TestReassignToRecord(unittest.TestCase):

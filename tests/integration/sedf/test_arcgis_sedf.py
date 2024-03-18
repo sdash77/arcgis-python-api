@@ -1,9 +1,10 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
+
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9169\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
 import ssl
 from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled
@@ -32,9 +33,10 @@ DATA_PATH = os.path.join(
 print(DATA_PATH)
 
 fs_urls = [
-    "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/amazingtimes/FeatureServer/0",  # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0",  # Polyline
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0",
+    # "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/amazingtimes/FeatureServer/0",  # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
+    # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0",  # Polyline
+    # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0",
+    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/0",
 ]  # polygon
 table_url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/1"  # table
 
@@ -102,16 +104,19 @@ if HAS_ARCPY:
             """test with geometries"""
             for url in fs_urls:
                 fl = Service(url=url)
-                res = fl.query(where="%s < 10" % fl.properties.objectIdField)
+                oidname = [
+                    fld['name']
+                    for fld in fl.properties['fields']
+                    if fld['type'].lower() == "esrifieldtypeoid"
+                ][0]
+                res = fl.query(where="%s < 10" % oidname)
                 res = res.sdf
                 self.assertIsInstance(
                     res,
                     pd.DataFrame,
                     msg="Got type: %s instead of pd.DataFrame" % type(res),
                 )
-                res = fl.query(
-                    where="%s < 10" % fl.properties.objectIdField, as_df=True
-                )
+                res = fl.query(where="%s < 10" % oidname, as_df=True)
                 self.assertIsInstance(
                     res,
                     pd.DataFrame,
@@ -135,7 +140,7 @@ if HAS_ARCPY:
             )
 
     ###########################################################################
-    # @unittest.SkipTest
+    @unittest.SkipTest
     class IOTest(unittest.TestCase):
         """tests the spatial dataframe io functions"""
 

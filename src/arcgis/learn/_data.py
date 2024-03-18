@@ -838,6 +838,8 @@ def prepare_textdata(
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
                             for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
+                            For `csv` dataset type. If an entity has multiple values. It should be
+                            separated by `,`.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
