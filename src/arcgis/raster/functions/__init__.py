@@ -13652,6 +13652,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+
 def create_color_composite(
     input_raster: Raster,
     method: str = "BAND_IDS",
@@ -13669,7 +13670,7 @@ def create_color_composite(
     --------------------------------     --------------------------------------------------------------------
     raster                               The input multiband :class:`Raster <arcgis.raster.Raster>` data.
     --------------------------------     --------------------------------------------------------------------
-    method                               Specifies the method that will be used to extract bands
+    method                               Optional string. Specifies the method that will be used to extract bands
     
                                             - BAND_NAMES - The band name representing the wavelength interval on the \
                                             electromagnetic spectrum (such as Red, Near Infrared, or Thermal Infrared)\
@@ -13677,19 +13678,19 @@ def create_color_composite(
                                             
                                             - BAND_IDS - The band number (such as B1, B2, or B3) will be used. This is the default.
     --------------------------------     --------------------------------------------------------------------
-    red_expression                       The calculation assigned to the first band.
+    red_expression                       Optional string. The calculation assigned to the first band.
 
                                          A band name, band ID, or an algebraic expression using the bands.
 
                                          The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
     --------------------------------     --------------------------------------------------------------------
-    green_expression                     The calculation assigned to the second band.
+    green_expression                     Optional string. The calculation assigned to the second band.
 
                                          A band name, band ID, or an algebraic expression using the bands.
 
                                          The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
     --------------------------------     --------------------------------------------------------------------
-    blue_expression                      The calculation assigned to the third band.
+    blue_expression                      Optional string. The calculation assigned to the third band.
 
                                          A band name, band ID, or an algebraic expression using the bands.
 
