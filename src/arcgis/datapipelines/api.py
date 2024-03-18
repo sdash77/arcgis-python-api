@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import Iterator
 from functools import lru_cache
 from arcgis.auth.tools import LazyLoader
 
-from ._pipelines import DataPipelines, PipelineRun
+from ._pipelines import DataPipelines, PipelineRun, RunStatus
 
 _arcgis_gis = LazyLoader("arcgis.gis")
 
-__all__ = ["list_runs", "run_data_pipeline"]
+__all__ = ["run_data_pipeline"]
 
 
 @lru_cache(maxsize=254)
@@ -23,33 +22,6 @@ def _get_arcgis_pipeline(
         )
         return DataPipelines(url=url, gis=gis)
     return None
-
-
-def list_runs(
-    item: _arcgis_gis.Item, gis: _arcgis_gis.GIS | None = None
-) -> Iterator[PipelineRun]:
-    """
-    Returns all running data pipelines for a given Item.
-
-    NOTE: This method is experimental. All parameters and return types are subject to change.
-
-    =================================================     ========================================================================
-    **Parameter**                                         **Description**
-    -------------------------------------------------     ------------------------------------------------------------------------
-    item                                                  Required Item. The `Data Pipeline` type item to run.
-    -------------------------------------------------     ------------------------------------------------------------------------
-    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_data_pipeline`
-                                                          operation.  If the value is `None`, then the item's GIS object will be
-                                                          used.
-    =================================================     ========================================================================
-
-    :return: Iterator[PipelineRun]
-    """
-    if gis is None:
-        gis = item._gis
-    pipeline: DataPipelines = _get_arcgis_pipeline(gis=gis)
-    for run in pipeline.runs.query(item):
-        yield run
 
 
 def run_data_pipeline(
@@ -71,6 +43,7 @@ def run_data_pipeline(
     =================================================     ========================================================================
 
     :return: PipelineRun
+    :raises: Exception if the user or organization does not have access to Data Pipelines, or if a run is already in progress for the item.
     """
     if gis is None:
         gis = item._gis
@@ -80,4 +53,14 @@ def run_data_pipeline(
         raise Exception(
             "Your organization or user account does not support Data Pipelines, please contact your Organization's administrator."
         )
+
+    last_created_run = next(pipeline.runs.query(item), None)
+    if last_created_run and last_created_run.status in [
+        RunStatus.WAITING,
+        RunStatus.SUBMITTED,
+        RunStatus.CANCELLING,
+        RunStatus.RUNNING,
+    ]:
+        raise Exception("A run is already in progress for this item.")
+
     return pipeline.runs.create(item=item)
