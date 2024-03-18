@@ -191,7 +191,7 @@ class DETReg(ModelExtension):
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction. resnet50 is the
                                     only backbone that is currently supported. resnet50 is
-                                    used by default. 
+                                    used by default.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -240,7 +240,7 @@ class DETReg(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        return ['resnet50']
+        return ["resnet50"]
 
     @property
     def supported_datasets(self):

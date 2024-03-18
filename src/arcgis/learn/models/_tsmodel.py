@@ -1131,7 +1131,7 @@ class TimeSeriesModel(ArcGISModel):
                     transformed_data = transform.transform(
                         np.array(
                             transformed_data.to_numpy(na_value=np.nan),
-                            dtype=type(processed_dataframe[col][0])
+                            dtype=type(processed_dataframe[col][0]),
                         ).reshape(-1, 1)
                     )
 
