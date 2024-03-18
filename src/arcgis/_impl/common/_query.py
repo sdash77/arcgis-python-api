@@ -55,7 +55,7 @@ def _common_query(
 ):
     raw = kwargs.pop("raw", False)
     # get url
-    if layer._is_3d:
+    if hasattr(layer, "_is_3d") and layer._is_3d:
         url = layer._url + "/query3D"
     elif layer._dynamic_layer is None:
         url = layer._url + "/query"
@@ -199,7 +199,7 @@ def _create_parameters(
     params["where"] = where
 
     # Add parameters for non 3D layers and for Tables
-    if layer._is_3d is False or is_layer is False:
+    if getattr(layer, "_is_3d", False) or is_layer is False:
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
         params["returnIdsOnly"] = return_ids_only
@@ -211,7 +211,7 @@ def _create_parameters(
         params["returnGeometry"] = return_geometry
         params["returnZ"] = return_z
         params["returnM"] = return_m
-        if layer._is_3d:
+        if getattr(layer, "_is_3d", None):
             # for 3D feature query
             if format_3d_objects:
                 params["formatOf3DObjects"] = format_3d_objects
@@ -629,7 +629,7 @@ def _query_df(layer, url, params, **kwargs):
 
     # set based on layer
     df.spatial.renderer = layer.renderer
-    df.spatial._meta.source = layer
+    df.spatial._meta.source = layer.url
 
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:

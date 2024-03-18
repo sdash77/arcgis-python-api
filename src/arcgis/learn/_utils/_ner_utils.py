@@ -167,7 +167,9 @@ def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
             f"The input CSV is missing some column names. Kindly provide the column name(s) to be used as entity tag "
             f"or class name."
         )
-
+    # Filter the cases where None of the entity has a valid value.
+    temp_csv_data = csv_data[list(keys - {text_key})].dropna(how="all")
+    csv_data = csv_data[csv_data.index.isin(temp_csv_data.index)]
     # calculate the index of the token and prepare it as a JSON format
     csv_data = csv_data.to_dict(orient="records")
     all_records = []
@@ -181,20 +183,20 @@ def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
             temp = i[key]
             if isinstance(temp, (int, float)) and temp is not None:
                 temp = str(temp)
-
-            for val in temp.split(";"):
+            for val in temp.split(","):
                 for match in re.finditer(val, i[text_key]):
                     temp_list.append([match.start(), match.end(), key])
 
         z["labels"] = temp_list
         all_records.append(z)
     train_data = []
+
     for i, item in enumerate(all_records):
         try:
-            train_data.append((item["text"], {"entities": item["labels"]}))
+            if len(item["labels"]):
+                train_data.append((item["text"], {"entities": item["labels"]}))
         except KeyError as key:
             raise Exception(f"{key} key not present in record {i} of input json file.")
-
     return train_data
 
 

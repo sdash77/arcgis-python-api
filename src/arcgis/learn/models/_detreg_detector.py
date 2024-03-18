@@ -189,9 +189,9 @@ class DETReg(ModelExtension):
                                     :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
-                                    model used for feature extraction, which
-                                    is `resnet50` by default.
-                                    Supported backbones: ResNet family.
+                                    model used for feature extraction. resnet50 is the
+                                    only backbone that is currently supported. resnet50 is
+                                    used by default.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -240,7 +240,7 @@ class DETReg(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        return ["resnet50"]
 
     @property
     def supported_datasets(self):

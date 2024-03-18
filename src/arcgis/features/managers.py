@@ -2668,7 +2668,7 @@ class FeatureLayerCollectionManager(_GISResource):
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
         if overwrite:
-            logging.warning(
+            _log.warning(
                 "overwrite is currently not supported on this platform, and will not be honored"
             )
 
