@@ -671,6 +671,8 @@ class StoryMap(object):
         self._update_or_add_description(description, children)
 
         # Add nodes to children of credits
+        if "children" not in self._properties["nodes"][credits_node_id]:
+            self._properties["nodes"][credits_node_id]["children"] = []
         self._properties["nodes"][credits_node_id]["children"].extend(nodes)
         return self._properties["nodes"][credits_node_id]["children"]
 
