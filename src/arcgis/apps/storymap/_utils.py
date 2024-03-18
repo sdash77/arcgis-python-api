@@ -1,4 +1,5 @@
 from __future__ import annotations
+import html
 import tempfile
 from time import sleep
 from typing import Optional, Union
@@ -357,29 +358,23 @@ def duplicate(story, title: Optional[str] = None):
     """
     # get the item to copy
     item = story._gis.content.get(story._itemid)
-
+    # set the title
     title = title if title is not None else item.title + " Copy"
-
+    # copy the story item
     copy = item.copy_item(title=title, include_resources=True, include_private=True)
 
-    # save to update keywords
-    try:
-        # the draft json resource is not always found on first call. Occurs in GUI as well.
-        if isinstance(story, briefing.Briefing):
-            copied_story = briefing.Briefing(copy.id)
-        else:
-            copied_story = storymap.StoryMap(copy.id)
-    except:
-        # the draft resource takes a moment to appear.
-        sleep(10)
-        # make a resource call for no reason like in the GUI
-        copy.resources.list()
-        if isinstance(story, briefing.Briefing):
-            copied_story = briefing.Briefing(copy.id)
-        else:
-            copied_story = storymap.StoryMap(copy.id)
+    # remove the type keywords that are not needed
+    keywords = story._item.typeKeywords
+    for keyword in keywords:
+        if "smeditorapp" in keyword or "Copy Item" in keyword:
+            # Remove old keywords and will be replaced in new keywords
+            keywords.remove(keyword)
 
-    return copied_story.save(title=title)
+    copy.update({"typeKeywords": keywords})
+
+    # make a resources call
+    copy.resources.list()
+    return copy
 
 
 # ----------------------------------------------------------------------
