@@ -371,7 +371,9 @@ def duplicate(story, title: Optional[str] = None):
             copied_story = storymap.StoryMap(copy.id)
     except:
         # the draft resource takes a moment to appear.
-        sleep(20)
+        sleep(10)
+        # make a resource call for no reason like in the GUI
+        copy.resources.list()
         if isinstance(story, briefing.Briefing):
             copied_story = briefing.Briefing(copy.id)
         else:
