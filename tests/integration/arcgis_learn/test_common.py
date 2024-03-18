@@ -106,6 +106,11 @@ accuracy_values = {
         "automl": 0,
         "maxdeeplab": 0,
         "detreg": 0,
+        "samlora": 0,
+        "mm3d":0,
+        "sqnseg":0,
+        "randlanet":0,
+        "psetae":0,
     }
 }
 
@@ -121,9 +126,9 @@ success_stat = {
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 9,
+        "text_total": 10,
         "text": 0,
-        "others_total": 10,
+        "others_total": 14,
         "others": 0,
     }
 }
@@ -309,7 +314,7 @@ def CommonTestUsingDF(
         global failure_score, failure_models
         if result < regression_test_score:
             failure_models.append(model_name)
-            failure_score.append(regression_test_score)
+            failure_score.append(result)
 
     if model_name == "mlmodel":
         model_object.load(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -575,7 +580,7 @@ def commonTestCases(
                 else:
                     result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "bleu_score":
-                result = float(model_object.bleu_score()["BLEU"])
+                result = float(model_object.bleu_score()["bleu-1"])
             elif regression_parameter == "get_model_metrics":
                 result = model_object.get_model_metrics()["seq2seq_acc"]
             elif regression_parameter == "mIOU":
@@ -615,7 +620,7 @@ def commonTestCases(
             global failure_score, failure_models
             if result < regression_test_score:
                 failure_models.append(model_name)
-                failure_score.append(regression_test_score)
+                failure_score.append(result)
 
     ## Inferencing function here.
     if os.environ.get("run_inference") == "1" and ms_flag == False:
@@ -1240,7 +1245,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
-        updateFailureModels()
+        # updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

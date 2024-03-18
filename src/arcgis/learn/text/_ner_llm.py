@@ -8,7 +8,7 @@ from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html
 from .._utils.llm_utils import (
     data_sanity_llm,
     lower_nesting,
-    extract_entities,
+    extract_entities_from_file,
     process_text,
 )
 from ._ner_transformer import backbone_models_reverse_map
@@ -269,7 +269,7 @@ class _LlmEntityRecognizer(ArcGISModel):
         tokens = []
 
         for i, j in zip(valid_token, valid_tag):
-            entities = extract_entities(i, j)
+            entities = extract_entities_from_file(i, j)
             entity_dict = dict()
             _ = [
                 entity_dict.setdefault(x[1], []).append(process_text(" ".join(x[0])))

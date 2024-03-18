@@ -2158,6 +2158,17 @@ class ArcGISModel(object):
                                 Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
+
+        **Keyword Arguments**
+
+        =====================   ===========================================
+        **Parameter**           **Description**
+        ---------------------   -------------------------------------------
+        strict                  Optional boolean, default True.
+                                Whether to strictly enforce the keys of
+                                `file`s state dict match with the model
+                                `Module.state_dict`.
+        =====================   ===========================================
         """
         temp = self.learn.path
         if "\\" in name_or_path or "/" in name_or_path:
@@ -2180,7 +2191,9 @@ class ArcGISModel(object):
             device = getattr(self, "_map_location", None)
             if hasattr(self, "_is_mmsegdet"):
                 logging.disable(logging.INFO)
-            self.learn.load(name, purge=False, device=device)
+            self.learn.load(
+                name, purge=False, device=device, strict=kwargs.get("strict", "True")
+            )
             logging.disable(logging.NOTSET)
         except Exception as e:
             raise e
