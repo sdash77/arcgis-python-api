@@ -222,7 +222,7 @@ class ImageCaptioner(ArcGISModel):
                 return
             else:
                 return json.loads(scores)
-        return get_bleu(self, self._data, *kwargs)
+        return get_bleu(self, self._data, **kwargs)
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
@@ -272,10 +272,10 @@ class ImageCaptioner(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         beam_width              Optional int. The size of beam to be used
-                                during beam search decoding. Default is 5.
+                                during beam search decoding. Default is 3.
         ---------------------   -------------------------------------------
         max_len                 Optional int. The maximum length of the
-                                sentence to be decoded. Default is 20.
+                                sentence to be decoded. Default is 15.
         =====================   ===========================================
 
         """

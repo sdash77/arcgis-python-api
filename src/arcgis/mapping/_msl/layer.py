@@ -943,6 +943,7 @@ class MapFeatureLayer(Layer):
         """
         return _query._common_query(
             layer=self,
+            as_df=as_df,
             is_layer=True,
             where=where,
             text=text,
