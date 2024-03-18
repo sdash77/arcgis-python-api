@@ -2524,6 +2524,10 @@ class FeatureLayer(Layer):
                                    featureCollection.
                                    Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
                                    'geojson' | 'csv' | 'excel'
+
+                                   .. note::
+                                        You can find the Feature Layer's supported formats by checking
+                                        the `featureLayer.properties.supportedAppendFormats` property.
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2631,6 +2635,13 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        upload_formats = self.properties.supportedAppendFormats
+        if upload_format not in upload_formats:
+            raise ValueError(
+                "Invalid append format: {}. This layer supports these append formats: {}".format(
+                    upload_format, upload_formats
+                )
+            )
 
         params = {
             "f": "json",
@@ -2660,13 +2671,7 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
-        )
-        if upload_format not in upload_formats:
-            raise ValueError("Invalid upload format: %s." % upload_format)
+
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:

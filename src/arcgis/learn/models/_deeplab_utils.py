@@ -278,7 +278,7 @@ def total_intersect_and_union(
             else:
                 pred = pred.argmax(dim=1)
             pred = pred.squeeze().detach().cpu()
-            target = target.squeeze(1).detach().cpu()
+            target = target.squeeze().detach().cpu()
             (
                 area_intersect,
                 area_union,
