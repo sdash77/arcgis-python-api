@@ -1,5 +1,6 @@
 from __future__ import annotations
 import tempfile
+from time import sleep
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -369,11 +370,13 @@ def duplicate(story, title: Optional[str] = None):
         else:
             copied_story = storymap.StoryMap(copy.id)
     except:
-        # Try second time if draft not found
+        # the draft resource takes a moment to appear.
+        sleep(20)
         if isinstance(story, briefing.Briefing):
             copied_story = briefing.Briefing(copy.id)
         else:
             copied_story = storymap.StoryMap(copy.id)
+
     return copied_story.save(title=title)
 
 
