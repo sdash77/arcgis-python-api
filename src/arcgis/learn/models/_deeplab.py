@@ -172,10 +172,17 @@ def _create_deeplab(
             )
             model.load_state_dict(state_dict)
     else:
-        from torchvision.models.segmentation import deeplabv3_resnet101
+        from torchvision.models.segmentation import (
+            deeplabv3_resnet101,
+            DeepLabV3_ResNet101_Weights,
+        )
 
         model = deeplabv3_resnet101(
-            pretrained, True, 21, True, False
+            weights=(DeepLabV3_ResNet101_Weights.DEFAULT if pretrained else None),
+            progress=True,
+            num_classes=21,
+            aux_loss=True,
+            weights_backbone=None,
         )  # vvit Vikash bug fix done
 
     model = _DeepLabOverride(
