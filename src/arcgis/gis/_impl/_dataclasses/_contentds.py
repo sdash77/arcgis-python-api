@@ -220,6 +220,7 @@ class ItemProperties:
     text: dict | str | None = None
     extension: str | None = None
     overwrite: bool | None = None
+    file_name: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
