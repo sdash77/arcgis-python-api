@@ -629,7 +629,7 @@ def _query_df(layer, url, params, **kwargs):
 
     # set based on layer
     df.spatial.renderer = layer.renderer
-    df.spatial._meta.source = layer
+    df.spatial._meta.source = layer.url
 
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:

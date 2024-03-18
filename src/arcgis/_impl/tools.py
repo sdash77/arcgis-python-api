@@ -9011,8 +9011,10 @@ class _OrthoMappingTools:
         """
         gis = self._gis
         if camera_query is not None:
-            if not isinstance(camera_query, str):
-                raise TypeError("The 'camera_query' parameter must be of type string")
+            if not isinstance(camera_query, str) and not isinstance(camera_query, dict):
+                raise TypeError(
+                    "The 'camera_query' parameter must be of type string or dict"
+                )
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
         job._is_ortho = True
