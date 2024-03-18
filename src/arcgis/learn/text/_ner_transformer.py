@@ -94,7 +94,7 @@ backbone_models_map = {
         "funnel-transformer/medium",
         "funnel-transformer/medium-base",
     ),
-    "llm": ("gpt-3.5",),
+    # "llm": ("gpt-3.5",),
 }
 
 transformer_architectures = [
@@ -111,7 +111,7 @@ transformer_architectures = [
     "ELECTRA",
     "Longformer",
     "Funnel",
-    "LLM",
+    # "LLM",
 ]
 
 backbone_models_reverse_map = {
@@ -604,7 +604,14 @@ class _TransformerEntityRecognizer(ArcGISModel):
         else:
             name_or_path = os.path.join(self.path, "models", name_or_path)
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path)
+
+        try:
+            return super().load(name_or_path, strict=True)
+        except RuntimeError as re:
+            if "Error(s) in loading state_dict" in str(re):
+                return super().load(name_or_path, strict=False)
+            else:
+                raise re
 
     @classmethod
     def _from_pretrained(cls, backbone, label2id, **kwargs):

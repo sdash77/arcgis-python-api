@@ -383,6 +383,8 @@ def pixel_mask_image(
                         cv2.RETR_TREE,
                         cv2.CHAIN_APPROX_NONE,
                     )
+                    contours = list(contours)
+
                     if len(contours) > 0:
                         hierarchy = hierarchy[0]
                         for c_idx, contour in enumerate(contours):

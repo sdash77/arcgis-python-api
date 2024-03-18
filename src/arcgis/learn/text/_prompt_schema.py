@@ -36,6 +36,7 @@ class nerprompt(BaseModel):
         if self.examples is not None:
             temp = []
             for i in self.examples:
-                temp.append(f"{i[0]}\n\n {i[1]}")
+                tstrin = str({"0": i[1]})
+                temp.append(f"{i[0]}\n\n {tstrin}")
             self.examples = temp
         return self.examples

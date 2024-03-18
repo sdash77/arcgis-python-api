@@ -1122,7 +1122,7 @@ class TimeSeriesModel(ArcGISModel):
                 if isinstance(transform, LabelEncoder):
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         )
                     )
@@ -1130,7 +1130,7 @@ class TimeSeriesModel(ArcGISModel):
                 else:
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         ).reshape(-1, 1)
                     )
