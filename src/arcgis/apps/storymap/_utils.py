@@ -1,5 +1,7 @@
 from __future__ import annotations
+import html
 import tempfile
+from time import sleep
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -356,16 +358,23 @@ def duplicate(story, title: Optional[str] = None):
     """
     # get the item to copy
     item = story._gis.content.get(story._itemid)
-
+    # set the title
     title = title if title is not None else item.title + " Copy"
-    clone = story._gis.content.clone_items(items=[item])
-    # save to update keywords
-    if isinstance(story, briefing.Briefing):
-        clone_story = briefing.Briefing(clone[0].id)
-    else:
-        clone_story = storymap.StoryMap(clone[0].id)
+    # copy the story item
+    copy = item.copy_item(title=title, include_resources=True, include_private=True)
 
-    return clone_story.save(title=title)
+    # remove the type keywords that are not needed
+    keywords = story._item.typeKeywords
+    for keyword in keywords:
+        if "smeditorapp" in keyword or "Copy Item" in keyword:
+            # Remove old keywords and will be replaced in new keywords
+            keywords.remove(keyword)
+
+    copy.update({"typeKeywords": keywords})
+
+    # make a resources call
+    copy.resources.list()
+    return copy
 
 
 # ----------------------------------------------------------------------
