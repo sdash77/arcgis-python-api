@@ -1,6 +1,7 @@
 import json
 import traceback
 import logging
+import warnings
 import pandas as pd
 
 from ._llm import LLM
@@ -9,6 +10,7 @@ try:
     from ._ner_spacy import _SpacyEntityRecognizer
     from .._utils._ner_utils import spaCyNERDatabunch
 
+    warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
 except Exception as e:
     spacy_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -75,7 +77,7 @@ class EntityRecognizer:
                             named according to the language’s `ISO code <https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes>`_
                             The default value is 'en' for English.
     ---------------------   -------------------------------------------
-    backbone                Optional string. Specify `spacy`, `gpt-3.5` or the  HuggingFace
+    backbone                Optional string. Specify `spacy` or the  HuggingFace
                             transformer model name to be used to train the
                             entity recognizer model. Default set to `spacy`.
 
@@ -89,8 +91,6 @@ class EntityRecognizer:
                             on Named Entity Recognition Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=token-classification
 
-                            To learn more about GPT-3.5
-                            https://platform.openai.com/docs/models
 
     =====================   ===========================================
 
@@ -121,37 +121,6 @@ class EntityRecognizer:
     pretrained_path         Optional String. Path where pre-trained model
                             is saved. Accepts a Deep Learning Package
                             (DLPK) or Esri Model Definition(EMD) file.
-    ---------------------   -------------------------------------------
-    prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
-                            LLM family.
-
-                            This parameter use to describe the task and guardrails for the task.
-    ---------------------   -------------------------------------------
-    examples                Optional List. The list comprises tuple(s) where the first element denotes the text for
-                            entity extraction, while the second element is a dictionary used for mapping named entities.
-
-                            This parameter is applicable if the selected model backbone is from the LLM family.
-
-                            Pydantic Schema: List[Tuple[str, Dict[str, List]]]
-
-                            Example: [("Jim stays in London", {"name": ["Jim"], "location": ["London"]})]
-
-                            If examples are not supplied, a data object must be provided.
-    ---------------------   -------------------------------------------
-    llm_params              Optional Dictionary. This parameter is applicable if the selected model backbone is from
-                            the LLM family.
-                            This parameter is used to configure the LLM.
-
-                            Required keys: `api_key` and `api_type`
-
-                            supported value for `api_type` is `openai`.
-
-                            Example:
-
-                                    |   llm_params = {
-                                    |    "api_key" : "YOUR_SECRET_OPENAI_KEY",
-                                    |    "api_type" : "openai"
-                                    |            }
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
@@ -166,6 +135,7 @@ class EntityRecognizer:
                 kwargs["submodel"] = backup_backbone
                 kwargs.update(kwargs.get("llm_params", {}))
                 backbone = "llm"
+                self.backbone = backbone
 
         create_empty = kwargs.get("create_empty", False)
         if backbone == "llm":
@@ -238,8 +208,10 @@ class EntityRecognizer:
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        if self._model._data._backbone == "llm":
+
+        if self.backbone == "llm":
             return ["precision_score", "recall_score", "f1_score"]
+
         return ["valid_loss", "precision_score", "recall_score", "f1_score"]
 
     @classmethod
@@ -258,9 +230,6 @@ class EntityRecognizer:
                                 suitable for your dataset, kindly visit:-
                                 https://huggingface.co/transformers/pretrained_models.html
 
-
-                                To learn more about `llm` and GPT-3.5
-                                https://platform.openai.com/docs/models
         =====================   ===========================================
 
         :return: a tuple containing the available models for the given entity recognition backbone
@@ -276,7 +245,7 @@ class EntityRecognizer:
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -293,7 +262,7 @@ class EntityRecognizer:
         """
         Unfreezes the earlier layers of the model for fine-tuning.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
         """
         self._model.unfreeze()
 
@@ -301,7 +270,7 @@ class EntityRecognizer:
         """
         Freeze up to last layer group to train only the last layer group of the model.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
         """
         self._model.freeze()
 
@@ -318,7 +287,7 @@ class EntityRecognizer:
         Train the model for the specified number of epochs and using the
         specified learning rates
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -433,7 +402,7 @@ class EntityRecognizer:
         """
         Loads a saved EntityRecognizer model from disk.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -452,7 +421,7 @@ class EntityRecognizer:
         Creates an EntityRecognizer model object from an already fine-tuned
         Hugging Face Transformer backbone.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -538,27 +507,6 @@ class EntityRecognizer:
         data                    Required DatabunchNER object or None. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Parameter**            **Description**
-        ---------------------   -------------------------------------------
-        llm_params              Optional Dictionary. This parameter is applicable if the selected model backbone is from
-                                the LLM family.
-                                This parameter is used to configure the LLM.
-
-                                Required keys: `api_key` and `api_type`
-
-                                supported value for `api_type` is `openai`.
-
-                                Example:
-
-                                        |   llm_params = {
-                                        |    "api_key" : "YOUR_SECRET_OPENAI_KEY",
-                                        |    "api_type" : "openai"
-                                        |            }
         =====================   ===========================================
         :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
@@ -693,7 +641,7 @@ class EntityRecognizer:
         """
         Plot training and validation losses.
 
-        This method is not supported when the backbone is configured as llm/gpt-3.5.
+
 
         =====================   ===========================================
         **Parameter**            **Description**

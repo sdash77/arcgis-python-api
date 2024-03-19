@@ -29,13 +29,13 @@ from arcgis.learn import (
     MMSegmentation,
     MMDetection,
     AutoML,
-    MLModel,
     MaXDeepLab,
     DETReg,
     PSETAE,
     RandLANet,
     SQNSeg,
     MMDetection3D,
+    SamLoRA
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
@@ -122,7 +122,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -183,8 +183,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.20,
-        "regression_epochs": 15,
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -246,7 +246,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -304,7 +304,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -363,7 +363,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -427,7 +427,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -485,7 +485,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -542,8 +542,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "f1_score",
-        "regression_test_score": 0.10,
-        "regression_epochs": 15,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "extract_entities",
             "sample_input": os.path.join(
@@ -569,7 +569,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "predict_las",
             "sample_input": os.path.join(
@@ -589,16 +589,14 @@ data = {
         "model_test": "superres_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "superres_data"),
-            "batch_size": 4,
-            "dataset_type": "superres",
-            "downsample_factor": 8,
+            "batch_size": 2,
         },
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "psnr_metric",
-        "regression_test_score": 0.40,
-        "regression_epochs": 10,
+        "regression_test_score": 0.4,
+        "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "pass",
             "sample_input": os.path.join(
@@ -655,8 +653,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.5,
-        "regression_epochs": 20,
+        "regression_test_score": 0.4,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -717,8 +715,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.05,
-        "regression_epochs": 15,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -775,7 +773,7 @@ data = {
         "test_feature_layer": True,
         "regression_parameter": "score",
         "regression_test_score": 0.40,
-        "regression_epochs": 15,
+        "regression_epochs": 10,
         "inferencing_parameter": {"model_type": "prediction_layer"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -793,8 +791,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
-        "regression_test_score": 0.2,
-        "regression_epochs": 2,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -849,8 +847,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
-        "regression_test_score": 0.1,
-        "regression_epochs": 1,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -904,8 +902,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "edge_detection",
-        "regression_test_score": 0.1,
-        "regression_epochs": 15,
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -959,8 +957,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "edge_detection",
-        "regression_test_score": 0.1,
-        "regression_epochs": 15,
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(
@@ -1022,8 +1020,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "panoptic_quality",
-        "regression_test_score": 0.1,
-        "regression_epochs": 15,
+        "regression_test_score": 0.10,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1049,8 +1047,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.55,
-        "regression_epochs": 50,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1072,8 +1070,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "bleu_score",
-        "regression_test_score": 0.05,
-        "regression_epochs": 2,
+        "regression_test_score": 0.3,
+        "regression_epochs": 30,
         "inferencing_parameter": {"model_type": "bleu_score"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -1092,8 +1090,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_metrics",
-        "regression_test_score": 0.01,
-        "regression_epochs": 10,
+        "regression_test_score": 0.4,
+        "regression_epochs": 15,
         "inferencing_parameter": {"model_type": "siammask_iou"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -1113,8 +1111,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "precision_recall_score",
-        "regression_test_score": 0.1,
-        "regression_epochs": 2,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {"model_type": "pass"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
@@ -1132,7 +1130,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "mIOU",
-        "regression_test_score": 0.05,
+        "regression_test_score": 0.4,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1146,7 +1144,7 @@ data = {
         "model_test": "sequencetosequence_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "sequencetosequence_data"),
-            "batch_size": 16,
+            "batch_size": 4,
             "task": "sequence_translation",
             "text_columns": "input",
             "label_columns": "target",
@@ -1156,8 +1154,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "get_model_metrics",
-        "regression_test_score": 0.10,
-        "regression_epochs": 1,
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
             "sample_input": os.path.join(
@@ -1181,7 +1179,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "r2_score",
-        "regression_test_score": 0.1,
+        "regression_test_score": 0.4,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1206,13 +1204,14 @@ data = {
                 [],
             ),
             "resize_to": (128, 64),
+            "dataset_type":"Imagenet"
         },
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
-        "regression_test_score": 0.3,
-        "regression_epochs": 3,
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1233,7 +1232,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "per_class_metrics",
         "regression_test_score": 0.4,
-        "regression_epochs": 3,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1253,8 +1252,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.2,
-        "regression_epochs": 2,
+        "regression_test_score": 0.4,
+        "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1262,19 +1261,19 @@ data = {
     },
     "mlmodel": {
         "model_name": "mlmodel",
-        "datapath": "automl_data",
+        "datapath": "mlmodel_data",
         "datapath_ms": "automl_data_ms",
         "model": MLModel,
         "model_test": "automl_test",
         "prepare_tabular_data": {
-            "path": os.path.join(data_folder, "automl_data", "automl_data.csv")
+            "path": os.path.join(data_folder, "mlmodel_data", "salary_data.csv")
         },
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": True,
         "regression_parameter": "automl_score",
         "regression_test_score": 0.4,
-        "regression_epochs": 3,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1294,7 +1293,7 @@ data = {
         "test_feature_layer": True,
         "regression_parameter": "automl_score",
         "regression_test_score": 0.4,
-        "regression_epochs": 3,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
@@ -1369,7 +1368,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
-        "regression_test_score": 0.20,
+        "regression_test_score": 0.40,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1396,7 +1395,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
-        "regression_test_score": 0.20,
+        "regression_test_score": 0.40,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1418,7 +1417,28 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
+        "regression_epochs": 15,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "samlora": {
+        "model_name": "samlora",
+        "datapath": "samlora_data",
+        "model": SamLoRA,
+        "model_test": "samlora_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "samlora_data"),
+            "batch_size": None,
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "accuracy",
+        "regression_test_score": 0.40,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",

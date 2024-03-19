@@ -1553,33 +1553,26 @@ class HomePageSettings(object):
         self, email: str | None = None, show_email: bool | None = None
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            if email:
-                hp["footer"]["contact"] = email
-            if show_email:
-                hp["footer"]["showContact"] = show_email
-            params = {
-                "key": "home.page.json",
-                "text": hp,
-                "f": "json",
-            }
-            return self._portal_resources.add(
-                key="home.page.json", text=json.dumps(params["text"])
-            )
-        else:
+        if not self._new_hp:
             return None
+        hp = self._reader_hp()
+        if email:
+            hp["footer"]["contact"] = email
+        if show_email is not None:
+            hp["footer"]["showContact"] = show_email
+        return self._portal_resources.add(key="home.page.json", text=json.dumps(hp))
 
     # ----------------------------------------------------------------------
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            contact = {
-                "email": hp["footer"]["contact"],
-                "show_email": hp["footer"]["showContact"],
-            }
-            return contact
+        if not self._new_hp:
+            return None
+        hp = self._reader_hp()
+        contact = {
+            "email": hp["footer"]["contact"],
+            "show_email": hp["footer"]["showContact"],
+        }
+        return contact
 
     # ----------------------------------------------------------------------
     def get_footer(self):
@@ -2017,17 +2010,12 @@ class MapSettings(object):
             if bing_key == "":
                 bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
-        if share_public:
+        if share_public is not None:
             self._gis.update_properties({"canShareBingPublic": share_public})
-        bing_dict = {
-            "key": (
-                self._gis.properties["bingKey"]
-                if "bingKey" in self._gis.properties
-                else None
-            ),
-            "public": self._gis.properties["canShareBingPublic"],
+        return {
+            "key": self._gis.properties.get("bingKey"),
+            "public": self._gis.properties.get("canShareBingPublic"),
         }
-        return bing_dict
 
     # ----------------------------------------------------------------------
     @property
@@ -2614,9 +2602,7 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        if "allowedRedirectUris" in self._gis.properties:
-            return self._gis.properties["allowedRedirectUris"]
-        return None
+        return self._gis.properties.get("allowedRedirectUris", [])
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
