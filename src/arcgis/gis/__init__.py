@@ -5097,7 +5097,7 @@ class UserManager(object):
                 "limit": max_results,
             }
             url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
-            res = res = self._portal.con.get(url, params)
+            res = self._portal.con.get(url, params)
             if "results" in res:
                 if not "results" in template:
                     template["results"] = []
