@@ -5081,17 +5081,35 @@ class UserManager(object):
             max_results = int(max_results)
 
         us = []
+        batches: list[str]
+        n: int = 20
+        template: dict[str, Any] = {}
         for user in users:
             if isinstance(user, User):
                 us.append(user.username)
             else:
                 us.append(user)
-        params = {"f": "json", "users": ",".join(us), "limit": max_results}
-        url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
-        res = res = self._portal.con.get(url, params)
-        if "results" in res:
-            return res["results"]
-        return res
+        # breaks the list into n sized chunks.
+        batches = [us[i * n : (i + 1) * n] for i in range((len(us) + n - 1) // n)]
+        for batch in batches:
+            params = {
+                "f": "json",
+                "users": ",".join(batch),
+                "limit": max_results,
+            }
+            url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
+            res = self._portal.con.get(url, params)
+            if "results" in res:
+                if not "results" in template:
+                    template["results"] = []
+                template["results"].extend(res.get("results", []))
+            elif isinstance(res, dict):
+                template.update(res)
+            else:
+                raise Exception(str(res))
+        if "results" in template:
+            return template["results"]
+        return template
 
 
 class RoleManager(object):
