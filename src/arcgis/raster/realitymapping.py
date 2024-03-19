@@ -1424,10 +1424,16 @@ def generate_orthomosaic(
     from ._realitymapping_mission import Mission
 
     image_collection = mission
-    flight_json_details = None
+    flight_json_details = {}
     if isinstance(mission, Mission):
         image_collection = mission.image_collection
         update_flight_json = True
+
+        if mission.workspace:
+            if context:
+                context["workspace"] = mission.workspace
+            else:
+                context = {"workspace": mission.workspace}
 
         if kwargs is not None:
             if "folder" in kwargs:
