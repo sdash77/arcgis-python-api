@@ -1,6 +1,7 @@
 try:
     # nlp.analyze_pipes(pretty=True)
     import spacy
+    import warnings
     import numpy as np
     import pandas as pd
     from spacy.util import minibatch, compounding
@@ -10,6 +11,7 @@ try:
     from .._utils.text_data import copy_metrics
     from ..models._codetemplate import entity_recognizer_placeholder
 
+    warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
 except:
     HAS_SPACY = False

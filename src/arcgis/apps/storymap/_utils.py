@@ -1,5 +1,7 @@
 from __future__ import annotations
+import html
 import tempfile
+from time import sleep
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -93,7 +95,9 @@ def cover(
             "summary": orig_data["summary"] if summary is None else summary,
             "byline": orig_data["byline"] if by_line is None else by_line,
             "titlePanelPosition": (
-                orig_data["titlePanelPosition"] if by_line is None else "start"
+                orig_data["titlePanelPosition"]
+                if by_line is None and "titlePanelPosition" in orig_data
+                else "start"
             ),
         },
     }
@@ -354,19 +358,23 @@ def duplicate(story, title: Optional[str] = None):
     """
     # get the item to copy
     item = story._gis.content.get(story._itemid)
+    # set the title
+    title = title if title is not None else item.title + " Copy"
+    # copy the story item
+    copy = item.copy_item(title=title, include_resources=True, include_private=True)
 
-    # enterprise copy_item starting at 10.8.1
-    if item._portal.is_arcgisonline is False and story._gis.version < [8, 2]:
-        clone = story._gis.content.clone_items(items=[item])
-    else:
-        clone = item.copy_item(
-            title="(Copy) " + story._item.title if title is None else title,
-            include_resources=True,
-            include_private=True,
-        )
-    # save to update keywords
-    clone_story = briefing.Briefing(clone.id)
-    return clone_story.save()
+    # remove the type keywords that are not needed
+    keywords = story._item.typeKeywords
+    for keyword in keywords:
+        if "smeditorapp" in keyword or "Copy Item" in keyword:
+            # Remove old keywords and will be replaced in new keywords
+            keywords.remove(keyword)
+
+    copy.update({"typeKeywords": keywords})
+
+    # make a resources call
+    copy.resources.list()
+    return copy
 
 
 # ----------------------------------------------------------------------

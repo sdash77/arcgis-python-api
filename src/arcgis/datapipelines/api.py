@@ -31,6 +31,8 @@ def list_runs(
     """
     Returns all running data pipelines for a given Item.
 
+    NOTE: This method is experimental. All parameters and return types are subject to change.
+
     =================================================     ========================================================================
     **Parameter**                                         **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -54,8 +56,9 @@ def run_data_pipeline(
     item: _arcgis_gis.Item, gis: _arcgis_gis.GIS | None = None
 ) -> PipelineRun:
     """
+    Runs the data pipeline item. Running data pipelines consumes credits for the time it takes the run to complete.
 
-    Allows a user to run a given data pipeline from a data pipeline item
+    NOTE: This method is experimental. All parameters and return types are subject to change.
 
     =================================================     ========================================================================
     **Parameter**                                         **Description**

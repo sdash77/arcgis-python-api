@@ -983,7 +983,6 @@ class PatchEmbed(nn.Module):
 ## UViT backbone
 class UViT(nn.Module):
     def __init__(self, img_size=256, in_chans=3, **kwargs):
-
         patch_size = kwargs.get("patch_size", 16)
         embed_dim = kwargs.get("embed_dim", 768)
         depth = kwargs.get("depth", 17)
