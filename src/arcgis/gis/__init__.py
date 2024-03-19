@@ -5089,6 +5089,7 @@ class UserManager(object):
                 us.append(user.username)
             else:
                 us.append(user)
+        # breaks the list into n sized chunks.
         batches = [us[i * n : (i + 1) * n] for i in range((len(us) + n - 1) // n)]
         for batch in batches:
             params = {
