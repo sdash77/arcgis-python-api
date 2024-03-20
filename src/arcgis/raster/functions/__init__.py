@@ -13704,6 +13704,8 @@ def create_color_composite(
 
         # Usage Example 1: Create a color composite using the band names VV, VH, and VV/VH.
 
+        raster = gis.content.search("my_sar_raster")[0].layers[0]
+
         out_raster = create_color_composite(raster, method="BAND_NAMES", red_expression="VV", green_expression="VH", blue_expression="VV/VH")
     """
 
