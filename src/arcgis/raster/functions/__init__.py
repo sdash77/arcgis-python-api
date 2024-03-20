@@ -8180,7 +8180,7 @@ def vector_field(
 
 def complex(
     raster: Union[Raster, ImageryLayer],
-    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    imaginary_raster: Optional[Union[Raster, ImageryLayer]] = None,
     value_type: str = "AMPLITUDE",
 ):
     """
@@ -13668,7 +13668,8 @@ def create_color_composite(
     ================================     ====================================================================
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               The input multiband :class:`Raster <arcgis.raster.Raster>` data.
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         The input multiband :class:`Raster <arcgis.raster.Raster>` data.
     --------------------------------     --------------------------------------------------------------------
     method                               Optional string. Specifies the method that will be used to extract bands
     
