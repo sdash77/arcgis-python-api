@@ -13654,7 +13654,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
 
 
 def create_color_composite(
-    input_raster: Raster,
+    input_raster: Union[Raster, ImageryLayer],
     method: str = "BAND_IDS",
     red_expression: str = None,
     green_expression: str = None,
