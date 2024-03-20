@@ -121,6 +121,7 @@ class MMSegmentationConfig:
 
         kwargs["model_type"] = "Segmentation"
         model, cfg = mmlab_models(data, **kwargs)
+        model._is_transformer = kwargs.get("is_transformer", False)
         self.model = model
         self.cfg = cfg
         self.prepare_mmbatch = prepare_mmbatch
