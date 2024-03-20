@@ -140,6 +140,11 @@ class MMSegmentationConfig:
             )
             gt_batch.append(data_sample)
 
+        # handle batch size one in training
+        if model_input_batch.shape[0] < 2:
+            model_input_batch = self.torch.cat((model_input_batch, model_input_batch))
+            gt_batch.append(gt_batch[0])
+
         model_input = [model_input_batch, gt_batch]
         return model_input, model_target_batch
 
