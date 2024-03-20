@@ -662,16 +662,17 @@ class StoryMap(object):
         children = self._properties["nodes"][credits_node_id].get("children", [])
 
         # Add content and attribution if provided
-        nodes = self._add_content_and_attribution(content, attribution)
+        children.extend(self._add_content_and_attribution(content, attribution))
 
         # Update or add heading
-        self._update_or_add_heading(heading, children)
+        if heading:
+            children = self._update_or_add_heading(heading, children)
 
         # Update or add description
-        self._update_or_add_description(description, children)
+        if description:
+            children = self._update_or_add_description(description, children)
 
-        # Add nodes to children of credits
-        self._properties["nodes"][credits_node_id]["children"].extend(nodes)
+        self._properties["nodes"][credits_node_id]["children"] = children
         return self._properties["nodes"][credits_node_id]["children"]
 
     def _get_credits_node_id(self):
@@ -697,28 +698,29 @@ class StoryMap(object):
         return nodes
 
     def _update_or_add_heading(self, heading, children):
-        # Create new heading and remove old one
-        if heading:
-            # Create new content node
-            # Create new heading node
-            node_id = self._generate_unique_node_id()
-            self._properties["nodes"][node_id] = {
-                "type": "text",
-                "data": {"text": heading, "type": "h4"},
-            }
-            children = self._update_or_remove_node(children, "text", "h4")
+        # Create new content node
+        # Create new heading node
+        node_id = self._generate_unique_node_id()
+        self._properties["nodes"][node_id] = {
+            "type": "text",
+            "data": {"text": heading, "type": "h4"},
+        }
+        children = self._update_node(children, "text", "h4")
+        children.append(node_id)
+        return children
 
     def _update_or_add_description(self, description, children):
-        if description:
-            # Create new description node
-            node_id = self._generate_unique_node_id()
-            self._properties["nodes"][node_id] = {
-                "type": "text",
-                "data": {"text": description, "type": "paragraph"},
-            }
-            children = self._update_or_remove_node(children, "text", "paragraph")
+        node_id = self._generate_unique_node_id()
+        self._properties["nodes"][node_id] = {
+            "type": "text",
+            "data": {"text": description, "type": "paragraph"},
+        }
+        children = self._update_node(children, "text", "paragraph")
+        children.append(node_id)
+        return children
 
-    def _update_or_remove_node(self, children, node_type, data_type):
+    def _update_node(self, children, node_type, data_type):
+        # remove the old node if it exists
         for child in children:
             if (
                 self._properties["nodes"][child]["type"] == node_type

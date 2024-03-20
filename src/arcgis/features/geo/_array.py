@@ -100,7 +100,11 @@ def _binary_predicate(name, left, right, *args, **kwargs):
     if isinstance(right, Geometry):
         data = np.empty(len(left), dtype=bool)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else left.na_value
+            (
+                getattr(s, name)(right, *args, **kwargs)
+                if s is not None
+                else left.na_value
+            )
             for s in left
         ]
         return data
@@ -134,14 +138,14 @@ def _binary_op(name, left, right=None, *args, **kwargs):
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(*args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(*args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return data
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(right, *args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return data
@@ -175,14 +179,14 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(*args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(*args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return GeoArray(data)
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(right, *args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return GeoArray(data)
@@ -308,6 +312,8 @@ class GeoArray(ExtensionArray):
         """Checks if the Geometries are Equal"""
         if isinstance(other, Geometry):
             return self.equals(other) == False
+        elif other is None:
+            return True
         else:
             raise ValueError("Input must be a arcgis.geometry.Geometry")
 
