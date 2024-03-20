@@ -8,7 +8,7 @@ from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureSet
 
 # Needs to be on devext for now
-gis = GIS(profile="your_dev_profile", verify_cert=False)
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # TODO: get better service with more features to be able to test better. Placeholder service
 layer = FeatureLayer(
