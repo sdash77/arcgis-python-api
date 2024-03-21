@@ -121,10 +121,10 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        #"syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
+                print(flc.manager.properties)
                 if result.get("success"):
                     print("Enabled necessary capabilities on feature layer")
                 else:
@@ -170,10 +170,10 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        #"syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
+                print(flc.properties)
                 if result.get("success"):
                     print("Enabled necessary capabilities on feature layer")
                 else:
