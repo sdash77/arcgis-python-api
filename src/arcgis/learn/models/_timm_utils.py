@@ -237,6 +237,9 @@ def load_timm_bckbn_pretrained(
     model.load_state_dict(state_dict, strict=strict)
 
 
+timm.models.helpers.load_pretrained = load_timm_bckbn_pretrained
+
+
 def _default_split(m):
     return (m[1],)
 
