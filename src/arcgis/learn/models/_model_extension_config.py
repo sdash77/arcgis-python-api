@@ -121,6 +121,7 @@ class MMSegmentationConfig:
 
         kwargs["model_type"] = "Segmentation"
         model, cfg = mmlab_models(data, **kwargs)
+        model._is_transformer = kwargs.get("is_transformer", False)
         self.model = model
         self.cfg = cfg
         self.prepare_mmbatch = prepare_mmbatch
@@ -139,6 +140,11 @@ class MMSegmentationConfig:
                 batch_shape, gt_sem_seg=gt_sem_seg, model_type="Segmentation"
             )
             gt_batch.append(data_sample)
+
+        # handle batch size one in training
+        if model_input_batch.shape[0] < 2:
+            model_input_batch = self.torch.cat((model_input_batch, model_input_batch))
+            gt_batch.append(gt_batch[0])
 
         model_input = [model_input_batch, gt_batch]
         return model_input, model_target_batch
