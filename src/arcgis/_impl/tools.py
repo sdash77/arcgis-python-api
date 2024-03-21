@@ -19126,7 +19126,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         class_field,
         analysis_cell_size=None,
         classes_as_rows=False,
-        output_name=None,
+        output_table_name=None,
         context=None,
         future=False,
         estimate=False,
@@ -19175,7 +19175,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_feature_name,
             output_feature_service,
         ) = self._set_output_feature(
-            output_name=output_name,
+            output_name=output_table_name,
             task=task,
             output_properties=kwargs,
             estimate=estimate,
@@ -19207,7 +19207,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         zone_field,
         analysis_cell_size=None,
         classes_as_rows=False,
-        output_name=None,
+        output_table_name=None,
         context=None,
         future=False,
         estimate=False,
@@ -19235,12 +19235,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_layer=input_zone_raster_or_features
             )
 
-
         (
             output_feature_name,
             output_feature_service,
         ) = self._set_output_feature(
-            output_name=output_name,
+            output_name=output_table_name,
             task=task,
             output_properties=kwargs,
             estimate=estimate,
@@ -19262,6 +19261,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
+
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

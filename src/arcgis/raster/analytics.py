@@ -10971,12 +10971,13 @@ def tabulate_area(
         class_field=class_field,
         analysis_cell_size=analysis_cell_size,
         classes_as_rows=classes_as_rows,
-        output_name=output_name,
+        output_table_name=output_name,
         context=context,
         future=future,
         estimate=estimate,
         **kwargs,
     )
+
 
 def zonal_geometry_as_table(
     input_zone_raster_or_features: Optional[Union[ImageryLayer, FeatureLayer]],
@@ -11080,7 +11081,7 @@ def zonal_geometry_as_table(
         input_zone_raster_or_features=input_zone_raster_or_features,
         zone_field=zone_field,
         analysis_cell_size=analysis_cell_size,
-        output_name=output_name,
+        output_table_name=output_name,
         context=context,
         future=future,
         estimate=estimate,
