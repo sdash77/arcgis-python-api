@@ -8,6 +8,8 @@ _arcgis_gis = LazyLoader("arcgis.gis")
 
 __all__ = ["run_data_pipeline"]
 
+_last_run_by_item_id: dict[str, PipelineRun] = {}
+
 
 @lru_cache(maxsize=254)
 def _get_arcgis_pipeline(
@@ -54,13 +56,13 @@ def run_data_pipeline(
             "Your organization or user account does not support Data Pipelines, please contact your Organization's administrator."
         )
 
-    last_created_run = next(pipeline.runs.query(item), None)
-    if last_created_run and last_created_run.status in [
+    if item.id in _last_run_by_item_id and _last_run_by_item_id[item.id].status in [
         RunStatus.WAITING,
         RunStatus.SUBMITTED,
-        RunStatus.CANCELLING,
         RunStatus.RUNNING,
     ]:
         raise Exception("A run is already in progress for this item.")
 
-    return pipeline.runs.create(item=item)
+    new_run = pipeline.runs.create(item=item)
+    _last_run_by_item_id[item.id] = new_run
+    return new_run
