@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import time
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-import parcel_fabric_utils as pfutils
+from . import parcel_fabric_utils as pfutils
 
 
 class TestSetLineLabelPosition(unittest.TestCase):

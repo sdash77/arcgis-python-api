@@ -2524,6 +2524,10 @@ class FeatureLayer(Layer):
                                    featureCollection.
                                    Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
                                    'geojson' | 'csv' | 'excel'
+
+                                   .. note::
+                                        You can find the Feature Layer's supported formats by checking
+                                        the `featureLayer.properties.supportedAppendFormats` property.
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2631,6 +2635,13 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        upload_formats = self.properties.supportedAppendFormats
+        if upload_format not in upload_formats:
+            raise ValueError(
+                "Invalid append format: {}. This layer supports these append formats: {}".format(
+                    upload_format, upload_formats
+                )
+            )
 
         params = {
             "f": "json",
@@ -2660,13 +2671,7 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
-        )
-        if upload_format not in upload_formats:
-            raise ValueError("Invalid upload format: %s." % upload_format)
+
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
@@ -2735,7 +2740,8 @@ class FeatureLayer(Layer):
                                    arcgis.geometry.filters module to filter results by a spatial
                                    relationship with another geometry.
         ----------------------     --------------------------------------------------------------------
-        gdb_version                Optional string. A ``Geodatabase`` version to apply the edits.
+        gdb_version                Optional string. The geodatabase version. This parameter applies only
+                                   if the `isDataVersioned` property of the layer is true.
         ----------------------     --------------------------------------------------------------------
         rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
                                    be applied only if all submitted edits succeed. If false, the server
@@ -2948,7 +2954,8 @@ class FeatureLayer(Layer):
                                 will look at a GUID field to track changes. This means the GUIDs will be passed
                                 instead of OIDs for delete, update or add features.
         ---------------------   --------------------------------------------------------------------------------------
-        gdb_version             Optional boolean. `Geodatabase` version to apply the edits.
+        gdb_version             Optional string. The geodatabase version to apply edits. This parameter
+                                applies only if the `isDataVersioned` property of the layer is true.
         ---------------------   --------------------------------------------------------------------------------------
         rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
                                 if all submitted edits succeed. If false, the server will apply the edits that succeed
@@ -3802,7 +3809,7 @@ class FeatureLayer(Layer):
                 "retentionPeriodUnits": retention_period_unit,
                 "async": asynchronous,
             }
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3829,8 +3836,8 @@ class FeatureLayer(Layer):
                 asset_hashes = [asset_hashes]
 
             url = self._url + "/hasAssets"
-            params = {"f": "json", "assetHashes": asset_hashes}
-            resp = self._gis._con._session.post(url, params).json()
+            params = {"f": "json", "assetHashes": str(asset_hashes)}
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3858,6 +3865,8 @@ class FeatureLayer(Layer):
                                     will return asset references. When `transport_type` is set to
                                     "esriTransportTypeEmbedded", the response will return multiple assets.
                                     The default value is "esriTransportTypeUrl".
+
+                                    Values: "esriTransportTypeUrl" | "esriTransportTypeEmbedded"
         ========================    ====================================================================
         """
         if self._is_3d:
@@ -3869,10 +3878,10 @@ class FeatureLayer(Layer):
 
             params = {
                 "f": "json",
-                "assetHashes": asset_hashes,
+                "assetHashes": str(asset_hashes),
                 "transportType": transport_type,
             }
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3919,9 +3928,12 @@ class FeatureLayer(Layer):
         """
         if self._is_3d:
             url = self._url + "/uploadAssets"
-            params = {"f": "json", "assets": assets}
+            if isinstance(assets, str):
+                assets = [assets]
 
-            resp = self._gis._con._session.post(url, params).json()
+            params = {"f": "json", "assets": str(assets)}
+
+            resp = self._gis._session.post(url, data=params).json()
             return resp
         else:
             return None
@@ -3976,12 +3988,12 @@ class FeatureLayer(Layer):
 
             params = {
                 "f": "json",
-                "assets": assets,
+                "assets": str(assets),
                 "targetFormat": target_format,
                 "transportType": transport_type,
             }
 
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3994,7 +4006,7 @@ class FeatureLayer(Layer):
         """
         if self._is_3d:
             url = self._url + "/relationshipsfor3d?f=json"
-            resp = self._gis._con._session.post(url).json()
+            resp = self._gis._session.get(url).json()
             return resp
         else:
             return None
@@ -4009,7 +4021,7 @@ class FeatureLayer(Layer):
         units: str | None = None,
         time_filter: str | int | None = None,
         geometry_filter: Geometry | dict | None = None,
-        gdb_version=None,
+        gdb_version: str | None = None,
         return_distinct_values: bool | None = None,
         order_by_fields: str | None = None,
         group_by_fields_for_statistics: str | None = None,
@@ -4020,7 +4032,6 @@ class FeatureLayer(Layer):
         sql_format: str | None = None,
         format_3d_objects: str | None = None,
         time_reference_unknown_client: bool | None = None,
-        as_df: bool = False,
     ):
         """
         The query3D operation allows clients to query 3D object features and is
@@ -4158,7 +4169,20 @@ class FeatureLayer(Layer):
                                             depends on useStandardizedQuery parameter.
                                             Values: none | standard | native
         -------------------------------     --------------------------------------------------------------------
-        format_3d_objects                   Optional string.
+        format_3d_objects                   Optional string. Specifies the 3D format that will be used to request
+                                            a feature. If set to a valid format ID (see layer resource), the geometry
+                                            of the feature response will be a 3D envelope of the 3D object and will
+                                            include asset maps for the 3D object. Since formats are created asynchronously,
+                                            review the flags field in the asset map to determine if the format is available
+                                            (conversionStatus is COMPLETED). If conversionStatus is INPROGRESS, the format
+                                            is not ready. Request the feature again later.
+
+                                            If a feature does not have the specified format, the feature will still be returned
+                                            according to the query parameters (such as the where clause), but the
+                                            asset mapping will be missing.
+
+                                            Values: "3D_dae" | "3D_dwg" | "3D_fbx" | "3D_glb" | "3D_gltf" | "3D_ifc"
+                                            | "3D_obj" | "3D_shapebuffer" | "3D_shapebufferg" | "3D_usdc" | "3D_usdz"
         -------------------------------     --------------------------------------------------------------------
         time_reference_unknown_client       Optional boolean. Setting `time_reference_unknown_client` as True
                                             indicates that the client is capable of working with data values that
@@ -4178,10 +4202,31 @@ class FeatureLayer(Layer):
 
                                             Most clients released prior to ArcGIS Enterprise 10.9 will not be able
                                             to work with feature services that have an unknown time setting.
-        -------------------------------     --------------------------------------------------------------------
-        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
-                                            instead of a FeatureSet.
         ===============================     ====================================================================
+
+        :returns: A dictionary containing the feature, asset map, and asset information for the layer.
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Query 3D objects
+
+            # Import the required modules
+            from arcgis.gis import GIS
+            from arcgis.features import FeatureLayer
+
+            # Connect to your GIS
+            gis = GIS(profile="your_enterprise_profile")
+
+            # Search for the feature layer
+            search_result = gis.content.search("3D Object Feature Layer", "Feature Layer")
+            feature_layer = search_result[0]
+
+            # Create a FeatureLayer object
+            layer = FeatureLayer(feature_layer.url, gis)
+
+            # Query the 3D objects
+            result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
+            print(result)
         """
         if where is None:
             where = "1=1"
@@ -4206,7 +4251,7 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            as_df=as_df,
+            raw=True,
         )
 
 
