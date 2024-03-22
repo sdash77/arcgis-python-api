@@ -607,7 +607,9 @@ class TaskManager(object):
             )
         if parameters:
             if params["type"] == "ExecuteNotebook":
-                params["parameters"] = json.dumps({"notebookParameters": parameters, "saveInjectedParameters": True})
+                params["parameters"] = json.dumps(
+                    {"notebookParameters": parameters, "saveInjectedParameters": True}
+                )
             else:
                 params["parameters"] = json.dumps(parameters)
         res = self._gis._con.post(url, params)
