@@ -179,7 +179,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return resp
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=1024, ttl=datetime.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def credit(
         self,
         start_time: Optional[datetime.datetime] = None,
@@ -298,7 +298,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=1024, ttl=datetime.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def users(
         self,
         start_time: Optional[datetime.datetime] = None,
@@ -418,7 +418,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=1024, ttl=datetime.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def applications(
         self,
         start_time: Optional[datetime.datetime] = None,
@@ -544,7 +544,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=1024, ttl=datetime.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def _custom(
         self,
         start_time,

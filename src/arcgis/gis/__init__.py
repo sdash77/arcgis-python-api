@@ -15628,7 +15628,7 @@ class Item(dict):
             return results
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=_dt.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=255, ttl=900))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
 

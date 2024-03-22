@@ -150,7 +150,7 @@ class CreditManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=10, ttl=datetime.timedelta(minutes=15)))
+    @cached(cache=TTLCache(maxsize=10, ttl=900))
     def credit_usage(
         self,
         start_time: Optional[datetime.datetime] = None,
