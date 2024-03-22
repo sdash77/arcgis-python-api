@@ -341,16 +341,6 @@ class _StoryMapDefinition(CloneNode):
                     f"smdraftresourceid:{os.path.basename(jsonfile.name)}"
                 )
                 new_item.update({"typeKeywords": type_keywords})
-            # express maps
-            if len(express_maps) > 0:
-                with tempfile.TemporaryDirectory() as d:
-                    shutil.unpack_archive(filename=self.resources, extract_dir=d)
-                    for expmap in express_maps:
-                        express_draft = os.path.join(d, "draft_" + expmap)
-                        express_pub = os.path.join(d, "pub_" + expmap)
-                        if os.path.isfile(express_pub):
-                            shutil.copy(express_pub, express_draft)
-                            new_item.resources.add(express_draft)
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
