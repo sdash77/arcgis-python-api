@@ -2664,6 +2664,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
+                    "options": {"dataSourceType": "relational"},
                 }
             ),
             "tags": tags if tags else ",".join(item.tags),
@@ -2870,7 +2871,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         _log.error("Unable to parse the view_tables parameter")
 
-        fs_view.manager.add_to_definition(add_def)
+        if self._gis._is_arcgisonline:
+            fs_view.manager.add_to_definition(add_def, future=True).result()
+        else:
+            fs_view.manager.add_to_definition(add_def, future=False)
+
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
                 vw_lyr.manager.update_definition(
@@ -2925,7 +2930,11 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc = FeatureLayerCollection.fromitem(item)
                 lyr = flc.layers[0]
                 mgr = lyr.manager
-                mgr.update_definition(values)
+                if self._gis._is_arcgisonline:
+                    res = mgr.update_definition(values, future=True).result()
+                else:
+                    res = mgr.update_definition(values)
+
         return item
 
     # ----------------------------------------------------------------------

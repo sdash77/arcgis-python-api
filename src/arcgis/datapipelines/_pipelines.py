@@ -72,8 +72,10 @@ class PipelineRun:
 
         :returns: dict[str,Any]
         """
-        i: int = 1
+        if self._result is not None:
+            return self._parse_result(self._result)
 
+        i: int = 1
         status: RunStatus = self.status
         while isinstance(status, RunStatus) and status in [
             RunStatus.WAITING,
