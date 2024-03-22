@@ -1319,7 +1319,7 @@ class _DeepCloner:
                 [
                     node
                     for node in self._graph.values()
-                    if isinstance(node, _ProProjectPackageDefinition)
+                    if isinstance(node, (_ProProjectPackageDefinition, _FormDefinition))
                     and "copy-only" not in node.info["tags"]
                 ]
             )
@@ -1539,6 +1539,7 @@ class _DeepCloner:
         # If the item is a survey get the FormDefintion
         elif item["type"] == "Form":
             related_items = item.related_items("Survey2Service", "forward")
+            related_items.extend(item.related_items("Survey2Data", "forward"))
             return _FormDefinition(
                 self.target,
                 self._clone_mapping,
@@ -5190,9 +5191,11 @@ class _FormDefinition(_ItemDefinition):
 
         original_item = self.info
         temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
+        # temp_dir = os.path.join(self._temp_dir.name, new_item["id"])
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
+        # form_zip = self.portal_item.download(temp_dir, new_item["id"])
         form_zip = self.portal_item.download(temp_dir)
         zip_file = zipfile.ZipFile(form_zip)
         org_url = _get_org_url(self.target)
@@ -5247,8 +5250,16 @@ class _FormDefinition(_ItemDefinition):
                     for key, value in clone_mapping["Item IDs"].items():
                         url = "{0}sharing/rest/content/items/{1}".format(org_url, value)
                         data = re.sub(
-                            '(?<=")([^<]+?{0})(?=")'.format(key),
+                            '(?<=action=")([^<]+?{0})(?=")'.format(key),
                             url,
+                            data,
+                            0,
+                            re.IGNORECASE,
+                        )
+
+                        data = re.sub(
+                            '(?<=(map=|ode=))({0})(?=")'.format(key),
+                            value,
                             data,
                             0,
                             re.IGNORECASE,
@@ -5286,6 +5297,37 @@ class _FormDefinition(_ItemDefinition):
                 elif path.lower() == "form.json":
                     with open(os.path.join(zip_dir, path), "r") as file:
                         form_json = file.read()
+                        for key, value in clone_mapping["Item IDs"].items():
+                            form_json = re.sub(
+                                key,
+                                value,
+                                form_json,
+                                0,
+                                re.IGNORECASE,
+                            )
+                        for key, value in clone_mapping["Services"].items():
+                            form_json = re.sub(
+                                key, value["url"], form_json, 0, re.IGNORECASE
+                            )
+                        with open(os.path.join(zip_dir, path), "w") as file:
+                            file.write(form_json)
+                        for new_id in clone_mapping["Item IDs"].values():
+                            new_flayer = target.content.get(new_id)
+                            if (
+                                new_flayer.title == self.portal_item.title
+                                and new_flayer.type == "Feature Service"
+                            ):
+                                with tempfile.NamedTemporaryFile(
+                                    mode="w+", suffix=".json", delete=False
+                                ) as tfile:
+                                    json.dump(json.loads(form_json), tfile)
+                                    tfile.close()
+                                new_flayer.resources.update(
+                                    folder_name="surveyDraft",
+                                    file_name="form.json",
+                                    file=tfile.name,
+                                )
+                                break
 
                 elif os.path.splitext(path)[1].lower() == ".xlsx":
                     xlsx = zipfile.ZipFile(os.path.join(zip_dir, path))
@@ -5308,9 +5350,17 @@ class _FormDefinition(_ItemDefinition):
                             url = "{0}sharing/rest/content/items/{1}".format(
                                 org_url, value
                             )
+                            check = "(?<=>)([^<]+?{0})(?=<)".format(key)
+                            # data = re.sub(
+                            #     check,
+                            #     url,
+                            #     data,
+                            #     0,
+                            #     re.IGNORECASE,
+                            # )
                             data = re.sub(
-                                "(?<=>)([^<]+?{0})(?=<)".format(key),
-                                url,
+                                key,
+                                value,
                                 data,
                                 0,
                                 re.IGNORECASE,
@@ -5324,15 +5374,15 @@ class _FormDefinition(_ItemDefinition):
                             file.write(data)
 
                         # Find related service mapping and replace in excel file
-                        for related_item in self.related_items:
-                            for key, value in clone_mapping["Services"].items():
-                                if _compare_url(related_item["url"], key):
-                                    for layer_id in value["layer_field_mapping"]:
-                                        field_mapping = value["layer_field_mapping"][
-                                            layer_id
-                                        ]
-                                        e = _ExcelHelper(xlsx_dir, field_mapping)
-                                        e.main()
+                        # for related_item in self.related_items:
+                        #     for key, value in clone_mapping["Services"].items():
+                        #         if _compare_url(related_item["url"], key):
+                        #             for layer_id in value["layer_field_mapping"]:
+                        #                 field_mapping = value["layer_field_mapping"][
+                        #                     layer_id
+                        #                 ]
+                        # e = _ExcelHelper(xlsx_dir, field_mapping)
+                        # e.main()
 
                         xlsx = zipfile.ZipFile(
                             os.path.join(zip_dir, path),
@@ -5348,12 +5398,19 @@ class _FormDefinition(_ItemDefinition):
                             shutil.rmtree(xlsx_dir)
 
             # Add a relationship between the new survey and the service
+            service_related = self.portal_item.related_items(
+                "Survey2Service", "forward"
+            )
+            data_related = self.portal_item.related_items("Survey2Data", "forward")
             for related_item in self.related_items:
-                for key, value in clone_mapping["Services"].items():
-                    if _compare_url(related_item["url"], key):
-                        feature_service = target.content.get(value["id"])
-                        new_item.add_relationship(feature_service, "Survey2Service")
-                        break
+                if related_item in service_related:
+                    new_id = clone_mapping["Services"][related_item["url"]]["id"]
+                    feature_service = target.content.get(new_id)
+                    new_item.add_relationship(feature_service, "Survey2Service")
+                if related_item in data_related:
+                    new_id = clone_mapping["Item IDs"][related_item["id"]]
+                    data_item = target.content.get(new_id)
+                    new_item.add_relationship(data_item, "Survey2Data")
 
             # If the survey was authored on the web add the web_json to the metadata table in the service
             if form_json is not None and feature_service_url is not None:
@@ -5382,7 +5439,10 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
-            new_item.update(data=form_zip)
+            new_form = shutil.copy2(
+                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+            )
+            new_item.update(data=new_form)
         except Exception as ex:
             raise Exception(
                 "Failed to update {0} {1}: {2}".format(
@@ -6418,7 +6478,9 @@ def _share_item_with_groups(item, sharing, group_mapping):
             sharing_level = SharingLevel.EVERYONE
 
         item.sharing.sharing_level = sharing_level
-        item.sharing._share(groups=groups)
+        grp_share = item.sharing.groups
+        for grp in groups:
+            grp_share.add(grp)
 
 
 def _wgs84_envelope(envelope):

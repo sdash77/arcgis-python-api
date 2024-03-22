@@ -5,7 +5,7 @@ from arcgis.gis import GIS
 import datetime
 import re
 
-import workflowmanager_setup
+from . import workflowmanager_setup
 
 
 ###########################################################################

@@ -838,6 +838,8 @@ def prepare_textdata(
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
                             for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
+                            For `csv` dataset type. If an entity has multiple values. It should be
+                            separated by `,`.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
@@ -971,6 +973,7 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
+
             _prepare_working_dir(path)
 
             return data
@@ -1190,9 +1193,7 @@ def prepare_tabulardata(
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
-    stratify = False
-    if kwargs.get("stratify") == True:
-        stratify = True
+    stratify = kwargs.pop("stratify", False)
 
     HAS_COLUMN_TRANSFORMS = False
 

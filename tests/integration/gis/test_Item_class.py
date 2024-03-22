@@ -2878,7 +2878,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )
 
             # try sharing to the group in the org
-            share_result = data_item.sharing._share(groups=[group3])
+            data_item.sharing.groups.add(group3)
 
             import time
 
@@ -2967,6 +2967,20 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         cls.gis = GIS(profile="your_kubernetes_profile")
         if cls.gis is None:
             cls.class_skip = True
+
+        # setup QALAB_ROOT_PATH
+        if cls.gis is None:
+            cls.class_skip = True
+        _conf_reader = ConfigParser()
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
+
+        cls.qalab_base_path = QALAB_ROOT_PATH
+        cls.qalab_data_path = (
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_dataprep"]
+        )
+        cls.qalab_cls_path = (
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_Item_cls"]
+        )
 
         # region publish necessary web layers
         cls.one_to_many_csv_item = PortalUtils.search_portal_item(

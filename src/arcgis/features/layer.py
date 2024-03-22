@@ -2524,6 +2524,10 @@ class FeatureLayer(Layer):
                                    featureCollection.
                                    Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
                                    'geojson' | 'csv' | 'excel'
+
+                                   .. note::
+                                        You can find the Feature Layer's supported formats by checking
+                                        the `featureLayer.properties.supportedAppendFormats` property.
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2631,6 +2635,13 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        upload_formats = self.properties.supportedAppendFormats
+        if upload_format not in upload_formats:
+            raise ValueError(
+                "Invalid append format: {}. This layer supports these append formats: {}".format(
+                    upload_format, upload_formats
+                )
+            )
 
         params = {
             "f": "json",
@@ -2660,13 +2671,7 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
-        )
-        if upload_format not in upload_formats:
-            raise ValueError("Invalid upload format: %s." % upload_format)
+
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
@@ -2735,7 +2740,8 @@ class FeatureLayer(Layer):
                                    arcgis.geometry.filters module to filter results by a spatial
                                    relationship with another geometry.
         ----------------------     --------------------------------------------------------------------
-        gdb_version                Optional string. A ``Geodatabase`` version to apply the edits.
+        gdb_version                Optional string. The geodatabase version. This parameter applies only
+                                   if the `isDataVersioned` property of the layer is true.
         ----------------------     --------------------------------------------------------------------
         rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
                                    be applied only if all submitted edits succeed. If false, the server
@@ -2948,7 +2954,8 @@ class FeatureLayer(Layer):
                                 will look at a GUID field to track changes. This means the GUIDs will be passed
                                 instead of OIDs for delete, update or add features.
         ---------------------   --------------------------------------------------------------------------------------
-        gdb_version             Optional boolean. `Geodatabase` version to apply the edits.
+        gdb_version             Optional string. The geodatabase version to apply edits. This parameter
+                                applies only if the `isDataVersioned` property of the layer is true.
         ---------------------   --------------------------------------------------------------------------------------
         rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
                                 if all submitted edits succeed. If false, the server will apply the edits that succeed
@@ -3802,7 +3809,7 @@ class FeatureLayer(Layer):
                 "retentionPeriodUnits": retention_period_unit,
                 "async": asynchronous,
             }
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3829,8 +3836,8 @@ class FeatureLayer(Layer):
                 asset_hashes = [asset_hashes]
 
             url = self._url + "/hasAssets"
-            params = {"f": "json", "assetHashes": asset_hashes}
-            resp = self._gis._con._session.post(url, params).json()
+            params = {"f": "json", "assetHashes": str(asset_hashes)}
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3858,6 +3865,8 @@ class FeatureLayer(Layer):
                                     will return asset references. When `transport_type` is set to
                                     "esriTransportTypeEmbedded", the response will return multiple assets.
                                     The default value is "esriTransportTypeUrl".
+
+                                    Values: "esriTransportTypeUrl" | "esriTransportTypeEmbedded"
         ========================    ====================================================================
         """
         if self._is_3d:
@@ -3869,10 +3878,10 @@ class FeatureLayer(Layer):
 
             params = {
                 "f": "json",
-                "assetHashes": asset_hashes,
+                "assetHashes": str(asset_hashes),
                 "transportType": transport_type,
             }
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3919,9 +3928,12 @@ class FeatureLayer(Layer):
         """
         if self._is_3d:
             url = self._url + "/uploadAssets"
-            params = {"f": "json", "assets": assets}
+            if isinstance(assets, str):
+                assets = [assets]
 
-            resp = self._gis._con._session.post(url, params).json()
+            params = {"f": "json", "assets": str(assets)}
+
+            resp = self._gis._session.post(url, data=params).json()
             return resp
         else:
             return None
@@ -3976,12 +3988,12 @@ class FeatureLayer(Layer):
 
             params = {
                 "f": "json",
-                "assets": assets,
+                "assets": str(assets),
                 "targetFormat": target_format,
                 "transportType": transport_type,
             }
 
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._session.get(url, params=params).json()
             return resp
         else:
             return None
@@ -3994,7 +4006,7 @@ class FeatureLayer(Layer):
         """
         if self._is_3d:
             url = self._url + "/relationshipsfor3d?f=json"
-            resp = self._gis._con._session.post(url).json()
+            resp = self._gis._session.get(url).json()
             return resp
         else:
             return None
@@ -4009,7 +4021,7 @@ class FeatureLayer(Layer):
         units: str | None = None,
         time_filter: str | int | None = None,
         geometry_filter: Geometry | dict | None = None,
-        gdb_version=None,
+        gdb_version: str | None = None,
         return_distinct_values: bool | None = None,
         order_by_fields: str | None = None,
         group_by_fields_for_statistics: str | None = None,
@@ -4020,7 +4032,6 @@ class FeatureLayer(Layer):
         sql_format: str | None = None,
         format_3d_objects: str | None = None,
         time_reference_unknown_client: bool | None = None,
-        as_df: bool = False,
     ):
         """
         The query3D operation allows clients to query 3D object features and is
@@ -4158,7 +4169,20 @@ class FeatureLayer(Layer):
                                             depends on useStandardizedQuery parameter.
                                             Values: none | standard | native
         -------------------------------     --------------------------------------------------------------------
-        format_3d_objects                   Optional string.
+        format_3d_objects                   Optional string. Specifies the 3D format that will be used to request
+                                            a feature. If set to a valid format ID (see layer resource), the geometry
+                                            of the feature response will be a 3D envelope of the 3D object and will
+                                            include asset maps for the 3D object. Since formats are created asynchronously,
+                                            review the flags field in the asset map to determine if the format is available
+                                            (conversionStatus is COMPLETED). If conversionStatus is INPROGRESS, the format
+                                            is not ready. Request the feature again later.
+
+                                            If a feature does not have the specified format, the feature will still be returned
+                                            according to the query parameters (such as the where clause), but the
+                                            asset mapping will be missing.
+
+                                            Values: "3D_dae" | "3D_dwg" | "3D_fbx" | "3D_glb" | "3D_gltf" | "3D_ifc"
+                                            | "3D_obj" | "3D_shapebuffer" | "3D_shapebufferg" | "3D_usdc" | "3D_usdz"
         -------------------------------     --------------------------------------------------------------------
         time_reference_unknown_client       Optional boolean. Setting `time_reference_unknown_client` as True
                                             indicates that the client is capable of working with data values that
@@ -4178,10 +4202,31 @@ class FeatureLayer(Layer):
 
                                             Most clients released prior to ArcGIS Enterprise 10.9 will not be able
                                             to work with feature services that have an unknown time setting.
-        -------------------------------     --------------------------------------------------------------------
-        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
-                                            instead of a FeatureSet.
         ===============================     ====================================================================
+
+        :returns: A dictionary containing the feature, asset map, and asset information for the layer.
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Query 3D objects
+
+            # Import the required modules
+            from arcgis.gis import GIS
+            from arcgis.features import FeatureLayer
+
+            # Connect to your GIS
+            gis = GIS(profile="your_enterprise_profile")
+
+            # Search for the feature layer
+            search_result = gis.content.search("3D Object Feature Layer", "Feature Layer")
+            feature_layer = search_result[0]
+
+            # Create a FeatureLayer object
+            layer = FeatureLayer(feature_layer.url, gis)
+
+            # Query the 3D objects
+            result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
+            print(result)
         """
         if where is None:
             where = "1=1"
@@ -4206,7 +4251,7 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            as_df=as_df,
+            raw=True,
         )
 
 
@@ -4713,6 +4758,12 @@ class FeatureLayerCollection(_GISResource):
 
         .. note::
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
+
+        .. note::
+            Only arcobject Feature Services support this operation. If the service supports this operation, then
+            the `supportsQueryDomains` property in the service properties is True. If this value is False or not
+            present, then the service cannot use this operation. In addition, this is only availabel for arcobject and
+            hosted Feature Services in Enterprise, not for ArcGIS Online.
 
         ================================     ====================================================================
         **Parameter**                         **Description**
@@ -5862,154 +5913,7 @@ class FeatureLayerCollection(_GISResource):
         out_path=None,
     ):
         """
-        The synchronizeReplica operation is performed on a feature service resource. This operation
-        synchronizes changes between the feature service and a client based on the replicaID
-        provided by the client. Requires the sync capability. See Sync overview for more information
-        on sync.
-        The client obtains the replicaID by first calling the _create_replica operation.
-        Synchronize applies the client's data changes by importing them into the server's
-        geodatabase. It then exports the changes from the server geodatabase that have taken place
-        since the last time the client got the data from the server. Edits can be supplied in the
-        edits parameter, or, alternatively, by using the editsUploadId and editUploadFormat to
-        identify a file containing the edits that were previously uploaded using the upload_item
-        operation.
-        The response for this operation includes the replicaID, new replica generation number, or
-        the layer's generation numbers. The response has edits or layers according to the
-        syncDirection/syncLayers. Presence of layers and edits in the response is indicated by the
-        responseType.
-        If the responseType is esriReplicaResponseTypeEdits or esriReplicaResponseTypeEditsAndData,
-        the result of this operation can include arrays of edit results for each layer/table edited
-        as specified in edits. Each edit result identifies a single feature on a layer or table and
-        indicates if the edits were successful or not. If an edit is not successful, the edit result
-        also includes an error code and an error description.
-        If syncModel is perReplica and syncDirection is download or bidirectional, the
-        _synchronize_replica operation's response will have edits. If syncDirection is snapshot, the
-        response will have replacement data.
-        If syncModel is perLayer, and syncLayers have syncDirection as download or bidirectional,
-        the response will have edits. If syncLayers have syncDirection as download or bidirectional
-        for some layers and snapshot for some other layers, the response will have edits and data.
-        If syncDirection for all the layers is snapshot, the response will have replacement data.
-        When syncModel is perReplica, the createReplica and synchronizeReplica operations' responses
-        contain replicaServerGen. When syncModel is perLayer, the createReplica and
-        synchronizeReplica operations' responses contain layerServerGens.
-        You can provide arguments to the synchronizeReplica operation as defined in the parameters
-        table below.
-
-        ===============                 ====================================================================
-        **Parameter**                    **Description**
-        ---------------                 --------------------------------------------------------------------
-        replica_id                      The ID of the replica you want to synchronize.
-        ---------------                 --------------------------------------------------------------------
-        transport_type
-        ---------------                 --------------------------------------------------------------------
-        replica_server_gen              Is a generation number that allows the server to keep track of what
-                                        changes have already been synchronized. A new replicaServerGen is sent with the response
-                                        to the synchronizeReplica operation. Clients should persist this value and use it with the
-                                        next synchronizeReplica call.
-                                        It applies to replicas with syncModel = perReplica.
-                                        For replicas with syncModel = perLayer, layer generation numbers are specified using
-                                        parameter: syncLayers; and replicaServerSibGen is not needed.
-        ---------------                 --------------------------------------------------------------------
-        return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
-                                        synchronize will be returned to the client in the addResults sections of the response.
-                                        Otherwise, the IDs are not returned. The default is false.
-
-                                        Values: true | false
-        ---------------                 --------------------------------------------------------------------
-        edits                           The edits the client wants to apply to the service. Alternatively, the
-                                        edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
-                                        The edits are described using an array where an element in the array includes:
-                                        - The layer or table ID
-                                        - The feature or row edits to apply listed as inserts, updates, and deletes
-                                        - The attachments to apply listed as inserts, updates, and deletes
-                                        For features, adds and updates are specified as feature objects that include geometry and
-                                        attributes.
-                                        Deletes can be specified using globalIDs for features and attachments.
-                                        For attachments, updates and adds are specified using the following set of properties for
-                                        each attachment. If embedding the attachment, set the data property; otherwise, set the url
-                                        property. All other properties are required:
-                                        - globalid - The globalID of the attachment that is to be added or updated.
-                                        - parentGlobalid - The globalID of the feature associated with the attachment.
-                                        - contentType - Describes the file type of the attachment (for example, image/jpeg).
-                                        - name - The file name (for example, hydrant.jpg).
-                                        - data - The base 64 encoded data if embedding the data. Only required if the attachment
-                                            is embedded.
-                                        - url - The location where the service will upload the attachment file (for example,
-                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
-                                            embedded.
-        ---------------                 --------------------------------------------------------------------
-        return_attachment_databy_url    If true, a reference to a URL will be provided for each
-                                        attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
-                                        response. The default is true. Applies only if attachments are included in the replica.
-        ---------------                 --------------------------------------------------------------------
-        asynchronous                    If true, the request is processed as an asynchronous job and a URL is
-                                        returned that a client can visit to check the status of the job. See the topic on
-                                        asynchronous usage for more information. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        sync_direction                  Determines whether to upload, download, or upload and download on sync. By
-                                        default, a replica is synchronized bi-directionally. Only applicable when
-                                        syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
-                                        syncLayers.
-
-                                        Values: download | upload | bidirectional | snapshot
-
-                                        - download-The changes that have taken place on the server since last download are
-                                            returned. Client does not need to send any changes. If the changes are sent, service
-                                            will ignore them.
-                                        - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
-                                            parameters are applied, and no changes are downloaded from the server.
-                                        - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
-                                            parameters are applied, and changes on the server are downloaded. This is the default
-                                            value.
-                                        - snapshot-The current state of the features is downloaded from the server. If any edits
-                                            are specified, they will be ignored.
-        ---------------                 --------------------------------------------------------------------
-        sync_layers                     Allows a client to specify layer-level generation numbers for a sync
-                                        operation. It can also be used to specify sync directions at layer-level. This parameter
-                                        is needed for replicas with syncModel = perLayer. It is ignored for replicas with
-                                        syncModel = perReplica.
-                                        serverGen is required for layers with syncDirection = bidirectional or download.
-                                        serverSibGen is needed only for replicas where the targetType = server. For replicas with
-                                        syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
-                                        replicaServerSibGen does in the case of syncModel = perReplica. See the
-                                        replicaServerSibGen parameter for more information.
-                                        If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
-                                        syncModel is perLayer, the layers that do not have syncDirection values will use the value
-                                        of the syncDirection parameter. If the syncDirection parameter is not specified, the
-                                        default value of bidirectional is used.
-
-                                        Values: download | upload | bidirectional | snapshot
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_id                 The ID for the uploaded item that contains the edits the client wants to
-                                        apply to the service. Used in conjunction with editsUploadFormat.
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_format             The data format of the uploaded data reference in edit_upload_id.
-                                        data_format="json"
-        ---------------                 --------------------------------------------------------------------
-        data_format                     The format of the replica geodatabase returned in the response. The
-                                        default is json.
-
-                                        Values: filegdb, json, sqlite, shapefile
-        ---------------                 --------------------------------------------------------------------
-        rollback_on_failure             Determines the behavior when there are errors while importing edits
-                                        on the server during synchronization. This only applies in cases where edits are being
-                                        uploaded to the server (syncDirection = upload or bidirectional). See the
-                                        RollbackOnFailure and Sync Models topic for more details.
-                                        When true, if an error occurs while importing edits on the server, all edits are rolled
-                                        back (not applied), and the operation returns an error in the response. Use this setting
-                                        when the edits are such that you will either want all or none applied.
-                                        When false, if an error occurs while importing an edit on the server, the import process
-                                        skips the edit and continues. All edits that were skipped are returned in the edits
-                                        results with information describing why the edits were skipped.
-        ---------------                 --------------------------------------------------------------------
-        close_replica                   If true, the replica will be unregistered when the synchronize completes.
-                                        This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
-                                        replica can continue to be synchronized. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        out_path                        Folder path to save the file
-        ===============                 ====================================================================
-
-        :returns:
+        Docstring in SyncManager.synchronize.
         """
 
         url = "{url}/synchronizeReplica".format(url=self._url)

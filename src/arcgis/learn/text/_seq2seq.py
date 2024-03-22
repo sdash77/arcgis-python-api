@@ -319,7 +319,14 @@ class SequenceToSequence(ArcGISModel):
         """
         if "\\" in str(name_or_path) or "/" in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path, strict=False)
+
+        try:
+            return super().load(name_or_path, strict=True)
+        except RuntimeError as re:
+            if "Error(s) in loading state_dict" in str(re):
+                return super().load(name_or_path, strict=False)
+            else:
+                raise re
 
     def save(
         self,
