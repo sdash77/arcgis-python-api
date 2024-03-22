@@ -219,6 +219,7 @@ class TabularDataObject(object):
                                 f"We see a class imbalance in the dataset. "
                                 f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
                                 f"not have enough data points in your dataset."
+                                f"The imbalance class(es) should have at least 1% of total number of data points to stratify."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -1632,22 +1633,22 @@ class TabularDataObject(object):
             dataframe,
             {
                 "dependent_variable": dependent_variable,
-                "categorical_variables": categorical_variables
-                if categorical_variables
-                else [],
-                "continuous_variables": continuous_variables
-                if continuous_variables
-                else [],
+                "categorical_variables": (
+                    categorical_variables if categorical_variables else []
+                ),
+                "continuous_variables": (
+                    continuous_variables if continuous_variables else []
+                ),
                 "text_variables": text_variables if text_variables else [],
                 "image_variables": image_variables if image_variables else [],
                 "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
-                "feature_field_variables": feature_field_variables
-                if feature_field_variables
-                else [],
-                "raster_field_variables": raster_field_variables
-                if raster_field_variables
-                else [],
+                "feature_field_variables": (
+                    feature_field_variables if feature_field_variables else []
+                ),
+                "raster_field_variables": (
+                    raster_field_variables if raster_field_variables else []
+                ),
             },
         )
 

@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, "C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, "C:\workspace\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager

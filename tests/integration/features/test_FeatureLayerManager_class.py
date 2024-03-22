@@ -85,11 +85,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_ent_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -127,8 +123,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
                 if result.get("success"):
@@ -176,8 +171,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
                 if result.get("success"):

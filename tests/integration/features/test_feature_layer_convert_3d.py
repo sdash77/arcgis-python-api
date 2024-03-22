@@ -8,7 +8,7 @@ from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 from utils.decorators import integration_test
 
-gis = GIS(profile="your_dev_profile", verify_cert=False)
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 layer = FeatureLayer(
     "https://servicesdev.arcgis.com/5xC5Wrapp1gUAl2r/arcgis/rest/services/CUBE_WGS84_APIforPython/FeatureServer/0"

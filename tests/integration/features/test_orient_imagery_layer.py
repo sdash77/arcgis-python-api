@@ -13,6 +13,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
 )
 from utils.decorators import integration_test
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -31,7 +32,7 @@ profiles = ['your_online_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
-QA_LABS = r"\\qalab_server\pydata\v109\geosaurus\oriented_image_layer"
+QA_LABS = QALAB_ROOT_PATH + r"\oriented_image_layer"
 DATASET = "OI_sample.gdb.zip"
 
 

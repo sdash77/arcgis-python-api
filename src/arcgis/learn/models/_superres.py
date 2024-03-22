@@ -10,12 +10,7 @@ try:
         create_loss,
         UNetSR,
     )
-    from ._SR3_utils import (
-        UNet,
-        GaussianDiffusion,
-        init_weights,
-        l1Loss,
-    )
+    from ._SR3_utils import UNet, GaussianDiffusion, init_weights, l1Loss, UViT
     from fastai.vision.learner import unet_learner, cnn_config
     from fastai.vision import nn, NormType, Learner, optim
     from fastai.callbacks import LossMetrics
@@ -35,7 +30,6 @@ except Exception as e:
 
 
 class SuperResolution(ArcGISModel):
-
     """
     Creates a model object which increases the resolution and improves the quality of images.
     Based on Fast.ai MOOC Lesson 7 and https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement.
@@ -50,14 +44,16 @@ class SuperResolution(ArcGISModel):
                             creating the base of the
                             :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
-                            Compatible backbones: 'SR3', 'resnet18', 'resnet34',
-                            'resnet50', 'resnet101', 'resnet152'.
+                            Compatible backbones: 'SR3', 'SR3_UViT',
+                            'resnet18', 'resnet34', 'resnet50', 'resnet101',
+                            'resnet152'.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    In addition to explicitly named parameters, the SuperResolution model with 'SR3' backbone supports the optional key word arguments:
+    In addition to explicitly named parameters, the SuperResolution model with 'SR3' backbone
+    supports the optional key word arguments:
 
     **kwargs**
 
@@ -96,12 +92,34 @@ class SuperResolution(ArcGISModel):
                             Default: 1e-02
     =====================   ===========================================
 
+    And, with 'SR3_UViT' backbone supports the below optional key word arguments:
+
+    =====================   ===========================================
+    patch_size              Optional int. Patch size for generating patch embeddings.
+                            Default: 16
+    ---------------------   -------------------------------------------
+    embed_dim               Optional int. Dimension of embeddings.
+                            Default: 768
+    ---------------------   -------------------------------------------
+    depth                   Optional int. Depth of model.
+                            Default: 17
+    ---------------------   -------------------------------------------
+    num_heads               Optional int. Number of attention heads.
+                            Default: 12
+    ---------------------   -------------------------------------------
+    mlp_ratio               Optional bool. Ratio of MLP.
+                            Default: 4.0
+    ---------------------   -------------------------------------------
+    qkv_bias                Optional bool. Addition of bias in QK Vector.
+                            Default: False
+    =====================   ===========================================
+
     :return: :class:`~arcgis.learn.SuperResolution` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         self._learn_version = kwargs.get("ArcGISLearnVersion", ArcGISLearnVersion)
-        if backbone == "SR3":
+        if backbone and backbone.startswith("SR3"):
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
                 downsampling_factor = data._downsampling_factor
@@ -124,13 +142,22 @@ class SuperResolution(ArcGISModel):
             super().__init__(data_bunch, backbone, **kwargs)
             self.kwargs = kwargs
             self._data = data_bunch if data_bunch else data
-            denoiseUnet = UNet(
-                in_channel=(self._data._n_channel) * 2,
-                out_channel=self._data._n_channel,
-                image_size=self._data.chip_size,
-                with_noise_level_emb=True,
-                **kwargs
-            )
+            if backbone == "SR3_UViT":
+                denoiseUnet = UViT(
+                    img_size=self._data.chip_size,
+                    in_chans=self._data._n_channel,  # 3,
+                    **kwargs
+                )
+                self.model_type = "SR3_UViT"
+            else:
+                denoiseUnet = UNet(
+                    in_channel=(self._data._n_channel) * 2,
+                    out_channel=self._data._n_channel,
+                    image_size=self._data.chip_size,
+                    with_noise_level_emb=True,
+                    **kwargs
+                )
+                self.model_type = "SR3"
             sr3model = GaussianDiffusion(
                 denoiseUnet,
                 image_size=self._data.chip_size,
@@ -145,7 +172,6 @@ class SuperResolution(ArcGISModel):
                 loss_func=l1Loss(self._device.type),
                 opt_func=optim.Adam,
             )
-            self.model_type = "SR3"
         else:
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
@@ -265,7 +291,7 @@ class SuperResolution(ArcGISModel):
         model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-        modtype = emd.get("ModelArch", "UNet")
+        modtype = emd.get("ModelArch", "SR3")
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
         n_channel = emd.get("n_channel", 3)
@@ -275,7 +301,7 @@ class SuperResolution(ArcGISModel):
         kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
 
         if data is None:
-            if modtype == "SR3":
+            if modtype.startswith("SR3"):
                 data = _EmptyData(
                     path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
@@ -303,7 +329,10 @@ class SuperResolution(ArcGISModel):
             data._extract_bands = emd.get("extract_bands", None)
             data._bands = emd.get("bands", None)
             data.device = _get_device()
-        backbone = "SR3" if modtype == "SR3" else model_params.get("backbone")
+        if modtype.startswith("SR3"):
+            backbone = "SR3_UViT" if modtype == "SR3_UViT" else "SR3"
+        else:
+            backbone = model_params.get("backbone")
         data.resize_to = resize_to
 
         return cls(data, backbone=backbone, pretrained_path=str(model_file), **kwargs)
@@ -319,16 +348,16 @@ class SuperResolution(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
+            )
         _emd_template["downsample_factor"] = self._data.downsample_factor
         _emd_template["n_channel"] = self._data._n_channel
         _emd_template["is_multispec"] = self._data._is_multispec
         _emd_template["ModelType"] = "SuperResolution"
 
         if self._data.train_ds.__class__.__name__ == "SR3Dataset":
-            _emd_template["ModelArch"] = "SR3"
+            _emd_template["ModelArch"] = self.model_type
             _emd_template["image_stats"] = {
                 i: j.tolist() for i, j in self._data.batch_stats_a.items() if j != None
             }

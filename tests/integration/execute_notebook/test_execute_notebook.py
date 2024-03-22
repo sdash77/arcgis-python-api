@@ -1,5 +1,6 @@
 import sys
 
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 #
 #  Update the Path to set the test area
 import json
@@ -10,6 +11,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from utils.decorators import integration_test
+from arcgis.notebook import list_runtimes
 
 __logger__ = logging.getLogger()
 
@@ -24,7 +26,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_admin_profile']  # , 'your_enterprise_profile'
+profiles = ["your_online_admin_profile"]  # , 'your_enterprise_profile'
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -38,8 +40,7 @@ notebook_json = {
         {
             "cell_type": "markdown",
             "metadata": {},
-            "source": "#### Run this cell to connect to your GIS and get "
-            "started:",
+            "source": "#### Run this cell to connect to your GIS and get " "started:",
         },
         {
             "cell_type": "code",
@@ -118,7 +119,9 @@ class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(
-            profile='your_online_admin_profile', verify_cert=False, proxy=PROXIES
+            profile="your_online_admin_profile",
+            verify_cert=False,
+            proxy=PROXIES,
         )
 
         d = tempfile.gettempdir()
@@ -227,7 +230,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        url = "https://rqawinbi01pt.ags.esri.com/gis"
+        url = "https://rextapilnx02eb.esri.com/portal"
         username = "NBAdvanced"
         password = "NBAdvanced.1"
         ent_json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"9.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
@@ -235,11 +238,12 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
         cls._gis = GIS(
             url=url,
             username=username,
-            password=password, 
+            password=password,
             verify_cert=False,
             proxy=PROXIES,
         )
-
+        runtimes = list_runtimes(gis=cls._gis)
+        runtimes[-1]
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
         writer = open(fp, "w")
@@ -252,18 +256,18 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "9.0",
+                    "notebookRuntimeVersion": "8.0",
                 },
             },
             data=fp,
         )
         cls._item.update(
             {
-                "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                "notebookRuntimeVersion": "9.0",
+                "notebookRuntimeName": runtimes[-1]["name"],
+                "notebookRuntimeVersion": runtimes[-1]["version"],
             }
         )
-        # print('stop')
+        print("stop")
 
     def test_open_notebook_ent_future(self):
         from arcgis._impl._async.jobs import Job
@@ -292,7 +296,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
 
         assert open_result
         assert open_result.result()
-        print('stop')
+        print("stop")
 
     # @unittest.skip("i work")
     def test_execute_notebook_ent(self):

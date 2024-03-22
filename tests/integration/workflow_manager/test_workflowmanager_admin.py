@@ -5,8 +5,8 @@ from arcgis.gis import GIS
 import datetime
 import re
 
-import workflowmanager_setup
 from utils.decorators import integration_test
+from . import workflowmanager_setup
 
 
 ###########################################################################

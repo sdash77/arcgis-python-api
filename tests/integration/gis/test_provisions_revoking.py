@@ -22,6 +22,7 @@ class TestLicenseProvisions(unittest.TestCase):
                 firstname="test",
                 lastname="account",
                 email="achapkowski@esri.com",
+                role='org_user'
             )
             user = gis.users.get(username)
         except Exception as e:
@@ -56,6 +57,7 @@ class TestLicenseProvisions(unittest.TestCase):
                 firstname="test",
                 lastname="account",
                 email="achapkowski@esri.com",
+                role="viewer"
             )
             user = gis.users.get(username)
         except Exception as e:

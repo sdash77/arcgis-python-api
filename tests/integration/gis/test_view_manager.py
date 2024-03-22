@@ -202,10 +202,11 @@ class Test_ItemViewManagerAGOL(unittest.TestCase):
 
         flc = FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
+        oid_field = flc.layers[0].properties['objectIdField']
         view_item = mgr.create_view(
             name=f"test_view_{uuid.uuid4().hex[:5]}",
-            query="OBJECTID > 0",
-            visible_fields=["phone", "building", "objectid"],
+            query=f"{oid_field} > 0",
+            visible_fields=["phone", "building", oid_field],
         )
         view_item.delete()
 

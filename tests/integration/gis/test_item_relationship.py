@@ -8,6 +8,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from utils.decorators import integration_test
+from config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -37,7 +38,7 @@ class TestItemRelationships(unittest.TestCase):
         ]
         cls.items = []
         cls.pitems = []
-        fp: str = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\issue_10433\issue_10433.zip"
+        fp: str = QALAB_ROOT_PATH + r"\esri_requests\issue_10433\issue_10433.zip"
         for gis in cls.gis_objs:
             item = gis.content.add(
                 item_properties={

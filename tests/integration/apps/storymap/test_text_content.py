@@ -55,6 +55,13 @@ class TestTextContent(unittest.TestCase):
                 assert welcome.properties
                 assert park_quote.properties
 
+                paragraph = Text(
+                    text="This is a paragraph of text that is not styled.",
+                    style=TextStyles.PARAGRAPH,
+                    size = "large"
+                )
+                assert story.add(paragraph)
+                
                 item = gis.content.get(story._itemid)
                 assert item.delete()
 

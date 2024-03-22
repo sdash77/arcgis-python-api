@@ -885,7 +885,9 @@ class CD_Model(nn.Module):
         # print(feat_A.shape, feat_B.shape)
         feat_A, feat_B = self.netA(feat_A, feat_B)
 
-        dist = F.pairwise_distance(feat_A, feat_B, keepdim=True)
+        dist = F.pairwise_distance(
+            feat_A.permute((0, 3, 2, 1)), feat_B.permute((0, 3, 2, 1)), keepdim=True
+        ).permute((0, 3, 2, 1))
 
         dist = F.interpolate(
             dist, size=inp1.shape[2:], mode="bilinear", align_corners=True

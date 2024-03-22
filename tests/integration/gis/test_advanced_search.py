@@ -1,4 +1,5 @@
 import sys
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -33,7 +34,7 @@ class Test_SearchEnrich(unittest.TestCase):
             proxy=PROXIES,
         )
 
-    def test_seaarch_enrich_true(self):
+    def test_search_enrich_true(self):
         """tests the search with enrich=true"""
         gis = self.gis
         items = gis.content.search("*", "Feature Layer", enrich=True)
@@ -63,6 +64,21 @@ class Test_SearchEnrich(unittest.TestCase):
         cm = gis.content
         query = f"owner: {gis.users.me.username}"
         items = cm.advanced_search(query, enrich=False)
+        assert isinstance(items, dict)
+
+class Test_SearchFilter(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.gis = GIS(
+            profile="your_online_profile",
+            verify_cert=False,
+            proxy=PROXIES,
+        )
+
+    def test_advanced_search_filter(self):
+        gis = self.gis
+        cm = gis.content
+        items = cm.advanced_search("*", filter="tags:data")
         assert isinstance(items, dict)
 
 

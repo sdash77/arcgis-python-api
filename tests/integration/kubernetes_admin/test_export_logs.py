@@ -2,9 +2,10 @@ import sys
 import os
 import unittest
 from utils.decorators import integration_test, profiles
-from utils.logging import enable_verbose_logging
+from utils._logging import enable_verbose_logging
 
 enable_verbose_logging()
+
 
 @profiles.k8s
 @integration_test

@@ -6,8 +6,8 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
-import parcel_fabric_utils as pfutils
 from utils.decorators import integration_test
+from . import parcel_fabric_utils as pfutils
 
 
 @integration_test

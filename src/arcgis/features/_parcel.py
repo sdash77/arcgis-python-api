@@ -1180,6 +1180,7 @@ class ParcelFabricManager(object):
         divide_distribute_remainder: bool,
         default_area_unit: int | str | None = None,
         divide_cogo_line_bearing: float = None,
+        divide_associated_lines: bool = False,
         future: bool = False,
     ):
         """
@@ -1258,6 +1259,11 @@ class ParcelFabricManager(object):
                                     (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
         --------------------------- --------------------------------------------------------------------
+        divide_associated_lines     Optional boolean. If true, boundary lines of divided parcels will be split.
+                                    The original parent lines will be set as historic.
+
+                                    The default is `False`.
+        --------------------------- --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1294,6 +1300,7 @@ class ParcelFabricManager(object):
             "divideDistributeRemainder": divide_distribute_remainder,
             "defaultAreaUnit": default_area_unit,
             "divideCogoLineBearing": divide_cogo_line_bearing,
+            "divideAssociatedLines": divide_associated_lines,
             "async": future,
             "f": "json",
         }

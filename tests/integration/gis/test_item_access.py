@@ -61,7 +61,7 @@ class TestItemAccess(unittest.TestCase):
                     data="https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/CapitolhillEnrichedByPop585927/FeatureServer",
                 )
 
-                result = test_item.sharing._share(everyone=False, org=True, groups="test_group")
+                result = test_item.sharing._share(level="ORG", groups="test_group")
                 assert test_item.shared_with["everyone"] == False
                 assert test_item.shared_with["org"] == True
                 assert result["notSharedWith"][0] == "test_group"  # expected to fail

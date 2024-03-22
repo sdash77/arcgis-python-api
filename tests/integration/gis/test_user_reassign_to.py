@@ -48,6 +48,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             firstname=f"a{uuid.uuid4().hex[:3]}z",
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
+            role="org_user"
         )
         fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
@@ -84,6 +85,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             firstname=f"a{uuid.uuid4().hex[:3]}z",
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
+            role="org_user"
         )
         fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:

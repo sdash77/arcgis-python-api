@@ -319,7 +319,14 @@ class SequenceToSequence(ArcGISModel):
         """
         if "\\" in str(name_or_path) or "/" in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path, strict=False)
+
+        try:
+            return super().load(name_or_path, strict=True)
+        except RuntimeError as re:
+            if "Error(s) in loading state_dict" in str(re):
+                return super().load(name_or_path, strict=False)
+            else:
+                raise re
 
     def save(
         self,
@@ -417,9 +424,9 @@ class SequenceToSequence(ArcGISModel):
         # _emd_template.update(metrics)
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
         _emd_template["Architecture"] = self.learn.model._transformer_architecture
-        _emd_template[
-            "PretrainedModel"
-        ] = self.learn.model._transformer_pretrained_model_name
+        _emd_template["PretrainedModel"] = (
+            self.learn.model._transformer_pretrained_model_name
+        )
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols

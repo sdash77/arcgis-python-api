@@ -1,10 +1,11 @@
 import unittest
 from arcgis.gis.admin._dsmgr import DataStoreMetricsManager
 from utils.decorators import profiles, integration_test
-from utils.logging import enable_verbose_logging
+from utils._logging import enable_verbose_logging
 
 
 enable_verbose_logging()
+
 
 @profiles.admin_agol
 @integration_test
@@ -58,6 +59,23 @@ class TestAGOLDatastoreMetrics(unittest.TestCase):
                 aggregation=DataStoreAggregation.SUM,
             )
             assert isinstance(res, list)
+
+    def test_average_cpu(self):
+        from arcgis.gis.admin._dsmgr import (
+            DataStoreMetricsManager,
+            DataStoreAggregation,
+            DataStoreTimeUnit,
+            DataStoreMetric,
+        )
+        import datetime as _dt
+
+        dmm: DataStoreMetricsManager = self.gis.admin.datastore_metrics
+        result = dmm.query(
+            metric=DataStoreMetric.AVG_CPU,
+            bin_size=3,
+            bin_unit=DataStoreTimeUnit.HOUR,
+        )
+        assert result
 
     def test_query_datetimes(self):
         dmm = self.gis.admin.datastore_metrics
