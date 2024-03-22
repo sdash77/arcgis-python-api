@@ -13651,6 +13651,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
 def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestMatch"):
     """
     The subset_bands function allows you to extract a subset of bands using ranges or lists. This function supports both multispectral and hyperspectral images, and maintains the same band order as the input.
+    (extraction by range is not supported for 'BY_NAMES' method)
     This function is available from 11.3 onwards.
 
     The arguments for this function are as follows:
@@ -13672,9 +13673,9 @@ def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestM
     bands                                Optional string or list. The bands to extract based on the method parameter option used.
 
                                          For example,
-                                         -  If BY_NAMES, bands can be  'band_15, band_13, band_14, band_100-band_105'
+                                         -  If BY_NAMES, bands can be  'band_15 band_13 band_14'
                                          -  If BY_WAVELENGTHS, bands can be '400-700 900'
-                                         -  If BY_IDS, bands can be '100 105 110 120-130'
+                                         -  If BY_IDS, bands can be '100 105 110 120-130'. bands should be using one-based indexing.
     --------------------------------     --------------------------------------------------------------------
     missing_band_action                  Optional string. Specify the action that will occur when a band within the extract band list is not available.
 
@@ -13694,7 +13695,7 @@ def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestM
 
         # Usage Example 2: This example extracts the bands by Band Names from the input raster.
 
-        extracted_bands = subset_bands(raster=img_lyr, method="BY_NAMES", bands="band_15, band_13, band_14, band_100-band_105")
+        extracted_bands = subset_bands(raster=img_lyr, method="BY_NAMES", bands="band_15 band_13 band_14")
 
         # Usage Example 3: This example extracts the bands by Wavelengths from the input raster.
 
@@ -13709,17 +13710,6 @@ def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestM
         },
     }
 
-    if bands is not None:
-        if isinstance(bands, list):
-            bands = ";".join(bands)
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, str):
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, int):
-            template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
-        else:
-            raise TypeError("bands should be  either a single string or a list")
-
     if method is not None:
         method_types = {"BY_IDS": 0, "BY_WAVELENGTHS": 1, "BY_NAMES": 2}
 
@@ -13729,6 +13719,35 @@ def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestM
             in_method = method
 
         template_dict["rasterFunctionArguments"]["Method"] = in_method
+
+        if isinstance(bands, list):
+            bands = ";".join(str(band) for band in bands)
+            template_dict["rasterFunctionArguments"]["Bands"] = bands
+        elif isinstance(bands, str):
+            if "," in bands:
+                raise ValueError("Invalid separator. Only space and ';' are allowed.")
+            template_dict["rasterFunctionArguments"]["Bands"] = bands
+        elif isinstance(bands, int):
+            template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
+        else:
+            raise TypeError("bands should be  either a single string or a list")
+
+        bands = template_dict["rasterFunctionArguments"]["Bands"]
+        if isinstance(bands, str):
+            if method.upper() == "BY_IDS":
+                separator = ";" if ";" in bands else " "
+                parts = bands.split(separator)
+
+                new_parts = []
+                for part in parts:
+                    if "-" in part:
+                        start, end = map(int, part.split("-"))
+                        new_parts.append(f"{start-1}-{end-1}")
+                    else:
+                        new_parts.append(str(int(part) - 1))
+
+                bands = separator.join(new_parts).replace(" ;", ";")
+                template_dict["rasterFunctionArguments"]["Bands"] = bands
 
     missing_band_actions = {"BESTMATCH": 0, "FAIL": 1}
 
