@@ -2,6 +2,7 @@ import json
 import ujson as _ujson
 from collections import OrderedDict
 from collections.abc import MutableMapping, Mapping
+from copy import deepcopy
 
 
 ###########################################################################
@@ -20,6 +21,11 @@ class InsensitiveDict(MutableMapping):
 
         self.update(data)
         self._to_isd(self)
+
+    def __deepcopy__(self, memo):
+        result = InsensitiveDict(deepcopy({**self}))
+        memo[id(self)] = result
+        return result
 
     # ----------------------------------------------------------------------
     def __repr__(self):

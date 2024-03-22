@@ -7,7 +7,7 @@ import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
-import parcel_fabric_utils as pfutils
+from . import parcel_fabric_utils as pfutils
 
 
 class TestAnalyzeLSA(unittest.TestCase):

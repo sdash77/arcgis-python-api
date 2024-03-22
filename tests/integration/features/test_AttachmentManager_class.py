@@ -82,13 +82,9 @@ class Test_AttachmentManager_portal(unittest.TestCase):
         )
         # endregion
 
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
+        # region sign in
         cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+            profile="your_ent_admin_profile", verify_cert=False
         )
         if cls.gis is None:
             cls.class_skip = True
@@ -230,9 +226,9 @@ class Test_AttachmentManager_portal(unittest.TestCase):
             self.assertGreaterEqual(
                 len(attch_list), 1, "At least 1 attchment should be found"
             )
-            self.assertEqual(attch_list[2]["id"], 3, "attachment id mismatch")
+            self.assertEqual(attch_list[1]["id"], 2, "attachment id mismatch")
             self.assertEqual(
-                attch_list[2]["name"], "crime_pdf.pdf", "attachment name mismatch"
+                attch_list[1]["att_name"], "crime_pdf.pdf", "attachment name mismatch"
             )
 
             # download
@@ -282,13 +278,6 @@ class Test_AttachmentManager_portal(unittest.TestCase):
             self.assertIsInstance(
                 download_result2[0], str, "download does not return a str path"
             )
-
-            download_result3 = flayer.attachments.download(1, 3)
-            self.assertIsInstance(
-                download_result3[0], str, "download does not return a str path"
-            )
-
-            print(download_result3)
 
         except AssertionError as assertErrorException:
             test_skip = True

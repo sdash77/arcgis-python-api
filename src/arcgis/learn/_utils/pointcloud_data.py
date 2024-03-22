@@ -3124,9 +3124,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
+            ufname = dl.dataset.path / dl.dataset.folder / ufname
             if ufname != current_file_name:
                 current_file_name = ufname
-                current_file_name = dl.dataset.path / dl.dataset.folder / ufname
                 h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
                 h5_file.close()
