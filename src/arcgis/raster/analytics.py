@@ -10929,6 +10929,9 @@ def tabulate_area(
                                                     "spatialReference": {"wkid": 4326}}}
 
                                                 - Mask (mask): Only cells that fall within the analysis mask will be considered in the operation.
+
+                                                Example:
+                                                    {'mask': {'url': '<image_service_url>'}}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
                                              active GIS is used.
