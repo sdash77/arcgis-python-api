@@ -2498,7 +2498,7 @@ class FeatureLayerCollectionManager(_GISResource):
         if future and self._gis._is_arcgisonline:
             return view.manager.add_to_definition(add_json, future=True)
         else:
-            if future and self._gis._is_arcgisonline:
+            if future and self._gis._is_arcgisonline == False:
                 _log.warning(
                     "Enterprise does not support asynchronous view swap, using synchronous method."
                 )
