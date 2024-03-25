@@ -44,7 +44,7 @@ class SuperResolution(ArcGISModel):
                             creating the base of the
                             :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
-                            Compatible backbones: 'SR3_UNet', 'SR3_UViT',
+                            Compatible backbones: 'SR3', 'SR3_UViT',
                             'resnet18', 'resnet34', 'resnet50', 'resnet101',
                             'resnet152'.
     ---------------------   -------------------------------------------
@@ -52,7 +52,7 @@ class SuperResolution(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    In addition to explicitly named parameters, the SuperResolution model with 'SR3_UNet' backbone
+    In addition to explicitly named parameters, the SuperResolution model with 'SR3' backbone
     supports the optional key word arguments:
 
     **kwargs**
@@ -148,6 +148,7 @@ class SuperResolution(ArcGISModel):
                     in_chans=self._data._n_channel,  # 3,
                     **kwargs
                 )
+                self.model_type = "SR3_UViT"
             else:
                 denoiseUnet = UNet(
                     in_channel=(self._data._n_channel) * 2,
@@ -156,6 +157,7 @@ class SuperResolution(ArcGISModel):
                     with_noise_level_emb=True,
                     **kwargs
                 )
+                self.model_type = "SR3"
             sr3model = GaussianDiffusion(
                 denoiseUnet,
                 image_size=self._data.chip_size,
@@ -170,7 +172,6 @@ class SuperResolution(ArcGISModel):
                 loss_func=l1Loss(self._device.type),
                 opt_func=optim.Adam,
             )
-            self.model_type = "SR3"
         else:
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
@@ -241,7 +242,7 @@ class SuperResolution(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return ["SR3_UNet", "SR3_UViT", *_resnet_family]
+        return ["SR3", *_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -290,7 +291,7 @@ class SuperResolution(ArcGISModel):
         model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-        modtype = emd.get("ModelArch", "UNet")
+        modtype = emd.get("ModelArch", "SR3")
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
         n_channel = emd.get("n_channel", 3)
@@ -300,7 +301,7 @@ class SuperResolution(ArcGISModel):
         kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
 
         if data is None:
-            if modtype == "SR3":
+            if modtype.startswith("SR3"):
                 data = _EmptyData(
                     path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
@@ -328,7 +329,10 @@ class SuperResolution(ArcGISModel):
             data._extract_bands = emd.get("extract_bands", None)
             data._bands = emd.get("bands", None)
             data.device = _get_device()
-        backbone = "SR3" if modtype == "SR3" else model_params.get("backbone")
+        if modtype.startswith("SR3"):
+            backbone = "SR3_UViT" if modtype == "SR3_UViT" else "SR3"
+        else:
+            backbone = model_params.get("backbone")
         data.resize_to = resize_to
 
         return cls(data, backbone=backbone, pretrained_path=str(model_file), **kwargs)
@@ -353,7 +357,7 @@ class SuperResolution(ArcGISModel):
         _emd_template["ModelType"] = "SuperResolution"
 
         if self._data.train_ds.__class__.__name__ == "SR3Dataset":
-            _emd_template["ModelArch"] = "SR3"
+            _emd_template["ModelArch"] = self.model_type
             _emd_template["image_stats"] = {
                 i: j.tolist() for i, j in self._data.batch_stats_a.items() if j != None
             }

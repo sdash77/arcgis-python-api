@@ -124,8 +124,7 @@ class Test_FeatureLayer_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
                 if result.get("success"):
@@ -173,8 +172,7 @@ class Test_FeatureLayer_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                     }
                 )
                 if result.get("success"):
