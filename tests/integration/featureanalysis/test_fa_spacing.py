@@ -4,6 +4,7 @@ import datetime as _dt
 from arcgis.gis import GIS
 from arcgis.features import analyze_patterns
 from .config_tests import setup_profiles
+from utils.decorators import integration_test
 
 
 data = [
@@ -1791,6 +1792,7 @@ setup_profiles(
 )
 
 
+@integration_test
 class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
     def test_removing_spaces_logic(self):
         """tests that any space in the output name is replaced with an _"""

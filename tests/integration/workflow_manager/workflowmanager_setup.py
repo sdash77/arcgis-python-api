@@ -3,10 +3,12 @@ from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
 class WorkflowManagerSetup:
     """Tests the workflow manager Functionality"""
 

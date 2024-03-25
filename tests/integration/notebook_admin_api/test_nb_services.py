@@ -12,6 +12,7 @@ from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer, NotebookManager
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
+from utils.decorators import integration_test
 
 from arcgis.auth.tools._util import detect_proxy
 
@@ -43,6 +44,7 @@ except:
 json_data = '{"cells":[{"metadata":{},"cell_type":"markdown","source":"## Welcome to your notebook.\\n"},{"metadata":{},"cell_type":"markdown","source":"#### Run this cell to connect to your GIS and get started:"},{"metadata":{"trusted":false},"cell_type":"code","source":"#from arcgis.gis import GIS\\n#gis = GIS(\\"home\\")\\nprint(\'hello\')","execution_count":1,"outputs":[{"output_type":"stream","text":"hello\\n","name":"stdout"}]},{"metadata":{},"cell_type":"markdown","source":"#### Now you are ready to start!"},{"metadata":{"trusted":false},"cell_type":"code","source":"","execution_count":null,"outputs":[]}],"metadata":{"language_info":{"name":"python","version":"3.9.11","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kernelspec":{"name":"python3","display_name":"Python 3 (ipykernel)","language":"python"}},"nbformat":4,"nbformat_minor":2}'
 
 
+@integration_test
 class TestNotebookService(unittest.TestCase):
     """
     Tests the Services Manager and Service class for notebook server

@@ -9,10 +9,12 @@ from arcgis.gis.kubernetes._admin._security import (
     KubeSecuritySAML,
 )
 from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test
 
 PROFILES = ["your_kubernetes_profile"]
 
 
+@integration_test
 class TestSecutiryKubernetes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

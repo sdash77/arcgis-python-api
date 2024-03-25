@@ -10,6 +10,7 @@ import unittest
 
 from arcgis.gis import GIS
 import arcgis.features.geo
+from utils.decorators import integration_test
 
 USERNAME = None
 PASSWORD = None
@@ -139,6 +140,7 @@ def portal_selector():
             pass
 
 
+@integration_test
 class TestArcGISIntegrationTests(unittest.TestCase):
 
     def test_content_import_data(self):

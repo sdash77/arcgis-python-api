@@ -37,9 +37,11 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 import os
+from utils.decorators import integration_test
 
 
 @unittest.skipIf(SKIP_NO_ARCPY, "ArcPy not present, skipping this test.")
+@integration_test
 class TestCategoriesSeDF(unittest.TestCase):
     def test_categories_to_featureclass(self):
         fc = QALAB_ROOT_PATH + r"\df_accessor_test\world30.shp"

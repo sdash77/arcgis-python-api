@@ -11,6 +11,7 @@ from arcgis.geoenrichment import BufferStudyArea, Country
 from arcgis.geoenrichment.enrichment import NamedArea
 from arcgis.geometry import Point, Polygon, Polyline, Geometry
 from arcgis.geoenrichment import interesting_facts
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -30,6 +31,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class Test_InterestingFacts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -46,6 +46,10 @@ except:
     msg = "COULD NOT DOWNLOAD THE PKI CERTIFICATE"
 
 
+from utils.decorators import integration_test
+
+
+@integration_test
 @unittest.skipIf(SKIP or SKIPME, msg)
 class TestPKISession(unittest.TestCase):
     """Tests the PKI Security on Enterprise Configuration"""

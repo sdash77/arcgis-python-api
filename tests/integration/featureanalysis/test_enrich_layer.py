@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.enrich_data import enrich_layer
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -17,6 +18,7 @@ stage_data(test_items)
 # was the previously intended functionality.
 
 
+@integration_test
 class TestEnrichLayer(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection
