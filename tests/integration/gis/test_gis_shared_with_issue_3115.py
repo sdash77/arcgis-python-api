@@ -4,8 +4,10 @@ import unittest
 import datetime
 from arcgis.gis import GIS
 from arcgis.gis import Item, UserManager, User
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestIssue3115(unittest.TestCase):
     """ """
 

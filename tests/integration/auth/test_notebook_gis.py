@@ -32,6 +32,10 @@ print(SITE_URL, API_KEY)
 
 
 ###########################################################################
+from utils.decorators import integration_test
+
+
+@integration_test
 class TestHomeNBAUTHLogic(unittest.TestCase):
     """Test the 'home' logic for NBAUTH file"""
 

@@ -12,6 +12,7 @@ import base64
 import configparser
 from functools import lru_cache
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -88,6 +89,7 @@ except:
 
 
 @unittest.skipIf(CONFIG_FAILED, reason='cannot find config.ini file.')
+@integration_test
 class TestKubernetesCertificates(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

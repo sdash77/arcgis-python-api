@@ -29,7 +29,10 @@ profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestAGSServerConnectionFile(unittest.TestCase):
     def test_services_directory(self):
         """tests using a services directory with an .ags file"""

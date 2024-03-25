@@ -4,8 +4,10 @@ import sys
 import unittest
 import datetime as _dt
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestReportApi(unittest.TestCase):
     """Tests the <username>/report API"""
 

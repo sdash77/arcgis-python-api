@@ -16,6 +16,7 @@ import tempfile, uuid
 import unittest
 import pandas as pd
 import os, shutil
+from utils.decorators import integration_test
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -92,6 +93,7 @@ geoms = [
 if HAS_ARCPY:
     #############################################################################
     # @unittest.SkipTest
+    @integration_test
     class FeatureSetConversionTest(unittest.TestCase):
         """
         tests the spatial dataframe operations related
@@ -140,7 +142,8 @@ if HAS_ARCPY:
             )
 
     ###########################################################################
-    @unittest.SkipTest
+    @integration_test
+    @unittest.skipIf(not HAS_ARCPY, "arcpy Not Installed, Skipping")
     class IOTest(unittest.TestCase):
         """tests the spatial dataframe io functions"""
 
@@ -249,6 +252,7 @@ if HAS_ARCPY:
 
     ########################################################################
     # @unittest.SkipTest
+    @integration_test    
     class TestCaseGeoAccessor(unittest.TestCase):
         """
         Tests the GeoAccessor Methods and Properties
@@ -463,6 +467,7 @@ if HAS_ARCPY:
 
     ########################################################################
     # @unittest.SkipTest
+    @integration_test
     class TestCaseGeoSeriesAccessor(unittest.TestCase):
         """Tests the `geom` namespace on the pd.Series object"""
 

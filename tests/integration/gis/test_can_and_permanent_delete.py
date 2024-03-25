@@ -4,6 +4,7 @@ sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 
 import unittest
 from arcgis.gis import GIS, ContentManager
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_kubernetes_profile"]
 wm = {
@@ -143,6 +144,7 @@ def create_item(gis):
     )
 
 
+@integration_test
 class TestCMCanDelete(unittest.TestCase):
     def test_can_delete(self):
         import copy
@@ -185,6 +187,7 @@ class TestCMCanDelete(unittest.TestCase):
             assert item.delete()
 
 
+@integration_test
 class TestPermanentDelete(unittest.TestCase):
     def test_permanent_delete(self):
         # As of now, only available in ArcGIS Online

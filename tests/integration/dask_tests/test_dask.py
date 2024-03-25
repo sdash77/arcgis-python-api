@@ -15,6 +15,7 @@ from arcgis.features.geo._dask import (
     GeoDaskSeriesAccessor,
     GeoDaskSpatialAccessor,
 )
+from utils.decorators import integration_test
 
 import arcgis
 
@@ -29,6 +30,7 @@ geoms = [
 ]
 
 
+@integration_test
 class TestDaskSeriesAccessor(unittest.TestCase):
     def test_properties(self):
         """tests creating a feature set dictionary"""
@@ -149,6 +151,7 @@ class TestDaskSeriesAccessor(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestDaskTestCase(unittest.TestCase):
     """Unit Tests for Dask Spatial Accessor"""
 

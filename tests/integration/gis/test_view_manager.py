@@ -11,6 +11,7 @@ from arcgis.gis import (
     ViewLayerDefParameter,
 )
 from arcgis.gis._impl import SpatialRelationship, SpatialFilter
+from utils.decorators import integration_test
 
 
 __logger__ = logging.getLogger()
@@ -145,6 +146,7 @@ _fs_dict = {
 }
 
 
+@integration_test
 class Test_ItemViewManagerAGOL(unittest.TestCase):
     """Tests the Item View Manager"""
 

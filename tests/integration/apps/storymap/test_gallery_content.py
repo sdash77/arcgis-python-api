@@ -4,8 +4,9 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Image, Gallery
+from utils.decorators import integration_test
 
-
+@integration_test
 class TestGallery(unittest.TestCase):
     """Test Story Map Gallery content"""
 
