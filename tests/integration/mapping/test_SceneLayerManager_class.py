@@ -1,7 +1,4 @@
-import sys
 from unittest.case import SkipTest
-
-sys.path.insert(0, r"C:\\workspace\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS

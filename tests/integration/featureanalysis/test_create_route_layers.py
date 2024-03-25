@@ -1,7 +1,4 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.gis import Item
 from arcgis.gis import GIS

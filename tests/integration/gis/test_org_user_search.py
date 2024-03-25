@@ -1,13 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-
-
-#
-# Prints all messages out to Debug Window
-#
 import logging
 
 root = logging.getLogger()

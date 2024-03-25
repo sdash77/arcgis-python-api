@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7656\src")
 import unittest
 from arcgis.gis import GIS
 from utils.decorators import integration_test

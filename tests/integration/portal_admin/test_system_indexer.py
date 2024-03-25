@@ -1,7 +1,4 @@
-import sys
 import unittest
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7414\src")
 from arcgis.gis import GIS
 
 from arcgis.gis.admin._system import Indexer

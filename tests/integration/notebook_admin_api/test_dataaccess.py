@@ -1,6 +1,4 @@
-import sys, os
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+import os
 import unittest
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy

@@ -2,10 +2,6 @@
 # Name:        network analysis module tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-# import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
-# sys.path.insert(1, r"C:\SVN\geosaurus_master_kubernetes\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs

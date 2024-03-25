@@ -1,7 +1,4 @@
-import sys
 import unittest
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 from datetime import timedelta, datetime
 from arcgis.mapping import WebMap

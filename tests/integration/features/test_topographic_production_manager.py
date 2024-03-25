@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
 from arcgis.gis.server.catalog import ServicesDirectory

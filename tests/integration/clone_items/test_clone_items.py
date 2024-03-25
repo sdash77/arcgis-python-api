@@ -2,9 +2,6 @@
 # Name:        clone items tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_5652\src")
 import unittest
 import os
 from pathlib import Path

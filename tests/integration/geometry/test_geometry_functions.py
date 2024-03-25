@@ -3,8 +3,6 @@
 # Purpose:     Test geometric operations such as project, buffer, cut,
 #               intersect, clip etc.
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
