@@ -199,7 +199,7 @@ def _create_parameters(
     params["where"] = where
 
     # Add parameters for non 3D layers and for Tables
-    if getattr(layer, "_is_3d", False) or is_layer is False:
+    if not getattr(layer, "_is_3d", False) or is_layer is False:
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
         params["returnIdsOnly"] = return_ids_only
@@ -209,6 +209,7 @@ def _create_parameters(
         params["returnCentroid"] = return_centroid
         params["returnExtentOnly"] = return_extent_only
         params["returnGeometry"] = return_geometry
+
         params["returnZ"] = return_z
         params["returnM"] = return_m
         if getattr(layer, "_is_3d", None):
