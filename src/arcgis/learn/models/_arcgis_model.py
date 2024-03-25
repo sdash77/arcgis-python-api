@@ -1203,13 +1203,17 @@ class ArcGISModel(object):
         _emd_template["ModelName"] = type(self).__name__.replace("_", "")
         _emd_template["backend"] = self._backend
 
+        modtype = getattr(self, "model_type", "SR3")
         if getattr(self, "_is_mmsegdet", False):
             model_params = {
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
-        elif getattr(self, "model_type", False) == "SR3":
-            model_params = {"backbone": "SR3", "backend": self._backend}
+        elif modtype.startswith("SR3"):
+            model_params = {
+                "backbone": "SR3_UViT" if modtype == "SR3_UViT" else "SR3",
+                "backend": self._backend,
+            }
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:

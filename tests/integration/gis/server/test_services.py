@@ -1,7 +1,8 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
+#sys.path.insert(0, r"<path to local repo>\src")
+#sys.path.insert(1, r"<path to local repo>\tests")
+
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
@@ -9,7 +10,7 @@ from utils._logging import enable_verbose_logging
 enable_verbose_logging()
 
 
-@profiles.enterprise
+@profiles.admin_enterprise
 @integration_test
 class TestArcGISServerServices(unittest.TestCase):
     def test_edit_services_sync(self):

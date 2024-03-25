@@ -1,10 +1,11 @@
 import sys
 
-#
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9888\src")
+#sys.path.insert(0, r"<path to local Repo>/src")
+
 import logging
 import unittest
+from integration.config import QALAB_ROOT_PATH
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 
@@ -22,7 +23,7 @@ def enable_verbose_logging(root):
 
 
 SOURCE_DATA_LOCATION = (
-    r"\\qalab_server\pydata\v109\geosaurus\publishing_test_data"
+   QALAB_ROOT_PATH + "\publishing_test_data"
 )
 profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
@@ -53,7 +54,7 @@ def clean_up_items(gis):
             [i.delete() for i in gis.content.search(f)]
 
 
-@unittest.skip("i work")
+#@unittest.skip("i work")
 class TestPublishingTPKAGOL(unittest.TestCase):
     """Tests the publishing the vector tile package process"""
 
@@ -72,18 +73,20 @@ class TestPublishingTPKAGOL(unittest.TestCase):
         clean_up_items(gis=gis)
         cm: ContentManager = gis.content
         folder = cm.folders.get()
+        
         ### Vector Tile Package
-        # ip = ItemProperties(
-        # title=f"data_{uuid.uuid4().hex[:3]}",
-        # item_type=ItemTypeEnum.VECTOR_TILE_PACKAGE,
-        # )
-        # vtpk_item = folder.add(
-        # item_properties=ip,
-        # file=os.path.join(
-        # cls.source_path, "packages", "CanadaCensusMapTest.vtpk"
-        # ),
-        # ).result()
-        # cls.data['vtpk'] = vtpk_item
+        ip = ItemProperties(
+            title=f"data_{uuid.uuid4().hex[:3]}",
+            item_type=ItemTypeEnum.VECTOR_TILE_PACKAGE,
+        )
+        vtpk_item = folder.add(
+            item_properties=ip,
+            file=os.path.join(
+                cls.source_path, "packages", "CanadaCensusMapTest.vtpk"
+                ),
+        ).result()
+        cls.data['vtpk'] = vtpk_item
+        
         ## Tile Package
         ip = ItemProperties(
             title=f"data_{uuid.uuid4().hex[:3]}",
@@ -121,7 +124,8 @@ class TestPublishingTPKAGOL(unittest.TestCase):
             item = publish(
                 item=self.data['vtpk'],
                 publish_parameters={
-                    "name": self.data['tpkg'].title.replace(" ", "_"),
+                    #"name": self.data['tpkg'].title.replace(" ", "_"),
+                    "name": self.data['tpkg'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
@@ -140,7 +144,8 @@ class TestPublishingTPKAGOL(unittest.TestCase):
             task = publish(
                 item=self.data['tpkg'],
                 publish_parameters={
-                    "name": self.data['tpkg'].title.replace(" ", "_"),
+                    #"name": self.data['tpkg'].title.replace(" ", "_"),
+                    "name": self.data['tpkg'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
@@ -163,7 +168,8 @@ class TestPublishingTPKAGOL(unittest.TestCase):
             item = publish(
                 item=self.data['scene'],
                 publish_parameters={
-                    "name": self.data['scene'].title.replace(" ", "_"),
+                    #"name": self.data['scene'].title.replace(" ", "_"),
+                    "name": self.data['scene'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
@@ -173,12 +179,12 @@ class TestPublishingTPKAGOL(unittest.TestCase):
     def tearDownClass(cls):
         for i in cls.pitems:
             try:
-                i.delete()
+                i.delete(permanent=True)
             except:
                 print(i)
         for k, v in cls.data.items():
             try:
-                v.delete()
+                v.delete(permanent=True)
             except:
                 print(f"{k} in {v}")
 
@@ -231,13 +237,13 @@ class TestPublishingTPKEnterprise(unittest.TestCase):
             title=f"data_{uuid.uuid4().hex[:3]}",
             item_type=ItemTypeEnum.SCENE_PACKAGE,
         )
-        tpk_item = folder.add(
+        slpk_item = folder.add(
             item_properties=ip,
             file=os.path.join(
                 cls.source_path, "packages", "lyon_trees2.slpk"
             ),
         ).result()
-        cls.data['tpkg'] = tpk_item
+        cls.data['scene'] = slpk_item
 
     # @unittest.skip("i work")
     def test_publish_vtpk_no_params(self):
@@ -251,13 +257,15 @@ class TestPublishingTPKEnterprise(unittest.TestCase):
             item = publish(
                 item=self.data['vtpk'],
                 publish_parameters={
-                    "name": self.data['tpkg'].title.replace(" ", "_"),
+                    #"name": self.data['tpkg'].title.replace("", "_"),
+                    "name": self.data['tpkg'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
             self.pitems.append(item.result())
 
     # @unittest.skip("i work")
+    # publish parameters are required for tilePackage
     def test_tile_package_no_params(self):
         if "tpkg" in self.data:
             with self.assertRaises(Exception):
@@ -270,13 +278,15 @@ class TestPublishingTPKEnterprise(unittest.TestCase):
             item = publish(
                 item=self.data['tpkg'],
                 publish_parameters={
-                    "name": self.data['tpkg'].title.replace(" ", "_"),
+                    #"name": self.data['tpkg'].title.replace(" ", "_"),
+                    "name": self.data['tpkg'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
             self.pitems.append(item.result())
 
     # @unittest.skip("i work")
+    # publish parameters are required for scene layer packages
     def test_scene_package_no_params(self):
         if "scene" in self.data:
             with self.assertRaises(Exception):
@@ -289,7 +299,8 @@ class TestPublishingTPKEnterprise(unittest.TestCase):
             item = publish(
                 item=self.data['scene'],
                 publish_parameters={
-                    "name": self.data['scene'].title.replace(" ", "_"),
+                    #"name": self.data['scene'].title.replace(" ", "_"),
+                    "name": self.data['scene'].title + "_apiTest",
                     "maxRecordCount": 2000,
                 },
             )
@@ -380,6 +391,7 @@ class TestPublishingNoParmetersEnterprise(unittest.TestCase):
         ).result()
         cls.data['excel'] = excel_item
 
+        # Service Definition
         ip = ItemProperties(
             title=f"data_{uuid.uuid4().hex[:3]}",
             item_type=ItemTypeEnum.SERVICE_DEFINITION,
@@ -412,7 +424,7 @@ class TestPublishingNoParmetersEnterprise(unittest.TestCase):
     # @unittest.skip("i work")
     def test_publish_shapefile(self):
         if "shapefile" in self.data:
-            self.pitems.append(publish(item=self.data['shapefile']).result())
+            self.pitems.append(publish(item=self.data['shapefile']).result()) 
 
     @classmethod
     def tearDownClass(cls):
@@ -546,12 +558,12 @@ class TestPublishingNoParmetersAGOL(unittest.TestCase):
     def tearDownClass(cls):
         for i in cls.pitems:
             try:
-                i.delete()
+                i.delete(permanent=True)
             except:
                 print(i)
         for k, v in cls.data.items():
             try:
-                v.delete()
+                v.delete(permanent=True)
             except:
                 print(f"{k} in {v}")
 
