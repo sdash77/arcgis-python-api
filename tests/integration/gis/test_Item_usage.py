@@ -5,6 +5,7 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 from datetime import timedelta, datetime
 from arcgis.mapping import WebMap
+from utils.decorators import integration_test
 
 # Note this is only supported for AGOL as of now
 profiles = [
@@ -14,6 +15,7 @@ VERIFY_CERT = False
 TRUST_ENV = True
 
 
+@integration_test
 class TestItemUsage(unittest.TestCase):
     def test_preset(self):
         """tests the preset times we can use for date range"""

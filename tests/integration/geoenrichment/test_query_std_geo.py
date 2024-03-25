@@ -12,6 +12,7 @@ from integration.geoenrichment.configtest import (
     skip_if_no_agol,
     gis_agol,
 )
+from utils.decorators import integration_test
 
 
 def get_san_bernardino_check(src: GIS, expectation: object):
@@ -21,6 +22,7 @@ def get_san_bernardino_check(src: GIS, expectation: object):
         assert isinstance(res, NamedArea)
 
 
+@integration_test
 class TestQueryStdGeo(unittest.TestCase):
 
     def setUp(self):

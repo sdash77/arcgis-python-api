@@ -4,10 +4,11 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Embed
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
-
+@integration_test
 class TestEmbedContent(unittest.TestCase):
     """Test adding embed and seeing properties"""
 

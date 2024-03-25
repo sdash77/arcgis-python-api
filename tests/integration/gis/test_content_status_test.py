@@ -3,11 +3,13 @@ from unittest.mock import MagicMock, Mock
 from arcgis.gis import GIS, Item
 from arcgis import env
 from arcgis.mapping import WebMap
+from utils.decorators import integration_test
 
 PROFILES = ["your_enterprise_profile", "your_online_profile"]
 
 
 ###########################################################################
+@integration_test
 class TestItemContentStatus(unittest.TestCase):
     """Tests the Item Content Status Property"""
 

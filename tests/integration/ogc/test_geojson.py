@@ -4,12 +4,14 @@ import unittest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import GeoJSONLayer
+from utils.decorators import integration_test
 
 geo_rss_url = (
     "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
 )
 
 
+@integration_test
 class TestGeoRSSLayer(unittest.TestCase):
     """Tests working with a GeoJSON Layer"""
 

@@ -4,8 +4,10 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Embed, Image, Sidecar, Text
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestSideCar(unittest.TestCase):
     """Test Story Map Sidecar content"""
 

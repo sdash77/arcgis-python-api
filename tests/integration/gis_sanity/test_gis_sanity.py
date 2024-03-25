@@ -15,6 +15,7 @@ from arcgis.gis import ItemProperties, ItemTypeEnum
 from arcgis.features import FeatureLayerCollection
 from arcgis.gis import ContentManager
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -74,6 +75,7 @@ def get_config_parser() -> dict:
     return {}
 
 
+@integration_test
 class Test_GIS_Sanity_Operations(unittest.TestCase):
     """
     This is a collection of tests that performs the common operations

@@ -6,6 +6,7 @@ import unittest
 from arcgis.features.layer import FeatureLayer
 from arcgis.mapping import MapImageLayer, MapImageLayerManager, EnterpriseMapImageLayerManager
 from arcgis.gis import GIS, Item
+from utils.decorators import integration_test
 
 gis = GIS("https://dev0015021.esri.com/portal", verify_cert=False)
 
@@ -26,6 +27,7 @@ except:
         print(layer)
 
 
+@integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
     def test_manager(self):
         """ "

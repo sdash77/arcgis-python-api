@@ -6,10 +6,12 @@ import datetime
 import unittest
 import uuid
 from arcgis.gis import GIS, Item, Group, GroupManager
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestGroupMethods(unittest.TestCase):
     def test_update(self):
         for p in PROFILES:

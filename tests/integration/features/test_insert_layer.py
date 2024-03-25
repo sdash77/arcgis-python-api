@@ -10,6 +10,7 @@ import tempfile
 import os
 import uuid
 import arcgis._impl.common._utils as _common_utils
+from utils.decorators import integration_test
 
 point_data = [
     {
@@ -2067,6 +2068,7 @@ tbl_data = [
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
     """tests the insert_layer on the FeatureLayerCollectionManager when creating a feature layer or table"""
 

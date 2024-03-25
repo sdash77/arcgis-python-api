@@ -10,6 +10,7 @@ import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -104,6 +105,7 @@ notebook_json = {
 }
 
 
+@integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
