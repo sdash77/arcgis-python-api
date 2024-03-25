@@ -2488,11 +2488,9 @@ class FeatureLayerCollectionManager(_GISResource):
             props["adminLayerInfo"]["viewLayerDefinition"] = (
                 flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
             )
-            props["adminLayerInfo"]["viewLayerDefinition"][
-                "sourceServiceName"
-            ] = new_source.url.split("/services/")[1].split("/")[
-                0
-            ]  # new_source.manager.properties["name"]
+            props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
+                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
+            )
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
             delete_json: dict = {"layers": [{"id": index}], "tables": []}
