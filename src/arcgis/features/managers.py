@@ -2385,7 +2385,8 @@ class FeatureLayerCollectionManager(_GISResource):
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
-                               JSON object.
+                               JSON object. This parameter is only honored for the ArcGIS Online
+                               platform.
         ==================     ====================================================================
 
         :return: dict | concurrent.futures.Future
@@ -2492,9 +2493,13 @@ class FeatureLayerCollectionManager(_GISResource):
             delete_json: dict = {"layers": [], "tables": [{"id": index}]}
             add_json: dict = {"tables": [props]}
         view.manager.delete_from_definition(delete_json)
-        if future:
+        if future and self._gis._is_arcgisonline:
             return view.manager.add_to_definition(add_json, future=True)
         else:
+            if future and self._gis._is_arcgisonline:
+                _log.warning(
+                    "Enterprise does not support asynchronous view swap, using synchronous method."
+                )
             return view.manager.add_to_definition(add_json, future=False)
 
     # ----------------------------------------------------------------------
