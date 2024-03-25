@@ -2013,7 +2013,13 @@ class WebHookServiceManager(object):
             params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
-            hook_url = self._url + f"/{resp['globalId']}"
+            if "globalId" in resp:
+                guid = resp.get("globalId")
+            elif "id" in resp:
+                guid = resp.get("id")
+            else:
+                raise Exception(str(resp))
+            hook_url = self._url + f"/{guid}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
             return WebHook(url=resp["url"], gis=self._gis)
