@@ -10852,9 +10852,9 @@ def locate_regions(
 
 def tabulate_area(
     input_zone_raster_or_features: Optional[Union[ImageryLayer, FeatureLayer]],
-    zone_field: Optional[Union[int, string]],
+    zone_field: Optional[Union[int, str]],
     input_class_raster_or_features: Optional[Union[ImageryLayer, FeatureLayer]],
-    class_field: Optional[Union[int, string]],
+    class_field: Optional[Union[int, str]],
     analysis_cell_size: Optional[int] = None,
     classes_as_rows: Optional[bool] = False,
     output_name: Optional[str] = None,
@@ -10985,7 +10985,7 @@ def tabulate_area(
 
 def zonal_geometry_as_table(
     input_zone_raster_or_features: Optional[Union[ImageryLayer, FeatureLayer]],
-    zone_field: Optional[Union[int, string]],
+    zone_field: Optional[Union[int, str]],
     analysis_cell_size: Optional[int] = None,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
@@ -10996,7 +10996,8 @@ def zonal_geometry_as_table(
     **kwargs,
 ):
     """
-    Function calculates cross-tabulated areas between two datasets and outputs a table.
+    Function calculates the geometry measures (area, perimeter, thickness, and the characteristics of an ellipse) for each 
+    zone in a dataset and reports the results as a table.
 
     .. note::
            Function available in ArcGIS Image Server 11.3 and higher.
