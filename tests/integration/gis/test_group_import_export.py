@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import os
 import unittest
 
@@ -15,6 +12,7 @@ from arcgis.gis import (
     GroupMigrationManager,
 )
 from arcgis.gis._impl._jb import StatusJob
+from utils.decorators import integration_test
 
 
 try:
@@ -41,6 +39,7 @@ except:
 # @unittest.skipIf(SKIPIT, "cannot connect to the GIS")
 
 
+@integration_test
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -63,7 +62,7 @@ class TestGroupImportExport(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=True
         )  # SHould Return an StatusJob
@@ -92,7 +91,7 @@ class TestGroupImportExport(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
 
         epk_file = new_group.migration.create(
             items=[pitem], future=False
@@ -104,6 +103,7 @@ class TestGroupImportExport(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(SKIPIT, "cannot connect to the GIS")
+@integration_test
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
 
@@ -128,7 +128,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -162,7 +162,7 @@ class TestImport2Group(unittest.TestCase):
             data=export_package_file,
         )
 
-        new_item.sharing._share(groups=[group_dest])
+        new_item.sharing.groups.add(group_dest)
         m = group_dest.migration
         print("inspecting")
         inspection = m.inspect(new_item)
@@ -198,7 +198,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group", tags="a,b,c"
         )
         isinstance(pitem, Item)
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -236,7 +236,7 @@ class TestImport2Group(unittest.TestCase):
         new_group = gis.groups.create(
             title="export_test_group", tags="a,b,c"
         )
-        pitem.sharing._share(groups=[new_group])
+        pitem.sharing.groups.add(new_group)
         epk_file = new_group.migration.create(
             items=[pitem], future=False
         )  # SHould Return an Item
@@ -254,7 +254,7 @@ class TestImport2Group(unittest.TestCase):
             title="export_test_group2342", tags="a,b,c"
         )
 
-        epk_file.sharing._share(groups=[new_group])
+        epk_file.sharing.groups.add(new_group)
         m = new_group.migration
         assert isinstance(m, GroupMigrationManager)
         res = m.inspect(epk_file)

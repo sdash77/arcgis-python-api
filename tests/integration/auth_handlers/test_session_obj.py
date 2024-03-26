@@ -1,12 +1,12 @@
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import json
 import unittest
 from arcgis.auth import EsriSession, EsriWindowsAuth
 from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestBasicEsriSession(unittest.TestCase):
     """tests some basic properties"""
 

@@ -1,14 +1,11 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10148a\src")
 import os
 import logging
 import uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -27,7 +24,7 @@ profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
-
+@integration_test
 class Test_CloneGroups(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

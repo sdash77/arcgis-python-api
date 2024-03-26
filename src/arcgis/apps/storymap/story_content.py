@@ -223,7 +223,8 @@ class Image:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Image: {self.caption}"
         else:
             return "Image"
@@ -300,7 +301,10 @@ class Image:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -308,7 +312,6 @@ class Image:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -325,7 +328,11 @@ class Image:
         :return:
             The alternate text that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
+        if self._existing is True:
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -598,7 +605,8 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Video: {self.caption}"
         else:
             return "Video"
@@ -679,7 +687,10 @@ class Video:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -687,7 +698,6 @@ class Video:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -705,7 +715,10 @@ class Video:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -934,7 +947,8 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self.caption:
+        caption = getattr(self, "caption", None)
+        if caption:
             return f"Audio: {self.caption}"
         else:
             return "Audio"
@@ -1011,7 +1025,10 @@ class Audio:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1037,7 +1054,10 @@ class Audio:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -1174,10 +1194,17 @@ class Embed:
         if self._existing is True:
             # Get the link path
             self._path = self._story._properties["nodes"][self.node]["data"]["url"]
+
+            # check if offline dependent
+            if "dependents" in self._story._properties["nodes"][self.node]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "dependents"
+                ]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._offline_dependent = None
 
     # ----------------------------------------------------------------------
     @property
@@ -1196,6 +1223,49 @@ class Embed:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       Image or Video. The new offline_media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The offline media that is being used.
+        """
+        if self._existing is True:
+            if self._offline_dependent:
+                return utils._assign_node_class(
+                    story=self._story, node_id=self._offline_dependent
+                )
+        return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: Image | Video):
+        if self._existing:
+            # can only set for briefing
+            if isinstance(self._story, briefing.Briefing):
+                if isinstance(value, Image) or isinstance(value, Video):
+                    value._add_to_story(story=self._story)
+                    self._story._properties["nodes"][self.node]["dependents"] = {
+                        "offline": value.node
+                    }
+                    self._offline_dependent = value.node
+                else:
+                    raise ValueError("offline_media must be an Image or Video")
+            else:
+                raise ValueError("offline_media can only be set for a Briefing")
+        else:
+            raise ValueError(
+                "offline_media can only be set for an Embed that has been added to a Briefing."
+            )
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -1246,7 +1316,10 @@ class Embed:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1272,7 +1345,10 @@ class Embed:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -1336,7 +1412,7 @@ class Embed:
                 "description": caption or "",
                 "providerUrl": sections.netloc,
                 "alt": alt_text or "",
-                "display": display,
+                "display": display or "inline",
             },
         }
 
@@ -1437,6 +1513,12 @@ class Map:
                 self._lighting_date = self._story._properties["resources"][
                     self.resource_node
                 ]["data"]["lightingDate"]
+
+            # check if offline dependents exist
+            if "dependents" in self._story._properties["nodes"][self.node]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "dependents"
+                ]["offline"]
         else:
             # Create new instance
             if isinstance(item, str):
@@ -1455,6 +1537,7 @@ class Map:
             self.resource_node = "r-" + item.id
             self._path = item
             self._type = item.type
+            self._offline_dependent = None
             if item.type == "Web Map":
                 self._extent = map_item._mapview.extent
                 if map_item._mapview.center is None:
@@ -1779,7 +1862,10 @@ class Map:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -1805,7 +1891,10 @@ class Map:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -1850,6 +1939,96 @@ class Map:
                     "floatAlignment", None
                 )
             return self.display
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media. This is an alternative version of this media
+        for offline viewing using the ArcGIS StoryMaps Briefings app.
+
+        .. note::
+            This property is only available for ArcGIS StoryMaps Briefings and
+            the map must be part of the Briefing before setting this property.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       The new offline media for the Map or Scene.
+                            This can either be the item of
+                            a Mobile Map Package or Mobile Scene Package or it
+                            can be an item of type Image or Video from Story Contents.
+        ==================  ========================================
+        """
+        # find the type of dependent based on the type of the dependent
+        # either an Image, Video, or ArcGIS Item.
+        if self._existing is True:
+            if self._offline_dependent:
+                # Find it in the story
+                node = self._story._properties["nodes"][self._offline_dependent]
+                # Find the type of dependent
+                if node["type"] in ["image", "video"]:
+                    return utils._assign_node_class(
+                        story=self._story, node_id=self._offline_dependent
+                    )
+                else:
+                    # Find the itemId of the dependent
+                    resource = self._story._properties["resources"][
+                        node["data"]["package"]
+                    ]
+                    item_id = resource["data"]["itemId"]
+                    return self._story._gis.content.get(item_id)
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: arcgis.gis.Item | Image | Video):
+        if self._existing:
+            if not isinstance(self._story, briefing.Briefing):
+                raise ValueError("offline_media can only be set for a Briefing")
+            if isinstance(value, arcgis.gis.Item):
+                # check if item is a MMPK or MSPK
+                if value.type in ["Mobile Map Package", "Mobile Scene Package"]:
+                    # create new node
+                    self._create_offline_node(value)
+                    # update dependent
+                    self._story._properties["nodes"][self.node]["dependents"] = {
+                        "offline": self._offline_dependent
+                    }
+                else:
+                    raise ValueError(
+                        "Item must be of type Mobile Map Package or Mobile Scene Package"
+                    )
+            elif isinstance(value, Image) or isinstance(value, Video):
+                value._add_to_story(story=self._story)
+                self._offline_dependent = value.node
+                # update dependent
+                self._story._properties["nodes"][self.node]["dependents"] = {
+                    "offline": self._offline_dependent
+                }
+            else:
+                raise ValueError("Value must be an Item, Image, or Video")
+
+    def _create_offline_node(self, item):
+        """
+        Create an offline node in the story.
+        """
+        self._offline_dependent = "n-" + uuid.uuid4().hex[0:6]
+        self._story._properties["nodes"][self._offline_dependent] = {
+            "type": "mobile-package",
+            "data": {
+                "package": "r-" + item.id,
+                "title": item.title,
+            },
+        }
+        self._story._properties["resources"]["r-" + item.id] = {
+            "type": "portal-item",
+            "data": {
+                "itemId": item.id,
+                "itemType": item.type,
+            },
+        }
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2003,6 +2182,10 @@ class Text:
 
 
                             Ex: custom_color = "080"
+    -------------------     --------------------------------------------------------------------
+    size                    Optional String. Used for 'paragraph', 'bullet-list', or 'numbered-list'.
+                            The size of the text. For a Storymap it can be 'large' or 'medium'.
+                            For a Briefing it can be 'large', 'medium', or 'small'.
     ==================      ====================================================================
 
 
@@ -2012,13 +2195,6 @@ class Text:
     **Type**                **Text**
     -------------------     --------------------------------------------------------------------
     paragraph               String can contain the following tags for text formatting:
-                            <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
-                            and a class attribute to indicate color formatting:
-                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
-    -------------------     --------------------------------------------------------------------
-    large-paragraph         String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
@@ -2053,6 +2229,7 @@ class Text:
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
         color: str = None,
+        size: str = None,
         **kwargs,
     ):
         # Can be created from scratch or already exist in story
@@ -2065,6 +2242,11 @@ class Text:
         if self._existing is True:
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
+            self._size = (
+                self._story._properties["nodes"][self.node]["data"]["textSize"]
+                if "textSize" in self._story._properties["nodes"][self.node]["data"]
+                else None
+            )
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._text = text
@@ -2081,6 +2263,16 @@ class Text:
                 self._color = color
             else:
                 self._color = None
+
+            # Size only applies to certain styles
+            if self._style in [
+                "paragraph",
+                "bullet-list",
+                "numbered-list",
+            ]:
+                self._size = size
+            else:
+                self._size = None
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -2136,7 +2328,47 @@ class Text:
         self._text = text
 
     # ----------------------------------------------------------------------
-    def add_attachment(self, content):
+    @property
+    def size(self):
+        """
+        Get/Set the size for the text node.
+
+        ==================  ==================================================
+        **Parameter**        **Description**
+        ------------------  --------------------------------------------------
+        size                Optional String. The new size to be displayed.
+                            Applicable for Paragraph, Bullet List, and Numbered List.
+
+                            Values: `small` | `medium` | `large`
+
+                            .. note::
+                                "small" can only be used in a Briefing.
+        ==================  ==================================================
+
+        :return:
+            The size for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
+        return self._size
+
+    # ----------------------------------------------------------------------
+    @size.setter
+    def size(self, size):
+        if self._existing is True:
+            # check for common errors
+            if size not in ["small", "medium", "large"]:
+                raise ValueError("Size must be 'small', 'medium', or 'large'")
+            if size == "small" and not isinstance(self._story, briefing.Briefing):
+                raise ValueError("Size 'small' can only be used in a Briefing")
+
+            self._story._properties["nodes"][self.node]["data"]["textSize"] = size
+
+        self._size = size
+
+    # ----------------------------------------------------------------------
+    def add_attachment(
+        self, content: arcgis.gis.Item | Image | Video, text: str = None
+    ) -> bool:
         """
         Add a text action to your text. You can specify the data of the action.
         This can only be used within a Briefing
@@ -2149,7 +2381,15 @@ class Text:
                             * An Item object of type: Web Map, Image, StoryMap, Collection, Dashboard,
                             Web Experience, or other arcgis Apps.
                             * A story content of type Image or Video
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The part of the text that the attachment will be linked to. The text
+                            must already exist in the text node.
+
+                            For example, if the entire text is "Look at this dog." and you want to link the word "dog"
+                            to the attachment, then the text parameter would be "dog".
         ===============     ====================================================================
+
+        :return: True if successful.
         """
         if self._existing is True and isinstance(self._story, briefing.Briefing):
             content_node = None
@@ -2181,7 +2421,7 @@ class Text:
 
             if content != "custom embed":
                 # Now content is either type Map, Image, or Video
-                self._add_item_story(content)
+                content._add_to_story(story=self._story)
             action_id = "a-" + uuid.uuid4().hex[0:6]
             action_dict = {
                 "origin": self.node,
@@ -2196,10 +2436,27 @@ class Text:
             }
 
             # Need to edit the text so that the format is: <span data-action-type="attachment-action" id="a-Mr9KE4">This is an attachment to ArcGIS Content</span>
-            # First get the text
-            text = self.text
-            # Now create the new text
-            new_text = f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>'
+            # There are two cases:
+            # 1. The text is the entire text of the node
+            # 2. The text is a part of the text of the node
+            # Case 1:
+            if text is None:
+                # Add the action to the text
+                new_text = (
+                    f'<span data-action-type="attachment-action" id="{action_id}">'
+                    + self.text
+                    + "</span>"
+                )
+            # Case 2:
+            else:
+                # First get the text
+                full_text = self.text
+                if text not in full_text:
+                    raise ValueError("The text must be part of the text of the node.")
+                new_text = full_text.replace(
+                    text,
+                    f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>',
+                )
             # Now update the text
             self.text = new_text
 
@@ -2209,35 +2466,71 @@ class Text:
             else:
                 self._story._properties["actions"] = [action_dict]
 
+            return True
         else:
-            print(
+            raise ValueError(
                 "This can only be used within a Briefing and the Text must exist in a Block."
             )
 
     # ----------------------------------------------------------------------
-    def remove_attachment(self):
+    def remove_attachment(self, text: str = None):
         """
-        Remove any attachment from the text. This can only be used within a Briefing.
+        Remove an attachment from the text. If text_to_remove is None, remove all attachments.
+        This can only be used within a Briefing.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The part of the text that the attachment will be removed from.
+                            The text must already exist in the text class. If text is None, then all
+                            attachments will be removed.
+        ===============     ====================================================================
+
+        :return: True if successful.
         """
         if self._existing is True and isinstance(self._story, briefing.Briefing):
             # First get the text
-            text = self.text
-            # Now remove the action, get the action id to remove it from the dictionary as well
-            action_id = text.split('id="')[1].split('">')[0]
-            # Now remove the action from the text
-            new_text = text.replace(
-                f'<span data-action-type="attachment-action" id="{action_id}">', ""
-            ).replace("</span>", "")
-            # Now update the text
-            self.text = new_text
+            full_text = self.text
+            # Initialize an empty list to store removed action IDs
+            removed_action_ids = []
 
-            # Now remove the action from the actions list in the story properties
-            for action in self._story._properties["actions"]:
-                if action["data"]["actionId"] == action_id:
-                    self._story._properties["actions"].remove(action)
-                    break
+            if text:
+                # Remove the specified attachment if text_to_remove is provided
+                if f'<span data-action-type="attachment-action" id="' in text:
+                    # Get the action id to remove it from the dictionary
+                    action_id = text.split('id="')[1].split('">')[0]
+                    # Remove the action from the text
+                    full_text = full_text.replace(
+                        f'<span data-action-type="attachment-action" id="{action_id}">',
+                        "",
+                    ).replace("</span>", "")
+                    # Add the removed action ID to the list
+                    removed_action_ids.append(action_id)
+            else:
+                # Remove all attachments if text_to_remove is not provided
+                while '<span data-action-type="attachment-action" id="' in full_text:
+                    # Get the action id to remove it from the dictionary
+                    action_id = full_text.split('id="')[1].split('">')[0]
+                    # Remove the action from the text
+                    full_text = full_text.replace(
+                        f'<span data-action-type="attachment-action" id="{action_id}">',
+                        "",
+                    ).replace("</span>", "")
+                    # Add the removed action ID to the list
+                    removed_action_ids.append(action_id)
+
+            # Now update the text
+            self.text = full_text
+
+            # Remove the corresponding actions from the actions list in the story properties
+            if "actions" in self._story._properties:
+                self._story._properties["actions"] = [
+                    action
+                    for action in self._story._properties["actions"]
+                    if action["data"]["actionId"] not in removed_action_ids
+                ]
         else:
-            pass
+            return False
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2298,19 +2591,11 @@ class Text:
             self._story._properties["nodes"][self.node]["data"]["customTextColors"] = [
                 self._color
             ]
-
-    # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content and content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
-            content._add_image(display="wide", story=self._story)
-        elif isinstance(content, Video):
-            content._add_video(display="wide", story=self._story)
-        elif isinstance(content, Embed):
-            content._add_link(display="card", story=self._story)
-        elif isinstance(content, Map):
-            content._add_map(display="wide", story=self._story)
+        if self._size is not None:
+            # if story is not a briefing and size is 'small' then set to 'medium'
+            if not isinstance(self._story, briefing.Briefing) and self._size == "small":
+                self._size = "medium"
+            self._story._properties["nodes"][self.node]["data"]["textSize"] = self._size
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -2544,7 +2829,7 @@ class Gallery:
             self._children = self._story._properties["nodes"][self.node]["children"]
             images = []
             for child in self._children:
-                images.append(Image(story=self._story, node_id=child))
+                images.append(utils._assign_node_class(self._story, child))
             return images
         else:
             raise Warning(
@@ -2581,7 +2866,11 @@ class Gallery:
         :return:
             The caption that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
+        if self._existing is True:
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -2605,7 +2894,11 @@ class Gallery:
         :return:
             The alternate text that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
+        if self._existing is True:
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
@@ -2671,10 +2964,12 @@ class Gallery:
         """
         if isinstance(image, Image):
             image = image.node
-        if image in self.images:
+        image_nodes = [im.node for im in self.images]
+        if image in image_nodes:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
             utils._delete(self._story, image)
+        self._children = self._story._properties["nodes"][self.node]["children"]
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2840,7 +3135,8 @@ class Swipe:
             The caption that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["caption"]
+            if "caption" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["caption"]
         else:
             return None
 
@@ -2867,7 +3163,8 @@ class Swipe:
             The alternate text that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["alt"]
+            if "alt" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["alt"]
         else:
             return None
 
@@ -3521,10 +3818,12 @@ class Sidecar:
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
         # Get narrative panel, always first child of the slide
-        narrative_panel = self._story._properties["nodes"][slide]["children"][0]
+        narrative_panel: str = self._story._properties["nodes"][slide]["children"][0]
         # Delete the children of the narrative panel
         if "children" in self._story._properties["nodes"][narrative_panel]:
-            children = self._story._properties["nodes"][narrative_panel]["children"]
+            children: list = self._story._properties["nodes"][narrative_panel][
+                "children"
+            ]
             for child in children:
                 utils._delete(self._story, child)
         # Delete the narrative panel itself
@@ -3532,23 +3831,22 @@ class Sidecar:
 
         # Remove media item and resource node if one exists
         if len(self._story._properties["nodes"][slide]["children"]) >= 1:
-            media_item = self._story._properties["nodes"][slide]["children"][0]
+            media_item: str = self._story._properties["nodes"][slide]["children"][0]
             utils._delete(self._story, media_item)
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
+    def _add_item_story(self, content: Union[Image, Video, Map, Embed, Swipe]):
         if content and content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
-            content._add_to_story(display="wide", story=self._story)
-        elif isinstance(content, Video):
+        if (
+            isinstance(content, Image)
+            or isinstance(content, Video)
+            or isinstance(content, Map)
+            or isinstance(content, Audio)
+        ):
             content._add_to_story(display="wide", story=self._story)
         elif isinstance(content, Embed):
             content._add_to_story(display="card", story=self._story)
-        elif isinstance(content, Map):
-            content._add_to_story(display="wide", story=self._story)
-        elif isinstance(content, Audio):
-            content._add_to_story(display="wide", story=self._story)
         else:
             content._add_to_story(story=self._story)
 
@@ -3710,7 +4008,7 @@ class Timeline:
 
         # Check to see if content has been added to node properties
         if content.node not in self._story._properties["nodes"]:
-            self._add_item_story(content)
+            content._add_to_story(story=self._story)
 
         # Insert new content
         if isinstance(content, Text):
@@ -3785,7 +4083,7 @@ class Timeline:
                 for content in contents:
                     # Check to see if content has been added to node properties
                     if content.node not in self._story._properties["nodes"]:
-                        self._add_item_story(content)
+                        content._add_to_story(story=self._story)
                     contents_ids.append(content.node)
                 self._story._properties["nodes"][event_node] = {
                     "type": "timeline-event",
@@ -3871,12 +4169,6 @@ class Timeline:
         return position
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        content._add_to_story(story=self._story)
-
-    # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
         return self._story is not None and self.node is not None
@@ -3889,14 +4181,6 @@ class MapTour:
 
     .. note::
         Once you create a MapTour instance you must add it to the story to be able to edit it further.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the map tour type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
-    ===============     ====================================================================
 
     .. code-block:: python
 
@@ -4138,6 +4422,104 @@ class MapAction:
                     "targetGeometry": target_geometry,
                 }
         return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        return self._story is not None and self.node is not None
+
+
+###############################################################################################################
+class ExpressMap:
+    """
+    Class representing an ExpressMap.
+
+    .. note::
+        You can only create an ExpressMap from a pre-existing `expressmap` in a story or briefing. You cannot create
+        an ExpressMap from scratch.
+    """
+
+    def __init__(self, **kwargs):
+        # Content must already exist in the story
+        # ExpressMap is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self.node = kwargs.pop("node_id", None)
+        self._existing = self._check_node()
+
+        if self._existing:
+            self._map_resource = self._story._properties["nodes"][self.node]["data"][
+                "map"
+            ]
+            # check if offline dependent
+            if "dependents" in self._story._properties["nodes"][self.node]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "dependents"
+                ]["offline"]
+        else:
+            raise ValueError(
+                "You cannot create an ExpressMap from scratch at this time. Please use an existing ExpressMap."
+            )
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "ExpressMap"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "ExpressMap"
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       Image or Video. The new offline_media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The offline media that is being used.
+        """
+        if self._existing is True:
+            if self._offline_dependent:
+                return utils._assign_node_class(
+                    story=self._story, node_id=self._offline_dependent
+                )
+        return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: Image | Video):
+        if self._existing:
+            # can only set for briefing
+            if isinstance(self._story, briefing.Briefing):
+                if isinstance(value, Image) or isinstance(value, Video):
+                    value._add_to_story(story=self._story)
+                    self._story._properties["nodes"][self.node]["dependents"] = {
+                        "offline": value.node
+                    }
+                    self._offline_dependent = value.node
+                else:
+                    raise ValueError("offline_media must be an Image or Video")
+            else:
+                raise ValueError("offline_media can only be set for a Briefing")
+        else:
+            raise ValueError(
+                "offline_media can only be set for an ExpressMap that has been added to a Briefing."
+            )
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -4551,13 +4933,13 @@ class BriefingSlide:
         # Slide is not a cover slide and has contents, even if empty
         contents = []
         for key, _ in self._children.items():
-            # the key will be "0", "1", "2", "3" depending on the layout
+            # the key will be "0", "1" depending on the layout
             contents.append(Block(key, self, self._story))
         return contents
 
     # ----------------------------------------------------------------------
     @property
-    def title(self) -> Text | None:
+    def title(self) -> str | None:
         """
         Get/Set the title of the slide.
 
@@ -4570,7 +4952,10 @@ class BriefingSlide:
         title               Text instance or string depicting the title of the slide.
         ===============     ====================================================================
         """
-        return self._title
+        if self._title:
+            return self._title.text
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @title.setter
@@ -4596,9 +4981,12 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     @property
-    def subtitle(self):
+    def subtitle(self) -> str | None:
         """Get/Set the subtitle when the layout is either 'section-single' or 'section-double'."""
-        return self._subtitle
+        if self._subtitle:
+            return self._subtitle.text
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @subtitle.setter
@@ -4617,6 +5005,11 @@ class BriefingSlide:
         # Set the title node id in data of slide
         self._story._properties["nodes"][self.node]["data"]["subtitle"] = subtitle.node
 
+        if self._subtitle:
+            # delete previous subtitle
+            self._subtitle.delete()
+
+        # assign new subtitle
         self._subtitle = subtitle
 
     # ----------------------------------------------------------------------
@@ -4734,6 +5127,15 @@ class BriefingSlide:
             self._story._properties["nodes"][self.node]["data"][
                 "title"
             ] = self._title.node
+
+        # Add subtitle if it exists
+        if self._subtitle:
+            if self._subtitle._existing is False:
+                self._subtitle._add_to_story(story=self._story)
+            self._story._properties["nodes"][self.node]["data"][
+                "subtitle"
+            ] = self._subtitle.node
+
         # For editing purposes, have children even if empty
         self._set_block_children()
 
@@ -4809,7 +5211,10 @@ class Block:
             return [utils._assign_node_class(self._story, self._content)]
 
     # ----------------------------------------------------------------------
-    def add_content(self, content: Text | Image | Video | Embed | Map | Swipe) -> bool:
+    def add_content(
+        self,
+        content: Text | Image | Video | Embed | Map | Swipe | Gallery | Code | Table,
+    ) -> bool:
         """
         Add content to the block.
 
@@ -4825,7 +5230,7 @@ class Block:
         ===============     ====================================================================
 
         :return:
-            True if successful.
+            The Content object that was added to the block.
         """
         # check that the content is not None
         if content is None:
@@ -4833,29 +5238,36 @@ class Block:
                 "The content cannot be None. To remove content use the delete_content method."
             )
         # check that the content is of the correct type
-        if not isinstance(content, (Text, Image, Video, Embed, Map, Swipe)):
+        if not isinstance(
+            content, (Text, Image, Video, Embed, Map, Swipe, Gallery, Code, Table)
+        ):
             raise Exception(
-                "The content must be of type Text, Image, Video, Embed, Map, or Swipe."
+                "The content must be of type Text, Image, Video, Embed, Map, Swipe, Gallery, Code, or Table."
             )
 
+        content._add_to_story(story=self._story)
         # If content is text and the current content is a list, append to the list
         if isinstance(content, Text) and isinstance(self._content, list):
-            content._add_to_story(story=self._story)
             self._content.append(content.node)
         # If content is text and the current content is not a list, create a list and append
         elif isinstance(content, Text) and not isinstance(self._content, list):
-            content._add_to_story(story=self._story)
-            self._content = [self._content, content.node]
+            # check the type of the current content
+            current = self.content[0]
+            if isinstance(current, Text):
+                # There can be multiple text contents in a block
+                self._content = [self._content, content.node]
+            else:
+                # There can only be one of the other types of contents
+                self._content = content.node
         # If another type, then assign to content's node id, this overwrites what is currently there
         else:
-            content._add_to_story(story=self._story)
             self._content = content.node
 
         # add to the slide in the story
         self._story._properties["nodes"][self._slide.node]["data"]["contents"][
             str(self._index)
         ] = self._content
-        return True
+        return content
 
     # ----------------------------------------------------------------------
     def delete_content(self, index: Optional[int] = None) -> bool:
@@ -4866,8 +5278,7 @@ class Block:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Optional integer, the index of the content to be deleted. If not
-                            specified, all content will be deleted. This applies for Text only since
-                            it is the only content held within a list.
+                            specified, all content will be deleted.
         ===============     ====================================================================
 
         :return: True if successful.
@@ -4888,7 +5299,7 @@ class Block:
             raise Exception("The index must be an integer.")
 
         # Update the story with the modified content
-        self._story._properties["nodes"][self._slide._node]["data"]["contents"][
+        self._story._properties["nodes"][self._slide.node]["data"]["contents"][
             str(self._index)
         ] = self._content
 

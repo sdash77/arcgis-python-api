@@ -8,6 +8,7 @@ from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import time
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -56,6 +57,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_Forms(unittest.TestCase):
     """
     Test forms functionality

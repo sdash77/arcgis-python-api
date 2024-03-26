@@ -1,15 +1,14 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import os
+import io
 import uuid
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._content_manager import Folder, Folders
+from utils.decorators import integration_test
+import pandas as pd
 
 __logger__ = logging.getLogger()
 
@@ -1029,7 +1028,7 @@ TEXT_DATA = {
 
 ###########################################################################
 
-
+@integration_test
 class TestFolderAddContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1045,6 +1044,26 @@ class TestFolderAddContent(unittest.TestCase):
                 proxy=PROXIES,
             ),
         ]
+
+    def test_add_by_io(self):
+        URL = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
+        buffer = io.StringIO()
+        df = pd.read_csv(URL)
+        df.to_csv(buffer)
+        for gis in self.gis_objs:
+
+            folders = gis.content.folders
+            folder = folders.get("root")
+
+            item_passengers = folder.add(
+                item_properties={
+                    "type": "CSV",
+                    "title": f"Airline Passenger Data {uuid.uuid4().hex[:4]}",
+                    "fileName": f"airline{uuid.uuid4().hex[:5]}.csv",
+                },
+                file=buffer,
+            )
+            item_passengers.result().delete()
 
     def test_add_service_url(self):
         for gis in self.gis_objs:
@@ -1194,7 +1213,7 @@ class TestFolderAddContent(unittest.TestCase):
 
 ###########################################################################
 
-
+@integration_test
 class TestFolder(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1253,7 +1272,7 @@ class TestFolder(unittest.TestCase):
 
 ###########################################################################
 
-
+@integration_test
 class TestFolders(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -1,19 +1,18 @@
-import sys
-
-# sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
+from utils.decorators import integration_test
 
-gis = GIS(profile="your_dev_profile", verify_cert=False)
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 layer = FeatureLayer(
     "https://servicesdev.arcgis.com/5xC5Wrapp1gUAl2r/arcgis/rest/services/CUBE_WGS84_APIforPython/FeatureServer/0"
 )
 
 
+@integration_test
 class TestConvert3DFeatureLayer(unittest.TestCase):
     def test_convert_3d(self):
         """

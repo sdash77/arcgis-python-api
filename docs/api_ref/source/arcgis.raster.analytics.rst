@@ -223,3 +223,15 @@ predict_using_regression_model
 locate_regions
 --------------
 .. autofunction:: arcgis.raster.analytics.locate_regions
+
+transfer_files
+--------------
+.. autofunction:: arcgis.raster.analytics.transfer_files
+
+tabulate_area
+-------------
+.. autofunction:: arcgis.raster.analytics.tabulate_area
+
+zonal_geometry_as_table
+-----------------------
+.. autofunction:: arcgis.raster.analytics.zonal_geometry_as_table

@@ -39,7 +39,8 @@ class MyFasterRCNN:
         import torchvision
         import fastai
 
-        tvisver = [int(x) for x in torchvision.__version__.split(".")]
+        tvers_split = torchvision.__version__.split(".")
+        tvisver = [int(tvers_split[0]), int(tvers_split[1])]
     except:
         pass
 
@@ -86,8 +87,12 @@ class MyFasterRCNN:
         assert type(pretrained_backbone) == bool
         if backbone.__name__ == "resnet50" and "timm" not in backbone.__module__:
             model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
-                pretrained=pretrained_backbone,
-                pretrained_backbone=False,
+                weights=(
+                    self.torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+                    if pretrained_backbone
+                    else None
+                ),
+                weights_backbone=None,
                 min_size=1.5 * data.chip_size,
                 max_size=2 * data.chip_size,
                 **self.fasterrcnn_kwargs,
@@ -99,7 +104,19 @@ class MyFasterRCNN:
         ):
             backbone_fpn = (
                 self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
-                    backbone.__name__, pretrained=pretrained_backbone
+                    backbone_name=backbone.__name__,
+                    weights=(
+                        getattr(
+                            self.torchvision.models,
+                            [
+                                i
+                                for i in dir(self.torchvision.models)
+                                if i.lower() == backbone.__name__ + "_weights"
+                            ][0],
+                        ).DEFAULT
+                        if pretrained_backbone
+                        else None
+                    ),
                 )
             )
             model = self.torchvision.models.detection.FasterRCNN(

@@ -10,6 +10,7 @@ from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from arcgis.gis import GIS, Item, ContentManager
 from arcgis._impl.common._utils import zipws
 import json
+from utils.decorators import integration_test
 
 g1 = Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
 g2 = Geometry({"x": -117.15, "y": 34.80, "spatialReference": {"wkid": 4326}})
@@ -209,6 +210,7 @@ webmap = {
 }
 
 
+@integration_test
 class TestItemByItemId(unittest.TestCase):
     """Tests the 10.8.1 Create Items with user specified UUID"""
 

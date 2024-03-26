@@ -1,13 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-
-
-#
-# Prints all messages out to Debug Window
-#
 import logging
 
 root = logging.getLogger()
@@ -22,11 +13,13 @@ import unittest
 
 import arcgis
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 print(arcgis.__file__)
 print(arcgis.__version__)
 
 
+@integration_test
 class TestUserManagerOrgSearch(unittest.TestCase):
     """
     Tests the Org Search Method

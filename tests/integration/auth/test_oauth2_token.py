@@ -1,8 +1,3 @@
-import sys
-
-sys.path.insert(
-    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
-)
 import unittest
 
 
@@ -45,6 +40,10 @@ else:
     ago_msg = "Configuration file not found."
 
 
+from utils.decorators import integration_test
+
+
+@integration_test
 @unittest.skipIf(SKIPME == True, msg)
 class TestOAuth2Workflow(unittest.TestCase):
     """
