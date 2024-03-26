@@ -27,7 +27,10 @@ def enable_verbose_logging(root):
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestMFASecurityAuth(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

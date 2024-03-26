@@ -14,6 +14,7 @@ from integration.geoenrichment.configtest import (
     skip_if_no_agol,
     usa_agol,
 )
+from utils.decorators import integration_test
 
 
 def assert_enrich_results(enrich_res, cntry):
@@ -187,6 +188,7 @@ in_memory_dict = {
 test_feature_set = FeatureSet.from_dict(in_memory_dict)
 
 
+@integration_test
 class TestLegacyGuide(unittest.TestCase):
     def setUp(self):
         self.usa_agol_inst = usa_agol()

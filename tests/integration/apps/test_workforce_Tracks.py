@@ -53,7 +53,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class Test_Workforce_Tracks(unittest.TestCase):
     """
     Test to verify that tracks can be queried, added, updated, and deleted from a project

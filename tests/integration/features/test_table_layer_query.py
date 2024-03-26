@@ -3,8 +3,10 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features import Table
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestQueryTableLayer(unittest.TestCase):
     """Tests the Query Sub-set functionality of the Table class"""
 

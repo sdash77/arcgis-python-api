@@ -11,6 +11,7 @@ import pandas as pd
 from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
+from utils.decorators import integration_test
 
 try:
     HASARCPY = True
@@ -95,6 +96,7 @@ MIXED_GEOMS = GeoArray(geoms)
 ##--------------------------------------------------------------------------
 ## Creation Tests
 ##--------------------------------------------------------------------------
+@integration_test
 class SeriesGeoTests(unittest.TestCase):
 
     def test_series_gen(selef):
@@ -591,6 +593,4 @@ class SeriesGeoTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()
-    print("series tests finished")

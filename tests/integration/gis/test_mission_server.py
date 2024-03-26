@@ -10,6 +10,7 @@ from arcgis.gis.mission._system import SystemManager
 from arcgis.gis.mission._machines import MachineManager
 from arcgis.gis.mission._security import SecurityManager
 import time
+from utils.decorators import integration_test
 
 
 gis = GIS(
@@ -20,6 +21,7 @@ gis = GIS(
 )
 
 
+@integration_test
 class TestMissionServer(unittest.TestCase):
     def test_properties(self):
         """
@@ -44,6 +46,7 @@ class TestMissionServer(unittest.TestCase):
         assert isinstance(security, SecurityManager)
 
 
+@integration_test
 class TestMission(unittest.TestCase):
     def test_properties(self):
         mission_ctlg = MissionCatalog(gis)

@@ -4,13 +4,14 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Audio
+from utils.decorators import integration_test
 
 ### ***** Before running this test you need to download the audio file below and correct the path in the test *****
 # audio: https://www.nps.gov/media/video/view.htm?id=E5833EE1-4BC7-47B8-832F-EBDE023E6E51
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
-
+@integration_test
 class TestAudioContent(unittest.TestCase):
     """Test adding audio and seeing properties"""
 

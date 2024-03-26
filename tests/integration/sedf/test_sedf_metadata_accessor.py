@@ -15,9 +15,11 @@ import tempfile
 from arcgis.features.geo._tools._metadata import _Metadata
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test
 
 
 ###########################################################################
+@integration_test
 class TestMetaDataClass(unittest.TestCase):
     """Tests the Private _Metadata Class"""
 
@@ -83,6 +85,7 @@ class TestMetaDataClass(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestAttrSeDFMetadata(unittest.TestCase):
     """tests the functionality of the _Metadata class on SeDF"""
 

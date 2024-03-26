@@ -3,6 +3,7 @@ import unittest
 from arcgis.gis import GIS
 from utils import INTEGRATION_TESTS_DIR
 from pathlib import Path
+from utils.decorators import integration_test
 
 
 try:
@@ -38,6 +39,7 @@ PKI_ORACLE_PW = "password"
 IWA_ESRI = "https://rqawiniwa02pt.ags.esri.com/gis"
 IWA_DUEL_ESRI = "https://rqawintest99pt.ags.esri.com/gis"
 #########################################################################################
+@integration_test
 class TestIWAConnections(unittest.TestCase):
     """Tests IWA access to portal/server"""
 
@@ -117,6 +119,7 @@ class TestIWAConnections(unittest.TestCase):
 
 
 #########################################################################################
+@integration_test
 class TestPKIConnections(unittest.TestCase):
     #########################################################################################
     def test_pki_login(self):

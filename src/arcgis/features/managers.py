@@ -2013,7 +2013,13 @@ class WebHookServiceManager(object):
             params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
-            hook_url = self._url + f"/{resp['globalId']}"
+            if "globalId" in resp:
+                guid = resp.get("globalId")
+            elif "id" in resp:
+                guid = resp.get("id")
+            else:
+                raise Exception(str(resp))
+            hook_url = self._url + f"/{guid}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
             return WebHook(url=resp["url"], gis=self._gis)
@@ -2385,7 +2391,8 @@ class FeatureLayerCollectionManager(_GISResource):
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
-                               JSON object.
+                               JSON object. This parameter is only honored for the ArcGIS Online
+                               platform.
         ==================     ====================================================================
 
         :return: dict | concurrent.futures.Future
@@ -2482,7 +2489,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
             )
             props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
-                new_source.manager.properties["name"]
+                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
             )
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
@@ -2492,9 +2499,13 @@ class FeatureLayerCollectionManager(_GISResource):
             delete_json: dict = {"layers": [], "tables": [{"id": index}]}
             add_json: dict = {"tables": [props]}
         view.manager.delete_from_definition(delete_json)
-        if future:
+        if future and self._gis._is_arcgisonline:
             return view.manager.add_to_definition(add_json, future=True)
         else:
+            if future and self._gis._is_arcgisonline == False:
+                _log.warning(
+                    "Enterprise does not support asynchronous view swap, using synchronous method."
+                )
             return view.manager.add_to_definition(add_json, future=False)
 
     # ----------------------------------------------------------------------

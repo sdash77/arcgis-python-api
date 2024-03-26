@@ -6,6 +6,7 @@ import unittest
 import pandas as pd
 from pandas import Timestamp
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 try:
     url = "https://gpportal.esri.com/portal"
@@ -3310,6 +3311,7 @@ test_data = {
 
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, reason="Cannot connect to the GIS")
+@integration_test
 class Test_GeoAnalytics_1081_GP(unittest.TestCase):
     """
 

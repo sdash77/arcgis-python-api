@@ -1,8 +1,10 @@
 import unittest
 import json
 from arcgis.gis._impl._con import Connection
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestPutVerb(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_simple_put(self):
