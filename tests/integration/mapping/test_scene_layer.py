@@ -11,6 +11,7 @@ from arcgis.mapping import (
     BuildingLayer,
     Tiles3DLayer
 )  #
+from utils.decorators import integration_test
 
 packages = [
     "6bab267f92234ffd8b76d8436d6c3b15",  # Building
@@ -21,6 +22,7 @@ packages = [
     "0c9a62b019aa4c5297f7ff1ff46bfd14", # 3D Tiles
 ]
 ###########################################################################
+@integration_test
 class TestSceneLayer(unittest.TestCase):
     """Tests the Scene Layer Operations"""
 
@@ -33,6 +35,7 @@ class TestSceneLayer(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestOtherSceneLayer(unittest.TestCase):
     """tests the other scene layer types"""
 

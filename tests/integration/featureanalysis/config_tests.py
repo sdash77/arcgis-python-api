@@ -8,9 +8,8 @@ from arcgis.gis import ProfileManager
 import os
 import sys
 fa_path = os.getcwd()
-for path in sys.path:
-    if not fa_path:
-        sys.path.insert(0, fa_path)
+if fa_path not in sys.path:
+    sys.path.insert(0, fa_path)
 
 
 test_items = [

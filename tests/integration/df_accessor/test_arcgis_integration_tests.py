@@ -4,12 +4,11 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import sys
-# sys.path.insert(0,r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS
 import arcgis.features.geo
+from utils.decorators import integration_test
 
 USERNAME = None
 PASSWORD = None
@@ -139,6 +138,7 @@ def portal_selector():
             pass
 
 
+@integration_test
 class TestArcGISIntegrationTests(unittest.TestCase):
 
     def test_content_import_data(self):

@@ -1,9 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-# sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
-# sys.path.insert(2, r"C:\SVN\geosaurus_master\tests\integration")
-# sys.path.insert(3, r"C:\SVN\geosaurus_master\tests\utils")
 from arcgis.gis import agoserver, server
 import unittest
 from utils.decorators import profiles, integration_test

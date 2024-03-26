@@ -2,6 +2,7 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 DATA = [
@@ -113,6 +114,7 @@ DATA = [
 ]
 
 
+@integration_test
 class TestItemProtection(unittest.TestCase):
     """tests for Item Protection (BUG-000136586)"""
 

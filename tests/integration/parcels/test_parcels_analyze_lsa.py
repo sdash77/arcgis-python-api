@@ -1,15 +1,14 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import time
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
+from utils.decorators import integration_test
 from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestAnalyzeLSA(unittest.TestCase):
     """Analyze LSA with and without parcelFeatures param on a small fabric.  Test sync and async"""
 
