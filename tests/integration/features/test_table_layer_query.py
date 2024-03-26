@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features import Table
 from arcgis.gis import GIS

@@ -1,9 +1,6 @@
 import sys
 import unittest
 
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\git\geosaurus\src")
-
 import arcgis
 from arcgis.gis import GIS
 from arcgis.apps.survey123 import Survey

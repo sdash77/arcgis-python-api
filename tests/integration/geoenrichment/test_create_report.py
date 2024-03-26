@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_9819\src")
 import os
 import logging
 import tempfile

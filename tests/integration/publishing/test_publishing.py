@@ -1,8 +1,4 @@
 import sys
-
-#  Update the Path to set the test area
-#sys.path.insert(0, r"<path to local Repo>/src")
-
 import logging
 import unittest
 from integration.config import QALAB_ROOT_PATH

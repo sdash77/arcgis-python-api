@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"YOUR PATH HERE")
 from arcgis.gis import GIS
 import unittest
 from utils.decorators import integration_test

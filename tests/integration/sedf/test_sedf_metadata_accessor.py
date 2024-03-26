@@ -3,10 +3,6 @@ Tests for the private GeoAccessor `_Metadata` Class.
 
 This class holds the source information inside a spatially enabled dataframe. 
 """
-
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import os
 import sys
 import json

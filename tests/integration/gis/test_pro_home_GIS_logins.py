@@ -2,10 +2,6 @@
 GIS Connection Testing for Pro and NBAUTH files
 """
 import os
-import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\tests")
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import imp
 import json
 import tempfile

@@ -1,10 +1,4 @@
 import sys
-
-## Uncomment if running locally without install and update path
-##
-##sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_5988\src")
-##
-
 import os
 import json
 import uuid

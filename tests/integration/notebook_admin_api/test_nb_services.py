@@ -1,9 +1,6 @@
 """
 This is 10.8.1+ Functionality Tests for Notebook Server
 """
-import sys
-
-#  sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import json
 import unittest
 import os, json

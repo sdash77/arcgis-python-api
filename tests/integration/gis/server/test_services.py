@@ -1,8 +1,3 @@
-import sys
-
-#sys.path.insert(0, r"<path to local repo>\src")
-#sys.path.insert(1, r"<path to local repo>\tests")
-
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging

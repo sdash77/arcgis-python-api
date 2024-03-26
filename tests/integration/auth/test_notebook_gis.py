@@ -1,8 +1,4 @@
 import os
-import sys
-
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 from arcgis.auth.tools._util import detect_proxy
 
 # import imp

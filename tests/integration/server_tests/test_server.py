@@ -1,10 +1,6 @@
 """
 Tests Related to Server API Frame
 """
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
-
 import unittest
 import pandas as pd
 import os, shutil
