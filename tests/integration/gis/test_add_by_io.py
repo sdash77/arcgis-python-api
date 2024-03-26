@@ -4,6 +4,7 @@ import uuid
 from arcgis.gis import GIS
 import pandas as pd
 import requests
+from utils.decorators import integration_test
 
 GUID = uuid.uuid4().hex[:6]
 item_properties = {
@@ -16,6 +17,7 @@ URL = (
 )
 PROFILES = ["your_online_profile", "your_kubernetes_profile"]
 
+@integration_test
 class TestAddUsingIO(unittest.TestCase):
     def test_add_by_string_io(self):
         """adds the CSV file using stringIO object"""
@@ -47,6 +49,7 @@ class TestAddUsingIO(unittest.TestCase):
             if item:
                 assert item.delete()
 
+@integration_test
 class TestAddUpdateKubeUsingIO(unittest.TestCase):
     def test_add_by_string_io(self):
         """adds the CSV file using stringIO object"""

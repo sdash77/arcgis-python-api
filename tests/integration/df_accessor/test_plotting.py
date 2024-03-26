@@ -11,6 +11,7 @@ import pandas as pd
 
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
+from utils.decorators import integration_test
 
 gis = GIS()
 wm = gis.map()
@@ -40,6 +41,7 @@ geoms = [
 attr = [["a", 1.2, 1]] * 5
 
 
+@integration_test
 class TestPlotting(unittest.TestCase):
 
     def test_plot(self):

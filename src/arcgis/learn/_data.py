@@ -1193,9 +1193,7 @@ def prepare_tabulardata(
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
-    stratify = False
-    if kwargs.get("stratify") == True:
-        stratify = True
+    stratify = kwargs.pop("stratify", False)
 
     HAS_COLUMN_TRANSFORMS = False
 

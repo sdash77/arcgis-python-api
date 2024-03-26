@@ -4,6 +4,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, ContentManager, Item
 from arcgis.gis import ItemProperties, ItemTypeEnum
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -51,6 +52,7 @@ data = {
 }
 
 
+@integration_test
 class TestItemProperties(unittest.TestCase):
     def test_add_item(self):
         ip = ItemProperties(

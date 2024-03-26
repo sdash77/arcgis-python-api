@@ -1163,7 +1163,7 @@ class Version(object):
             )
         else:
             raise Exception(
-                "Version must be in `edit` mode inorder to apply edits to this version."
+                "Version must be in `edit` mode in order to apply edits to this version."
             )
         return None
 

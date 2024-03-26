@@ -431,6 +431,24 @@ def _set_tail(model, new_tail):
                 pass
 
 
+def change_tail_transformer(model, data):
+    tail = model.backbone.patch_embed.projection
+    in_chanls = len(data._extract_bands)
+    new_tail = nn.Conv2d(
+        in_channels=in_chanls,
+        out_channels=tail.out_channels,
+        kernel_size=tail.kernel_size,
+        stride=tail.stride,
+        padding=tail.padding,
+        dilation=tail.dilation,
+        groups=tail.groups,
+        bias=tail.bias is not None,
+        padding_mode=tail.padding_mode,
+    )
+    model.backbone.patch_embed.projection = new_tail
+    return model
+
+
 def _change_tail(model, data, tail_weights_type=None):
     tail_name, tail = _get_tail(model)
     if tail_weights_type is None:
@@ -443,6 +461,8 @@ def _change_tail(model, data, tail_weights_type=None):
         \n`arcgis.env.type_init_tail_parameters={{valid_scheme}}`
         """
         )
+    if getattr(model, "_is_transformer", False):
+        return change_tail_transformer(model, data)
     new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type)
     _set_tail(model, new_tail)
     return model
@@ -1183,13 +1203,17 @@ class ArcGISModel(object):
         _emd_template["ModelName"] = type(self).__name__.replace("_", "")
         _emd_template["backend"] = self._backend
 
+        modtype = getattr(self, "model_type", "SR3")
         if getattr(self, "_is_mmsegdet", False):
             model_params = {
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
-        elif getattr(self, "model_type", False) == "SR3":
-            model_params = {"backbone": "SR3", "backend": self._backend}
+        elif modtype.startswith("SR3"):
+            model_params = {
+                "backbone": "SR3_UViT" if modtype == "SR3_UViT" else "SR3",
+                "backend": self._backend,
+            }
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:

@@ -1,6 +1,3 @@
-import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.features import FeatureSet
@@ -14,6 +11,7 @@ from integration.geoenrichment.configtest import (
     skip_if_no_agol,
     usa_agol,
 )
+from utils.decorators import integration_test
 
 
 def assert_enrich_results(enrich_res, cntry):
@@ -187,6 +185,7 @@ in_memory_dict = {
 test_feature_set = FeatureSet.from_dict(in_memory_dict)
 
 
+@integration_test
 class TestLegacyGuide(unittest.TestCase):
     def setUp(self):
         self.usa_agol_inst = usa_agol()

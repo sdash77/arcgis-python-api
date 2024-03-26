@@ -3,6 +3,7 @@ import pandas as pd
 import concurrent.futures
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
@@ -10,6 +11,7 @@ PROFILES = ["your_online_profile"]
 ###########################################################################
 
 
+@integration_test
 class TestQueryAnalytics(unittest.TestCase):
     """
     Tests the new functionality of the queryanalytics functionality on

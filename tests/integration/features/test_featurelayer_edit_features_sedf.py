@@ -1,14 +1,11 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import logging
 import unittest
 import pandas as pd
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -288,6 +285,7 @@ DATA = {
 }
 
 
+@integration_test
 class TestApplyEditsSeDF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

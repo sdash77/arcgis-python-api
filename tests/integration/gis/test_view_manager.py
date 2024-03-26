@@ -1,6 +1,4 @@
 import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_10692\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -11,6 +9,7 @@ from arcgis.gis import (
     ViewLayerDefParameter,
 )
 from arcgis.gis._impl import SpatialRelationship, SpatialFilter
+from utils.decorators import integration_test
 
 
 __logger__ = logging.getLogger()
@@ -145,6 +144,7 @@ _fs_dict = {
 }
 
 
+@integration_test
 class Test_ItemViewManagerAGOL(unittest.TestCase):
     """Tests the Item View Manager"""
 
@@ -200,10 +200,11 @@ class Test_ItemViewManagerAGOL(unittest.TestCase):
 
         flc = FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
+        oid_field = flc.layers[0].properties['objectIdField']
         view_item = mgr.create_view(
             name=f"test_view_{uuid.uuid4().hex[:5]}",
-            query="OBJECTID > 0",
-            visible_fields=["phone", "building", "objectid"],
+            query=f"{oid_field} > 0",
+            visible_fields=["phone", "building", oid_field],
         )
         view_item.delete()
 
