@@ -5,6 +5,7 @@ import os
 import unittest
 import json, uuid
 from arcgis.gis import GIS, ContentManager
+from utils.decorators import integration_test
 
 profiles = [
     "your_online_profile",
@@ -161,6 +162,7 @@ def create_item(gis, thumbnail=None):
     )
 
 
+@integration_test
 class TestCMAddItemMultiPartPost(unittest.TestCase):
     def test_add_text_file_item(self):
         """tests the unterlying multi-part FORM POST with an additional file"""

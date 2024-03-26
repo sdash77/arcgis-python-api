@@ -1,9 +1,7 @@
-import sys
-
-# sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 # Devext profile for now and enterprise
 profiles = ["your_dev_profile"]
@@ -14,6 +12,7 @@ fl_3d_online = FeatureLayer(
 fl_3d_enterprise = FeatureLayer("https://zhsvteb03.esri.com/server/rest/services/Hosted/CUBE_APIforPython/FeatureServer/0")
 
 
+@integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
     def test_assets(self):
         """

@@ -1,7 +1,4 @@
 import os
-import sys
-
-# sys.path.insert(0, r"c:\ipython_workfolder\geosaurus\src")
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
@@ -26,7 +23,7 @@ class TestGEHorizontalScaling(unittest.TestCase):
         cm = gis.content
         isinstance(cm, ContentManager)
         item = cm.add(item_properties=item_properties)
-        item.share(org=True)
+        item.sharing.sharing_level = "ORGANIZATION"
         item.protect(True)
         gis.update_properties({"geoenrichmentService": {"url": item.url}})
         return item

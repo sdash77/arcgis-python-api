@@ -198,9 +198,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
                         "Could not find the emd file in the specified path. Please provide correct path"
                     )
 
-                kwargs[
-                    "orient_bin_size"
-                ] = bin_size  # To ensure the data is consistent across multiple runs
+                kwargs["orient_bin_size"] = (
+                    bin_size  # To ensure the data is consistent across multiple runs
+                )
 
             self._orient_data = self._get_road_orient_data(data, **kwargs)
             if len(data.classes) > 2:
@@ -598,9 +598,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            )
         _emd_template["ModelConfiguration"] = "_road_infrencing"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -611,9 +611,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
             "backbone": self._backbone,
             "backend": self._backend,
             "opt_func": self._opt_func_name if hasattr(self, "_opt_func_name") else "",
-            "opt_func_args": self._opt_func_args
-            if hasattr(self, "_opt_func_args")
-            else "",
+            "opt_func_args": (
+                self._opt_func_args if hasattr(self, "_opt_func_args") else ""
+            ),
             "loss": self._loss_f.__class__.__name__,
             "loss_weights": self._loss_f.__dict__["loss_weights"],
             "mtl_model": self._mtl_model,

@@ -864,15 +864,17 @@ class TimeSeriesModel(ArcGISModel):
         while index < len(prediction_sequence_list):
             if pd.isna(prediction_sequence_list[index]).any() or any(
                 [
-                    True
-                    if i
-                    in [
-                        "",
-                        None,
-                        "null",
-                        "None",
-                    ]
-                    else False
+                    (
+                        True
+                        if i
+                        in [
+                            "",
+                            None,
+                            "null",
+                            "None",
+                        ]
+                        else False
+                    )
                     for i in prediction_sequence_list[index]
                 ]
             ):
@@ -1120,7 +1122,7 @@ class TimeSeriesModel(ArcGISModel):
                 if isinstance(transform, LabelEncoder):
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         )
                     )
@@ -1128,15 +1130,15 @@ class TimeSeriesModel(ArcGISModel):
                 else:
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         ).reshape(-1, 1)
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[
-                :
-            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
+                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            )
         return processed_dataframe_transform
 
     def score(self):
@@ -1210,6 +1212,8 @@ class TimeSeriesModel(ArcGISModel):
     def show_results(self, rows=5):
         """
         Prints the graph with predictions.
+
+        Experimental support for multivariate timeseries.
 
         =====================   ===========================================
         **Parameter**            **Description**

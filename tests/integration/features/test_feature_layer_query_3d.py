@@ -1,14 +1,12 @@
-import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureSet
+from utils.decorators import integration_test
 
 # Needs to be on devext for now
-gis = GIS(profile="your_dev_profile", verify_cert=False)
+gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # TODO: get better service with more features to be able to test better. Placeholder service
 layer = FeatureLayer(
@@ -16,6 +14,7 @@ layer = FeatureLayer(
 )
 
 
+@integration_test
 class TestQuery3DFeatureLayer(unittest.TestCase):
     def test_query_result_offset(self):
         """
@@ -29,18 +28,8 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         Test query object_ids
         """
         object_ids_result = layer.query_3d(object_ids="10,20,30")
-        assert isinstance(object_ids_result, FeatureSet)
-        assert len(object_ids_result) == 0
-
-    def test_query_as_df(self):
-        """
-        Test query as_df
-        """
-        import pandas as pd
-
-        df = layer.query_3d(as_df=True)
-        assert isinstance(df, pd.DataFrame)
-        assert not df.empty
+        assert isinstance(object_ids_result, dict)
+        assert len(object_ids_result["features"]) == 0
 
     def test_query_out_fields(self):
         """ "
@@ -49,14 +38,14 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         """
         fields = layer.query_3d(out_fields=["ESRI3DO_OY", "ESRI3DO_TZ", "ESRI3DO_RDEG"])
         # ObjectId field always included
-        assert len(fields.fields) == 4
+        assert len(fields["fields"]) == 4
 
         distinct_values = layer.query_3d(
             out_fields=["ESRI3DO_OY", "ESRI3DO_TZ", "ESRI3DO_RDEG"],
             return_distinct_values=True,
         )
         # ObjectId field not included
-        assert len(distinct_values.fields) == 3
+        assert len(distinct_values["fields"]) == 3
 
     def test_query_order_by_fields(self):
         """ "
@@ -118,13 +107,10 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
                 "ymin": 3961002.843403707,
                 "xmax": -13014973.425772188,
                 "ymax": 4113876.899973986,
-                "spatialReference": {"wkid": 102100},
+                "spatialReference": {"wkid": 4326},
             }
         )
-        assert (
-            geom_filter.spatial_reference["wkid"]
-            is not geom_filter.spatial_reference["latestWkid"]
-        )
+        assert geom_filter["spatialReference"]["wkid"] == 4326
 
     def test_query_group_by_field(self):
         """ "

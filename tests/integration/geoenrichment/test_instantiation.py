@@ -1,6 +1,3 @@
-import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from typing import Optional
 
@@ -17,6 +14,7 @@ from integration.geoenrichment.configtest import (
     _agol_user as agol_user,
     _agol_pass as agol_pass,
 )
+from utils.decorators import integration_test
 
 
 def create_country_check(
@@ -27,6 +25,7 @@ def create_country_check(
         assert isinstance(cntry, Country)
 
 
+@integration_test
 class TestInstantiation(unittest.TestCase):
 
     # including to ensure credentials correctly getting loaded from config and also ensure not lower level issues in GIS

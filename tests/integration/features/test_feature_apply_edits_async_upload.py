@@ -1,8 +1,5 @@
 import sys
 
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9705\src")
 import json
 import uuid
 import logging
@@ -11,6 +8,8 @@ import unittest
 from arcgis.features import FeatureLayer
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -37,10 +36,11 @@ def search_and_remove(gis):
         i.delete()
 
 
+@integration_test
 class TestEditFeaturesUpload(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fp = r"\\qalab_server\pydata\v109\geosaurus\edits_features_tests\test_new_edit_features.zip"
+        fp = QALAB_ROOT_PATH + r"\edits_features_tests\test_new_edit_features.zip"
         cls.gis_objs = [
             GIS(profile=p, verify_cert=False, proxy=PROXIES)
             for p in profiles

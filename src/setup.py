@@ -64,12 +64,15 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3>=1.21.1,<3",
+        "urllib3>=1.26.1,<3",
         "cachetools",
         "lxml",
         "cryptography",
-        "pandas >=2.0.0,<3",
-        "numpy >=1.21.6",
+        "ipywidgets >=7,<8",
+        "widgetsnbextension >=3",
+        "jupyter-client <=6.1.12",
+        "pandas >=2.0.0,<2.2.0",
+        "numpy >=1.21.6,<2",
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",

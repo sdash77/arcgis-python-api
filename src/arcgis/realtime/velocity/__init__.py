@@ -4,6 +4,7 @@ ArcGIS Velocity is a real-time and big data processing and analysis capability o
 It enables you to ingest, visualize, analyze, store, and act upon data from Internet of Things (IoT) sensors.
 
 """
+
 from .velocity import Velocity
 
 from .velocity import FeedsManager

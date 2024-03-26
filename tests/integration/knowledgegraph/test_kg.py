@@ -1,21 +1,19 @@
 """
 Tests the functionality of the knowledge graph
 """
-import sys
-
-sys.path.insert(0, r"YOUR PATH HERE")
 import unittest
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from typing import Generator
 import requests
+from utils.decorators import integration_test
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
-domain = "dev0025946.esri.com"
+domain = "dev0025246.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0025946.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
-portal_url = "https://dev0025946.esri.com/portal"
+server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
+portal_url = "https://dev0025246.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
 
@@ -81,6 +79,7 @@ except:
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestImport(unittest.TestCase):
     def test_import(self):
         from arcgis.graph import KnowledgeGraph
@@ -92,6 +91,7 @@ class TestImport(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestKGMethods(unittest.TestCase):
     """tests the methods"""
 
@@ -424,8 +424,42 @@ class TestKGMethods(unittest.TestCase):
             # call should have deleted both entities, making it equal to initial again
             assert final_amount == initial_amount
 
+    def test_constraint_rules(self):
+
+        with self.subTest(msg="Add test"):
+
+            pokemon = {"set": ["Pokemon"]}
+
+            healed_at = {"set": ["HealedAt"]}
+
+            pokecenter = {"set_complement": ["PokeCenter"]}
+
+            relationship_exclusion_rule = {
+                "origin_entity_types": pokemon,
+                "relationship_types": healed_at,
+                "destination_entity_types": pokecenter,
+            }
+
+            constraint_rule = {
+                "name": "PokemonCS",
+                "alias": "pokecenterdata",
+                "disabled": False,
+                "relationship_exclusion_rule": relationship_exclusion_rule,
+            }
+
+            res = kg.constraint_rule_adds([constraint_rule])
+            assert isinstance(res, dict)
+            assert "PokemonCS" in kg.datamodel["constraint_rules"]
+
+        with self.subTest(msg="Delete Test"):
+
+            res = kg.constraint_rule_deletes(["PokemonCS"])
+            assert isinstance(res, dict)
+            assert "PokemonCS" not in kg.datamodel["constraint_rules"]
+
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestKGService(unittest.TestCase):
     """tests the properties"""
 

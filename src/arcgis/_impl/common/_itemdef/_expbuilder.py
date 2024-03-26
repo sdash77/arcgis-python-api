@@ -109,9 +109,12 @@ class _WebExperience(_ItemDefinition):
             for k, v in new_dict["dataSources"].items():
                 if "itemId" not in v:
                     continue
-                v["portalUrl"] = target.url
+                if "portalUrl" in v:
+                    v["portalUrl"] = target.url
                 orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
+                if item is None:
+                    continue
 
                 # if predefined in clone mapping
                 if orig_id in self._clone_mapping["Item IDs"]:

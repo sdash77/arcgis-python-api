@@ -775,6 +775,8 @@ def prepare_textdata(
     ---------------------   -------------------------------------------
     text_columns            Optional string.
                             This parameter is mandatory when task is "classification" or "sequence_translation".
+                            This parameter is mandatory when task is `entity_recognition` task with input dataset_type
+                            as `csv`.
                             The column that will contain the input text.
     ---------------------   -------------------------------------------
     label_columns           Optional list.
@@ -835,7 +837,9 @@ def prepare_textdata(
     dataset_type            Optional list.
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
-                            for this model are - 'ner_json','BIO' or 'LBIOU'
+                            for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
+                            For `csv` dataset type. If an entity has multiple values. It should be
+                            separated by `,`.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
@@ -940,9 +944,14 @@ def prepare_textdata(
                 remove_urls=remove_urls,
             )
     elif task.lower() == "entity_recognition":
-        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
             from ._utils._ner_utils import _NERData
 
+            if dataset_type == "csv" and text_columns is None:
+                raise Exception(
+                    f"For entity_recognition task `text_columns` parameter  is required when the dataset_type parameter"
+                    f" is `csv`."
+                )
             if batch_size == 64:
                 batch_size = 8
             encoding = kwargs.get("encoding", "UTF-8")
@@ -955,6 +964,7 @@ def prepare_textdata(
                 val_split_pct=val_split_pct,
                 batch_size=batch_size,
                 encoding=encoding,
+                text_columns=text_columns,
             )
             if working_dir is not None:
                 data.working_dir = path = Path(os.path.abspath(working_dir))
@@ -963,16 +973,19 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
+
             _prepare_working_dir(path)
 
             return data
         else:
             logger = logging.getLogger()
             logger.error(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
             raise Exception(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
 
     else:
@@ -1180,9 +1193,7 @@ def prepare_tabulardata(
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
-    stratify = False
-    if kwargs.get("stratify") == True:
-        stratify = True
+    stratify = kwargs.pop("stratify", False)
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -2783,7 +2794,7 @@ def prepare_data(
             kwargs_transforms["size"] = img_size
         kwargs_transforms["tfm_y"] = True
 
-    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
         from ._utils._ner_utils import _NERData
 
         if batch_size == 64:

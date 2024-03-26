@@ -1,84 +1,41 @@
-import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
+from arcgis.auth import EsriPKCEAuth, EsriSession
 from arcgis.gis import GIS
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+enable_verbose_logging()
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
-
-class Test_PKCEAuthHandler(unittest.TestCase):
-    def test_esri_session_enterprise(self):
-        """tests the esri session auth on enterprise"""
-        from arcgis.auth import EsriSession
-        from arcgis.auth import EsriPKCEAuth
-
-        gis = GIS(
-            profile=profiles[1],
-            verify_cert=False,
-            proxy=PROXIES,
-        )
+@profiles.enterprise_and_agol
+@integration_test
+class TestPkceAuthHandler(unittest.TestCase):
+    def test_esri_session(self):
+        """tests the esri session auth"""
+        gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
         auth = EsriPKCEAuth(url, username, password)
         with EsriSession(
-            auth=auth, proxies=PROXIES, verify_cert=False
+            auth=auth, proxies=self.proxies, verify_cert=False
         ) as session:
-            purl = f"{url}/sharing/rest/portals/self?f=json"
-            data = session.get(purl).json()
-            assert data['user']['username'].lower() == username.lower()
+            data = session.get(
+                f"{url}/sharing/rest/portals/self?f=json"
+            ).json()
+            assert (
+                data.get("user", {}).get("username", "").lower()
+                == username.lower()
+            )
 
-    def test_esri_session_agol(self):
-        """tests the esri session auth on AGOL"""
-        gis = GIS(
-            profile=profiles[0],
-            verify_cert=False,
-            proxy=PROXIES,
-        )
-        username, password, url = gis._username, gis._password, gis.url
-        del gis
-        from arcgis.auth import EsriSession
-        from arcgis.auth import EsriPKCEAuth
-
-        auth = EsriPKCEAuth(url, username, password)
-        with EsriSession(auth=auth) as session:
-            purl = f"{url}/sharing/rest/portals/self?f=json"
-            data = session.get(purl).json()
-            assert data['user']['username'].lower() == username.lower()
-
-    def test_gis_agol(self):
+    def test_gis(self):
         """tests the PKCE auth on AGOL using a GIS"""
-        gis = GIS(
-            profile=profiles[0],
-            verify_cert=False,
-            proxy=PROXIES,
-        )
+        gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
         del gis
-        from arcgis.auth import EsriSession
-        from arcgis.auth import EsriPKCEAuth
 
         auth = EsriPKCEAuth(url, username, password)
         gis = GIS(url=url, custom_auth=auth)
+        assert gis.users.me
+        assert gis.users.me.username
         assert gis.users.me.username.lower() == username.lower()
         del gis
 

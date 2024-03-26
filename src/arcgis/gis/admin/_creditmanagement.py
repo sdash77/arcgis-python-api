@@ -1,6 +1,7 @@
 ########################################################################
 from typing import Optional
 import datetime
+from cachetools import TTLCache, cached
 
 
 class CreditManager(object):
@@ -11,13 +12,13 @@ class CreditManager(object):
 
     .. code-block:: python
 
-        from arcgis.gis import GIS
-        gis = GIS(profile='agol_account')
-        cm = gis.admin.credits
-        cm.allocate("user1", 100)
+        >>> from arcgis.gis import GIS
 
+        >>> gis = GIS(profile='your_online_admin_account')
+        >>> cm = gis.admin.credits
+        >>> cm
 
-
+        <arcgis.gis.admin._creditmanagement.CreditManager object at 0x...>
     """
 
     _gis = None
@@ -100,6 +101,14 @@ class CreditManager(object):
 
         :return: Boolean. True if successful else False
 
+        .. code-block:: python
+
+            # Usage Example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> credit_mgr = gis.admin.credits
+            >>> credit_mgr.allocate("gis_editor", 250)
         """
         if hasattr(username, "username"):
             username = getattr(username, "username")
@@ -119,7 +128,7 @@ class CreditManager(object):
     # ----------------------------------------------------------------------
     def deallocate(self, username: str):
         """
-        Allows organization administrators to set credit limit to umlimited for
+        Allows organization administrators to set credit limit to unlimited for
         organizational users in ArcGIS Online
 
         ===========================     ====================================================================
@@ -141,6 +150,7 @@ class CreditManager(object):
         return res
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=10, ttl=900))
     def credit_usage(
         self,
         start_time: Optional[datetime.datetime] = None,
@@ -160,14 +170,51 @@ class CreditManager(object):
                               to look for credit consumption. It needs to be
                               at least 1 day previous than then start_time.
         -------------------   -----------------------------------------------
-        time_frame            Optional string. is the timeframe report to create.
-                              Allowed values: today, week (default), 14days, 30days,
-                              60days, 90days, 6months, year
+        time_frame            Optional string. The time frame to create the
+                              report for.
 
-                              If end_time is specified, this parameter is ignored.
+                              Allowed values:
+
+                              * *today*
+                              * *week* (default)
+                              * *7days*
+                              * *14days*
+                              * *30days*
+                              * *60days*
+                              * *90days*
+                              * *6months*
+                              * *year*
+
+                              .. note::
+                                  If *end_time* is provided, this parameter
+                                  is ignored.
         ===================   ===============================================
 
         returns: dictionary
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> import datetime as dt
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_online_admin_profile")
+
+            >>> credit_mgr = gis.admin.credits
+
+            >>> start_date = dt.datetime(2024, 1, 4, 9)
+            >>> end_date = dt.datetime(2024, 1, 2, 9)
+
+            >>> usage_report_dict = credit_mgr.credit_usage(start_time=start_date,
+                                                            end_time=end_date)
+            >>> usage_report_dict
+
+            {'intnotebks': 11.9,
+             'schdnotebks': 2.225,
+             'geocode': 167.67,
+             'tiles': 0.588,
+             ...
+             'spanalysis': 368.69302}
         """
         from ..._impl.common._utils import local_time_to_online
 

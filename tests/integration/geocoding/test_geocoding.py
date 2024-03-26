@@ -1,6 +1,4 @@
 import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
 import os
 import sys
 import json
@@ -18,6 +16,7 @@ from arcgis.geocoding import (
     reverse_geocode,  #
     suggest,
 )  #
+from utils.decorators import integration_test
 
 # gis = GIS(profile='your_online_profile')
 # lyr = gis.content.search("owner:andrew57", "Feature Layer")[0]
@@ -41,7 +40,10 @@ profiles = [
     None,
     "your_kubernetes_profile",
 ]
+
+
 ###########################################################################
+@integration_test
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
         import tempfile
@@ -92,6 +94,7 @@ class TestAnalyzeGeocodingInput(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestGeocoder(unittest.TestCase):
     """test the geocoder operations"""
 
@@ -125,7 +128,7 @@ class TestGeocoder(unittest.TestCase):
             else:
                 print(f"{p} has no geocoders")
 
-    #######################################################################
+    ########################################################################
 
     def test_create_geocoder_from_server(self):
         """tests creating a service from the sample server 6 endpoint"""
@@ -276,9 +279,10 @@ class TestGeocoder(unittest.TestCase):
                 as_featureset=False,
             )
             g_fs = geocode(address=address, as_featureset=True)
+            suggestion = suggest(text="Cedar ", location="-82.971625,39.965386")
             g_magic_key = geocode(
-                address="",
-                magic_key="dHA9MSNubT1TdGFyYnVja3Mjc3o9LTExNy4xOTY6MzQuMDU1OTk5OTk5OTk5OTk3I2NzPTcw",
+                address=suggestion["suggestions"][0]["text"],
+                magic_key=suggestion["suggestions"][0]["magicKey"],
             )
             assert g_magic_key
             assert g1
@@ -480,7 +484,7 @@ class TestGeocoder(unittest.TestCase):
                     assert bc_ent
                     assert len(bc_ent) > 0
 
-    #######################################################################
+    ########################################################################
     def test_batch_geocode_list(self):
         """tests the batch geocoding operation via list of strings"""
         addresses_dict = [

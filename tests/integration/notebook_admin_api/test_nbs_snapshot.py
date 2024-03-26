@@ -2,6 +2,7 @@ import unittest
 import os, json, uuid
 from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer
+from utils.decorators import integration_test
 
 try:
     url = "https://datasciencedev.esri.com/portal"
@@ -90,6 +91,7 @@ notebook_json = {
 
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+@integration_test
 class TestNBS109SnapShotManger(unittest.TestCase):
     """Tests the SnapshotManager and SnapShot classes for Notebook Server"""
 

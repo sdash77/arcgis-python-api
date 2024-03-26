@@ -430,7 +430,8 @@ class TaskManager(object):
         active            Optional Bool. Queries tasks based on active status.
         ----------------  -------------------------------------------------------------------------------
         types             Optional String. The type of notebook execution for the item.  This can be
-                          ``ExecuteNotebook``, or ``UpdateInsightsWorkbook``.
+                          ''ExecuteNotebook'', ''UpdateInsightsWorkbook'', ''ExecuteSceneCook'',
+                          ''ExecuteWorkflowManager''. ''ExecuteReport'', or ''GPService''.
         ================  ===============================================================================
 
         :return: List of :class:`~arcgis.gis.tasks.Task` objects
@@ -475,32 +476,40 @@ class TaskManager(object):
         end_date: datetime.datetime | None = None,
         title: str | None = None,
         parameters: dict | None = None,
+        task_url: str | None = None,
     ) -> Task:
         """
-        Creates a new scheduled task for a notebook `Item`.
+        Creates a new scheduled task.
 
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The item to schedule a task on.
+        item                   Required :class:`~arcgis.gis.Item`. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------
         cron                   Required String. The CRON statement. This should be in the from of:
 
                                `<minute> <hour> <day of month> <month> <day of week>`
 
-                               Example to run a task weekly, use: `0 0 * * 0`
+                               Example to run a task weekly, use: `0 0 * * 0`.
+
+                               .. note::
+                                   See `cron <https://en.wikipedia.org/wiki/Cron#Overview>`_ for
+                                   details on valid values and meanings for symbols.
         ------------------     --------------------------------------------------------------------
-        task_type              Required String. The type of task, either executing a notebook or
-                               updating an Insights workbook, that will be executed against the
-                               specified item.  For notebook server tasks use ``ExecuteNotebook``,
-                               for Insights notebook use: ``UpdateInsightsWorkbook``. Use
-                               ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
-                               to run workflow manager tasks.
-                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
-                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
-                               `GPService`
+        task_type              Required String. The type of task that will be executed against the
+                               specified _item_.
+
+                               Values:
+
+                               * `ExecuteNotebook`
+                               * `UpdateInsightsWorkbook`
+                               * `ExecuteSceneCook`
+                               * `ExecuteWorkflowManager`
+                               * `ExecuteReport`,
+                               * `GPService`
+                               * `RunDataPipeline`
         ------------------     --------------------------------------------------------------------
-        occurences             Optional Integer. The total number of instance that can run at a single time.
+        occurences             Optional Integer. The maximum number of times the task will run.
         ------------------     --------------------------------------------------------------------
         start_date             Optional Datetime. The begin date for the task to run.
         ------------------     --------------------------------------------------------------------
@@ -508,20 +517,31 @@ class TaskManager(object):
         ------------------     --------------------------------------------------------------------
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------
-        parameters             Optional Dict. Optional collection of Key/Values that will be given
-                               to the task.  The dictionary will be added to the task run
-                               request. This parameter is required for ``ExecuteSceneCook`` tasks.
+        parameters             Optional Dict. Optional collection of Key/Value pairs that will be
+                               added to the task run request.
 
-                               Example:
+                               .. note::
+                                   Required when *task_type* argument is *ExecuteSceneCook*
 
-                                   | {
-                                   |    "service_url": <scene service URL>,
-                                   |    "num_of_caching_service_instances": 2, (2 instances are required)
-                                   |    "layer": "{<list of scene layers to cook>}", //The default is all layers
-                                   |    "update_mode": "PARTIAL_UPDATE_NODES"
-                                   | }
+                               .. code-block:: python
 
+                                   >>> task_mgr = gis.users.me.tasks
+                                   >>> task_output = task_mgr.create(
+                                                             ...
+                                                             parameters = {
+                                                                   "service_url": <scene service URL>,
+                                                                   "num_of_caching_service_instances": 2, (2 instances are required)
+                                                                   "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                                                   "update_mode": "PARTIAL_UPDATE_NODES"
+                                                                },
+                                                            ...
+                                                        )
+        ------------------     --------------------------------------------------------------------
+        task_url               Optional String. The URL of the task of an asynchronous
+                               geoprocessing service on any of the federated servers of your portal.
 
+                               .. note::
+                                   Required when *task_type* argument is *GPService*
         ==================     ====================================================================
 
         :return:
@@ -554,6 +574,8 @@ class TaskManager(object):
             "dayOfWeek": None,
             "maxOccurrences": occurences,
         }
+        if task_url:
+            params["taskURL"] = task_url
         if isinstance(item, Item):
             params["itemId"] = item.itemid
         else:
@@ -584,7 +606,12 @@ class TaskManager(object):
                 }
             )
         if parameters:
-            params["parameters"] = json.dumps(parameters)
+            if params["type"] == "ExecuteNotebook":
+                params["parameters"] = json.dumps(
+                    {"notebookParameters": parameters, "saveInjectedParameters": True}
+                )
+            else:
+                params["parameters"] = json.dumps(parameters)
         res = self._gis._con.post(url, params)
 
         if "success" in res and res["success"]:

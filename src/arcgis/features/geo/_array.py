@@ -100,7 +100,11 @@ def _binary_predicate(name, left, right, *args, **kwargs):
     if isinstance(right, Geometry):
         data = np.empty(len(left), dtype=bool)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else left.na_value
+            (
+                getattr(s, name)(right, *args, **kwargs)
+                if s is not None
+                else left.na_value
+            )
             for s in left
         ]
         return data
@@ -112,9 +116,11 @@ def _binary_predicate(name, left, right, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=bool)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else False
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else False
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return data
@@ -132,14 +138,14 @@ def _binary_op(name, left, right=None, *args, **kwargs):
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(*args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(*args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return data
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(right, *args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return data
@@ -151,9 +157,11 @@ def _binary_op(name, left, right=None, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else null_value
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else null_value
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return data
@@ -171,14 +179,14 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(*args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(*args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return GeoArray(data)
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(s, name)(right, *args, **kwargs) if s is not None else null_value
+            (getattr(s, name)(right, *args, **kwargs) if s is not None else null_value)
             for s in left
         ]
         return GeoArray(data)
@@ -190,9 +198,11 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
         data[:] = [
-            getattr(this_elem, name)(other_elem, *args, **kwargs)
-            if not (this_elem is None or other_elem is None)
-            else null_value
+            (
+                getattr(this_elem, name)(other_elem, *args, **kwargs)
+                if not (this_elem is None or other_elem is None)
+                else null_value
+            )
             for this_elem, other_elem in zip(left, right)
         ]
         return GeoArray(data)
@@ -257,7 +267,10 @@ class GeoArray(ExtensionArray):
 
     def _validate_data(self):
         data = self.data
-        check = np.where(self.data != None)[0]
+        if isinstance(self.data, GeoArray):
+            check = np.where(self.data.to_numpy() != None)[0]
+        else:
+            check = np.where(self.data != None)[0]
         if len(check) > 0:
             vindx = check[0]
             if isinstance(data[vindx], Geometry) == False:
@@ -302,6 +315,8 @@ class GeoArray(ExtensionArray):
         """Checks if the Geometries are Equal"""
         if isinstance(other, Geometry):
             return self.equals(other) == False
+        elif other is None:
+            return True
         else:
             raise ValueError("Input must be a arcgis.geometry.Geometry")
 

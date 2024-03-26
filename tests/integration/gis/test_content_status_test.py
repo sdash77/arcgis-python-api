@@ -3,11 +3,13 @@ from unittest.mock import MagicMock, Mock
 from arcgis.gis import GIS, Item
 from arcgis import env
 from arcgis.mapping import WebMap
+from utils.decorators import integration_test
 
 PROFILES = ["your_enterprise_profile", "your_online_profile"]
 
 
 ###########################################################################
+@integration_test
 class TestItemContentStatus(unittest.TestCase):
     """Tests the Item Content Status Property"""
 
@@ -55,7 +57,7 @@ class TestItemContentStatus(unittest.TestCase):
 
         wm = WebMap()
         item = wm.save({"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"})
-        item.share(everyone=True)
+        item.sharing.sharing_level = "EVERYONE"
         with self.assertRaises(Exception) as context:
             item.content_status = "public_authoritative"
         item.protect(False)
@@ -70,7 +72,7 @@ class TestItemContentStatus(unittest.TestCase):
             item = wm.save(
                 {"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"}
             )
-            item.share(everyone=True)
+            item.sharing.sharing_level = "EVERYONE"
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status

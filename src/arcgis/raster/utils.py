@@ -268,7 +268,6 @@ def publish_hosted_imagery_layer(
 
                                                     {"outSR": {spatial reference}}
 
-
                                              - Upload Properties (upload_properties): ``upload_properties`` key can be used to control specific upload parameters when trying to create hosted imagery layers in ArcGIS Online from local raster datasets.
 
                                                Available options:
@@ -306,7 +305,12 @@ def publish_hosted_imagery_layer(
                                                 |                        "minRegionSize":100},
                                                 | "defineNodata":True,                                            
                                                 | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                                | "buildOverview":True}
+                                                | "buildOverview":True
+
+
+                                             .. note:: 
+                                                 To define NoData values for ``ONE_IMAGE`` case when the input is a single raster, use the following:
+                                                 {"noData": "1 255;2 0;3 255"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` . The GIS on which this function runs.
                                              If not specified, the active GIS is used.

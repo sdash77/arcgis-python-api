@@ -1,9 +1,4 @@
-import sys, os
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9202\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_issue_9202\tests")
-sys.path.insert(2, r"C:\SVN\geosaurus_issue_9202\tests\integration")
-
+import os
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock
@@ -29,6 +24,7 @@ from arcgis.gis import (
 )
 from arcgis.gis._impl._jb import StatusJob
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 profiles = ["your_kubernetes_profile"]
 # ['your_online_profile', 'your_enterprise_profile', 'your_kubernetes_profile']  # profile names go here
@@ -69,6 +65,7 @@ except:
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -94,7 +91,9 @@ class TestGroupImportExport(unittest.TestCase):
                 title="export_test_group", tags="a,b,c"
             )
             isinstance(pitem, Item)
-            pitem.share(groups=[new_group])
+            gm = pitem.sharing.groups
+            gm.add(new_group)
+
             epk_file = new_group.migration.create(
                 items=[pitem], future=True
             )  # SHould Return an StatusJob
@@ -126,7 +125,8 @@ class TestGroupImportExport(unittest.TestCase):
                 title="export_test_group", tags="a,b,c"
             )
             isinstance(pitem, Item)
-            pitem.share(groups=[new_group])
+            gm = pitem.sharing.groups
+            gm.add(new_group)
 
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
@@ -138,6 +138,7 @@ class TestGroupImportExport(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
 
@@ -167,11 +168,12 @@ class TestImport2Group(unittest.TestCase):
                 title="export_test_group", tags="a,b,c"
             )
             isinstance(pitem, Item)
-            pitem.share(groups=[new_group])
+            gm = pitem.sharing.groups
+            gm.add(new_group)
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
             )  # SHould Return an Item
-            export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
+            export_package_file = epk_file.download()
             assert isinstance(epk_file, Item)
             assert pitem.delete()
 
@@ -207,8 +209,9 @@ class TestImport2Group(unittest.TestCase):
                 },
                 data=export_package_file,
             )
+            gm = new_item.sharing.groups
+            gm.add(group_dest)
 
-            new_item.share(groups=[group_dest])
             m = group_dest.migration
             print("inspecting")
             inspection = m.inspect(new_item)
@@ -248,7 +251,8 @@ class TestImport2Group(unittest.TestCase):
                 title="export_test_group", tags="a,b,c"
             )
             isinstance(pitem, Item)
-            pitem.share(groups=[new_group])
+            gm = pitem.sharing.groups
+            gm.add(new_group)
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
             )  # SHould Return an Item
@@ -289,7 +293,8 @@ class TestImport2Group(unittest.TestCase):
             new_group = gis.groups.create(
                 title="export_test_group", tags="a,b,c"
             )
-            pitem.share(groups=[new_group])
+            gm = pitem.sharing.groups
+            gm.add(new_group)
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
             )  # SHould Return an Item
@@ -306,8 +311,9 @@ class TestImport2Group(unittest.TestCase):
             new_group = gis.groups.create(
                 title="export_test_group2342", tags="a,b,c"
             )
+            gm = epk_file.sharing.groups
+            gm.add(new_group)
 
-            epk_file.share(groups=[new_group])
             m = new_group.migration
             assert isinstance(m, GroupMigrationManager)
             res = m.inspect(epk_file)
@@ -329,6 +335,7 @@ class TestImport2Group(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroup(unittest.TestCase):
     """
     Tests the `Group` class operations
@@ -374,6 +381,7 @@ class TestGroup(unittest.TestCase):
                 firstname="firstname",
                 lastname="last_name",
                 email="pythonapi@esri.com",
+                role="admin",
             )
             group.add_users(usernames=[user.username])
             assert isinstance(group.get_members(), dict)
@@ -409,6 +417,7 @@ class TestGroup(unittest.TestCase):
                 firstname="firstname",
                 lastname="last_name",
                 email="pythonapi@esri.com",
+                role="admin",
             )
             group.add_users(usernames=[user.username])
             group.reassign_to(target_owner=user.username)
@@ -438,6 +447,7 @@ class TestGroup(unittest.TestCase):
                 firstname="firstname",
                 lastname="last_name",
                 email="pythonapi@esri.com",
+                role="admin",
             )
             group.add_users(usernames=[user.username])  # adds a new user.
             assert group.reassign_to(
@@ -450,6 +460,7 @@ class TestGroup(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupApplication(unittest.TestCase):
     """
     Tests the `GroupApplication` class operations
@@ -470,6 +481,7 @@ class TestGroupApplication(unittest.TestCase):
                 firstname="firstname",
                 lastname="last_name",
                 email="pythonapi@esri.com",
+                role="admin",
             )
 
             user.reset(
@@ -550,6 +562,7 @@ class TestGroupApplication(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupManager(unittest.TestCase):
     """
     Tests the `GroupManager` class operations

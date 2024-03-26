@@ -11,6 +11,8 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from pathlib import Path
 import datetime
+from utils.decorators import integration_test
+import tempfile
 
 # region PreCondition check
 test_skip = False
@@ -50,6 +52,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_ResourceManager_portal(unittest.TestCase):
     """
     Test to check if a ResourceManager object works with builtin portal
@@ -550,41 +553,32 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # Download both json and png files to disk overriding defaults
         try:
-            # create a timestamped folder to download this file
-            output_folder = os.path.join(
-                self.qalab_output_root + self.qalab_cls_name,
-                self._testMethodName,
-                self.time_stamp,
-            )
-            os.makedirs(
-                output_folder, exist_ok=True
-            )  # create intermediate dirs as necessary. If it exists use it.
+            with tempfile.TemporaryDirectory() as output_folder:
+                fld_png = res_mgr.get(
+                    "fld/set2_fld_bin_res_file.png",
+                    out_folder=output_folder,
+                    out_file_name="a_sequoias_seed_is_tiny.png",
+                )
+                fld_json = res_mgr.get(
+                    "fld/root_resource_file.json",
+                    try_json=False,
+                    out_folder=output_folder,
+                    out_file_name="as_its_a_type_of_pine.json",
+                )
+                self.assertIsNotNone(fld_png, "Got none when getting png resource file")
+                self.assertIsNotNone(fld_json, "Got none when getting json resource file")
+                self.assertTrue(
+                    "a_sequoias_seed_is_tiny.png" in fld_png,
+                    "png file does not download with custom name",
+                )
+                self.assertTrue(
+                    output_folder in fld_png, "png file does not download to custom dir"
+                )
 
-            fld_png = res_mgr.get(
-                "fld/set2_fld_bin_res_file.png",
-                out_folder=output_folder,
-                out_file_name="a_sequoias_seed_is_tiny.png",
-            )
-            fld_json = res_mgr.get(
-                "fld/root_resource_file.json",
-                try_json=False,
-                out_folder=output_folder,
-                out_file_name="as_its_a_type_of_pine.json",
-            )
-            self.assertIsNotNone(fld_png, "Got none when getting png resource file")
-            self.assertIsNotNone(fld_json, "Got none when getting json resource file")
-            self.assertTrue(
-                "a_sequoias_seed_is_tiny.png" in fld_png,
-                "png file does not download with custom name",
-            )
-            self.assertTrue(
-                "geosaurus" in fld_png, "png file does not download to custom dir"
-            )
-
-            self.assertTrue(
-                "as_its_a_type_of_pine.json" in fld_json,
-                "json file does not download with custom name",
-            )
+                self.assertTrue(
+                    "as_its_a_type_of_pine.json" in fld_json,
+                    "json file does not download with custom name",
+                )
 
         except AssertionError as assertErrorException:
             test_skip = True

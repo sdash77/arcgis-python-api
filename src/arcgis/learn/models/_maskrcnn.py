@@ -320,8 +320,12 @@ class MaskRCNN(ArcGISModel):
             and "timm" not in self._backbone.__module__
         ):
             model = models.detection.maskrcnn_resnet50_fpn(
-                pretrained=pretrained_backbone,
-                pretrained_backbone=False,
+                weights=(
+                    models.detection.MaskRCNN_ResNet50_FPN_Weights.DEFAULT
+                    if pretrained_backbone
+                    else None
+                ),
+                weights_backbone=None,
                 min_size=1.5 * data.chip_size,
                 max_size=2 * data.chip_size,
                 **self.maskrcnn_kwargs,
@@ -385,8 +389,21 @@ class MaskRCNN(ArcGISModel):
                             torch.nn.Sequential(*backbone_fpn.children())
                         )
             else:
+                ## warning_fix 'pretrained' replaced with 'weights'
                 backbone_fpn = resnet_fpn_backbone(
-                    self._backbone.__name__, pretrained=pretrained_backbone
+                    backbone_name=self._backbone.__name__,
+                    weights=(
+                        getattr(
+                            models,
+                            [
+                                i
+                                for i in dir(models)
+                                if i.lower() == self._backbone.__name__ + "_weights"
+                            ][0],
+                        ).DEFAULT
+                        if pretrained_backbone
+                        else None
+                    ),
                 )
             if self._is_multispectral:
                 backbone_fpn = _change_tail(backbone_fpn, data)
@@ -689,9 +706,9 @@ class MaskRCNN(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
+            )
         _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
