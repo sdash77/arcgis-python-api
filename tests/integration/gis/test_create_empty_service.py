@@ -7,6 +7,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.gis import GIS, Item
 from arcgis.gis import CreateServiceParameter
 from arcgis.gis._impl import ServiceTypeEnum
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -24,6 +25,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestCreateEmptyService(unittest.TestCase):
     def test_service_type_enum(self):
         assert ServiceTypeEnum.FEATURE_SERVICE.value == "featureService"

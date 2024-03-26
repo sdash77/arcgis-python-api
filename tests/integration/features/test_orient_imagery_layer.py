@@ -12,6 +12,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
 )
+from utils.decorators import integration_test
 from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
@@ -35,6 +36,7 @@ QA_LABS = QALAB_ROOT_PATH + r"\oriented_image_layer"
 DATASET = "OI_sample.gdb.zip"
 
 
+@integration_test
 class TestOrientedImageryLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

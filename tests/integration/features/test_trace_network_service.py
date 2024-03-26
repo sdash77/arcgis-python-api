@@ -1,6 +1,7 @@
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._trace import TraceNetworkManager
+from utils.decorators import integration_test
 
 gis = GIS(
     "https://utilitynetwork.esri.com/portal",
@@ -24,6 +25,7 @@ except:
 
 
 @unittest.skipIf(module_skip, "No Trace Network Service Found. Skipping Test.")
+@integration_test
 class TestTraceNetworkManager(unittest.TestCase):
     """Tests the Trace Network Service"""
 

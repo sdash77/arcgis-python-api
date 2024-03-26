@@ -7,10 +7,12 @@ import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import OGCCollection, OGCFeatureService
 from collections.abc import Iterable as _Iterable
+from utils.decorators import integration_test
 
 ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
 
 
+@integration_test
 class TestOGCFS(unittest.TestCase):
     """Tests working with a OGC FS and Layer"""
 

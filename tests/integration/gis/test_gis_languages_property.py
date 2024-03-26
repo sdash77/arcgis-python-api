@@ -1,6 +1,7 @@
 import sys, uuid
 import unittest
 from arcgis.gis import GIS, UserManager, User
+from utils.decorators import integration_test
 
 profiles = [
     None,
@@ -11,6 +12,7 @@ VERIFY_CERT = False
 TRUST_ENV = True
 
 
+@integration_test
 class TestLanguagesRegionEndpoint(unittest.TestCase):
     def test_languages(self):
         """tests getting the languages registered with the enterprise"""

@@ -24,11 +24,13 @@ else:
     SKIPME = True
     msg = "Configuration file not found."
 
+from utils.decorators import integration_test
 
 # @unittest.skipIf(SKIPME == True, reason=msg)
 @unittest.skipIf(
     WINDOWS == False or SKIPME == True, "Operating System is not Windows"
 )
+@integration_test
 class TestStandAloneServer(unittest.TestCase):
     def test_server_login_generateToken(self):
         """tests a basic login of server"""

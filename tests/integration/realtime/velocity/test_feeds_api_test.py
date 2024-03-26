@@ -8,6 +8,7 @@ from arcgis.realtime.velocity.http_authentication_type import (
     BasicAuth,
     CertificateAuth,
 )
+from utils.decorators import integration_test
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -23,6 +24,7 @@ except:
 
 
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
+@integration_test
 class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
