@@ -1,9 +1,5 @@
 import sys
 import time
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_sharing_manager_redo\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy

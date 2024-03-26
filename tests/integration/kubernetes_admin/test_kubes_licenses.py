@@ -1,6 +1,3 @@
-#import sys
-#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
-
 import unittest
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser

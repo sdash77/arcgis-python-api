@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import logging
 import unittest
 import pandas as pd

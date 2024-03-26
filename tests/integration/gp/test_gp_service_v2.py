@@ -1,8 +1,4 @@
-import sys
 import types
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7160\src")
-
 import unittest
 from arcgis.gis import GIS
 from arcgis.geoprocessing import GPService, GPTask, GPJob

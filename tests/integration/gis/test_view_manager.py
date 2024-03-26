@@ -1,6 +1,4 @@
 import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_10692\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy

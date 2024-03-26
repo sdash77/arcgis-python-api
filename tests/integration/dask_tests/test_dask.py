@@ -1,8 +1,6 @@
-import sys, os
+import os
 import random
 import tempfile
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10329\src")
 import pandas as pd
 import unittest  # pytest,
 import dask.dataframe as dd

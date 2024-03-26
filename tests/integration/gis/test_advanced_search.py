@@ -1,5 +1,4 @@
 import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy

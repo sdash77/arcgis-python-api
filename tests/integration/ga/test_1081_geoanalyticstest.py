@@ -1,7 +1,4 @@
 import os
-import sys
-
-# sys.path.insert(0, r"c:\SVN\achapkowski_geosaurus_fork_issue_2641\src")
 import unittest
 import pandas as pd
 from pandas import Timestamp

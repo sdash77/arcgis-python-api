@@ -1,7 +1,6 @@
-import sys, os
+import os
 import random
 import tempfile
-#sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\src")
 import pandas as pd
 import unittest #pytest,
 import dask.dataframe as dd

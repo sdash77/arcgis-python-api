@@ -1,5 +1,3 @@
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap

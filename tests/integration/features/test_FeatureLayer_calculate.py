@@ -1,10 +1,6 @@
 import os
-import sys
 import unittest
 import concurrent.futures
-
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_fl_108_calculate\src")
 from arcgis.gis import GIS, ContentManager
 from arcgis.features import FeatureLayer
 from utils.decorators import integration_test

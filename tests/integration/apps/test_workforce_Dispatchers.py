@@ -2,9 +2,6 @@
 # Name:        Workforce Dispatchers tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import (
     PreconditionChecks,
