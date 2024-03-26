@@ -10996,7 +10996,7 @@ def zonal_geometry_as_table(
     **kwargs,
 ):
     """
-    Function calculates the geometry measures (area, perimeter, thickness, and the characteristics of an ellipse) for each 
+    Function calculates the geometry measures (area, perimeter, thickness, and the characteristics of an ellipse) for each
     zone in a dataset and reports the results as a table.
 
     .. note::
