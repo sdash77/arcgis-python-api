@@ -4,12 +4,10 @@
 # -------------------------------------------------------------------------------
 import unittest
 import os
-import sys
-
-# sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -51,6 +49,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_WebMap_OMA_AGO(unittest.TestCase):
     """
     Test to check if a ImageryLayer object works with builtin portal

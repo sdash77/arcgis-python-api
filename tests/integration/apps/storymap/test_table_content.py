@@ -1,14 +1,13 @@
-import sys
-
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Table, Text
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestTableContent(unittest.TestCase):
     """Test adding a table and editing"""
 

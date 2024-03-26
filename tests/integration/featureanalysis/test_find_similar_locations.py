@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.find_locations import find_similar_locations
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = [
     "00fbc412f68645958520d946806f90c0",  # Tennessee Town
@@ -21,6 +22,7 @@ stage_data(test_items)
 # throw an exception until overwriting has been implemented.
 
 
+@integration_test
 class TestFindSimilarLocations(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection

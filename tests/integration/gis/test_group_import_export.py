@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import os
 import unittest
 
@@ -15,6 +12,7 @@ from arcgis.gis import (
     GroupMigrationManager,
 )
 from arcgis.gis._impl._jb import StatusJob
+from utils.decorators import integration_test
 
 
 try:
@@ -41,6 +39,7 @@ except:
 # @unittest.skipIf(SKIPIT, "cannot connect to the GIS")
 
 
+@integration_test
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -104,6 +103,7 @@ class TestGroupImportExport(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(SKIPIT, "cannot connect to the GIS")
+@integration_test
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
 

@@ -5,6 +5,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.analysis import aggregate_points
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 # from arcgis.gis import ProfileManager
 
@@ -1796,6 +1797,7 @@ setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
 
+@integration_test
 class TestAggregatePoints(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""

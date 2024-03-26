@@ -1,6 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 from arcgis.auth.tools._util import detect_proxy
 
 import platform
@@ -58,10 +55,12 @@ try:
 except:
     WINDOWS = False
 
+from utils.decorators import integration_test
 
 @unittest.skipIf(
     WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
 )
+@integration_test
 class TestWinAuth(unittest.TestCase):
     def test_win_auth(self):
         gis = GIS(url=iwa_url, password=iwa_pw, username=iwa_user)

@@ -23,6 +23,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+import datetime as _dt
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -15633,7 +15634,7 @@ class Item(dict):
             return results
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=60))
+    @cached(cache=TTLCache(maxsize=255, ttl=900))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
 

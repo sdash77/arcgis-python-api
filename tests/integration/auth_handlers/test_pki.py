@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import os
 import tempfile
 import unittest
@@ -42,8 +39,11 @@ except:
     SKIP = True
     msg = "COULD NOT DOWNLOAD THE PKI CERTIFICATE"
 
+from utils.decorators import integration_test
+
 
 @unittest.skipIf(SKIP or SKIPME, msg)
+@integration_test
 class TestPKISession(unittest.TestCase):
     """Tests the PKI Security on Enterprise Configuration"""
 

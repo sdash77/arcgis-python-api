@@ -1,12 +1,10 @@
 import os
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_1537\src")
 import unittest
 import pandas as pd
 from pandas import Timestamp
 from arcgis.gis import GIS
 from arcgis.geoanalytics.summarize_data import describe_dataset
+from utils.decorators import integration_test
 
 try:
     url = "https://gpportal.esri.com/portal"
@@ -3312,6 +3310,7 @@ test_data = {
 
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, reason="Cannot connect to the GIS")
+@integration_test
 class TestGAProcessInfoTool(unittest.TestCase):
     def test_process_info(self):
         """Runs Describe Data to Test Processing Info Addition"""

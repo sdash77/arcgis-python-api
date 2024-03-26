@@ -11,6 +11,7 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from pathlib import Path
 import datetime
+from utils.decorators import integration_test
 import tempfile
 
 # region PreCondition check
@@ -51,6 +52,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_ResourceManager_portal(unittest.TestCase):
     """
     Test to check if a ResourceManager object works with builtin portal

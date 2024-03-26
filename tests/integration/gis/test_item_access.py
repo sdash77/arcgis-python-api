@@ -1,13 +1,12 @@
-import sys
-
-sys.path.insert(0, r"YOUR PATH HERE")
 from arcgis.gis import GIS
 import unittest
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
 ###########################################################################
+@integration_test
 class TestItemAccess(unittest.TestCase):
     """
     Ensures item access is updated properly through content.add() and
