@@ -6,8 +6,11 @@ import uuid
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
 
+from utils.decorators import integration_test
+
 
 @unittest.skipIf(detect_proxy() is None, "no proxy")
+@integration_test
 class TestOauth2WithProxy(unittest.TestCase):
     """
     When a Proxy is Enabled this UnitTest tests the login method of the EsriOAuth2Auth class

@@ -10,7 +10,10 @@ from arcgis.auth import EsriGenTokenAuth
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestBuiltIn(unittest.TestCase):
     """tests the username/password with ago and enterprise"""
 

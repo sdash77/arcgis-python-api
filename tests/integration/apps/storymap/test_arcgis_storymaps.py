@@ -6,10 +6,11 @@ from arcgis.apps.storymap import StoryMap, Themes
 from arcgis.apps.storymap import (
     Image,
 )
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
-
+@integration_test
 class TestStoryMap(unittest.TestCase):
     """Test Basic Story Map Methods"""
 

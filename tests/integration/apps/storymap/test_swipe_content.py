@@ -4,8 +4,10 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Image, Swipe
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestSwipe(unittest.TestCase):
     """Test Story Map Swipe content"""
 

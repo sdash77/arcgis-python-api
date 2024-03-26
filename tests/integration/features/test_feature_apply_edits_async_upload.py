@@ -11,6 +11,7 @@ import unittest
 from arcgis.features import FeatureLayer
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
@@ -38,6 +39,7 @@ def search_and_remove(gis):
         i.delete()
 
 
+@integration_test
 class TestEditFeaturesUpload(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

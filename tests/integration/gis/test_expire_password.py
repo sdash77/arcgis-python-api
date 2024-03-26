@@ -1,10 +1,12 @@
 import unittest
 from arcgis.gis import GIS, User, UserManager
 from integration.dino_utils.manage_test_profiles import create_test_profiles
+from utils.decorators import integration_test
 
 PROFILES = ["your_ent_admin_profile", "your_online_admin_profile"]
 
 
+@integration_test
 class TestUserExpirePassword(unittest.TestCase):
     """
     Tests the expire password logic

@@ -8,6 +8,7 @@ import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 import unittest
 import tempfile
+from utils.decorators import integration_test
 
 point_data = [
     {
@@ -2193,6 +2194,7 @@ tbl_data = [
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestSeDFOverwrite(unittest.TestCase):
     """tests the overwrite on the SeDF when creating a feature layer"""
 

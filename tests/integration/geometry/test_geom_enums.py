@@ -8,10 +8,12 @@ from arcgis.geometry import (
     LengthUnits,
     AreaUnits,
 )
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestGeometryServiceWithEnums(unittest.TestCase):
     def test_method_with_enum(self):
         for profile in PROFILES:

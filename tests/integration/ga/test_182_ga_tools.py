@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import Timestamp
 from arcgis.gis import GIS
 from arcgis.geoanalytics.summarize_data import describe_dataset
+from utils.decorators import integration_test
 
 try:
     url = "https://gpportal.esri.com/portal"
@@ -3312,6 +3313,7 @@ test_data = {
 
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, reason="Cannot connect to the GIS")
+@integration_test
 class TestGAProcessInfoTool(unittest.TestCase):
     def test_process_info(self):
         """Runs Describe Data to Test Processing Info Addition"""
