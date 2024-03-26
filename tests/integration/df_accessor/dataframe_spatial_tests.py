@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
 import unittest
 
 import datetime

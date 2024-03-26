@@ -1,8 +1,4 @@
 import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-#
-#  Update the Path to set the test area
 import json
 import os, uuid
 import tempfile

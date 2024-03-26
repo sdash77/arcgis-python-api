@@ -1,9 +1,4 @@
-import sys, os
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
-sys.path.insert(2, r"C:\SVN\geosaurus_master\tests\integration")
-
+import os
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock

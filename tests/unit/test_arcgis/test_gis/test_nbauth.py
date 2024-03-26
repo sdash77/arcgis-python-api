@@ -1,11 +1,8 @@
 import os
-import sys
 import json
 import tempfile
 import unittest
 from unittest import mock
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 from arcgis.gis._impl.nbauth import AESCipher, get_token
 
 # from arcgis.gis._impl._decrypt_nbauth import get_token, AESCipher

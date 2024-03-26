@@ -4,9 +4,6 @@
 # -------------------------------------------------------------------------------
 import unittest
 import os
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs

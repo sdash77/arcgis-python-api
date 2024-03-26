@@ -1,6 +1,4 @@
-import sys, json
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
+import json
 import unittest
 
 try:

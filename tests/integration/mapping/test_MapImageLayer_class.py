@@ -1,6 +1,3 @@
-import sys
-#sys.path.insert(0, r"<path_to_local>\geosaurus\src")
-
 import unittest
 
 from arcgis.features.layer import FeatureLayer

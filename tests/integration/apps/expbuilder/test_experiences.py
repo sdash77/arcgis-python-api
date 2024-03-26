@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"/Users/cowboy/GitHub/geosaurus/src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.expbuilder import WebExperience

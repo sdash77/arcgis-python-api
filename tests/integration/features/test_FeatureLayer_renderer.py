@@ -1,6 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_viz_take_3\src")
 import os
 import unittest
 from arcgis.gis import GIS, ContentManager
