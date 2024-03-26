@@ -1,10 +1,6 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
-
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
 import ssl
 from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled

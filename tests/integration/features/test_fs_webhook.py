@@ -1,9 +1,5 @@
 import os, uuid
 import unittest
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11333\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_issue_11333\tests")
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayerCollection
 from arcgis.features.managers import (

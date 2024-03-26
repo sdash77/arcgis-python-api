@@ -1,7 +1,4 @@
-import sys
 import concurrent.futures
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS

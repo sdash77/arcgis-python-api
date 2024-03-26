@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor

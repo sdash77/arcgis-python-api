@@ -4,8 +4,6 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import sys
-# sys.path.insert(0,r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS

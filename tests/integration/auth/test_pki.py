@@ -1,6 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import os
 import tempfile
 import unittest

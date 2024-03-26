@@ -1,10 +1,6 @@
 """
 Tests the functionality of the knowledge graph
 """
-
-import sys
-
-sys.path.insert(0, r"YOUR PATH HERE")
 import unittest
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
