@@ -97,6 +97,7 @@ def chunk_by_file_size(
                     yield bio
                 i += 1
     elif isinstance(fp, io.StringIO):
+        fp.seek(0)
         while True:
             bio = io.StringIO()
             data = bio.write(fp.read(size))
@@ -110,6 +111,7 @@ def chunk_by_file_size(
                 yield bio
             i += 1
     else:
+        fp.seek(0)
         while True:
             bio = io.BytesIO()
             data = bio.write(fp.read(size))

@@ -1,13 +1,13 @@
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Text, TextStyles, Button
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestTextContent(unittest.TestCase):
     """Test adding text and seeing properties"""
 
@@ -53,6 +53,13 @@ class TestTextContent(unittest.TestCase):
                 assert welcome.properties
                 assert park_quote.properties
 
+                paragraph = Text(
+                    text="This is a paragraph of text that is not styled.",
+                    style=TextStyles.PARAGRAPH,
+                    size = "large"
+                )
+                assert story.add(paragraph)
+                
                 item = gis.content.get(story._itemid)
                 assert item.delete()
 

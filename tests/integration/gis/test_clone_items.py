@@ -1,10 +1,4 @@
 import sys
-
-## Uncomment if running locally without install and update path
-##
-##sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_5988\src")
-##
-
 import os
 import json
 import uuid
@@ -12,6 +6,7 @@ import logging
 import tempfile
 import unittest
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -62,6 +57,7 @@ storymap_item_data = {
 }
 
 
+@integration_test
 class TestStoryMapCloning(unittest.TestCase):
     """Tests clone items for storymaps (2.0)"""
 

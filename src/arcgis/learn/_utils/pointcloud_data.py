@@ -1143,7 +1143,7 @@ def prepare_las_data(
                     block_size_,
                     2 * (xyz_max[0, -1] - xyz_min[0, -1]),
                 )
-                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(np.int)
+                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(int)
 
                 blocks, point_block_indices, block_point_counts = np.unique(
                     xyz_blocks, return_inverse=True, return_counts=True, axis=0
@@ -1194,7 +1194,7 @@ def prepare_las_data(
                             ],
                             axis=-1,
                         )
-                        block_point_indices[block_idx] = np.array([], dtype=np.int)
+                        block_point_indices[block_idx] = np.array([], dtype=int)
                         block_merge_count = block_merge_count + 1
                         break
 
@@ -1212,7 +1212,7 @@ def prepare_las_data(
                     block_points = xyz[point_indices]
                     block_min = np.amin(block_points, axis=0, keepdims=True)
                     xyz_grids = np.floor((block_points - block_min) / grid_size).astype(
-                        np.int
+                        int
                     )
                     grids, point_grid_indices, grid_point_counts = np.unique(
                         xyz_grids, return_inverse=True, return_counts=True, axis=0
@@ -3124,9 +3124,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
+            ufname = dl.dataset.path / dl.dataset.folder / ufname
             if ufname != current_file_name:
                 current_file_name = ufname
-                current_file_name = dl.dataset.path / dl.dataset.folder / ufname
                 h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
                 h5_file.close()

@@ -2,6 +2,8 @@ from unittest.mock import MagicMock
 
 from utils.mocks.mock_arcgisconnection import MockArcGISConnection
 
+from arcgis._impl.common._mixins import PropertyMap
+
 
 class MockFeatureLayer(MagicMock):
     _dynamic_layer = None
@@ -9,3 +11,20 @@ class MockFeatureLayer(MagicMock):
     url = "https://example.com/server/rest/services/Hosted/CamerTraps/FeatureServer"
     _url = url
     _con = MockArcGISConnection()
+    properties = PropertyMap(
+        {
+            "supportsAppend": True,
+            "supportedAppendFormats": [
+                "csv",
+                "excel",
+                "featureCollection",
+                "featureService",
+                "filegdb",
+                "geoPackage",
+                "geojson",
+                "jsonl",
+                "shapefile",
+                "sqlite",
+            ],
+        }
+    )

@@ -305,6 +305,16 @@ class Mission:
 
         return True
 
+    def reset(self):
+        """
+        The ``reset`` method resets the mission to its original state
+
+        :return: A boolean indicating whether the reset was successful or not
+        """
+        from arcgis.raster.orthomapping import reset_image_collection
+
+        return reset_image_collection(self, gis=self._gis)
+
     def add_image(
         self,
         input_rasters: list,

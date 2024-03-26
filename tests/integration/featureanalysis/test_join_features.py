@@ -6,6 +6,7 @@ from arcgis.features.layer import Table
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import join_features
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 data = [
     {
@@ -1803,6 +1804,7 @@ setup_profiles(
 stage_data(test_items)
 
 
+@integration_test
 class TestJoinFeatures(unittest.TestCase):
     def test_overwrite_layer(self):
         """tests overwriting an Item layer using the context param"""

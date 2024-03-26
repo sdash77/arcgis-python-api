@@ -7,7 +7,7 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 """
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import arcgis
 import json
 from arcgis.gis import GIS, Item
@@ -208,25 +208,19 @@ def _create_project(
     gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_" + name
-    if folder is not None:
-        if isinstance(folder, dict):
-            if "id" in folder:
-                folderId = folder["id"]
-                folder = folder["title"]
-        else:
-            owner = gis.properties.user.username
-            folderId = gis._portal.get_folder_id(owner, folder)
-        if folderId is None:
-            folder_item = gis.content.folders.create(folder, owner)
-            folder_dict = folder_item.properties
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+        folder = "_orthomapping " + name
+    owner = gis.properties.user.username
+    try:
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
@@ -2229,6 +2223,8 @@ def generate_orthomosaic(
     update_flight_json = False
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2508,7 +2504,7 @@ def generate_report(
 ## query camera info
 ###################################################################################################
 def query_camera_info(
-    camera_query: Optional[str] = None,
+    camera_query: Optional[Union[dict[str, Any], str]] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -2522,22 +2518,31 @@ def query_camera_info(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    camera_query           Required String. This is a SQL query statement that can
-                           be used to filter a portion of the digital camera
-                           database.
-                           Digital camera database can be queried using the fields Make, Model,
+    camera_query           Optional Dictionary or String. A dictionary or a string representing
+                           the SQL query statement to query the specifications of digital
+                           camera sensors that are used to capture drone images.
+                           The digital camera database can be queried using the fields Make, Model,
                            Focallength, Columns, Rows, PixelSize.
 
-                           Example:
-
-                            "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
 
     :return:
-        Data Frame representing the camera database
+        Dictionary/Data Frame representing the camera database
+
+    .. code-block:: python
+
+        # Example 1: Query camera properties for camera Rollei RCP-8325 in dictionary format.
+
+        camera_info = query_camera_info(camera_query={"Make":"Rollei", "Model":"RCP-8325"})
+
+
+        # Example 2: Query camera properties for camera Rollei RCP-8325 in string format.
+
+        camera_info = query_camera_info(camera_query="Make='Rollei' and Model='RCP-8325'")
+
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -2690,6 +2695,8 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2814,9 +2821,14 @@ class Project:
             try:
                 project = _create_project(name=project, definition=definition)
             except:
-                raise RuntimeError("Creation of orthompping project failed.")
+                raise RuntimeError("Creation of orthomapping project failed.")
 
-        self._project_item = project
+        if project.type == "Ortho Mapping Project":
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Ortho Mapping Project"
+            )
         try:
             self._project_name = self._project_item.title
         except:

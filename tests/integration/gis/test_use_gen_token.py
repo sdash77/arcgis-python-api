@@ -5,10 +5,12 @@ import sys
 import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestUseGenTokenGIS(unittest.TestCase):
     def test_use_gen_token_true_enterprise(self):
         """tests using the generate token"""

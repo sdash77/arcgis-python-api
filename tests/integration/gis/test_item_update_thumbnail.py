@@ -1,12 +1,9 @@
 import sys, json
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8288\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -64,6 +61,7 @@ webmap_data = {
 }
 
 
+@integration_test
 class TestUpdateThumbnail(unittest.TestCase):
     def test_update_thumbnail_url(self):
         """url image"""

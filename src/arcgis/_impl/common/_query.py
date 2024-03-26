@@ -53,9 +53,14 @@ def _common_query(
     time_reference_unknown_client: Optional[bool] = None,
     **kwargs,
 ):
+    query_3d = kwargs.pop("query_3d", False)
+    raw = False  # default to False
     # get url
-    if layer._is_3d:
+    # if raw is True it means it came from query 3D layer
+    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
         url = layer._url + "/query3D"
+        raw = True
+    # else query normal
     elif layer._dynamic_layer is None:
         url = layer._url + "/query"
     else:
@@ -103,6 +108,7 @@ def _common_query(
         parameter_values=parameter_values,
         format_3d_objects=format_3d_objects,
         time_reference_unknown_client=time_reference_unknown_client,
+        query_3d=query_3d,
         kwargs=kwargs,
     )
 
@@ -120,7 +126,7 @@ def _common_query(
     if as_df:
         return _query_df(layer, url, params)
     else:
-        return _query(layer, url, params)
+        return _query(layer, url, params, raw)
 
 
 def _create_parameters(
@@ -165,6 +171,7 @@ def _create_parameters(
     parameter_values,
     format_3d_objects,
     time_reference_unknown_client,
+    query_3d,
     **kwargs,
 ):
     # create parameters dictionary
@@ -197,8 +204,8 @@ def _create_parameters(
     # add required parameters
     params["where"] = where
 
-    # Add parameters for non 3D layers and for Tables
-    if layer._is_3d is False or is_layer is False:
+    # Add parameters for all non 3D querying
+    if query_3d is False:
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
         params["returnIdsOnly"] = return_ids_only
@@ -210,10 +217,10 @@ def _create_parameters(
         params["returnGeometry"] = return_geometry
         params["returnZ"] = return_z
         params["returnM"] = return_m
-        if layer._is_3d:
+        if getattr(layer, "_is_3d", None):
             # for 3D feature query
             if format_3d_objects:
-                params["formatFor3DObjects"] = format_3d_objects
+                params["formatOf3DObjects"] = format_3d_objects
 
     # convert out_fields to a comma separated string
     if isinstance(out_fields, (list, tuple)):
@@ -605,6 +612,7 @@ def _query_df(layer, url, params, **kwargs):
     df = pd.DataFrame.from_records(data=rows)
     if "SHAPE" in df.columns:
         df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        df.spatial.set_geometry("SHAPE")
     if "fields" in result:
         dtypes = {}
         names = []
@@ -623,8 +631,10 @@ def _query_df(layer, url, params, **kwargs):
     if dtypes:
         df = df.astype(dtypes)
 
-    if "SHAPE" in result:
-        df.spatial.set_geometry("SHAPE")
+    # set based on layer
+    df.spatial.renderer = layer.renderer
+    df.spatial._meta.source = layer.url
+
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:
             try:

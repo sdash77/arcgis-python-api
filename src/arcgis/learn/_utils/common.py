@@ -288,7 +288,7 @@ class ArcGISImageList(ImageList):
         try:
             labelval = [(func(o)) for o in self.items]
             if any(isinstance(el, list) for el in labelval):
-                total_sample = np.concatenate(np.array(labelval))
+                total_sample = np.concatenate(np.array(labelval, dtype=object))
             else:
                 total_sample = np.array(labelval)
             unique_sample = set(total_sample)
@@ -408,6 +408,40 @@ def get_color_array(color_mapping: dict, alpha=0.7):
 
 
 ## show_batch() show_results() helper functions start ##
+def check_path_or_url(input_str):
+    import re
+
+    # Regular expression pattern to match Windows path
+    windows_path_pattern = r'^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*$'
+
+    # Regular expression pattern to match URL
+    url_pattern = r"^(?:http|ftp)s?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$"
+
+    if re.match(windows_path_pattern, input_str):
+        return False
+    elif re.match(url_pattern, input_str):
+        return True
+    else:
+        return False
+
+
+def _get_hosted_dlpk(model):
+    try:
+        import arcpy
+        from arcgis.gis import GIS
+
+        desc = arcpy.env.workspace
+        model_definition = model
+        item_id = os.path.basename(model_definition).split(".")[0]
+        gis = GIS("home", set_active=False)
+        online_model = gis.content.get(item_id)
+        path = os.path.join(desc, online_model.name)
+        if not os.path.isfile(path):
+            online_model.download(save_path=desc, file_name=online_model.name)
+
+        return True, path
+    except Exception as e:
+        return False, e
 
 
 def to_torch_tensor(x):
