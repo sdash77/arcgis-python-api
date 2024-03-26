@@ -612,6 +612,7 @@ def _query_df(layer, url, params, **kwargs):
     df = pd.DataFrame.from_records(data=rows)
     if "SHAPE" in df.columns:
         df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        df.spatial.set_geometry("SHAPE")
     if "fields" in result:
         dtypes = {}
         names = []
@@ -629,9 +630,6 @@ def _query_df(layer, url, params, **kwargs):
                 dfields.append(fld["name"])
     if dtypes:
         df = df.astype(dtypes)
-
-    if "SHAPE" in result:
-        df.spatial.set_geometry("SHAPE")
 
     # set based on layer
     df.spatial.renderer = layer.renderer
