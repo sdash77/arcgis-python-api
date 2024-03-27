@@ -10,6 +10,7 @@ import json as _json
 from datetime import datetime as _datetime
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -28,6 +29,7 @@ from ._util import (
     _prevent_bds_item,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
