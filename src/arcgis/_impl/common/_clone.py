@@ -4068,15 +4068,17 @@ class _WebMapDefinition(_TextItemDefinition):
                 feature_collections = []
                 map_service_layers = []
                 vector_tile_layers = []
+                def _append_layer(layer_list, layer):
+                    if "layerType" in layer:
+                        if layer["layerType"] == "ArcGISFeatureLayer" and "url" in layer and layer["url"] is not None:
+                            layer_list.append(layer)
+                        elif layer["layerType"] == "GroupLayer":
+                            for sublayer in layer["layers"]:
+                                _append_layer(layer_list, sublayer)
+                    return layer_list
                 if "operationalLayers" in webmap_json:
-                    layers += [
-                        layer
-                        for layer in webmap_json["operationalLayers"]
-                        if "layerType" in layer
-                        and layer["layerType"] == "ArcGISFeatureLayer"
-                        and "url" in layer
-                        and layer["url"] is not None
-                    ]
+                    for layer in webmap_json["operationalLayers"]:
+                        layers = _append_layer(layers, layer)
                     feature_collections += [
                         layer
                         for layer in webmap_json["operationalLayers"]
