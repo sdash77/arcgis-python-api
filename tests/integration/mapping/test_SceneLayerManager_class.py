@@ -1,11 +1,9 @@
-import sys
 from unittest.case import SkipTest
-
-sys.path.insert(0, r"C:\\workspace\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS
 from arcgis.mapping import SceneLayer
+from utils.decorators import integration_test
 
 # Initialize manager
 online_admin = GIS(
@@ -23,6 +21,7 @@ fs_scene_layer = SceneLayer(fs_scene_layer_item.url, online_admin)
 fs_manager = fs_scene_layer.manager
 
 
+@integration_test
 class TestSceneLayerManager(unittest.TestCase):
     def test_refresh(self):
         """

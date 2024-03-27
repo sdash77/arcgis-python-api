@@ -1,13 +1,8 @@
 import os
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import uuid
 import tempfile
 import unittest
-from arcgis.gis import GIS
 import pandas as pd
-from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 
 ###########################################################################

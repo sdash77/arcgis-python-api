@@ -1,10 +1,8 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 import unittest
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 DATA = [
@@ -116,6 +114,7 @@ DATA = [
 ]
 
 
+@integration_test
 class TestFeatureLayerGetEstimates(unittest.TestCase):
     """tests the get estimates property on HFL"""
 

@@ -1,10 +1,8 @@
-import sys
 import unittest
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7414\src")
 from arcgis.gis import GIS
 
 from arcgis.gis.admin._system import Indexer
+from utils.decorators import integration_test
 
 url = "https://rqawinbi01pt.ags.esri.com/gis/home"
 username = "PAPIadmin"
@@ -14,6 +12,7 @@ gis = GIS(url, username, password, verify_cert=False, trust_env=True)
 
 
 @unittest.skipIf(gis.version < [9, 2], reason="Portal is too old!")
+@integration_test
 class TestPortalIndexer(unittest.TestCase):
     def test_get_indexer(self):
         """tests that the right class is returned."""

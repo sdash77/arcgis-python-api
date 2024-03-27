@@ -9,6 +9,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -51,6 +52,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_AttachmentManager_portal(unittest.TestCase):
     """
     Test to check if a FeatureLayer object works with builtin portal
@@ -290,6 +292,7 @@ class Test_AttachmentManager_portal(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@integration_test
 class Test_AttachmentManager_online(unittest.TestCase):
     """
     Test to check if a FeatureLayer object works with AGO

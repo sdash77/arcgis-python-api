@@ -44,7 +44,7 @@ def integration_test(cls):
     """Mark a test case class as an integration test and apply default configuration"""
     if os_name == "posix":
         # apply default timeout on supported platforms
-        cls = default_timeout(cls)
+        cls = default_timeout_class(cls)
     # TODO find a way to apply default timeout on Windows
     return cls
 

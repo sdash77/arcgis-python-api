@@ -4,6 +4,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import derive_new_locations
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["d3cb37b9636d47888268ca086810bd9b"]  # Cougar Habitat
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -11,6 +12,7 @@ setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
 
+@integration_test
 class TestDeriveNewLocations(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""

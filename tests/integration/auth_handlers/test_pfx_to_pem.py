@@ -2,7 +2,10 @@ import os
 import unittest
 import arcgis.auth
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestCertificateTools(unittest.TestCase):
     def test_pfx_to_pem(self):
         current_folder = os.path.dirname(os.path.realpath(__file__))

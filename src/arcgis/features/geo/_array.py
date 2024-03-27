@@ -267,7 +267,10 @@ class GeoArray(ExtensionArray):
 
     def _validate_data(self):
         data = self.data
-        check = np.where(self.data != None)[0]
+        if isinstance(self.data, GeoArray):
+            check = np.where(self.data.to_numpy() != None)[0]
+        else:
+            check = np.where(self.data != None)[0]
         if len(check) > 0:
             vindx = check[0]
             if isinstance(data[vindx], Geometry) == False:

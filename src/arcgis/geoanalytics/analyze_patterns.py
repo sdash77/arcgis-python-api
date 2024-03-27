@@ -10,6 +10,7 @@ import json as _json
 from datetime import datetime as _datetime
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -28,12 +29,19 @@ from ._util import (
     _prevent_bds_item,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def forest(
     input_layer: Union[
         Item,
@@ -275,7 +283,10 @@ def forest(
                                       output_name='train and predict number of 911 calls')
 
     """
-    allowed_prediction_types = {"train": "Train", "trainandpredict": "TrainAndPredict"}
+    allowed_prediction_types = {
+        "train": "Train",
+        "trainandpredict": "TrainAndPredict",
+    }
 
     input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
@@ -375,6 +386,12 @@ def forest(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def gwr(
     input_layer: Union[
         Item,
@@ -591,6 +608,12 @@ def gwr(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def glr(
     input_layer: Union[
         Item,
@@ -855,6 +878,12 @@ def glr(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def find_point_clusters(
     input_layer: Union[
         Item,
@@ -1035,6 +1064,12 @@ def find_point_clusters(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def calculate_density(
     input_layer: Union[
         Item,
@@ -1325,6 +1360,12 @@ def calculate_density(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def find_hot_spots(
     point_layer: Union[
         Item,
@@ -1548,6 +1589,12 @@ def find_hot_spots(
 
 
 # --------------------------------------------------------------------------
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def create_space_time_cube(
     point_layer: Union[
         Item,
