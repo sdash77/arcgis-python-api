@@ -1454,6 +1454,10 @@ def copy_raster(
                                             | "defineNodata":True,                                            
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
+
+                                         .. note:: 
+                                             To define NoData values when the input is a single raster, use the following:
+                                             {"noData": "1 255;2 0;3 255"}
     --------------------------------     --------------------------------------------------------------------
     raster_type_name                     Optional string. The name of the raster type to use for adding data to
                                          the mosaic dataset.
