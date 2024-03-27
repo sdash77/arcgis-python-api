@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8882\src")
 import json
 import os, uuid
 import tempfile
@@ -13,6 +9,7 @@ from arcgis.gis import GIS
 from arcgis.gis.agonb import snapshot as _agosnapshot
 from arcgis.gis.nb import _snapshot as _entsnapshot
 from arcgis.notebook import list_snapshots, create_snapshot
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -107,6 +104,7 @@ notebook_json = {
 }
 
 
+@integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -146,6 +144,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert len(self._item.snapshots) == len(list_snapshots(self._item))
 
 
+@integration_test
 class TestEntNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):

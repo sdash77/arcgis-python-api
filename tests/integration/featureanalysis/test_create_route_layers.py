@@ -1,12 +1,10 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import create_route_layers
 from config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["3793ab5f2baa47919bd4212b3d0f08e2"]  # LA Route Geodatabase
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -18,6 +16,7 @@ setup_profiles(
 stage_data(test_items)
 
 
+@integration_test
 class TestCreateRouteLayers(unittest.TestCase):
     def test_routing(self):
         # establish gis connection

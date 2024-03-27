@@ -1,6 +1,4 @@
-import sys, json
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
+import json
 import unittest
 
 try:
@@ -16,7 +14,7 @@ mock_url = "https://www.arcgis.com/sharing/rest?f=json"
 
 
 @unittest.skipIf(SKIPME, "requests_mock not found.")
-class TestEsriSessionHTTPVerbs(unittest.TestCase):
+class TestEsriSessionMockedRequests(unittest.TestCase):
     """
     Tests the EsriSession HTTP Methods
     """

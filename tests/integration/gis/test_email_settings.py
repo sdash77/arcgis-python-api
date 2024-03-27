@@ -6,6 +6,7 @@ import arcgis
 
 print(arcgis.__file__)
 from arcgis.gis import GIS, Item, User, UserManager
+from utils.decorators import integration_test
 
 try:
 
@@ -24,6 +25,7 @@ except:
 
 
 @unittest.skipIf(ALL_GOOD == False, "Could not connect to Portal")
+@integration_test
 class TestEmailSettings(unittest.TestCase):
     """Tests the Email Settings for 10.9.1 Portal"""
 

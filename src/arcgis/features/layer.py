@@ -2740,7 +2740,8 @@ class FeatureLayer(Layer):
                                    arcgis.geometry.filters module to filter results by a spatial
                                    relationship with another geometry.
         ----------------------     --------------------------------------------------------------------
-        gdb_version                Optional string. A ``Geodatabase`` version to apply the edits.
+        gdb_version                Optional string. The geodatabase version. This parameter applies only
+                                   if the `isDataVersioned` property of the layer is true.
         ----------------------     --------------------------------------------------------------------
         rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
                                    be applied only if all submitted edits succeed. If false, the server
@@ -2953,7 +2954,8 @@ class FeatureLayer(Layer):
                                 will look at a GUID field to track changes. This means the GUIDs will be passed
                                 instead of OIDs for delete, update or add features.
         ---------------------   --------------------------------------------------------------------------------------
-        gdb_version             Optional boolean. `Geodatabase` version to apply the edits.
+        gdb_version             Optional string. The geodatabase version to apply edits. This parameter
+                                applies only if the `isDataVersioned` property of the layer is true.
         ---------------------   --------------------------------------------------------------------------------------
         rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
                                 if all submitted edits succeed. If false, the server will apply the edits that succeed
@@ -4019,7 +4021,7 @@ class FeatureLayer(Layer):
         units: str | None = None,
         time_filter: str | int | None = None,
         geometry_filter: Geometry | dict | None = None,
-        gdb_version=None,
+        gdb_version: str | None = None,
         return_distinct_values: bool | None = None,
         order_by_fields: str | None = None,
         group_by_fields_for_statistics: str | None = None,
@@ -4249,7 +4251,7 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            raw=True,
+            query_3d=True,
         )
 
 

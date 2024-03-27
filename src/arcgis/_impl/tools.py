@@ -9011,8 +9011,10 @@ class _OrthoMappingTools:
         """
         gis = self._gis
         if camera_query is not None:
-            if not isinstance(camera_query, str):
-                raise TypeError("The 'camera_query' parameter must be of type string")
+            if not isinstance(camera_query, str) and not isinstance(camera_query, dict):
+                raise TypeError(
+                    "The 'camera_query' parameter must be of type string or dict"
+                )
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
         job._is_ortho = True
@@ -19104,6 +19106,150 @@ class _RasterAnalysisTools(BaseAnalytics):
             region_resolution=region_resolution,
             selection_method=selection_method,
             output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+            estimate=estimate,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def tabulate_area(
+        self,
+        input_zone_raster_or_features,
+        zone_field,
+        input_class_raster_or_features,
+        class_field,
+        analysis_cell_size=None,
+        classes_as_rows=False,
+        output_table_name=None,
+        context=None,
+        future=False,
+        estimate=False,
+        **kwargs,
+    ):
+        task = "TabulateArea"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
+            input_zone_raster_or_features = self._feature_input(
+                input_layer=input_zone_raster_or_features
+            )
+        elif isinstance(input_zone_raster_or_features, Item):
+            input_zone_raster_or_features = {
+                "itemId": input_zone_raster_or_features.itemid
+            }
+        elif input_zone_raster_or_features is not None:
+            input_zone_raster_or_features = self._layer_input(
+                input_layer=input_zone_raster_or_features
+            )
+
+        if isinstance(input_class_raster_or_features, _FEATURE_INPUTS):
+            input_class_raster_or_features = self._feature_input(
+                input_layer=input_class_raster_or_features
+            )
+        elif isinstance(input_class_raster_or_features, Item):
+            input_class_raster_or_features = {
+                "itemId": input_class_raster_or_features.itemid
+            }
+        elif input_class_raster_or_features is not None:
+            input_class_raster_or_features = self._layer_input(
+                input_layer=input_class_raster_or_features
+            )
+
+        if classes_as_rows is not None:
+            if not isinstance(classes_as_rows, bool):
+                raise RuntimeError("classes_as_rows should be of type bool")
+
+        (
+            output_feature_name,
+            output_feature_service,
+        ) = self._set_output_feature(
+            output_name=output_table_name,
+            task=task,
+            output_properties=kwargs,
+            estimate=estimate,
+        )
+
+        gpjob = self._tbx.tabulate_area(
+            input_zone_raster_or_features=input_zone_raster_or_features,
+            zone_field=zone_field,
+            input_class_raster_or_features=input_class_raster_or_features,
+            class_field=class_field,
+            analysis_cell_size=analysis_cell_size,
+            classes_as_rows=classes_as_rows,
+            output_table_name=output_feature_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+            estimate=estimate,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def zonal_geometry_as_table(
+        self,
+        input_zone_raster_or_features,
+        zone_field,
+        analysis_cell_size=None,
+        classes_as_rows=False,
+        output_table_name=None,
+        context=None,
+        future=False,
+        estimate=False,
+        **kwargs,
+    ):
+        task = "ZonalGeometryAsTable"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
+            input_zone_raster_or_features = self._feature_input(
+                input_layer=input_zone_raster_or_features
+            )
+        elif isinstance(input_zone_raster_or_features, Item):
+            input_zone_raster_or_features = {
+                "itemId": input_zone_raster_or_features.itemid
+            }
+        elif input_zone_raster_or_features is not None:
+            input_zone_raster_or_features = self._layer_input(
+                input_layer=input_zone_raster_or_features
+            )
+
+        (
+            output_feature_name,
+            output_feature_service,
+        ) = self._set_output_feature(
+            output_name=output_table_name,
+            task=task,
+            output_properties=kwargs,
+            estimate=estimate,
+        )
+
+        gpjob = self._tbx.zonal_geometry_as_table(
+            input_zone_raster_or_features=input_zone_raster_or_features,
+            zone_field=zone_field,
+            analysis_cell_size=analysis_cell_size,
+            output_table_name=output_feature_name,
             context=context,
             gis=self._gis,
             future=True,

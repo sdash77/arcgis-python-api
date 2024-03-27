@@ -1,13 +1,10 @@
 import sys
 import time
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_sharing_manager_redo\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -27,6 +24,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestSharingManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

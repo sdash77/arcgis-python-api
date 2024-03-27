@@ -1,11 +1,10 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
 ###########################################################################
+@integration_test
 class TestGISExpiration(unittest.TestCase):
     """Tests the setting of the expiration value"""
 

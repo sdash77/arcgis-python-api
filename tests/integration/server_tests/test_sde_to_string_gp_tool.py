@@ -4,6 +4,7 @@ import unittest
 from arcgis.gis import GIS
 
 from pathlib import Path
+from utils.decorators import integration_test
 
 
 file_name = "RagS19004_gdb_pg.sde"
@@ -15,6 +16,7 @@ else:
 
 
 @unittest.skipIf(SDEFOUND == False, "cannot find SDE file.")
+@integration_test
 class TestSDE2String(unittest.TestCase):
     """Tests the SDE to String helper GP tool"""
 

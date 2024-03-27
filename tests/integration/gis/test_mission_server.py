@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -10,22 +7,21 @@ from arcgis.gis.mission._system import SystemManager
 from arcgis.gis.mission._machines import MachineManager
 from arcgis.gis.mission._security import SecurityManager
 import time
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
 
-gis = GIS(
-    url="https://rpubs22001.ags.esri.com/portal/home/user.html?newUser=true",
-    username="APITeam",
-    password="APIletmein01",
-    verify_cert=False,
-)
+enable_verbose_logging()
 
 
+@profiles.admin_enterprise
+@integration_test
 class TestMissionServer(unittest.TestCase):
     def test_properties(self):
         """
         Test the properties of the mission server
         """
-        mission_server = MissionServer("https://RPubS22002.ags.esri.com/mission", gis)
+        mission_server = MissionServer("https://pythonapitestnb.dev.geocloud.com/missionserver", self.gis)
         assert mission_server
 
         info = mission_server.info
@@ -44,15 +40,17 @@ class TestMissionServer(unittest.TestCase):
         assert isinstance(security, SecurityManager)
 
 
+@profiles.enterprise
+@integration_test
 class TestMission(unittest.TestCase):
     def test_properties(self):
-        mission_ctlg = MissionCatalog(gis)
+        mission_ctlg = MissionCatalog(self.gis)
         assert mission_ctlg
 
         assert mission_ctlg.properties
 
     def test_mission(self):
-        mission_ctlg = MissionCatalog(gis)
+        mission_ctlg = MissionCatalog(self.gis)
         mission_job = mission_ctlg.create_mission(title="Python API Test Mission")
         assert isinstance(mission_job, MissionJob)
         # wait for job to finish
@@ -145,7 +143,7 @@ class TestMission(unittest.TestCase):
         assert report
         assert report["success"] is True
 
-        assert gis.content.get(report["reportItemId"]).delete()
+        assert self.gis.content.get(report["reportItemId"]).delete()
         # test delete
         assert mission.delete()
 

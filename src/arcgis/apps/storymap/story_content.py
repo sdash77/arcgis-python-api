@@ -2829,7 +2829,7 @@ class Gallery:
             self._children = self._story._properties["nodes"][self.node]["children"]
             images = []
             for child in self._children:
-                images.append(Image(story=self._story, node_id=child))
+                images.append(utils._assign_node_class(self._story, child))
             return images
         else:
             raise Warning(
@@ -2964,10 +2964,12 @@ class Gallery:
         """
         if isinstance(image, Image):
             image = image.node
-        if image in self.images:
+        image_nodes = [im.node for im in self.images]
+        if image in image_nodes:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
             utils._delete(self._story, image)
+        self._children = self._story._properties["nodes"][self.node]["children"]
         return self.images
 
     # ----------------------------------------------------------------------

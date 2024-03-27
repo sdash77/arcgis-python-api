@@ -3,6 +3,7 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
 import pandas as pd
 from arcgis.features._async import EditFeatureJob
+from utils.decorators import integration_test
 
 if "your_online_profile" in ProfileManager().list():
     gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
@@ -128,6 +129,7 @@ data = [
 
 
 @unittest.skipIf(do_not_skip_me == False, reason=msg)
+@integration_test
 class TestApplyEditsAsync(unittest.TestCase):
     def test_async_edits(self):
 

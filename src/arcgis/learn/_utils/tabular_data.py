@@ -219,6 +219,7 @@ class TabularDataObject(object):
                                 f"We see a class imbalance in the dataset. "
                                 f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
                                 f"not have enough data points in your dataset."
+                                f"The imbalance class(es) should have at least 1% of total number of data points to stratify."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")

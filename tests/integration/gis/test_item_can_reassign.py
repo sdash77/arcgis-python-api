@@ -1,36 +1,23 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
+from config import QALAB_ROOT_PATH
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
+@profiles.enterprise_and_agol
+@integration_test
 class TestCanReassignItems(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis = GIS(profile='your_online_profile')
-        fp = r"\\qalab_server\pydata\v109\geosaurus\gis_mod_Item_cls\issue_10434.zip"
+        fp = QALAB_ROOT_PATH + r"\gis_mod_Item_cls\issue_10434.zip"
         cls.item = cls.gis.content.add(
             item_properties={
                 "title": "reassign_item_test",

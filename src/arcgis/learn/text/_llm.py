@@ -52,7 +52,6 @@ def calling_api(url, header, payload):
         )
     elif s.status_code >= 400:
         # raise Exception(f"{s.json()['error']['message']}")
-        print(f"{s.json()['error']['message']}")
         raise Exception(
             "The API server has encountered an error. Please try again later."
         )
@@ -293,7 +292,14 @@ class LLM:
                             for key, val in ast.literal_eval(i).items():
                                 try:
                                     testner(**{"sample": val})
-                                    response[idx] = val
+                                    if isinstance(val, dict):
+                                        for k, v in val.items():
+                                            if k not in response[idx]:
+                                                response[idx][k] = v
+                                            else:
+                                                response[idx][k] += v
+                                    else:
+                                        response[idx] = val
                                 except:
                                     response[idx] = {}
                     else:

@@ -8,10 +8,13 @@ import datetime
 from typing import Optional
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
-from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
+from ..._impl.common._utils import (
+    local_time_to_online,
+    timestamp_to_datetime,
+)
 from ...gis import GIS
 from ._base import BasePortalAdmin
-
+from cachetools import cached, TTLCache
 
 ########################################################################
 
@@ -110,7 +113,11 @@ class AGOLUsageReports(BasePortalAdmin):
 
         """
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
-        params = {"f": "json", "reportType": focus, "reportSubType": report_type}
+        params = {
+            "f": "json",
+            "reportType": focus,
+            "reportSubType": report_type,
+        }
 
         # Perform Checks
         if duration and duration.lower() not in [
@@ -161,7 +168,10 @@ class AGOLUsageReports(BasePortalAdmin):
                 count += 1
             item = self._gis.content.get(resp["itemId"])
             isj = ItemStatusJob(
-                item=item, task_name="Generate Report", notify=notify, gis=self._gis
+                item=item,
+                task_name="Generate Report",
+                notify=notify,
+                gis=self._gis,
             )
             if future:
                 return isj
@@ -169,6 +179,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return resp
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def credit(
         self,
         start_time: Optional[datetime.datetime] = None,
@@ -287,8 +298,11 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def users(
-        self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
+        self,
+        start_time: Optional[datetime.datetime] = None,
+        time_frame: str = "week",
     ):
         """
         Creates a credit usage report for resources of an ArcGIS Online
@@ -404,8 +418,11 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def applications(
-        self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
+        self,
+        start_time: Optional[datetime.datetime] = None,
+        time_frame: str = "week",
     ):
         """
         Creates a usage report for all registered application logins for a
@@ -527,6 +544,7 @@ class AGOLUsageReports(BasePortalAdmin):
         return res
 
     # ----------------------------------------------------------------------
+    @cached(cache=TTLCache(maxsize=1024, ttl=900))
     def _custom(
         self,
         start_time,

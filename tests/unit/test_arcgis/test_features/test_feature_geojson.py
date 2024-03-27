@@ -1,28 +1,6 @@
-import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_9409\src")
-import logging
 import unittest
 
 from arcgis.features import FeatureSet
-
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-enable_verbose_logging(__logger__)
 
 data = {
     'type': 'FeatureCollection',
@@ -444,7 +422,6 @@ data = {
 class TestFeatureSetGeoJSON(unittest.TestCase):
     def test_fs_from_geojson(self):
         fs = FeatureSet.from_geojson(data)
-
         assert all([f.geometry.is_valid() for f in fs])
 
 

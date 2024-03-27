@@ -1,14 +1,11 @@
-import sys
-
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
-from arcgis.apps.storymap import Briefing, Themes
-from arcgis.apps.storymap import Image, SlideLayout, SlideSubLayout, Text
+from arcgis.apps.storymap import Briefing, Themes, Image, SlideLayout, SlideSubLayout, Text
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
-
+@integration_test
 class TestStoryMap(unittest.TestCase):
     """Test Basic Story Map Methods"""
 

@@ -31,7 +31,7 @@ from arcgis.raster import (
 )
 from arcgis.gis import Layer
 from arcgis.gis import Item
-
+from arcgis._impl.common._mixins import PropertyMap
 import ipywidgets
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
@@ -1596,19 +1596,9 @@ class MapView(widgets.DOMWidget):
         elif isinstance(item, Layer):
             if isinstance(item, FeatureCollection):
                 # Need to do extra processing when plotting Feature Collection
-                if "featureSet" in item.layer:
-                    item.layer = {
-                        "layers": [
-                            {
-                                "featureSet": item.layer["featureSet"],
-                                "layerDefinition": item.layer["layerDefinition"],
-                            }
-                        ]
-                    }
-                else:
-                    item.layer = dict(item.layer)
-                for layer in item.layer["layers"]:
-                    for field in layer["layerDefinition"]["fields"]:
+                item.layer = dict(item.layer)
+                if "layerDefinition" in item.layer:
+                    for field in item.layer["layerDefinition"]["fields"]:
                         if field["type"] == "esriFieldTypeBigInteger":
                             field["type"] = "esriFieldTypeDouble"
                         if field["type"] == "esriFieldTypeDateOnly":
@@ -1617,6 +1607,19 @@ class MapView(widgets.DOMWidget):
                             field["type"] == "esriFieldTypeString"
                         if field["type"] == "esriFieldTimestampOffset":
                             field["type"] == "esriFieldTypeString"
+                else:
+                    for layer in item.layer["layers"]:
+                        for field in layer["layerDefinition"]["fields"]:
+                            if field["type"] == "esriFieldTypeBigInteger":
+                                field["type"] = "esriFieldTypeDouble"
+                            if field["type"] == "esriFieldTypeDateOnly":
+                                field["type"] = "esriFieldTypeDate"
+                            if field["type"] == "esriFieldTypeTimeOnly":
+                                field["type"] == "esriFieldTypeString"
+                            if field["type"] == "esriFieldTimestampOffset":
+                                field["type"] == "esriFieldTypeString"
+                # revert back to property map after processing
+                item.layer = PropertyMap(item.layer)
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
