@@ -3153,9 +3153,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         ):
                             layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                 "sourceServiceName"
-                            ] = os.path.basename(
-                                os.path.dirname(new_service["url"])
-                            )
+                            ] = os.path.basename(os.path.dirname(new_service["url"]))
                             layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                 "sourceLayerId"
                             ] = new_service["layer_id_mapping"][int(original_id)]
@@ -3170,13 +3168,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     "viewLayerDefinition"
                                 ]["table"]["relatedTables"]:
                                     name = related_table["sourceServiceName"]
-                                    for k, v in self._clone_mapping[
-                                        "Services"
-                                    ].items():
-                                        if (
-                                            os.path.basename(os.path.dirname(k))
-                                            == name
-                                        ):
+                                    for k, v in self._clone_mapping["Services"].items():
+                                        if os.path.basename(os.path.dirname(k)) == name:
                                             related_table["sourceServiceName"] = (
                                                 os.path.basename(
                                                     os.path.dirname(v["url"])
@@ -3185,20 +3178,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             if (
                                                 "sourceLayerId" in related_table
                                                 and "layer_id_mapping" in v
-                                                and int(
-                                                    related_table["sourceLayerId"]
-                                                )
+                                                and int(related_table["sourceLayerId"])
                                                 in v["layer_id_mapping"]
                                             ):
                                                 related_table["sourceLayerId"] = v[
                                                     "layer_id_mapping"
-                                                ][
-                                                    int(
-                                                        related_table[
-                                                            "sourceLayerId"
-                                                        ]
-                                                    )
-                                                ]
+                                                ][int(related_table["sourceLayerId"])]
 
                             admin_layer_info = layer["adminLayerInfo"]
                             if (
@@ -3213,9 +3198,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 and "geometryType" in layer
                             ):
                                 admin_layer_info["geometryField"]["name"] = (
-                                    admin_layer_info["viewLayerDefinition"][
-                                        "table"
-                                    ]["name"]
+                                    admin_layer_info["viewLayerDefinition"]["table"][
+                                        "name"
+                                    ]
                                     + "."
                                     + admin_layer_info["geometryField"]["name"]
                                 )
@@ -3226,23 +3211,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 del admin_layer_info["xssTrustedFields"]
                             if (
                                 "viewLayerDefinition" in admin_layer_info
-                                and "table"
-                                in admin_layer_info["viewLayerDefinition"]
+                                and "table" in admin_layer_info["viewLayerDefinition"]
                             ):
                                 if (
                                     "sourceId"
-                                    in admin_layer_info["viewLayerDefinition"][
-                                        "table"
-                                    ]
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
                                 ):
                                     del admin_layer_info["viewLayerDefinition"][
                                         "table"
                                     ]["sourceId"]
                                 if (
                                     "relatedTables"
-                                    in admin_layer_info["viewLayerDefinition"][
-                                        "table"
-                                    ]
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
                                     and len(
                                         admin_layer_info["viewLayerDefinition"][
                                             "table"
@@ -4068,14 +4048,20 @@ class _WebMapDefinition(_TextItemDefinition):
                 feature_collections = []
                 map_service_layers = []
                 vector_tile_layers = []
+
                 def _append_layer(layer_list, layer):
                     if "layerType" in layer:
-                        if layer["layerType"] == "ArcGISFeatureLayer" and "url" in layer and layer["url"] is not None:
+                        if (
+                            layer["layerType"] == "ArcGISFeatureLayer"
+                            and "url" in layer
+                            and layer["url"] is not None
+                        ):
                             layer_list.append(layer)
                         elif layer["layerType"] == "GroupLayer":
                             for sublayer in layer["layers"]:
                                 _append_layer(layer_list, sublayer)
                     return layer_list
+
                 if "operationalLayers" in webmap_json:
                     for layer in webmap_json["operationalLayers"]:
                         layers = _append_layer(layers, layer)
