@@ -9,6 +9,7 @@ from datetime import datetime
 import json as _json
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.features.feature import FeatureCollection
@@ -22,6 +23,8 @@ from arcgis.geoanalytics._util import (
     GAJob,
     _prevent_bds_item,
 )
+
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 from arcgis.gis import GIS, Item
 
 _log = _logging.getLogger(__name__)
