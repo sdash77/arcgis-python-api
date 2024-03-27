@@ -10,6 +10,7 @@ from datetime import datetime
 import json as _json
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -26,11 +27,18 @@ from ._util import (
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def run_python_script(
     code: str,
     layers: Optional[
@@ -232,6 +240,12 @@ def run_python_script(
         raise
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def dissolve_boundaries(
     input_layer: Union[
         Item,
@@ -417,6 +431,12 @@ def dissolve_boundaries(
     return
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def merge_layers(
     input_layer: Union[
         Item,
@@ -609,6 +629,12 @@ def merge_layers(
         raise
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def clip_layer(
     input_layer: Union[
         Item,
@@ -742,6 +768,12 @@ def clip_layer(
         raise
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def overlay_data(
     input_layer: Union[
         Item,
@@ -946,6 +978,12 @@ def overlay_data(
     return
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def append_data(
     input_layer: Union[
         Item,
@@ -1071,6 +1109,12 @@ def append_data(
         raise
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def calculate_fields(
     input_layer: Union[
         Item,
@@ -1260,6 +1304,12 @@ def calculate_fields(
         raise
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def copy_to_data_store(
     input_layer: Union[
         Item,
