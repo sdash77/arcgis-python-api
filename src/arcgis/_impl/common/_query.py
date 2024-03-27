@@ -204,8 +204,8 @@ def _create_parameters(
     # add required parameters
     params["where"] = where
 
-    # Add parameters for non 3D layers and for Tables
-    if not getattr(layer, "_is_3d", False) or is_layer is False:
+    # Add parameters for all non 3D querying
+    if query_3d is False:
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
         params["returnIdsOnly"] = return_ids_only
