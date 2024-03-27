@@ -215,7 +215,6 @@ def _create_parameters(
         params["returnCentroid"] = return_centroid
         params["returnExtentOnly"] = return_extent_only
         params["returnGeometry"] = return_geometry
-
         params["returnZ"] = return_z
         params["returnM"] = return_m
         if getattr(layer, "_is_3d", None):
