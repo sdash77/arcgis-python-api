@@ -1,3 +1,7 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 import os
 import tempfile
 import unittest
@@ -23,18 +27,13 @@ else:
     msg = "Configuration file not found."
 
 try:
-    import requests
-    import requests_kerberos
-
-    resp = requests.get(cert_url, auth=requests_kerberos.HTTPKerberosAuth())
-    if resp.headers["content-type"] == "text/html":
-        1 / 0
-    data = resp.content
-    cert_file = r"./gisproadv1.pfx"
-    with open(cert_file, "wb") as writer:
-        writer.write(data)
-    SKIP = False
-    msg = "all good"
+    cert_file = cert_url
+    if os.path.isfile(cert_file):
+        SKIP = False
+        msg = "all good"
+    else:
+        SKIP = True
+        msg = "COULD NOT DOWNLOAD THE PKI CERTIFICATE"
 except:
     SKIP = True
     msg = "COULD NOT DOWNLOAD THE PKI CERTIFICATE"
@@ -49,7 +48,7 @@ class TestPKISession(unittest.TestCase):
 
     def test_simple_pfx_to_pem(self):
         values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx",
+            pfx_path=cert_file,
             pfx_password=password,
             folder=tempfile.gettempdir(),
         )
@@ -57,16 +56,12 @@ class TestPKISession(unittest.TestCase):
         [os.remove(f) for f in values]
 
     def test_simple_pfx_to_pem(self):
-        values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx", pfx_password=password
-        )
+        values = pfx_to_pem(pfx_path=cert_file, pfx_password=password)
         assert values
         [os.remove(f) for f in values]
 
     def test_simple_login_pure_requests(self):
-        values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx", pfx_password=password
-        )
+        values = pfx_to_pem(pfx_path=cert_file, pfx_password=password)
         import requests
 
         s = requests.Session()
@@ -79,9 +74,7 @@ class TestPKISession(unittest.TestCase):
         [os.remove(f) for f in values]
 
     def test_simple_login_esri_session(self):
-        values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx", pfx_password=password
-        )
+        values = pfx_to_pem(pfx_path=cert_file, pfx_password=password)
         with EsriSession(cert=values, verify_cert=False) as session:
             assert session.get(
                 f"{url_pki}/sharing/rest/portals/self/servers?f=json"
@@ -89,9 +82,7 @@ class TestPKISession(unittest.TestCase):
         [os.remove(f) for f in values]
 
     def test_simple_login_multi_auth(self):
-        values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx", pfx_password=password
-        )
+        values = pfx_to_pem(pfx_path=cert_file, pfx_password=password)
         extra_auth = EsriWindowsAuth()
         with EsriSession(
             cert=values, verify_cert=False, auth=extra_auth
@@ -102,9 +93,7 @@ class TestPKISession(unittest.TestCase):
         [os.remove(f) for f in values]
 
     def test_simple_login_server_test(self):
-        values = pfx_to_pem(
-            pfx_path="./gisproadv1.pfx", pfx_password=password
-        )
+        values = pfx_to_pem(pfx_path=cert_file, pfx_password=password)
         with EsriSession(cert=values, verify_cert=False) as session:
             assert session.get(
                 f"{url_pki}/sharing/rest/portals/self/servers?f=json"
