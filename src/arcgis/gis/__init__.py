@@ -6768,6 +6768,11 @@ class ContentManager(object):
             item_properties = item_properties.to_dict()
             item_properties.pop("thumbnail", None)
             item_properties.pop("metadata", None)
+        if "overwrite" in item_properties:
+            _log.warning(
+                "The `overwrite` parameter is no longer support on adding of items."
+            )
+            item_properties.pop("overwrite", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -12064,7 +12069,11 @@ class User(dict):
         )
 
     @property
-    def groups(self):
+    def _group_dict(self) -> list[dict]:
+        return self["groups"]
+
+    @property
+    def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
         return [Group(self._gis, group["id"]) for group in self["groups"]]
 
@@ -12928,13 +12937,19 @@ class User(dict):
         if reassign_to:
             # reassigns the group owner to the reassigned_to user.
             [
-                grp.reassign_to(User(gis=self._gis, username=reassign_to))
-                for grp in self.groups
-                if grp.owner == self.username
+                Group(self._gis, grp["id"]).reassign_to(
+                    User(gis=self._gis, username=reassign_to)
+                )
+                for grp in self["groups"]
+                if grp["owner"] == self.username
             ]
         else:
             # delete the groups owned by the user
-            [grp.delete() for grp in self.groups if grp.owner == self.username]
+            [
+                Group(self._gis, grp["id"]).delete()
+                for grp in self["groups"]
+                if grp["owner"] == self.username
+            ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
