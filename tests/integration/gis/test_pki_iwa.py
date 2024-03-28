@@ -1,7 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 import os
 import unittest
 from arcgis.gis import GIS
