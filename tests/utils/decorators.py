@@ -92,6 +92,36 @@ class credentials:
         environ.get("ENTERPRISE_PKI_PASSWORD", "portalaccount1"),
         environ.get("ENTERPRISE_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
     )
+    _enterprise_java_pki_credential_parameters = (
+        "enterprise_java_pki",
+        environ.get(
+            "ENTERPRISE_JAVA_PKI_URL", "https://rqawinjpki06pt.ags.esri.com/gis"
+        ),
+        None,
+        environ.get("ENTERPRISE_JAVA_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_JAVA_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
+    )
+    _enterprise_linux_pki_credential_parameters = (
+        "enterprise_linux_pki",
+        environ.get(
+            "ENTERPRISE_LINUX_PKI_URL", "https://rqalnxpki03pt.esri.com/gis"
+        ),
+        None,
+        environ.get("ENTERPRISE_LINUX_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_LINUX_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
+    )
+    _enterprise_iwa_credential_parameters = (
+        "enterprise_iwa",
+        environ.get("ENTERPRISE_IWA_URL", "https://rqawiniwa02pt.ags.esri.com/gis"),
+        environ.get("ENTERPRISE_IWA_USERNAME", r"avworld\creator2"),
+        environ.get("ENTERPRISE_IWA_PASSWORD", "portalaccount1"),
+    )
+    _enterprise_multi_iwa_credential_parameters = (
+        "enterprise_multi_iwa",
+        environ.get("ENTERPRISE_MULTI_IWA_URL", "https://rqawinmiwa05pt.ags.esri.com/gis"),
+        environ.get("ENTERPRISE_MULTI_IWA_USERNAME", r"avworld\creator2"),
+        environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", "portalaccount1"),
+    )
     _agol_credential_parameters = (
         "agol",
         environ.get("STANDARD_AGOL_URL", "https://www.arcgis.com"),
@@ -131,6 +161,22 @@ class credentials:
         """Run tests for enterprise credentials"""
         return cls._get_credentials_parameterized_class(
             cls._enterprise_credential_parameters
+        )
+    
+    @classproperty
+    def enterprise_all_iwa(cls):
+        """Run tests for iwa and multi-iwa enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_iwa_credential_parameters, cls._enterprise_multi_iwa_credential_parameters
+        )
+    
+    @classproperty
+    def enterprise_all_pki(cls):
+        """Run tests for pki enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_pki_credential_parameters, 
+            cls._enterprise_java_pki_credential_parameters, 
+            cls._enterprise_linux_pki_credential_parameters
         )
 
     @classproperty
