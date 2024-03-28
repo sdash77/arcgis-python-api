@@ -5,6 +5,7 @@ from .timeout_decorator import timeout as _timeout, timeout_class as _timeout_cl
 from .classproperty import classproperty
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
+from integration.config import get_resource_path
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
@@ -69,6 +70,7 @@ class credentials:
     self.portal_url: the portal url
     self.username: the username
     self.password: the password
+    self.cert: the cert file path, if any
 
     If multiple credentials are injected, the test will be run once for each credential.
     """
@@ -80,6 +82,15 @@ class credentials:
         ),
         environ.get("STANDARD_ENTERPRISE_USERNAME", "esri_requests"),
         environ.get("STANDARD_ENTERPRISE_PASSWORD", "portalaccount1"),
+    )
+    _enterprise_pki_credential_parameters = (
+        "enterprise_pki",
+        environ.get(
+            "ENTERPRISE_PKI_URL", "https://rqawinpki03pt.ags.esri.com/gis"
+        ),
+        None,
+        environ.get("ENTERPRISE_PKI_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
     )
     _agol_credential_parameters = (
         "agol",
@@ -104,6 +115,7 @@ class credentials:
             "portal_url",
             "username",
             "password",
+            "cert",
         )
         """Returns a parameterized class for the credentials parameters from provided args"""
         return parameterized_class(
@@ -142,6 +154,13 @@ class credentials:
         """
         return cls._get_credentials_parameterized_class(
             cls._agol_api_key_credential_parameters
+        )
+    
+    @classproperty
+    def enterprise_pki(cls):
+        """Run tests for enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_pki_credential_parameters
         )
 
     # endregion
