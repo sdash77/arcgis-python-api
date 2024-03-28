@@ -37,12 +37,6 @@ _use_async = True
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
 def summarize_center_and_dispersion(
     input_layer: Union[
         Item,
@@ -182,18 +176,8 @@ def summarize_center_and_dispersion(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def build_multivariable_grid(
     input_layers: Union[
         Item,
@@ -500,12 +484,8 @@ def build_multivariable_grid(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def aggregate_points(
     point_layer: Union[
         Item,
@@ -806,12 +786,8 @@ def aggregate_points(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def describe_dataset(
     input_layer: Union[
         Item,
@@ -986,12 +962,8 @@ def describe_dataset(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def join_features(
     target_layer: Union[
         Item,
@@ -1330,12 +1302,8 @@ def join_features(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def reconstruct_tracks(
     input_layer: Union[
         Item,
@@ -1642,12 +1610,8 @@ def reconstruct_tracks(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def summarize_attributes(
     input_layer: Union[
         Item,
@@ -1856,12 +1820,8 @@ def summarize_attributes(
 
 
 # --------------------------------------------------------------------------
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+
+
 def summarize_within(
     summarized_layer: Union[
         Item,

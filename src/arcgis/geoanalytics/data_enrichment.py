@@ -32,6 +32,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def calculate_motion_statistics(
     input_layer: Union[
         Item,
@@ -312,6 +313,7 @@ def calculate_motion_statistics(
         raise
 
 
+# -------------------------------------------------------------------------
 def enrich_from_grid(
     input_layer: Union[
         Item,
