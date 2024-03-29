@@ -2935,7 +2935,7 @@ class Transform3d(object):
         self.rotation_range = rotation
         self.scaling_range = scaling
         self.order = "XYZ"
-        self.jitter = jitter
+        self.jitter = float(jitter)
 
     def _detection_transforms(self):
         from .pointcloud_od import ODTransform3D
