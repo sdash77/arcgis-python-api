@@ -41,6 +41,8 @@ from matplotlib.colors import Normalize
 import matplotlib.patches as mpatches
 import warnings
 
+_SENSITIVE_FEATURE_ERROR = "Senstive feature should be a categorical feature"
+
 
 def score(
     _is_classification,
@@ -175,6 +177,9 @@ def get_mdf(_data, sensitive_features, col, y_test, y_pred):
         "R2": r2_score,
         "MAPE": mean_absolute_percentage_error,
     }
+
+    if col not in _data._categorical_variables:
+        raise Exception(_SENSITIVE_FEATURE_ERROR)
 
     overall = {}
 
