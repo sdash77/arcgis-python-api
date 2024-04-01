@@ -602,7 +602,7 @@ def detect_object_mask(
                 pred_class.append(pred_classes[batch_idx][n].tolist())
                 pred_score.append(pred_scores[batch_idx][n].tolist() * 100)
 
-    return np.array(all_contour_list), pred_score, pred_class
+    return np.array(all_contour_list, dtype=object), pred_score, pred_class
 
 
 def classify_image(
