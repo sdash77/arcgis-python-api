@@ -488,9 +488,18 @@ class AutoML(object):
                 val_labels = self._validation_labels
         # val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                return self._model.score(self._validation_data_df, val_labels)
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(
+                        self._data._dataframe,
+                        self._data._dataframe[self._data._dependent_variable],
+                    )
+            except:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(self._validation_data_df, val_labels)
+
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
@@ -1283,7 +1292,8 @@ class AutoML(object):
             if column not in fields_needed:
                 if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
-
+        if self._data._embedding_variables is None:
+            self._data._embedding_variables = []
         processed_numpy = processed_dataframe[
             self._data._continuous_variables
             + self._data._categorical_variables

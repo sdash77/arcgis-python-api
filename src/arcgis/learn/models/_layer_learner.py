@@ -177,7 +177,9 @@ class FullyConnectedNetwork(ArcGISModel):
             class_object._data.emd_path = emd_path
             return class_object
 
-        return cls(data, layers=layers, pretrained_path=str(emd_path))
+        model = cls(data, layers=layers, pretrained_path=str(emd_path))
+        model.learn.loss_func.func.label_smoothing = 0.0
+        return model
 
     def save(
         self,
