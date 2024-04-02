@@ -1,11 +1,8 @@
 import uuid
 import unittest
-from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ProfileManager
 from arcgis.gis import login_profiles
 import pandas as pd
-
-DUMMY_PROFILE = "FAKE" + uuid.uuid4().hex[:5]
 
 
 def get_fake_profile_name():
@@ -34,21 +31,21 @@ class TestProfileManager(unittest.TestCase):
         pm = ProfileManager()
         created = pm.create(
             profile=profile_name,
-            url="https://test.maps.arcgis.com",
+            url=f"https://{profile_name}.maps.arcgis.com",
             username="fakeuser",
-            password="fakepassword",
+            password=f"{profile_name}_fakepassword",
         )
         assert created
         assert profile_name in pm.list()
         profile = pm.get(profile_name)
         assert profile
         self.assertIsInstance(profile, dict)
-        assert profile.get("url") == "https://test.maps.arcgis.com"
+        assert profile.get("url") == f"https://{profile_name}.maps.arcgis.com"
         assert profile.get("username") == "fakeuser"
         assert not profile.get("key_file")
         assert not profile.get("cert_file")
         assert not profile.get("client_id")
-        assert pm._securely_get_password(profile_name) == "fakepassword"
+        assert pm._securely_get_password(profile_name) == f"{profile_name}_fakepassword"
         assert pm.delete(profile_name)
         assert profile_name not in pm.list()
         assert not pm._securely_get_password(profile_name)
@@ -59,7 +56,7 @@ class TestProfileManager(unittest.TestCase):
         pm = ProfileManager()
         created = pm.create(
             profile=profile_name,
-            url="https://test.maps.arcgis.com",
+            url=f"https://{profile_name}.maps.arcgis.com",
             key_file="fakekey.pem",
         )
         assert created
@@ -67,7 +64,7 @@ class TestProfileManager(unittest.TestCase):
         profile = pm.get(profile_name)
         assert profile
         self.assertIsInstance(profile, dict)
-        assert profile.get("url") == "https://test.maps.arcgis.com"
+        assert profile.get("url") == f"https://{profile_name}.maps.arcgis.com"
         assert not profile.get("username")
         assert profile.get("key_file") == "fakekey.pem"
         assert not profile.get("cert_file")
@@ -82,22 +79,45 @@ class TestProfileManager(unittest.TestCase):
         pm = ProfileManager()
         created = pm.create(
             profile=profile_name,
-            url="https://test.maps.arcgis.com",
+            url=f"https://{profile_name}.maps.arcgis.com",
             cert_file="fakecert.pem",
-            password="fakepassword",
+            password=f"{profile_name}_fakepassword",
         )
         assert created
         assert profile_name in pm.list()
         profile = pm.get(profile_name)
         assert profile
         self.assertIsInstance(profile, dict)
-        assert profile.get("url") == "https://test.maps.arcgis.com"
+        assert profile.get("url") == f"https://{profile_name}.maps.arcgis.com"
         assert not profile.get("username")
         assert not profile.get("key_file")
         assert profile.get("cert_file") == "fakecert.pem"
         assert not profile.get("client_id")
         retrieved_password = pm._securely_get_password(profile_name)
-        assert retrieved_password == "fakepassword"
+        assert retrieved_password == f"{profile_name}_fakepassword"
+        assert pm.delete(profile_name)
+        assert profile_name not in pm.list()
+
+    def test_create_oauth_profile(self):
+        """tests creating/deleting a profile with oauth"""
+        profile_name = get_fake_profile_name()
+        pm = ProfileManager()
+        created = pm.create(
+            profile=profile_name,
+            url=f"https://{profile_name}.maps.arcgis.com",
+            client_id="fakeclientid",
+        )
+        assert created
+        assert profile_name in pm.list()
+        profile = pm.get(profile_name)
+        assert profile
+        self.assertIsInstance(profile, dict)
+        assert profile.get("url") == f"https://{profile_name}.maps.arcgis.com"
+        assert not profile.get("username")
+        assert not profile.get("key_file")
+        assert not profile.get("cert_file")
+        assert profile.get("client_id") == "fakeclientid"
+        assert not pm._securely_get_password(profile_name)
         assert pm.delete(profile_name)
         assert profile_name not in pm.list()
 
@@ -107,9 +127,9 @@ class TestProfileManager(unittest.TestCase):
         pm = ProfileManager()
         created = pm.create(
             profile=profile_name,
-            url="https://test.maps.arcgis.com",
+            url=f"https://{profile_name}.maps.arcgis.com",
             username="fakeuser",
-            password="fakepassword",
+            password=f"{profile_name}_fakepassword",
         )
         assert created
         assert profile_name in pm.list()
@@ -127,9 +147,9 @@ class TestProfileManager(unittest.TestCase):
         pm = ProfileManager()
         created = pm.create(
             profile=profile_name,
-            url="https://test.maps.arcgis.com",
+            url=f"https://{profile_name}.maps.arcgis.com",
             username="fakeuser",
-            password="fakepassword",
+            password=f"{profile_name}_fakepassword",
         )
         assert created
         assert profile_name in pm.list()
