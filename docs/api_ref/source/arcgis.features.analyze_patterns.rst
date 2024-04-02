@@ -5,7 +5,7 @@ arcgis.features.analyze_patterns module
 
 calculate_composite_index
 -------------------------
-.. autofunction:: arcgis.features.summarize_data.calculate_composite_index
+.. autofunction:: arcgis.features.analyze_patterns.calculate_composite_index
 
 calculate_density
 --------------
