@@ -139,7 +139,7 @@ jobs:
         id: arcgis-info
         run: |
           echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-      - name: Load Cache
+      - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
@@ -147,26 +147,31 @@ jobs:
           key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
           restore-keys: |
             conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
-      - name: Install dependencies
+      - name: Install shared dependencies
         run: |
           conda install -c main nose2 --yes
-          conda install conda-forge::requests-mock
+          conda install conda-forge::requests-mock --yes
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
           conda install -c main "urllib3>=1.26.1,<3" --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Save Cache
+      - name: Save dependency cache
         id: save-cache
         uses: actions/cache/save@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-      - name: Force install requests-kerberos
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: Install Mac-specific dependencies
+        if: runner.os == 'macOS'
         run: |
           pip install -U requests-kerberos
+      - name: Install Linux-specific dependencies
+        if: runner.os == 'Linux'
+        run: |
+          pip install -U requests-kerberos
+          conda install -c main keyrings.alt --yes
       - name: Show conda environment
         run: |
           conda list
