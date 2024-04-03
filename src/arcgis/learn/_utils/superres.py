@@ -182,7 +182,7 @@ def show_results(self, rows, **kwargs):
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     denormfunc = lambda img, max, min: (img + 1) * (max - min) / 2 + min
 
-    if self.model_type == "UNet":
+    if hasattr(self._backbone, "__call__"):
         x_batch, y_batch = get_nbatches(
             self._data.valid_dl, ceil(rows / self._data.batch_size)
         )

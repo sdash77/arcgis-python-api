@@ -671,15 +671,15 @@ class GeoSeriesAccessor:
 
 
         """
-        if isinstance(second_geometry, _geometry.Geometry):
+        if isinstance(second_geometry, GeoSeriesAccessor):
+            # Do a GeoArray eq
+            return self._data == second_geometry._data
+        else:
             return pd.Series(
                 self._data.equals(**{"second_geometry": second_geometry}),
                 name="equals",
                 index=self._index,
             )
-        elif isinstance(second_geometry, GeoSeriesAccessor):
-            # Do a GeoArray eq
-            return self._data == second_geometry._data
 
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
