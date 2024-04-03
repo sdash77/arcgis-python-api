@@ -64,14 +64,14 @@ class TestItemAccess(unittest.TestCase):
                 result = test_item.sharing.sharing_level = SharingLevel.ORG
                 assert result.value == "ORGANIZATION"
                 shr_group = gis.groups.create(
-                    f"test group {uuid.uuid4().hex[:4]}", tags='tags'
+                    f"test group {uuid.uuid4().hex[:4]}", tags="tags"
                 )
                 grp_share_res = test_item.sharing.groups.add(shr_group)
                 assert grp_share_res
                 assert test_item.sharing.shared_with["level"] == SharingLevel.ORG
                 assert test_item.sharing.shared_with["level"] != SharingLevel.EVERYONE
-                assert test_item.shared_with['groups'][0].id == shr_group.id
-                
+                assert test_item.shared_with["groups"][0].id == shr_group.id
+
                 test_item.sharing.sharing_level = "EVERYONE"
                 assert test_item.sharing.shared_with["level"].value == "EVERYONE"
 
