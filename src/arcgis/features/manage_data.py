@@ -318,9 +318,9 @@ def extract_data(
     ===================================     =========================================================
     **Parameter**                           **Description**
     -----------------------------------     ---------------------------------------------------------
-    input_layers                            Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+    input_layers                            Required list of feature layers and tables. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------
-    extent                                  Optional dict. The extent is the area of interest used to extract the input features.
+    extent                                  Optional feature layer. The extent is the area of interest used to extract the input features.
                                             If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------
     clip                                    Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
@@ -383,7 +383,7 @@ def extract_data(
                                                         "outSR": {"wkid": 3857}}
     ===================================     =========================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    :return: resulting item : :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
     If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
