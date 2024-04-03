@@ -12075,7 +12075,15 @@ class User(dict):
     @property
     def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group["id"]) for group in self["groups"]]
+        if self._gis.users.me.username != self["username"]:
+
+            groups: list[Group] = []
+            for grp in self["groups"]:
+                if grp.get("orgId", None):
+                    groups.append(Group(self._gis, grp["id"]))
+            return groups
+        else:
+            return [Group(self._gis, grp["id"]) for grp in self["groups"]]
 
     def update_license_type(self, user_type: str):
         """
@@ -13273,29 +13281,19 @@ class Item(dict):
         """
         Gets/Sets if the Item is in the user's favorites
         """
-        user: User = self._gis.users.get(self.owner)
+        user: User = self._gis.users.me
+        grp_shr = self.sharing.groups
+        # get(self.owner)
         if value == True:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
-        elif value == False:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
-        else:
-            raise ValueError("'value' must be a boolean.")
-
-        params = {
-            "f": "json",
-            "everyone": self.shared_with["everyone"],
-            "org": self.shared_with["org"],
-            "items": self.itemid,
-            "groups": user.favGroupId,
-        }
-
-        res = self._gis._con.post(url, params=params)
-        assert self.shared_with
-        if "error" in res:
-            raise Exception(f"An error has occurred: {str(res)}")
-        else:
+            grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
+        elif value == False:
+            grp_shr.remove(user.favGroupId)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("'value' must be a boolean.")
 
     # ----------------------------------------------------------------------
     @property
