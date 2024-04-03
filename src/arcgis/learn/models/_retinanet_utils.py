@@ -372,7 +372,9 @@ class RetinaNetFocalLoss(nn.Module):
         self.scales = scales
         self.ratios = ratios
         self._device = device
-        self._create_anchors(self.sizes, self._device)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self._create_anchors(self.sizes, self._device)
 
     def _change_anchors(self, sizes) -> bool:
         if not hasattr(self, "sizes"):
