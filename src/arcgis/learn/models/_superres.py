@@ -4,7 +4,14 @@ from ... import __version__ as ArcGISLearnVersion
 from .._data import prepare_data, _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family, _EmptyData, _get_device
+    from ._arcgis_model import (
+        ArcGISModel,
+        _resnet_family,
+        _EmptyData,
+        _get_device,
+        _set_ddp_multigpu,
+        _isnotebook,
+    )
     from ._superres_utils import (
         compute_metrics,
         create_loss,
@@ -166,12 +173,32 @@ class SuperResolution(ArcGISModel):
             )
             init_weights(sr3model, init_type="orthogonal")
             sr3model.set_new_noise_schedule(self._device.type, **kwargs)
-            self.learn = Learner(
-                self._data,
-                sr3model,
-                loss_func=l1Loss(self._device.type),
-                opt_func=optim.Adam,
-            )
+            if not _isnotebook():
+                _set_ddp_multigpu(self)
+                if self._multigpu_training:
+                    self.learn = Learner(
+                        self._data,
+                        sr3model,
+                        loss_func=l1Loss(self._device.type),
+                        opt_func=optim.Adam,
+                    ).to_distributed(self._rank_distributed)
+                    self._map_location = {
+                        "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
+                    }
+                else:
+                    self.learn = Learner(
+                        self._data,
+                        sr3model,
+                        loss_func=l1Loss(self._device.type),
+                        opt_func=optim.Adam,
+                    )
+            else:
+                self.learn = Learner(
+                    self._data,
+                    sr3model,
+                    loss_func=l1Loss(self._device.type),
+                    opt_func=optim.Adam,
+                )
         else:
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
