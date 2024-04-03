@@ -12075,12 +12075,24 @@ class User(dict):
     @property
     def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        if self._gis.users.me.username != self["username"]:
+        if (
+            self._gis.users.me.username != self["username"]
+            and self._gis._is_arcgisonline
+        ):
 
             groups: list[Group] = []
             for grp in self["groups"]:
-                if grp.get("orgId", None):
-                    groups.append(Group(self._gis, grp["id"]))
+                try:
+                    group = Group(self._gis, grp["id"])
+                    group.__str__()
+                    if "orgId" in grp and grp["orgId"] == self._gis.properties["id"]:
+                        groups.append(group)
+                    elif not "orgId" in grp:
+                        groups.append(group)
+                    elif grp["owner"] == self["username"]:
+                        groups.append(group)
+                except:
+                    pass
             return groups
         else:
             return [Group(self._gis, grp["id"]) for grp in self["groups"]]
