@@ -311,7 +311,7 @@ class ArcGISTBCallback(
         top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
         denormfunc = lambda img, max, min: (img + 1) * (max - min) / 2 + min
 
-        if self._arcgis_model.model_type == "UNet":
+        if hasattr(self._arcgis_model._backbone, "__call__"):
             x_batch, y_batch = get_nbatches(
                 self._arcgis_model._data.valid_dl,
                 ceil(rows / self._arcgis_model._data.batch_size),
