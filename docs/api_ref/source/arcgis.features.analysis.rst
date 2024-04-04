@@ -54,6 +54,10 @@ create_route_layers
 --------------
 .. autofunction:: arcgis.features.analysis.create_route_layers
 
+generate_tessellation
+--------------
+.. autofunction:: arcgis.features.analysis.generate_tessellation
+
 create_viewshed
 --------------
 .. autofunction:: arcgis.features.analysis.create_viewshed

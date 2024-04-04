@@ -3961,15 +3961,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                     See :ref:`Feature Input<FeatureInput>`.
         -------------------------------------    ------------------------------------------------------------------------------------------------------
-        expressions                              Required dict. There are two types of expressions, attribute and spatial.
+        expressions                              Required list of dicts. There are two types of expressions, attribute and spatial.
 
                                                     Example attribute expression:
 
-                                                    {
+                                                    [{
                                                     "operator": "and",
                                                     "layer": 0,
                                                     "where": "STATUS = 'VACANT'"
-                                                    }
+                                                    }]
 
                                                     **Note**
 
