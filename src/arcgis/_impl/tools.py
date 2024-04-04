@@ -1073,8 +1073,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def calculate_composite_index(
         self,
-        input_layer,
-        input_variables,
+        input_layer=None,
+        input_variables=None,
         index_method=None,
         output_index_reverse=False,
         output_index_min_max=None,
