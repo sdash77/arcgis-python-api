@@ -1,66 +1,112 @@
 import unittest
 import datetime as _dt
 from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
+@profiles.admin_agol
 @integration_test
-class TestReportApi(unittest.TestCase):
-    """Tests the <username>/report API"""
+class TestReportApiOnline(unittest.TestCase):
+    """Tests the <username>/report API for Online"""
 
-    def test_error_on_eneterprise(self):
-        gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
-        user = gis.users.me
-        date_time_str = "16/01/22"
-        then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
-        val = int(then.timestamp() * 1000)
-        with self.assertRaises(Exception):
-            user.report("users", "weekly")
+    def setUp(self) -> None:
+        self.user = self.gis.users.me
+        self.start_time_val = _dt.datetime(2024, 4, 1, 16)
 
-    def test_assert_error(self):
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
-        user = gis.users.me
-        date_time_str = "16/01/22"
-        then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
-        val = int(then.timestamp() * 1000)
+    def test_missing_argument_error(self):
+        """test missing argument raises error"""
+        with self.assertRaises(Exception) as e:
+            self.user.report("users", None, "weekly")
 
-        with self.assertRaises(Exception):
-            user.report("user", None, "weekly")
+    def test_daily_report_error(self):
+        """test daily reports raise ValueError (daily activity report does not)"""
+        with self.assertRaises(Exception) as e:
+            self.user.report("users", self.start_time_val, "daily")
+            assert "Daily only applies to activity report" in e.exception
+
+    def test_start_time_error(self):
+        """test start_time raising error for weekly report not started from Sunday or Monday"""
+        start_time = _dt.datetime(2024, 4, 2, 16)
+        with self.assertRaises(Exception) as e:
+            self.user.report("users", "weekly", start_time=start_time)
+            assert "Invalid start_time" in e.exception
 
     def test_content_report(self):
-        gis = GIS(profile="your_online_admin_profile", verify_cert=False, trust_env=True)
-        user = gis.users.me
-        date_time_str = "16/01/22"
-        then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
-        val = int(then.timestamp() * 1000)
-        # user.report("user", "weekly")
-
-        items = gis.content.advanced_search(
-            f"accountid:{gis.properties.id} type:'Administrative Report'"
+        """test weekly content report"""
+        content_item = self.user.report(
+            report_type="content", duration="weekly", start_time=self.start_time_val
         )
-        [item.delete() for item in items.get("results", [])]
-        # final_item = user.report("content", "weekly", val)
-        user = gis.users.me
-        date_time_str = "16/01/22"
-        then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
-        val = int(then.timestamp() * 1000)
-
-        final_item = user.report(
-            report_type="content", duration="weekly", start_time=val
-        )
-
-        assert final_item
-        assert final_item.delete()
+        assert content_item
+        assert content_item.delete()
 
     def test_users_report(self):
-        gis = GIS(profile="your_online_admin_profile", verify_cert=False, trust_env=True)
-        user = gis.users.me
-        date_time_str = "16/01/22"
-        then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
-        val = int(then.timestamp() * 1000)
-        users_item = user.report(
-            report_type="users", duration="monthly", start_time=val
+        """test monthly users report"""
+        users_item = self.user.report(
+            report_type="users", duration="monthly", start_time=self.start_time_val
         )
+        assert users_item
+        assert users_item.delete()
+
+    def test_activity_daily_report(self):
+        """test daily activity report"""
+        activity_item = self.user.report(
+            report_type="activity", duration="daily", start_time=self.start_time_val
+        )
+        assert activity_item
+        assert activity_item.delete()
+
+    def test_itemUsages_report_aggregate(self):
+        """test quarterly item usage report"""
+        itemUsage_item = self.user.report(
+            report_type="itemUsages",
+            duration="quarterly",
+            start_time=self.start_time_val,
+            time_aggregate="month",
+        )
+        assert itemUsage_item
+        assert itemUsage_item.delete()
+
+    def test_serviceUsages_report(self):
+        """test weekly service usage report"""
+        serviceUsage_item = self.user.report(
+            report_type="serviceUsages",
+            duration="weekly",
+            start_time=self.start_time_val,
+        )
+        assert serviceUsage_item
+        assert serviceUsage_item.delete()
+
+
+@profiles.admin_enterprise
+@integration_test
+class TestReportApiEnterprise(unittest.TestCase):
+    """Tests the <username>/report API for portal"""
+
+    def setUp(self) -> None:
+        self.user = self.gis.users.me
+        self.start_time_val = _dt.datetime(2024, 4, 1, 16)
+
+    def test_missing_argument_error(self):
+        """test missing argument raises error"""
+        with self.assertRaises(Exception) as e:
+            self.user.report("user", None, "weekly")
+
+    def test_start_time_error(self):
+        """test start_time raising error for monthly report not started from the first day of the month"""
+        start_time = _dt.datetime(2024, 4, 2, 16)
+        with self.assertRaises(Exception) as e:
+            self.user.report("users", "monthly", start_time=start_time)
+            assert "Invalid start_time" in e.exception
+
+    def test_content_report(self):
+        """test weekly content report without start_time"""
+        content_item = self.user.report(report_type="content", duration="weekly")
+        assert content_item
+        assert content_item.delete()
+
+    def test_users_report(self):
+        """test monthly users report without start_time"""
+        users_item = self.user.report(report_type="users", duration="monthly")
         assert users_item
         assert users_item.delete()
 
