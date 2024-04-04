@@ -268,22 +268,22 @@ def summarize_nearby(
 
                                 Choice list:
 
-                                * ``StraightLine``,
-                                * ``Driving Distance``,
-                                * ``Driving Time``,
-                                * ``Rural Driving Distance``,
-                                * ``Rural Driving Time``,
-                                * ``Trucking Distance``,
-                                * ``Trucking Time``,
-                                * ``Walking Distance``,
+                                * ``StraightLine``
+                                * ``Driving Distance``
+                                * ``Driving Time``
+                                * ``Rural Driving Distance``
+                                * ``Rural Driving Time``
+                                * ``Trucking Distance``
+                                * ``Trucking Time``
+                                * ``Walking Distance``
                                 * ``Walking Time``
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    distances                   Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
+    distances                   Optional list of float values. Defines the search distance for ``StraightLine`` and distance-based travel modes, or time
                                 duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
                                 Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
                                 supplied by the units parameter.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    units                       Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
+    units                       Optional string. If :attr:`near_type` is ``StraightLine`` or a distance-based travel mode, this is the linear unit to be
                                 used with the distance value(s) specified in distances.
 
                                 Choice list:
@@ -340,9 +340,9 @@ def summarize_nearby(
                                 * "time_of_day"- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
                                 * "time_of_day"- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
                                 * "time_of_day"- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
-                                live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                Live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
                                 * "time_of_day"- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
-                                live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                Live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     time_zone_for_time_of_day   Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
 
@@ -354,10 +354,11 @@ def summarize_nearby(
 
                                 The default is 'GeoLocal'.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    return_boundaries           Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``. For example, if using 'StraightLine' of 5 miles,
-                                the ``result_layer`` will contain areas with a 5 mile radius around the input ``sum_nearby_layer`` features.
+    return_boundaries           Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``.
+                                For example, if using ``StraightLine`` of 5 miles,  the ``result_layer`` will contain areas with a 5 mile radius
+                                around the input ``sum_nearby_layer`` features.
 
-                                If False, the ``result_ayer`` will contain the same features as the ``sum_nearby_layer``.
+                                If False, the ``result_layer`` will contain the same features as the ``sum_nearby_layer``.
 
                                 The default is True.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -375,17 +376,27 @@ def summarize_nearby(
     summary_fields              Optional list of strings.A list of field names and statistical summary types that you want to calculate.
                                 Note that the count is always returned by default.
 
-                                fieldName is the name of one of the numeric fields found in the input join layer.
+                                Format:
 
-                                statisticType is one of the following:
+                                ["*fieldName* *statisticType*", ...]
 
-                                * ``SUM``-Adds the total value of all the points in each polygon
-                                * ``MEAN``-Calculates the average of all the points in each polygon
-                                * ``MIN``-Finds the smallest value of all the points in each polygon
-                                * ``MAX``-Finds the largest value of all the points in each polygon
-                                * ``STDDEV``-Finds the standard deviation of all the points in each polygon
+                                * *fieldName* is the name of one of the numeric fields found in the input join layer.
+                                * *statisticType* is one of the following:
 
-                                Example: ["fieldName summaryType","fieldName summaryType", ...]
+                                    * ``SUM``-Adds the total value of all the points in each polygon
+                                    * ``MEAN``-Calculates the average of all the points in each polygon
+                                    * ``MIN``-Finds the smallest value of all the points in each polygon
+                                    * ``MAX``-Finds the largest value of all the points in each polygon
+                                    * ``STDDEV``-Finds the standard deviation of all the points in each polygon
+
+                                .. code-block:: python
+
+                                    # Example:
+                                    >>> summ_output = summarize_nearby(
+                                                            ...
+                                                            summary_fields = ["Population MEAN","Households SUM"],
+                                                            ...
+                                                        )
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     group_by_field              Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately for each unique attribute value.
                                 For example, suppose the ``summary_layer`` contains point locations of businesses that store hazardous materials, and one of the fields is HazardClass
@@ -681,11 +692,11 @@ def summarize_within(
 
                                             The default is True.
     -------------------------------------   ---------------------------------------------------------
-    shape_units                             Optional string. Specify units to summarize the length or areas when ``sum_shape`` is set to true. Units is not required to summarize
-                                            points.
+    shape_units                             Optional string. Specify units to summarize the length or
+                                            areas when ``sum_shape`` is set to true. Units are not
+                                            required to summarize points.
 
                                             * When ``summary_layer`` contains polygons: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet']
-
                                             * When ``summary_layer`` contains lines: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
     -------------------------------------   ---------------------------------------------------------
     summary_fields                          Optional list of strings. A list of field names and statistical summary type that you wish

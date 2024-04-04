@@ -67,7 +67,7 @@ def generate_tessellation(
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
-                                             For calculate_density, there are three settings.
+                                             For *generate_tesselation*, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
