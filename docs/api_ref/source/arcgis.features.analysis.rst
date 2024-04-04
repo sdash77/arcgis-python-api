@@ -54,10 +54,6 @@ create_route_layers
 --------------
 .. autofunction:: arcgis.features.analysis.create_route_layers
 
-generate_tessellation
---------------
-.. autofunction:: arcgis.features.analysis.generate_tessellation
-
 create_viewshed
 --------------
 .. autofunction:: arcgis.features.analysis.create_viewshed
@@ -105,6 +101,10 @@ find_similar_locations
 find_centroids
 --------------
 .. autofunction:: arcgis.features.analysis.find_centroids
+
+generate_tessellation
+--------------
+.. autofunction:: arcgis.features.analysis.generate_tessellation
 
 interpolate_points
 --------------

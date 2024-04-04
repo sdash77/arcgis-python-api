@@ -575,16 +575,16 @@ def derive_new_locations(
                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
-                                                    .. code-block:: python
-
-                                                        # Example Usage
-                                                        context = {"extent": {"xmin": 3164569.408035,
-                                                                            "ymin": -9187921.892449,
-                                                                            "xmax": 3174104.927313,
-                                                                            "ymax": -9175500.875353,
-                                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                                    "outSR": {"wkid": 3857},
-                                                                    "overwrite": True}
+                                                .. code-block:: python
+    
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353,
+                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
     -------------------------------------       ------------------------------------------------------------------------------------------------------
     gis                                         Optional. The :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------       ------------------------------------------------------------------------------------------------------
@@ -746,19 +746,28 @@ def find_similar_locations(
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
-                                    .. code-block:: python
+                                .. code-block:: python
 
-                                        # Example Usage
-                                        context = {"extent": {"xmin": 3164569.408035,
-                                                            "ymin": -9187921.892449,
-                                                            "xmax": 3174104.927313,
-                                                            "ymax": -9175500.875353,
-                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                    "outSR": {"wkid": 3857},
-                                                    "overwrite": True}
-     ----------------------    ---------------------------------------------------------
+                                    # Example Usage
+                                    >>> locations_output = find_similar_locations(
+                                                                        ...                                   
+                                                                        context = {
+                                                                                "extent": {
+                                                                                    "xmin": 3164569.408035,
+                                                                                    "ymin": -9187921.892449,
+                                                                                    "xmax": 3174104.927313,
+                                                                                    "ymax": -9175500.875353,
+                                                                                    "spatialReference":{
+                                                                                            "wkid":102100,
+                                                                                            "latestWkid":3857}
+                                                                                        },
+                                                                                "outSR": {"wkid": 3857},
+                                                                                "overwrite": True}
+                                                                        ...
+                                                                )
+    -----------------------     -------------------------------------------------------------------------------------------
     gis                         Optional. The :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
-    -----------------------    --------------------------------------------------------------------------------
+    -----------------------     -------------------------------------------------------------------------------------------
     estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------     -------------------------------------------------------------------------------------------
     future                      Optional boolean. If True, a future object will be returned and the process
@@ -774,25 +783,29 @@ def find_similar_locations(
 
                                 Examples:
 
-                                * [{"referenceField":"population", "candidateField":"pop"}] (single criteria field)
-                                * [{"referenceField":"population", "candidateField":" pop"},
-                                    {"referenceField":"age", "candidateField":"age"},
-                                    {"referenceField":"edu", "candidateField":"education"}] (multiple criteria field)
+                                * [{"referenceField":"population", "candidateField":"pop"}] # (single criteria field)
+                                * [
+                                   {"referenceField":"population", "candidateField":" pop"},
+                                   {"referenceField":"age", "candidateField":"age"},
+                                   {"referenceField":"edu", "candidateField":"education"}
+                                  ]  # (multiple criteria field)
     =======================     ===========================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
-        "similar_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-
-        "process_info" : list of message
+        * *similar_result_layer* : :class:`~arcgis.features.FeatureCollection`
+        * *process_info* : list of messages
 
     .. code-block:: python
 
         #USAGE EXAMPLE: To find top 4 most locations from the candidates layer that are similar to the target location.
-        top_4_most_similar_locations = find_similar_locations(target_lyr, candidates_lyr,
-                                                    analysis_fields=['THH17','THH35','THH02','THH05','POPDENS14','FAMGRW10_14','UNEMPRT_CY'],
-                                                    output_name = "top 4 similar locations",
-                                                    number_of_results=4)
+        >>> top_4_most_similar_locations = find_similar_locations(
+                                                        target_lyr,
+                                                        candidates_lyr,
+                                                        analysis_fields=['THH17','THH35','THH02','THH05','POPDENS14','FAMGRW10_14','UNEMPRT_CY'],
+                                                        output_name = "top 4 similar locations",
+                                                        number_of_results=4
+                                                )
     """
     if analysis_fields is None:
         analysis_fields = []
@@ -849,47 +862,83 @@ def find_centroids(
     For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
     ================    ===============================================================
-    **Parameter**        **Description**
+    **Parameter**       **Description**
     ----------------    ---------------------------------------------------------------
-    input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
+    input_layer         Required feature layer. The multipoint, line, or polygon features
+                        that will be used to generate centroid point features.
+                        See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
-    point_location      Optional boolean. A Boolean value that determines the output location of the points.
+    point_location      Optional boolean. A Boolean value that determines the output
+                        location of the points.
 
-                        + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
-                        + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+                        + True - Output points will be the nearest point to the actual
+                          centroid, but located inside or contained by the bounds of
+                          the input feature.
+                        + False - Output point locations will be determined by the
+                          calculated geometric center of each input feature. This is
+                          the default.
     ----------------    ---------------------------------------------------------------
     output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                        feature layer will cause the new layer to be appended to the Feature Service.
-                        If overwrite is True in context, new layer will overwrite existing layer.
-                        If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+                        feature layer will cause the new layer to be appended to the
+                        Feature Service.
+                        
+                        * If overwrite is *True* in *contextI, new layer will overwrite
+                          existing layer.
+                        * If *output_name* not provided, a new
+                          :class:`~arcgis.features.FeatureCollection` is created.
     ----------------    ---------------------------------------------------------------
-    context             Optional dict. Additional settings such as processing extent and output spatial reference.
-                        For find_centroids, there are three settings.
+    context             Optional dict. Additional settings such as processing extent
+                        and output spatial reference. For *find_centroids*, there are
+                        three *context* settings.
 
-                        - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                        - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                        - ``extent`` - a bounding box that defines the analysis area. Only
+                          those features in the input_layer that intersect the bounding box
+                          will be analyzed.
+                        - ``outSR`` - the output features will be projected into the output
+                          spatial reference referred to by the `wkid`.
+                        - ``overwrite`` - if *True*, then the feature layer in *output_name*
+                          will be overwritten with new feature layer. Available for ArcGIS
+                          Online or Enterprise 10.9.1+.
 
-                            .. code-block:: python
+                        .. code-block:: python
 
-                                # Example Usage
-                                context = {"extent": {"xmin": 3164569.408035,
-                                                    "ymin": -9187921.892449,
-                                                    "xmax": 3174104.927313,
-                                                    "ymax": -9175500.875353,
-                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                            "outSR": {"wkid": 3857},
-                                            "overwrite": True}
-     ---------------    ---------------------------------------------------------
-    gis                 Optional. The :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
-    ----------------    ----------------------------------------------------------
-    estimate            Optional boolean. If True, the number of credits to run the operation will be returned.
+                            # Example Usage
+                            centroids_res = find_centroids(
+                                                ...
+                                                context = {
+                                                        "extent": {
+                                                                "xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{
+                                                                        "wkid":102100,
+                                                                        "latestWkid":3857
+                                                                    }
+                                                                },
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True
+                                                    }
+                                                ...
+                                            )
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, a future object will be returned and the process
-                        will not wait for the task to complete. The default is False, which means wait for results.
+    gis                 Optional. The :class:`~arcgis.gis.GIS`  on which this
+                        tool runs. If not specified, the active GIS is used.
+    ----------------    ---------------------------------------------------------------
+    estimate            Optional boolean. If True, the number of credits to run
+                        the operation will be returned.
+    ----------------    ---------------------------------------------------------------
+    future              Optional boolean.
+    
+                        * If *True*, a future object will be returned which can be
+                          queried for results. The process will return control to user.
+                        * If *False*, the process completes before returning control to
+                          the user. The default is *False*.
     ================    ===============================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
+    :return:
+        * :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified
+        * :class:`~arcgis.features.FeatureCollection` if ``output_name`` not specified
 
     .. code-block:: python
 
@@ -1690,21 +1739,25 @@ def trace_downstream(
     =====================================   =========================================================
     **Parameter**                            **Description**
     -------------------------------------   ---------------------------------------------------------
-    input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
-                                            See :ref:`Feature Input<FeatureInput>`.
+    input_layer                             Required feature layer. The point features used for the
+                                            starting location of a downstream trace. See
+                                            :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
-    split_distance                          Optional float. The trace line will be split into multiple lines where each line is of the specified length.
-                                            The resulting trace will have multiple line segments, each with fields FromDistance and ToDistance.
+    split_distance                          Optional float. The trace line will be split into multiple
+                                            lines where each line is of the specified length. The
+                                            resulting trace will have multiple line segments, each
+                                            with fields *FromDistance* and *ToDistance*.
     -------------------------------------   ---------------------------------------------------------
     split_units                             Optional string. The units used to specify split distance.
 
                                             Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-                                            The default is 'Kilometers'.
+                                            The default is *Kilometers*.
     -------------------------------------   ---------------------------------------------------------
-    max_distance                            Optional float. Determines the total length of the line that will be returned. If you provide a
-                                            ``bounding_polygon_layer`` to clip the trace, the result will be clipped to the features in ``bounding_polygon_layer``,
-                                            regardless of the distance you enter here.
+    max_distance                            Optional float. Determines the total length of the line
+                                            that will be returned. If you provide a *bounding_polygon_layer*
+                                            to clip the trace, the result will be clipped to the features
+                                            in that layer regardless of the distance you enter here.
     -------------------------------------   ---------------------------------------------------------
     max_distance_units                      Optional string. The units used to specify maximum distance.
 
@@ -1712,55 +1765,86 @@ def trace_downstream(
 
                                             The default is 'Kilometers'.
     -------------------------------------   ---------------------------------------------------------
-    bounding_polygon_layer                  Optional feature layer. A polygon layer specifying the area(s) where you want the trace
-                                            downstreams to be calculated in. For example, if you only want to calculate the trace downstream
-                                            with in a county polygon, provide a layer containing the county polygon and the resulting trace
-                                            lines will be clipped to the county boundary. See :ref:`Feature Input<FeatureInput>`.
+    bounding_polygon_layer                  Optional feature layer. A polygon layer specifying the
+                                            area(s) where you want the trace downstreams to be calculated
+                                            in. For example, if you only want to calculate the trace
+                                            downstream with in a county polygon, provide a layer
+                                            containing the county polygon and the resulting trace lines
+                                            will be clipped to the county boundary.
+                                            See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
-    source_database                         Optional string. Keyword indicating the data source resolution that will be used in the analysis.
+    source_database                         Optional string. Keyword indicating the data source
+                                            resolution that will be used in the analysis.
 
-                                            Choice list: ['Finest', '30m', '90m'].
+                                            Choice list:
+                                            
+                                            * Finest: Finest resolution available at each location
+                                              from all possible data sources.
+                                            * 30m: The hydrologic source was built from 1 arc second -
+                                              approximately 30 meter resolution, elevation data.
+                                            * 90m: The hydrologic source was built from 3 arc second -
+                                              approximately 90 meter resolution, elevation data.
 
-                                            * Finest: Finest resolution available at each location from all possible data sources.
-
-                                            * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
-
-                                            * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
-
-                                            The default is 'Finest'.
+                                            The default is *Finest*.
     -------------------------------------   ---------------------------------------------------------
-    generalize                              Optional boolean. Determines if the output trace downstream lines will be smoothed
-                                            into simpler lines or conform to the cell edges of the original DEM.
+    generalize                              Optional boolean. Determines if the output trace downstream 
+                                            lines will be smoothed into simpler lines or conform to
+                                            the cell edges of the original DEM.
     -------------------------------------   ---------------------------------------------------------
-    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                                            feature layer will cause the new layer to be appended to the Feature Service.
-                                            If overwrite is True in context, new layer will overwrite existing layer.
-                                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`.
+                                            Existing feature layer will cause the new layer to be
+                                            appended to the Feature Service.
+                                            
+                                            * If overwrite is *True* in context, new layer will
+                                              overwrite existing layer.
+                                            * If *output_name* not indicated then new
+                                              :class:`~arcgis.features.FeatureCollection` created.                             
     -------------------------------------   ---------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                             For trace_downstream, there are three settings.
 
-                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                            - ``extent`` - a bounding box that defines the analysis area.
+                                              Only those features in the input_layer that intersect the
+                                              bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the
+                                              output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if *True*, then the feature layer in
+                                              *output_name* will be overwritten with new feature layer.
+                                              Available for ArcGIS Online or Enterprise 10.9.1+
 
-                                                .. code-block:: python
+                                            .. code-block:: python
 
-                                                    # Example Usage
-                                                    context = {"extent": {"xmin": 3164569.408035,
-                                                                        "ymin": -9187921.892449,
-                                                                        "xmax": 3174104.927313,
-                                                                        "ymax": -9175500.875353,
-                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                                "outSR": {"wkid": 3857},
-                                                                "overwrite": True}
-    -------------------------------------    ---------------------------------------------------------
-    gis                                      Optional. The :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
-    -------------------------------------    ----------------------------------------------------------------------------------------------   ---------------------------------------------------------
-    estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+                                                # Example Usage
+                                                >>> trace_res = trace_downstream(
+                                                                        ...
+                                                                        context = {
+                                                                                "extent": {
+                                                                                    "xmin": 3164569.408035,
+                                                                                    "ymin": -9187921.892449,
+                                                                                    "xmax": 3174104.927313,
+                                                                                    "ymax": -9175500.875353,
+                                                                                    "spatialReference":{
+                                                                                        "wkid":102100,
+                                                                                        "latestWkid":3857
+                                                                                        }
+                                                                                    },
+                                                                                "outSR": {"wkid": 3857},
+                                                                                "overwrite": True}
+                                                                        ...
+                                                                    )
     -------------------------------------   ---------------------------------------------------------
-    future                                  Optional boolean. If True, a future object will be returned and the process
-                                            will not wait for the task to complete. The default is False, which means wait for results.
+    gis                                     Optional. The :class:`~arcgis.gis.GIS`  on which this tool
+                                            runs. If not specified, the active GIS is used.
+    -------------------------------------   ---------------------------------------------------------
+    estimate                                Optional boolean. If True, the number of credits to run
+                                            the operation will be returned.
+    -------------------------------------   ---------------------------------------------------------
+    future                                  Optional boolean.
+    
+                                            * If *True*, a future object will be returned that can be
+                                              queried for results. The process returns control to the user.
+                                            * If *False*, the process waits for results until returning
+                                              control to the user. The default is *False*.
     =====================================   =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class:`~arcgis.features.FeatureCollection`.
