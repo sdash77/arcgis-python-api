@@ -845,7 +845,7 @@ def join_features(
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     target_layer                                               Required layer. The point, line, polygon or table layer that will
                                                                have attributes from  the ``join_layer`` appended to its table.
-                                                               See :ref:`Feature Input<FeatureInput>`.                            
+                                                               See :ref:`Feature Input<FeatureInput>`.
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     join_layer                                                 Required layer. The point, line, polygon or table layer that will be
                                                                joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -854,7 +854,7 @@ def join_features(
                                                                relationship used to spatially join features.
 
                                                                Choice list:
-                                                             
+
                                                                * *identicalto*
                                                                * *intersects*
                                                                * *completelycontains*
@@ -863,19 +863,19 @@ def join_features(
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     spatial_relationship_distance                              Optional float. **Required** if *spatial_relationship* is *withindistance*.
                                                                A value used for the search distance to determine if the target features
-                                                               are near or within a specified distance of the join features. 
-                                                            
+                                                               are near or within a specified distance of the join features.
+
                                                                .. note::
                                                                    Only applied if *withindistance* is the *spatial_relationship* argument.
-                                                                
+
                                                                You can only enter a single distance value.
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     spatial_relationship_distance_units                        Optional string. **Required** if *spatial_relationship* argument is
                                                                *withindistance*. The linear unit to be used with the distance value
                                                                specified as the *spatial_relationship_distance* argument.
-                                                                                                    
+
                                                                Choice list:
-                                                                
+
                                                                * *Miles*
                                                                * *Yards*
                                                                * *Feet*
@@ -901,7 +901,7 @@ def join_features(
                                                                  sum is selected, the aggregated value in the output feature class will be 10.
                                                                  There will always be a Count field calculated, with a value of 2, for the
                                                                  number of features specified. This is the default.
-                                                                  
+
 
                                                                * *JoinOneToMany* - If multiple join features are found that have the same
                                                                  relationship with a single target feature, the output feature class will contain
@@ -913,18 +913,18 @@ def join_features(
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     summary_fields                                             Optional list of dicts. A list of field names and statistical summary types
                                                                that you want to calculate. Note that the count is always returned by default.
-                                                               
+
                                                                Format of argument:
-                                                               
+
                                                                .. code-block:: python
-                                                               
+
                                                                    >>> join_features(...
                                                                             summary_fields= [
                                                                                     {"onStatisticField": "fieldName", "statisticType": "statisticName"},
                                                                                     {"onStatisticField": "fieldName", "statisticType": "statisticName"}
                                                                                 ],
                                                                             ...)
-                                                          
+
                                                                * *statisticType* name is one of the following:
 
                                                                  * ``SUM`` - Adds the total value of all the points in each polygon
@@ -936,7 +936,7 @@ def join_features(
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     output_name                                                Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                                                                feature layer will cause the new layer to be appended to the Feature Service.
-                                                               
+
                                                                * If overwrite is *True* in *context*, new layer will overwrite existing layer.
                                                                * If *output_name* not indicated then a new :class:`~arcgis.features.FeatureCollection`
                                                                  is created.
@@ -975,7 +975,7 @@ def join_features(
                                                                will be returned.
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     future                                                     Optional boolean.
-    
+
                                                                * If *True*, a future object will be returned and the process returns
                                                                  control to the user.
                                                                * If *False*, the process waits for the results to complete before
@@ -983,14 +983,14 @@ def join_features(
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     join_type                                                  Optional String.  Determines the type of join performed on the datasets.
                                                                The allowed values are;
-                                                               
+
                                                                * *INNER*
                                                                * *LEFT*
     --------------------------------------------------------   ---------------------------------------------------------------------------------------
     records_to_match                                           Optional Dict. Defines how two features are joined.
-                                                                
+
                                                                Example:
-                                                                
+
                                                                | {"groupByFields":"",
                                                                | "orderByFields":"objectid ASC",
                                                                | "topCount":1}

@@ -576,7 +576,7 @@ def derive_new_locations(
                                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
-    
+
                                                     # Example Usage
                                                     context = {"extent": {"xmin": 3164569.408035,
                                                                         "ymin": -9187921.892449,
@@ -750,7 +750,7 @@ def find_similar_locations(
 
                                     # Example Usage
                                     >>> locations_output = find_similar_locations(
-                                                                        ...                                   
+                                                                        ...
                                                                         context = {
                                                                                 "extent": {
                                                                                     "xmin": 3164569.408035,
@@ -881,7 +881,7 @@ def find_centroids(
     output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                         feature layer will cause the new layer to be appended to the
                         Feature Service.
-                        
+
                         * If overwrite is *True* in *contextI, new layer will overwrite
                           existing layer.
                         * If *output_name* not provided, a new
@@ -929,7 +929,7 @@ def find_centroids(
                         the operation will be returned.
     ----------------    ---------------------------------------------------------------
     future              Optional boolean.
-    
+
                         * If *True*, a future object will be returned which can be
                           queried for results. The process will return control to user.
                         * If *False*, the process completes before returning control to
@@ -1777,7 +1777,7 @@ def trace_downstream(
                                             resolution that will be used in the analysis.
 
                                             Choice list:
-                                            
+
                                             * Finest: Finest resolution available at each location
                                               from all possible data sources.
                                             * 30m: The hydrologic source was built from 1 arc second -
@@ -1787,18 +1787,18 @@ def trace_downstream(
 
                                             The default is *Finest*.
     -------------------------------------   ---------------------------------------------------------
-    generalize                              Optional boolean. Determines if the output trace downstream 
+    generalize                              Optional boolean. Determines if the output trace downstream
                                             lines will be smoothed into simpler lines or conform to
                                             the cell edges of the original DEM.
     -------------------------------------   ---------------------------------------------------------
     output_name                             Optional string or :class:`~arcgis.features.FeatureLayer`.
                                             Existing feature layer will cause the new layer to be
                                             appended to the Feature Service.
-                                            
+
                                             * If overwrite is *True* in context, new layer will
                                               overwrite existing layer.
                                             * If *output_name* not indicated then new
-                                              :class:`~arcgis.features.FeatureCollection` created.                             
+                                              :class:`~arcgis.features.FeatureCollection` created.
     -------------------------------------   ---------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
                                             For trace_downstream, there are three settings.
@@ -1840,7 +1840,7 @@ def trace_downstream(
                                             the operation will be returned.
     -------------------------------------   ---------------------------------------------------------
     future                                  Optional boolean.
-    
+
                                             * If *True*, a future object will be returned that can be
                                               queried for results. The process returns control to the user.
                                             * If *False*, the process waits for results until returning
