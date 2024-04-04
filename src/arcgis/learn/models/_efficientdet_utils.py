@@ -236,7 +236,7 @@ def _get_optimizer(params):
         else:
             learning_rate = params["constant_lr"]
 
-    momentum = params["momentum"]
+    momentum = tf.Variable(params["momentum"], dtype=tf.float32, trainable=False)
     if params["optimizer"].lower() == "sgd":
         optimizer = tf.keras.optimizers.SGD(learning_rate, momentum=momentum)
     elif params["optimizer"].lower() == "adam":

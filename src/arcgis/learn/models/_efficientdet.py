@@ -56,7 +56,7 @@ class EfficientDet(ArcGISModel):
                             Only (JPEG+PASCAL_VOC_rectangles) format supported.
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone convolutional neural network
-                            model used for feature extraction, which
+                            model used for EfficientDet, which
                             is `efficientdet_lite0` by default.
     ---------------------   -----------------------------------------------------
     pretrained_path         Optional String. Path where a compatible pre-trained
