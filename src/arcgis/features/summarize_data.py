@@ -278,12 +278,12 @@ def summarize_nearby(
                                 * ``Walking Distance``
                                 * ``Walking Time``
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    distances                   Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
+    distances                   Optional list of float values. Defines the search distance for ``StraightLine`` and distance-based travel modes, or time
                                 duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
                                 Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
                                 supplied by the units parameter.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    units                       Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
+    units                       Optional string. If :attr:`near_type` is ``StraightLine`` or a distance-based travel mode, this is the linear unit to be
                                 used with the distance value(s) specified in distances.
 
                                 Choice list:
@@ -355,7 +355,7 @@ def summarize_nearby(
                                 The default is 'GeoLocal'.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     return_boundaries           Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``.
-                                For example, if using 'StraightLine' of 5 miles,  the ``result_layer`` will contain areas with a 5 mile radius
+                                For example, if using ``StraightLine`` of 5 miles,  the ``result_layer`` will contain areas with a 5 mile radius
                                 around the input ``sum_nearby_layer`` features.
 
                                 If False, the ``result_layer`` will contain the same features as the ``sum_nearby_layer``.
