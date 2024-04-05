@@ -119,9 +119,9 @@ class PSETAE(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTsClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
+            )
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data._class_map_dict
         if self._data._num_class_map_dict:

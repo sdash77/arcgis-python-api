@@ -210,7 +210,9 @@ class AGOLAdminManager(object):
 
         if item_type:
             params["types"] = item_type.value
-        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
         session = self._gis._con._session
         resp = session.get(url=url, params=params)
         resp.raise_for_status()
@@ -429,7 +431,9 @@ class AGOLAdminManager(object):
                 for task in res.get("tasks", []):
                     owner: str = task["userId"]
                     task_id: str = task["id"]
-                    task_url: str = f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
                     yield Task(url=task_url, gis=self._gis)
 
             start = res["nextStart"]

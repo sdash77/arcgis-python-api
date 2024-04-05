@@ -786,12 +786,12 @@ class WebMap(HasTraits, collections.OrderedDict):
             elif hasattr(layer, "properties"):
                 if hasattr(layer.properties, "layerDefinition"):
                     if hasattr(layer.properties.layerDefinition, "serviceItemId"):
-                        new_layer[
-                            "type"
-                        ] = "Feature Collection"  # if ItemId is found, then type is fc and insert item id
-                        new_layer[
-                            "itemId"
-                        ] = layer.properties.layerDefinition.serviceItemId
+                        new_layer["type"] = (
+                            "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                        )
+                        new_layer["itemId"] = (
+                            layer.properties.layerDefinition.serviceItemId
+                        )
                 elif hasattr(layer, "layer"):
                     if hasattr(layer.layer, "layers"):
                         if hasattr(layer.layer.layers[0], "layerDefinition"):
@@ -799,9 +799,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                                 layer.layer.layers[0].layerDefinition,
                                 "serviceItemId",
                             ):
-                                new_layer[
-                                    "type"
-                                ] = "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                                new_layer["type"] = (
+                                    "Feature Collection"  # if ItemId is found, then type is fc and insert item id
+                                )
                                 new_layer["itemId"] = layer.layer.layers[
                                     0
                                 ].layerDefinition.serviceItemId

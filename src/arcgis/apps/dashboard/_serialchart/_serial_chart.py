@@ -1212,9 +1212,7 @@ class SerialChartData(object):
             "title": (
                 label
                 if label
-                else value_field[0]
-                if isinstance(value_field, list)
-                else value_field
+                else value_field[0] if isinstance(value_field, list) else value_field
             ),
             "lineColor": line_color,
             "lineColorField": "_lineColor_",

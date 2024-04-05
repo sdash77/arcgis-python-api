@@ -1145,9 +1145,9 @@ class ServiceAreaLayer(NetworkLayer):
         if return_empty_results is not None:
             params["returnEmptyResults"] = return_empty_results
         if include_source_information_on_lines is not None:
-            params[
-                "includeSourceInformationOnLines"
-            ] = include_source_information_on_lines
+            params["includeSourceInformationOnLines"] = (
+                include_source_information_on_lines
+            )
         if future:
             f = self._run_async(
                 self._con.post,

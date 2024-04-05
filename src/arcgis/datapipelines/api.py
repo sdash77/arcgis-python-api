@@ -19,7 +19,9 @@ def _get_arcgis_pipeline(
     helper_service = gis.properties["helperServices"]
 
     if "dataPipelines" in helper_service:
-        url: str = f"{helper_service['dataPipelines']['url']}/api/v{version}/{gis.properties['id']}/"
+        url: str = (
+            f"{helper_service['dataPipelines']['url']}/api/v{version}/{gis.properties['id']}/"
+        )
         return DataPipelines(url=url, gis=gis)
     return None
 

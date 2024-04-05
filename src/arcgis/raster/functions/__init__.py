@@ -8771,9 +8771,9 @@ def pansharpen(
     }
 
     if type is not None:
-        template_dict["rasterFunctionArguments"][
-            "PansharpeningType"
-        ] = pansharpening_types[type]
+        template_dict["rasterFunctionArguments"]["PansharpeningType"] = (
+            pansharpening_types[type]
+        )
 
     if ir_raster is not None:
         template_dict["rasterFunctionArguments"]["InfraredImage"] = ir_raster_1
@@ -10792,12 +10792,12 @@ def aggregate(
                 percentile_interpolation_type = 2
             elif percentile_interpolation_type.upper() == "LINEAR":
                 percentile_interpolation_type = 3
-            template_dict["rasterFunctionArguments"][
-                "AggregationFunction"
-            ] = _local_function_template(
-                operation_number=opnum,
-                percentile_value=percentile_value,
-                percentile_interpolation_type=percentile_interpolation_type,
+            template_dict["rasterFunctionArguments"]["AggregationFunction"] = (
+                _local_function_template(
+                    operation_number=opnum,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                )
             )
         if (
             "type"
@@ -12778,9 +12778,9 @@ def dimensional_moving_statistics(
                 "nodata_handling parameter value should be one of the following "
                 + str(nodata_handling_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "NoDataHandling"
-        ] = nodata_handling_types[nodata_handling.upper()]
+        template_dict["rasterFunctionArguments"]["NoDataHandling"] = (
+            nodata_handling_types[nodata_handling.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13230,9 +13230,9 @@ def surface_parameters(
                 "parameter_type should be one of the following "
                 + str(parameter_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "SurfaceCalculation"
-        ] = parameter_types[parameter_type.upper()]
+        template_dict["rasterFunctionArguments"]["SurfaceCalculation"] = (
+            parameter_types[parameter_type.upper()]
+        )
 
     surface_types = {
         "QUADRATIC": 1,
@@ -13322,9 +13322,9 @@ def surface_parameters(
                 "use_equatorial_aspect should be one of the following "
                 + str(eq_aspect_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "UseEquatorialAspect"
-        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+        template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = (
+            eq_aspect_types[use_equatorial_aspect.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 

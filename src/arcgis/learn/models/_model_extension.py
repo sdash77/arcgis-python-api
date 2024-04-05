@@ -208,9 +208,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                )
             _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
@@ -221,9 +221,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                )
             _emd_template["ModelConfiguration"] = "_panoptic_inferencing"
 
         else:
@@ -231,9 +231,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["Classes"] = []
