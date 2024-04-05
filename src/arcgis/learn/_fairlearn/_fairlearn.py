@@ -196,9 +196,10 @@ def get_mdf(_data, sensitive_features, col, y_test, y_pred):
     for value in values:
         metrics = {}
         for k, v in regression_metrics.items():
+            filtered_rows = sensitive_features[col] == value
             metrics[k] = v(
-                y_test[sensitive_features[col] == value],
-                y_pred[sensitive_features[col] == value],
+                y_test.where(filtered_rows.values).dropna(),
+                y_pred.where(filtered_rows.values).dropna(),
             )
         all_metrics += [metrics]
 
