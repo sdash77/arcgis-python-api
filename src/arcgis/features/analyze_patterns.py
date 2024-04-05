@@ -816,9 +816,9 @@ def find_hot_spots(
     ===================================================================     =========================================================
     **Parameter**                                                            **Description**
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
+    analysis_layer                                                          Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
+    analysis_field                                                          Optional string. **Required** if the *analysis_layer* contains polygons. The numeric field that will be analyzed. The field you select might represent:
 
                                                                             + counts (such as the number of traffic accidents)
                                                                             + rates (such as the number of crimes per square mile)
