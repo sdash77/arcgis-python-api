@@ -1103,11 +1103,37 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_variables                             Required list of dictionaries. The variables that will be combined to create the index.
                                                     Provide at least two variables. For each variable, specify the following:
 
-                                                    * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
-                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to False. When True the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
-                                                    * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
+                                                    * `field` is the numeric field from the inputLayer containing the variable.
+                                                      Any records in the field with missing values will not be included in the analysis.
+                                                    * `reverseVariable` specifies whether the values of the variable will be reversed.
+                                                      If no value is specified, the value will be set to *False*. When *True* the feature
+                                                      or record that originally had the highest value will have the lowest value,
+                                                      and vice versa. Values will be reversed after scaling. To create an index, variables
+                                                      must be on a compatible scale; reversing some variables may be required to ensure
+                                                      the meaning of low and high values in each variable is consistent.
+                                                    * `weight` is the relative influence of the variable on the index. If each
+                                                      variable should have equal contribution, set the value to 1. Increase or decrease
+                                                      the weight to reflect the relative importance of the variable. For example, if a
+                                                      variable is twice as important as the others, use a weight of 2.
 
-                                                    Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
+                                                    .. code-block:: python
+
+                                                        #Example:
+                                                        >>> output = calculate_composite_index(
+                                                                                ...,
+                                                                                input_variables = [
+                                                                                    {"field":"median_income",
+                                                                                     "reverseVariable": True,
+                                                                                     "weight": 2},
+                                                                                    {"field": "pct_uninsured",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1},
+                                                                                    {"field": "pct_unemployed",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1}
+                                                                                    ],
+                                                                                ...,
+                                                                            )
         -------------------------------------       ---------------------------------------------------------
         index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
                                                     the scaled variables to create the index.
