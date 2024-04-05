@@ -11739,12 +11739,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_cost_raster = self._layer_input(input_cost_raster)
 
         if estimate:
-            output_optimum_network_name, output_optimum_network_service = (
-                self._output_name_dict(
-                    output_name=output_optimum_network_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_optimum_network_name,
+                output_optimum_network_service,
+            ) = self._output_name_dict(
+                output_name=output_optimum_network_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_optimum_network_name is None:
@@ -11810,12 +11811,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 )
 
         if estimate:
-            output_neighbor_network_name, output_neighbor_network_service = (
-                self._output_name_dict(
-                    output_name=output_neighbor_network_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_neighbor_network_name,
+                output_neighbor_network_service,
+            ) = self._output_name_dict(
+                output_name=output_neighbor_network_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_neighbor_network_name is None:
@@ -13547,18 +13549,31 @@ class _RasterAnalysisTools(BaseAnalytics):
         if self._current_version is not None:
             current_version = self._current_version
             if current_version is not None and current_version >= 11.1:
-                gpjob = self._tbx.train_classifier(
-                    input_raster=input_raster,
-                    input_training_sample_json=input_training_sample_json,
-                    classifier_parameters=classifier_parameters,
-                    segmented_raster=segmented_raster,
-                    segment_attributes=segment_attributes,
-                    dimension_value_field=dimension_value_field,
-                    output_ecd_item_name=output_ecd_item_name,
-                    gis=gis,
-                    future=True,
-                    estimate=estimate,
-                )
+                if self._gis._is_agol:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
+                else:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        output_ecd_item_name=output_ecd_item_name,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.train_classifier(
                     input_raster=input_raster,
@@ -15822,20 +15837,22 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if estimate:
-            output_optimal_lines_name, output_optimal_lines_service = (
-                self._output_name_dict(
-                    output_name=output_optimal_lines_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_optimal_lines_name,
+                output_optimal_lines_service,
+            ) = self._output_name_dict(
+                output_name=output_optimal_lines_name,
+                task=task,
+                output_properties=kwargs,
             )
 
-            output_neighbor_connections_name, output_neighbor_connections_service = (
-                self._output_name_dict(
-                    output_name=output_neighbor_connections_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_neighbor_connections_name,
+                output_neighbor_connections_service,
+            ) = self._output_name_dict(
+                output_name=output_neighbor_connections_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             folderId = None
