@@ -13521,18 +13521,31 @@ class _RasterAnalysisTools(BaseAnalytics):
         if self._current_version is not None:
             current_version = self._current_version
             if current_version is not None and current_version >= 11.1:
-                gpjob = self._tbx.train_classifier(
-                    input_raster=input_raster,
-                    input_training_sample_json=input_training_sample_json,
-                    classifier_parameters=classifier_parameters,
-                    segmented_raster=segmented_raster,
-                    segment_attributes=segment_attributes,
-                    dimension_value_field=dimension_value_field,
-                    output_ecd_item_name=output_ecd_item_name,
-                    gis=gis,
-                    future=True,
-                    estimate=estimate,
-                )
+                if self._gis._is_agol:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
+                else:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        output_ecd_item_name=output_ecd_item_name,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.train_classifier(
                     input_raster=input_raster,

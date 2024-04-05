@@ -3362,6 +3362,10 @@ def train_classifier(
     --------------------------------     --------------------------------------------------------------------
     output_ecd_item_name                 Optional String or Item. The output ECD Portal item to be created.
                                          If an Item is provided, the given item will be overwritten with the ECD instead.
+
+                                         .. note::
+
+                                            This parameter is not currently supported on AGOL. 
     --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                          is used.
