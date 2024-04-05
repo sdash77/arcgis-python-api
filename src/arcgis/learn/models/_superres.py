@@ -374,9 +374,9 @@ class SuperResolution(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
         _emd_template["downsample_factor"] = self._data.downsample_factor
         _emd_template["n_channel"] = self._data._n_channel
         _emd_template["is_multispec"] = self._data._is_multispec

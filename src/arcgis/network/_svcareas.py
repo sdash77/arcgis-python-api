@@ -1378,9 +1378,9 @@ def generate_service_areas(
         "locate_settings": locate_settings,
     }
     if gis._is_agol == False:
-        params["exclude_sources_from_polygon_generation"] = (
-            exclude_sources_from_polygon_generation
-        )
+        params[
+            "exclude_sources_from_polygon_generation"
+        ] = exclude_sources_from_polygon_generation
     params = inspect_function_inputs(tbx.generate_service_areas, **params)
     params["future"] = True
     job = tbx.generate_service_areas(**params)

@@ -527,9 +527,9 @@ class DeepLab(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation

@@ -168,9 +168,9 @@ class CycleGAN(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_intput_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True

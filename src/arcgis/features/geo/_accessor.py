@@ -1532,7 +1532,6 @@ class GeoAccessor(object):
             self._name = col
             sdf = self._data
         elif self._data[col].dtype.name.lower() != "geometry" and inplace == False:
-
             sdf = self._data.copy()
             sdf.loc[self._data[col].isna(), col] = None
             sdf.loc[self._data[col].isnull(), col] = None

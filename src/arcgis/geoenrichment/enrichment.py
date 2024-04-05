@@ -2310,9 +2310,7 @@ def interesting_facts(
     if out_sr is None:
         out_sr = {"wkid": 3857}
 
-    url: str = (
-        f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
-    )
+    url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
     study_areas = _process_study_areas(areas=study_areas)
     params = {
         "studyAreas": study_areas,

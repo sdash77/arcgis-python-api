@@ -70,7 +70,9 @@ class AGOLServerManager:
         return InsensitiveDict(resp)
 
     @lru_cache(maxsize=50)
-    def get(self, name: str) -> Union[
+    def get(
+        self, name: str
+    ) -> Union[
         _mapservermgr.VectorTileLayerManager,
         _imagemgr.ImageryLayerCacheManager,
         _scenemgr.SceneLayerManager,

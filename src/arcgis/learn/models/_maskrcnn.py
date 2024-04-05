@@ -706,9 +706,9 @@ class MaskRCNN(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
         _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend

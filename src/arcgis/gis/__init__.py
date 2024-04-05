@@ -12079,7 +12079,6 @@ class User(dict):
             self._gis.users.me.username != self["username"]
             and self._gis._is_arcgisonline
         ):
-
             groups: list[Group] = []
             for grp in self["groups"]:
                 try:
@@ -13595,9 +13594,7 @@ class Item(dict):
             raise ValueError("`user` must be a string or User object.")
         elif isinstance(target_user, User):
             target_user: str = target_user.username
-        url: str = (
-            f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
-        )
+        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
         params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
         session: EsriSession = self._gis._con._session
         resp: requests.Response = session.post(url=url, data=params)

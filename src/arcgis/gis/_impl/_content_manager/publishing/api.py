@@ -354,9 +354,7 @@ def publish(
         job_id: str = publish_payload.get("jobId", None)
 
         if folder:
-            status_url: str = (
-                f"{item._gis.resturl}content/users/{owner}/{folder}/items/{item_id}/status"
-            )
+            status_url: str = f"{item._gis.resturl}content/users/{owner}/{folder}/items/{item_id}/status"
         else:
             status_url: str = (
                 f"{item._gis.resturl}content/users/{owner}/items/{item_id}/status"

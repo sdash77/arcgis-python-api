@@ -2485,12 +2485,12 @@ class FeatureLayerCollectionManager(_GISResource):
             props["url"] = new_source.url
         if "viewLayerDefinition" in flc_lyr_info.manager.properties["adminLayerInfo"]:
             props["adminLayerInfo"] = {}
-            props["adminLayerInfo"]["viewLayerDefinition"] = (
-                flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
-            )
-            props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
-                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
-            )
+            props["adminLayerInfo"][
+                "viewLayerDefinition"
+            ] = flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
+            props["adminLayerInfo"]["viewLayerDefinition"][
+                "sourceServiceName"
+            ] = os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
             delete_json: dict = {"layers": [{"id": index}], "tables": []}
@@ -3093,9 +3093,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 if "editorTrackingInfo" in json_dict:
                     definition["editorTrackingInfo"] = collections.OrderedDict()
                     if "enableEditorTracking" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"]["enableEditorTracking"] = (
-                            json_dict["editorTrackingInfo"]["enableEditorTracking"]
-                        )
+                        definition["editorTrackingInfo"][
+                            "enableEditorTracking"
+                        ] = json_dict["editorTrackingInfo"]["enableEditorTracking"]
 
                     if (
                         "enableOwnershipAccessControl"
@@ -3108,19 +3108,19 @@ class FeatureLayerCollectionManager(_GISResource):
                         ]
 
                     if "allowOthersToUpdate" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"]["allowOthersToUpdate"] = (
-                            json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
-                        )
+                        definition["editorTrackingInfo"][
+                            "allowOthersToUpdate"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
 
                     if "allowOthersToDelete" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"]["allowOthersToDelete"] = (
-                            json_dict["editorTrackingInfo"]["allowOthersToDelete"]
-                        )
+                        definition["editorTrackingInfo"][
+                            "allowOthersToDelete"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToDelete"]
 
                     if "allowOthersToQuery" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"]["allowOthersToQuery"] = (
-                            json_dict["editorTrackingInfo"]["allowOthersToQuery"]
-                        )
+                        definition["editorTrackingInfo"][
+                            "allowOthersToQuery"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToQuery"]
                     if isinstance(json_dict["editorTrackingInfo"], dict):
                         for key, val in json_dict["editorTrackingInfo"].items():
                             if key not in definition["editorTrackingInfo"]:
