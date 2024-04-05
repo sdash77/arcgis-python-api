@@ -34,6 +34,7 @@ try:
     from ._deeplab_utils import compute_miou
     from matplotlib import pyplot as plt
     from .._utils.env import is_arcgispronotebook
+    from torch import nn
 
     HAS_FASTAI = True
 except Exception as e:
@@ -288,7 +289,7 @@ class UnetClassifier(ArcGISModel):
                 class_weight[self._ignore_mapped_class] = 0.0
 
             self._final_class_weight = class_weight
-            self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+            self.learn.loss_func = self._unet_loss
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -312,6 +313,23 @@ class UnetClassifier(ArcGISModel):
             # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
             if pretrained_path is not None:
                 self.load(pretrained_path)
+
+    def _unet_loss(self, outputs, targets, **kwargs):
+        targets = targets.squeeze(1).detach()
+
+        criterion = nn.CrossEntropyLoss(
+            weight=self._final_class_weight, reduction="none"
+        ).to(self._device)
+
+        batch_weight = (
+            targets.numel()
+            if self._final_class_weight == None
+            or self._final_class_weight[targets].sum() < 1.0
+            else self._final_class_weight[targets].sum()
+        )
+
+        total_loss = criterion(outputs, targets).sum() / (batch_weight + 1e-7)
+        return total_loss
 
     def __str__(self):
         return self.__repr__()
