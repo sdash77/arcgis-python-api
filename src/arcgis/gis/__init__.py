@@ -12079,7 +12079,6 @@ class User(dict):
             self._gis.users.me.username != self["username"]
             and self._gis._is_arcgisonline
         ):
-
             groups: list[Group] = []
             for grp in self["groups"]:
                 try:
