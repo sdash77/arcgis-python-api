@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.3.0"
+            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:latest"
             registryUrl 'https://harbor-west.esri.com'
             registryCredentialsId 'avworld_geosaurusaccnt'
             alwaysPull true
@@ -46,6 +46,7 @@ pipeline {
 
                             // deploy to geosaurus share (by commit)
                             sh "mkdir -p /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/html"
+                            sh "cp ../html.zip /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT"
                             sh "cp -r . /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/html"
                         }
                     }
@@ -73,6 +74,7 @@ pipeline {
 
                             // deploy to geosaurus share (by commit)
                             sh "mkdir -p /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/json"
+                            sh "cp ../json.zip /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT"
                             sh "cp -r . /media/geosaurus_public/docs/python-api/build/$GIT_COMMIT/json"
                         }
                     }

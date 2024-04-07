@@ -67,7 +67,7 @@ def generate_tessellation(
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
-                                             For calculate_density, there are three settings.
+                                             For *generate_tesselation*, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
@@ -179,7 +179,7 @@ def dissolve_boundaries(
                                              A list of field names and statistical summary types that you
                                              wish to calculate from the polygons that are dissolved together:
 
-                                             *["fieldName summary type", "fieldName2 summaryType"]*
+                                             *["fieldName summaryType", "fieldName2 summaryType"]*
 
                                              `fieldName` is the name of one of the numeric fields found in the
                                              input_layer.
@@ -486,7 +486,7 @@ def merge_layers(
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
     context             Optional dict. Additional settings such as processing extent and output spatial reference.
-                        For calculate_density, there are three settings.
+                        For *merge_layers*, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
@@ -642,7 +642,7 @@ def overlay_layers(
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
     context             Optional dict. Additional settings such as processing extent and output spatial reference.
-                        For calculate_density, there are three settings.
+                        For *overlay_layers*, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
