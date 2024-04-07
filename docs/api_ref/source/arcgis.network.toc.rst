@@ -40,14 +40,26 @@ NetworkDataset
     :undoc-members:
 
 NetworkDatasetLayer
---------------
+-------------------
 .. autoclass:: arcgis.network.NetworkDatasetLayer
     :members:
     :undoc-members:
 
 ODCostMatrixLayer
---------------
+-----------------
 .. autoclass:: arcgis.network.ODCostMatrixLayer
+    :members:
+    :undoc-members:
+    
+LocateSettings
+--------------
+.. autoclass:: arcgis.network.LocateSettings
+    :members:
+    :undoc-members:
+
+ToleranceUnits
+--------------
+.. autoclass:: arcgis.network.ToleranceUnits
     :members:
     :undoc-members:
     
