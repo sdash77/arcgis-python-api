@@ -61,7 +61,7 @@ def get_tool_info(
     for the analysis and the execution limits for a tool in a geoprocessing service.
     See `GetToolInfo <https://developers.arcgis.com/rest/services-reference/enterprise/gettoolinfo-tool.htm>`_
     for additional help.
-    
+
     =================================================     ========================================================================
     **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -69,7 +69,7 @@ def get_tool_info(
                                                           parameter value should be specified using one of the following keywords
                                                           that reference a particular geoprocessing service. The default value is
                                                           *asyncRoute*.
-                                                          
+
                                                           * *asyncClosestFacility* - The asynchronous geoprocessing service
                                                             used to perform the closest facility analysis
                                                           * *asyncLocationAllocation* - The asynchronous geoprocessing service used
@@ -83,27 +83,27 @@ def get_tool_info(
                                                           * *syncVRP* - The synchronous geoprocessing service used to perform the vehicle
                                                             routing problem analysis.
                                                           * *asyncODCostMatrix*
-    -------------------------------------------------     ------------------------------------------------------------------------                                                         
+    -------------------------------------------------     ------------------------------------------------------------------------
     tool_name                                             Required string. Specify the tool name in the geoprocessing service. The
                                                           parameter value should be a valid tool name in the geoprocessing service
                                                           specified by the *service_name* parameter. The default value is *FindRoutes*.
-          
+
                                                           Choice list:
-                                                          
+
                                                           * *EditVehicleRoutingProblem*
                                                           * *FindClosestFacilities*
                                                           * *FindRoutes*
                                                           * *GenerateOriginDestinationCostMatrix*
                                                           * *GenerateServiceAreas*
                                                           * *SolveLocationAllocation*
-                                                          * *SolveVehicleRoutingProblem* 
+                                                          * *SolveVehicleRoutingProblem*
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
                                                           specified, the active GIS is used.
-    -------------------------------------------------     ------------------------------------------------------------------------                                                      
+    -------------------------------------------------     ------------------------------------------------------------------------
     include_network_source_info                           Specify whether the information of all the source feature classes that
                                                           participate in the network dataset will be included. The default
-                                                          value is *False*.                           
+                                                          value is *False*.
     =================================================     ========================================================================
 
     Returns:
