@@ -57,12 +57,24 @@ LocateSettings
     :members:
     :undoc-members:
 
+publish_routing_services
+------------------------
+.. autofunction:: arcgis.network.publish_routing_services
+
+Enumerations
+------------
 ToleranceUnits
---------------
+^^^^^^^^^^^^^^
 .. autoclass:: arcgis.network.ToleranceUnits
     :members:
     :undoc-members:
-    
+
+SolverType
+^^^^^^^^^^
+.. autoclass:: arcgis.network.SolverType
+    :members:
+    :undoc-members:
+
 Submodules
 --------------
 .. toctree::
