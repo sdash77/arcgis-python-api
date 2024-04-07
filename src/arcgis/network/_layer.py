@@ -270,10 +270,10 @@ class ToleranceUnits(Enum):
 class LocateSettings:
     """
     Parameters available for the locate settings dictionary that can be
-    passed to the solve operation as a Python dictionary. See 
+    passed to the solve operation as a Python dictionary. See
     `locateSettings <https://developers.arcgis.com/rest/services-reference/enterprise/locate-service.htm#ESRI_SECTION2_71A6EDCD15B64DCE84CCAE459FE03865>`_
     for full descriptions.
-    
+
     ========================     ===============================================
     **Key**                      **Value**
     ------------------------     -----------------------------------------------
@@ -291,18 +291,18 @@ class LocateSettings:
     allow_auto_relocate          Allows you to control whether inputs with existing
                                  network location fields can be automatically
                                  relocated to ensure valid, routable location fields
-                                 for the analysis. 
+                                 for the analysis.
     ------------------------     -----------------------------------------------
     sources                      Allows you to control which network source can
                                  be used for locating. For example, you can configure
                                  the analysis to locate inputs on streets but not
                                  on sidewalks. The list of possible sources on
                                  which to locate is specific to the network dataset
-                                 this service references. 
+                                 this service references.
     ========================     ===============================================
-    
+
     .. code-block:: python
-    
+
         # Usage Example:
         >>> locate_settings = LocateSettings(
                                         tolerance=5000,
@@ -1765,7 +1765,7 @@ class ODCostMatrixLayer(NetworkLayer):
                                                     junctions. The default is as defined in the network layer.
 
                                                     Values:
-                                                    
+
                                                     * *esriNFSBAllowBacktrack*
                                                     * *esriNFSBAtDeadEndsOnly*
                                                     * *esriNFSBNoBacktrack*
@@ -2123,7 +2123,7 @@ class NetworkDatasetLayer(NetworkLayer):
         routing services compute the location on the network during the solve operation.
         With the locate service, you can compute the locations on the network
         before calling the solve operation.
-        
+
         The locate service is performed on a network dataset layer resource.
         You can provide arguments to the locate service as query parameters defined
         in the parameters table below. The locate service can be used in scenarios
@@ -2159,7 +2159,7 @@ class NetworkDatasetLayer(NetworkLayer):
           located on a major road, you can set it to right or left side of the vehicle, depending on the driving
           side of the country where it's located. If the input is located on a local road, either side of curb
           approach will work since a vehicle can cross a local road for a delivery.
-        
+
         ====================================    ====================================================================
         **Parameter**                           **Description**
         ------------------------------------    --------------------------------------------------------------------
@@ -2178,27 +2178,27 @@ class NetworkDatasetLayer(NetworkLayer):
                                                 such as the maximum search distance to use when locating the inputs on the
                                                 network or the network sources being used for locating. To restrict locating
                                                 on a portion of the source, you can specify a where clause for a source.
-        
+
                                                 The dictionary of parameters can be assigned to the 'default', or to the
                                                 'overrides' key which holds the dictionary of parameters for each override, types of override are
                                                 'inputLocations', 'barriers', 'polylineBarriers', 'polygonBarriers'.
                                                 Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
                                                 for the default.
-        
+
                                                 .. note::
                                                     'default' has to be present if you want to pass in any locate_settings to the
                                                     service. In addition, locate settings for default have to be complete, meaning
                                                     all properties need to be present.
                                                     For each override, the keys do not have to be complete.
-        
+
                                                 .. note::
                                                     for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                     not supported.
-        
+
                                                 .. code-block:: python
-        
+
                                                     # Usage Example:
-                                                    
+
                                                     >>> from arcgis.network import LocateSettings
                                                     >>> locate_settings = LocateSettings(
                                                                 tolerance=5000,
