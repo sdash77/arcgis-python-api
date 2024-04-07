@@ -29,7 +29,6 @@ from .story_content import (
     Block,
     Table,
     ExpressMap,
-    Collection,
 )
 
 __all__ = ["StoryMap", "Briefing"]
