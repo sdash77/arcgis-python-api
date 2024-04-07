@@ -269,13 +269,13 @@ class ToleranceUnits(Enum):
 @dataclass
 class LocateSettings:
     """
-    Parameters available for the locate settings dictionary that can be
-    passed to the solve operation as a Python dictionary. See
+    Parameters available for locate settings that can be
+    passed to the solve operation. See
     `locateSettings <https://developers.arcgis.com/rest/services-reference/enterprise/locate-service.htm#ESRI_SECTION2_71A6EDCD15B64DCE84CCAE459FE03865>`_
     for full descriptions.
 
     ========================     ===============================================
-    **Key**                      **Value**
+    **Parameter**                **Description**
     ------------------------     -----------------------------------------------
     tolerance                    Allows you to control the maximum search
                                  distance when locating inputs. If no valid network
@@ -1838,7 +1838,14 @@ class ODCostMatrixLayer(NetworkLayer):
 
                                                         # Usage example:
                                                         >>> from arcgis.network import LocateSettings
-                                                        >>> locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                        >>> locate_settings = LocateSettings(
+                                                                                    tolerance=5000,
+                                                                                    tolerance_units=ToleranceUnits.meters,
+                                                                                    allow_auto_relocate=True,
+                                                                                    sources=[
+                                                                                        {"name": "Routing_Streets"}
+                                                                                    ]
+                                                                                )
                                                         >>> result = route_layer.solve(
                                                                             stops=stops,
                                                                             locate_settings={
