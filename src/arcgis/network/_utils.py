@@ -121,7 +121,7 @@ def publish_routing_services(
                                            solver_types=[SolverType.ROUTE, SolverType.VEHICLEROUTINGPROBLEM],
                                            server_id=gis.servers['servers'][0]['id'])
         >>> type(job)
-        
+
         <:class:`~arcgis.geoprocessing._job.GPJob>
 
 
