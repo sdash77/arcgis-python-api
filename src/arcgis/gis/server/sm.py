@@ -183,7 +183,6 @@ class ServerManager(object):
                 except:
                     c = Server(url=public_url, gis=self._gis)
                     if hasattr(c, "admin"):
-
                         c.admin.logs.properties
                     else:
                         c.logs.properties
