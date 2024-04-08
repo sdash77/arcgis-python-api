@@ -575,6 +575,15 @@ class StoryMap(object):
         return self.navigation_list
 
     # ----------------------------------------------------------------------
+    def get_theme(self) -> str:
+        """
+        Get the theme name or the theme item that is used in the story.
+
+        return: The theme name or the theme item item_id.
+        """
+        return utils.get_theme(self)
+
+    # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
         Each story has a theme node in its resources. This method can be used to change the theme.
