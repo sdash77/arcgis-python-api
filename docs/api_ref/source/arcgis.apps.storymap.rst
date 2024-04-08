@@ -130,6 +130,13 @@ ExpressMap
    :members:
    :undoc-members:
    :show-inheritance:
+
+Collection
+-----------------
+.. autoclass:: arcgis.apps.storymap.collection.Collection
+   :members:
+   :undoc-members:
+   :show-inheritance:
    
 Enumerations
 ------------
