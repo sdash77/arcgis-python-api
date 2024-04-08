@@ -16224,7 +16224,7 @@ class Item(dict):
                                `Geocoder` can be supplied in order to specify which service
                                geocodes the information. If no geocoder is given, the first
                                registered `Geocoder` is used.
-        -------------------    ---------------------------------------------------------------                       
+        -------------------    ---------------------------------------------------------------
         future                 Optional Boolean indicating whether to run the operation in an
                                asynchronous manner. When *True*, the return value is a
                                *concurrent.futures.Future* object that can be queried for
