@@ -57,28 +57,58 @@ def get_tool_info(
     include_network_source_info: bool = False,
 ):
     """
+    Get additional information such as the description of the network dataset used
+    for the analysis and the execution limits for a tool in a geoprocessing service.
+    See `GetToolInfo <https://developers.arcgis.com/rest/services-reference/enterprise/gettoolinfo-tool.htm>`_
+    for additional help.
 
+    =================================================     ========================================================================
+    **Parameter**                                          **Description**
+    -------------------------------------------------     ------------------------------------------------------------------------
+    service_name                                          Required string. Specify the service name containing the tool. The
+                                                          parameter value should be specified using one of the following keywords
+                                                          that reference a particular geoprocessing service. The default value is
+                                                          *asyncRoute*.
 
-    Get additional information such as the description of the network dataset used for the analysis and the execution limits for a tool in a geoprocessing service.
+                                                          * *asyncClosestFacility* - The asynchronous geoprocessing service
+                                                            used to perform the closest facility analysis
+                                                          * *asyncLocationAllocation* - The asynchronous geoprocessing service used
+                                                            to perform the location-allocation analysis
+                                                          * *asyncRoute* - The asynchronous geoprocessing service used to perform the
+                                                            route analysis
+                                                          * *asyncServiceArea* - The asynchronous geoprocessing service used to perform
+                                                            the service area analysis
+                                                          * *asyncVRP* - The asynchronous geoprocessing service used to perform the
+                                                            vehicle routing problem analysis
+                                                          * *syncVRP* - The synchronous geoprocessing service used to perform the vehicle
+                                                            routing problem analysis.
+                                                          * *asyncODCostMatrix*
+    -------------------------------------------------     ------------------------------------------------------------------------
+    tool_name                                             Required string. Specify the tool name in the geoprocessing service. The
+                                                          parameter value should be a valid tool name in the geoprocessing service
+                                                          specified by the *service_name* parameter. The default value is *FindRoutes*.
 
-    Parameters:
+                                                          Choice list:
 
-       service_name: Service Name (str). Required parameter.  Specify the service name containing the tool. The parameter value should be specified using one of the following keywords that reference a particular geoprocessing service.asyncClosestFacility - The asynchronous geoprocessing service used to perform the closest facility analysis.asyncLocationAllocation - The asynchronous geoprocessing service used to perform the location-allocation analysis.asyncRoute - The asynchronous geoprocessing service used to perform the route analysis.asyncServiceArea - The asynchronous geoprocessing service used to perform the service area analysis.asyncVRP - The asynchronous geoprocessing service used to perform the vehicle routing problem analysis.syncVRP - The synchronous geoprocessing service used to perform the vehicle routing problem analysis.The default value is asyncRoute.
-          Choice list:['asyncClosestFacility', 'asyncLocationAllocation', 'asyncODCostMatrix', 'asyncRoute', 'asyncServiceArea', 'asyncVRP', 'syncVRP']
-
-       tool_name: Tool Name (str). Required parameter.  Specify the tool name in the geoprocessing service. The parameter value should be a valid tool name in the geoprocessing service specified by the serviceName parameter. The default value is FindRoutes.
-          Choice list:['EditVehicleRoutingProblem', 'FindClosestFacilities', 'FindRoutes', 'GenerateOriginDestinationCostMatrix', 'GenerateServiceAreas', 'SolveLocationAllocation', 'SolveVehicleRoutingProblem']
-
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-       include_network_source_info: Specify whether the information of all the source feature classes that participate in the network dataset will be included. The default value is False.
-
-
+                                                          * *EditVehicleRoutingProblem*
+                                                          * *FindClosestFacilities*
+                                                          * *FindRoutes*
+                                                          * *GenerateOriginDestinationCostMatrix*
+                                                          * *GenerateServiceAreas*
+                                                          * *SolveLocationAllocation*
+                                                          * *SolveVehicleRoutingProblem*
+    -------------------------------------------------     ------------------------------------------------------------------------
+    gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
+                                                          specified, the active GIS is used.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    include_network_source_info                           Specify whether the information of all the source feature classes that
+                                                          participate in the network dataset will be included. The default
+                                                          value is *False*.
+    =================================================     ========================================================================
 
     Returns:
-       tool_info - Tool Info as a str
+       Tool Info as a str
 
-    See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetToolInfo.htm for additional help.
     """
 
     if gis is None:

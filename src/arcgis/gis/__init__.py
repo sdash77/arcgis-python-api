@@ -6768,6 +6768,11 @@ class ContentManager(object):
             item_properties = item_properties.to_dict()
             item_properties.pop("thumbnail", None)
             item_properties.pop("metadata", None)
+        if "overwrite" in item_properties:
+            _log.warning(
+                "The `overwrite` parameter is no longer support on adding of items."
+            )
+            item_properties.pop("overwrite", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -12064,9 +12069,32 @@ class User(dict):
         )
 
     @property
-    def groups(self):
+    def _group_dict(self) -> list[dict]:
+        return self["groups"]
+
+    @property
+    def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group["id"]) for group in self["groups"]]
+        if (
+            self._gis.users.me.username != self["username"]
+            and self._gis._is_arcgisonline
+        ):
+            groups: list[Group] = []
+            for grp in self["groups"]:
+                try:
+                    group = Group(self._gis, grp["id"])
+                    group.__str__()
+                    if "orgId" in grp and grp["orgId"] == self._gis.properties["id"]:
+                        groups.append(group)
+                    elif not "orgId" in grp:
+                        groups.append(group)
+                    elif grp["owner"] == self["username"]:
+                        groups.append(group)
+                except:
+                    pass
+            return groups
+        else:
+            return [Group(self._gis, grp["id"]) for grp in self["groups"]]
 
     def update_license_type(self, user_type: str):
         """
@@ -12928,13 +12956,19 @@ class User(dict):
         if reassign_to:
             # reassigns the group owner to the reassigned_to user.
             [
-                grp.reassign_to(User(gis=self._gis, username=reassign_to))
-                for grp in self.groups
-                if grp.owner == self.username
+                Group(self._gis, grp["id"]).reassign_to(
+                    User(gis=self._gis, username=reassign_to)
+                )
+                for grp in self["groups"]
+                if grp["owner"] == self.username
             ]
         else:
             # delete the groups owned by the user
-            [grp.delete() for grp in self.groups if grp.owner == self.username]
+            [
+                Group(self._gis, grp["id"]).delete()
+                for grp in self["groups"]
+                if grp["owner"] == self.username
+            ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
@@ -13258,29 +13292,19 @@ class Item(dict):
         """
         Gets/Sets if the Item is in the user's favorites
         """
-        user: User = self._gis.users.get(self.owner)
+        user: User = self._gis.users.me
+        grp_shr = self.sharing.groups
+        # get(self.owner)
         if value == True:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
-        elif value == False:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
-        else:
-            raise ValueError("'value' must be a boolean.")
-
-        params = {
-            "f": "json",
-            "everyone": self.shared_with["everyone"],
-            "org": self.shared_with["org"],
-            "items": self.itemid,
-            "groups": user.favGroupId,
-        }
-
-        res = self._gis._con.post(url, params=params)
-        assert self.shared_with
-        if "error" in res:
-            raise Exception(f"An error has occurred: {str(res)}")
-        else:
+            grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
+        elif value == False:
+            grp_shr.remove(user.favGroupId)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("'value' must be a boolean.")
 
     # ----------------------------------------------------------------------
     @property
@@ -14452,7 +14476,16 @@ class Item(dict):
         metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
 
         try:
-            response = self._portal.con.get(metadataurlpath, try_json=False)
+            save_path: str = os.path.join(
+                tempfile.gettempdir(), self.itemid, "metadata"
+            )
+            os.makedirs(save_path, exist_ok=True)
+            response = self._portal.con.get(
+                metadataurlpath,
+                try_json=False,
+                out_folder=save_path,
+                file_name="metadata.xml",
+            )
             if response.find("Metadata for item not found") > -1:
                 return None
             else:
@@ -16191,10 +16224,16 @@ class Item(dict):
                                `Geocoder` can be supplied in order to specify which service
                                geocodes the information. If no geocoder is given, the first
                                registered `Geocoder` is used.
+        -------------------    ---------------------------------------------------------------
+        future                 Optional Boolean indicating whether to run the operation in an
+                               asynchronous manner. When *True*, the return value is a
+                               *concurrent.futures.Future* object that can be queried for
+                               job status and results. The default is *False*.
         ===================    ===============================================================
 
         :return:
-            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
+            When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
+            published web layer. When *future=True*, a *concurrent.futures.Future* object.
 
         .. code-block:: python
 

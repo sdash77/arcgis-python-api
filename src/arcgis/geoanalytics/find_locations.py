@@ -34,12 +34,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+# -------------------------------------------------------------------------
 def geocode_locations(
     input_layer: Union[
         Item,
@@ -300,12 +295,7 @@ def geocode_locations(
         raise
 
 
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+# -------------------------------------------------------------------------
 def snap_tracks(
     point_layer: Union[
         Item,
@@ -534,12 +524,7 @@ def snap_tracks(
     return job.result()
 
 
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+# -------------------------------------------------------------------------
 def detect_incidents(
     input_layer: Union[
         Item,
@@ -765,12 +750,7 @@ def detect_incidents(
         raise
 
 
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+# -------------------------------------------------------------------------
 def find_dwell_locations(
     input_layer: Union[
         Item,
@@ -1057,12 +1037,7 @@ def find_dwell_locations(
     return None
 
 
-@_common_deprecated.deprecated(
-    deprecated_in="2.3.0",
-    removed_in="2.3.2",
-    current_version=None,
-    details="GeoAnalytics is depreacted and will be removed in a future release.",
-)
+# -------------------------------------------------------------------------
 def find_similar_locations(
     input_layer: Union[
         Item,

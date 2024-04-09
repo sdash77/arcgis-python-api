@@ -187,7 +187,7 @@ class Server(BaseServer):
         return "< %s @ %s >" % (type(self).__name__, self._url)
 
     @property
-    def resouces(self) -> list:
+    def resources(self) -> list:
         """returns the list of resources available on the server administration endpoint."""
         return self.properties.resources
 
