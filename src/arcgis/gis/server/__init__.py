@@ -24,7 +24,7 @@ from .admin._services import (
     JobManager,
     Job,
 )
-from .admin._system import ConfigurationStore, DirectoryManager, Jobs
+from .admin._system import ConfigurationStore, DirectoryManager, Jobs, AsyncJob
 from .admin._system import ServerDirectory, ServerProperties, SystemManager
 from .admin._uploads import Uploads
 from .admin._usagereports import Report, ReportManager

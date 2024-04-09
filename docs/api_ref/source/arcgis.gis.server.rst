@@ -213,3 +213,10 @@ ServiceWebHookManager
     :members:
     :undoc-members:
     :show-inheritance:
+    
+AsyncJob
+--------
+.. autoclass:: arcgis.gis.server.AsyncJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
