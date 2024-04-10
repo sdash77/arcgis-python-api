@@ -386,7 +386,7 @@ class Initiative(OrderedDict):
         groups_to_share_with = []
         if groups:
             # If group ids are specified, fetch group objects
-            if type(groups[0])==str:
+            if type(groups[0]) == str:
                 for group in groups:
                     groups_to_share_with.append(self._gis.groups.get(group))
             else:

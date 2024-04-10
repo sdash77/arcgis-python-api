@@ -788,7 +788,9 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data["values"]["map"] = {"basemaps": {"primary": self._gis.properties["defaultBasemap"]}}
+        site_data["values"]["map"] = {
+            "basemaps": {"primary": self._gis.properties["defaultBasemap"]}
+        }
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
         return site_data
