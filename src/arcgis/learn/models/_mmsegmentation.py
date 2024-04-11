@@ -39,7 +39,10 @@ def norm_prithvi(data, model):
             img_norm_crop_model.get("means"),
             img_norm_crop_model.get("stds"),
         ),
-        "prithvi100m": (data._scaled_mean_values, data._scaled_std_values),
+        "prithvi100m": (
+            data._scaled_mean_values.tolist(),
+            data._scaled_std_values.tolist(),
+        ),
     }
 
     means, stds = scaling_info[model]
@@ -108,6 +111,7 @@ class MMSegmentation(ModelExtension):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
             data = norm_prithvi(data, model)
+
         self._ignore_classes = kwargs.get("ignore_classes", [])
         self.class_balancing = kwargs.get("class_balancing", False)
         if self._ignore_classes != [] and len(data.classes) <= 2:
