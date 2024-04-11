@@ -1882,7 +1882,9 @@ class Service(BaseServer):
         ===============     ====================================================================
 
 
-        :return: Boolean and the Service Message when future='False' or AsyncJob when future=`True`
+        :return:
+            Boolean and the Service Message when *future=False*,
+            or :class:`~arcgis.gis.server.AsyncJob` when *future=True*
 
 
         """
