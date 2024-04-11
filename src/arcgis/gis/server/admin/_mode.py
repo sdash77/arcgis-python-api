@@ -48,8 +48,8 @@ class Mode(BaseServer):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="1.7.1",
-        removed_in=None,
-        current_version="2.3.0",
+        removed_in="2.3.2",
+        current_version="2.3.1",
         details="Use `Mode.update_mode` instead.",
     )
     def update(self, siteMode: str, runAsync: bool = False) -> bool:

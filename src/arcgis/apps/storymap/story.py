@@ -173,7 +173,10 @@ class StoryMap(object):
 
         # Step 11: Make a resource call with the template to create json draft needed
         utils._add_resource(
-            self, resource_name=draft, text=json.dumps(template), access="private"
+            self,
+            resource_name=draft,
+            text=json.dumps(template),
+            access="private",
         )
 
     def _get_storymap_template(self):
@@ -340,8 +343,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.3.0",
+        removed_in="2.3.2",
+        current_version="2.3.1",
         details="`nodes` property has been deprecated, use `content_list` property instead.",
     )
     @property
@@ -413,7 +416,7 @@ class StoryMap(object):
     @deprecated(
         deprecated_in="2.2.0",
         removed_in="3.0.0",
-        current_version="2.3.0",
+        current_version="2.3.1",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -508,7 +511,9 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def navigation(
-        self, nodes: Optional[list[str]] = None, hidden: Optional[bool] = None
+        self,
+        nodes: Optional[list[str]] = None,
+        hidden: Optional[bool] = None,
     ):
         """
         Story navigation is a way for authors to add headings as
@@ -830,7 +835,10 @@ class StoryMap(object):
         # Find instance of content and call correct method
         if content:
             content._add_to_story(
-                story=self, caption=caption, alt_text=alt_text, display=display
+                story=self,
+                caption=caption,
+                alt_text=alt_text,
+                display=display,
             )
         else:
             content = Content.Separator(story=self, node_id=node_id)
@@ -842,7 +850,10 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def move(
-        self, node_id: str, position: Optional[int] = None, delete_current: bool = False
+        self,
+        node_id: str,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a node to another position. The node currently at that position will
