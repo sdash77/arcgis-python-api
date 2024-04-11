@@ -623,6 +623,12 @@ class Folder:
                 for key, value in item_properties.to_dict().items()
                 if not value is None
             }
+            if "overwrite" in item_properties and item_properties["overwrite"] == True:
+
+                logger.warning(
+                    "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
+                )
+            item_properties.pop("overwrite", None)
         if not file:
             stream = False
         elif file and item_id:
