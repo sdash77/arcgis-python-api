@@ -9397,7 +9397,9 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         if estimate:
             return self._output_name_dict(
-                output_name=output_name, task=task, output_properties=output_properties
+                output_name=output_name,
+                task=task,
+                output_properties=output_properties,
             )
 
         gis = self._gis
@@ -9474,7 +9476,9 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         if estimate:
             return self._output_name_dict(
-                output_name=output_name, task=task, output_properties=output_properties
+                output_name=output_name,
+                task=task,
+                output_properties=output_properties,
             )
 
         gis = self._gis
@@ -10249,7 +10253,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.3.3", current_version="2.3.1")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -11588,7 +11592,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_objects, output_service = self._output_name_dict(
-                output_name=output_objects, task=task, output_properties=kwargs
+                output_name=output_objects,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_objects is None:
@@ -12035,7 +12041,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
@@ -12991,7 +12999,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, item=item).result()
 
     def list_datastore_content(
-        self, data_store_name=None, filter=None, future=False, estimate=False, **kwargs
+        self,
+        data_store_name=None,
+        filter=None,
+        future=False,
+        estimate=False,
+        **kwargs,
     ):
         """
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
@@ -15201,7 +15214,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
@@ -15386,7 +15401,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_feature_class, output_service = self._output_name_dict(
-                output_name=output_feature_class, task=task, output_properties=kwargs
+                output_name=output_feature_class,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_feature_class is None:
@@ -15601,7 +15618,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
