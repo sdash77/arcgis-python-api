@@ -391,7 +391,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def ssl(self):
         """
         .. note::
