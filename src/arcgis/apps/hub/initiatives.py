@@ -1,4 +1,5 @@
 from arcgis.gis import GIS
+from arcgis.gis import SharingLevel
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.apps.hub.sites import SiteManager, Site
 from collections import OrderedDict
@@ -195,17 +196,13 @@ class Initiative(OrderedDict):
             items = [self._gis.content.get(item_id) for item_id in items_list]
         else:
             items = items_list
-        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        # Share each item with content group
         for item in items:
-            sharing = item.shared_with
-            everyone = sharing["everyone"]
-            org = sharing["org"]
-            groups = sharing["groups"]
-            # add current initiative's content group to list of groups to share to
-            groups.append(self.content_group_id)
-            # share item to this group
-            status = item.share(everyone=everyone, org=org, groups=groups)
-            if status["results"][0]["success"] == False:
+            # Fetch the content group
+            group = self._gis.groups.get(self.content_group_id)
+            # Share item with group
+            status = item.sharing.groups.add(group)
+            if status == False:
                 return status
         return status
 
@@ -361,32 +358,44 @@ class Initiative(OrderedDict):
         org                     Optional boolean. Default is False, don't share with
                                 the organization.
         ----------------------  --------------------------------------------------------
-        groups                  Optional list of group ids as strings, or a list of
-                                arcgis.gis.Group objects, or a comma-separated list of
-                                group IDs.
+        private                 Optional boolean. Default is False, don't restrict
+                                access to owner.
         ----------------------  --------------------------------------------------------
-        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
-                                shared with groups that allow shared update
+        groups                  Optional list of group ids as strings, or a list of
+                                arcgis.gis.Group objects.
         ======================  ========================================================
 
         :return:
             A dictionary with key "notSharedWith" containing array of groups with which the items could not be shared.
         """
+        # Fetch site of initiative
         site = self._gis.sites.get(self.site_id)
-        result1 = site.item.share(
-            everyone=everyone,
-            org=org,
-            groups=groups,
-            allow_members_to_edit=allow_members_to_edit,
-        )
-        result2 = self.item.share(
-            everyone=everyone,
-            org=org,
-            groups=groups,
-            allow_members_to_edit=allow_members_to_edit,
-        )
-        print(result1)
-        return result2
+        # Share initiative and site publicly
+        if everyone:
+            site.item.sharing.sharing_level = "EVERYONE"
+            self.item.sharing.sharing_level = "EVERYONE"
+        # Share initiative and site with organization
+        if organization:
+            site.item.sharing.sharing_level = "ORGANIZATION"
+            self.item.sharing.sharing_level = "ORGANIZATION"
+        # Share initiative and site privately
+        if private:
+            site.item.sharing.sharing_level = "PRIVATE"
+            self.item.sharing.sharing_level = "PRIVATE"
+        # Share with groups, if specified
+        groups_to_share_with = []
+        if groups:
+            # If group ids are specified, fetch group objects
+            if type(groups[0]) == str:
+                for group in groups:
+                    groups_to_share_with.append(self._gis.groups.get(group))
+            else:
+                groups_to_share_with = groups
+            # Share initiative and site with each group
+            for group in groups_to_share_with:
+                site.item.sharing.groups.add(group)
+                self.item.sharing.groups.add(group)
+        return site.item.sharing.shared_with
 
     def unshare(self, groups: list) -> dict:
         """
@@ -572,7 +581,7 @@ class InitiativeManager(object):
         # Create initiative and share it with collaboration group if exists
         item = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
         try:
-            item.share(groups=[collab_group])
+            item.sharing.groups.add(collab_group)
         except:
             pass
 

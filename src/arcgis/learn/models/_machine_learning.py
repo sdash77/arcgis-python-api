@@ -476,12 +476,15 @@ class MLModel(object):
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,

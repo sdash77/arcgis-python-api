@@ -228,7 +228,7 @@ def get_version():
         def __path(filename):
             return os.path.join(os.path.dirname(__file__), filename)
 
-        MICRO = "0"
+        MICRO = "1"
         if os.path.exists(__path("build.info")):
             MICRO = open(__path("build.info")).read().strip()
     except:
