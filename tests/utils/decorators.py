@@ -388,7 +388,11 @@ class from_to_profiles:
         """Run tests for enterprise to enterprise"""
         # TODO Andrew: add another profile if you want these to go to different enterprises
         return cls._get_multi_profile_parameterized_class(
-            cls._enterprise_profile_parameters
+            {
+                "description": "enterprise_to_enterprise",
+                "from_profile": "your_enterprise_admin_profile",
+                "to_profile": "your_enterprise_admin_profile",
+            }
         )
 
     @classproperty
