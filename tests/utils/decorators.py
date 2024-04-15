@@ -41,6 +41,7 @@ default_timeout_class = timeout_class(DEFAULT_TIMEOUT_SECONDS)
 extended_timeout_class = timeout_class(EXTENDED_TIMEOUT_SECONDS)
 maximum_timeout_class = timeout_class(MAXIMUM_TIMEOUT_SECONDS)
 
+
 def integration_test(cls):
     """Mark a test case class as an integration test and apply default configuration"""
     if os_name == "posix":
@@ -48,6 +49,7 @@ def integration_test(cls):
         cls = default_timeout_class(cls)
     # TODO find a way to apply default timeout on Windows
     return cls
+
 
 _gis_by_profile = {}
 
@@ -85,12 +87,12 @@ class credentials:
     )
     _enterprise_pki_credential_parameters = (
         "enterprise_pki",
-        environ.get(
-            "ENTERPRISE_PKI_URL", "https://rqawinpki03pt.ags.esri.com/gis"
-        ),
+        environ.get("ENTERPRISE_PKI_URL", "https://rqawinpki03pt.ags.esri.com/gis"),
         None,
         environ.get("ENTERPRISE_PKI_PASSWORD", "portalaccount1"),
-        environ.get("ENTERPRISE_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
+        environ.get(
+            "ENTERPRISE_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")
+        ),
     )
     _enterprise_java_pki_credential_parameters = (
         "enterprise_java_pki",
@@ -99,16 +101,20 @@ class credentials:
         ),
         None,
         environ.get("ENTERPRISE_JAVA_PKI_PASSWORD", "portalaccount1"),
-        environ.get("ENTERPRISE_JAVA_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
+        environ.get(
+            "ENTERPRISE_JAVA_PKI_CERT",
+            get_resource_path("esri_requests/certs/creator2.pfx"),
+        ),
     )
     _enterprise_linux_pki_credential_parameters = (
         "enterprise_linux_pki",
-        environ.get(
-            "ENTERPRISE_LINUX_PKI_URL", "https://rqalnxpki03pt.esri.com/gis"
-        ),
+        environ.get("ENTERPRISE_LINUX_PKI_URL", "https://rqalnxpki03pt.esri.com/gis"),
         None,
         environ.get("ENTERPRISE_LINUX_PKI_PASSWORD", "portalaccount1"),
-        environ.get("ENTERPRISE_LINUX_PKI_CERT", get_resource_path("esri_requests/certs/creator2.pfx")),
+        environ.get(
+            "ENTERPRISE_LINUX_PKI_CERT",
+            get_resource_path("esri_requests/certs/creator2.pfx"),
+        ),
     )
     _enterprise_iwa_credential_parameters = (
         "enterprise_iwa",
@@ -118,7 +124,9 @@ class credentials:
     )
     _enterprise_multi_iwa_credential_parameters = (
         "enterprise_multi_iwa",
-        environ.get("ENTERPRISE_MULTI_IWA_URL", "https://rqawinmiwa05pt.ags.esri.com/gis"),
+        environ.get(
+            "ENTERPRISE_MULTI_IWA_URL", "https://rqawinmiwa05pt.ags.esri.com/gis"
+        ),
         environ.get("ENTERPRISE_MULTI_IWA_USERNAME", r"avworld\creator2"),
         environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", "portalaccount1"),
     )
@@ -162,21 +170,22 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_credential_parameters
         )
-    
+
     @classproperty
     def enterprise_all_iwa(cls):
         """Run tests for iwa and multi-iwa enterprise credentials"""
         return cls._get_credentials_parameterized_class(
-            cls._enterprise_iwa_credential_parameters, cls._enterprise_multi_iwa_credential_parameters
+            cls._enterprise_iwa_credential_parameters,
+            cls._enterprise_multi_iwa_credential_parameters,
         )
-    
+
     @classproperty
     def enterprise_all_pki(cls):
         """Run tests for pki enterprise credentials"""
         return cls._get_credentials_parameterized_class(
-            cls._enterprise_pki_credential_parameters, 
-            cls._enterprise_java_pki_credential_parameters, 
-            cls._enterprise_linux_pki_credential_parameters
+            cls._enterprise_pki_credential_parameters,
+            cls._enterprise_java_pki_credential_parameters,
+            cls._enterprise_linux_pki_credential_parameters,
         )
 
     @classproperty
@@ -201,7 +210,7 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._agol_api_key_credential_parameters
         )
-    
+
     @classproperty
     def enterprise_pki(cls):
         """Run tests for enterprise credentials"""
@@ -307,6 +316,7 @@ class profiles:
 
     # endregion
 
+
 class from_to_profiles:
     """
     A set of decorators that inject `from` and `to` profiles into tests.  It will inject a from and to profile into the test.
@@ -343,27 +353,53 @@ class from_to_profiles:
     def agol_to_agol(cls):
         """Run tests from agol to agol"""
         # TODO Andrew: add another profile if you want these to go to different AGOLs
-        return cls._get_multi_profile_parameterized_class({"description": "agol_to_agol", "from_profile": "your_online_admin_profile", "to_profile": "your_online_admin_profile"})
+        return cls._get_multi_profile_parameterized_class(
+            {
+                "description": "agol_to_agol",
+                "from_profile": "your_online_admin_profile",
+                "to_profile": "your_online_admin_profile",
+            }
+        )
 
     @classproperty
     def agol_to_enterprise(cls):
         """Run tests for agol to enterprise"""
-        return cls._get_multi_profile_parameterized_class({"description": "agol_to_enterprise", "from_profile": "your_online_admin_profile", "to_profile": "your_enterprise_admin_profile"})
+        return cls._get_multi_profile_parameterized_class(
+            {
+                "description": "agol_to_enterprise",
+                "from_profile": "your_online_admin_profile",
+                "to_profile": "your_enterprise_admin_profile",
+            }
+        )
 
     @classproperty
     def enterprise_to_agol(cls):
         """Run tests for enterprise to agol"""
-        return cls._get_multi_profile_parameterized_class({"description": "enterprise_to_agol", "from_profile": "your_enterprise_admin_profile", "to_profile": "your_online_admin_profile"})
+        return cls._get_multi_profile_parameterized_class(
+            {
+                "description": "enterprise_to_agol",
+                "from_profile": "your_enterprise_admin_profile",
+                "to_profile": "your_online_admin_profile",
+            }
+        )
 
     @classproperty
     def enterprise_to_enterprise(cls):
         """Run tests for enterprise to enterprise"""
         # TODO Andrew: add another profile if you want these to go to different enterprises
-        return cls._get_multi_profile_parameterized_class(cls._enterprise_profile_parameters)
+        return cls._get_multi_profile_parameterized_class(
+            cls._enterprise_profile_parameters
+        )
 
     @classproperty
     def enterprise_to_k8s(cls):
         """Run tests for enterprise to k8s"""
-        return cls._get_multi_profile_parameterized_class({"description": "enterprise_to_k8s", "from_profile": "your_enterprise_admin_profile", "to_profile": "your_kubernetes_profile"})
+        return cls._get_multi_profile_parameterized_class(
+            {
+                "description": "enterprise_to_k8s",
+                "from_profile": "your_enterprise_admin_profile",
+                "to_profile": "your_kubernetes_profile",
+            }
+        )
 
     # endregion
