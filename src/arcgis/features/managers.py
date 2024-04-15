@@ -149,7 +149,7 @@ class AttachmentManager(object):
         if attachment_types is None:
             attachment_types = []
         if where is None:
-            where = ""
+            where = "1=1"
         if keywords is None:
             keywords = []
         params: dict[str, Any] = {
