@@ -306,3 +306,64 @@ class profiles:
         return cls._get_profile_parameterized_class(cls._k8s_profile_parameters)
 
     # endregion
+
+class from_to_profiles:
+    """
+    A set of decorators that inject `from` and `to` profiles into tests.  It will inject a from and to profile into the test.
+
+    Sets the following properties on the test class:
+    self.description: the unique description, appended to the test name (e.g. from_agol_to_agol, from_agol_to_enterprise, from_enterprise_to_enterprise)
+    self.from_profile: the source profile name
+    self.from_gis: the GIS for the source profile, if connection is successful
+    self.to_profile: the desination profile name
+    self.to_gis: the GIS for the destination profile, if connection is successful
+    self.proxies: the detected proxies, if any
+
+    If multiple profiles are injected, the test will be run once for each profile.
+    """
+
+    def _get_multi_profile_parameterized_class(params):
+        """Returns a parameterized class for the profile parameters from provided args"""
+        # attempt to set gis property constructed from profile
+        # in each profile configuration
+        for profile_config in [("from_profile", "from_gis"), ("to_profile", "to_gis")]:
+            try:
+                params[profile_config[1]] = _get_gis(params[profile_config[0]])
+                params["proxies"] = PROXIES
+            except Exception as e:
+                pass
+        return parameterized_class(
+            params,
+            # default test name is {class_name}_{index}_{profile_description}; override to remove index:
+            class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['description'])}",
+        )
+
+    # region decorators
+    @classproperty
+    def agol_to_agol(cls):
+        """Run tests from agol to agol"""
+        # TODO Andrew: add another profile if you want these to go to different AGOLs
+        return cls._get_multi_profile_parameterized_class({"description": "agol_to_agol", "from_profile": "your_online_admin_profile", "to_profile": "your_online_admin_profile"})
+
+    @classproperty
+    def agol_to_enterprise(cls):
+        """Run tests for agol to enterprise"""
+        return cls._get_multi_profile_parameterized_class({"description": "agol_to_enterprise", "from_profile": "your_online_admin_profile", "to_profile": "your_enterprise_admin_profile"})
+
+    @classproperty
+    def enterprise_to_agol(cls):
+        """Run tests for enterprise to agol"""
+        return cls._get_multi_profile_parameterized_class({"description": "enterprise_to_agol", "from_profile": "your_enterprise_admin_profile", "to_profile": "your_online_admin_profile"})
+
+    @classproperty
+    def enterprise_to_enterprise(cls):
+        """Run tests for enterprise to enterprise"""
+        # TODO Andrew: add another profile if you want these to go to different enterprises
+        return cls._get_multi_profile_parameterized_class(cls._enterprise_profile_parameters)
+
+    @classproperty
+    def enterprise_to_k8s(cls):
+        """Run tests for enterprise to k8s"""
+        return cls._get_multi_profile_parameterized_class({"description": "enterprise_to_k8s", "from_profile": "your_enterprise_admin_profile", "to_profile": "your_kubernetes_profile"})
+
+    # endregion
