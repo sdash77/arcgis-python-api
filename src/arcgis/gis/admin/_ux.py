@@ -3322,24 +3322,9 @@ class UtilityServicesSettings(object):
         self._portal_resources = gis.admin.resources
 
     # ----------------------------------------------------------------------
-    def printing_service(self, service_url: str):
-        """
-        Set the URL of the utility service that provides printing functionality
-        for the organization. The URL must point to a REST endpoint that
-        supports the ArcGIS Print Task operation.
-
-        ==================      =======================================
-        **Parameter**            **Description**
-        ------------------      ---------------------------------------
-        service_url             The URL of the utility service that
-                                provides printing functionality for the
-                                organization.
-                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task
-        ==================      =======================================
-
-        :return: Json dictionary response indicating success.
-        """
-        # TODO
+    def printing_service(self):
+        """Get the printing service settings for the organization."""
+        return PrintingServiceSettings(self._gis)
 
     # ----------------------------------------------------------------------
     def geoenrichment_service(self, service_url: str):
@@ -3500,6 +3485,119 @@ class UtilityServicesSettings(object):
         return RoutingServiceSettings(self._gis)
 
     ##########################################################################
+    class PrintingServiceSettings:
+
+        def __init__(self, gis) -> None:
+            self._gis = gis
+            self._portal = gis._portal
+            self._portal_resources = gis.admin.resources
+
+        # ----------------------------------------------------------------------
+        @property
+        def template(self):
+            """
+            Get the print service template used by the organization.
+
+            :return: Json dictionary response indicating success.
+            """
+            # TODO
+
+        # ----------------------------------------------------------------------
+        def add_service(self, service_url):
+            """
+            Set the URL of the utility service that provides printing functionality
+            for the organization. The URL must point to a REST endpoint that
+            supports the ArcGIS Print Task operation.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            service_url             The URL of the utility service that
+                                    provides printing functionality for the
+                                    organization.
+                                    Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            # Do a get call to the service URL to check if it is a valid print service
+            # If it is, then set the print service URL in the portal properties by calling the update endpoint on the portal
+            # Pass the printServiceTask dictionary as a parameter to the post call. This dictionary has keys:
+            # "url" and "templates"
+
+            resp = self._gis._con.get(service_url, params={"f": "json"}).json()
+            if "error" in resp:
+                raise ValueError(
+                    "The service URL provided is not a valid print service or cannot be accessed."
+                )
+
+            params = {
+                "f": "json",
+                "url": service_url,
+            }
+
+            # create the templates dictionary
+            # first get the template choice list:
+            temp_choices = (
+                resp.get("parameters", {})
+                .get("Layout_Template", {})
+                .get("choiceList", [])
+            )
+            templates = []
+
+            # each template dictionary is made of 3 keys: "format", "label", "layout"
+            for choice in temp_choices:
+                templates.append({"format": "PNG32", "label": choice, "layout": choice})
+
+            params["templates"] = templates
+
+            return self._gis.update_properties({"printServiceTask": params})
+
+        # ----------------------------------------------------------------------
+        def edit_template(self, index, name, description, format, layout, print_legend):
+            """
+            Edit an existing print service template for the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the template to edit.
+            ------------------      ---------------------------------------
+            name                    The name of the template.
+            ------------------      ---------------------------------------
+            description             The description of the template.
+            ------------------      ---------------------------------------
+            format                  The format of the template.
+            ------------------      ---------------------------------------
+            layout                  The layout of the template.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            # Make an update call on the portal and pass in the entire printServiceTask dictionary as a parameter to the post call with the updates included
+
+            # First get the dictionary from the portal properties
+            # Then update the template at the index provided with the new values
+            # Then pass the updated
+            # TODO
+
+        # ----------------------------------------------------------------------
+        def delete_template(self, index):
+            """
+            Remove a print service template from the list of templates used by the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the template to remove.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            # Make an update call on the portal and pass in the entire printServiceTask dictionary as a parameter to the post call with the template removed
+            # TODO
+
+    ##########################################################################
     class GeocodingServiceSettings:
         """Helper class that can be called from the UtilityServicesSettings class using the `geocoding_service` property.
         Edit the locators used.
@@ -3564,7 +3662,7 @@ class UtilityServicesSettings(object):
             self._portal_resources = gis.admin.resources
 
         # ----------------------------------------------------------------------
-        def route_service(self, service_url: str):
+        def add_route_service(self, service_url: str):
             """
             Set the URL of the utility service that provides routing
             functionality for the organization. The URL must point to a REST
@@ -3582,6 +3680,23 @@ class UtilityServicesSettings(object):
             """
             # TODO
 
+            # for enterprise you can get the service from an ArcGIS Online
+            # in this case, user needs to provide username and password for Online as well as folder to add items to
+            # then get the resource from Online and find the services set for Routing. Then add the service to the portal as Service items.
+            # Store the username and password with teh service
+            # Then share all the items with the organization
+            # Then delete protect the items
+            # Then update the portal properties with the new service URLs to each section accordingly
+            ### DELETE IS OPPOSITE WORKFLOW ###
+
+        def delete_route_service(self):
+            """
+            Remove a route service from the organization settings.
+
+            :return: Json dictionary response indicating success.
+            """
+            # TODO
+
         # ----------------------------------------------------------------------
         @property
         def travel_modes(self):
@@ -3593,9 +3708,12 @@ class UtilityServicesSettings(object):
 
             :return: List of travel modes used by the organization.
             """
-            url = "https://logistics.arcgis.com/arcgis/rest/services/World/Utilities/GPServer/GetTravelModes/execute"
-            params = {"f": "json"}
-            return self._gis.session.post(url, params)
+            if self._gis.is_agol:
+                url = "https://logistics.arcgis.com/arcgis/rest/services/World/Utilities/GPServer/GetTravelModes/execute"
+                params = {"f": "json"}
+                return self._gis.session.post(url, params)
+            else:
+                raise ValueError("This operation is only available in ArcGIS Online.")
 
         # ----------------------------------------------------------------------
         def create_travel_mode(self, *kwargs):
