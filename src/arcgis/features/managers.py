@@ -140,7 +140,38 @@ class AttachmentManager(object):
         size: tuple[int] | list[int] | None = None,
         keywords: str | None = None,
     ) -> int:
-        """"""
+        """
+        The count operation returns the total number of attachments that satisfy
+        the specific criteria entered as arguments to the method. The default
+        count is the number of attachments for all features in the layer.
+        
+        =====================   =======================================================
+        **Parameters**          **Description**
+        ---------------------   -------------------------------------------------------
+        where                   Optional String. Clause to specify the set of features for which
+                                for which to return the attachment count. 
+        ---------------------   -------------------------------------------------------
+        attachment_where        Optional String. Clause to specify criteria to apply to
+                                the attachments table for which specific attachments to
+                                include in the count value.
+        ---------------------   -------------------------------------------------------
+        object_ids              Optional String. Comma separated string of *object_id*
+                                values of features for which to return attachment count.
+        ---------------------   -------------------------------------------------------
+        global_ids              Optional String. Comma separated string of *global_id*
+                                values of features for which to return attachment count.
+        ---------------------   -------------------------------------------------------
+        attachment_types        Optional String. Value specifying the specific format
+                                of attachments to count. See `attachmentTypes <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm#GUID-4E456078-2B9C-4E8C-B2E4-AA2F1A0BEEC4>`_
+                                for list of options to use.
+        ---------------------   -------------------------------------------------------
+        size                    Optional Integer or integer range. Value or values to
+                                to query attachments of a specific size.
+        =====================   =======================================================
+        
+        :returns:
+            Integer of total number of attachments.
+        """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
             object_ids = []
@@ -148,7 +179,7 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None:
+        if where is None and not bool(object_ids) and not bool(global_ids):
             where = "1=1"
         if keywords is None:
             keywords = []
@@ -158,7 +189,6 @@ class AttachmentManager(object):
             "attachmentTypes": ",".join(attachment_types),
             "objectIds": ",".join([str(v) for v in object_ids]),
             "globalIds": ",".join([str(v) for v in global_ids]),
-            "definitionExpression": where,
             "attachmentsDefinitionExpression": attachment_where or "",
             "keywords": ",".join([str(v) for v in keywords]),
             "size": size,
