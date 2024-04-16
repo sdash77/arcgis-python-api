@@ -1310,6 +1310,103 @@ class KnowledgeGraph:
 
         results_dict = dec.get_results()
         return results_dict
+    
+    def constraint_rule_updates(self, rules: list[dict[str, Any]]) -> dict:
+        """
+        Update constraint rules for entities & relationships in the data model.
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        rules               Required list of dicts. The dictionaries defining the
+                            constraint rules to be updated. See below for an example of the
+                            structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Update a constraint rule in the Knowledge Graph's data model.
+
+            constraint_rule = {
+                "name": "PersonCS",
+                "alias": "officespace",
+                "disabled": False,
+            }
+
+            mask = {
+                "update_name": False,
+                "update_alias": True,
+                "update_disabled": True
+            }
+
+            relationship_exclusion_rule_update =  {
+                "update_origin_entity_types": {
+                    "add_named_types": ["animal"],
+                    "remove_named_types": ["person"]
+                },
+                "update_relationship_types": {
+                    "add_named_types": ["lives_in"],
+                    "remove_named_types": ["works_at"]
+                },
+                "update_destination_entity_types": {
+                    "add_named_types": ["habitat"],
+                    "remove_named_types": ["company"]
+                }
+            }
+
+            constraint_rule_update = {
+                "rule_name": "PersonCS",
+                "mask": mask,
+                "constraint_rule": constraint_rule,
+                "relationship_exclusion_rule_update": relationship_exclusion_rule_update
+            }
+
+            knowledge_graph.constraint_rule_updates([constraint_rule_update])
+
+
+        :return: A `dict` showing the results of updating the rule(s).
+
+        """
+
+        self._validate_import()
+        split_url = self._url.split("/rest/")
+        url = (
+            split_url[0]
+            + "/rest/admin/"
+            + split_url[1]
+            + "/dataModel/constraintRules/update"
+        )
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphUpdateConstraintRulesEncoder()
+        for rule in rules:
+            enc.add_constraint_rule_update(rule)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        self._validate_response(response)
+        response_content = response.content
+        dec = _kgparser.GraphUpdateConstraintRulesDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
 
     def constraint_rule_deletes(self, rule_names: list[str]) -> dict:
         """

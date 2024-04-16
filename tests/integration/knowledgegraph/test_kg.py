@@ -13,10 +13,10 @@ import requests
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
-domain = "dev0025246.esri.com"
+domain = "dev0028833.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
-portal_url = "https://dev0025246.esri.com/portal"
+server_url = "https://dev0028833.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
+portal_url = "https://dev0028833.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
 
@@ -451,6 +451,47 @@ class TestKGMethods(unittest.TestCase):
             res = kg.constraint_rule_adds([constraint_rule])
             assert isinstance(res, dict)
             assert "PokemonCS" in kg.datamodel["constraint_rules"]
+
+        with self.subTest(msg="Update Test"):
+
+            constraint_rule = {
+                "name": "PokemonCS",
+                "alias": "gymdata",
+                "disabled": False,
+            }
+
+            mask = {
+                "update_name": False,
+                "update_alias": True,
+                "update_disabled": True
+            }
+
+            relationship_exclusion_rule_update =  {
+                "update_origin_entity_types": {
+                    "add_named_types": ["Trainer"],
+                    "remove_named_types": ["Pokemon"]
+                },
+                "update_relationship_types": {
+                    "add_named_types": ["TrainedAt"],
+                    "remove_named_types": ["HealedAt"]
+                },
+                "update_destination_entity_types": {
+                    "add_named_types": ["Gym"],
+                    "remove_named_types": ["PokeCenter"]
+                }
+            }
+
+            constraint_rule_update = {
+                "rule_name": "PokemonCS",
+                "mask": mask,
+                "constraint_rule": constraint_rule,
+                "relationship_exclusion_rule_update": relationship_exclusion_rule_update
+            }
+
+            res = kg.constraint_rule_updates([constraint_rule_update])
+            assert isinstance(res, dict)
+            assert "PokemonCS" in kg.datamodel['constraint_rules']
+            assert kg.datamodel['constraint_rules']['PokemonCS']['alias'] == 'gymdata'
 
         with self.subTest(msg="Delete Test"):
 
