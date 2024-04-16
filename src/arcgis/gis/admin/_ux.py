@@ -749,6 +749,14 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
+    def utility_services_settings(self):
+        """
+        Get an instance of the :class:`~arcgis.gis.admin.UtilityServices` class
+        to make edits to the org's utility services such as print, routing, etc.
+        """
+        return UtilityServicesSettings(gis=self._gis)
+    # ----------------------------------------------------------------------
+    @property
     def item_settings(self):
         """
         Get an instance of the :class:`~arcgis.gis.admin.ItemSettings` class to make edits to the org's default
@@ -3297,3 +3305,377 @@ class SecuritySettings(object):
             return self._gis._con.post(url, {"f": "json"})
         else:
             return None
+
+##############################################################################
+class UtilityServicesSettings(object):
+    """Helper class that can be called off of UX class using the 'utility_services_settings' property.
+    Edit org utility service settings such as print service, geoenrichment service, etc.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._portal_resources = gis.admin.resources
+
+    # ----------------------------------------------------------------------
+    def printing_service(self, service_url: str):
+        """
+        Set the URL of the utility service that provides printing functionality
+        for the organization. The URL must point to a REST endpoint that
+        supports the ArcGIS Print Task operation.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides printing functionality for the
+                                organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        # TODO
+
+    # ----------------------------------------------------------------------
+    def geoenrichment_service(self, service_url: str):
+        """
+        Set the URL of the utility service that provides geoenrichment
+        functionality for the organization. The URL must point to a REST
+        endpoint that supports the ArcGIS GeoEnrichment operation.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides geoenrichment functionality for
+                                the organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/folder/serviceName/GeoenrichmentServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        # TODO
+    
+    # ----------------------------------------------------------------------
+    def geometry_service(self, service_url):
+        """
+        Set the URL of the utility service that provides geometry functionality
+        for the organization. The URL must point to a REST endpoint that
+        supports the ArcGIS Geometry operation.
+
+        .. note::
+            This is Enterprise Only.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides geometry functionality for the
+                                organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/Geometry/GeometryServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        # TODO
+
+    # ----------------------------------------------------------------------
+    def hydrology_service(self, service_url: str):
+        """
+        Set the URL of the utility service that provides hydrology functionality
+        for the organization. The URL must point to a REST endpoint that
+        supports the ArcGIS Hydrology operation.
+
+        .. note::
+            This is Enterprise Only.
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides hydrology functionality for the
+                                organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/Hydrology/GPServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        # TODO
+
+    # ----------------------------------------------------------------------
+    def elevation_service(self, service_url:str):
+        """
+        Set the URL of the utility service that provides elevation functionality
+        for the organization. The URL must point to a REST endpoint that
+        supports the ArcGIS Elevation operation.
+
+        .. note::
+            This is Enterprise Only.
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides elevation functionality for the
+                                organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/Elevation/GPServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        # TODO
+
+    # ----------------------------------------------------------------------
+    def orthomapping_elevation_service(self, service_url:str):
+        """
+        Set the URL of the utility service that provides orthomapping elevation
+        functionality for the organization. The URL must point to a REST endpoint
+        that supports the ArcGIS Orthomapping Elevation operation.
+
+        .. note::
+            This is Enterprise Only.
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides orthomapping elevation functionality
+                                for the organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/OrthomappingElevation/GPServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        # TODO
+
+
+    # ----------------------------------------------------------------------
+    def symbol_service(self, service_url:str):
+        """
+        Set the URL of the utility service that provides symbol functionality
+        for the organization. The URL must point to a REST endpoint that
+        supports the ArcGIS Symbol operation.
+
+        .. note::
+            This is Enterprise Only.
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        service_url             The URL of the utility service that
+                                provides symbol functionality for the
+                                organization.
+                                Example: https://webadaptor.domain.com/arcgis/rest/services/Utilities/Symbol/GeometryServer
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        # TODO
+    # ----------------------------------------------------------------------
+    @property
+    def geocoding_service(self):
+        return GeocodingServiceSettings(self._gis)
+    
+    # ----------------------------------------------------------------------
+    @property
+    def cached_elevation_image_service(self):
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        return CachedElevationImageServiceSettings(self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def routing_service(self):
+        return RoutingServiceSettings(self._gis)
+    
+    ##########################################################################
+    class GeocodingServiceSettings:
+        """Helper class that can be called from the UtilityServicesSettings class using the `geocoding_service` property.
+        Edit the locators used.
+        """
+
+        def __init__(self, gis) -> None:
+            self._gis = gis
+            self._portal = gis._portal
+            self._portal_resources = gis.admin.resources
+
+        # ----------------------------------------------------------------------
+        @property
+        def locators(self):
+            """
+            Get the list of locators used by the organization.
+
+            :return: List of locators used by the organization.
+            """
+            #TODO
+
+        # ----------------------------------------------------------------------
+        def add_locator(self, url, name, text, allow_geosearch =True, allow_batch_geocoding=True):
+            """
+            Add a locator to the list of locators used by the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            locator                 The locator to add.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+        
+        # ----------------------------------------------------------------------
+        def delete_locator(self, index):
+            """
+            Remove a locator from the list of locators used by the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the locator to remove.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+
+    ##########################################################################
+    class RoutingServiceSettings:
+        """Helper class that can be called from the UtilityServicesSettings class using the `routing_service` property.
+        Edit the locators used.
+        """
+
+        def __init__(self, gis) -> None:
+            self._gis = gis
+            self._portal = gis._portal
+            self._portal_resources = gis.admin.resources
+
+        # ----------------------------------------------------------------------
+        def route_service(self, service_url: str):
+            """
+            Set the URL of the utility service that provides routing
+            functionality for the organization. The URL must point to a REST
+            endpoint that supports the ArcGIS Route operation.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            service_url             The URL of the utility service that
+                                    provides routing functionality for the
+                                    organization.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+        
+        # ----------------------------------------------------------------------
+        @property
+        def travel_modes(self):
+            """
+            Get the list of travel modes used by the organization.
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: List of travel modes used by the organization.
+            """
+            url = "https://logistics.arcgis.com/arcgis/rest/services/World/Utilities/GPServer/GetTravelModes/execute"
+            params = {"f": "json"}
+            return self._gis.session.post(url, params)
+
+        # ----------------------------------------------------------------------
+        def create_travel_mode(self, *kwargs):
+            """
+            Create a new travel mode for the organization.
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+
+        # ----------------------------------------------------------------------
+        def edit_travel_mode(self, *kwargs):
+            """
+            Edit an existing travel mode for the organization.
+
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+        
+        # ----------------------------------------------------------------------
+        @property
+        def default_travel_mode(self):
+            """
+            Get/Set the default travel mode for the organization.
+
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+        
+        # ----------------------------------------------------------------------
+        @default_travel_mode.setter
+        def default_travel_mode(self, mode):
+            """
+            Get/Set the default travel mode for the organization.
+
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+
+        # ----------------------------------------------------------------------
+        def delete_travel_mode(self, index):
+            """
+            Remove a travel mode from the list of travel modes used by the organization.
+
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the travel mode to remove.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
+        
+        # ----------------------------------------------------------------------
+        def duplicate_travel_mode(self, index):
+            """
+            Duplicate a travel mode from the list of travel modes used by the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the travel mode to duplicate.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            #TODO
