@@ -29,6 +29,7 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
+import copy
 
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
@@ -17972,6 +17973,129 @@ class Item(dict):
             return private_url or public_url
         return url
 
+    # ----------------------------------------------------------------------
+    def remap_data(self, item_mapping: dict[str, str], force = False):
+
+        _TEXT_BASED_ITEM_TYPES = [
+            "Web Map",
+            "Feature Service",
+            "Map Service",
+            "Operation View",
+            "Dashboard",
+            "Image Service",
+            "Feature Collection",
+            "Feature Collection Template",
+            "Web Mapping Application",
+            "Mobile Application",
+            "Symbol Set",
+            "Color Set",
+            "Document Link",
+            "Geocode Service",
+            "Geodata Service",
+            "Application",
+            "Geometry Service",
+            "Geoprocessing Service",
+            "Network Analysis Service",
+            "Workflow Manager Service",
+            "Web Scene",
+            "Data Pipeline",
+            "360 VR Experience",
+            "Workforce Project",
+            "Insights Model",
+            "Insights Page",
+            "Insights Workbook",
+            "Hub Initiative",
+            "Hub Site Application",
+            "Hub Page",
+            "Content Category Set",
+            "Windows Viewer Configuration",
+        ]
+
+        def _replace_related_items(item, item_mapping):
+            return
+
+        if not force:
+            for k, v in item_mapping.items():
+                if self._gis.content.get(v) is None:
+                    raise ValueError(f"Item with id {v} does not exist in the GIS")
+                if self._gis.content.get(k).type != self._gis.content.get(v).type:
+                    raise ValueError(f"Items with ids {k} and {v} are not of the same type")
+                
+        # _replace_related_items(self, item_mapping)
+        expanded_dict = copy.deepcopy(item_mapping)
+        for k, v in item_mapping.items():
+            orig_item = self._gis.content.get(k)
+            new_item = self._gis.content.get(v)
+            if orig_item and new_item:
+                expanded_dict[orig_item.title] = new_item.title
+
+                if "layers" in orig_item and "layers" in new_item:
+                    for i, layer in enumerate(orig_item.layers):
+                        expanded_dict[layer.url] = new_item.layers[i].url
+
+        if self.type in _TEXT_BASED_ITEM_TYPES:
+            data = self.get_data()
+            old_string = json.dumps(data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+
+            return self.update(item_properties={}, data = new_data)
+        
+        elif self.type == "Web Experience":
+            config_dict = self.resources.get("config/config.json")
+            config_string = json.dumps(config_dict)
+            new_config_string = _common_utils._text_replace(config_string, expanded_dict)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                tfile.write(new_config_string)
+                tfile.close()
+            self.resources.update(
+                folder_name="config",
+                file_name="config.json",
+                file=tfile.name,
+            )
+
+            data = self.get_data()
+            old_string = json.dumps(data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+
+            return self.update(item_properties={}, data = new_data)
+        
+        elif self.type == "StoryMap":
+            for res in self.resources.list():
+                res_name = res["resource"]
+                if "draft" in res_name and ".json" in res_name and "express" not in res_name:
+                    draft_name = res_name
+                    break
+
+            draft_dict = self.resources.get(draft_name)
+            config_string = json.dumps(draft_dict)
+            new_config_string = _common_utils._text_replace(config_string, expanded_dict)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                tfile.write(new_config_string)
+                tfile.close()
+            self.resources.update(
+                file_name=res_name,
+                file=tfile.name,
+            )
+
+            data = self.get_data()
+            if data != {'unpublished' : True}:
+                old_string = json.dumps(data)
+                new_string = _common_utils._text_replace(old_string, expanded_dict)
+                new_data = json.loads(new_string)
+
+                return self.update(item_properties={}, data = new_data)
+            
+            else:
+                return True
+            
+        else:
+            raise ValueError(f"Item type {self.type} is not supported for remapping data")
 
 ########################################################################
 class ViewManager:
