@@ -755,6 +755,7 @@ class UX(object):
         to make edits to the org's utility services such as print, routing, etc.
         """
         return UtilityServicesSettings(gis=self._gis)
+
     # ----------------------------------------------------------------------
     @property
     def item_settings(self):
@@ -3306,6 +3307,7 @@ class SecuritySettings(object):
         else:
             return None
 
+
 ##############################################################################
 class UtilityServicesSettings(object):
     """Helper class that can be called off of UX class using the 'utility_services_settings' property.
@@ -3358,7 +3360,7 @@ class UtilityServicesSettings(object):
         :return: Json dictionary response indicating success.
         """
         # TODO
-    
+
     # ----------------------------------------------------------------------
     def geometry_service(self, service_url):
         """
@@ -3409,7 +3411,7 @@ class UtilityServicesSettings(object):
         # TODO
 
     # ----------------------------------------------------------------------
-    def elevation_service(self, service_url:str):
+    def elevation_service(self, service_url: str):
         """
         Set the URL of the utility service that provides elevation functionality
         for the organization. The URL must point to a REST endpoint that
@@ -3433,7 +3435,7 @@ class UtilityServicesSettings(object):
         # TODO
 
     # ----------------------------------------------------------------------
-    def orthomapping_elevation_service(self, service_url:str):
+    def orthomapping_elevation_service(self, service_url: str):
         """
         Set the URL of the utility service that provides orthomapping elevation
         functionality for the organization. The URL must point to a REST endpoint
@@ -3456,9 +3458,8 @@ class UtilityServicesSettings(object):
             raise ValueError("This operation is only available in ArcGIS Enterprise.")
         # TODO
 
-
     # ----------------------------------------------------------------------
-    def symbol_service(self, service_url:str):
+    def symbol_service(self, service_url: str):
         """
         Set the URL of the utility service that provides symbol functionality
         for the organization. The URL must point to a REST endpoint that
@@ -3480,11 +3481,12 @@ class UtilityServicesSettings(object):
         if self._gis._is_agol:
             raise ValueError("This operation is only available in ArcGIS Enterprise.")
         # TODO
+
     # ----------------------------------------------------------------------
     @property
     def geocoding_service(self):
         return GeocodingServiceSettings(self._gis)
-    
+
     # ----------------------------------------------------------------------
     @property
     def cached_elevation_image_service(self):
@@ -3496,7 +3498,7 @@ class UtilityServicesSettings(object):
     @property
     def routing_service(self):
         return RoutingServiceSettings(self._gis)
-    
+
     ##########################################################################
     class GeocodingServiceSettings:
         """Helper class that can be called from the UtilityServicesSettings class using the `geocoding_service` property.
@@ -3516,10 +3518,12 @@ class UtilityServicesSettings(object):
 
             :return: List of locators used by the organization.
             """
-            #TODO
+            # TODO
 
         # ----------------------------------------------------------------------
-        def add_locator(self, url, name, text, allow_geosearch =True, allow_batch_geocoding=True):
+        def add_locator(
+            self, url, name, text, allow_geosearch=True, allow_batch_geocoding=True
+        ):
             """
             Add a locator to the list of locators used by the organization.
 
@@ -3531,8 +3535,8 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
-        
+            # TODO
+
         # ----------------------------------------------------------------------
         def delete_locator(self, index):
             """
@@ -3546,7 +3550,7 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
+            # TODO
 
     ##########################################################################
     class RoutingServiceSettings:
@@ -3576,8 +3580,8 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
-        
+            # TODO
+
         # ----------------------------------------------------------------------
         @property
         def travel_modes(self):
@@ -3603,7 +3607,7 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
+            # TODO
 
         # ----------------------------------------------------------------------
         def edit_travel_mode(self, *kwargs):
@@ -3616,8 +3620,8 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
-        
+            # TODO
+
         # ----------------------------------------------------------------------
         @property
         def default_travel_mode(self):
@@ -3630,8 +3634,8 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
-        
+            # TODO
+
         # ----------------------------------------------------------------------
         @default_travel_mode.setter
         def default_travel_mode(self, mode):
@@ -3644,7 +3648,11 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
+            # do an update call on the portal to set the default travel mode
+            # pass in the routeServiceLayer dict, asyncRouteService dict, closestFacilityService,
+            # asyncClosestFacilityService, serviceAreaService, asyncServiceAreaService, locationAllocationService,
+            # asyncLocationAllocationService, sycVRPService, asyncVRPService, asyncODCostMatrixService as parameters to post call
+            # TODO
 
         # ----------------------------------------------------------------------
         def delete_travel_mode(self, index):
@@ -3663,8 +3671,9 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
-        
+            # update the resource file called travelmodes.json and make an addresource call
+            # TODO
+
         # ----------------------------------------------------------------------
         def duplicate_travel_mode(self, index):
             """
@@ -3678,4 +3687,74 @@ class UtilityServicesSettings(object):
 
             :return: Json dictionary response indicating success.
             """
-            #TODO
+            # use execute call on GP Service to get the travel modes, then update the resource file called travelmodes.json and make an addresource call
+            # TODO
+
+        # ----------------------------------------------------------------------
+        def reset_to_defaults(self):
+            """
+            This will reset all the Travel modes back to defaults provided by Esri.
+
+            .. note::
+                This is ArcGIS Online Only.
+
+            :return: Json dictionary response indicating success.
+            """
+            # remove the travelmodes.json resource
+            # do an execute call on GPServer to get travel modes
+            # TODO
+
+    ##########################################################################
+    class CachedElevationImageServiceSettings:
+        """Helper class that can be called from the UtilityServicesSettings class using the `cached_elevation_image_service` property.
+        Edit the locators used.
+        """
+
+        def __init__(self, gis) -> None:
+            self._gis = gis
+            self._portal = gis._portal
+            self._portal_resources = gis.admin.resources
+
+        # ----------------------------------------------------------------------
+        @property
+        def elevation_image_services(self):
+            """
+            Get the list of elevation image services used by the organization.
+
+            :return: List of elevation image services used by the organization.
+            """
+            # TODO
+
+        # ----------------------------------------------------------------------
+        def add_elevation_image_service(self, service_url: str):
+            """
+            Set the URL of the utility service that provides elevation image
+            functionality for the organization. The URL must point to a REST
+            endpoint that supports the ArcGIS Elevation Image operation.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            service_url             The URL of the utility service that
+                                    provides elevation image functionality for
+                                    the organization.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            # TODO
+
+        # ----------------------------------------------------------------------
+        def delete_elevation_image_service(self, index):
+            """
+            Remove an elevation image service from the list of elevation image services used by the organization.
+
+            ==================      =======================================
+            **Parameter**            **Description**
+            ------------------      ---------------------------------------
+            index                   The index of the elevation image service to remove.
+            ==================      =======================================
+
+            :return: Json dictionary response indicating success.
+            """
+            # TODO
