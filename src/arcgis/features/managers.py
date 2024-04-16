@@ -144,12 +144,12 @@ class AttachmentManager(object):
         The count operation returns the total number of attachments that satisfy
         the specific criteria entered as arguments to the method. The default
         count is the number of attachments for all features in the layer.
-        
+
         =====================   =======================================================
         **Parameters**          **Description**
         ---------------------   -------------------------------------------------------
         where                   Optional String. Clause to specify the set of features for which
-                                for which to return the attachment count. 
+                                for which to return the attachment count.
         ---------------------   -------------------------------------------------------
         attachment_where        Optional String. Clause to specify criteria to apply to
                                 the attachments table for which specific attachments to
@@ -168,7 +168,7 @@ class AttachmentManager(object):
         size                    Optional Integer or integer range. Value or values to
                                 to query attachments of a specific size.
         =====================   =======================================================
-        
+
         :returns:
             Integer of total number of attachments.
         """
