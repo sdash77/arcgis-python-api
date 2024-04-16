@@ -1310,7 +1310,7 @@ class KnowledgeGraph:
 
         results_dict = dec.get_results()
         return results_dict
-    
+
     def constraint_rule_updates(self, rules: list[dict[str, Any]]) -> dict:
         """
         Update constraint rules for entities & relationships in the data model.
