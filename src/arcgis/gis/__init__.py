@@ -23,6 +23,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+import datetime as _dt
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -61,6 +62,7 @@ from cachetools import cached, TTLCache
 from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 
+
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
@@ -73,7 +75,9 @@ _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
+_dt = LazyLoader("datetime")
 _log = logging.getLogger(__name__)
+
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.auth.tools._util import create_base_url as _create_base_url
 
@@ -4852,7 +4856,7 @@ class UserManager(object):
         if query is None:
             query = "*"
         if exclude:
-            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav ({query})"
+            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav -username:esri_webstyles ({query})"
         count = self.advanced_search(query, return_count=True)
 
         url = f"{self._gis._portal.resturl}/portals/self/users/search"
@@ -5078,17 +5082,35 @@ class UserManager(object):
             max_results = int(max_results)
 
         us = []
+        batches: list[str]
+        n: int = 20
+        template: dict[str, Any] = {}
         for user in users:
             if isinstance(user, User):
                 us.append(user.username)
             else:
                 us.append(user)
-        params = {"f": "json", "users": ",".join(us), "limit": max_results}
-        url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
-        res = res = self._portal.con.get(url, params)
-        if "results" in res:
-            return res["results"]
-        return res
+        # breaks the list into n sized chunks.
+        batches = [us[i * n : (i + 1) * n] for i in range((len(us) + n - 1) // n)]
+        for batch in batches:
+            params = {
+                "f": "json",
+                "users": ",".join(batch),
+                "limit": max_results,
+            }
+            url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
+            res = self._portal.con.get(url, params)
+            if "results" in res:
+                if not "results" in template:
+                    template["results"] = []
+                template["results"].extend(res.get("results", []))
+            elif isinstance(res, dict):
+                template.update(res)
+            else:
+                raise Exception(str(res))
+        if "results" in template:
+            return template["results"]
+        return template
 
 
 class RoleManager(object):
@@ -6746,6 +6768,11 @@ class ContentManager(object):
             item_properties = item_properties.to_dict()
             item_properties.pop("thumbnail", None)
             item_properties.pop("metadata", None)
+        if "overwrite" in item_properties:
+            _log.warning(
+                "The `overwrite` parameter is no longer support on adding of items."
+            )
+            item_properties.pop("overwrite", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -11303,9 +11330,10 @@ class User(dict):
     def report(
         self,
         report_type: str,
-        start_time: Optional[datetime],
         *,
-        duration: Optional[str] = "weekly",
+        start_time: _dt.datetime | None = None,
+        duration: str = "weekly",
+        time_aggregate: str | None = None,
     ) -> Item:
         """
 
@@ -11325,11 +11353,13 @@ class User(dict):
                           generate. The allowed arguments are:
 
                           * *credits*
-                          * *content*
-                          * *users*
+                          * *content* (does not honor start_time)
+                          * *users* (does not honor start_time)
                           * *activity*
+                          * *serviceUsages*
+                          * *itemUsages*
         ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The time from which the report
+        start_time        Optional Datetime. The time from which the report
                           generates information.
 
                           * If *duration* is *weekly*, the day component must
@@ -11353,10 +11383,18 @@ class User(dict):
                           * *monthly*
                           * *weekly*
                           * *daily* - only available if *report_type* is *activity*
+                          * *yearly*
+                          * *quarterly*
 
                           .. note::
                               Argument is required when setting *report_type*
                               argument to *activity* or *credits*.
+
+                          .. note::
+                              The yearly value is only available when reportSubType is set to itemUsages.
+        ----------------  --------------------------------------------------------
+        time_aggregate    Optional String.  When the `report_type` is `itemUsages`, the records can be aggregated on
+                          specific time groups.  These are `day`, `week`, or `month`.
         ================  ========================================================
 
 
@@ -11392,8 +11430,23 @@ class User(dict):
 
         import datetime as _dt
 
-        assert report_type in ["users", "credits", "activity", "content"]
-        assert duration in ["monthly", "weekly", "daily"]
+        assert report_type in [
+            "users",
+            "credits",
+            "activity",
+            "content",
+            "serviceUsages",
+            "itemUsages",
+        ]
+        assert duration in [
+            "monthly",
+            "weekly",
+            "daily",
+            "quarterly",
+            "yearly",
+        ]
+        if report_type == "itemUsages" and time_aggregate:
+            assert time_aggregate in ["day", "week", "month"]
 
         def weeknumber(dayname):
             if dayname == "Monday":
@@ -11442,15 +11495,23 @@ class User(dict):
             start_time = now + _dt.timedelta(days=dow)
             start_time = int(start_time.timestamp() * 1000)
         elif start_time is None and duration in ["daily"]:
-            start_time = _dt.datetime.now(_dt.timezone.utc)
+            start_time = int(_dt.datetime.now(_dt.timezone.utc).totimestamp() * 1000)
         params = {
             "f": "json",
             "reportType": "org",
             "reportSubType": report_type,
             "timeDuration": duration,
-            "startTime": start_time,
+            "startTime": start_time or "",
+            "timeAggregate": "" or time_aggregate,
         }
 
+        if report_type in ["content", "users"] and start_time:
+            del params["startTime"]
+            _log.warning(
+                "`start_time` is not honored with report type of content and users."
+            )
+        if report_type != "itemUsages":
+            del params["timeAggregate"]
         url = "%s/sharing/rest/community/users/%s/report" % (
             self._gis._url,
             self._user_id,
@@ -12008,9 +12069,32 @@ class User(dict):
         )
 
     @property
-    def groups(self):
+    def _group_dict(self) -> list[dict]:
+        return self["groups"]
+
+    @property
+    def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group["id"]) for group in self["groups"]]
+        if (
+            self._gis.users.me.username != self["username"]
+            and self._gis._is_arcgisonline
+        ):
+            groups: list[Group] = []
+            for grp in self["groups"]:
+                try:
+                    group = Group(self._gis, grp["id"])
+                    group.__str__()
+                    if "orgId" in grp and grp["orgId"] == self._gis.properties["id"]:
+                        groups.append(group)
+                    elif not "orgId" in grp:
+                        groups.append(group)
+                    elif grp["owner"] == self["username"]:
+                        groups.append(group)
+                except:
+                    pass
+            return groups
+        else:
+            return [Group(self._gis, grp["id"]) for grp in self["groups"]]
 
     def update_license_type(self, user_type: str):
         """
@@ -12872,13 +12956,19 @@ class User(dict):
         if reassign_to:
             # reassigns the group owner to the reassigned_to user.
             [
-                grp.reassign_to(User(gis=self._gis, username=reassign_to))
-                for grp in self.groups
-                if grp.owner == self.username
+                Group(self._gis, grp["id"]).reassign_to(
+                    User(gis=self._gis, username=reassign_to)
+                )
+                for grp in self["groups"]
+                if grp["owner"] == self.username
             ]
         else:
             # delete the groups owned by the user
-            [grp.delete() for grp in self.groups if grp.owner == self.username]
+            [
+                Group(self._gis, grp["id"]).delete()
+                for grp in self["groups"]
+                if grp["owner"] == self.username
+            ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
@@ -13202,29 +13292,19 @@ class Item(dict):
         """
         Gets/Sets if the Item is in the user's favorites
         """
-        user: User = self._gis.users.get(self.owner)
+        user: User = self._gis.users.me
+        grp_shr = self.sharing.groups
+        # get(self.owner)
         if value == True:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
-        elif value == False:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
-        else:
-            raise ValueError("'value' must be a boolean.")
-
-        params = {
-            "f": "json",
-            "everyone": self.shared_with["everyone"],
-            "org": self.shared_with["org"],
-            "items": self.itemid,
-            "groups": user.favGroupId,
-        }
-
-        res = self._gis._con.post(url, params=params)
-        assert self.shared_with
-        if "error" in res:
-            raise Exception(f"An error has occurred: {str(res)}")
-        else:
+            grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
+        elif value == False:
+            grp_shr.remove(user.favGroupId)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("'value' must be a boolean.")
 
     # ----------------------------------------------------------------------
     @property
@@ -14396,7 +14476,16 @@ class Item(dict):
         metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
 
         try:
-            response = self._portal.con.get(metadataurlpath, try_json=False)
+            save_path: str = os.path.join(
+                tempfile.gettempdir(), self.itemid, "metadata"
+            )
+            os.makedirs(save_path, exist_ok=True)
+            response = self._portal.con.get(
+                metadataurlpath,
+                try_json=False,
+                out_folder=save_path,
+                file_name="metadata.xml",
+            )
             if response.find("Metadata for item not found") > -1:
                 return None
             else:
@@ -14505,7 +14594,10 @@ class Item(dict):
         elif self.type.lower() == "map service":
             icon = "mapimages16.png"
         elif self.type.lower() == "image service":
-            icon = "imagery16.png"
+            if "tiled imagery" in [keyword.lower() for keyword in self.typeKeywords]:
+                icon = "tiledimagerylayer16.png"
+            else:
+                icon = "imagery16.png"
         elif self.type.lower() == "kml":
             icon = "features16.png"
         elif self.type.lower() == "wms":
@@ -14566,7 +14658,10 @@ class Item(dict):
         elif self.type.lower() == "map service":
             item_type = "Map Image Layer"
         elif self.type.lower() == "image service":
-            item_type = "Imagery Layer"
+            if "tiled imagery" in [keyword.lower() for keyword in self.typeKeywords]:
+                item_type = "Tiled Imagery Layer"
+            else:
+                item_type = "Imagery Layer"
         elif self.type.lower().endswith("service"):
             item_type = self.type.replace("Service", "Layer")
         return item_type
@@ -15139,7 +15234,9 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
+            return self._portal.delete_item(
+                self.itemid, self._user_id, folder, force, permanent
+            )
 
     # ----------------------------------------------------------------------
     def update(
@@ -15570,7 +15667,7 @@ class Item(dict):
             return results
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=60))
+    @cached(cache=TTLCache(maxsize=255, ttl=900))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
 
@@ -16127,10 +16224,16 @@ class Item(dict):
                                `Geocoder` can be supplied in order to specify which service
                                geocodes the information. If no geocoder is given, the first
                                registered `Geocoder` is used.
+        -------------------    ---------------------------------------------------------------
+        future                 Optional Boolean indicating whether to run the operation in an
+                               asynchronous manner. When *True*, the return value is a
+                               *concurrent.futures.Future* object that can be queried for
+                               job status and results. The default is *False*.
         ===================    ===============================================================
 
         :return:
-            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
+            When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
+            published web layer. When *future=True*, a *concurrent.futures.Future* object.
 
         .. code-block:: python
 
@@ -16616,12 +16719,13 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
-        elif (
-            "success" in ret[0]
-            and ret[0]["success"] == False
-            and ret[0].get("error", None)
-        ):
-            raise Exception(ret[0].get("error"))
+        elif "success" in ret[0] and ret[0]["success"] == False:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                )
+            )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
             return Item(self._gis, ret[0]["serviceItemId"])
         else:

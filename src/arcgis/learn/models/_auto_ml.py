@@ -488,9 +488,18 @@ class AutoML(object):
                 val_labels = self._validation_labels
         # val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                return self._model.score(self._validation_data_df, val_labels)
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(
+                        self._data._dataframe,
+                        self._data._dataframe[self._data._dependent_variable],
+                    )
+            except:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    return self._model.score(self._validation_data_df, val_labels)
+
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
@@ -566,6 +575,11 @@ class AutoML(object):
         y_pred = y_pred.reset_index(drop=True)
 
         if self._data._is_classification:
+            y_true_unique = y_true.nunique()
+            if y_true_unique > 2:
+                raise Exception(
+                    "This method is available only for Binary classification and Regression.It does not support multi class classification yet"
+                )
             le_1 = LabelEncoder()
             le_1.fit(y_true)
             y_true = le_1.transform(y_true)
@@ -1278,7 +1292,8 @@ class AutoML(object):
             if column not in fields_needed:
                 if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
-
+        if self._data._embedding_variables is None:
+            self._data._embedding_variables = []
         processed_numpy = processed_dataframe[
             self._data._continuous_variables
             + self._data._categorical_variables

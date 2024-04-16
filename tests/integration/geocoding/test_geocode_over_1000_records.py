@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import logging
 import json
 import unittest
@@ -12,6 +8,7 @@ from arcgis.gis import GIS
 from arcgis.features import GeoAccessor
 from arcgis.geocoding import Geocoder
 import pandas as pd
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -60,6 +57,7 @@ COLUMNS = [
 ]
 
 
+@integration_test
 class TestGeoAccessorFromDFGeocoding(unittest.TestCase):
     def test_geocoding_over_1000_records(self):
         # OR geocoder has a max batch size of 1000

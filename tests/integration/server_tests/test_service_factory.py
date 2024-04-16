@@ -27,10 +27,12 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer  #
 from arcgis.raster import ImageryLayer  #
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._types import SceneLayer
+from arcgis.mapping import SceneLayer
+from utils.decorators import integration_test
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class ServiceFactoryTest(unittest.TestCase):
     """test ServiceFactory Class"""
 

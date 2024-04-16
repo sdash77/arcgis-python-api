@@ -1,7 +1,4 @@
-import sys
 import unittest
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
-
 from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
@@ -9,6 +6,7 @@ import pandas as pd
 from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
+from utils.decorators import integration_test
 
 try:
     HASARCPY = True
@@ -93,6 +91,7 @@ MIXED_GEOMS = GeoArray(geoms)
 ##--------------------------------------------------------------------------
 ## Creation Tests
 ##--------------------------------------------------------------------------
+@integration_test
 class SeriesGeoTests(unittest.TestCase):
 
     def test_series_gen(selef):
@@ -115,7 +114,6 @@ class SeriesGeoTests(unittest.TestCase):
             df.spatial.set_geometry("SHAPE")
             assert hasattr(df.SHAPE, "geom")
             assert isinstance(df, pd.DataFrame)
-
 
     ##--------------------------------------------------------------------------
     ## Tests Properties
@@ -312,7 +310,6 @@ class SeriesGeoTests(unittest.TestCase):
         df.spatial.set_geometry("SHAPE")
         assert isinstance(df.SHAPE.geom.length3D, pd.Series)
 
-
     ##--------------------------------------------------------------------------
     ## Tests Geometry Methods
     ##--------------------------------------------------------------------------
@@ -326,13 +323,21 @@ class SeriesGeoTests(unittest.TestCase):
     geojson_polygon = {
         "type": "Polygon",
         "coordinates": [
-            [[10.0, 0.0], [20.0, 0.0], [20.0, 10.0], [10.0, 10.0], [10.0, 0.0]]
+            [
+                [10.0, 0.0],
+                [20.0, 0.0],
+                [20.0, 10.0],
+                [10.0, 10.0],
+                [10.0, 0.0],
+            ]
         ],
     }
     polygon = Geometry(geojson_polygon)
     geojson_polygon = {
         "type": "Polygon",
-        "coordinates": [[[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [5.0, 5.0], [0.0, 0.0]]],
+        "coordinates": [
+            [[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [5.0, 5.0], [0.0, 0.0]]
+        ],
     }
     polygon2 = Geometry(geojson_polygon)
     poly_geoms = [polygon, polygon2]
@@ -341,7 +346,8 @@ class SeriesGeoTests(unittest.TestCase):
         """tests angle distance to"""
         try:
             df = pd.DataFrame(
-                data=[["a", 1, 2.1, self.gj_geoms[0]]], columns=["a", "b", "c", "SHAPE"]
+                data=[["a", 1, 2.1, self.gj_geoms[0]]],
+                columns=["a", "b", "c", "SHAPE"],
             )
             df.spatial.set_geometry("SHAPE")
             r = df.SHAPE.geom.angle_distance_to(self.gj_geoms[1])
@@ -417,7 +423,9 @@ class SeriesGeoTests(unittest.TestCase):
         if HASARCPY:
             v = GeoArray([geoms[3]])
             df = pd.DataFrame({"SHAPE": v})
-            r = df.SHAPE.geom.densify(method="GEODESIC", distance=10, deviation=1)
+            r = df.SHAPE.geom.densify(
+                method="GEODESIC", distance=10, deviation=1
+            )
             assert r.dtype.name.lower() == "geometry"
             assert r.geom.geometry_type.unique()[0] == "polygon"
 
@@ -521,7 +529,11 @@ class SeriesGeoTests(unittest.TestCase):
             df = pd.DataFrame({"SHAPE": v})
             df.spatial.set_geometry("SHAPE")
             pt = Geometry(
-                {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+                {
+                    "x": -97.06133,
+                    "y": 32.8379,
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             r = df.SHAPE.geom.query_point_and_distance(pt, True)
             assert r.dtype.name.lower() in ["float64", "object"]
@@ -544,7 +556,11 @@ class SeriesGeoTests(unittest.TestCase):
     def test_snap_to_line(self):
         if HASARCPY:
             pt = Geometry(
-                {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+                {
+                    "x": -97.06133,
+                    "y": 32.8379,
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             v = GeoArray([geoms[2]])
             df = pd.DataFrame({"SHAPE": v})
@@ -572,6 +588,4 @@ class SeriesGeoTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()
-    print("series tests finished")

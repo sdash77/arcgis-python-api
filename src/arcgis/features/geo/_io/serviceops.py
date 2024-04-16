@@ -187,7 +187,7 @@ def from_layer(layer, query="1=1"):
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
-    sdf.spatial._meta.source = layer
+    sdf.spatial._meta.source = layer.url
     if "drawingInfo" in layer.properties:
         sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
     else:

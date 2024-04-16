@@ -1,9 +1,7 @@
-#import sys
-#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
-
 import unittest
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
+from utils.decorators import integration_test
 
 # Import the module
 try:
@@ -14,6 +12,7 @@ except ImportError:
     raise (exit())
 
 
+@integration_test
 class TestLicense(unittest.TestCase):
     """tests the license manager"""
 

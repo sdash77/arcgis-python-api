@@ -42,11 +42,13 @@ except Exception as e:
 
 HAS_BEAUTIFULSOUP = True
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 except:
     HAS_BEAUTIFULSOUP = False
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="bs4")
+
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 HAS_NUMPY = True
 try:
@@ -306,7 +308,6 @@ class TextDataObject:
             validation_file_exists = True
         else:
             validation_file_exists = False
-
         if validation_file_exists:
             valid_df = read_file(os.path.join(data, valid_file))
             valid_df = cls._preprocess_df(
@@ -329,11 +330,11 @@ class TextDataObject:
                     label
                 ) in unique_labels:  # duplicating datapoints with unique classes.
                     idx = y[y == label].index.tolist()[0]
-                    train_df = train_df.append(train_df.iloc[idx])
+                    train_df = train_df._append(train_df.iloc[idx])
                 train_df.reset_index(drop=True, inplace=True)
                 x, y = train_df[text_cols], train_df[label_col]
                 X_train, X_test, y_train, y_test = train_test_split(
-                    x, y, test_size=val_split_pct, stratify=y
+                    x, y, test_size=val_split_pct, stratify=y, random_state=seed
                 )
                 train_df = pd.concat([X_train, y_train], axis=1)
                 valid_df = pd.concat([X_test, y_test], axis=1)

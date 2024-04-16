@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 
 from arcgis.auth import EsriSession
@@ -23,8 +20,11 @@ else:
     SKIPME = True
     msg = "Configuration file not found."
 
+from utils.decorators import integration_test
+
 
 @unittest.skipIf(SKIPME == True, msg)
+@integration_test
 class TestOAuth2Workflow(unittest.TestCase):
     """
     Tests the Oauth2 Token Authentication Workflows

@@ -16,10 +16,12 @@ from arcgis.gis.nb._nbm import Runtime, NotebookManager  #
 from arcgis.gis.nb._security import SecurityManager  #
 from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
 from arcgis.gis.nb._system import Container, DirectoryManager
+from utils.decorators import integration_test
 
 profiles = ["datasciencedev"]
 
 ###########################################################################
+@integration_test
 class TestNBLogManager(unittest.TestCase):
     """tests the log functionality of the notebook server"""
 
@@ -85,6 +87,7 @@ class TestNBLogManager(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestNotebookServer(unittest.TestCase):
     """tests the base level to the notebook server"""
 
@@ -124,6 +127,7 @@ class TestNotebookServer(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestNBSecurityModule(unittest.TestCase):
     """
     Tests the Security Module for the ArcGIS Notebook Server
@@ -167,6 +171,7 @@ class TestNBSecurityModule(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestNBMachineManager(unittest.TestCase):
     """tests the MachineManager methods"""
 
@@ -297,6 +302,7 @@ class TestNBMachineManager(unittest.TestCase):
 
 
 ########################################################################
+@integration_test
 class TestNBNotebookManager(unittest.TestCase):
     """Tests the Notebook Manager Class"""
 
@@ -343,6 +349,7 @@ class TestNBNotebookManager(unittest.TestCase):
 
 
 ########################################################################
+@integration_test
 class TestSystemManager(unittest.TestCase):
     """Tests the SystemManager Class"""
 
@@ -394,6 +401,7 @@ class TestSystemManager(unittest.TestCase):
 
 
 ########################################################################
+@integration_test
 class TestWebAdaptorManager(unittest.TestCase):
     """Tests the WebAdaptor, WebAdaptorManager Classes"""
 
@@ -430,6 +438,7 @@ class TestWebAdaptorManager(unittest.TestCase):
 
 
 ########################################################################
+@integration_test
 class TestDirectoryManager(unittest.TestCase):
     """Tests the DirectoryManager Classes"""
 
@@ -471,5 +480,4 @@ class TestDirectoryManager(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

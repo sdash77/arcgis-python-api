@@ -105,6 +105,9 @@ class StoryMap(object):
         # Get the story url
         self._url = self._get_url()
 
+        #  Assign resources to item
+        self._resources = self._item.resources.list()
+
     # ----------------------------------------------------------------------
     def _setup_existing_storymap(self, item):
         saved_drafts = [
@@ -170,11 +173,11 @@ class StoryMap(object):
 
         # Step 11: Make a resource call with the template to create json draft needed
         utils._add_resource(
-            self, resource_name=draft, text=json.dumps(template), access="private"
+            self,
+            resource_name=draft,
+            text=json.dumps(template),
+            access="private",
         )
-
-        # Step 12: Assign resources to item
-        self._resources = self._item.resources.list()
 
     def _get_storymap_template(self):
         return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
@@ -340,8 +343,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.3.0",
+        removed_in="2.3.2",
+        current_version="2.3.1",
         details="`nodes` property has been deprecated, use `content_list` property instead.",
     )
     @property
@@ -413,7 +416,7 @@ class StoryMap(object):
     @deprecated(
         deprecated_in="2.2.0",
         removed_in="3.0.0",
-        current_version="2.3.0",
+        current_version="2.3.1",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -508,7 +511,9 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def navigation(
-        self, nodes: Optional[list[str]] = None, hidden: Optional[bool] = None
+        self,
+        nodes: Optional[list[str]] = None,
+        hidden: Optional[bool] = None,
     ):
         """
         Story navigation is a way for authors to add headings as
@@ -573,6 +578,15 @@ class StoryMap(object):
         }
 
         return self.navigation_list
+
+    # ----------------------------------------------------------------------
+    def get_theme(self) -> str:
+        """
+        Get the theme name or the theme item that is used in the story.
+
+        return: The theme name or the theme item item_id.
+        """
+        return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
@@ -662,16 +676,17 @@ class StoryMap(object):
         children = self._properties["nodes"][credits_node_id].get("children", [])
 
         # Add content and attribution if provided
-        nodes = self._add_content_and_attribution(content, attribution)
+        children.extend(self._add_content_and_attribution(content, attribution))
 
         # Update or add heading
-        self._update_or_add_heading(heading, children)
+        if heading:
+            children = self._update_or_add_heading(heading, children)
 
         # Update or add description
-        self._update_or_add_description(description, children)
+        if description:
+            children = self._update_or_add_description(description, children)
 
-        # Add nodes to children of credits
-        self._properties["nodes"][credits_node_id]["children"].extend(nodes)
+        self._properties["nodes"][credits_node_id]["children"] = children
         return self._properties["nodes"][credits_node_id]["children"]
 
     def _get_credits_node_id(self):
@@ -697,28 +712,29 @@ class StoryMap(object):
         return nodes
 
     def _update_or_add_heading(self, heading, children):
-        # Create new heading and remove old one
-        if heading:
-            # Create new content node
-            # Create new heading node
-            node_id = self._generate_unique_node_id()
-            self._properties["nodes"][node_id] = {
-                "type": "text",
-                "data": {"text": heading, "type": "h4"},
-            }
-            children = self._update_or_remove_node(children, "text", "h4")
+        # Create new content node
+        # Create new heading node
+        node_id = self._generate_unique_node_id()
+        self._properties["nodes"][node_id] = {
+            "type": "text",
+            "data": {"text": heading, "type": "h4"},
+        }
+        children = self._update_node(children, "text", "h4")
+        children.append(node_id)
+        return children
 
     def _update_or_add_description(self, description, children):
-        if description:
-            # Create new description node
-            node_id = self._generate_unique_node_id()
-            self._properties["nodes"][node_id] = {
-                "type": "text",
-                "data": {"text": description, "type": "paragraph"},
-            }
-            children = self._update_or_remove_node(children, "text", "paragraph")
+        node_id = self._generate_unique_node_id()
+        self._properties["nodes"][node_id] = {
+            "type": "text",
+            "data": {"text": description, "type": "paragraph"},
+        }
+        children = self._update_node(children, "text", "paragraph")
+        children.append(node_id)
+        return children
 
-    def _update_or_remove_node(self, children, node_type, data_type):
+    def _update_node(self, children, node_type, data_type):
+        # remove the old node if it exists
         for child in children:
             if (
                 self._properties["nodes"][child]["type"] == node_type
@@ -828,7 +844,10 @@ class StoryMap(object):
         # Find instance of content and call correct method
         if content:
             content._add_to_story(
-                story=self, caption=caption, alt_text=alt_text, display=display
+                story=self,
+                caption=caption,
+                alt_text=alt_text,
+                display=display,
             )
         else:
             content = Content.Separator(story=self, node_id=node_id)
@@ -840,7 +859,10 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def move(
-        self, node_id: str, position: Optional[int] = None, delete_current: bool = False
+        self,
+        node_id: str,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a node to another position. The node currently at that position will

@@ -24,7 +24,7 @@ from arcgis.gis._impl._con import (
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 
 _log = logging.getLogger(__name__)
 
@@ -1754,6 +1754,7 @@ class KbertnetesPy(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -1768,6 +1769,8 @@ class KbertnetesPy(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             Optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         Optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -1783,6 +1786,8 @@ class KbertnetesPy(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:

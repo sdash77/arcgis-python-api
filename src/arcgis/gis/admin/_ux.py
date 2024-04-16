@@ -769,7 +769,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def enable_comments(self):
         """
         Get/Set item commenting and comments.
@@ -787,7 +787,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
@@ -795,7 +795,7 @@ class UX(object):
         self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def set_background(
         self, background_file: str | None = None, is_built_in: bool = True
     ):
@@ -826,7 +826,7 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -845,7 +845,7 @@ class UX(object):
         return self.homepage_settings.get_background(download_path=download_path)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def set_banner(
         self,
         banner_file: str | None = None,
@@ -974,7 +974,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -1012,7 +1012,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -1036,7 +1036,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -1045,7 +1045,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -1068,7 +1068,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -1077,7 +1077,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -1095,7 +1095,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="2.3.2", current_version="2.3.1")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
@@ -1553,33 +1553,26 @@ class HomePageSettings(object):
         self, email: str | None = None, show_email: bool | None = None
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            if email:
-                hp["footer"]["contact"] = email
-            if show_email:
-                hp["footer"]["showContact"] = show_email
-            params = {
-                "key": "home.page.json",
-                "text": hp,
-                "f": "json",
-            }
-            return self._portal_resources.add(
-                key="home.page.json", text=json.dumps(params["text"])
-            )
-        else:
+        if not self._new_hp:
             return None
+        hp = self._reader_hp()
+        if email:
+            hp["footer"]["contact"] = email
+        if show_email is not None:
+            hp["footer"]["showContact"] = show_email
+        return self._portal_resources.add(key="home.page.json", text=json.dumps(hp))
 
     # ----------------------------------------------------------------------
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
-        if self._new_hp:
-            hp = self._reader_hp()
-            contact = {
-                "email": hp["footer"]["contact"],
-                "show_email": hp["footer"]["showContact"],
-            }
-            return contact
+        if not self._new_hp:
+            return None
+        hp = self._reader_hp()
+        contact = {
+            "email": hp["footer"]["contact"],
+            "show_email": hp["footer"]["showContact"],
+        }
+        return contact
 
     # ----------------------------------------------------------------------
     def get_footer(self):
@@ -1588,9 +1581,9 @@ class HomePageSettings(object):
             hp = self._reader_hp()
             footer = {
                 "contact": self.get_contact_email(),
-                "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
+                "text": (hp["footer"]["copy"] if "copy" in hp["footer"] else ""),
                 "show_text": hp["footer"]["showCopy"],
-                "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
+                "color": (hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else ""),
                 "custom_color": (
                     hp["footer"]["bgCustom"] if "bgCustom" in hp["footer"] else ""
                 ),
@@ -2017,17 +2010,12 @@ class MapSettings(object):
             if bing_key == "":
                 bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
-        if share_public:
+        if share_public is not None:
             self._gis.update_properties({"canShareBingPublic": share_public})
-        bing_dict = {
-            "key": (
-                self._gis.properties["bingKey"]
-                if "bingKey" in self._gis.properties
-                else None
-            ),
-            "public": self._gis.properties["canShareBingPublic"],
+        return {
+            "key": self._gis.properties.get("bingKey"),
+            "public": self._gis.properties.get("canShareBingPublic"),
         }
-        return bing_dict
 
     # ----------------------------------------------------------------------
     @property
@@ -2326,8 +2314,10 @@ class SecuritySettings(object):
         # set new params if given
         informational_banner = {
             "text": text if text else current_info_banner["text"],
-            "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
-            "fontColor": font_color if font_color else current_info_banner["fontColor"],
+            "bgColor": (bg_color if bg_color else current_info_banner["bgColor"]),
+            "fontColor": (
+                font_color if font_color else current_info_banner["fontColor"]
+            ),
             "enabled": (
                 enabled if enabled is not None else current_info_banner["enabled"]
             ),
@@ -2501,7 +2491,7 @@ class SecuritySettings(object):
 
         policy = {
             "f": "json",
-            "minLength": min_length if min_length else current_policy["minLength"],
+            "minLength": (min_length if min_length else current_policy["minLength"]),
         }
 
         # For all parameters, only need to set if True or value passed in.
@@ -2614,9 +2604,7 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        if "allowedRedirectUris" in self._gis.properties:
-            return self._gis.properties["allowedRedirectUris"]
-        return None
+        return self._gis.properties.get("allowedRedirectUris", [])
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter

@@ -1,9 +1,8 @@
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock
-import sys, datetime
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_6694\src")
+import datetime
+from utils.decorators import integration_test
 
 from arcgis.gis import GIS
 
@@ -13,6 +12,7 @@ profiles = [
 VERIFY_CERT = False  # Boolean T/F
 
 
+@integration_test
 class TestLogsAdminTemplate(unittest.TestCase):
     """
     Tests the Kubernetes Admin Logs Functions

@@ -57,6 +57,7 @@ try:
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
     from ..models._rand_lanet_utils import batch_preprocess_dict
+    from IPython.display import display
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -541,9 +542,11 @@ class PointCloudDataset(Dataset):
                 block_centers.append(xyz_scaled.mean(axis=0))
 
         index_mask = get_random_cluster_indexes(block_centers, self.block_size)
-        xyzs = np.concatenate(np.array(xyzs)[index_mask], axis=0)
-        labels = np.concatenate(np.array(labels)[index_mask], axis=0)
-        xyzs_scaled = np.concatenate(np.array(xyzs_scaled)[index_mask], axis=0)
+        xyzs = np.concatenate(np.array(xyzs, dtype="object")[index_mask], axis=0)
+        labels = np.concatenate(np.array(labels, dtype="object")[index_mask], axis=0)
+        xyzs_scaled = np.concatenate(
+            np.array(xyzs_scaled, dtype="object")[index_mask], axis=0
+        )
 
         return xyzs, labels, xyzs_scaled
 
@@ -819,7 +822,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
             ],
             layout=layout,
         )
-        fig.show()
+
+        fig2 = go.FigureWidget(fig)
+        display(fig2)
 
         if idx == rows - 1:
             break
@@ -2935,7 +2940,7 @@ class Transform3d(object):
         self.rotation_range = rotation
         self.scaling_range = scaling
         self.order = "XYZ"
-        self.jitter = jitter
+        self.jitter = float(jitter)
 
     def _detection_transforms(self):
         from .pointcloud_od import ODTransform3D
@@ -3124,9 +3129,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
+            ufname = dl.dataset.path / dl.dataset.folder / ufname
             if ufname != current_file_name:
                 current_file_name = ufname
-                current_file_name = dl.dataset.path / dl.dataset.folder / ufname
                 h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
                 h5_file.close()
@@ -3328,8 +3333,13 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         clustered_index_bool_mask = get_random_cluster_indexes(
             block_centers, self._data.block_size
         )
-        labels = np.concatenate(np.array(labels)[clustered_index_bool_mask])
-        pc = np.concatenate(np.array(pc)[clustered_index_bool_mask], axis=0)
+
+        labels = np.concatenate(
+            np.array(labels, dtype="object")[clustered_index_bool_mask]
+        )
+        pc = np.concatenate(
+            np.array(pc, dtype="object")[clustered_index_bool_mask], axis=0
+        )
         blocks = [blocks[i] for i, mask in enumerate(clustered_index_bool_mask) if mask]
 
         # prediction step
@@ -3345,7 +3355,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                     self.sample_point_num,
                     pred_batch_size,
                     point_num.cpu().item(),
-                )
+                ),
+                dtype="object",
             )
             pred_class.append(predictions[:point_num, 0])
 

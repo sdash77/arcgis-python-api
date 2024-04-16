@@ -1,7 +1,4 @@
 import os
-import sys
-
-# sys.path.insert(0, r"c:\ipython_workfolder\geosaurus\src")
 import unittest
 import pandas as pd
 from arcgis.gis import GIS

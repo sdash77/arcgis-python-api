@@ -219,6 +219,7 @@ class TabularDataObject(object):
                                 f"We see a class imbalance in the dataset. "
                                 f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
                                 f"not have enough data points in your dataset."
+                                f"The imbalance class(es) should have at least 1% of total number of data points to stratify."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -226,7 +227,7 @@ class TabularDataObject(object):
                         from sklearn.model_selection import train_test_split
 
                         if (
-                            len(set(dependent_variable_column.values))
+                            dependent_variable_column.nunique().values[0]
                             > len(dependent_variable_column.values) * val_split_pct
                         ):
                             classes = len(set(dependent_variable_column.values))
@@ -642,6 +643,14 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
+            if self._procs:
+                list_of_transformed_cols = []
+                for cnt, transform in enumerate(self._procs.transformers):
+                    for col in self._procs.transformers[cnt][-1]:
+                        list_of_transformed_cols.append(col)
+                processed_orig_data = dataframe.copy()
+                processed_orig_data[list_of_transformed_cols] = processed_data
+                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "

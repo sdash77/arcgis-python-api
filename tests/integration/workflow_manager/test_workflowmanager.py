@@ -3,15 +3,17 @@ import datetime
 import re
 from pprint import pprint
 from arcgis.geometry import Geometry
-import workflowmanager_setup
+from . import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
+from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -1166,6 +1168,58 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertEqual(actual, True, "Incorrect return type")
 
     # endregion
+
+    # endregion
+
+    # region Statistics
+
+    def test_job_statistics_successfully_returns(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "99o2QTePTqq-BHRHK_Aeag"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] > 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] == 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        try:
+            actual = self.connection.workflow_manager.jobs.statistics(
+                query=user_query, group_by="wrong_string"
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
 
     # endregion
 
