@@ -332,11 +332,10 @@ class from_to_profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
-    # TODO Andrew: add another profile if you want these to go to different AGOLs
     _agol_to_agol_params = {
         "description": "agol_to_agol",
         "from_profile": "your_online_admin_profile",
-        "to_profile": "your_online_admin_profile",
+        "to_profile": "your_online_admin_publication_profile",
     }
     _agol_to_enterprise_params = {
         "description": "agol_to_enterprise",
