@@ -60,7 +60,7 @@ class TestGroupMigrationByName(unittest.TestCase):
             assert published_item.delete()
             assert pitem.delete()
         else:
-            _log.warn(
+            self.skipTest(
                 "The enterprise does not support the output name, skipping test."
             )
 
