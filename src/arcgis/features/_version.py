@@ -287,10 +287,7 @@ class Version(object):
             self._gis = env.active_gis
         self._gis = gis
         self._con = self._gis._portal.con
-        if session_guid is None:  # convert to uppercase for Oracle and PG requirements
-            sg = f"{{{uuid.uuid4()}}}".upper()
-        else:
-            self._guid = session_guid.upper()
+        self._guid = (session_guid or f"{{{uuid.uuid4()}}}").upper()
         self._flc = flc
 
     # ----------------------------------------------------------------------
