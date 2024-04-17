@@ -7,7 +7,7 @@ from arcgis.gis import GIS, User, UserManager
 enable_verbose_logging()
 
 
-@profiles.enterprise_and_agol
+@profiles.admin_enterprise_and_agol
 @integration_test
 class TestFeature(unittest.TestCase):
     def test_user_groups_over_20(self):
