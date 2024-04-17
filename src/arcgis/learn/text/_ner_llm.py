@@ -1,5 +1,7 @@
 import os
 import json
+
+import numpy as np
 import pandas as pd
 from copy import deepcopy
 
@@ -35,6 +37,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             data.create_empty_object_for_ner(
                 entities=[], address_tag="Address", label2id={}, batch_size=4
             )
+            examples = [np.array(list(i[1].keys())) for i in kwargs.get("examples", [])]
         else:
             data.prepare_data_for_transformer()
             data = data.get_data_object()
@@ -230,12 +233,22 @@ class _LlmEntityRecognizer(ArcGISModel):
             text_list = [j[1] for j in temp_val]
 
         result = self._llm.process(
-            text_list, show_progress=show_progress, task="learn_text"
+            text_list,
+            show_progress=show_progress,
+            task="learn_text",
+            batch_size=batch_size,
         )
         result = lower_nesting(result)
+        _keep_labels = [i.lower() for i in self._l2id]
         # Add final formatting for upstream
         result = pd.DataFrame.from_dict(result, orient="columns").T.fillna("")
+        keep_labels = set(result.columns).intersection(set(_keep_labels))
+        result = result[list(keep_labels)]
         result.insert(0, "TEXT", value=text_list)
+        extra_labels = set(_keep_labels).difference(keep_labels)
+        for idx, col in enumerate(extra_labels):
+            result.insert(idx + 1, col, value=[""] * len(result))
+
         result.index = [int(i) for i in result.index]
         result = result.applymap(
             lambda a: a if not isinstance(a, list) else ",".join(a)

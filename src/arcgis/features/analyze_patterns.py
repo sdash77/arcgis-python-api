@@ -479,8 +479,8 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def calculate_composite_index(
-    input_layer=None,
-    input_variables=None,
+    input_layer,
+    input_variables,
     index_method=None,
     output_index_reverse=False,
     output_index_min_max=None,
@@ -495,42 +495,126 @@ def calculate_composite_index(
     =====================================       =========================================================
     **Parameter**                               **Description**
     -------------------------------------       ---------------------------------------------------------
-    input_layer                                 Required layer. The input table or features containing the variables that will be combined into the index.
+    input_layer                                 Required layer. The input table or features containing the
+                                                variables that will be combined into the index.
 
-                                                Syntax: As described in detail in the Feature input topic, this parameter can be one of the following:
+                                                Syntax: As described in detail in the Feature input topic,
+                                                this parameter can be one of the following:
 
-                                                A URL to a feature service layer with an optional filter to select specific features
-                                                A feature collection
-                                                Examples:
+                                                * A URL to a :class:`feature service layer <arcgis.features.FeatureLayer>`
+                                                  with an optional filter to select specific features
+                                                * A :class:`~arcgis.features.FeatureCollection`
 
-                                                {"url": <feature service layer url>, "filter": <where clause>}
-                                                {"layerDefinition": {}, "featureSet": {}, "filter": <where clause>}
+                                                .. code-block:: python
+
+                                                    #Example #1: Feature Layer with selection
+                                                    >>> output = calculate_composite_index(
+                                                                    input_layer= {
+                                                                        "url": <feature service layer url>,
+                                                                        "filter": <where clause>},
+                                                                    ...
+                                                                )
+
+                                                    #Example #2: Feature Collection
+                                                    >>> output = calculate_composite_index(
+                                                                    input_layer= {"
+                                                                        "layerDefinition": {},
+                                                                        "featureSet": {},
+                                                                        "filter": <where clause>},
+                                                                    ...,
+                                                                )
     -------------------------------------       ---------------------------------------------------------
-    input_variables                             Required list of dictionaries. The variables that will be combined to create the index.
-                                                Provide at least two variables. For each variable, specify the following:
+    input_variables                             Required list of dictionaries. The variables that will be combined
+                                                to create the index. Provide at least two variables. For each variable,
+                                                specify the following:
 
-                                                * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
-                                                * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to false. When true the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
-                                                * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
+                                                * `field` is the numeric field from the inputLayer containing the variable.
+                                                  Any records in the field with missing values will not be included in the
+                                                  analysis.
+                                                * `reverseVariable` specifies whether the values of the variable will be
+                                                  reversed. If no value is specified, the value will be set to *False*.
+                                                  When *True* the feature or record that originally had the highest value
+                                                  will have the lowest value, and vice versa. Values will be reversed after
+                                                  scaling. To create an index, variables must be on a compatible scale;
+                                                  reversing some variables may be required to ensure the meaning of low and
+                                                  high values in each variable is consistent.
+                                                * `weight` is the relative influence of the variable on the index. If each
+                                                  variable should have equal contribution, set the value to 1. Increase or
+                                                  decrease the weight to reflect the relative importance of the variable.
+                                                  For example, if a variable is twice as important as the others, use a
+                                                  weight of 2.
 
-                                                Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
+                                                .. code-block:: python
+
+                                                        #Example:
+                                                        >>> output = calculate_composite_index(
+                                                                                ...,
+                                                                                input_variables = [
+                                                                                    {"field":"median_income",
+                                                                                     "reverseVariable": True,
+                                                                                     "weight": 2},
+                                                                                    {"field": "pct_uninsured",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1},
+                                                                                    {"field": "pct_unemployed",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1}
+                                                                                    ],
+                                                                                ...,
+                                                                            )
     -------------------------------------       ---------------------------------------------------------
-    index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
-                                                the scaled variables to create the index.
+    index_method                                Optional string. The methods that will be used to scale the
+                                                inputVariables and combine the scaled variables to create
+                                                the index.
 
-                                                Scaling is a type of preprocessing that ensures the variables are on a compatible scale before they are combined. These scaled variables are then combined to create a single index value. The following options are available:
+                                                Scaling is a type of preprocessing that ensures the variables
+                                                are on a compatible scale before they are combined. These scaled
+                                                variables are then combined to create a single index value. The
+                                                following options are available:
 
-                                                * `meanScaled` the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the mean of the scaled values. This method is useful for creating an index that is easy to interpret. The shape of the distribution and outliers in the input variables will impact the index.
-                                                * `meanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values. The shape of the distribution and outliers in the input variables will not impact the index.
-                                                * `meanRaw` creates the index by calculating the mean of the raw input variables. This option is useful when variables are already on a compatible scale.
-                                                * `geomeanScaled` creates the index by scaling the input variables between 0 and 1 (minimum-maximum scaling) and calculating the geometric mean of the scaled values. High values will not cancel low values, so this option is useful for creating an index in which higher index values will occur only when there are high values in multiple variables.
-                                                * `geomeanPercentile` creates the index by scaling the ranks of the input variables between 0 and 1 (scaling by percentile) and calculating the geometric mean of the scaled ranks. This option is useful when the rankings of the variable values are more important than the differences between values and when high variable values should not cancel out low variable values.
-                                                * `geomeanRaw` creates the index by calculating the geometric mean of the raw input variables. This option is useful when variables are already on a compatible scale and when high variable values should not cancel out low variable values.
-                                                * `sumFlagsPercentile` creates the index by counting the number of input variables with values greater than or equal to the 90th percentile. This method is useful for identifying locations that may be considered the most extreme or the most in need.
+                                                * `meanScaled` the index by scaling the input variables between 0
+                                                  and 1 (minimum-maximum scaling) and calculating the mean of the
+                                                  scaled values. This method is useful for creating an index that is
+                                                  easy to interpret. The shape of the distribution and outliers in the
+                                                  input variables will impact the index.
+                                                * `meanPercentile` creates the index by scaling the ranks of the input
+                                                  variables between 0 and 1 (scaling by percentile) and calculating the
+                                                  mean of the scaled ranks. This option is useful when the rankings of the
+                                                  variable values are more important than the differences between values.
+                                                  The shape of the distribution and outliers in the input variables will not
+                                                  impact the index.
+                                                * `meanRaw` creates the index by calculating the mean of the raw input
+                                                  variables. This option is useful when variables are already on a compatible
+                                                  scale.
+                                                * `geomeanScaled` creates the index by scaling the input variables between
+                                                  0 and 1 (minimum-maximum scaling) and calculating the geometric mean of
+                                                  the scaled values. High values will not cancel low values, so this option
+                                                  is useful for creating an index in which higher index values will occur only
+                                                  when there are high values in multiple variables.
+                                                * `geomeanPercentile` creates the index by scaling the ranks of the input
+                                                  variables between 0 and 1 (scaling by percentile) and calculating the geometric
+                                                  mean of the scaled ranks. This option is useful when the rankings of the variable
+                                                  values are more important than the differences between values and when high
+                                                  variable values should not cancel out low variable values.
+                                                * `geomeanRaw` creates the index by calculating the geometric mean of the raw
+                                                  input variables. This option is useful when variables are already on a compatible
+                                                  scale and when high variable values should not cancel out low variable values.
+                                                * `sumFlagsPercentile` creates the index by counting the number of input variables
+                                                  with values greater than or equal to the 90th percentile. This method is useful
+                                                  for identifying locations that may be considered the most extreme or the most
+                                                  in need.
 
-                                                Values: "meanScaled" | "meanPercentile" | "meanRaw" | "geomeanScaled" | "geomeanPercentile" | "geomeanRaw" | "sumFlagsPercentile"
+                                                Values:
 
-                                                Default: "meanScaled"
+                                                * *meanScaled*
+                                                * *meanPercentile*
+                                                * *meanRaw*
+                                                * *geomeanScaled*
+                                                * *geomeanPercentile*
+                                                * *geomeanRaw*
+                                                * *sumFlagsPercentile*
+
+                                                Default: *meanScaled*
     -------------------------------------       ---------------------------------------------------------
     output_index_reverse                        Optional boolean. Specifies whether the output index values will
                                                 be reversed in direction. When checked, high index values will be treated
@@ -540,56 +624,87 @@ def calculate_composite_index(
     output_index_min_max                        Optional list of one dictionary. The minimum and maximum of the output index values.
                                                 Specifying a minimum and maximum value will apply minimum-maximum scaling to the combined variables.
 
-                                                Example: [{'min': 0, 'max': 100}]
+                                                .. code-block:: python
+
+                                                    # Example:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_index_min_max= [
+                                                                            {'min': 0, 'max': 100}
+                                                                        ],
+                                                                    ...,
+                                                                )
     -------------------------------------       ---------------------------------------------------------
-    output_name                                 Optional dictionary. If provided, the task will create a feature service of the results. You define the name of the service. If an outputName value is not provided, the task will return a feature collection.
+    output_name                                 Optional dictionary. If provided, the task will create a
+                                                feature service of the results. You define the name of the service.
+                                                If no argument is provided, the task will return a feature collection.
 
-                                                Syntax:
-                                                ```
-                                                {
-                                                "serviceProperties": {
-                                                    "name": "<service name>"
-                                                }
-                                                }
-                                                ```
+                                                .. code-block:: python
 
-                                                You can overwrite an existing feature service by providing the itemId value of the existing feature service and setting the overwrite property to True. Including the serviceProperties parameter is optional. As described in the Feature output topic, you must either be the owner of the feature service or have administrative privileges to perform the overwrite.
-                                                Syntax:
-                                                ```
-                                                {
+                                                    # Example #1:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    output_name={
+                                                                        "serviceProperties": {
+                                                                                "name": "<service name>"
+                                                                            }
+                                                                        },
+                                                                    ...
 
-                                                "itemProperties": {
-                                                            "itemId": "<itemID of the existing feature service>",
-                                                            "overwrite": True
-                                                    }
-                                                }
-                                                ```
+                                                You can overwrite an existing feature service by providing the
+                                                itemId value of the existing feature service and setting the
+                                                *overwrite* property to *True*. Including the *serviceProperties*
+                                                parameter is optional. As described in the Feature output topic,
+                                                you must either be the owner of the feature service or have administrative
+                                                privileges to perform the overwrite.
 
-                                                or
-                                                ```
-                                                {
-                                                "serviceProperties": {
-                                                    "name": "<existing service name>"
-                                                },
-                                                "itemProperties": {
-                                                                "itemId": "<itemID of the existing feature service>",
-                                                                "overwrite": True
-                                                    }
-                                                }
-                                                ```
+                                                .. code-block:: python
+
+                                                    # Example #2:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_name= {
+                                                                        "itemProperties": {
+                                                                            "itemId": "<itemID of existing service>",
+                                                                            "overwrite": True
+                                                                            }
+                                                                    },
+                                                                )
+
+                                                    # Example #3:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_name= {
+                                                                        "serviceProperties": {
+                                                                                "name": "<existing service name>"
+                                                                                },
+                                                                        "itemProperties": {
+                                                                                "itemId": "<itemID of the existing feature service>",
+                                                                                "overwrite": True
+                                                                                }
+                                                                        },
+                                                                    ...
+                                                                )
     -------------------------------------       ---------------------------------------------------------
-    context                                     Optional dict. The Context parameter contains the following additional settings that affect task operation:
+    context                                     Optional dict. The Context parameter contains the following
+                                                additional settings that affect task operation:
 
-                                                * Extent (extent)—A bounding box that defines the analysis area. Only input features that intersect the bounding box will be analyzed.
-                                                * Output spatial reference (outSR)—The output features will be projected into the output spatial reference.
+                                                * Extent (extent)—A bounding box that defines the analysis area.
+                                                  Only input features that intersect the bounding box will be analyzed.
+                                                * Output spatial reference (outSR)—The output features will be
+                                                  projected into the output spatial reference.
 
-                                                Syntax:
-                                                ```
-                                                {
-                                                "extent" : {extent},
-                                                "outSR" : {spatial reference}
-                                                }
-                                                ```
+                                                .. code-block:: python
+
+                                                    # Example:
+                                                    >>> output = calculate_composite_index(
+                                                                        ...,
+                                                                        context= {
+                                                                            "extent" : {extent},
+                                                                            "outSR" : {spatial reference}
+                                                                        },
+                                                                        ...,
+                                                                )
     -------------------------------------       ---------------------------------------------------------
     gis                                         Optional, the :class:`~arcgis.gis.GIS` on which this tool runs.
                                                 If not specified, the active GIS is used.
@@ -597,8 +712,30 @@ def calculate_composite_index(
     future                                      Optional boolean. If True, the task will be performed asynchronously.
     =====================================       =========================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    :return:
+        :class:`~arcgis.features.FeatureLayer` if *output_name* is specified, else
+        a :class:`~arcgis.features.FeatureCollection` object.
 
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To create a social vulnerability index.
+
+        index = calculate_composite_index(
+                        input_layer=demographicsLayer,
+                        input_variables=[
+                                {'field':'pct_uninsured',
+                                 'reverseVariable': True,
+                                 'weight': 2},
+                                {'field': 'pct_unemployed',
+                                 'reverseVariable': False,
+                                 'weight': 1}
+                            ],
+                        index_method='meanPercentile',
+                        output_index_reverse=True,
+                        output_index_min_max=[
+                                    {'min': 0, 'max': 100}
+                                ],
+                        output_name="Social vulnerability index")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
@@ -679,9 +816,9 @@ def find_hot_spots(
     ===================================================================     =========================================================
     **Parameter**                                                            **Description**
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
+    analysis_layer                                                          Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
+    analysis_field                                                          Optional string. **Required** if the *analysis_layer* contains polygons. The numeric field that will be analyzed. The field you select might represent:
 
                                                                             + counts (such as the number of traffic accidents)
                                                                             + rates (such as the number of crimes per square mile)

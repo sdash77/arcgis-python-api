@@ -20,7 +20,7 @@ Note: GeoAnalytics operations use the following context parameters defined in th
 """
 
 from typing import Optional, Union
-
+from arcgis.auth.tools import LazyLoader
 from arcgis.gis import GIS, Datastore
 from . import (
     summarize_data,
@@ -31,7 +31,15 @@ from . import (
     data_enrichment,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
+
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def get_datastores(gis: Optional[GIS] = None):
     """
     Returns a helper object to manage geoanalytics datastores in the GIS.
@@ -51,8 +59,15 @@ def get_datastores(gis: Optional[GIS] = None):
     return None
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def define_output_datastore(
-    datastore: Optional[Union[str, Datastore]] = None, template: Optional[str] = None
+    datastore: Optional[Union[str, Datastore]] = None,
+    template: Optional[str] = None,
 ):
     """
     Sets the `arcgis.env.output_datastore` by providing the datastore and template name
@@ -114,6 +129,12 @@ def define_output_datastore(
         return True
 
 
+@_common_deprecated.deprecated(
+    deprecated_in="2.3.0",
+    removed_in="2.3.2",
+    current_version=None,
+    details="GeoAnalytics is depreacted and will be removed in a future release.",
+)
 def is_supported(gis: Optional[GIS] = None):
     """
     Returns True if the GIS supports geoanalytics. If a gis isn't specified,

@@ -30,6 +30,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def group_by_proximity(
     input_layer: Union[
         Item,
@@ -204,6 +205,7 @@ def group_by_proximity(
     return
 
 
+# -------------------------------------------------------------------------
 def trace_proximity_events(
     input_points: Union[
         Item,
@@ -436,6 +438,7 @@ def trace_proximity_events(
     return
 
 
+# -------------------------------------------------------------------------
 def create_buffers(
     input_layer: Union[
         Item,

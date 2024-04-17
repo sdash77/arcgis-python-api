@@ -34,6 +34,7 @@ from ._pointcnn_utils import get_indices
 
 try:
     from .._utils.nearest_neighbors import knn_batch as knn_search
+
 except Exception:
     raise Exception(
         f"The arcgis package was not installed, correctly(knn). Use deep learning essentials metapackage from https://github.com/Esri/deep-learning-frameworks"
