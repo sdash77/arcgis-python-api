@@ -162,8 +162,9 @@ class AttachmentManager(object):
                                 values of features for which to return attachment count.
         ---------------------   -------------------------------------------------------
         attachment_types        Optional String. Value specifying the specific format
-                                of attachments to count. See `attachmentTypes <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm#GUID-4E456078-2B9C-4E8C-B2E4-AA2F1A0BEEC4>`_
-                                for list of options to use.
+                                of attachments to count. See *attachmentTypes* at
+                                the `Query Attachments <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm>`_
+                                page for a list of options to use.
         ---------------------   -------------------------------------------------------
         size                    Optional Integer or integer range. Value or values to
                                 to query attachments of a specific size.
@@ -179,7 +180,7 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None and not bool(object_ids) and not bool(global_ids):
+        if where is None and not object_ids and not global_ids:
             where = "1=1"
         if keywords is None:
             keywords = []
