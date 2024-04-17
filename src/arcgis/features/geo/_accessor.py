@@ -3286,14 +3286,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
-                            ge[0] - 0.001,
-                            ge[1] - 0.001,
-                            ge[2] + 0.001,
-                            ge[3] - 0.001,
+                            ge[0],
+                            ge[1],
+                            ge[2],
+                            ge[3],
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:
@@ -3311,14 +3311,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
                             ge[0] - 0.001,
                             ge[1] - 0.001,
                             ge[2] + 0.001,
                             ge[3] - 0.001,
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:

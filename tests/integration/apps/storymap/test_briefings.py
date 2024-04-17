@@ -38,6 +38,8 @@ class TestStoryMap(unittest.TestCase):
                 """Change the story theme"""
                 briefing.theme(Themes.SLATE)
 
+                assert briefing.get_theme() == Themes.SLATE.value
+                
                 assert briefing.save()
 
                 assert briefing.delete_briefing()
