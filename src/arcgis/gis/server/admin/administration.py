@@ -834,7 +834,7 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _uploads(self) -> _uploads.Uploads:
+    def uploads(self) -> _uploads.Uploads:
         """Gets an object to work with the site uploads."""
         if self.resources is None:
             self._init()
