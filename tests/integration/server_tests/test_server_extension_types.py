@@ -1,9 +1,9 @@
 # Uncomment this and update the paths to be the `src` folder and `tests` folder path
 # to run it locally.
-import sys
+# import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+# sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 
 _QALABS_DATSET = (
     r"\\qalab_server\pydata\v109\geosaurus\EntepriseSOE_SOI\linux"
