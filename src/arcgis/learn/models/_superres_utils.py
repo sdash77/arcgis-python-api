@@ -6,7 +6,7 @@ try:
     import cv2
     from osgeo import gdal_array
     import numpy as np
-    from torchvision.models import vgg16_bn
+    from torchvision.models import vgg16_bn, VGG16_BN_Weights
     import torch.nn.functional as F
     import torch.nn as nn
     from fastai.vision.learner import create_body
@@ -111,7 +111,7 @@ def create_loss(c, device_type="cuda"):
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    vggmodel = vgg16_bn(True)
+    vggmodel = vgg16_bn(weights=VGG16_BN_Weights.DEFAULT)
     vggmodel.features[0] = nn.Conv2d(c, 64, 3, 1, 1)
     vgg_m = vggmodel.features.to(device).eval()
     requires_grad(vgg_m, False)
@@ -132,9 +132,7 @@ def compute_metrics(model, dl, show_progress, **kwargs):
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=False):
-            if model.model_type == "UNet":
-                prediction = model.learn.model(input)
-            else:
+            if not hasattr(model._backbone, "__call__"):
                 device = next(model.learn.model.parameters()).device.type
 
                 if sampling == "ddim":
@@ -175,9 +173,11 @@ def compute_metrics(model, dl, show_progress, **kwargs):
                 avg_psnr += psnr(prediction, target)
                 avg_ssim += ssim(prediction, target)
                 break
+            else:
+                prediction = model.learn.model(input)
             avg_psnr += psnr(prediction, target)
             avg_ssim += ssim(prediction, target)
-    if model.model_type == "UNet":
+    if hasattr(model._backbone, "__call__"):
         return avg_psnr / len(dl), avg_ssim.item() / len(dl)
     else:
         return avg_psnr, avg_ssim

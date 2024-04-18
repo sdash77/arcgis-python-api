@@ -1539,6 +1539,7 @@ class _DeepCloner:
         # If the item is a survey get the FormDefintion
         elif item["type"] == "Form":
             related_items = item.related_items("Survey2Service", "forward")
+            related_items.extend(item.related_items("Survey2Data", "forward"))
             return _FormDefinition(
                 self.target,
                 self._clone_mapping,
@@ -3138,123 +3139,102 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         original_feature_service = os.path.dirname(url)
                         original_id = os.path.basename(url)
 
-                        if len(self.view_sources[layer["id"]]) > 1:
-                            new_service = None
-                            for key, value in self._clone_mapping["Services"].items():
-                                if _compare_url(key, original_feature_service):
-                                    new_service = value
-                                    break
+                        new_service = None
+                        for key, value in self._clone_mapping["Services"].items():
+                            if _compare_url(key, original_feature_service):
+                                new_service = value
+                                break
 
-                            # validate admin_layer_info
+                        # validate admin_layer_info
+                        if (
+                            new_service is not None
+                            and "adminLayerInfo" in layer
+                            and "viewLayerDefinition" in layer["adminLayerInfo"]
+                        ):
+                            layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                "sourceServiceName"
+                            ] = os.path.basename(os.path.dirname(new_service["url"]))
+                            layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                "sourceLayerId"
+                            ] = new_service["layer_id_mapping"][int(original_id)]
                             if (
-                                new_service is not None
-                                and "adminLayerInfo" in layer
-                                and "viewLayerDefinition" in layer["adminLayerInfo"]
+                                "relatedTables"
+                                in layer["adminLayerInfo"]["viewLayerDefinition"][
+                                    "table"
+                                ]
                             ):
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceServiceName"
-                                ] = os.path.basename(
-                                    os.path.dirname(new_service["url"])
+                                # Update the name of the related table to use the new items name
+                                for related_table in layer["adminLayerInfo"][
+                                    "viewLayerDefinition"
+                                ]["table"]["relatedTables"]:
+                                    name = related_table["sourceServiceName"]
+                                    for k, v in self._clone_mapping["Services"].items():
+                                        if os.path.basename(os.path.dirname(k)) == name:
+                                            related_table["sourceServiceName"] = (
+                                                os.path.basename(
+                                                    os.path.dirname(v["url"])
+                                                )
+                                            )
+                                            if (
+                                                "sourceLayerId" in related_table
+                                                and "layer_id_mapping" in v
+                                                and int(related_table["sourceLayerId"])
+                                                in v["layer_id_mapping"]
+                                            ):
+                                                related_table["sourceLayerId"] = v[
+                                                    "layer_id_mapping"
+                                                ][int(related_table["sourceLayerId"])]
+
+                            admin_layer_info = layer["adminLayerInfo"]
+                            if (
+                                _deep_get(
+                                    admin_layer_info,
+                                    "viewLayerDefinition",
+                                    "table",
                                 )
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceLayerId"
-                                ] = new_service["layer_id_mapping"][int(original_id)]
+                                is not None
+                                and "isMultiServicesView" in layer
+                                and layer["isMultiServicesView"]
+                                and "geometryType" in layer
+                            ):
+                                admin_layer_info["geometryField"]["name"] = (
+                                    admin_layer_info["viewLayerDefinition"]["table"][
+                                        "name"
+                                    ]
+                                    + "."
+                                    + admin_layer_info["geometryField"]["name"]
+                                )
+
+                            if "tableName" in admin_layer_info:
+                                del admin_layer_info["tableName"]
+                            if "xssTrustedFields" in admin_layer_info:
+                                del admin_layer_info["xssTrustedFields"]
+                            if (
+                                "viewLayerDefinition" in admin_layer_info
+                                and "table" in admin_layer_info["viewLayerDefinition"]
+                            ):
+                                if (
+                                    "sourceId"
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
+                                ):
+                                    del admin_layer_info["viewLayerDefinition"][
+                                        "table"
+                                    ]["sourceId"]
                                 if (
                                     "relatedTables"
-                                    in layer["adminLayerInfo"]["viewLayerDefinition"][
-                                        "table"
-                                    ]
-                                ):
-                                    # Update the name of the related table to use the new items name
-                                    for related_table in layer["adminLayerInfo"][
-                                        "viewLayerDefinition"
-                                    ]["table"]["relatedTables"]:
-                                        name = related_table["sourceServiceName"]
-                                        for k, v in self._clone_mapping[
-                                            "Services"
-                                        ].items():
-                                            if (
-                                                os.path.basename(os.path.dirname(k))
-                                                == name
-                                            ):
-                                                related_table["sourceServiceName"] = (
-                                                    os.path.basename(
-                                                        os.path.dirname(v["url"])
-                                                    )
-                                                )
-                                                if (
-                                                    "sourceLayerId" in related_table
-                                                    and "layer_id_mapping" in v
-                                                    and int(
-                                                        related_table["sourceLayerId"]
-                                                    )
-                                                    in v["layer_id_mapping"]
-                                                ):
-                                                    related_table["sourceLayerId"] = v[
-                                                        "layer_id_mapping"
-                                                    ][
-                                                        int(
-                                                            related_table[
-                                                                "sourceLayerId"
-                                                            ]
-                                                        )
-                                                    ]
-
-                                admin_layer_info = layer["adminLayerInfo"]
-                                if (
-                                    _deep_get(
-                                        admin_layer_info,
-                                        "viewLayerDefinition",
-                                        "table",
-                                    )
-                                    is not None
-                                    and "isMultiServicesView" in layer
-                                    and layer["isMultiServicesView"]
-                                    and "geometryType" in layer
-                                ):
-                                    admin_layer_info["geometryField"]["name"] = (
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
+                                    and len(
                                         admin_layer_info["viewLayerDefinition"][
                                             "table"
-                                        ]["name"]
-                                        + "."
-                                        + admin_layer_info["geometryField"]["name"]
+                                        ]["relatedTables"]
                                     )
-
-                                if "tableName" in admin_layer_info:
-                                    del admin_layer_info["tableName"]
-                                if "xssTrustedFields" in admin_layer_info:
-                                    del admin_layer_info["xssTrustedFields"]
-                                if (
-                                    "viewLayerDefinition" in admin_layer_info
-                                    and "table"
-                                    in admin_layer_info["viewLayerDefinition"]
+                                    > 0
                                 ):
-                                    if (
-                                        "sourceId"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                    ):
-                                        del admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]["sourceId"]
-                                    if (
-                                        "relatedTables"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                        and len(
-                                            admin_layer_info["viewLayerDefinition"][
-                                                "table"
-                                            ]["relatedTables"]
-                                        )
-                                        > 0
-                                    ):
-                                        for related_table in admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]["relatedTables"]:
-                                            if "sourceId" in related_table:
-                                                del related_table["sourceId"]
+                                    for related_table in admin_layer_info[
+                                        "viewLayerDefinition"
+                                    ]["table"]["relatedTables"]:
+                                        if "sourceId" in related_table:
+                                            del related_table["sourceId"]
 
                         else:
                             for key, value in self._clone_mapping["Services"].items():
@@ -4068,15 +4048,23 @@ class _WebMapDefinition(_TextItemDefinition):
                 feature_collections = []
                 map_service_layers = []
                 vector_tile_layers = []
+
+                def _append_layer(layer_list, layer):
+                    if "layerType" in layer:
+                        if (
+                            layer["layerType"] == "ArcGISFeatureLayer"
+                            and "url" in layer
+                            and layer["url"] is not None
+                        ):
+                            layer_list.append(layer)
+                        elif layer["layerType"] == "GroupLayer":
+                            for sublayer in layer["layers"]:
+                                _append_layer(layer_list, sublayer)
+                    return layer_list
+
                 if "operationalLayers" in webmap_json:
-                    layers += [
-                        layer
-                        for layer in webmap_json["operationalLayers"]
-                        if "layerType" in layer
-                        and layer["layerType"] == "ArcGISFeatureLayer"
-                        and "url" in layer
-                        and layer["url"] is not None
-                    ]
+                    for layer in webmap_json["operationalLayers"]:
+                        layers = _append_layer(layers, layer)
                     feature_collections += [
                         layer
                         for layer in webmap_json["operationalLayers"]
@@ -5190,9 +5178,11 @@ class _FormDefinition(_ItemDefinition):
 
         original_item = self.info
         temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
+        # temp_dir = os.path.join(self._temp_dir.name, new_item["id"])
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
+        # form_zip = self.portal_item.download(temp_dir, new_item["id"])
         form_zip = self.portal_item.download(temp_dir)
         zip_file = zipfile.ZipFile(form_zip)
         org_url = _get_org_url(self.target)
@@ -5247,8 +5237,16 @@ class _FormDefinition(_ItemDefinition):
                     for key, value in clone_mapping["Item IDs"].items():
                         url = "{0}sharing/rest/content/items/{1}".format(org_url, value)
                         data = re.sub(
-                            '(?<=")([^<]+?{0})(?=")'.format(key),
+                            '(?<=action=")([^<]+?{0})(?=")'.format(key),
                             url,
+                            data,
+                            0,
+                            re.IGNORECASE,
+                        )
+
+                        data = re.sub(
+                            '(?<=(map=|ode=))({0})(?=")'.format(key),
+                            value,
                             data,
                             0,
                             re.IGNORECASE,
@@ -5286,6 +5284,37 @@ class _FormDefinition(_ItemDefinition):
                 elif path.lower() == "form.json":
                     with open(os.path.join(zip_dir, path), "r") as file:
                         form_json = file.read()
+                        for key, value in clone_mapping["Item IDs"].items():
+                            form_json = re.sub(
+                                key,
+                                value,
+                                form_json,
+                                0,
+                                re.IGNORECASE,
+                            )
+                        for key, value in clone_mapping["Services"].items():
+                            form_json = re.sub(
+                                key, value["url"], form_json, 0, re.IGNORECASE
+                            )
+                        with open(os.path.join(zip_dir, path), "w") as file:
+                            file.write(form_json)
+                        for new_id in clone_mapping["Item IDs"].values():
+                            new_flayer = target.content.get(new_id)
+                            if (
+                                new_flayer.title == self.portal_item.title
+                                and new_flayer.type == "Feature Service"
+                            ):
+                                with tempfile.NamedTemporaryFile(
+                                    mode="w+", suffix=".json", delete=False
+                                ) as tfile:
+                                    json.dump(json.loads(form_json), tfile)
+                                    tfile.close()
+                                new_flayer.resources.update(
+                                    folder_name="surveyDraft",
+                                    file_name="form.json",
+                                    file=tfile.name,
+                                )
+                                break
 
                 elif os.path.splitext(path)[1].lower() == ".xlsx":
                     xlsx = zipfile.ZipFile(os.path.join(zip_dir, path))
@@ -5308,9 +5337,17 @@ class _FormDefinition(_ItemDefinition):
                             url = "{0}sharing/rest/content/items/{1}".format(
                                 org_url, value
                             )
+                            check = "(?<=>)([^<]+?{0})(?=<)".format(key)
+                            # data = re.sub(
+                            #     check,
+                            #     url,
+                            #     data,
+                            #     0,
+                            #     re.IGNORECASE,
+                            # )
                             data = re.sub(
-                                "(?<=>)([^<]+?{0})(?=<)".format(key),
-                                url,
+                                key,
+                                value,
                                 data,
                                 0,
                                 re.IGNORECASE,
@@ -5324,15 +5361,15 @@ class _FormDefinition(_ItemDefinition):
                             file.write(data)
 
                         # Find related service mapping and replace in excel file
-                        for related_item in self.related_items:
-                            for key, value in clone_mapping["Services"].items():
-                                if _compare_url(related_item["url"], key):
-                                    for layer_id in value["layer_field_mapping"]:
-                                        field_mapping = value["layer_field_mapping"][
-                                            layer_id
-                                        ]
-                                        e = _ExcelHelper(xlsx_dir, field_mapping)
-                                        e.main()
+                        # for related_item in self.related_items:
+                        #     for key, value in clone_mapping["Services"].items():
+                        #         if _compare_url(related_item["url"], key):
+                        #             for layer_id in value["layer_field_mapping"]:
+                        #                 field_mapping = value["layer_field_mapping"][
+                        #                     layer_id
+                        #                 ]
+                        # e = _ExcelHelper(xlsx_dir, field_mapping)
+                        # e.main()
 
                         xlsx = zipfile.ZipFile(
                             os.path.join(zip_dir, path),
@@ -5348,12 +5385,19 @@ class _FormDefinition(_ItemDefinition):
                             shutil.rmtree(xlsx_dir)
 
             # Add a relationship between the new survey and the service
+            service_related = self.portal_item.related_items(
+                "Survey2Service", "forward"
+            )
+            data_related = self.portal_item.related_items("Survey2Data", "forward")
             for related_item in self.related_items:
-                for key, value in clone_mapping["Services"].items():
-                    if _compare_url(related_item["url"], key):
-                        feature_service = target.content.get(value["id"])
-                        new_item.add_relationship(feature_service, "Survey2Service")
-                        break
+                if related_item in service_related:
+                    new_id = clone_mapping["Services"][related_item["url"]]["id"]
+                    feature_service = target.content.get(new_id)
+                    new_item.add_relationship(feature_service, "Survey2Service")
+                if related_item in data_related:
+                    new_id = clone_mapping["Item IDs"][related_item["id"]]
+                    data_item = target.content.get(new_id)
+                    new_item.add_relationship(data_item, "Survey2Data")
 
             # If the survey was authored on the web add the web_json to the metadata table in the service
             if form_json is not None and feature_service_url is not None:
@@ -5382,7 +5426,10 @@ class _FormDefinition(_ItemDefinition):
             zip_file.close()
 
             # Upload the zip to the item
-            new_item.update(data=form_zip)
+            new_form = shutil.copy2(
+                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+            )
+            new_item.update(data=new_form)
         except Exception as ex:
             raise Exception(
                 "Failed to update {0} {1}: {2}".format(
@@ -6418,7 +6465,9 @@ def _share_item_with_groups(item, sharing, group_mapping):
             sharing_level = SharingLevel.EVERYONE
 
         item.sharing.sharing_level = sharing_level
-        item.sharing._share(groups=groups)
+        grp_share = item.sharing.groups
+        for grp in groups:
+            grp_share.add(grp)
 
 
 def _wgs84_envelope(envelope):

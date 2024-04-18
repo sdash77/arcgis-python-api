@@ -2,9 +2,11 @@ import unittest
 from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 from arcgis.gis.kubernetes._admin._system import SystemManager
 from arcgis.gis.kubernetes._admin._adaptors import WebAdaptorManager
-from utils.decorators import profiles
+from utils.decorators import integration_test, profiles
+
 
 @profiles.k8s
+@integration_test
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
 
@@ -35,7 +37,7 @@ class TestKubernetesAdmin(unittest.TestCase):
     def test_scheduled_task(self):
         admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
-        assert isinstance(admin.scheduled_tasks(), list)
+        assert isinstance(list(admin.scheduled_tasks()), list)
 
     def test_jobs(self):
         from arcgis.gis.kubernetes._admin._jobs import JobManager
@@ -45,7 +47,6 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert isinstance(admin.jobs, JobManager)
 
     def test_system(self):
-
 
         admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)

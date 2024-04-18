@@ -12,11 +12,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.runner import load_checkpoint
+from .._mmlab_utils import load_mmlab_checkpoint
 from mmseg.models.builder import BACKBONES, NECKS
 from timm.models.layers import to_2tuple
 from timm.models.vision_transformer import Block
-from mmseg.ops import resize
 from mmseg.models import builder
 from mmseg.models.builder import SEGMENTORS
 from mmseg.models.segmentors.encoder_decoder import EncoderDecoder
@@ -506,8 +505,7 @@ class TemporalViTEncoder(nn.Module):
 
         if isinstance(self.pretrained, str):
             self.apply(self._init_weights)
-            # print(f"load from {self.pretrained}")
-            load_checkpoint(self, self.pretrained, strict=False)
+            load_mmlab_checkpoint(self, self.pretrained)
         elif self.pretrained is None:
             # # initialize nn.Linear and nn.LayerNorm
             self.apply(self._init_weights)
@@ -588,18 +586,3 @@ class TemporalEncoderDecoder(EncoderDecoder):
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
         assert self.with_decode_head
-
-    def encode_decode(self, img, img_metas):
-        """Encode images with backbone and decode into a semantic segmentation
-        map of the same size as input."""
-        x = self.extract_feat(img)
-        out = self._decode_head_forward_test(x, img_metas)
-
-        #### size calculated over last two dimensions ###
-        size = img.shape[-2:]
-
-        out = resize(
-            input=out, size=size, mode="bilinear", align_corners=self.align_corners
-        )
-
-        return out

@@ -12,7 +12,6 @@ StoryMap
    :undoc-members:
    :show-inheritance:
 
-
 Image
 ------------------------------------------
 .. autoclass:: arcgis.apps.storymap.story_content.Image
@@ -89,17 +88,89 @@ Timeline
    :members:
    :undoc-members:
    :show-inheritance:
-
-Scales
-------------------------------------------
-.. autoclass:: arcgis.apps.storymap.story_content.Scales
-   :members:
-   :undoc-members:
-   :show-inheritance:
    
 MapTour
 ------------------------------------------
 .. autoclass:: arcgis.apps.storymap.story_content.MapTour
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+Code
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Code
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Briefing
+-----------------
+.. autoclass:: arcgis.apps.storymap.briefing.Briefing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+Block
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.Block
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+Table
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.Table
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+ExpressMap
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.ExpressMap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Collection
+-----------------
+.. autoclass:: arcgis.apps.storymap.collection.Collection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+Enumerations
+------------
+Language
+^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.Language
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Scales
+^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.Scales
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+TextStyles
+^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.TextStyles
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SlideLayout
+^^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.SlideLayout
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
+SlideSubLayout
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.SlideSubLayout
    :members:
    :undoc-members:
    :show-inheritance:

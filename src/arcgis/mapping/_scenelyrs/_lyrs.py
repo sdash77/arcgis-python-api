@@ -850,6 +850,121 @@ class IntegratedMeshLayer(Layer):
 
 
 ###########################################################################
+class Tiles3DLayerManager(_GISResource):
+    def __init__(self, url, gis=None, tiles3d_service=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
+        super(Tiles3DLayerManager, self).__init__(url, gis)
+        self._tiles3dservice = tiles3d_service
+        # Scene Layers published from Scene Layer Package are read only.
+        if "layers" in self.properties:
+            self._source_type = (
+                "Feature Service"
+                if "updateEnabled" in self.properties.layers[0]
+                else "3DTiles Package"
+            )
+        else:
+            # No layers are present so we will not have cache
+            self._source_type = "3DTilesPackage"
+
+
+###########################################################################
+class Tiles3DLayer(Layer):
+    """
+    The ``Tiles3DLayer`` class represents a Web scene 3D Tile Service Layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /3DTilesServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a Tiles3D Layer given a web scene layer URL
+        """
+        super(Tiles3DLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "3DTiles Service", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "3DTiles Service", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.Tiles3DLayerManager` class
+        which provides methods and properties for administering this service.
+        """
+        if self._admin is None:
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            else:
+                rd = {"/rest/": "/admin/", "/3DTilesServer": ".3DTilesServer"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+            self._admin = Tiles3DLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
 
 
 class VoxelLayer(Layer):

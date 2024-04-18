@@ -14,6 +14,7 @@ from datetime import datetime
 import logging as _logging
 from typing import Any, Optional, Union
 import arcgis as _arcgis
+from arcgis.auth.tools import LazyLoader
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
@@ -29,6 +30,7 @@ from ._util import (
     _prevent_bds_item,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
@@ -174,6 +176,8 @@ def summarize_center_and_dispersion(
 
 
 # --------------------------------------------------------------------------
+
+
 def build_multivariable_grid(
     input_layers: Union[
         Item,
@@ -480,6 +484,8 @@ def build_multivariable_grid(
 
 
 # --------------------------------------------------------------------------
+
+
 def aggregate_points(
     point_layer: Union[
         Item,
@@ -780,6 +786,8 @@ def aggregate_points(
 
 
 # --------------------------------------------------------------------------
+
+
 def describe_dataset(
     input_layer: Union[
         Item,
@@ -954,6 +962,8 @@ def describe_dataset(
 
 
 # --------------------------------------------------------------------------
+
+
 def join_features(
     target_layer: Union[
         Item,
@@ -1292,6 +1302,8 @@ def join_features(
 
 
 # --------------------------------------------------------------------------
+
+
 def reconstruct_tracks(
     input_layer: Union[
         Item,
@@ -1598,6 +1610,8 @@ def reconstruct_tracks(
 
 
 # --------------------------------------------------------------------------
+
+
 def summarize_attributes(
     input_layer: Union[
         Item,
@@ -1806,6 +1820,8 @@ def summarize_attributes(
 
 
 # --------------------------------------------------------------------------
+
+
 def summarize_within(
     summarized_layer: Union[
         Item,

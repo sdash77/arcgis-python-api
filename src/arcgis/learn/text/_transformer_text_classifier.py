@@ -64,6 +64,10 @@ backbone_models_map = {
         "funnel-transformer/medium",
         "funnel-transformer/medium-base",
     ),
+    "llm": (
+        "mistral",
+        # "GPT-4"
+    ),
 }
 
 transformer_architectures = [
@@ -81,6 +85,7 @@ transformer_architectures = [
     "Longformer",
     "MobileBERT",
     "Funnel",
+    "LLM",
 ]
 
 backbone_models_reverse_map = {
@@ -305,10 +310,12 @@ class TransformerForTextClassification(ArcGISTransformer):
             text_batch, max_length=self._max_seq_len, padding=True, truncation=True
         )
         batch_token_ids = encodings["input_ids"]
+        mask = encodings["attention_mask"]
         results_list = []
         sequence = torch.tensor(batch_token_ids).to(device)
+        mask = torch.tensor(mask).to(device)
         with torch.no_grad():
-            logits = self._transformer(sequence)[0]
+            logits = self._transformer(sequence, attention_mask=mask)[0]
 
         if is_multilabel_problem:
             results = torch.sigmoid(logits)

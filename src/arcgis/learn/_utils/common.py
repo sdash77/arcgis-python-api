@@ -288,7 +288,7 @@ class ArcGISImageList(ImageList):
         try:
             labelval = [(func(o)) for o in self.items]
             if any(isinstance(el, list) for el in labelval):
-                total_sample = np.concatenate(np.array(labelval))
+                total_sample = np.concatenate(np.array(labelval, dtype=object))
             else:
                 total_sample = np.array(labelval)
             unique_sample = set(total_sample)

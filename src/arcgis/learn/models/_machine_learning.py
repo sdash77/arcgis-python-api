@@ -54,6 +54,7 @@ _PROTOCOL_LEVEL = 2
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
 _DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
+_SENSITIVE_FEATURE_ERROR = "Senstive feature should be a categorical feature"
 
 
 def _get_model_type(model_type):
@@ -280,6 +281,9 @@ class MLModel(object):
 
         self.protected_class = fairness_args["sensitive_feature"]
 
+        if self.protected_class not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
+
         if "mitigation_type" not in fairness_args:
             raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
@@ -464,17 +468,23 @@ class MLModel(object):
         :return: dataframe
         """
 
+        if sensitive_feature not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
+
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,
@@ -1247,7 +1257,7 @@ class MLModel(object):
         rasters=None,
         datefield=None,
         distance_feature_layers=None,
-        output_name="Prediction Layer",
+        output_name=None,
         gis=None,
         match_field_names=None,
         prediction_type="features",
@@ -1258,6 +1268,9 @@ class MLModel(object):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
+
+        if output_name is None:
+            output_name = "Prediction Layer"
 
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
@@ -1370,10 +1383,15 @@ class MLModel(object):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
-                return online_table.publish(overwrite=True)
+                try:
+                    online_table = gis.content.add(
+                        {"type": "Microsoft Excel", "overwrite": True}, table_file
+                    )
+                    return online_table.publish(overwrite=True)
+                except Exception as ex:
+                    raise Exception(
+                        f"Filename {output_name} already exists. Please provide different output filename."
+                    )
 
     def _predict_rasters(
         self,

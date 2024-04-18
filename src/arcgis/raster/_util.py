@@ -1593,7 +1593,7 @@ def _get_stac_api_search_items(
     return all_items
 
 
-def _get_stac_metadata_file(item):
+def _get_stac_metadata_file(item, context=None):
     """
     This method is used to retrieve the metadata file of a valid STAC item.
     :param item: input STAC Item (JSON dictionary)
@@ -1644,6 +1644,26 @@ def _get_stac_metadata_file(item):
                 "noaa-cdr-sea-surface-temperature-whoi",
                 "noaa-cdr-ocean-heat-content",
                 "esa-worldcover",
+                "modis-64A1-061",
+                "modis-17A2H-061",
+                "modis-11A2-061",
+                "modis-17A2HGF-061",
+                "modis-17A3HGF-061",
+                "modis-09A1-061",
+                "modis-16A3GF-061",
+                "modis-21A2-061",
+                "modis-43A4-061",
+                "modis-09Q1-061",
+                "modis-14A1-061",
+                "modis-13Q1-061",
+                "modis-14A2-061",
+                "modis-15A2H-061",
+                "modis-11A1-061",
+                "modis-15A3H-061",
+                "modis-13A1-061",
+                "modis-10A2-061",
+                "modis-10A1-061",
+                "aster-l1t",
             ],
             "All COGs",
         ),
@@ -1719,12 +1739,35 @@ def _get_stac_metadata_file(item):
         **dict.fromkeys(["sentinel-2"], ("data", "productInfo.json")),
         **dict.fromkeys(["sentinel-1"], ("s3", "manifest.safe")),
     }
+    geoportal_azure_map = {
+        "sentinel": ("S2_Level-2A_Product_Metadata", "MTD_MSIL2A.xml")
+    }
 
     product_file_map = {
         "planetarycomputer.microsoft.com/api/stac": planetary_computer_map,
         "earth-search.aws.element84.com": earth_search_map,
         "services.sentinel-hub.com/api": sentinel_hub_map,
+        "landsatlook.usgs.gov/stac-server": "self_href",
+        "gpt.geocloud.com/sentinel/stac": "self_href",
+        "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return href_list
 
     stacs = list(product_file_map.keys())
 
@@ -1748,24 +1791,32 @@ def _get_stac_metadata_file(item):
         )
     )
 
-    target = product_file_map[item_stac].get(collection_id)
+    target = (
+        product_file_map[item_stac].get(collection_id)
+        if isinstance(product_file_map[item_stac], dict)
+        else product_file_map[item_stac]
+    )
 
     href = None
     if isinstance(target, str):
         href = (
-            [
-                cog["href"]
-                for cog in item["assets"].values()
-                if cog["href"].endswith((".tif", ".tiff"))
-            ]
-            if target == "All COGs"
-            else item["assets"][target]["href"]
+            f"StacItemHref/{self_link}"
+            if target == "self_href"
+            else (
+                [
+                    cog["href"]
+                    for cog in item["assets"].values()
+                    if cog["href"].endswith((".tif", ".tiff"))
+                ]
+                if target == "All COGs"
+                else item["assets"][target]["href"]
+            )
         )
     elif isinstance(target, int):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
-        if collection_id == "sentinel-s2-l2a":
+        if collection_id in ("sentinel", "sentinel-s2-l2a"):
             directory = os.path.dirname(directory)
         href = f"{directory}/{target[1]}"
 
@@ -1774,9 +1825,16 @@ def _get_stac_metadata_file(item):
         if href is not None and isinstance(href, str) and href.startswith("s3")
         else href
     )
+    if processing_template is None and (
+        collection_id.startswith(
+            ("sentinel-2", "sentinel-s2", "landsat-c2l2", "landsat-c2-", "sentinel_v1")
+        )
+        or collection_id == "sentinel"
+    ):
+        processing_template = "Multiband"
 
-    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
-        href = rf"{href}\Multiband"
+    if isinstance(href, str) and isinstance(processing_template, str):
+        href += rf"\{processing_template}"
 
     return href
 
@@ -1805,7 +1863,7 @@ def _get_stac_links(stac_json, cat_filename, rel):
     return all_links
 
 
-def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
+def _get_all_stac_catalog_items(stac_json, filename, request_params={}, context=None):
     """
     This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
     :param stac_json: input Static STAC (Catalog - JSON dictionary)
@@ -1817,7 +1875,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             urljoin(*item_link) if not isinstance(item_link, str) else item_link
         )
         item_resources = _get_static_catalog_item_resources(
-            request_link, request_params
+            request_link, request_params, context
         )
         yield item_resources
 
@@ -1831,6 +1889,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
             "binary/octet-stream",
             "application/octet-stream",
             "text/plain; charset=utf-8",
@@ -1838,30 +1897,54 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
-        yield from _get_all_stac_catalog_items(child_json, request_link, request_params)
+        yield from _get_all_stac_catalog_items(
+            child_json, request_link, request_params, context
+        )
 
 
-def _get_static_catalog_item_resources(request_link, request_params={}):
-
+def _get_static_catalog_item_resources(request_link, request_params={}, context=None):
     if isinstance(request_link, str):
         item_res = _requests.get(request_link, **request_params)
         if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
             "application/octet-stream",
             "text/plain; charset=utf-8",
             "text/plain",
+            "binary/octet-stream",
         ]:
             raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
         item = item_res.json()
     else:
         request_link, item = request_link
+
     assets = item["assets"]
+
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(assets, context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return item, href_list
+
     product_file = None
     self_link_products = [
         "https://maxar-opendata.s3.amazonaws.com/events",
         "https://capella-open-data.s3.us-west-2.amazonaws.com/stac",
+        "https://bdc-sentinel-2.s3.us-west-2.amazonaws.com",
     ]
     cog_composite_products = [
         "https://pta.data.lit.fmi.fi/stac",
@@ -1885,7 +1968,58 @@ def _get_static_catalog_item_resources(request_link, request_params={}):
             if cog["href"].endswith((".tif", ".tiff"))
         ]
 
+    if isinstance(product_file, str) and isinstance(processing_template, str):
+        product_file += rf"\{processing_template}"
     return item, product_file
+
+
+def _find_stac_asset_hrefs(assets, context):
+    hrefs = {}
+    asset_management = context.get("assetmanagement", {})
+    if not isinstance(asset_management, list):
+        asset_management = [asset_management]
+    for asset_info in asset_management:
+        if isinstance(asset_info, str):
+            asset_key = asset_info
+            asset_info = {"key": asset_key}
+        else:
+            asset_key = asset_info["key"]
+        hrefs[asset_key] = _find_stac_asset_href(assets, asset_info)
+    return hrefs
+
+
+def _find_stac_asset_href(assets, asset_info):
+    asset_key = asset_info["key"]
+    href_key = asset_info.get("hrefKey", "href")
+    asset_path = asset_info.get("path")
+
+    if asset_key in assets:
+        value = assets[asset_key]
+        if asset_path:
+            for key in asset_path:
+                if key in value:
+                    value = value[key]
+                else:
+                    return None
+        if href_key in value:
+            href = value[href_key]
+            if href is not None and isinstance(href, str):
+                if href.startswith("s3"):
+                    href = rf"/vsis3{href[4:]}"
+                elif ".blob.core.windows.net" in href or ".amazonaws.com" in href:
+                    pass
+                elif href.lower().startswith(
+                    ("https://", "http://")
+                ) and href.lower().endswith((".tiff", ".tif")):
+                    href = f"/vsicurl/{href}"
+            return href
+    else:
+        for value in assets.values():
+            if isinstance(value, dict):
+                href = _find_stac_asset_href(value, asset_info)
+                if href:
+                    return href
+    return None
 
 
 def _lookup_datastore(datastore_type, gis=None):

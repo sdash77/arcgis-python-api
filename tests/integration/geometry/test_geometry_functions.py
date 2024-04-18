@@ -3,8 +3,6 @@
 # Purpose:     Test geometric operations such as project, buffer, cut,
 #               intersect, clip etc.
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -13,6 +11,7 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Envelope
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -55,6 +54,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_geometry_functions_portal(unittest.TestCase):
     """
     Test to check if a ContentManager object works with builtin portal
@@ -194,6 +194,7 @@ class Test_geometry_functions_portal(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@integration_test
 class Test_geometry_functions_AGO(unittest.TestCase):
     """
     Test to check if a ContentManager object works with ArcGIS Online

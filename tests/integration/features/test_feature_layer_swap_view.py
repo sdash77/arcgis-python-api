@@ -1,13 +1,11 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10927\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item, ItemProperties, ItemTypeEnum
 from arcgis.features import FeatureLayerCollection, FeatureLayer
+from utils.decorators import integration_test
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -27,6 +25,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestFeatureLayerCollectionSwap(unittest.TestCase):
     """Tests the swap view logic"""
 
@@ -35,8 +34,8 @@ class TestFeatureLayerCollectionSwap(unittest.TestCase):
         cls.gis = GIS(
             profile='your_online_profile', verify_cert=False, proxy=PROXIES
         )
-        cls.path1 = r"\\qalab_server\pydata\v109\geosaurus\swap_layer\swap_layer1.zip"
-        cls.path2 = r"\\qalab_server\pydata\v109\geosaurus\swap_layer\swap_layer2.zip"
+        cls.path1 = QALAB_ROOT_PATH + r"\swap_layer\swap_layer1.zip"
+        cls.path2 = QALAB_ROOT_PATH + r"\swap_layer\swap_layer2.zip"
         content = cls.gis.content
         folder = content.folders.get()
         ip = ItemProperties(

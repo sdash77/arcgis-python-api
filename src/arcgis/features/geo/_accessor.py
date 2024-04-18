@@ -671,15 +671,15 @@ class GeoSeriesAccessor:
 
 
         """
-        if isinstance(second_geometry, _geometry.Geometry):
+        if isinstance(second_geometry, GeoSeriesAccessor):
+            # Do a GeoArray eq
+            return self._data == second_geometry._data
+        else:
             return pd.Series(
                 self._data.equals(**{"second_geometry": second_geometry}),
                 name="equals",
                 index=self._index,
             )
-        elif isinstance(second_geometry, GeoSeriesAccessor):
-            # Do a GeoArray eq
-            return self._data == second_geometry._data
 
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
@@ -1150,7 +1150,6 @@ class GeoAccessor(object):
     The ``GeoAccessor`` class includes visualization, spatial indexing, IO and dataset level properties.
     """
 
-    _sr = None
     _viz = None
     _data = None
     _name = None
@@ -1493,63 +1492,90 @@ class GeoAccessor(object):
         """
         from ._array import GeoArray
 
-        if (
-            isinstance(col, str)
-            and col in self._data.columns
-            and self._data[col].dtype.name.lower() != "geometry"
-        ):
-            idx = self._data[col].first_valid_index()
-            if sr is None:
-                try:
-                    g = self._data.iloc[idx][col]
-                    if isinstance(g, dict):
-                        self._sr = _geometry.SpatialReference(
-                            _geometry.Geometry(g["spatialReference"])
-                        )
-                    else:
-                        self._sr = _geometry.SpatialReference(g["spatialReference"])
-                except:
-                    self._sr = _geometry.SpatialReference({"wkid": 4326})
-            else:
-                if isinstance(sr, int):
-                    self._sr = _geometry.SpatialReference({"wkid": sr})
-                elif isinstance(sr, _geometry.SpatialReference):
-                    self._sr = sr
-            self._name = col
-            # q = self._data[col].isna()
-            # self._data.loc[q, "SHAPE"] = None
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self._data[col] = GeoArray(self._data[col])
-        elif (
-            isinstance(col, str)
-            and col in self._data.columns
-            and self._data[col].dtype.name.lower() == "geometry"
-        ):
-            self._name = col
-            # self._data[col] = self._data[col]
-        elif isinstance(col, str) and col not in self._data.columns:
-            raise ValueError("Column {name} does not exist".format(name=col))
-        elif isinstance(col, pd.Series):
-            self._data["SHAPE"] = GeoArray(col.values)
-            self._name = "SHAPE"
+        if isinstance(col, (pd.Series, list, tuple)):
+            array = GeoArray(col)
+        elif isinstance(col, (str)) and col in self._data.columns:
+            array = GeoArray(self._data[col])
         elif isinstance(col, GeoArray):
-            self._data["SHAPE"] = col
-            self._name = "SHAPE"
-        elif isinstance(col, (list, tuple)):
-            self._data["SHAPE"] = GeoArray(values=col)
-            self._name = "SHAPE"
+            array = col
+        elif isinstance(col, (str)) and not col in self._data.columns:
+            raise ValueError("The input column does not exist on the DataFrame.")
         else:
             raise ValueError(
-                "Column {name} is not valid. Please ensure it is of type Geometry".format(
-                    name=col
-                )
+                "The input must be a string (Column name), GeoArray, pd.Series, or list."
             )
+        if isinstance(col, (GeoArray, pd.Series, list, tuple)) and inplace:
+            col: str = "SHAPE"
+            self._data["SHAPE"] = array
+            self._data.loc[self._data[col].isna(), "SHAPE"] = None
+            self._data.loc[self._data[col].isnull(), "SHAPE"] = None
+            self._name = col
+            sdf = self._data
 
-        self.sr = self._sr
+        elif isinstance(col, (GeoArray, pd.Series, list, tuple)) and inplace == False:
+            sdf = self._data.copy()
+            sdf["SHAPE"] = array
+            sdf["SHAPE"].loc[sdf["SHAPE"].isna()] = None
+            sdf["SHAPE"].loc[sdf["SHAPE"].isnull()] = None
+            array = GeoArray(sdf[col])
+            sdf.spatial._name = col
+            sdf[col] = array
+        elif self._data[col].dtype.name.lower() != "geometry" and inplace:
+            self._data.loc[self._data[col].isna(), col] = None
+            self._data.loc[self._data[col].isnull(), col] = None
+
+            self._data[col] = array
+            self._name = col
+            sdf = self._data
+        elif self._data[col].dtype.name.lower() == "geometry" and inplace:
+            self._data[col] = array
+            self._name = col
+            sdf = self._data
+        elif self._data[col].dtype.name.lower() != "geometry" and inplace == False:
+            sdf = self._data.copy()
+            sdf.loc[self._data[col].isna(), col] = None
+            sdf.loc[self._data[col].isnull(), col] = None
+
+            array = GeoArray(sdf[col])
+            sdf.spatial._name = col
+            sdf[col] = array
+        elif self._data[col].dtype.name.lower() == "geometry" and inplace == False:
+            sdf = self._data.copy()
+            sdf[col].loc[self._data[col].isna()] = None
+            sdf[col].loc[self._data[col].isnull()] = None
+            array = GeoArray(sdf[col])
+            sdf.spatial._name = col
+            sdf[col] = array
+
+        if sr:
+            idx = self._data[col].first_valid_index()
+
+            current_geom_sr = sdf.spatial.sr
+            current_sr = (
+                current_geom_sr.get("wkid", None)
+                or current_geom_sr.get("wkt", None)
+                or None
+            )
+            if current_sr is None and isinstance(sr, int):
+                sdf.spatial.sr = _geometry.Geometry(
+                    {
+                        "wkid": sr,
+                    }
+                )
+            elif current_sr is None and isinstance(sr, str):
+                sdf.spatial.sr = _geometry.Geometry(
+                    {
+                        "wkt": sr,
+                    }
+                )
+            else:
+                sdf.spatial.sr = current_geom_sr
+                _LOGGER.warning(
+                    "not setting the SpatialReference because the geometries have references set."
+                )
+
         if not inplace:
-            return self._data.copy()
+            return sdf
 
     # ----------------------------------------------------------------------
     @property
@@ -3260,14 +3286,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
-                            ge[0] - 0.001,
-                            ge[1] - 0.001,
-                            ge[2] + 0.001,
-                            ge[3] - 0.001,
+                            ge[0],
+                            ge[1],
+                            ge[2],
+                            ge[3],
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:
@@ -3285,14 +3311,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
                             ge[0] - 0.001,
                             ge[1] - 0.001,
                             ge[2] + 0.001,
                             ge[3] - 0.001,
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:
@@ -3559,7 +3585,9 @@ class GeoAccessor(object):
             df[td] = df[td].dt.total_seconds() * 1000
 
         # define the function once
-        fn = lambda x,: int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else 0
+        fn = lambda x,: (
+            int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else None
+        )
         for f in date_fields:
             # apply function to each column in date_fields
             df[f] = pd.to_datetime(df[f]).apply(fn)

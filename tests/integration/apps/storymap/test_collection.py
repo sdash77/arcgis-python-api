@@ -1,13 +1,12 @@
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import Collection, Themes
 from arcgis.apps.storymap import Image, Slide
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile"]
 
-
+@integration_test
 class TestStoryMap(unittest.TestCase):
     """Test Basic Collection Methods"""
 
@@ -32,6 +31,7 @@ class TestStoryMap(unittest.TestCase):
 
                 """Change the story theme"""
                 collection.theme(Themes.SLATE)
+                assert collection.get_theme() == Themes.SLATE.value
 
                 assert collection.save()
 

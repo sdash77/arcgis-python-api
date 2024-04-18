@@ -1,12 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 import unittest
 
 import pandas as pd
 from pandas import Timestamp
 from arcgis.geometry import Geometry
+from utils.decorators import integration_test
 
 test_data = {
     "fid": {
@@ -582,6 +580,7 @@ test_data = {
 
 PROFILES = ["your_online_profile", "your_enterprise_profile", "your_online_dev_profile"]
 
+@integration_test
 class TestIssueInt64(unittest.TestCase):
     """tests the fact that int64 is only accepted on Online(November2023) and Enterprise 11.2+"""
 

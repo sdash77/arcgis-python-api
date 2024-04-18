@@ -2,9 +2,6 @@
 # Name:        Workforce Assignment Types tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
@@ -54,7 +51,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class Test_Workforce_Assignment_Types(unittest.TestCase):
     """
     Test to verify that assignments types can be fetched, updated, added, deleted

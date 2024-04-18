@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_9819\src")
 import os
 import logging
 import tempfile
@@ -13,6 +9,7 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.geometry import Point
 from arcgis.geoenrichment import Country, create_report, BufferStudyArea
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -32,6 +29,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class Test_GE_CreateReport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

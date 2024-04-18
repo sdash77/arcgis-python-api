@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_10272\src")
 import logging
 import unittest, os, uuid
 from arcgis.auth.tools._util import detect_proxy
@@ -12,6 +8,8 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
 )
+from utils.decorators import integration_test
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -30,10 +28,11 @@ profiles = ['your_online_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
-QA_LABS = r"\\qalab_server\pydata\v109\geosaurus\oriented_image_layer"
+QA_LABS = QALAB_ROOT_PATH + r"\oriented_image_layer"
 DATASET = "OI_sample.gdb.zip"
 
 
+@integration_test
 class TestOrientedImageryLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -31,14 +31,17 @@ try:
     from fastai.vision import flatten_model
     from .._utils.segmentation_loss_functions import FocalLoss, MixUpCallback, DiceLoss
 
-    #
+    _segm_model = None
     try:
         from torchvision.models.segmentation.segmentation import _segm_model
     except:
-        from torchvision.models.segmentation.segmentation import (
-            _segm_resnet as _segm_model,
-        )
-    #
+        try:
+            from torchvision.models.segmentation.segmentation import (
+                _segm_resnet as _segm_model,
+            )
+        except:
+            pass
+
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
@@ -158,12 +161,30 @@ def _create_deeplab(
     """
     # model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
 
-    model = _segm_model("deeplabv3", "resnet101", 21, True, pretrained_backbone=False)
-    if pretrained:
-        state_dict = models.utils.load_state_dict_from_url(
-            models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+    model = None
+    if not _segm_model is None:
+        model = _segm_model(
+            "deeplabv3", "resnet101", 21, True, pretrained_backbone=False
         )
-        model.load_state_dict(state_dict)
+        if pretrained:
+            state_dict = models.utils.load_state_dict_from_url(
+                models.segmentation.segmentation.model_urls["deeplabv3_resnet101_coco"]
+            )
+            model.load_state_dict(state_dict)
+    else:
+        from torchvision.models.segmentation import (
+            deeplabv3_resnet101,
+            DeepLabV3_ResNet101_Weights,
+        )
+
+        model = deeplabv3_resnet101(
+            weights=(DeepLabV3_ResNet101_Weights.DEFAULT if pretrained else None),
+            progress=True,
+            num_classes=21,
+            aux_loss=True,
+            weights_backbone=None,
+        )  # vvit Vikash bug fix done
+
     model = _DeepLabOverride(
         chip_size,
         num_class,
@@ -571,9 +592,18 @@ class DeepLab(ArcGISModel):
     def _deeplab_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
-        criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(
-            self._device
+        criterion = nn.CrossEntropyLoss(
+            weight=self._final_class_weight, reduction="none"
+        ).to(self._device)
+
+        # to find the weighted mean of the loss
+        batch_weight = (
+            targets.numel()
+            if self._final_class_weight == None
+            or self._final_class_weight[targets].sum() < 1.0
+            else self._final_class_weight[targets].sum()
         )
+
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
@@ -583,12 +613,15 @@ class DeepLab(ArcGISModel):
                 pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else:  # validation
             out = outputs
-        main_loss = criterion(out, targets)
+        # handle divide by zero
+        main_loss = criterion(out, targets).sum() / (batch_weight + 1e-7)
 
         if self.learn.model.training:
-            aux_loss = criterion(aux, targets)
+            aux_loss = criterion(aux, targets).sum() / (batch_weight + 1e-7)
             if self._pointrend:
-                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                pointrend_loss = criterion(pointrend_out, pointrend_target).sum() / (
+                    batch_weight + 1e-7
+                )
                 total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
             else:
                 total_loss = main_loss + 0.4 * aux_loss

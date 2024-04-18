@@ -10,6 +10,7 @@ from datetime import datetime
 import json as _json
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -26,11 +27,13 @@ from ._util import (
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def run_python_script(
     code: str,
     layers: Optional[
@@ -232,6 +235,7 @@ def run_python_script(
         raise
 
 
+# -------------------------------------------------------------------------
 def dissolve_boundaries(
     input_layer: Union[
         Item,
@@ -417,6 +421,7 @@ def dissolve_boundaries(
     return
 
 
+# -------------------------------------------------------------------------
 def merge_layers(
     input_layer: Union[
         Item,
@@ -609,6 +614,7 @@ def merge_layers(
         raise
 
 
+# -------------------------------------------------------------------------
 def clip_layer(
     input_layer: Union[
         Item,
@@ -742,6 +748,7 @@ def clip_layer(
         raise
 
 
+# -------------------------------------------------------------------------
 def overlay_data(
     input_layer: Union[
         Item,
@@ -946,6 +953,7 @@ def overlay_data(
     return
 
 
+# -------------------------------------------------------------------------
 def append_data(
     input_layer: Union[
         Item,
@@ -1071,6 +1079,7 @@ def append_data(
         raise
 
 
+# -------------------------------------------------------------------------
 def calculate_fields(
     input_layer: Union[
         Item,
@@ -1260,6 +1269,7 @@ def calculate_fields(
         raise
 
 
+# -------------------------------------------------------------------------
 def copy_to_data_store(
     input_layer: Union[
         Item,

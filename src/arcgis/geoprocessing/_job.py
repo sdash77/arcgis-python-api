@@ -335,11 +335,18 @@ class GPJob(object):
                     item.update(item_properties=_item_properties)
                 return item
             elif self.task == "QueryCameraInfo":
-                import pandas as pd
+                if "camera_info" in value.keys():
+                    return value["camera_info"]
+                else:
+                    import pandas as pd
 
-                columns = value["schema"]
-                data = value["content"]
-                return pd.DataFrame(data, columns=columns)
+                    columns = value["schema"]
+                    data = value["content"]
+
+                    if isinstance(data, list) and not isinstance(data[0], list):
+                        data = [data]
+
+                    return pd.DataFrame(data, columns=columns)
             elif (
                 isinstance(value, dict)
                 and "url" in value
@@ -547,6 +554,11 @@ class GPJob(object):
                 try:
                     dict_output = json.loads(value["modelInfo"])
                     return dict_output
+                except:
+                    return value
+            elif isinstance(value, dict) and "credits" in value:
+                try:
+                    return float(value["credits"])
                 except:
                     return value
             elif isinstance(value, dict) and "result" in value:

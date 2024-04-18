@@ -338,7 +338,9 @@ def encode_class(idxs, n_classes):
     target = idxs.new_zeros(len(idxs), n_classes).float()
     mask = idxs != 0
     i1s = LongTensor(list(range(len(idxs))))
-    target[i1s[mask], idxs[mask] - 1] = 1
+    target.to(mask.device)[
+        i1s.to(mask.device)[mask], idxs.to(mask.device)[mask] - 1
+    ] = 1
     return target
 
 
@@ -370,7 +372,9 @@ class RetinaNetFocalLoss(nn.Module):
         self.scales = scales
         self.ratios = ratios
         self._device = device
-        self._create_anchors(self.sizes, self._device)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self._create_anchors(self.sizes, self._device)
 
     def _change_anchors(self, sizes) -> bool:
         if not hasattr(self, "sizes"):
@@ -453,7 +457,11 @@ def nms(boxes, scores, thresh: float = 0.2):
         mask_keep = iou_vals <= thresh
         if len(mask_keep.nonzero()) == 0:
             break
-        boxes, scores, indexes = boxes[mask_keep], scores[mask_keep], indexes[mask_keep]
+        boxes, scores, indexes = (
+            boxes[mask_keep.to(boxes.device)],
+            scores[mask_keep.to(scores.device)],
+            indexes[mask_keep.to(indexes.device)],
+        )
     to_keep = [int(idx.item()) for idx in to_keep]
     return torch.tensor(to_keep).long()
 
@@ -482,7 +490,11 @@ def get_predictions(output, detect_thresh=0.2, crit=None, nms_overlap=0.1):
 
     # Filter out the predicted boxes with size zero
     mask_keep = (bbox_pred[:, 2] * bbox_pred[:, 3]) != 0
-    bbox_pred, preds, scores = bbox_pred[mask_keep], preds[mask_keep], scores[mask_keep]
+    bbox_pred, preds, scores = (
+        bbox_pred[mask_keep.to(bbox_pred.device)],
+        preds[mask_keep.to(preds.device)],
+        scores[mask_keep.to(scores.device)],
+    )
 
     # Apply nms
     to_keep = nms(bbox_pred, scores, thresh=nms_overlap)

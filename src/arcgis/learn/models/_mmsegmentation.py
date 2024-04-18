@@ -13,6 +13,7 @@ logger = logging.getLogger()
 
 try:
     from fastai.vision import flatten_model
+    import fastai
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
@@ -38,7 +39,10 @@ def norm_prithvi(data, model):
             img_norm_crop_model.get("means"),
             img_norm_crop_model.get("stds"),
         ),
-        "prithvi100m": (data._scaled_mean_values, data._scaled_std_values),
+        "prithvi100m": (
+            data._scaled_mean_values.tolist(),
+            data._scaled_std_values.tolist(),
+        ),
     }
 
     means, stds = scaling_info[model]
@@ -107,6 +111,7 @@ class MMSegmentation(ModelExtension):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
             data = norm_prithvi(data, model)
+
         self._ignore_classes = kwargs.get("ignore_classes", [])
         self.class_balancing = kwargs.get("class_balancing", False)
         if self._ignore_classes != [] and len(data.classes) <= 2:
@@ -155,6 +160,9 @@ class MMSegmentation(ModelExtension):
                 class_weight[idx] = 0.0
 
         self._final_class_weight = class_weight
+        is_transformer = False
+        if model in self.supported_transformer_models:
+            is_transformer = True
 
         super().__init__(
             data,
@@ -164,6 +172,7 @@ class MMSegmentation(ModelExtension):
             model_weight=model_weight,
             ignore_class=self._ignore_mapped_class,
             class_weight=self._final_class_weight,
+            is_transformer=is_transformer,
         )
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -177,10 +186,21 @@ class MMSegmentation(ModelExtension):
         "Freezes the pretrained backbone."
         if self._model_conf.cfg.model.backbone.type == "CGNet":
             return 6
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+
+        layers = flatten_model(self.learn.model.backbone)
+        idx = len(layers) // 2
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 2
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
                 continue
-            for p in i.parameters():
+            for p in layer.parameters():
                 p.requires_grad = False
         return idx
 
@@ -215,6 +235,7 @@ class MMSegmentation(ModelExtension):
         "fcn",
         "gcnet",
         "hrnet",
+        "mask2former",
         "mobilenet_v2",
         "nonlocal_net",
         "ocrnet",
@@ -227,6 +248,11 @@ class MMSegmentation(ModelExtension):
     ]
     """
     List of models supported by this class.
+    """
+
+    supported_transformer_models = ["mask2former"]
+    """
+    List of transformer based models supported by this class.
     """
 
     @classmethod
