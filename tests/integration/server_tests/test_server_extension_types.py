@@ -1,8 +1,9 @@
 # Uncomment this and update the paths to be the `src` folder and `tests` folder path
 # to run it locally.
-# import sys
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-# sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 
 _QALABS_DATSET = (
     r"\\qalab_server\pydata\v109\geosaurus\EntepriseSOE_SOI\linux"
@@ -26,7 +27,7 @@ class TestTypesSOISOE(unittest.TestCase):
 
     def test_extensions(self):
         gis = self.gis
-        servers = gis.admin.servers.list()
+        servers = gis.admin.servers.get("HOSTING_SERVER")
         server = servers[0]
         types = server.services.types
         ext_name: str = "Javadownloadfilerestsoe.soe"
@@ -47,7 +48,7 @@ class TestTypesSOISOE(unittest.TestCase):
 
     def test_providers(self):
         gis = self.gis
-        servers = gis.admin.servers.list()
+        servers = gis.admin.servers.get("HOSTING_SERVER")
         server = servers[0]
         types = server.services.types
 
