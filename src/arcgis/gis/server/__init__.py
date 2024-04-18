@@ -34,5 +34,5 @@ from .admin._types import (
     TypesManager,
     ProvidersManager,
     ExtensionManager,
-    RegisteredExtension
+    RegisteredExtension,
 )
