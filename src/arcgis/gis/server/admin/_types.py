@@ -85,7 +85,7 @@ class RegisteredExtension:
 
 ###########################################################################
 class ExtensionManager:
-    """Manages the Serveric Extension Objects"""
+    """Manages the Service Extension Objects"""
 
     _um: Uploads
     url: str

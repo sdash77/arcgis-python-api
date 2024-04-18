@@ -236,10 +236,10 @@ class Server(BaseServer):
             service = catalog.get(name="PublishingToolsEx", folder="System")
         if service is None:
             return False
-        status, res = self._uploads.upload(path=sd_file, description="sd file")
+        status, res = self.uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res["item"]["itemID"]
-            config = self._uploads._service_configuration(uid)
+            config = self.uploads._service_configuration(uid)
             if folder or service_config:
                 if service_config and isinstance(service_config, dict):
                     for key in service_config.keys():
