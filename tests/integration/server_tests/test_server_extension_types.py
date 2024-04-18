@@ -14,13 +14,21 @@ import os
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
 
+try:
+    from integration.config import QALAB_ROOT_PATH
+except:
+    from .integration.config import QALAB_ROOT_PATH
+
+
+_QALABS_DATSET: str = rf"{QALAB_ROOT_PATH}\EntepriseSOE_SOI\linux"
+
 enable_verbose_logging()
 
 
 @unittest.skipIf(
     os.path.isdir(_QALABS_DATSET) == False, "Cannot find test dataset."
 )
-@profiles.enterprise  #  must be administrator
+@profiles.admin_enterprise  #  must be administrator
 @integration_test
 class TestTypesSOISOE(unittest.TestCase):
     """tests the SOI/SOE"""
