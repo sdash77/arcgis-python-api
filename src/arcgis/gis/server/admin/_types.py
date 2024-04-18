@@ -5,7 +5,7 @@ from arcgis.auth import EsriSession
 from ._uploads import Uploads
 
 __all__ = [
-    "Extension",
+    "RegisteredExtension",
     "ExtensionManager",
     "TypesManager",
     "ProvidersManager",
@@ -13,7 +13,7 @@ __all__ = [
 
 
 ###########################################################################
-class Extension:
+class RegisteredExtension:
     """
     Represents a single SOE or SOI deployment.
     """
@@ -142,12 +142,12 @@ class ExtensionManager:
         return data.get("status", "failed") == "success"
 
     @property
-    def extensions(self) -> Iterable[Extension]:
+    def extensions(self) -> Iterable[RegisteredExtension]:
         """returns all the registered extensions"""
         data = self.properties
         for key in data.keys():
 
-            yield Extension(
+            yield RegisteredExtension(
                 url=self.url,
                 session=self.session,
                 properties=data[key],
