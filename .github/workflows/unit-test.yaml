@@ -2,9 +2,9 @@ name: Unit Test
 on:
   pull_request:
   schedule:
-    # every Monday at 4:30 AM Pacific/7:30 AM Eastern/12:30 PM UTC (all platforms, all python versions)
+    # Mondays at 12:30 PM UTC (4:30 AM Pacific/7:30 AM Eastern) (all platforms, all python versions)
     - cron: '30 12 * * 1'
-    # every other day at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
+    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
     - cron: '30 12 * * 0,2-6'
   workflow_dispatch:
     inputs:
@@ -111,7 +111,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout code
         uses: actions/checkout@v4
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+        if: github.event_name != 'pull_request'
       - name: Checkout binaries
         uses: actions/checkout@v4
         with:
@@ -135,8 +135,6 @@ jobs:
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
-          restore-keys: |
-            conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
       - name: Install shared dependencies
         run: |
           conda install -c main nose2 --yes
@@ -145,6 +143,7 @@ jobs:
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache
+        if: steps.restore-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
@@ -169,7 +168,7 @@ jobs:
           cp ./binaries/windows/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
           cp ./binaries/windows/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
           cp ./binaries/windows/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-      - name: Install arcgis
+      - name: Install arcgis from source
         run: |
           python -m pip install -e ./src --no-deps
       - name: Run smoke tests
