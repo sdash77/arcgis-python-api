@@ -3017,7 +3017,39 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     # Get the item properties from the original item
                     item_properties = self._get_item_properties(self.item_extent)
                     # del item_properties["url"]
-
+                    for new_layer in new_item.layers:
+                        update_properties = {}
+                        new_props = new_layer.properties
+                        for og_layer in self.layers_definition["layers"]:
+                            if new_props["name"] == og_layer["name"]:
+                                for key in ["drawingInfo", "maxRecordCount"]:
+                                    if key in og_layer:
+                                        if og_layer[key] != new_props[key]:
+                                            update_properties[key] = og_layer[key]
+                                # Remove any unsupported capabilities from layer for Portal
+                                supported_capabilities = [
+                                    "Create",
+                                    "Query",
+                                    "Editing",
+                                    "Update",
+                                    "Delete",
+                                    "Uploads",
+                                    "Sync",
+                                    "Extract",
+                                ]
+                                og_capabilities = _deep_get(og_layer, "capabilities")
+                                if og_capabilities is not None and self.target.properties.isPortal:
+                                    update_properties["capabilities"] = ",".join(
+                                        [
+                                            x
+                                            for x in og_capabilities.split(",")
+                                            if x in supported_capabilities
+                                        ]
+                                    )
+                                break
+                        new_layer.manager.update_definition(update_properties)
+                    temp_export.delete()
+                                
                 else:
                     for key in ["layers", "tables", "fullExtent", "hasViews"]:
                         if key in service_definition:
