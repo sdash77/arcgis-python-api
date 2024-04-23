@@ -3151,6 +3151,7 @@ class UserManager(object):
         user_li_lu = {
             "creatorUT": "creatorUT",
             "creator": "creatorUT",
+            "contributor": "editorUT",
             "editor": "editorUT",
             "editorUT": "editorUT",
             "GISProfessionalAdvUT": "GISProfessionalAdvUT",
@@ -3163,6 +3164,8 @@ class UserManager(object):
             "viewerUT": "viewerUT",
             "fieldworker": "fieldWorkerUT",
             "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
         }
         role_lu = {
             "administrator": "org_admin",
