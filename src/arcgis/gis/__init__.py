@@ -3558,7 +3558,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string, unless specified in the `New Member Defaults`. The user type
                           license for an organization member. See
-                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          `user types <https://doc.arcgis.com/en/arcgis-online/administer/user-types-orgs.htm>`_
                           for detailed descriptions of each `user type`. Each `user_type` is
                           compatible with specific `roles` in the organization. Compatibility is
                           determined by the `privileges` assigned to each `role`. Only certain `role`
