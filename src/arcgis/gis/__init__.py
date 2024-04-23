@@ -3570,7 +3570,7 @@ class UserManager(object):
                           .. code-block:: python
 
                               >>> for utype in gis.users.license_types:
-                                      print(f"{utype['id]}")
+                                      print(f"{utype['id']}")
 
                           .. note::
                               See the :attr:`~arcgis.gis.UserManager.license_types` property on the
