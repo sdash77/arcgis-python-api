@@ -13,11 +13,13 @@ from .._common import BaseServer
 from .parameters import Extension
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
+from arcgis.auth import EsriSession
 from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 from typing import Optional
 from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
 from ._system import AsyncJob
+from ._types import TypesManager
 
 
 ########################################################################
@@ -42,6 +44,8 @@ class ServiceManager(BaseServer):
     _isDefault = None
     _services = None
     _json = None
+    _tm = None
+    session: EsriSession | None = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -65,6 +69,11 @@ class ServiceManager(BaseServer):
             self._sm = sm
         super(ServiceManager, self).__init__(gis=gis, url=url, sm=sm)
         self._con = gis
+        if hasattr(gis, "_session"):
+            self.session = getattr(gis, "_session")
+        elif hasattr(gis, "session"):
+            self.session = getattr(gis, "session")
+
         self._url = url
         self._currentURL = url
         self._currentFolder = "/"
@@ -127,6 +136,28 @@ class ServiceManager(BaseServer):
         if "/" not in self._folders:
             self._folders.append("/")
         return self._folders
+
+    # ----------------------------------------------------------------------
+    @property
+    def types(self) -> TypesManager:
+        """The types resource provides metadata about all service types and
+        extensions that can be enabled on each service type. The services
+        framework uses this information to validate a service and construct
+        the various objects in the service. The metadata contains
+        identifiers for each object, a default list of capabilities,
+        properties, and other resource information (like WSDL and so
+        forth). Type information for a specific service type can be
+        accessed by appending the type name to this URL.
+
+        :returns: TypesManager
+        """
+        if self._tm is None:
+            url: str = f"{self.url}/types"
+
+            self._tm = TypesManager(
+                uploads=self._sm.uploads, url=url, session=self.session
+            )
+        return self._tm
 
     # ----------------------------------------------------------------------
     def list(self, folder: Optional[str] = None, refresh: bool = True) -> list:
