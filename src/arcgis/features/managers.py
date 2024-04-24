@@ -148,18 +148,18 @@ class AttachmentManager(object):
         =====================   =======================================================
         **Parameters**          **Description**
         ---------------------   -------------------------------------------------------
-        where                   Optional String. Clause to specify the set of features for which
+        where                   Optional String. Clause to specify the set of features
                                 for which to return the attachment count.
         ---------------------   -------------------------------------------------------
         attachment_where        Optional String. Clause to specify criteria to apply to
                                 the attachments table for which specific attachments to
                                 include in the count value.
         ---------------------   -------------------------------------------------------
-        object_ids              Optional String. Comma separated string of *object_id*
-                                values of features for which to return attachment count.
+        object_ids              Optional List. List of *object_id* values to be queried
+                                for which to count the number of attachments.
         ---------------------   -------------------------------------------------------
-        global_ids              Optional String. Comma separated string of *global_id*
-                                values of features for which to return attachment count.
+        global_ids              Optional List. List of *global_id* values to be queried
+                                for which to count the number of attachments.
         ---------------------   -------------------------------------------------------
         attachment_types        Optional String. Value specifying the specific format
                                 of attachments to count. See *attachmentTypes* at
@@ -172,6 +172,29 @@ class AttachmentManager(object):
 
         :returns:
             Integer of total number of attachments.
+
+        .. code-block:: python
+
+            # Usage Example 1: Default
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organizational_profile")
+
+            >>> flyr_item = gis.content.get("<item id>")
+
+            >>> att_mgr = flyr_item.attachments
+            >>> att_mgr.count()
+
+            9
+
+            # Usage Example 2: List of Object Ids:
+            >>> att_mgr.count(object_ids=[1, 3])
+
+            5
+
+            # Usage Example 3: List of Global Ids:
+            >>> att_mgr.count(global_ids=['{D432BA85-8702-437D-B740-C214DDE65846}'])
+
+            2
         """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
