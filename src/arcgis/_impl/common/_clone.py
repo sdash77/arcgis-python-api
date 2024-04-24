@@ -2963,6 +2963,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         and self.target._portal.is_arcgisonline == False
                     ):
                         item_id = self.portal_item.itemid
+                    # publish_params = {}
                     try:
                         # try:
                         #     temp_name = self.portal_item.layers[0].properties["name"]
@@ -2983,7 +2984,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         if service_item is None:
                             raise RuntimeError("already exists")
                         # new_item_name = self.portal_item.title
-                        # new_item = service_item.publish(publish_parameters = {"name" : new_item_name})
+                        # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
                         new_item = service_item.publish()
                         # new_item.update(item_properties={"title": temp_name})
                         if new_item is None:
@@ -3003,7 +3004,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 item_id=item_id,
                             )
                             # new_item_name = self.portal_item.title
-                            # new_item = service_item.publish(publish_parameters = {"name" : new_item_name})
+                            # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
                             new_item = service_item.publish()
                             # new_item.update(item_properties={"title": temp_name})
                             self.created_items.append(new_item)
@@ -3022,7 +3023,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         new_props = new_layer.properties
                         for og_layer in self.layers_definition["layers"]:
                             if new_props["name"] == og_layer["name"]:
-                                for key in ["drawingInfo", "maxRecordCount"]:
+                                for key in ["drawingInfo", "maxRecordCount", "extent"]:
                                     if key in og_layer:
                                         if og_layer[key] != new_props[key]:
                                             update_properties[key] = og_layer[key]
