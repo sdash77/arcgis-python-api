@@ -3023,7 +3023,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         new_props = new_layer.properties
                         for og_layer in self.layers_definition["layers"]:
                             if new_props["name"] == og_layer["name"]:
-                                for key in ["drawingInfo", "maxRecordCount", "extent"]:
+                                for key in ["drawingInfo", "maxRecordCount"]:
                                     if key in og_layer:
                                         if og_layer[key] != new_props[key]:
                                             update_properties[key] = og_layer[key]
