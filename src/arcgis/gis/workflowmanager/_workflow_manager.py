@@ -2169,7 +2169,7 @@ class WorkflowManager:
         template_type: str,
         template_name: str,
         template_details: str,
-        template_id: Optional[str],
+        template_id: Optional[str] = None,
     ):
         """
         Returns the newly created template id.
@@ -2213,10 +2213,11 @@ class WorkflowManager:
         """
         try:
             obj = {
-                "templateId": template_id,
                 "templateName": template_name,
                 "templateDetails": template_details,
             }
+            if template_id is not None:
+                obj['templateId'] = template_id
             template_obj = Template(obj)
             return template_obj.post(
                 self._gis,
