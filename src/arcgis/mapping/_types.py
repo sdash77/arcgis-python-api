@@ -534,6 +534,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             layer_type = None
 
+        if layer_type == "WMS":
+            # WMS can have different spatial reference than the webmap
+            if "spatialReferences" in new_layer:
+                if (
+                    new_layer["spatialReferences"][0]
+                    != self.definition["spatialReference"]
+                ):
+                    warn(
+                        "WMS layer has different spatial reference than the webmap. The layer may not display correctly. To best display, make it the only basemap layer."
+                    )
+
         # region sort layers into 'operationalLayers' or 'tables'
         if isinstance(layer, _arcgis_features.Table):
             if "tables" not in self._webmapdict.keys():
