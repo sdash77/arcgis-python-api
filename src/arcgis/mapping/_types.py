@@ -1681,17 +1681,14 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> 2
 
         """
-        if self._layers is not None:
-            return self._layers
-        else:
-            self._layers = []
-            if "operationalLayers" in self._webmapdict.keys():
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
+        self._layers = []
+        if "operationalLayers" in self._webmapdict.keys():
+            for l in self._webmapdict["operationalLayers"]:
+                self._layers.append(_mixins.PropertyMap(l))
 
-            # reverse the layer list - webmap viewer reverses the list always
-            self._layers.reverse()
-            return self._layers
+        # reverse the layer list - webmap viewer reverses the list always
+        self._layers.reverse()
+        return self._layers
 
     @property
     def basemap(self):
