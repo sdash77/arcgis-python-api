@@ -2200,13 +2200,13 @@ class WorkflowManager:
             wm = WorkflowManager(wf_item)
 
             # create the template object
-           details = '{ \"to\":[\"user@esri.com\"],
-                     \"cc\":[\"boss@esri.com\"],
-                     \"bcc\":[\"supervisor@esri.com\"],
-                     \"subject\":\"Workflow Manager Templates\",
-                     \"body\":\"Look how easy it is to make a email template!\",
-                     \"attachmentSelection\":\"None\",
-                     \"attachmentFolder\":null }'
+            details = '{ \"to\":[\"user@esri.com\"],
+                         \"cc\":[\"boss@esri.com\"],
+                         \"bcc\":[\"supervisor@esri.com\"],
+                         \"subject\":\"Workflow Manager Templates\",
+                         \"body\":\"Look how easy it is to make a email template!\",
+                         \"attachmentSelection\":\"None\",
+                         \"attachmentFolder\":null }'
 
             wm.create_template(template_type="email", template_name="Email Template", template_details=details)
             >> Ef42tu_QQMS-IgZc7pOPnQ  # returns Template ID if created successfully
