@@ -2020,9 +2020,9 @@ class WorkflowManager:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
-                            Create an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            define a custom template.
+                            Get the email templates by entering 'email', the Web Request Templates by entering
+                            'webRequest', or the Step Templates by entering 'step'. Or, enter your own value to
+                            get the custom templates.
         ===============     ====================================================================
 
         :return:
@@ -2046,9 +2046,9 @@ class WorkflowManager:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
-                            Create an email template by entering 'email', a Web Request Template by entering
+                            Get an email template by entering 'email', a Web Request Template by entering
                             'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            define a custom template.
+                            get a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be retrieved
         ===============     ====================================================================
@@ -2097,9 +2097,9 @@ class WorkflowManager:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
-                            Create an email template by entering 'email', a Web Request Template by entering
+                            Delete an email template by entering 'email', a Web Request Template by entering
                             'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            define a custom template.
+                            delete a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be deleted
         ===============     ====================================================================
@@ -2133,9 +2133,9 @@ class WorkflowManager:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
-                            Create an email template by entering 'email', a Web Request Template by entering
+                            Update an email template by entering 'email', a Web Request Template by entering
                             'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            define a custom template.
+                            update a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be updated
         ---------------     --------------------------------------------------------------------
@@ -2147,6 +2147,28 @@ class WorkflowManager:
         :return:
            Boolean
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Update a Template
+
+            # update a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # update the template object
+            details = { \"to\":[\"user@esri.com\"],
+                         \"cc\":[\"boss@esri.com\"],
+                         \"bcc\":[\"supervisor@esri.com\"],
+                         \"subject\":\"Workflow Manager Templates\",
+                         \"body\":\"Look how easy it is to make an email template!\",
+                         \"attachmentSelection\":\"None\",
+                         \"attachmentFolder\":null }
+            details_str = json.dumps(details)
+
+            wm.update_template(template_type="email",
+                               template_id='Ef42tu_QQMS-IgZc7pOPnQ'
+                               template_name="Email Template",
+                               template_details=details_str)
+            >> True  # returns True if updated successfully
         """
         try:
             obj = {
@@ -2200,15 +2222,16 @@ class WorkflowManager:
             wm = WorkflowManager(wf_item)
 
             # create the template object
-            details = '{ \"to\":[\"user@esri.com\"],
+            details = { \"to\":[\"user@esri.com\"],
                          \"cc\":[\"boss@esri.com\"],
                          \"bcc\":[\"supervisor@esri.com\"],
                          \"subject\":\"Workflow Manager Templates\",
                          \"body\":\"Look how easy it is to make a email template!\",
                          \"attachmentSelection\":\"None\",
-                         \"attachmentFolder\":null }'
+                         \"attachmentFolder\":null }
+            details_str = json.dumps(details)
 
-            wm.create_template(template_type="email", template_name="Email Template", template_details=details)
+            wm.create_template(template_type="email", template_name="Email Template", template_details=details_str)
             >> Ef42tu_QQMS-IgZc7pOPnQ  # returns Template ID if created successfully
         """
         try:
@@ -2327,13 +2350,12 @@ class Template(object):
     def __getattr__(self, item):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
-        id = object.__getattribute__(self, "job_template_id")
         full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
         except KeyError:
-            raise KeyError(f'The attribute "{item}" is invalid for LookUpTables')
+            raise KeyError(f'The attribute "{item}" is invalid for Templates')
 
     def get(self, gis, url, params):
         template_dict = gis._con.get(url, params)
