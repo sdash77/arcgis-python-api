@@ -2058,7 +2058,7 @@ class WorkflowManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Creating a Template
+            # USAGE EXAMPLE: Get a Template
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)
@@ -2068,13 +2068,13 @@ class WorkflowManager:
 
             >> { "template_name": "Email Template",
                  "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-                 "template_details": "{\"to\":[\"user@esri.com\"],
+                 "template_details": '{\"to\":[\"user@esri.com\"],
                                       \"cc\":[\"boss@esri.com\"],
                                       \"bcc\":[\"supervisor@esri.com\"],
                                       \"subject\":\"Workflow Manager Templates\",
-                                      \"body\":\"Look how easy it is to make a email template!\",
+                                      \"body\":\"Look how easy it is to make an email template!\",
                                       \"attachmentSelection\":\"None\",
-                                      \"attachmentFolder\":null }"
+                                      \"attachmentFolder\":null }'
                }
         """
         try:
@@ -2200,13 +2200,13 @@ class WorkflowManager:
             wm = WorkflowManager(wf_item)
 
             # create the template object
-           details = "{ \"to\":[\"user@esri.com\"],
-                                 \"cc\":[\"boss@esri.com\"],
-                                 \"bcc\":[\"supervisor@esri.com\"],
-                                 \"subject\":\"Workflow Manager Templates\",
-                                 \"body\":\"Look how easy it is to make a email template!\",
-                                 \"attachmentSelection\":\"None\",
-                                 \"attachmentFolder\":null }"
+           details = '{ \"to\":[\"user@esri.com\"],
+                     \"cc\":[\"boss@esri.com\"],
+                     \"bcc\":[\"supervisor@esri.com\"],
+                     \"subject\":\"Workflow Manager Templates\",
+                     \"body\":\"Look how easy it is to make a email template!\",
+                     \"attachmentSelection\":\"None\",
+                     \"attachmentFolder\":null }'
 
             wm.create_template(template_type="email", template_name="Email Template", template_details=details)
             >> Ef42tu_QQMS-IgZc7pOPnQ  # returns Template ID if created successfully
@@ -2217,7 +2217,7 @@ class WorkflowManager:
                 "templateDetails": template_details,
             }
             if template_id is not None:
-                obj['templateId'] = template_id
+                obj["templateId"] = template_id
             template_obj = Template(obj)
             return template_obj.post(
                 self._gis,
