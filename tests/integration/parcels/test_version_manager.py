@@ -51,7 +51,7 @@ class TestVersionManagementSQL(unittest.TestCase):
 
         with self.vms.get(fq_version_name, "edit") as version:
             # start the 'edit' session
-            print("Editing.../")
+            pass
 
         # Outside of with statement
         self.assertFalse(version.properties.isBeingRead, "Read session still open")
@@ -64,7 +64,7 @@ class TestVersionManagementSQL(unittest.TestCase):
 
         with self.vms.get(fq_version_name, "read") as version:
             # start the 'edit' session
-            print("Editing.../")
+            pass
 
         # Outside of with statement
         self.assertFalse(version.properties.isBeingRead, "Read session still open")
