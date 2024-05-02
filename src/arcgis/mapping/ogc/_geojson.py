@@ -96,7 +96,7 @@ class GeoJSONLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView widget's JSON format"""
+        """Represents the Map widget's JSON format"""
         lyr = {
             "type": self._type,
             "url": self._url,
@@ -114,7 +114,7 @@ class GeoJSONLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json
 
     @property

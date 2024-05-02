@@ -150,12 +150,6 @@ arcgis.mapping module
 
 .. automodule:: arcgis.mapping
 
-WebMap
------------------
-.. autoclass:: arcgis.mapping.WebMap
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 OfflineMapAreaManager
 -----------------------
@@ -173,12 +167,6 @@ arcgis.mapping module
 
 Working with 2D Maps
 --------------------
-WebMap
-^^^^^^
-.. autoclass:: arcgis.mapping.WebMap
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 OfflineMapAreaManager
 ^^^^^^^^^^^^^^^^^^^^^

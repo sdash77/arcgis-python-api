@@ -263,7 +263,7 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
-        """Represents the MapView's JSON format"""
+        """Represents the Map's JSON format"""
         add_layer = {
             "type": self._type,
             "delimiter": self.delimiter,
@@ -293,7 +293,7 @@ class CSVLayer(BaseOpenData):
 
     @property
     def _operational_layer_json(self):
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json
 
     # ----------------------------------------------------------------------

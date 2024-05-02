@@ -103,7 +103,7 @@ class JournalStoryMap(object):
         ===============     ====================================================================
 
 
-        **WebMap Options**
+        **Map Options**
 
         ====================     ====================================================================
         **Parameter**             **Description**
@@ -350,7 +350,7 @@ class JournalStoryMap(object):
         popup=None,
     ):
         """
-        Adds a WebMap to the Section.
+        Adds a Map to the Section.
 
 
         ===============     ====================================================================

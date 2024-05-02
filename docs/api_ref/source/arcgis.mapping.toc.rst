@@ -9,14 +9,7 @@ arcgis.mapping module
 .. automodule:: arcgis.mapping
 
 Working with 2D Maps
---------------------
-WebMap
-^^^^^^
-.. autoclass:: arcgis.mapping.WebMap
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+--------------------S
 OfflineMapAreaManager
 ^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.mapping.OfflineMapAreaManager
@@ -33,12 +26,6 @@ PackagingJob
 
 Working with 3D Maps
 --------------------
-WebScene
-^^^^^^^^
-.. autoclass:: arcgis.mapping.WebScene
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 SceneLayer
 ^^^^^^^^^^

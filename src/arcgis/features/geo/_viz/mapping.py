@@ -6,8 +6,8 @@ import json
 from typing import Optional, Union
 import pandas as pd
 
-from arcgiswidgets.widgets.map_widget import Map
-from arcgiswidgets.widgets.renderers import (
+from arcgismapping import Map
+from arcgismapping import (
     HeatmapRenderer,
     SimpleRenderer,
     UniqueValueRenderer,
@@ -51,7 +51,7 @@ def plot(
     ----------------------  ---------------------------------------------------------
     renderer                Optional Renderer object. The renderer to use to draw the data.
                             To create a renderer dataclass use the renderers module in the
-                            arcgiswidgets package.
+                            arcgismapping package.
     ======================  =========================================================
 
     """

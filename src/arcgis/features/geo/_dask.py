@@ -14,7 +14,7 @@ from ._io.fileops import to_featureclass, from_featureclass
 from ._index._dqtree import DaskSpatialIndex
 from ._viz._dmapping import dask_plot
 from distutils.version import LooseVersion
-from arcgiswidgets.widgets.map_widget import Map
+from arcgismapping import Map
 import dask
 from dask.dataframe import Series, from_pandas
 import dask.dataframe as dd

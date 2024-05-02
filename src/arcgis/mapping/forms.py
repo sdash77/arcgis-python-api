@@ -11,7 +11,7 @@ from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import copy
 
-map_widget = LazyLoader("arcgiswidgets.widgets.map_widget")
+arcgismapping = LazyLoader("arcgismapping")
 
 
 class FormCollection:
@@ -26,18 +26,18 @@ class FormCollection:
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    parent                 Required :class:`~arcgiswidgets.Map` or :class:`~arcgis.gis.Item`.
+    parent                 Required :class:`~arcgismapping.Map` or :class:`~arcgis.gis.Item`.
                            This is the object which contains the layer, either an item of type
                            :class:`Feature Layer Collection <arcgis.features.FeatureLayerCollection>`
-                           or a :class:`Web Map <arcgiswidgets.Map>`, where the forms are located.
+                           or a :class:`Web Map <arcgismapping.Map>`, where the forms are located.
                            This is needed to save your form changes to the backend.
     ==================     ====================================================================
 
     .. code-block:: python
 
-        # USAGE EXAMPLE 1: Get Form Collection from WebMap
+        # USAGE EXAMPLE 1: Get Form Collection from Map
         wm = Map(item)
-        wm.add_layer(manhole_inspection)
+        wm.content.add(manhole_inspection)
 
         # get forms from webmap, get individual form from FormCollection, modify form
         form_collection = wm.forms
@@ -51,7 +51,7 @@ class FormCollection:
         # USAGE EXAMPLE 2: Create Form Collection
 
         from arcgis.mapping.forms import FormCollection
-        from arcgiswidgets import Map
+        from arcgismapping import Map
         wm = Map(item)
         form_collection = FormCollection(wm)
         form_info_1 = form_collection.get(item_id="232323232323232323")
@@ -78,7 +78,7 @@ class FormCollection:
             return self.forms[self._index - 1]
 
     def _refresh_forms(self, parent):
-        if isinstance(parent, map_widget.Map):
+        if isinstance(parent, arcgismapping.Map):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
             if parent.type != "Feature Layer Collection":
@@ -180,9 +180,9 @@ class FormInfo:
     ------------------     --------------------------------------------------------------------
     layer_data             Required :class:`PropertyMap` or :class:`dict`. This is the
                            operational layer which contains the formInfo dict. It can be
-                           retrieved from a webmap using `arcgiswidgets.Map(item).layers[0]`
+                           retrieved from a webmap using `arcgismapping.Map(item).content.layers[0]`
     ------------------     --------------------------------------------------------------------
-    parent                 Required :class:`~arcgiswidgets.Map` or :class:`~arcgis.gis.Item`.
+    parent                 Required :class:`~arcgismapping.Map` or :class:`~arcgis.gis.Item`.
                            This is the object which contains the layer, either an item of type
                            `Feature Layer Collection` or a webmap. This is needed to save your
                            form changes to the backend.
@@ -190,16 +190,16 @@ class FormInfo:
     subtype_gl_data        Optional :class:`PropertyMap` or :class:`dict`. This is the
                            operational layer representing a subtype group layer which contains
                            the layer containing the form. It can be retrieved from a webmap
-                           using `arcgiswidgets.Map(item).layers[0]`
+                           using `arcgismapping.Map(item).content.layers[0]`
     ==================     ====================================================================
 
     .. code-block:: python
 
         # USAGE EXAMPLE 1: Modify FormInfo
             from arcgis.mapping.forms import FormFieldElement
-            from arcgiswidgets import Map
+            from arcgismapping import Map
             wm = Map(item)
-            wm.add_layer(manhole_inspection)
+            wm.content.add(manhole_inspection)
             form_collection = wm.forms
             form_info = form_collection.get_form(title="Manhole Inspection")
 
@@ -342,21 +342,21 @@ class FormInfo:
 
     @property
     def elements(self):
-        """Returns elements in the form to the user - a list of :class:`~arcgis.mapping.forms.FormElement`"""
+        """Returns elements in the form to the user - a list of :class:`~arcgismapping.forms.FormElement`"""
         return self._form_elements
 
     @property
     def expressions(self):
         """
-        Returns Arcade expressions used in the form to the user - a list of :class:`~arcgis.mapping.forms.FormExpressionInfo`
+        Returns Arcade expressions used in the form to the user - a list of :class:`~arcgismapping.forms.FormExpressionInfo`
         """
         return self._expression_infos
 
     def update(self):
         """
         Saves the form to the backend. If the form was derived from an :class:`~arcgis.gis.Item`, calling this function is required
-        to save the form into the item. If the form was derived from a :class:`~arcgis.mapping.WebMap`, you can either call this
-        function or :attr:`~arcgis.mapping.WebMap.update()`. If form has been cleared, removes formInfo from webmap
+        to save the form into the item. If the form was derived from a :class:`~arcgismapping.Map`, you can either call this
+        function or :attr:`~arcgismapping.Map.update()`. If form has been cleared, removes formInfo from webmap
         """
         if self.exists():
             self._validate_all_required_fields_in_form()
@@ -367,7 +367,7 @@ class FormInfo:
             else:
                 item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
             self._parent.update(data=item_data)
-        if isinstance(self._parent, map_widget.Map):
+        if isinstance(self._parent, arcgismapping.Map):
             if self.exists():
                 self._original_layer["formInfo"] = self.to_dict()
             else:
@@ -1088,9 +1088,9 @@ class FormFieldElement(FormElement):
     .. code-block:: python
 
         # USAGE EXAMPLE 1: Edit properties on form element
-        from arcgis.mapping.forms import FormExpressionInfo
-        wm = arcgis.mapping.WebMap(item)
-        wm.add_layer(manhole_inspection)
+        from arcgismapping.forms import FormExpressionInfo
+        wm = arcgismapping.Map(item)
+        wm.content.add(manhole_inspection)
         form_collection = wm.forms
         form_info = form_collection.get_form(title="Manhole Inspection")
 
@@ -1312,8 +1312,8 @@ class FormGroupElement(FormElement):
 
         # USAGE EXAMPLE 1: Edit properties on group, add to group
         from arcgis.mapping.forms import FormExpressionInfo
-        wm = arcgis.mapping.WebMap(item)
-        wm.add_layer(manhole_inspection)
+        wm = arcgismapping.Map(item)
+        wm.content.add(manhole_inspection)
         form_collection = wm.forms
         form_info = form_collection.get_form(title="Manhole Inspection")
 

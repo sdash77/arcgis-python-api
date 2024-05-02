@@ -15,7 +15,7 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
-arcgiswidgets = LazyLoader("arcgiswidgets.widgets.map_widget")
+arcgismapping = LazyLoader("arcgismapping")
 utils = LazyLoader("arcgis.apps.storymap._utils")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 pd = LazyLoader("pandas")
@@ -1446,8 +1446,8 @@ class Map:
     =================       ====================================================================
     **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
-    item                    An Item of type :class:`~arcgiswidgets.Map` or
-                            :class:`~arcgiswidgets.Scene` or a String representing the item
+    item                    An Item of type :class:`~arcgismapping.Map` or
+                            :class:`~arcgismapping.Scene` or a String representing the item
                             id to add to the story map.
     =================       ====================================================================
     """
@@ -1528,9 +1528,9 @@ class Map:
             # Create map object to extract properties
             if isinstance(item, arcgis.gis.Item):
                 if item.type == "Web Map":
-                    map_item = arcgiswidgets.Map(item)
+                    map_item = arcgismapping.Map(item)
                 elif item.type == "Web Scene":
-                    map_item = arcgiswidgets.Scene(item)
+                    map_item = arcgismapping.Scene(item)
                 else:
                     raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
@@ -1635,12 +1635,12 @@ class Map:
         map                 One of three choices:
 
                             * String being an item id for an Item of type
-                            :class:`~arcgiswidgets.Map`
-                            or :class:`~arcgiswidgets.Scene`.
+                            :class:`~arcgismapping.Map`
+                            or :class:`~arcgismapping.Scene`.
 
                             * An :class:`~arcgis.gis.Item` of type
-                            :class:`~arcgiswidgets.Map`
-                            or :class:`~arcgiswidgets.Scene`.
+                            :class:`~arcgismapping.Map`
+                            or :class:`~arcgismapping.Scene`.
         ==================  ========================================
 
         .. note::
@@ -1670,10 +1670,10 @@ class Map:
 
         If you have an extent to use from a bookmark,
         find this extent by using the `bookmarks` property in
-        the :class:`~arcgis.mapping.WebMap` Class.
+        the :class:`~arcgismapping.Map` Class.
         The `map` property on this class will return the Web Map
         Item being used. By passing this item into
-        the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
+        the :class:`~arcgismapping.Map` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
 
         To see the current viewpoint call the `properties` property on the Map
@@ -2105,9 +2105,9 @@ class Map:
 
         # create new map
         if map.type == "Web Map":
-            new_map = arcgiswidgets.Map(map)
+            new_map = arcgismapping.Map(map)
         elif map.type == "Web Scene":
-            new_map = arcgiswidgets.Scene(map)
+            new_map = arcgismapping.Scene(map)
 
         # Get all the old properties but update with new map where needed
 

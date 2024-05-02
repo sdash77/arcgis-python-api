@@ -1,6 +1,7 @@
 import urllib.parse
 import arcgis
 import json
+import arcgismapping
 
 
 def build_collector_url(
@@ -22,7 +23,7 @@ def build_collector_url(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
     ------------------     --------------------------------------------------------------------
     center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
@@ -83,7 +84,7 @@ def build_collector_url(
                 raise ValueError("Invalid parameters -- Must specify a webmap")
             else:
                 item_id = webmap
-                if isinstance(item_id, arcgis.mapping.WebMap):
+                if isinstance(item_id, arcgismapping.Map):
                     item_id = item_id.item.id
                 elif isinstance(item_id, arcgis.gis.Item):
                     item_id = item_id.id
@@ -111,7 +112,7 @@ def build_collector_url(
         item_id = webmap
         # webmap falsy bug #1244
         if webmap is not None:
-            if isinstance(webmap, arcgis.mapping.WebMap):
+            if isinstance(webmap, arcgismapping.Map):
                 item_id = webmap.item.id
             elif isinstance(webmap, arcgis.gis.Item):
                 item_id = webmap.id
@@ -248,7 +249,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgis.mapping.WebMap),
+            isinstance(webmap, arcgismapping.Map),
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -290,7 +291,7 @@ def build_explorer_url(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Explorer.
                            Item can be of type Web Map or Mobile Map Package.
     ------------------     --------------------------------------------------------------------
@@ -324,7 +325,7 @@ def build_explorer_url(
     params = []
     item_id = webmap
     if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
+        if isinstance(webmap, arcgismapping.Map):
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
@@ -359,7 +360,7 @@ def _validate_explorer_url(
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgis.mapping.WebMap),
+            isinstance(webmap, arcgismapping.Map),
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -413,7 +414,7 @@ def build_field_maps_url(
                            and the user is signed in. This correlates to the URL param "referenceContext"
                            The following values are supported: addFeature, center, open, search, updateFeature.
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Field Maps.
                            Item can be of type Web Map or Mobile Map Package.
     ------------------     --------------------------------------------------------------------
@@ -506,7 +507,7 @@ def build_field_maps_url(
     if action:
         params.append("referenceContext=" + action)
         item_id = webmap
-        if isinstance(item_id, arcgis.mapping.WebMap):
+        if isinstance(item_id, arcgismapping.Map):
             item_id = item_id.item.id
         elif isinstance(item_id, arcgis.gis.Item):
             item_id = item_id.id
@@ -573,7 +574,7 @@ def _validate_field_maps_url(
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgis.mapping.WebMap),
+            isinstance(webmap, arcgismapping.Map),
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -707,7 +708,7 @@ def build_navigator_url(
     params = []
     item_id = webmap
     if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
+        if isinstance(webmap, arcgismapping.Map):
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
@@ -932,7 +933,7 @@ def build_workforce_url(
     ------------------     --------------------------------------------------------------------
     url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Workforce.
                            Item can be of type Web Map. This can be referenced
                            at the project level using project.worker_webmap
@@ -962,7 +963,7 @@ def build_workforce_url(
     if assignment is None and assignment_status is not None:
         raise ValueError("Assignment status provided without assignment parameter")
     if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
+        if isinstance(webmap, arcgismapping.Map):
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
@@ -970,7 +971,7 @@ def build_workforce_url(
             item_id = webmap
         else:
             raise ValueError(
-                "Please provide either a WebMap, Item, or str to the webmap param"
+                "Please provide either a Map, Item, or str to the webmap param"
             )
         url = url + "&mapID=" + item_id
         # assignment id can only be set is map id is set
