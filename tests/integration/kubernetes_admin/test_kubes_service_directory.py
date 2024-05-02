@@ -1,7 +1,7 @@
 import os
 import unittest
 from utils.decorators import integration_test, profiles
-from integration.config import ADDITIONAL_QALAB_PATH
+from integration.config import get_resource_path
 from arcgis.gis import GIS
 from utils._logging import enable_verbose_logging
 
@@ -34,8 +34,8 @@ class TestLogsAdminTemplate(unittest.TestCase):
         assert admin.services_catalog.find("PublishingTools", "System")
 
     def test_admin_sd(self):
-        """runs the admin.logs tests for Kubernetes"""
-        sd_path = os.path.join(ADDITIONAL_QALAB_PATH, 'GPServer11\sd\Release\CWT_ByVal_s11_SimpleParamTest.sd')
+        """tests publishing a service definition on k8s"""
+        sd_path = get_resource_path('seleniumdata/sd/CWT_ByVal_s11_SimpleParamTest.sd')
 
         sc = self.gis.admin.services_catalog
         result = sc.publish_sd(sd_path)
