@@ -2,7 +2,7 @@ import os
 import unittest
 from utils.decorators import integration_test, profiles
 from arcgis.gis import GIS
-from integration.config import K8S_LICENSES_PATH
+from integration.config import get_resource_path
 
 
 @profiles.admin_k8s
@@ -17,11 +17,9 @@ class TestLicense(unittest.TestCase):
         Setup GIS connection
         Store License information for an org
         """
-        cls.K8S_LICENSE_PATH = K8S_LICENSES_PATH
-        cls.lic_file1_path = 'AllUTs_AllAddOnApps_K8S.json'
-        cls.lic_file1 = os.path.join(K8S_LICENSES_PATH, cls.lic_file1_path)
-        cls.lic_file2_path = 'CreatorViewerUTs_NoAddOnApps_K8S.json'
-        cls.lic_file2 = os.path.join(K8S_LICENSES_PATH, cls.lic_file2_path)
+        cls.resources_root = get_resource_path('authorization_files/k8s')
+        cls.lic_file1 = get_resource_path(f'{cls.resources_root}/AllUTs_AllAddOnApps_K8S.json')
+        cls.lic_file2 = get_resource_path(f'{cls.resources_root}/CreatorViewerUTs_NoAddOnApps_K8S.json')
 
         cls.org = cls.gis.admin.organizations.orgs[0]
         cls.lic1 = cls.org.license

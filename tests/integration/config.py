@@ -13,12 +13,6 @@ _TESTS_RESOURCES_ROOT_PATH = _TESTS_ROOT_PATH / 'resources'
 # defaults to `geosaurus/tests/resources`
 RESOURCES_ROOT_PATH = os.environ.get('GEOSAURUS_RESOURCES_ROOT_PATH', str(_TESTS_RESOURCES_ROOT_PATH))
 
-# kubernetes licenses path
-_AUTH_FILES_ROOT_PATH = r'\\metro\released\Authorization_Files'
-_K8S_VERSION = 'Version11.2'
-_AUTH_FILES_PATH = os.path.join(_AUTH_FILES_ROOT_PATH, _K8S_VERSION, 'ArcGIS_Enterprise_on_Kubernetes')
-K8S_LICENSES_PATH = os.environ.get('K8S_LICENSES_PATH', _AUTH_FILES_PATH)
-
 def get_resource_path(relative_path, verify=True):
     resource = pathlib.Path(RESOURCES_ROOT_PATH) / relative_path
     if verify and not resource.exists():
