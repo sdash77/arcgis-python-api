@@ -197,6 +197,8 @@ class Server(BaseServer):
         sd_file: str,
         folder: Optional[str] = None,
         service_config: Optional[dict] = None,
+        publish_options: Optional[dict] = None,
+        item_id: Optional[str] = None,
         future: bool = False,
     ) -> bool:
         """
@@ -213,6 +215,10 @@ class Server(BaseServer):
                                to the System folder.
         ------------------     --------------------------------------------------------------------
         service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
+        ------------------     --------------------------------------------------------------------
+        publish_options        Optional Dict[str, Any]. A set of specifications for the published item.
+        ------------------     --------------------------------------------------------------------
+        item_id                Optional string. The item ID of the item to be published. Must be a valid ID nonexistent in the server. 
         ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If True, the operation is returned immediately and a Job object is returned.
         ==================     ====================================================================
@@ -240,6 +246,32 @@ class Server(BaseServer):
         if status:
             uid = res["item"]["itemID"]
             config = self.uploads._service_configuration(uid)
+
+            # process publish options and custom item ids
+            if publish_options is None and item_id:
+                publish_options = {
+                    "portalProperties" : {
+                        "preserveIDs" : True,
+                        "portalItems" : [
+                            {
+                                "type" : config["service"]["type"],
+                                "itemID" : item_id,
+                            }
+                        ]
+                    }
+                }
+                publish_string = json.dumps(publish_options)
+            elif publish_options and item_id:
+                try:
+                    publish_options["portalProperties"]["portalItems"][0]["itemID"] = item_id
+                    publish_options["portalProperties"]["preserveIDs"] = True
+                    publish_string = json.dumps(publish_options)
+                except:
+                    pass
+            else:
+                publish_string = None
+            
+            # process service configuration
             if folder or service_config:
                 if service_config and isinstance(service_config, dict):
                     for key in service_config.keys():
@@ -254,15 +286,20 @@ class Server(BaseServer):
                             config[key] = service_config[key]
                 if "folderName" in config:
                     config["folderName"] = folder
+
                 res = service.publish_service_definition(
                     in_sdp_id=uid,
                     in_config_overwrite=json.dumps(config),
+                    in_publish_options=publish_string,
                     future=True,
                     gis=self._con,
                 )
             else:
                 res = service.publish_service_definition(
-                    in_sdp_id=uid, future=True, gis=self._con
+                    in_sdp_id=uid,
+                    in_publish_options=publish_string,
+                    future=True,
+                    gis=self._con,
                 )
             if future:
                 return res
