@@ -34,7 +34,7 @@ from ._ux import (
     RoutingServiceSettings,
     PrintingServiceSettings,
     GeocodingServiceSettings,
-    CachedElevationImageServiceSettings
+    CachedElevationImageServiceSettings,
 )
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy

@@ -3307,7 +3307,8 @@ class SecuritySettings(object):
         else:
             return None
 
- ##########################################################################
+
+##########################################################################
 class PrintingServiceSettings:
 
     def __init__(self, gis) -> None:
@@ -3362,9 +3363,7 @@ class PrintingServiceSettings:
         # create the templates dictionary
         # first get the template choice list:
         temp_choices = (
-            resp.get("parameters", {})
-            .get("Layout_Template", {})
-            .get("choiceList", [])
+            resp.get("parameters", {}).get("Layout_Template", {}).get("choiceList", [])
         )
         templates = []
 
@@ -3421,6 +3420,8 @@ class PrintingServiceSettings:
         # TODO
 
     ##########################################################################
+
+
 class GeocodingServiceSettings:
     """Helper class that can be called from the UtilityServicesSettings class using the `geocoding_service` property.
     Edit the locators used.
@@ -3473,6 +3474,7 @@ class GeocodingServiceSettings:
         """
         # TODO
 
+
 ##########################################################################
 class RoutingServiceSettings:
     """Helper class that can be called from the UtilityServicesSettings class using the `routing_service` property.
@@ -3492,36 +3494,42 @@ class RoutingServiceSettings:
         ==================      =======================================
         **Parameter**            **Description**
         ------------------      ---------------------------------------
-        gis                     The GIS object that is connected to your 
+        gis                     The GIS object that is connected to your
                                 ArcGIS Online organization where the routing
                                 service will come from.
         ------------------      ---------------------------------------
         folder                  Optional, the folder in the Enterprise Org
                                 where the routing services will be added.
-                                Can be a string representing the name of the 
+                                Can be a string representing the name of the
                                 folder or a folder object.
                                 If folder cannot be found, a new one is created.
         ==================      =======================================
 
         :return: Json dictionary response indicating success.
         """
-        
+
         # Step 1: Check the inputs
         if self._gis._is_agol:
             raise ValueError("This operation is only available in ArcGIS Enterprise.")
         if not gis._is_agol:
-            raise ValueError("The GIS object provided must be connected to an ArcGIS Online organization.")
+            raise ValueError(
+                "The GIS object provided must be connected to an ArcGIS Online organization."
+            )
         # Step 2: find the folder in Enterprise
         if folder:
             if isinstance(folder, str):
-                folder = self._gis.content.folders.get(folder, self._gis.users.me.username)
-                if folder:
+                folder_item = self._gis.content.folders.get(
+                    folder, self._gis.users.me.username
+                )
+                if folder_item:
                     # folder exists, get name
-                    folder_name = folder.name
+                    folder_name = folder_item.name
                 else:
                     # folder does not exist, create it
-                    folder = self._gis.content.folders.create(folder, self._gis.users.me.username)
-                    folder_name = folder.name
+                    folder_item = self._gis.content.folders.create(
+                        folder, self._gis.users.me.username
+                    )
+                    folder_name = folder_item.name
             else:
                 # instance of folder object
                 folder_name = folder.name
@@ -3534,9 +3542,21 @@ class RoutingServiceSettings:
             "Geocode": ["geocode"],
             "GeoEnrichment": ["geoenrichment"],
             "Hydrology": ["hydrology"],
-            "Network": ["asyncClosestFacility", "asyncLocationAllocation", "asyncODCostMatrix", "asyncRoute",
-                        "asyncVRP", "asyncServiceArea", "route", "routingUtilities", "serviceArea", "closestFacility",
-                        "syncVRP", "traffic", "odCostMatrix"],
+            "Network": [
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
+            ],
             "Traffic Data": ["trafficData"],
         }
         # Service type mapping
@@ -3545,17 +3565,17 @@ class RoutingServiceSettings:
             "MapServer": "Map Service",
             "NAServer": "Network Analysis Service",
             "GeoenrichmentServer": "Geoenrichment Service",
-            "GeocodeServer": "Geocoding Service"
+            "GeocodeServer": "Geocoding Service",
         }
 
         # Get the self call from AGOL
         agol_helper_svcs = gis.properties["helperServices"]
 
         # Create service proxy items
-        username = self._gis._username
-        password = self._gis._password
+        username = gis._username
+        password = gis._password
         proxy_urls = {}  # store proxy urls for AGOL services
-        for svc in ["Geocode", "Traffic Data"]:
+        for svc in ["Geocode", "Traffic Data"]:  # replace with config utilityServices
             for helper_svc in helper_services[svc]:
                 if helper_svc == "geocode":
                     url = agol_helper_svcs[helper_svc][0]["url"]
@@ -3572,20 +3592,29 @@ class RoutingServiceSettings:
                     "type": svc_types.get(svc_type, ""),
                 }
                 # Add item
-                search_result = self.portal.content.search(item_props["title"],  # False +ve. pylint:disable=no-member
-                                                           item_type=item_props["type"])
-                this_item = next((x for x in search_result if x.title == item_props["title"]), "")
+                search_result = self._gis.content.search(
+                    item_props["title"],  # False +ve. pylint:disable=no-member
+                    item_type=item_props["type"],
+                )
+                this_item = next(
+                    (x for x in search_result if x.title == item_props["title"]), ""
+                )
                 if not this_item:
                     # False positive. pylint: disable=no-member
                     svc_item = self._gis.content.add(item_props, folder=folder_name)
                     # convert from private URL to a public URL for the proxy item
-                    svc_item_url = svc_item.url.replace(":7443/arcgis/", f"/{self._gis.properties.customBaseUrl}/")
+                    svc_item_url = svc_item.url.replace(
+                        ":7443/arcgis/", f"/{self._gis.properties.customBaseUrl}/"
+                    )
                     # pylint: enable=no-member
                     svc_item.protect(enable=True)
                     svc_item.share(org=True)
                     if helper_svc == "geocode":
                         # Set batch geocoder properties
-                        geocoders = [dict(val) for val in self._gis.properties.helperServices.geocode]  # pylint:disable=no-member
+                        geocoders = [
+                            dict(val)
+                            for val in self._gis.properties.helperServices.geocode
+                        ]  # pylint:disable=no-member
                         geocoder = dict(geocoders[0])
                         geocoder["url"] = svc_item_url
                         geocoder["name"] = "Esri World Batch Geocoder"
@@ -3602,7 +3631,10 @@ class RoutingServiceSettings:
                         proxy_urls[helper_svc + "Service"] = {"url": svc_item_url}
         proxy_urls["elevationSyncService"] = agol_helper_svcs["elevationSync"]
         # Update portal properties
-        if "Network" in self.config["agolServices"]["utilityServices"]:
+        if "Network" in [
+            "Geocode",
+            "Traffic Data",
+        ]:  # replace with config utilityServices
             agol_token_params = {
                 "username": username,
                 "password": password,
@@ -3611,22 +3643,24 @@ class RoutingServiceSettings:
                 "expiration": 60,
                 "f": "json",
             }
-            agol_token = requests.post(f"{gis.url}/sharing/rest/generateToken", data=agol_token_params,
-                                       timeout=60).json()["token"]
-            user_self_params = {
-                "f": "json",
-                "token": agol_token
-            }
-            agol_user_info = requests.post(f"{gis.url}/sharing/rest/community/self", data=user_self_params,
-                                           timeout=60).json()
+            agol_token = self._gis._session.post(
+                f"{gis.url}/sharing/rest/generateToken",
+                data=agol_token_params,
+                timeout=60,
+            ).json()["token"]
+            user_self_params = {"f": "json", "token": agol_token}
+            agol_user_info = self._gis._session.post(
+                f"{gis.url}/sharing/rest/community/self",
+                data=user_self_params,
+                timeout=60,
+            ).json()
             proxy_urls["routingServicesSource"] = {
-                "sourceName":"ArcGISOnline",
+                "sourceName": "ArcGISOnline",
                 "agoUsername": username,
                 "firstName": agol_user_info.get("firstName", "Unknown"),
                 "lastName": agol_user_info.get("lastName", "Unknown"),
             }
         return self._gis.update_properties(proxy_urls)
-
 
     def delete_from_online(self):
         """
@@ -3636,6 +3670,7 @@ class RoutingServiceSettings:
         :return: Json dictionary response indicating success.
         """
         # TODO
+
 
 ##########################################################################
 class CachedElevationImageServiceSettings:
@@ -3691,7 +3726,8 @@ class CachedElevationImageServiceSettings:
         :return: Json dictionary response indicating success.
         """
         # TODO
-            
+
+
 ##############################################################################
 class UtilityServicesSettings:
     """Helper class that can be called off of UX class using the 'utility_services_settings' property.
@@ -3867,5 +3903,3 @@ class UtilityServicesSettings:
     @property
     def routing_service(self):
         return RoutingServiceSettings(self._gis)
-
-   
