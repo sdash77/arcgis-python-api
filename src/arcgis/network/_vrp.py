@@ -4,12 +4,14 @@ import json
 from typing import Optional
 import arcgis
 from datetime import datetime
+from arcgis.auth.tools import LazyLoader
 from arcgis.features import FeatureSet
 from arcgis.gis import GIS
 from arcgis.geoprocessing import LinearUnit
 from arcgis._impl.common._utils import _validate_url
 from arcgis.network import _utils
 
+pd = LazyLoader("pandas")
 try:
 
     from ._routing_utils import _create_toolbox
@@ -1010,10 +1012,10 @@ default_tolerance = {"distance": 10, "units": "esriMeters"}
 import datetime as _dt
 
 
-def last_mile_delivery(
-    orders: FeatureSet,
-    depots: FeatureSet,
-    routes: FeatureSet,
+def solve_last_mile_delivery(
+    orders: FeatureSet | dict | pd.DataFrame,
+    depots: FeatureSet | dict | pd.DataFrame,
+    routes: FeatureSet | dict | pd.DataFrame,
     travel_mode: str | None = None,
     earliest_route_start_date: str | None = None,
     earliest_route_start_time: str | None = None,
@@ -1203,7 +1205,7 @@ def last_mile_delivery(
     if locate_settings is None:
         locate_settings = "{'default': {'allowAutoRelocate': True, 'tolerance': 20000, 'toleranceUnits': 'esriMeters', 'sources': [{'name': 'main.Routing_Streets'}]}}"
     url: str = gis.properties["helperServices"]["asyncFleetRouting"]["url"]
-    tbx = _create_toolbox(url=url, gis=gis, verbose=True)
+    tbx = _create_toolbox(url=url, gis=gis, verbose=False)
     if hasattr(tbx, "solve_last_mile_delivery") == False:
         raise Exception(
             "last_mile_delivery is not supported on this organization. Please contact your administrator for further details."

@@ -3,7 +3,7 @@
 from ._vrp import (
     solve_vehicle_routing_problem,
     edit_vehicle_routing_problem,
-    last_mile_delivery,
+    solve_last_mile_delivery,
 )
 from ._closest_facility import find_closest_facilities
 from ._location_allocation import solve_location_allocation
@@ -15,7 +15,7 @@ from ._svcareas import generate_service_areas
 __all__ = [
     "solve_vehicle_routing_problem",
     "edit_vehicle_routing_problem",
-    "last_mile_delivery",
+    "solve_last_mile_delivery",
     "find_closest_facilities",
     "solve_location_allocation",
     "generate_origin_destination_cost_matrix",
