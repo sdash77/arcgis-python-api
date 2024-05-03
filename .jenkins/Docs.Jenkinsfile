@@ -15,9 +15,9 @@ pipeline {
         stage('Setup') {
             steps {
                 // copy in dependent binaries to relevant path
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/graph/* ./src/arcgis/graph'
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/knn/* ./src/arcgis/learn/_utils'
-                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/tracking-engine/* ./src/arcgis/learn/_tracking'
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.11/graph/* ./src/arcgis/graph'
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.11/knn/* ./src/arcgis/learn/_utils'
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.11/tracking-engine/* ./src/arcgis/learn/_tracking'
                 sh 'python -m pip install -e ./src --no-deps'
             }
         }
