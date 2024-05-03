@@ -194,11 +194,10 @@ class Server(BaseServer):
     # ----------------------------------------------------------------------
     def publish_sd(
         self,
-        sd_file: Optional[str] = None,
+        sd_file: str,
         folder: Optional[str] = None,
         service_config: Optional[dict] = None,
         future: bool = False,
-        upload_id: Optional[str] = None,
         publish_options: Optional[dict] = None,
         item_id: Optional[str] = None,
     ) -> bool:
@@ -208,8 +207,7 @@ class Server(BaseServer):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        sd_file                Optional string. The path to the service definition file to be uploaded and published.
-                               If both sd_file and upload_id arguments are provided, sd_file will be used.
+        sd_file                Required string. The path to the service definition file to be uploaded and published.
         ------------------     --------------------------------------------------------------------
         folder                 Optional string. The folder in which to publish the service definition
                                file to.  If this folder is not present, it will be created.  The
@@ -219,9 +217,6 @@ class Server(BaseServer):
         service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
         ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If True, the operation is returned immediately and a Job object is returned.
-        ------------------     --------------------------------------------------------------------
-        upload_id              Optional string. If publishing an existent SD file uploaded to the server, the ID of the upload.
-                               If both sd_file and upload_id arguments are provided, sd_file will be used.
         ------------------     --------------------------------------------------------------------
         publish_options        Optional Dict[str, Any]. A set of specifications for the published item.
         ------------------     --------------------------------------------------------------------
@@ -235,22 +230,8 @@ class Server(BaseServer):
         """
         import json
 
-        if not sd_file and not upload_id:
-            raise ValueError("Either sd_file or upload_id must be provided.")
-        elif sd_file:
-            if sd_file.lower().endswith(".sd") == False:
-                raise ValueError("The sd_file must be a .sd file.")
-        else:
-            upload = self.uploads.item(upload_id)
-            if "status" in upload:
-                if upload["status"] == "error":
-                    raise ValueError("The upload_id provided is invalid.")
-            if "itemName" in upload:
-                if upload["itemName"].lower().endswith(".sd") == False:
-                    raise ValueError(
-                        "The upload_id provided does not correspond to a .sd file."
-                    )
-
+        if sd_file.lower().endswith(".sd") == False:
+            raise ValueError("The sd_file must be a .sd file.")
         catalog = self.content
         if "System" not in self.services.folders:
             return False
@@ -261,11 +242,7 @@ class Server(BaseServer):
             service = catalog.get(name="PublishingToolsEx", folder="System")
         if service is None:
             return False
-        if sd_file:
-            status, res = self.uploads.upload(path=sd_file, description="sd file")
-        else:
-            status = True
-            res = {"item": {"itemID": upload_id}}
+        status, res = self.uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res["item"]["itemID"]
             config = self.uploads._service_configuration(uid)
