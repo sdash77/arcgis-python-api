@@ -21,9 +21,9 @@ class TestMapContent(unittest.TestCase):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                from arcgis.mapping import WebMap
+                import arcgismapping
 
-                wm_test = WebMap()
+                wm_test = arcgismapping.Map()
                 wm_item = wm_test.save(
                     item_properties={
                         "title": "Test WebMap for ArcGIS StoryMap Test",

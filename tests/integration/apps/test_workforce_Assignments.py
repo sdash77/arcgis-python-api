@@ -28,7 +28,6 @@ else:
 try:
     from arcgis.gis import GIS, Group, User
     from arcgis.features import Feature, FeatureLayer
-    from arcgis.mapping import WebMap
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce._schemas import *
     from arcgis.apps.workforce.managers import *

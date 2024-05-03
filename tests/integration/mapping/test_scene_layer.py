@@ -1,4 +1,3 @@
-import sys, os
 from uuid import uuid4
 import unittest
 from arcgis.gis import GIS
