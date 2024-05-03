@@ -225,7 +225,7 @@ class Server(BaseServer):
         ------------------     --------------------------------------------------------------------
         publish_options        Optional Dict[str, Any]. A set of specifications for the published item.
         ------------------     --------------------------------------------------------------------
-        item_id                Optional string. The item ID of the item to be published. Must be a valid ID nonexistent in the server. 
+        item_id                Optional string. The item ID of the item to be published. Must be a valid ID nonexistent in the server.
         ==================     ====================================================================
 
         :return:
@@ -234,6 +234,7 @@ class Server(BaseServer):
 
         """
         import json
+
         if not sd_file and not upload_id:
             raise ValueError("Either sd_file or upload_id must be provided.")
         elif sd_file:
@@ -241,12 +242,14 @@ class Server(BaseServer):
                 raise ValueError("The sd_file must be a .sd file.")
         else:
             upload = self.uploads.item(upload_id)
-            if 'status' in upload:
-                if upload['status'] == 'error':
+            if "status" in upload:
+                if upload["status"] == "error":
                     raise ValueError("The upload_id provided is invalid.")
-            if 'itemName' in upload:
-                if upload['itemName'].lower().endswith(".sd") == False:
-                    raise ValueError("The upload_id provided does not correspond to a .sd file.")
+            if "itemName" in upload:
+                if upload["itemName"].lower().endswith(".sd") == False:
+                    raise ValueError(
+                        "The upload_id provided does not correspond to a .sd file."
+                    )
 
         catalog = self.content
         if "System" not in self.services.folders:
@@ -270,27 +273,29 @@ class Server(BaseServer):
             # process publish options and custom item ids
             if publish_options is None and item_id:
                 publish_options = {
-                    "portalProperties" : {
-                        "preserveIDs" : True,
-                        "portalItems" : [
+                    "portalProperties": {
+                        "preserveIDs": True,
+                        "portalItems": [
                             {
-                                "type" : config["service"]["type"],
-                                "itemID" : item_id,
+                                "type": config["service"]["type"],
+                                "itemID": item_id,
                             }
-                        ]
+                        ],
                     }
                 }
                 publish_string = json.dumps(publish_options)
             elif publish_options and item_id:
                 try:
-                    publish_options["portalProperties"]["portalItems"][0]["itemID"] = item_id
+                    publish_options["portalProperties"]["portalItems"][0][
+                        "itemID"
+                    ] = item_id
                     publish_options["portalProperties"]["preserveIDs"] = True
                     publish_string = json.dumps(publish_options)
                 except:
                     pass
             else:
                 publish_string = None
-            
+
             # process service configuration
             if folder or service_config:
                 if service_config and isinstance(service_config, dict):
