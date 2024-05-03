@@ -31,10 +31,6 @@ from ._ux import (
     SecuritySettings,
     StockImage,
     UtilityServicesSettings,
-    RoutingServiceSettings,
-    PrintingServiceSettings,
-    GeocodingServiceSettings,
-    CachedElevationImageServiceSettings,
 )
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy

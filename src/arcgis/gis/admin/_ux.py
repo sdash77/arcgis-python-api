@@ -3333,7 +3333,7 @@ class UtilityServicesSettings:
                                 ArcGIS Online credentials.
 
                                 The list can be any combination of these values:
-                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Traffic Data"]
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Orthomapping Elevation"]
         ------------------      ---------------------------------------
         gis                     The GIS object that is connected to your
                                 ArcGIS Online organization where the routing
@@ -3399,6 +3399,7 @@ class UtilityServicesSettings:
                 "odCostMatrix",
             ],
             "Traffic Data": ["trafficData"],
+            "Orthomapping Elevation": ["orthomappingElevation"],
         }
         # Service type mapping
         svc_types = {
@@ -3499,3 +3500,66 @@ class UtilityServicesSettings:
                 "lastName": agol_user_info.get("lastName", "Unknown"),
             }
         return self._gis.update_properties(proxy_urls)
+
+    def reset_services(self, services: list[str]):
+        """
+        Rest the specified services from the utility services settings to their default.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        services                List of sources to remove from the utility
+                                services settings.
+
+                                The list can be any combination of these values:
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"]
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        helper_services = {
+            "Elevation": ["elevationService"],
+            "Geocode": ["geocodeService"],
+            "GeoEnrichment": ["geoenrichmentService"],
+            "Hydrology": ["hydrologyService"],
+            "Network": [
+                "asyncClosestFacilityService",
+                "asyncLocationAllocationService",
+                "asyncODCostMatrixService",
+                "asyncRouteService",
+                "asyncVRPService",
+                "asyncServiceAreaService",
+                "routeService",
+                "routingUtilitiesService",
+                "serviceAreaService",
+                "closestFacilityService",
+                "syncVRPService",
+                "trafficService",
+                "odCostMatrixService",
+            ],
+            "Orthomapping Elevation": ["orthomappingElevationService"],
+        }
+
+        for service in services:
+            if service in helper_services:
+                for helper_svc in helper_services[service]:
+                    if helper_svc == "geocodeService":
+                        self._gis.update_properties(
+                            {
+                                helper_svc: [
+                                    {
+                                        "westLon": "Xmin",
+                                        "southLat": "Ymin",
+                                        "name": "ArcGIS World Geocoding Service",
+                                        "batch": false,
+                                        "placefinding": true,
+                                        "northLat": "Ymax",
+                                        "eastLon": "Xmax",
+                                        "suggest": true,
+                                        "url": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer",
+                                    }
+                                ]
+                            }
+                        )
+                    else:
+                        self._gis.update_properties({helper_svc: None})

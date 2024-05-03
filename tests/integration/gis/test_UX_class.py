@@ -12,6 +12,7 @@ from arcgis.gis.admin import (
     ItemSettings,
     SecuritySettings,
     StockImage,
+    UtilityServicesSettings
 )
 import tempfile
 import requests
@@ -650,6 +651,32 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 if gis._is_agol:
                     assert isinstance(ss.get_idp(), dict)
 
+@integration_test
+class Test_UtilityServicesSettingsClass(unittest.TestCase):
+    """Tests Org Utility Services Settings Class"""
+
+    def test_class_calls(self):
+        for profile in PROFILES:
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                uss = gis.admin.ux.utility_services_settings
+                assert isinstance(uss, UtilityServicesSettings)
+    
+    def test_add_reset_online(self):
+        gis1 = GIS(profile="your_ent_admin_profile", verify_cert=False, proxy=PROXIES)
+        gis2 = GIS(profile="your_online_admin_profile", verify_cert=False, proxy=PROXIES)
+
+        uss = gis1.admin.ux.utility_services_settings
+        settings = uss.add_from_online(["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network"], gis2, "RoutingService")
+        assert settings
+
+        services = ['analysis', 'asyncClosestFacility', 'asyncGeocode', 'asyncLocationAllocation', 'asyncODCostMatrix', 'asyncRoute', 'asyncServiceArea', 'asyncVRP', 'closestFacility', 'defaultElevationLayers', 'elevation', 'elevationSync', 'geoanalytics', 'geocode', 'geoenrichment', 'geometry', 'hydrology', 'odCostMatrix', 'orthoMapping', 'packaging', 'printTask', 'rasterAnalytics', 'rasterUtilities', 'route', 'routingServicesSource', 'routingUtilities', 'serviceArea', 'symbols', 'syncVRP', 'traffic', 'trafficData', 'workflowManager']
+
+        for ser in services:
+            assert ser in gis1.properties["helperServices"]
+        
+        # reset services
+        uss.reset_services(["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"])
 
 if __name__ == "__main__":
     unittest.main()
