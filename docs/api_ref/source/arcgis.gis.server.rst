@@ -139,28 +139,28 @@ SiteManager
 
 TypesManager
 ------------
-.. autoclass:: arcgis.gis.server._types.TypesManager
+.. autoclass:: arcgis.gis.server.TypesManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 ProvidersManager
 ----------------
-.. autoclass:: arcgis.gis.server._types.ProvidersManager
+.. autoclass:: arcgis.gis.server.ProvidersManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 ExtensionManager
 ----------------
-.. autoclass:: arcgis.gis.server._types.ExtensionManager
+.. autoclass:: arcgis.gis.server.ExtensionManager
     :members:
     :undoc-members:
     :show-inheritance:
     
 RegisteredExtension
 -------------------
-.. autoclass:: arcgis.gis.server._types.RegisteredExtension
+.. autoclass:: arcgis.gis.server.RegisteredExtension
     :members:
     :undoc-members:
     :show-inheritance:
