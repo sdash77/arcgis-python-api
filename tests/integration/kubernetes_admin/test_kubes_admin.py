@@ -5,7 +5,7 @@ from arcgis.gis.kubernetes._admin._adaptors import WebAdaptorManager
 from utils.decorators import integration_test, profiles
 
 
-@profiles.k8s
+@profiles.admin_k8s
 @integration_test
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""

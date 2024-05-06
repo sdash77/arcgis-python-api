@@ -242,6 +242,7 @@ class profiles:
         "your_ent_admin_profile",
     )
     _k8s_profile_parameters = ("k8s", "your_kubernetes_profile")
+    _k8s_admin_profile_parameters = ("k8s_admin", "your_kubernetes_admin_profile")
 
     def _get_profile_parameterized_class(*args):
         """Returns a parameterized class for the profile parameters from provided args"""
@@ -313,6 +314,11 @@ class profiles:
     def k8s(cls):
         """Run tests for kubernetes profile"""
         return cls._get_profile_parameterized_class(cls._k8s_profile_parameters)
+
+    @classproperty
+    def admin_k8s(cls):
+        """Run tests for kubernetes admin profile"""
+        return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
 
     # endregion
 
