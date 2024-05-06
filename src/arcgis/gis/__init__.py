@@ -728,10 +728,17 @@ class GIS(object):
                 if self._is_hosted_nb_home:
                     import warnings
 
+                    orin_fn = warnings.formatwarning
+
+                    def warning_on_one_line(message, *args, **kwargs):
+                        return "%s\n" % (message)
+
+                    warnings.formatwarning = warning_on_one_line
                     warnings.warn(
                         "You are logged on as %s with an administrator role, proceed with caution."
                         % self.users.me.username
                     )
+                    warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
                     from arcgis.gis.kubernetes._admin.kadmin import (
                         KubernetesAdmin,
@@ -2036,7 +2043,12 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items: Optional[list[Item]] = None, future: bool = True):
+    def create(
+        self,
+        items: list[Item] | None = None,
+        output_filename: str | None = None,
+        future: bool = True,
+    ):
         """
         The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
         an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
@@ -2061,6 +2073,10 @@ class GroupMigrationManager(object):
         items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
                                from the group.  If argument is not provided, the method will attempt
                                to export all group content items.
+        ------------------     --------------------------------------------------------------------
+        output_filename        Optional String. The name of the output file in the exported item
+                               file. This parameter is only supported in enterprises `11.3` and
+                               over.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When `True`, the operation runs asynchronously
                                and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
@@ -2111,6 +2127,12 @@ class GroupMigrationManager(object):
             params = {"itemIdList": items}
 
             params["async"] = json.dumps(True)
+            if self._gis.version >= [2024, 1] and output_filename:
+                params["outputFilename"] = output_filename
+            elif self._gis.version < [2024, 1] and output_filename:
+                _log.warning(
+                    "Output filename is not support on this version of enterprise"
+                )
             res = self._gis._con.post(url, params)
             if not "jobId" in res:
                 raise Exception(

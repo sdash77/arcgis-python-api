@@ -137,6 +137,34 @@ SiteManager
     :undoc-members:
     :show-inheritance:
 
+TypesManager
+------------
+.. autoclass:: arcgis.gis.server.TypesManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ProvidersManager
+----------------
+.. autoclass:: arcgis.gis.server.ProvidersManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ExtensionManager
+----------------
+.. autoclass:: arcgis.gis.server.ExtensionManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+RegisteredExtension
+-------------------
+.. autoclass:: arcgis.gis.server.RegisteredExtension
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 DirectoryManager
 ----------------
 .. autoclass:: arcgis.gis.server.DirectoryManager
