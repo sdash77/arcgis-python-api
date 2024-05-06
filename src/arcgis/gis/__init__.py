@@ -13580,7 +13580,7 @@ class Item(dict):
         """
         try:
             return self.contentStatus
-        except:
+        except Exception:
             return ""
 
     # ----------------------------------------------------------------------
@@ -14616,7 +14616,7 @@ class Item(dict):
                     + str(b64, "utf-8")
                     + "' width='200' height='133"
                 )
-            except:
+            except Exception:
                 if self._gis.properties.portalName == "ArcGIS Online":
                     thumbnail = "http://static.arcgis.com/images/desktopapp.png"
                 else:
@@ -14718,7 +14718,7 @@ class Item(dict):
         """
         try:
             current_folder = self.ownerFolder
-        except:
+        except Exception:
             current_folder = None
         if isinstance(target_owner, User):
             target_owner = target_owner.username
@@ -14769,7 +14769,7 @@ class Item(dict):
             ig_url = f"{self._gis._portal.resturl}content/itemsgroups"
             params = {"f": "json", "items": self.itemid}
             ig_groups = list(self._portal.con.get(ig_url, params).keys())
-        except:
+        except Exception:
             ig_groups = []
 
         if self._gis._portal.is_arcgisonline:
@@ -14793,7 +14793,7 @@ class Item(dict):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid["id"])
                         ret_dict["groups"].append(grp)
-                    except:
+                    except Exception:
                         pass
                 return ret_dict
             else:
@@ -14821,7 +14821,7 @@ class Item(dict):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid["id"])
                         ret_dict["groups"].append(grp)
-                    except:
+                    except Exception:
                         pass
                 return ret_dict
             if self.ownerFolder is not None:
@@ -14854,7 +14854,7 @@ class Item(dict):
             for g in sharing_info["groups"]:
                 try:
                     grps.append(Group(self._gis, g))
-                except:  # ignore groups you can't access
+                except Exception:  # ignore groups you can't access
                     pass
             ret_dict["groups"] = grps
 
@@ -15046,7 +15046,7 @@ class Item(dict):
         """
         try:
             folder = self.ownerFolder
-        except:
+        except Exception:
             folder = None
 
         # get list of group IDs
@@ -15150,7 +15150,7 @@ class Item(dict):
 
         try:
             folder = self.ownerFolder
-        except:
+        except Exception:
             folder = None
 
         if dry_run:
@@ -15309,7 +15309,7 @@ class Item(dict):
 
             try:
                 folder = self.ownerFolder
-            except:
+            except Exception:
                 folder = None
 
             if item_properties:
@@ -15319,15 +15319,15 @@ class Item(dict):
 
             if item_properties is not None:
                 if "tags" in item_properties:
-                    if type(item_properties["tags"]) is list:
+                    if isinstance(item_properties["tags"], list):
                         item_properties["tags"] = ",".join(item_properties["tags"])
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
                     item_properties = {}
-                if not "type" in item_properties:
+                if "type" not in item_properties:
                     item_properties["type"] = self.type
-                if not "fileName" in item_properties:
+                if "fileName" not in item_properties:
                     fileName = self.name
                     item_properties["fileName"] = fileName
             # update everything but the data
@@ -15352,10 +15352,10 @@ class Item(dict):
             if folder:
                 url += "/" + folder
             url += "/items/" + self.itemid + "/update"
-            res = self._gis._con.post(url, params)
+            self._gis._con.post(url, params)
             if item_properties is None:
                 item_properties = {"type": self.type}
-            elif not "type" in item_properties:
+            elif "type" not in item_properties:
                 item_properties["type"] = self.type
             status = self._gis.content._add_by_part(
                 file_path=data,
@@ -15375,7 +15375,7 @@ class Item(dict):
 
             try:
                 folder = self.ownerFolder
-            except:
+            except Exception:
                 folder = None
 
             if item_properties:
@@ -15404,9 +15404,9 @@ class Item(dict):
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
                     item_properties = {}
-                if not "type" in item_properties:
+                if "type" not in item_properties:
                     item_properties["type"] = self.type
-                if not "fileName" in item_properties:
+                if "fileName" not in item_properties:
                     if self.name is None or self.name == "":
                         msg: str = (
                             "The `update` method requires a user to "
@@ -15810,7 +15810,7 @@ class Item(dict):
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
-        except:
+        except Exception:
             return None
 
     # ----------------------------------------------------------------------
@@ -15842,19 +15842,19 @@ class Item(dict):
         folder = None
         try:
             item_data = self._portal.get_item_data(self.itemid, try_json, folder)
-        except:
+        except Exception:
             item_data = {}
 
         if item_data == "":
             return None
-        elif type(item_data) == bytes:
+        elif isinstance(item_data, bytes):
             try:
                 item_data_str = item_data.decode("utf-8")
                 if item_data_str == "":
                     return None
                 else:
                     return item_data
-            except:
+            except Exception:
                 return item_data
         else:
             return item_data
@@ -15948,7 +15948,7 @@ class Item(dict):
 
         if rel_type not in self._RELATIONSHIP_TYPES:
             raise Error("Unsupported relationship type: " + rel_type)
-        if not direction in self._RELATIONSHIP_DIRECTIONS:
+        if direction not in self._RELATIONSHIP_DIRECTIONS:
             raise Error("Unsupported direction: " + direction)
 
         related_items = []
@@ -16029,7 +16029,7 @@ class Item(dict):
             >>> item.add_relationship(reL_item=item2, rel_type='Map2FeatureCollection')
             <True>
         """
-        if not rel_type in self._RELATIONSHIP_TYPES:
+        if rel_type not in self._RELATIONSHIP_TYPES:
             raise Error("Unsupported relationship type: " + rel_type)
 
         postdata = {"f": "json"}
@@ -16069,7 +16069,7 @@ class Item(dict):
 
             item.delete_relationship(item2, 'Map2FeatureCollection')
         """
-        if not rel_type in self._RELATIONSHIP_TYPES:
+        if rel_type not in self._RELATIONSHIP_TYPES:
             raise Error("Unsupported relationship type: " + rel_type)
         postdata = {"f": "json"}
         postdata["originItemId"] = self.itemid
@@ -16212,7 +16212,7 @@ class Item(dict):
         }
         job: concurrent.futures.Future = tp.submit(self._publish, **params)
         tp.shutdown(wait=True)
-        if future is False:
+        if future == False:
             return job.result()
         return job
 
@@ -16399,7 +16399,7 @@ class Item(dict):
             fileType = file_type
         try:
             folder = self.ownerFolder
-        except:
+        except Exception:
             folder = None
 
         if publish_parameters is None:
@@ -16635,9 +16635,7 @@ class Item(dict):
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
 
-                edit_result = manager.edit_tile_service(
-                    min_scale=min_scale, max_scale=max_scale
-                )
+                manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
@@ -16656,7 +16654,7 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
-        elif "success" in ret[0] and ret[0]["success"] is False:
+        elif "success" in ret[0] and ret[0]["success"] == False:
             raise Exception(
                 ret[0].get(
                     "error",
@@ -16763,7 +16761,6 @@ class Item(dict):
         """
 
         if self.type.lower() == "Feature Service".lower():
-            p = self.layers[0].container
             if cache_info is None:
                 cache_info = {
                     "spatialReference": {"latestWkid": 3857, "wkid": 102100},
@@ -16968,7 +16965,7 @@ class Item(dict):
 
         try:
             folder = self.ownerFolder
-        except:
+        except Exception:
             folder = None
         res = self._portal.protect_item(self.itemid, self._user_id, folder, enable)
         self._hydrated = False
@@ -16998,7 +16995,7 @@ class Item(dict):
 
         try:
             serviceitem_id = ret[0]["serviceItemId"]
-        except KeyError as ke:
+        except KeyError:
             raise RuntimeError(ret[0]["error"]["message"])
 
         if "jobId" in ret[0]:
@@ -17013,7 +17010,6 @@ class Item(dict):
 
             # Query and report the Analysis job status.
             #
-            num_messages = 0
             # print(str(job_response))
             if "status" in job_response:
                 while not job_response.get("status") == "completed":
@@ -17032,7 +17028,7 @@ class Item(dict):
                     elif job_response.get("status") == "esriJobTimedOut":
                         raise Exception("Job timed out.")
             elif (
-                not "jobId" in ret[0]
+                "jobId" not in ret[0]
                 and "serviceItemId" in ret[0]
                 and ret[0]["type"] == "Map Service"
             ):
@@ -17193,7 +17189,7 @@ class Item(dict):
             if "appProxies" in res:
                 for p in res["appProxies"]:
                     ps.append(p)
-        except:
+        except Exception:
             return []
         return ps
 
@@ -17339,7 +17335,7 @@ class Item(dict):
 
         :return: An :class:`~arcgis.gis.Item` object
         """
-        if tags and type(tags) is list:
+        if tags and isinstance(tags, list):
             tags = ",".join(tags)
 
         url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
@@ -17575,7 +17571,7 @@ class Item(dict):
             params["tags"] = ",".join(tags)
             params["snippet"] = snippet
             params["description"] = description
-            if not layers is None:
+            if layers is not None:
                 text = {"layers": []}
                 lyrs = item.layers
                 for idx, lyr in enumerate(lyrs):
@@ -17871,7 +17867,7 @@ class Item(dict):
         params = {"f": "json"}
         try:
             return self._portal.con.get(url, params)
-        except:
+        except Exception:
             return {}
 
     # ----------------------------------------------------------------------
@@ -17925,7 +17921,7 @@ class Item(dict):
                         if purl:
                             self._gis._con.get(purl)
                             return purl
-                    except:
+                    except Exception:
                         ...
         elif return_type == "PUBLIC_ONLY":
             return public_url
@@ -18042,7 +18038,7 @@ class ViewManager:
                         ]
                     }
                 )
-            except:
+            except Exception:
                 ...
         #  Create a blank view
         #
@@ -18101,7 +18097,7 @@ class ViewManager:
                             ]
                         }
                     )
-            except:
+            except Exception:
                 ...
 
         #  Create the Join Layer
@@ -18515,7 +18511,6 @@ class ItemDependency(object):
         res = self._con.get(url, params)
 
         items = res["list"]
-        num = 100
         while res["nextStart"] > -1:
             params = {"f": "json", "num": 100, "start": res["nextStart"]}
             res = self._con.get(url, params)
@@ -18533,7 +18528,7 @@ def rot13(s, b64: bool = False, of: bool = False):
     if b64:
         try:
             s = base64.b64decode(s).decode()
-        except:
+        except Exception:
             raise RuntimeError(
                 "Reading value from profile is not correctly formatted. "
                 + "Update by creating a new connection using the profile option."
@@ -18682,7 +18677,7 @@ class _GISResource(object):
             except HTTPError as httperror:  # service maybe down
                 _log.error(httperror)
                 err = httperror
-            except RuntimeError as e:
+            except RuntimeError:
                 try:
                     # try as a public server
                     self._lazy_token = None
@@ -18696,7 +18691,7 @@ class _GISResource(object):
                         # try token in the provided gis
                         self._lazy_token = self._con.token
                         self._refresh()
-            except:
+            except Exception:
                 try:
                     # try as a public server
                     self._lazy_token = None
@@ -18821,7 +18816,7 @@ class Layer(_GISResource):
         """
         domains = []
         for field in [
-            field for field in self.properties.fields if field["domain"] != None
+            field for field in self.properties.fields if field["domain"] is not None
         ]:
             field_domain = dict(field.domain)
             field_domain["fieldName"] = field.name
