@@ -2927,7 +2927,6 @@ class DatastoreManager(object):
 
     def _validate_item(self, item):
         """validates a BDS connection"""
-        msg = ""
         url = self._admin_url + "/data/validateDataItem"
         params = {"f": "json", "item": item}
         res = self._portal.con.post(url, params, verify_cert=False)
@@ -12311,15 +12310,14 @@ class User(dict):
         culture_check = [
             lang["culture"].lower() for lang in self._gis.languages if lang
         ]
-        if culture and not culture.lower() in culture_check:
+        if culture and culture.lower() not in culture_check:
             raise ValueError(
                 f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
             )
-        if region and not region.upper() in [g["region"] for g in self._gis.regions]:
+        if region and region.upper() not in [g["region"] for g in self._gis.regions]:
             raise ValueError(
                 f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
             )
-        user_type = None
         if tags is not None and isinstance(tags, list):
             tags = ",".join(tags)
         import copy
@@ -12345,7 +12343,7 @@ class User(dict):
         }
         if categories:
             params["categories"] = categories
-        if security_answer and not security_question is None:
+        if security_answer and security_question is not None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -12442,7 +12440,7 @@ class User(dict):
                 self.username,
             )
             params = {"f": "json", "properties": us}
-            res = self._gis._con.post(url, params)
+            self._gis._con.post(url, params)
 
         else:
             raise ValueError("The ")
@@ -12594,9 +12592,9 @@ class User(dict):
         """
         if self._portal.is_arcgisonline:
             if value is True:
-                ret = self._portal.update_user(self._user_id, user_type="both")
+                self._portal.update_user(self._user_id, user_type="both")
             else:
-                ret = self._portal.update_user(self._user_id, user_type="arcgisonly")
+                self._portal.update_user(self._user_id, user_type="arcgisonly")
             self._hydrate()
 
     # ----------------------------------------------------------------------
@@ -12886,7 +12884,7 @@ class User(dict):
         for l in self._gis.admin.license.all():
             try:
                 entitle = l.check(user=self.username)
-            except Exception as e:
+            except Exception:
                 entitle = []
             if len(entitle) > 0:
                 l.revoke(
@@ -12951,7 +12949,7 @@ class User(dict):
         # currently issue with REST API method, so we try/except for it
         try:
             return self._portal.reassign_user(self._user_id, target_username)
-        except:
+        except Exception:
             # variables to ensure that every item & group is assigned
             # issue with dependencies for these methods too, so try/except/pass
             items_success = True
@@ -12960,13 +12958,13 @@ class User(dict):
                 try:
                     if not item.reassign_to(target_username):
                         items_success = False
-                except:
+                except Exception:
                     pass
             for group in self.groups:
                 try:
                     if not group.reassign_to(target_username):
                         group_success = False
-                except:
+                except Exception:
                     pass
             return items_success and group_success
 
@@ -13025,7 +13023,6 @@ class User(dict):
                 if len(file_name) > 50:  # If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
 
-                file_path = os.path.join(save_folder, file_name)
                 return self._portal.con.get(
                     path=thumbnail_url_path,
                     try_json=False,
@@ -13202,7 +13199,7 @@ class Item(dict):
             self._hydrated = False
         try:
             self._depend = ItemDependency(item=self)
-        except:
+        except Exception:
             pass
 
         if self._has_layers():
@@ -13238,11 +13235,11 @@ class Item(dict):
         user: User = self._gis.users.me
         grp_shr = self.sharing.groups
         # get(self.owner)
-        if value is True:
+        if value == True:
             grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
-        elif value is False:
+        elif value == False:
             grp_shr.remove(user.favGroupId)
             self._hydrated = False
             self._hydrate()
@@ -13361,7 +13358,7 @@ class Item(dict):
                         lyr._rendering_rule_from_item = True
                     if lyr._mosaic_rule is None:
                         lyr._mosaic_rule = item_data.get("mosaicRule", None)
-                except:
+                except Exception:
                     pass
                 layers.append(lyr)
 
@@ -13436,7 +13433,7 @@ class Item(dict):
                         for lyr in svc.properties.tables:
                             lyr = Table(svc.url + "/" + str(lyr.id), self._gis)
                             tables.append(lyr)
-                    except:
+                    except Exception:
                         pass
 
             self.layers = layers
@@ -13452,7 +13449,7 @@ class Item(dict):
         try:
             with _common_utils._DisableLogger():
                 self._populate_layers()
-        except:
+        except Exception:
             pass
         user = self._gis.users.get(self.owner)
         if hasattr(user, "id") and user.id != "null":
@@ -13463,7 +13460,7 @@ class Item(dict):
 
     def __getattribute__(self, name):
         if name == "layers":
-            if self["layers"] == None or self["layers"] == []:
+            if self["layers"] is None or self["layers"] == []:
                 try:
                     with _common_utils._DisableLogger():
                         self._populate_layers()
@@ -13479,11 +13476,11 @@ class Item(dict):
                     pass
                 return self["layers"]
         elif name == "tables":
-            if self["tables"] == None or self["tables"] == []:
+            if self["tables"] is None or self["tables"] == []:
                 try:
                     with _common_utils._DisableLogger():
                         self._populate_layers()
-                except:
+                except Exception:
                     pass
                 return self["tables"]
         elif name == "url" and self._gis._validate_item_url:
@@ -13496,7 +13493,7 @@ class Item(dict):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
-        except:
+        except Exception:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
@@ -13813,7 +13810,7 @@ class Item(dict):
         else:
             try:
                 copied_item.delete()
-            except:
+            except Exception:
                 pass
         return None
 
@@ -13845,7 +13842,7 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + f"/data"
+        data_path = "content/items/" + self.itemid + "/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -14012,7 +14009,7 @@ class Item(dict):
             params["snippet"] = snippet
         if parameters:
             params.update({"exportParameters": parameters})
-        if not enforce_fld_vis is None and "View Service" in self.typeKeywords:
+        if enforce_fld_vis is not None and "View Service" in self.typeKeywords:
             if "exportParameters" in params:
                 params["exportParameters"]["enforceFieldVisibility"] = enforce_fld_vis
             else:
@@ -14027,7 +14024,7 @@ class Item(dict):
                 raise
         if "success" in res and res["success"] is False:
             raise Exception("Could not export item.")
-        elif not "exportItemId" in res:
+        elif "exportItemId" not in res:
             raise Exception("Could not export item.")
         export_item = Item(gis=self._gis, itemid=res["exportItemId"])
         if wait is True:
@@ -14199,7 +14196,6 @@ class Item(dict):
         from arcgis.features import FeatureLayer, FeatureLayerCollection
         from arcgis.gis.server._service import Service
 
-        props = self._gis.properties
         gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
 
         if self.type == "Feature Service":
@@ -14234,8 +14230,6 @@ class Item(dict):
             }
 
         elif self.type == "Web Map":
-            import json
-
             layers = []
             mapjson = self.get_data()
             container = None
