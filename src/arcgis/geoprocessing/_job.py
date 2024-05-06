@@ -844,7 +844,7 @@ class OMJob(GPJob):
         Returns the amount of time that passed while the ortho mapping job
         ran.
         """
-        
+
         return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
