@@ -5,7 +5,9 @@ Mapping Holds the Plot function for creating a FeatureCollection JSON plus the r
 import uuid
 import json
 import dask.dataframe as dd
-from arcgismapping import Map
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgismapping")
 
 
 ###########################################################################
@@ -50,7 +52,7 @@ def dask_plot(df, map_widget=None, renderer=None):
         name = uuid.uuid4().hex[:7]
     if map_widget is None:
         map_exists = False
-        map_widget = Map()
+        map_widget = arcgismapping.Map()
     assert isinstance(df, dd.DataFrame)
 
     feature_collections = df.map_partitions(
