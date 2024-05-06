@@ -3443,14 +3443,17 @@ class UtilityServicesSettings:
                 )
                 if not this_item:
                     # False positive. pylint: disable=no-member
-                    svc_item = self._gis.content.add(item_props, folder=folder_name)
-                    # convert from private URL to a public URL for the proxy item
-                    svc_item_url = svc_item.url.replace(
-                        ":7443/arcgis/", f"/{self._gis.properties.customBaseUrl}/"
-                    )
-                    # pylint: enable=no-member
-                    svc_item.protect(enable=True)
-                    svc_item.sharing.sharing_level = "ORGANIZATION"
+                    if helper_svc == "orthomappingElevation":
+                        svc_item_url = item_props["url"]
+                    else:
+                        svc_item = self._gis.content.add(item_props, folder=folder_name)
+                        # convert from private URL to a public URL for the proxy item
+                        svc_item_url = svc_item.url.replace(
+                            ":7443/arcgis/", f"/{self._gis.properties.customBaseUrl}/"
+                        )
+                        # pylint: enable=no-member
+                        svc_item.protect(enable=True)
+                        svc_item.sharing.sharing_level = "ORGANIZATION"
                     if helper_svc == "geocode":
                         # Set batch geocoder properties
                         geocoders = [
@@ -3518,35 +3521,52 @@ class UtilityServicesSettings:
         :return: Json dictionary response indicating success.
         """
         helper_services = {
-            "Elevation": ["elevationService"],
-            "Geocode": ["geocodeService"],
-            "GeoEnrichment": ["geoenrichmentService"],
-            "Hydrology": ["hydrologyService"],
+            "Elevation": ["elevation"],
+            "Geocode": ["geocode"],
+            "GeoEnrichment": ["geoenrichment"],
+            "Hydrology": ["hydrology"],
             "Network": [
-                "asyncClosestFacilityService",
-                "asyncLocationAllocationService",
-                "asyncODCostMatrixService",
-                "asyncRouteService",
-                "asyncVRPService",
-                "asyncServiceAreaService",
-                "routeService",
-                "routingUtilitiesService",
-                "serviceAreaService",
-                "closestFacilityService",
-                "syncVRPService",
-                "trafficService",
-                "odCostMatrixService",
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
             ],
-            "Orthomapping Elevation": ["orthomappingElevationService"],
+            "Orthomapping Elevation": ["orthomappingElevation"],
         }
+
+        current_services = self._gis.properties["helperServices"]
 
         for service in services:
             if service in helper_services:
                 for helper_svc in helper_services[service]:
+                    # First find the item id of the current service if one
+                    if helper_svc in current_services:
+                        if helper_svc == "orthomappingElevation":
+                            full_url = None
+                        elif helper_svc == "geocode":
+                            full_url = current_services[helper_svc][1]["url"]
+                        else:
+                            full_url = current_services[helper_svc]["url"]
+                        segments = full_url.split("/")
+                        item_id = segments[segments.index("servers") + 1]
+                        item = self._gis.content.get(item_id)
+                        if item:
+                            item.protect(enable=False)
+                            item.delete()
                     if helper_svc == "geocodeService":
                         self._gis.update_properties(
                             {
-                                helper_svc: [
+                                helper_svc
+                                + "Service": [
                                     {
                                         "westLon": "Xmin",
                                         "southLat": "Ymin",
@@ -3562,4 +3582,4 @@ class UtilityServicesSettings:
                             }
                         )
                     else:
-                        self._gis.update_properties({helper_svc: None})
+                        self._gis.update_properties({helper_svc + "Service": None})
