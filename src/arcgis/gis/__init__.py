@@ -2933,7 +2933,7 @@ class DatastoreManager(object):
         res = self._portal.con.post(url, params, verify_cert=False)
         try:
             return res["status"] == "success", ""
-        except:
+        except Exception:
             return False, res
 
     def validate(self):
@@ -3978,7 +3978,7 @@ class UserManager(object):
             try:
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
-            except:
+            except Exception:
                 # maybe user passed in role name instead of id
                 if self._gis.users.roles.exists(role):
                     all_roles = self._gis.users.roles.all()
@@ -4005,7 +4005,7 @@ class UserManager(object):
                 )
             params = {"f": "json"}
             resp = self._gis._con._session.get(url).json()
-            if "role" not in resp or resp["role"] == None:
+            if "role" not in resp or resp["role"] is None:
                 raise ValueError(
                     "Role cannot be None since no default role is provided in the org settings. Please provide a valid role."
                 )
@@ -4943,7 +4943,7 @@ class UserManager(object):
                     un = u["username"]
                 else:
                     un = u["id"]
-                if not "roleId" in u:
+                if "roleId" not in u:
                     u["roleId"] = u.pop("role", None)
                 user_storage.append(User(gis, un, u))
             return user_storage
@@ -5915,7 +5915,7 @@ class GroupManager(object):
         if users_update_items is None:
             users_update_items = False
 
-        if type(tags) is list:
+        if isinstance(tags, list):
             tags = ",".join(tags)
         params = {
             "title": title,
@@ -5992,7 +5992,7 @@ class GroupManager(object):
         thumbnail = dict.pop("thumbnail", None)
 
         if "tags" in dict:
-            if type(dict["tags"]) is list:
+            if isinstance(dict["tags"], list):
                 dict["tags"] = ",".join(dict["tags"])
 
         group = self._portal.create_group_from_dict(dict, thumbnail)
@@ -6124,7 +6124,7 @@ def _is_shapefile(data):
                 if name.endswith(".shp") or name.endswith(".SHP"):
                     return True
         return False
-    except:
+    except Exception:
         return False
 
 
@@ -6376,7 +6376,7 @@ class ContentManager(object):
 
 
         """
-        from typing import Union, Iterator, Tuple
+        from typing import Iterator, Tuple
         from io import BytesIO
 
         def chunk_by_file_size(
@@ -6782,12 +6782,12 @@ class ContentManager(object):
             if _is_shapefile(data):
                 filetype = "Shapefile"
 
-            if not "type" in item_properties:
+            if "type" not in item_properties:
                 if filetype is not None:
                     item_properties["type"] = filetype
                 else:
                     raise RuntimeError("Specify type in item_properties")
-            if not "title" in item_properties:
+            if "title" not in item_properties:
                 item_properties["title"] = title
 
         # For 3D Tiles Service the typeKeywords determine if Integrated Mesh or 3D Object
@@ -6814,7 +6814,7 @@ class ContentManager(object):
             owner_name = owner.username
 
         if "tags" in item_properties:
-            if type(item_properties["tags"]) is list:
+            if isinstance(item_properties["tags"], list):
                 item_properties["tags"] = ",".join(item_properties["tags"])
         try:
             from arcgis._impl.common._utils import bytesto
@@ -6832,7 +6832,7 @@ class ContentManager(object):
                 if "multipart" in item_properties:
                     item_properties["multipart"] = True
                 multipart = True
-        except:
+        except Exception:
             is_file = False
             multipart = False
             item_properties.pop("multipart", None)
@@ -6851,7 +6851,7 @@ class ContentManager(object):
             else:
                 upload_size = self._calculate_upload_size(data)
 
-            status = self._add_by_part(
+            self._add_by_part(
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
@@ -8150,7 +8150,7 @@ class ContentManager(object):
                     try:
                         item.delete()
                         return status
-                    except:
+                    except Exception:
                         return status
                 status = item.status(res["jobId"], "generateFeatures")
             item.update(item_properties={"title": f"Generate Features: {res['jobId']}"})
@@ -8356,7 +8356,7 @@ class ContentManager(object):
         csv_item: Item = self.add(item_properties=pp, data=fname)
         try:
             os.remove(fname)
-        except:
+        except Exception:
             pass
         if publish_parameters is None:
             publish_parameters: dict[str, Any] = self.analyze(
@@ -9197,7 +9197,7 @@ class CategorySchemaManager(object):
             if "success" in res:
                 return res["success"]
             return False
-        except:
+        except Exception:
             return False
 
     # ----------------------------------------------------------------------
@@ -9265,12 +9265,8 @@ class CategorySchemaManager(object):
             params["items"] = json.dumps(items)
             url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
         response = self._gis._con.post(url, params)
-        output = {}
         if "results" in response:
             return response["results"]
-            # for res in response['results']:
-            # if 'success' in res and 'itemId' in res:
-            # output[res['itemId']] = res['success']
         return response
 
 
@@ -9791,7 +9787,7 @@ class Group(dict):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
-        except:
+        except AttributeError:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
@@ -9987,22 +9983,22 @@ class Group(dict):
         owner = "Not Provided"
         try:
             title = self.title
-        except:
+        except Exception:
             title = "Not Provided"
 
         try:
             description = self.description
-        except:
+        except Exception:
             description = "Not Provided"
 
         try:
             snippet = self.snippet
-        except:
+        except Exception:
             snippet = "Not Provided"
 
         try:
             owner = self.owner
-        except:
+        except Exception:
             owner = "Not available"
 
         url = self.homepage
@@ -10765,7 +10761,7 @@ class Group(dict):
         if users_update_items is None:
             users_update_items = False
         if tags is not None:
-            if type(tags) is list:
+            if isinstance(tags, list):
                 tags = ",".join(tags)
         if (
             isinstance(display_settings, str)
@@ -10861,7 +10857,7 @@ class Group(dict):
                 for app in res["applications"]:
                     url = "%s/%s" % (path, app["username"])
                     apps.append(GroupApplication(url=url, gis=self._gis))
-        except:
+        except Exception:
             print()
         return apps
 
@@ -10888,9 +10884,9 @@ class Group(dict):
                 user,
             )
             params = {"f": "json"}
-            res = self._portal.con.post(path, params)
+            self._portal.con.post(path, params)
             return GroupApplication(url=path, gis=self._gis)
-        except:
+        except Exception:
             print()
 
     # ----------------------------------------------------------------------
@@ -10922,7 +10918,7 @@ class Group(dict):
                 self._portal.resturl,
                 self.groupid,
             )
-            res = self._portal.con.post(url, params)
+            self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
         elif value is False and self.protected is True:
@@ -10930,7 +10926,7 @@ class Group(dict):
                 self._portal.resturl,
                 self.groupid,
             )
-            res = self._portal.con.post(url, params)
+            self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
 
@@ -10962,7 +10958,7 @@ class GroupApplication(object):
             res = self._con.get(self._url, {"f": "json"})
             self._properties = _mixins.PropertyMap(res)
             self._json_dict = res
-        except:
+        except Exception:
             self._properties = _mixins.PropertyMap({})
             self._json_dict = {}
 
@@ -11160,7 +11156,7 @@ class User(dict):
                 try:
                     role_obj = self._gis.users.roles.get_role(userdict["roleId"])
                     userdict["role"] = role_obj.name
-                except Exception as ex:
+                except Exception:
                     userdict["role"] = userdict["roleId"]
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
@@ -11174,7 +11170,7 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self._user_id)
-        if not "roleId" in userdict and "role" in userdict:
+        if "roleId" not in userdict and "role" in userdict:
             userdict["roleId"] = userdict["role"]
         self._hydrated = True
         super(User, self).update(userdict)
@@ -11187,7 +11183,7 @@ class User(dict):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
-        except:
+        except AttributeError:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
@@ -11471,7 +11467,7 @@ class User(dict):
             while count < 10:
                 try:
                     item = Item(self._gis, res["itemId"])
-                except:
+                except Exception:
                     ...
                 if item:
                     break
@@ -11483,7 +11479,7 @@ class User(dict):
 
             status = item.status()
             counter = 1
-            while not status["status"] in ["completed", "failed"]:
+            while status["status"] not in ["completed", "failed"]:
                 status = item.status()
                 time.sleep(counter)
                 counter += 1
@@ -11955,22 +11951,22 @@ class User(dict):
 
         try:
             firstName = self.firstName
-        except:
+        except Exception:
             firstName = "Not Provided"
 
         try:
             lastName = self.lastName
-        except:
+        except Exception:
             firstName = "Not Provided"
 
         try:
             fullName = self.fullName
-        except:
+        except Exception:
             fullName = "Not Provided"
 
         try:
             description = self.description
-        except:
+        except Exception:
             description = "This user has not provided any personal information."
 
         url = self.homepage
