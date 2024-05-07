@@ -222,7 +222,7 @@ class GAJob(object):
     @property
     def elapse_time(self):
         """
-        Returns the elapse Time for the Job
+        Returns the elapse time for the Job
         """
         return self._gpjob.elapse_time
 
