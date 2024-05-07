@@ -21,7 +21,7 @@ from arcgis.network.analysis import solve_last_mile_delivery
 # ^^^ marks the test as an integration test
 # sets the default timeout for the test
 # may be enhanced with additional functionality in the future
-class TestFeature(unittest.TestCase):
+class TestLastMileDelivery(unittest.TestCase):
     def test_last_mile_delivery(self):
         from arcgis.gis import GIS
 
