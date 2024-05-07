@@ -165,8 +165,10 @@ def _create_output_service(
     output_service.update(item_properties)
     return output_service
 
+
 def _check_ga_status(gis):
     from arcgis import geoanalytics
+
     if not geoanalytics.is_supported(gis):
         raise RuntimeError("GeoAnalytics is not supported for this GIS.")
     try:
@@ -177,7 +179,10 @@ def _check_ga_status(gis):
         else:
             resp.raise_for_status()
     except:
-        raise RuntimeError("The GeoAnalytics service is currently unavailable or invalid.")
+        raise RuntimeError(
+            "The GeoAnalytics service is currently unavailable or invalid."
+        )
+
 
 class GAJob(object):
     """
