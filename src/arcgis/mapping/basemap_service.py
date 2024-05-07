@@ -37,6 +37,7 @@ class BasemapService:
         paths = [style["path"] for style in styles_dict]
         self._styles_name_to_path = dict(zip(style_names, paths))
 
+    @property
     def styles(self) -> list[str]:
         """
         Returns a list of available basemap styles and their respective path.

@@ -13,7 +13,7 @@ class Test_BasemapService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile)
             bs = BasemapService(gis)
-            styles = bs.styles()
+            styles = bs.styles
             self.assertTrue(isinstance(styles, list))
             self.assertTrue(len(styles) > 0)
     
