@@ -16,7 +16,7 @@ import requests
 
 
 class LivingAtlasJob:
-    """The Living Atlas Update Job Object"""
+    """The Living Atlas Update Job"""
 
     def __init__(self, url: str, session: EsriSession):
         self.url: str = url
@@ -24,6 +24,9 @@ class LivingAtlasJob:
 
     @property
     def properties(self) -> dict:
+        """
+        returns the job information
+        """
         return self.session.get(
             url=self.url,
             params={
@@ -32,6 +35,7 @@ class LivingAtlasJob:
         ).json()
 
     def status(self) -> str:
+        """returns the state of a given job"""
         return self.properties.get("status", "unknown")
 
     def result(self) -> dict[str, Any]:
@@ -89,8 +93,21 @@ class LivingAtlasManager:
         resp.raise_for_status()
         return resp.json()
 
-    def update(self, package_id: str, start_time: _dt.datetime | None = None) -> dict:
-        """Updates the living atlas to a given package"""
+    def update(
+        self, package_id: str, start_time: _dt.datetime | None = None
+    ) -> LivingAtlasJob | dict:
+        """
+        Updates the living atlas to a given package
+
+        ===============     ====================================================
+        **Parameter**        **Description**
+        ---------------     ----------------------------------------------------
+        package_id          Required str. The package ID to update with.  This can be obtained from `check` method.
+        ---------------     ----------------------------------------------------
+        start_time          Optional datetime.datetime. The date/time to run the update.
+        ===============     ====================================================
+
+        """
         if start_time is None:
             start_time: str = ""
         elif isinstance(start_time, _dt.datetime):

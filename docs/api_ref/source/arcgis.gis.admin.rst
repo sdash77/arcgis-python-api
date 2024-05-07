@@ -142,6 +142,18 @@ LivingAtlas
     :members:
     :undoc-members:
 
+LivingAtlasManager
+------------------
+.. autoclass:: arcgis.gis.admin.LivingAtlasManager
+    :members:
+    :undoc-members:
+	
+LivingAtlasJob
+--------------
+.. autoclass:: arcgis.gis.admin.LivingAtlasJob
+    :members:
+    :undoc-members:
+
 IdentityProviderManager
 -----------------------
 .. autoclass:: arcgis.gis.admin.IdentityProviderManager
