@@ -10,18 +10,12 @@ from arcgis.network._utils import find_travel_mode
 from arcgis.network.analysis import solve_last_mile_delivery
 
 
-@profiles.agol
+@profiles.devext
 @integration_test
 class TestLastMileDelivery(unittest.TestCase):
     def test_last_mile_delivery(self):
-        from arcgis.gis import GIS
 
-        gis = GIS(
-            profile='your_dev_online_profile',  #  need to use devext until on production
-            trust_env=True,
-            verify_cert=False,
-        )
-        travel_modes = find_travel_mode(gis=gis)
+        travel_modes = find_travel_mode(gis=self.gis)
         orders: dict = {
             "features": [
                 {
