@@ -65,7 +65,7 @@ class LivingAtlasManager:
 
     @property
     def properties(self) -> dict:
-        """returns the properties of the updated"""
+        """returns the living atlas manager's properties"""
         return self.session.get(
             url=self.url,
             params={
