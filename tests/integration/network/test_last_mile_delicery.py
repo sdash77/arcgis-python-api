@@ -11,16 +11,7 @@ from arcgis.network.analysis import solve_last_mile_delivery
 
 
 @profiles.agol
-# ^^^ runs tests for each profile
-# sets `self.profile` to the profile name
-# sets `self.gis` to the GIS for the profile, if connection is successful
-# sets `self.proxies` to the detected proxies, if any
-#
-# see tests/utils/decorators.py for available credential and profile decorators
 @integration_test
-# ^^^ marks the test as an integration test
-# sets the default timeout for the test
-# may be enhanced with additional functionality in the future
 class TestLastMileDelivery(unittest.TestCase):
     def test_last_mile_delivery(self):
         from arcgis.gis import GIS
