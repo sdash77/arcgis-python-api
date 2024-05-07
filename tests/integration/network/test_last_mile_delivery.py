@@ -163,8 +163,7 @@ class TestLastMileDelivery(unittest.TestCase):
             max_route_total_time=480,
             route_shape="True Shape with Measures",
         )
-        job.result()
-        print('here')
+        assert job.result()
 
 
 if __name__ == "__main__":
