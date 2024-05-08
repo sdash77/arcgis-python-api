@@ -1009,8 +1009,6 @@ default_param_values = {
 
 default_tolerance = {"distance": 10, "units": "esriMeters"}
 
-import datetime as _dt
-
 
 def solve_last_mile_delivery(
     orders: FeatureSet | dict | pd.DataFrame,
@@ -3801,8 +3799,3 @@ solve_vehicle_routing_problem.__annotations__ = {
     "save_route_data": bool,
     "return": tuple,
 }
-
-
-if __name__ == "__main__":
-    gis = GIS(profile="your_dev_online_profile", verify_cert=False)
-    last_mile_delivery(gis=gis)
