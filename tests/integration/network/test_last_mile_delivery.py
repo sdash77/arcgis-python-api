@@ -15,7 +15,6 @@ from arcgis.network.analysis import solve_last_mile_delivery
 class TestLastMileDelivery(unittest.TestCase):
     def test_last_mile_delivery(self):
 
-        travel_modes = find_travel_mode(gis=self.gis)
         orders: dict = {
             "features": [
                 {
