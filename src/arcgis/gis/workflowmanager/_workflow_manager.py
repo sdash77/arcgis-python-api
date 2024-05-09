@@ -2030,9 +2030,9 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(
-                f"{self._url}/templates/{template_type}"
-            )["templates"]
+            return self._gis._con.get(f"{self._url}/templates/{template_type}")[
+                "templates"
+            ]
         except:
             self._handle_error(sys.exc_info())
 
@@ -2076,12 +2076,9 @@ class WorkflowManager:
                }
         """
         try:
-            return Template.get(
-                self,
-                self._gis,
-                f"{self._url}/templates/{template_type}/{template_id}",
-                params={},
-            )
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            template_dict = self._gis._con.get(url, {})
+            return Template(template_dict, self._gis, url)
         except:
             self._handle_error(sys.exc_info())
 
@@ -2105,11 +2102,18 @@ class WorkflowManager:
 
         """
         try:
-            return Template.delete(
-                self,
-                self._gis,
-                f"{self._url}/templates/{template_type}/{template_id}"
-            )
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            return_obj = json.loads(self._gis._con.delete(url, try_json=False))
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
         except:
             self._handle_error(sys.exc_info())
 
@@ -2170,11 +2174,26 @@ class WorkflowManager:
                 "templateName": template_name,
                 "templateDetails": template_details,
             }
-            template_obj = Template(obj)
-            return template_obj.put(
-                self._gis,
-                f"{self._url}/templates/{template_type}/{template_id}"
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            return_obj = json.loads(
+                self._gis._con.put(
+                    url,
+                    obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
             )
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
         except:
             self._handle_error(sys.exc_info())
 
@@ -2233,11 +2252,22 @@ class WorkflowManager:
             }
             if template_id is not None:
                 obj["templateId"] = template_id
-            template_obj = Template(obj)
-            return template_obj.post(
-                self._gis,
-                f"{self._url}/templates/{template_type}"
+
+            url = f"{self._url}/templates/{template_type}"
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
             )
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return return_obj
         except:
             self._handle_error(sys.exc_info())
 
@@ -2346,70 +2376,6 @@ class Template(object):
             return full_object[item]
         except KeyError:
             raise KeyError(f'The attribute "{item}" is invalid for Templates')
-
-    def get(self, gis, url, params):
-        template_dict = gis._con.get(url, params)
-        return Template(template_dict, gis, url)
-
-    def put(self, gis, url):
-        put_dict = {
-            _underscore_to_camelcase(k): v
-            for k, v in self.__dict__.items()
-            if v is not None
-        }
-        return_obj = json.loads(
-            gis._con.put(
-                url,
-                put_dict,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
-            )
-        )
-        if "error" in return_obj:
-            gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return_obj = {
-            _camelCase_to_underscore(k): v
-            for k, v in return_obj.items()
-            if v is not None and not k.startswith("_")
-        }
-        return return_obj
-
-    def delete(self, gis, url):
-        return_obj = json.loads(gis._con.delete(url, try_json=False))
-        if "error" in return_obj:
-            gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return_obj = {
-            _camelCase_to_underscore(k): v
-            for k, v in return_obj.items()
-            if v is not None and not k.startswith("_")
-        }
-        return return_obj
-
-    def post(self, gis, url):
-        post_dict = {
-            _underscore_to_camelcase(k): v
-            for k, v in self.__dict__.items()
-            if v is not None
-        }
-        return_obj = json.loads(
-            gis._con.post(
-                url,
-                post_dict,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
-            )
-        )
-        if "error" in return_obj:
-            gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        return return_obj
 
 
 class SavedSearchesManager:
