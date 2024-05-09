@@ -103,6 +103,7 @@ class FeatureLayer(Layer):
         else:
             return False
 
+    @property
     def _upload_manager(self) -> "UploadManager":
         """Provides the upload endpoint for a feature layer"""
 
