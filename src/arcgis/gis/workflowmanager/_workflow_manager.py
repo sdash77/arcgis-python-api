@@ -2031,9 +2031,7 @@ class WorkflowManager:
         """
         try:
             return self._gis._con.get(
-                "{base}/templates/{templateType}".format(
-                    base=self._url, templateType=template_type
-                )
+                f"{self._url}/templates/{template_type}"
             )["templates"]
         except:
             self._handle_error(sys.exc_info())
@@ -2081,9 +2079,7 @@ class WorkflowManager:
             return Template.get(
                 self,
                 self._gis,
-                "{base}/templates/{templateType}/{templateId}".format(
-                    base=self._url, templateType=template_type, templateId=template_id
-                ),
+                f"{self._url}/templates/{template_type}/{template_id}",
                 params={},
             )
         except:
@@ -2112,9 +2108,7 @@ class WorkflowManager:
             return Template.delete(
                 self,
                 self._gis,
-                "{base}/templates/{templateType}/{templateId}".format(
-                    base=self._url, templateType=template_type, templateId=template_id
-                ),
+                f"{self._url}/templates/{template_type}/{template_id}"
             )
         except:
             self._handle_error(sys.exc_info())
@@ -2179,9 +2173,7 @@ class WorkflowManager:
             template_obj = Template(obj)
             return template_obj.put(
                 self._gis,
-                "{base}/templates/{templateType}/{templateId}".format(
-                    base=self._url, templateType=template_type, templateId=template_id
-                ),
+                f"{self._url}/templates/{template_type}/{template_id}"
             )
         except:
             self._handle_error(sys.exc_info())
@@ -2244,9 +2236,7 @@ class WorkflowManager:
             template_obj = Template(obj)
             return template_obj.post(
                 self._gis,
-                "{base}/templates/{templateType}".format(
-                    base=self._url, templateType=template_type
-                ),
+                f"{self._url}/templates/{template_type}"
             )
         except:
             self._handle_error(sys.exc_info())
