@@ -92,9 +92,10 @@ class Job(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that has passed while the
+        :class:`~arcgis.gis.server.AsyncJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time
