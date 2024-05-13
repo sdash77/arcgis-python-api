@@ -4,7 +4,7 @@ from arcgis.auth.tools import LazyLoader
 _arcgis = LazyLoader("arcgis")
 
 
-class BasemapService:
+class BasemapServices:
     """
     The basemap styles service is a ready-to-use location service that serves vector
     and image tiles that represent geographic features around the world. It includes
@@ -38,33 +38,21 @@ class BasemapService:
         self._styles_name_to_path = dict(zip(style_names, paths))
 
     @property
-    def styles(self) -> list[str]:
+    def services(self) -> list[str]:
         """
         Returns a list of available basemap styles and their respective path.
         """
-        return self._styles_name_to_path
-
-    def get_style(
-        self, style_name: str | None = None, style_path: str | None = None
-    ) -> dict:
-        """
-        Returns the style JSON for the specified style name or path.
-        """
-        if style_name and style_name not in self._styles_name_to_path:
-            raise ValueError(f"Style '{style_name}' is not available.")
-        elif style_path and style_path not in self._styles_name_to_path.values():
-            raise ValueError(f"Style path '{style_path}' is not available.")
-
-        path = style_path if style_path else self._styles_name_to_path[style_name]
-        url = f"https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/{path}"
-        params = {"f": "json"}
-        resp = self._session.get(url, params=params)
-        return resp.json()
+        return [
+            BasemapService(service_name, service_path, self._gis)
+            for service_name, service_path in self._styles_name_to_path.items()
+        ]
 
     @property
     def languages(self):
         """
         Returns a list of supported languages for the basemap styles.
+        To see which languages are supported by each service look at the documentation
+        found here: https://developers.arcgis.com/rest/basemap-styles/
         """
         url = "https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/self"
         params = {"f": "json"}
@@ -75,8 +63,46 @@ class BasemapService:
     def places(self):
         """
         Returns a list of supported places for the basemap styles.
+        To see which services support which places look at the documentation
+        found here: https://developers.arcgis.com/rest/basemap-styles/
         """
         url = "https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/self"
         params = {"f": "json"}
         resp = self._session.get(url, params=params)
         return resp.json()["places"]
+
+    @property
+    def worldviews(self):
+        """
+        Returns a list of supported worldviews for the basemap styles.
+        To see which services support which worldviews look at the documentation
+        found here: https://developers.arcgis.com/rest/basemap-styles/
+        """
+        url = "https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/self"
+        params = {"f": "json"}
+        resp = self._session.get(url, params=params)
+        return resp.json()["worldviews"]
+
+
+class BasemapService:
+    """
+    Represents a basemap style service that is available for use in the basemap styles service.
+    """
+
+    def __init__(self, service_name: str, service_path: str, gis) -> None:
+        self._session = gis._session
+        self._service_name = service_name
+        self._service_path = service_path
+        self.style = self._get_style()
+
+    def __repr__(self) -> str:
+        return f"{self._service_name}"
+
+    def _get_style(self) -> dict:
+        """
+        Returns the style JSON for the specified style name or path.
+        """
+        url = f"https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/{self._service_path}"
+        params = {"f": "json"}
+        resp = self._session.get(url, params=params)
+        return resp.json()

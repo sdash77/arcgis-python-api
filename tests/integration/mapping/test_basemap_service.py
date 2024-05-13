@@ -1,4 +1,4 @@
-from arcgis.mapping.basemap_service import BasemapService
+from arcgis.mapping.basemap_service import BasemapServices
 from arcgis.gis import GIS
 import unittest
 from utils.decorators import integration_test
@@ -12,7 +12,7 @@ class Test_BasemapService(unittest.TestCase):
         """Tests getting styles"""
         for profile in profiles:
             gis = GIS(profile=profile)
-            bs = BasemapService(gis)
+            bs = BasemapServices(gis)
             styles = bs.styles
             self.assertTrue(isinstance(styles, list))
             self.assertTrue(len(styles) > 0)
@@ -21,7 +21,7 @@ class Test_BasemapService(unittest.TestCase):
         """Tests getting languages"""
         for profile in profiles:
             gis = GIS(profile=profile)
-            bs = BasemapService(gis)
+            bs = BasemapServices(gis)
             languages = bs.languages
             self.assertTrue(isinstance(languages, list))
             self.assertTrue(len(languages) > 0)
@@ -30,7 +30,7 @@ class Test_BasemapService(unittest.TestCase):
         """Tests getting places"""
         for profile in profiles:
             gis = GIS(profile=profile)
-            bs = BasemapService(gis)
+            bs = BasemapServices(gis)
             places = bs.places
             self.assertTrue(isinstance(places, list))
             self.assertTrue(len(places) > 0)

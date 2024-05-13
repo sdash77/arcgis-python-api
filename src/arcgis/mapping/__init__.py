@@ -14,7 +14,7 @@ from ._types import (
     PackagingJob,
 )
 
-from arcgis.mapping.basemap_service import BasemapService
+from arcgis.mapping.basemap_service import BasemapServices, BasemapService
 from arcgis.mapping._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
