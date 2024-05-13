@@ -364,7 +364,7 @@ class Briefing(object):
         """
         # call method to update logo
         return utils.set_logo(self, image, link, alt_text)
-    
+
     # ----------------------------------------------------------------------
     def get_theme(self) -> str:
         """
