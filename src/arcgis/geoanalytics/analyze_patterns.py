@@ -10,6 +10,7 @@ import json as _json
 from datetime import datetime as _datetime
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -26,14 +27,18 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
 # --------------------------------------------------------------------------
+
+
 def forest(
     input_layer: Union[
         Item,
@@ -275,7 +280,10 @@ def forest(
                                       output_name='train and predict number of 911 calls')
 
     """
-    allowed_prediction_types = {"train": "Train", "trainandpredict": "TrainAndPredict"}
+    allowed_prediction_types = {
+        "train": "Train",
+        "trainandpredict": "TrainAndPredict",
+    }
 
     input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
@@ -283,6 +291,7 @@ def forest(
     else:
         prediction_type = allowed_prediction_types[prediction_type.lower()]
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
 
     if gis.version < [7]:
         return None
@@ -375,6 +384,8 @@ def forest(
 
 
 # --------------------------------------------------------------------------
+
+
 def gwr(
     input_layer: Union[
         Item,
@@ -490,7 +501,7 @@ def gwr(
         gis = _env.active_gis
     if gis.version < [8, 1]:
         return None
-
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
 
     if output_name is None:
@@ -591,6 +602,8 @@ def gwr(
 
 
 # --------------------------------------------------------------------------
+
+
 def glr(
     input_layer: Union[
         Item,
@@ -784,7 +797,7 @@ def glr(
         raise ValueError("Invalid regression_family.")
 
     gis = _arcgis.env.active_gis if gis is None else gis
-
+    _check_ga_status(gis)
     if gis.version < [7]:
         return None
     url = gis.properties.helperServices.geoanalytics.url
@@ -855,6 +868,8 @@ def glr(
 
 
 # --------------------------------------------------------------------------
+
+
 def find_point_clusters(
     input_layer: Union[
         Item,
@@ -962,6 +977,7 @@ def find_point_clusters(
     input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1035,6 +1051,8 @@ def find_point_clusters(
 
 
 # --------------------------------------------------------------------------
+
+
 def calculate_density(
     input_layer: Union[
         Item,
@@ -1251,6 +1269,7 @@ def calculate_density(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1325,6 +1344,8 @@ def calculate_density(
 
 
 # --------------------------------------------------------------------------
+
+
 def find_hot_spots(
     point_layer: Union[
         Item,
@@ -1477,6 +1498,7 @@ def find_hot_spots(
     """
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1548,6 +1570,8 @@ def find_hot_spots(
 
 
 # --------------------------------------------------------------------------
+
+
 def create_space_time_cube(
     point_layer: Union[
         Item,
@@ -1717,6 +1741,7 @@ def create_space_time_cube(
 
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
     params = {

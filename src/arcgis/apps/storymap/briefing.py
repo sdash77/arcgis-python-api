@@ -364,6 +364,15 @@ class Briefing(object):
         """
         # call method to update logo
         return utils.set_logo(self, image, link, alt_text)
+    
+    # ----------------------------------------------------------------------
+    def get_theme(self) -> str:
+        """
+        Get the theme name or the theme item that is used in the briefing.
+
+        return: The theme name or the theme item item_id.
+        """
+        return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):

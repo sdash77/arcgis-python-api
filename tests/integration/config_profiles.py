@@ -3,16 +3,20 @@ This configuration file will check and reset all profiles for running gis module
 If the parameter "reset" for setup_profiles() set as "True", all existing profiles will be reset,
 and non-existing profiles will be added.
 """
+
 from arcgis.gis import ProfileManager
+
 
 def setup_profiles(
     online_name="your_online_profile",
     online_admin_name="your_online_admin_profile",
     online_api_data_owner_name="your_online_api_data_owner_profile",
+    online_admin_publication_name="your_online_admin_publication_profile",
     ent_name="your_enterprise_profile",
     ent_admin_name="your_ent_admin_profile",
     kube_name="your_kubernetes_profile",
     kube_admin_name="your_kubernetes_admin_profile",
+    devext_admin_name="your_dev_online_profile",
     reset=False,
 ):
     """create profiles"""
@@ -22,8 +26,10 @@ def setup_profiles(
         online_admin_name,
         ent_admin_name,
         online_api_data_owner_name,
+        online_admin_publication_name,
         kube_name,
         kube_admin_name,
+        devext_admin_name,
     ]
 
     pm = ProfileManager()
@@ -65,6 +71,15 @@ def setup_profiles(
         )
         print(f"Created profile {online_api_data_owner_name}")
 
+    if not online_admin_publication_name in updated_list:
+        pm.create(
+            online_admin_publication_name,
+            url="https://pythonapi.maps.arcgis.com",
+            username="python_api_test",
+            password="esri.agp2",
+        )
+        print(f"Created profile {online_admin_publication_name}")
+
     if not ent_name in updated_list:
         pm.create(
             ent_name,
@@ -91,7 +106,7 @@ def setup_profiles(
             password="PAPIletmein01%",
         )
         print(f"Created profile {kube_name}")
-    
+
     if not kube_admin_name in updated_list:
         pm.create(
             kube_admin_name,
@@ -100,16 +115,28 @@ def setup_profiles(
             password="PAPIletmein01%",
         )
         print(f"Created profile {kube_admin_name}")
-
+    if not devext_admin_name in updated_list:
+        pm.create(
+            profile=devext_admin_name,
+            url="https://devgeosaurus.mapsdevext.arcgis.com",
+            username="esrirequests",
+            password="portalaccount1",
+            key_file=None,
+            cert_file=None,
+            client_id=None,
+        )
     print("------------------")
     print(pm.get(online_name))
     print(pm.get(online_admin_name))
     print(pm.get(online_api_data_owner_name))
+    print(pm.get(online_admin_publication_name))
     print(pm.get(ent_name))
     print(pm.get(ent_admin_name))
     print(pm.get(kube_name))
     print(pm.get(kube_admin_name))
+    print(pm.get(devext_admin_name))
     print("------------------")
+
 
 if __name__ == "__main__":
     setup_profiles(reset=True)

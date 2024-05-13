@@ -104,9 +104,9 @@ class NAJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the elapse time for the Job
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -269,8 +269,49 @@ class ToleranceUnits(Enum):
 @dataclass
 class LocateSettings:
     """
-    Parameters available for the locate settings dictionary that can be
-    passed to the solve operation.
+    Parameters available for locate settings that can be
+    passed to the solve operation. See
+    `locateSettings <https://developers.arcgis.com/rest/services-reference/enterprise/locate-service.htm#ESRI_SECTION2_71A6EDCD15B64DCE84CCAE459FE03865>`_
+    for full descriptions.
+
+    ========================     ===============================================
+    **Parameter**                **Description**
+    ------------------------     -----------------------------------------------
+    tolerance                    Allows you to control the maximum search
+                                 distance when locating inputs. If no valid network
+                                 location is found within this distance, the input
+                                 features will be considered unlocated. A small
+                                 search tolerance decreases the likelihood of locating
+                                 on the wrong street but increases the likelihood of not
+                                 finding any valid network location.
+    ------------------------     -----------------------------------------------
+    tolerance_units              Argument should be specified as one of
+                                 :class:`~arcgis.network.ToleranceUnits`
+    ------------------------     -----------------------------------------------
+    allow_auto_relocate          Allows you to control whether inputs with existing
+                                 network location fields can be automatically
+                                 relocated to ensure valid, routable location fields
+                                 for the analysis.
+    ------------------------     -----------------------------------------------
+    sources                      Allows you to control which network source can
+                                 be used for locating. For example, you can configure
+                                 the analysis to locate inputs on streets but not
+                                 on sidewalks. The list of possible sources on
+                                 which to locate is specific to the network dataset
+                                 this service references.
+    ========================     ===============================================
+
+    .. code-block:: python
+
+        # Usage Example:
+        >>> locate_settings = LocateSettings(
+                                        tolerance=5000,
+                                        tolerance_units=ToleranceUnits.meters,
+                                        allow_auto_relocate=True,
+                                        sources=[
+                                                {"name": "Routing_Streets"}
+                                            ]
+                                        )
     """
 
     tolerance: float
@@ -1723,8 +1764,12 @@ class ODCostMatrixLayer(NetworkLayer):
         restrict_u_turns                            Optional String. Restrict or permit the route from making U-turns at
                                                     junctions. The default is as defined in the network layer.
 
-                                                    Values: esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly |
-                                                         esriNFSBNoBacktrack | esriNFSBAtDeadEndsAndIntersections
+                                                    Values:
+
+                                                    * *esriNFSBAllowBacktrack*
+                                                    * *esriNFSBAtDeadEndsOnly*
+                                                    * *esriNFSBNoBacktrack*
+                                                    * *esriNFSBAtDeadEndsAndIntersections*
         ------------------------------------        --------------------------------------------------------------------
         use_hierarchy                               Optional Boolean. Specify whether hierarchy should be used when
                                                     finding the shortest paths. The default value is true.
@@ -1791,10 +1836,23 @@ class ODCostMatrixLayer(NetworkLayer):
 
                                                     .. code-block:: python
 
-                                                        from arcgis.network import LocateSettings
-                                                        locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
-                                                        result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
-        -----------------------------------         --------------------------------------------------------------------
+                                                        # Usage example:
+                                                        >>> from arcgis.network import LocateSettings
+                                                        >>> locate_settings = LocateSettings(
+                                                                                    tolerance=5000,
+                                                                                    tolerance_units=ToleranceUnits.meters,
+                                                                                    allow_auto_relocate=True,
+                                                                                    sources=[
+                                                                                        {"name": "Routing_Streets"}
+                                                                                    ]
+                                                                                )
+                                                        >>> result = route_layer.solve(
+                                                                            stops=stops,
+                                                                            locate_settings={
+                                                                                    "default": locate_settings.to_dict()
+                                                                                }
+                                                                            )
+        ------------------------------------        --------------------------------------------------------------------
         return_empty_results                        Optional boolean. If True, the service will return empty results instead
                                                     of the error property when the request fails. The default is False.
         ====================================        ====================================================================
@@ -2079,9 +2137,9 @@ class NetworkDatasetLayer(NetworkLayer):
         such as the following:
 
         * Reuse location fields during the solve operation - You have a set of regularly serviced customers.
-        You can use the locate service to calculate location fields, and use the located inputs in the routing services.
-        This helps to speed up routing services since the service doesn't need to locate inputs again and
-        you can reuse the locations in multiple places.
+          You can use the locate service to calculate location fields, and use the located inputs in the routing services.
+          This helps to speed up routing services since the service doesn't need to locate inputs again and
+          you can reuse the locations in multiple places.
 
         .. note::
             The settings and barriers you use to locate inputs should match the eventual analysis
@@ -2089,32 +2147,33 @@ class NetworkDatasetLayer(NetworkLayer):
             relocate because the locations are not valid for a different travel mode or with barriers.
 
         * Compute serviceability - Before you perform a routing request, you can call locate
-        to determine serviceability. For example, the mode of travel may only allow service
-        inputs that are 500 meters off the streets. You can perform a locate service with
-        500 meters as the search tolerance and determine which inputs cannot be serviced
-        before you perform a more advanced routing service.
+          to determine serviceability. For example, the mode of travel may only allow service
+          inputs that are 500 meters off the streets. You can perform a locate service with
+          500 meters as the search tolerance and determine which inputs cannot be serviced
+          before you perform a more advanced routing service.
 
         * Use DistanceToNetworkInMeters to calculate service time - You can gain information from the
-        locate service response to fine-tune your routing service settings. For example, if you want to
-        know how far each input is off network to perform delivery analysis, and it takes time to go
-        from the parked vehicle location to the delivery location, you can use the DistanceToNetworkInMeters
-        field for each record in the response. Once you know how far away the actual location is from the
-        network, you can use a speed factor to calculate a service time for each input based
-        on its distance off the network.
+          locate service response to fine-tune your routing service settings. For example, if you want to
+          know how far each input is off network to perform delivery analysis, and it takes time to go
+          from the parked vehicle location to the delivery location, you can use the DistanceToNetworkInMeters
+          field for each record in the response. Once you know how far away the actual location is from the
+          network, you can use a speed factor to calculate a service time for each input based
+          on its distance off the network.
 
         * Query fields from the underlying source features -The locate service also supports returning additional
-        field values from the source features where the inputs are located. For example, you can set different
-        curb approaches on the inputs depending on the type of road on which they're located. If the input is
-        located on a major road, you can set it to right or left side of the vehicle, depending on the driving
-        side of the country where it's located. If the input is located on a local road, either side of curb
-        approach will work since a vehicle can cross a local road for a delivery.
+          field values from the source features where the inputs are located. For example, you can set different
+          curb approaches on the inputs depending on the type of road on which they're located. If the input is
+          located on a major road, you can set it to right or left side of the vehicle, depending on the driving
+          side of the country where it's located. If the input is located on a local road, either side of curb
+          approach will work since a vehicle can cross a local road for a delivery.
 
         ====================================    ====================================================================
         **Parameter**                           **Description**
         ------------------------------------    --------------------------------------------------------------------
         input_locations                         Required FeatureSet, list of Point geometries, or a comma separated string.
-                                                To see the fields that can be included in your Feature Set refer to the doc:
-                                                https://developers.arcgis.com/rest/services-reference/enterprise/locate-service.htm
+                                                To see the fields that can be included in your Feature Set refer to the
+                                                `Locate Service <https://developers.arcgis.com/rest/services-reference/enterprise/locate-service.htm>`_
+                                                doc.
         ------------------------------------    --------------------------------------------------------------------
         travel_mode                             Optional string. Travel modes provide override values that help you
                                                 quickly and consistently model a vehicle or mode of transportation.
@@ -2145,17 +2204,23 @@ class NetworkDatasetLayer(NetworkLayer):
 
                                                 .. code-block:: python
 
-                                                    from arcgis.network import LocateSettings
-                                                    locate_settings = LocateSettings(
-                                                        tolerance=5000,
-                                                        tolerance_units=ToleranceUnits.meters,
-                                                        allow_auto_relocate=True,
-                                                        sources=[{"name": "Routing_Streets"}]
-                                                    )
-                                                    result = route_layer.solve(
-                                                        stops=stops,
-                                                        locate_settings={"default": locate_settings.to_dict()}
-                                                    )
+                                                    # Usage Example:
+
+                                                    >>> from arcgis.network import LocateSettings
+                                                    >>> locate_settings = LocateSettings(
+                                                                tolerance=5000,
+                                                                tolerance_units=ToleranceUnits.meters,
+                                                                allow_auto_relocate=True,
+                                                                sources=[
+                                                                    {"name": "Routing_Streets"}
+                                                                ]
+                                                            )
+                                                    >>> result = route_layer.solve(
+                                                                        stops=stops,
+                                                                        locate_settings={
+                                                                            "default": locate_settings.to_dict()
+                                                                        }
+                                                            )
         ------------------------------------    --------------------------------------------------------------------
         barriers                                Optional Point/FeatureSet. The set of barriers loaded as network
                                                 locations during analysis. Barriers can be specified using a simple
@@ -2169,7 +2234,7 @@ class NetworkDatasetLayer(NetworkLayer):
                                                 specified, preloaded polyline barriers from the map document are
                                                 used in the analysis. If an empty json object is passed ('{}')
                                                 preloaded polyline barriers are ignored.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         polygon_barriers                        Optional Polygon/FeatureSet. The set of polygon barriers loaded as
                                                 network locations during analysis. If polygon barriers are not
                                                 specified, preloaded polygon barriers from the map document are used
@@ -2178,29 +2243,29 @@ class NetworkDatasetLayer(NetworkLayer):
         ------------------------------------    --------------------------------------------------------------------
         return_barriers                         Optional boolean. If true, barriers will be returned with the analysis
                                                 results. Default is False.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         return_polyline_barriers                Optional boolean. If true, polyline barriers will be returned with
                                                 the analysis results. Default is False.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         return_polygon_barriers                 Optional boolean. If true, polygon barriers will be returned with
                                                 the analysis results. Default is False.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         output_source_field_names               Optional string.The fields from which the located source feature values
                                                 will be retrieved. This parameter is specified as a comma-separated
                                                 list of names. The values can be specified as in the example below:
 
-                                                    outputSourceFieldNames=ROAD_CLASS,FULL_STREET_NAME
+                                                * *outputSourceFieldNames=ROAD_CLASS,FULL_STREET_NAME*
 
                                                 .. note::
                                                     These value are specific to the services published with the ArcGIS
                                                     StreetMap Premium data. The values will be different if you are
                                                     using other data for the analysis.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         out_sr                                  Optional Integer. Specify the spatial reference of the geometries.
-        -----------------------------------     --------------------------------------------------------------------
+        ------------------------------------    --------------------------------------------------------------------
         future                                  Optional boolean. If True, a future object will be returned and the process
                                                 will not wait for the task to complete. The default is False, which means wait for results.
-        ===================================     ====================================================================
+        ====================================    ====================================================================
 
         :return: Dictionary
 

@@ -375,6 +375,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         * Vector Tile Layer
 
+        * WMS Layer
+
         =====================       ===================================================================
         **Parameter**                **Definition**
         ---------------------       -------------------------------------------------------------------
@@ -405,8 +407,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISTiledImageServiceLayer",
             "ArcGISVectorTileLayer",
             "VectorTileLayer",
+            "WMS",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
+            # self._check_spatial_reference(layer)
             self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
@@ -438,13 +442,15 @@ class WebMap(HasTraits, collections.OrderedDict):
         .. code-block:: python
 
             wm = WebMap(<webmap_item_id>)
-            layer = wm.definition["baseMap"]["baseMapLayer"][0]
+            layer = wm.definition["baseMap"]["baseMapLayers"][0]
             wm.move_from_basemap(layer)
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
             self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
+            # Check that the first basemap layer has correct spatial reference still
+            self._check_spatial_reference(self._webmapdict["baseMap"])
             self.definition = _mixins.PropertyMap(self._webmapdict)
             return self.basemap
         else:
@@ -527,6 +533,17 @@ class WebMap(HasTraits, collections.OrderedDict):
             layer_type = new_layer["layerType"]
         else:
             layer_type = None
+
+        if layer_type == "WMS":
+            # WMS can have different spatial reference than the webmap
+            if "spatialReferences" in new_layer:
+                if (
+                    new_layer["spatialReferences"][0]
+                    != self.definition["spatialReference"]
+                ):
+                    warn(
+                        "WMS layer has different spatial reference than the webmap. The layer may not display correctly. To best display, make it the only basemap layer."
+                    )
 
         # region sort layers into 'operationalLayers' or 'tables'
         if isinstance(layer, _arcgis_features.Table):
@@ -1675,17 +1692,14 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> 2
 
         """
-        if self._layers is not None:
-            return self._layers
-        else:
-            self._layers = []
-            if "operationalLayers" in self._webmapdict.keys():
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
+        self._layers = []
+        if "operationalLayers" in self._webmapdict.keys():
+            for l in self._webmapdict["operationalLayers"]:
+                self._layers.append(_mixins.PropertyMap(l))
 
-            # reverse the layer list - webmap viewer reverses the list always
-            self._layers.reverse()
-            return self._layers
+        # reverse the layer list - webmap viewer reverses the list always
+        self._layers.reverse()
+        return self._layers
 
     @property
     def basemap(self):
@@ -1883,20 +1897,27 @@ class WebMap(HasTraits, collections.OrderedDict):
         layer_sr = None
 
         if isinstance(service, dict) and not isinstance(service, _gis.Item):
-            for layer in service["baseMapLayers"]:
-                if layer["layerType"] == "VectorTileLayer":
-                    # Vector Tile layer always has spatial reference of 4326
-                    layer_sr = 4326
-            if not layer_sr:
-                # If none of the layers are vector tile layers, get the layer from it's itemid or url and then continue
-                if "itemId" in service["baseMapLayers"][0]:
-                    service = self._gis.content.get(
-                        service["baseMapLayers"][0]["itemId"]
-                    )
-                    return self._check_spatial_reference(service)
-                elif "url" in service["baseMapLayers"][0]:
-                    service = _gis.Layer(service["baseMapLayers"][0]["url"])
-                    return self._check_spatial_reference(service)
+            while layer_sr is None:
+                for layer in service["baseMapLayers"]:
+                    if layer["layerType"] == "VectorTileLayer":
+                        # Vector Tile layer always has spatial reference of 4326
+                        layer_sr = 4326
+                    elif layer["layerType"] == "WMS":
+                        if "spatialReferences" in layer:
+                            # given as a list sometimes
+                            layer_sr = layer["spatialReferences"][0]
+                        else:
+                            layer_sr = layer["spatialReference"]
+                if not layer_sr:
+                    # If none of the layers are vector tile layers, get the layer from it's itemid or url and then continue
+                    if "itemId" in service["baseMapLayers"][0]:
+                        service = self._gis.content.get(
+                            service["baseMapLayers"][0]["itemId"]
+                        )
+                        return self._check_spatial_reference(service)
+                    elif "url" in service["baseMapLayers"][0]:
+                        service = _gis.Layer(service["baseMapLayers"][0]["url"])
+                        return self._check_spatial_reference(service)
         elif isinstance(service, _gis.Item):
             # Checking spatial reference of an existing WebMap item or of an existing basemap layer in our webmap
             # If existing basemap layer, it is because user is moving it to first index position
@@ -2867,9 +2888,10 @@ class PackagingJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
+        Reports the total amout of time that passed while the
+        :class:`~arcgis.mapping.PackagingJob` ran.
 
         :return:
             The elapsed time

@@ -471,7 +471,7 @@ def pixel_classify_superres_image(
 
     tiles, is_multispec = tensor(tiles), model_info.get("is_multispec")
     modarch = model_info.get("ModelArch", "UNet")
-    if modarch == "SR3":
+    if modarch.startswith("SR3"):
         norm_stats_a = model_info.get("image_stats", None)
         norm_stats_b = model_info.get("image_stats2", None)
         model_info["ExtractBands"] = list(range(tiles.shape[1]))

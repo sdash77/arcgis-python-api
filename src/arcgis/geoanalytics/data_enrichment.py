@@ -9,6 +9,7 @@ from datetime import datetime
 import json as _json
 import logging as _logging
 from typing import Any, Optional, Union
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.features.feature import FeatureCollection
@@ -21,7 +22,10 @@ from arcgis.geoanalytics._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
+
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 from arcgis.gis import GIS, Item
 
 _log = _logging.getLogger(__name__)
@@ -29,6 +33,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def calculate_motion_statistics(
     input_layer: Union[
         Item,
@@ -231,6 +236,7 @@ def calculate_motion_statistics(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateMotionStatistics"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -309,6 +315,7 @@ def calculate_motion_statistics(
         raise
 
 
+# -------------------------------------------------------------------------
 def enrich_from_grid(
     input_layer: Union[
         Item,
@@ -398,6 +405,7 @@ def enrich_from_grid(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "EnrichFromMultiVariableGrid"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 

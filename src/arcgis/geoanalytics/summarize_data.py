@@ -14,6 +14,7 @@ from datetime import datetime
 import logging as _logging
 from typing import Any, Optional, Union
 import arcgis as _arcgis
+from arcgis.auth.tools import LazyLoader
 from arcgis.features.feature import FeatureCollection
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
@@ -27,8 +28,10 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
@@ -109,6 +112,7 @@ def summarize_center_and_dispersion(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "SummarizeCenterAndDispersion"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
 
     params = {
@@ -174,6 +178,8 @@ def summarize_center_and_dispersion(
 
 
 # --------------------------------------------------------------------------
+
+
 def build_multivariable_grid(
     input_layers: Union[
         Item,
@@ -409,6 +415,7 @@ def build_multivariable_grid(
             flayers.append(il)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -480,6 +487,8 @@ def build_multivariable_grid(
 
 
 # --------------------------------------------------------------------------
+
+
 def aggregate_points(
     point_layer: Union[
         Item,
@@ -701,6 +710,7 @@ def aggregate_points(
     """
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -780,6 +790,8 @@ def aggregate_points(
 
 
 # --------------------------------------------------------------------------
+
+
 def describe_dataset(
     input_layer: Union[
         Item,
@@ -884,6 +896,7 @@ def describe_dataset(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "DescribeDataset"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -954,6 +967,8 @@ def describe_dataset(
 
 
 # --------------------------------------------------------------------------
+
+
 def join_features(
     target_layer: Union[
         Item,
@@ -1214,6 +1229,7 @@ def join_features(
     target_layer = _prevent_bds_item(target_layer)
     join_layer = _prevent_bds_item(join_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1292,6 +1308,8 @@ def join_features(
 
 
 # --------------------------------------------------------------------------
+
+
 def reconstruct_tracks(
     input_layer: Union[
         Item,
@@ -1517,6 +1535,7 @@ def reconstruct_tracks(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1598,6 +1617,8 @@ def reconstruct_tracks(
 
 
 # --------------------------------------------------------------------------
+
+
 def summarize_attributes(
     input_layer: Union[
         Item,
@@ -1731,6 +1752,7 @@ def summarize_attributes(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1806,6 +1828,8 @@ def summarize_attributes(
 
 
 # --------------------------------------------------------------------------
+
+
 def summarize_within(
     summarized_layer: Union[
         Item,
@@ -2030,6 +2054,7 @@ def summarize_within(
     """
     summarized_layer = _prevent_bds_item(summarized_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 

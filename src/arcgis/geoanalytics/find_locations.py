@@ -10,6 +10,7 @@ import json as _json
 import logging as _logging
 from typing import Any, Optional, Union
 from datetime import datetime
+from arcgis.auth.tools import LazyLoader
 import arcgis as _arcgis
 from arcgis import env as _env
 from arcgis.geocoding._functions import Geocoder
@@ -25,13 +26,16 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def geocode_locations(
     input_layer: Union[
         Item,
@@ -166,6 +170,7 @@ def geocode_locations(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -292,6 +297,7 @@ def geocode_locations(
         raise
 
 
+# -------------------------------------------------------------------------
 def snap_tracks(
     point_layer: Union[
         Item,
@@ -449,6 +455,7 @@ def snap_tracks(
     point_layer = _prevent_bds_item(point_layer)
     polyline_layer = _prevent_bds_item(polyline_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -520,6 +527,7 @@ def snap_tracks(
     return job.result()
 
 
+# -------------------------------------------------------------------------
 def detect_incidents(
     input_layer: Union[
         Item,
@@ -676,6 +684,7 @@ def detect_incidents(
     """
     tool_name = "DetectIncidents"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -745,6 +754,7 @@ def detect_incidents(
         raise
 
 
+# -------------------------------------------------------------------------
 def find_dwell_locations(
     input_layer: Union[
         Item,
@@ -937,6 +947,7 @@ def find_dwell_locations(
         gis = _env.active_gis
     if gis.version < [8, 1]:
         return None
+    _check_ga_status(gis)
 
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _arcgis.geoprocessing.import_toolbox(url, gis=gis)
@@ -1031,6 +1042,7 @@ def find_dwell_locations(
     return None
 
 
+# -------------------------------------------------------------------------
 def find_similar_locations(
     input_layer: Union[
         Item,
@@ -1189,6 +1201,7 @@ def find_similar_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {

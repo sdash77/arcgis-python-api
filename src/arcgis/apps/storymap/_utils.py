@@ -218,6 +218,18 @@ def theme(story, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
 
 
 # ----------------------------------------------------------------------
+def get_theme(story):
+    """
+    Get the theme of the story, briefing, or collection.
+    """
+    # see if there is a resource that is the story-theme
+    for node, node_info in story._properties["resources"].items():
+        for key, val in node_info.items():
+            if key == "type" and val == "story-theme":
+                return story._properties["resources"][node]["data"]["themeId"]
+
+
+# ----------------------------------------------------------------------
 def save(
     story,
     title: Optional[str] = None,

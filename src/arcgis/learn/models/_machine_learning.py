@@ -476,12 +476,15 @@ class MLModel(object):
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,
@@ -1254,7 +1257,7 @@ class MLModel(object):
         rasters=None,
         datefield=None,
         distance_feature_layers=None,
-        output_name="Prediction Layer",
+        output_name=None,
         gis=None,
         match_field_names=None,
         prediction_type="features",
@@ -1265,6 +1268,9 @@ class MLModel(object):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
+
+        if output_name is None:
+            output_name = "Prediction Layer"
 
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
@@ -1377,10 +1383,15 @@ class MLModel(object):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
-                return online_table.publish(overwrite=True)
+                try:
+                    online_table = gis.content.add(
+                        {"type": "Microsoft Excel", "overwrite": True}, table_file
+                    )
+                    return online_table.publish(overwrite=True)
+                except Exception as ex:
+                    raise Exception(
+                        f"Filename {output_name} already exists. Please provide different output filename."
+                    )
 
     def _predict_rasters(
         self,
