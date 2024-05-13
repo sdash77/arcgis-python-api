@@ -17,7 +17,7 @@ class TestLicenseClass(unittest.TestCase):
     def test_offline_report(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.offline_report()
+            assert lic.offline_report
 
     def test_get_license(self):
         licenses = self.admin.license.all()
@@ -30,7 +30,7 @@ class TestLicenseClass(unittest.TestCase):
     def test_report(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.report()
+            assert lic.report
 
     def test_check(self):
         licenses = self.admin.license.all()

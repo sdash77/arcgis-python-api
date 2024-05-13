@@ -627,8 +627,9 @@ class License(object):
         return {}
 
     # ----------------------------------------------------------------------
+    @property
     def offline_report(self):
-        """Return a list of users who have taken the license offline"""
+        """Return a DataFrame that shows the usernames and whether they have taken a license offline"""
         # now that we have all user_entitlements, filter out the ones that have taken the license offline
         import pandas as pd
 
