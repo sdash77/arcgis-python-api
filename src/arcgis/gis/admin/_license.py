@@ -228,9 +228,9 @@ class LicenseManager(BasePortalAdmin):
         }
         res = self._con.post(url, params)
         if "success" in res and res["success"] == False:
-            raise Exception("Could not update the dicconnect settings.")
+            raise Exception("Could not update the disconnect settings.")
         elif "success" not in res:
-            raise Exception("Could not update the dicconnect settings: %s" % res)
+            raise Exception("Could not update the disconnect settings: %s" % res)
 
 
 ########################################################################
@@ -437,6 +437,7 @@ class License(object):
     _properties = None
     _gis = None
     _con = None
+    _entitlements = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gis, info):
@@ -444,6 +445,7 @@ class License(object):
         self._gis = gis
         self._con = gis._con
         self._properties = PropertyMap(info)
+        self._entitlements = self._get_entitlements
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -472,6 +474,30 @@ class License(object):
                 type(self).__name__,
                 self._gis._portal.resturl,
             )
+
+    # ----------------------------------------------------------------------
+    @property
+    def _get_entitlements(self):
+        """returns the entitlements"""
+        item_id = self.properties["listing"]["itemId"]
+        url = "%scontent/listings/%s/userEntitlements" % (
+            self._gis._portal.resturl,
+            item_id,
+        )
+        start = 1
+        num = 100
+        params = {"start": start, "num": num}
+        user_entitlements = []
+        res = self._con.get(url, params)
+        # add the first set of results
+        user_entitlements += res["userEntitlements"]
+        if "nextStart" in res:
+            while res["nextStart"] > 0:
+                start += num
+                params = {"start": start, "num": num}
+                res = self._con.get(url, params)
+                user_entitlements += res["userEntitlements"]
+        return user_entitlements
 
     # ----------------------------------------------------------------------
     @property
@@ -540,24 +566,7 @@ class License(object):
         """
         returns a list of all usernames and their entitlements for this license
         """
-        item_id = self.properties["listing"]["itemId"]
-        url = "%scontent/listings/%s/userEntitlements" % (
-            self._gis._portal.resturl,
-            item_id,
-        )
-        start = 1
-        num = 100
-        params = {"start": start, "num": num}
-        user_entitlements = []
-        res = self._con.get(url, params)
-        user_entitlements += res["userEntitlements"]
-        if "nextStart" in res:
-            while res["nextStart"] > 0:
-                start += num
-                params = {"start": start, "num": num}
-                res = self._con.get(url, params)
-                user_entitlements += res["userEntitlements"]
-        return user_entitlements
+        return self._entitlements
 
     # ----------------------------------------------------------------------
     def check(self, user: str) -> list:
@@ -612,28 +621,27 @@ class License(object):
         :return:
            dictionary
         """
-        item_id = self.properties["listing"]["itemId"]
-        url = "%scontent/listings/%s/userEntitlements" % (
-            self._gis._portal.resturl,
-            item_id,
-        )
-        start = 1
-        num = 100
-        params = {"start": start, "num": num}
-        user_entitlements = []
-        res = self._con.get(url, params)
-        for u in res["userEntitlements"]:
+        for u in self._entitlements:
             if u["username"].lower() == username.lower():
                 return u
-        if "nextStart" in res:
-            while res["nextStart"] > 0:
-                start += num
-                params = {"start": start, "num": num}
-                res = self._con.get(url, params)
-                for u in res["userEntitlements"]:
-                    if u["username"].lower() == username.lower():
-                        return u
         return {}
+
+    # ----------------------------------------------------------------------
+    def offline_report(self):
+        """Return a list of users who have taken the license offline"""
+        # now that we have all user_entitlements, filter out the ones that have taken the license offline
+        import pandas as pd
+
+        data = []
+        columns = ["Username", "Disconnected"]
+        for u in self._entitlements:
+            try:
+                row = [u["username"], u["disconnected"]]
+                data.append(row)
+            except:
+                pass
+
+        return pd.DataFrame(data=data, columns=columns)
 
     # ----------------------------------------------------------------------
     def assign(
