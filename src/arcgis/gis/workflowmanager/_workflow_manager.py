@@ -2021,8 +2021,7 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
                             Get the email templates by entering 'email', the Web Request Templates by entering
-                            'webRequest', or the Step Templates by entering 'step'. Or, enter your own value to
-                            get the custom templates.
+                            'webRequest', or, enter your own value to get the custom templates.
         ===============     ====================================================================
 
         :return:
@@ -2045,8 +2044,7 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
                             Get an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            get a custom template.
+                            'webRequest', or enter your own value to get a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be retrieved
         ===============     ====================================================================
@@ -2091,8 +2089,7 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
                             Delete an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            delete a custom template.
+                            'webRequest', or enter your own value to delete a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be deleted
         ===============     ====================================================================
@@ -2132,8 +2129,7 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
                             Update an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            update a custom template.
+                            'webRequest', or enter your own value to update a custom template.
         ---------------     --------------------------------------------------------------------
         template_id         Required string. The id of the template to be updated
         ---------------     --------------------------------------------------------------------
@@ -2212,8 +2208,7 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         template_type       Required string. The type of template stored in the workflow item.
                             Create an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or a Step Template by entering 'step'. Or, enter your own value to
-                            define a custom template.
+                            'webRequest', or enter your own value to define a custom template.
         ---------------     --------------------------------------------------------------------
         template_name       Required string. The new name to be given to the template
         ---------------     --------------------------------------------------------------------
