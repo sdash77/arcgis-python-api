@@ -1,51 +1,33 @@
-import sys
-
 import json
 import uuid
-import logging
 import concurrent.futures
 import unittest
 from arcgis.features import FeatureLayer
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 from integration.config import QALAB_ROOT_PATH
 
-__logger__ = logging.getLogger()
 
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_profile', 'your_enterprise_profile']  #
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
 def search_and_remove(gis):
     for i in gis.content.search("test_new_edit_features.zip"):
-        [ii.delete() for ii in i.related_items("Service2Data", 'reverse')]
-
+        [ii.delete() for ii in i.related_items("Service2Data", "reverse")]
         i.delete()
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestEditFeaturesUpload(unittest.TestCase):
+    """test async edit_feature() with add, update and delete"""
+
     @classmethod
     def setUpClass(cls):
         fp = QALAB_ROOT_PATH + r"\edits_features_tests\test_new_edit_features.zip"
-        cls.gis_objs = [
-            GIS(profile=p, verify_cert=False, proxy=PROXIES)
-            for p in profiles
-        ]
-        [search_and_remove(gis) for gis in cls.gis_objs]
+
+        search_and_remove(cls.gis)
+
         cls.items = []
         cls.pitems = []
         cls.deletes = [2]
@@ -84,16 +66,16 @@ class TestEditFeaturesUpload(unittest.TestCase):
             }
         ]
 
-        for gis in cls.gis_objs:
-            item = gis.content.add(
-                {
-                    "type": "File Geodatabase",
-                    "name": uuid.uuid4().hex[:6],
-                },
-                data=fp,
-            )
-            cls.items.append(item)
-            cls.pitems.append(item.publish())
+        item = cls.gis.content.add(
+            {
+                "type": "File Geodatabase",
+                "name": uuid.uuid4().hex[:6],
+            },
+            data=fp,
+        )
+        cls.items.append(item)
+        cls.pitems.append(item.publish())
+
         for item in cls.pitems:
             lyr: FeatureLayer = item.layers[0]
             container = lyr.container
@@ -104,6 +86,8 @@ class TestEditFeaturesUpload(unittest.TestCase):
                 # {"capabilities": "Query,Uploads"}
             )
             container.manager.refresh()
+
+        print(cls.pitems)
 
     def test_add_feature(self):
         for item in self.pitems:

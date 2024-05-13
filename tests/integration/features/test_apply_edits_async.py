@@ -1,17 +1,8 @@
 import unittest
-from arcgis.features import FeatureLayer
-from arcgis.gis import GIS, ProfileManager
 import pandas as pd
-from arcgis.features._async import EditFeatureJob
-from utils.decorators import integration_test
+import concurrent.futures
+from utils.decorators import integration_test, profiles
 
-if "your_online_profile" in ProfileManager().list():
-    gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
-    do_not_skip_me = True
-    msg = "All systems go!"
-else:
-    do_not_skip_me = False
-    msg = "Profile Missing"
 
 data = [
     {
@@ -128,14 +119,14 @@ data = [
 ]
 
 
-@unittest.skipIf(do_not_skip_me == False, reason=msg)
+@profiles.agol
 @integration_test
 class TestApplyEditsAsync(unittest.TestCase):
     def test_async_edits(self):
 
         df = pd.DataFrame(data)
         df.spatial.name
-        item = gis.content.import_data(df)
+        item = self.gis.content.import_data(df)
         edit_data = [
             {
                 "geometry": {
@@ -162,9 +153,8 @@ class TestApplyEditsAsync(unittest.TestCase):
         ]
         fl = item.layers[0]
         try:
-
             res = fl.edit_features(adds=edit_data, future=True)
-            assert isinstance(res, EditFeatureJob)
+            assert isinstance(res, concurrent.futures.Future)
             result = res.result()
             assert result
         except Exception as e:
