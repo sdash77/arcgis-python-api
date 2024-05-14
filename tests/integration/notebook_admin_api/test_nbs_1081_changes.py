@@ -13,9 +13,9 @@ from arcgis.gis.tasks._schedule import Run
 from utils.decorators import integration_test
 
 try:
-    url = "https://datasciencedev.esri.com/portal"
-    username = "portaladmin"
-    password = "esri.agp"
+    url = "https://pythonapitest.dev.geocloud.com/portal"
+    username = "arcgispyapibot"
+    password = "geosaurus_automation123"
     gis = GIS(
         url=url, username=username, password=password, verify_cert=False, trust_env=True
     )

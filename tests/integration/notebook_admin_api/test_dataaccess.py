@@ -6,9 +6,9 @@ import urllib
 from utils.decorators import integration_test
 
 GIS(
-    url="https://datasciencedev.esri.com/portal",
-    username="portaladmin",
-    password="esri.agp",
+    url="https://pythonapitest.dev.geocloud.com/portal",
+    username="arcgispyapibot",
+    password="geosaurus_automation123",
     verify_cert=False,
     trust_env=True,
     use_gen_token=True,
@@ -17,11 +17,12 @@ GIS(
 
 
 gis = GIS(
-    url="https://datasciencedev.esri.com/portal",
-    username="portaladmin",
-    password="esri.agp",
+    url="https://pythonapitest.dev.geocloud.com/portal",
+    username="arcgispyapibot",
+    password="geosaurus_automation123",
     verify_cert=False,
     trust_env=True,
+    use_gen_token=True,
     proxy=detect_proxy(True),
 )
 NOTEBOOKS = gis.notebook_server

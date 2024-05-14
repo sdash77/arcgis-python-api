@@ -18,7 +18,7 @@ from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
 from arcgis.gis.nb._system import Container, DirectoryManager
 from utils.decorators import integration_test
 
-profiles = ["datasciencedev"]
+profiles = ["pythonapitest"]
 
 ###########################################################################
 @integration_test

@@ -15,9 +15,9 @@ from arcgis.auth.tools._util import detect_proxy
 
 proxy = detect_proxy(True)
 try:
-    url = "https://rqalnxbi01pt.esri.com/gis"  # "https://datasciencedev.esri.com/portal"
-    username = "PAPIadmin"  # "portaladmin"
-    password = "PAPIletmein01"  # "esri.agp"
+    url = "https://pythonapitest.dev.geocloud.com/portal"  # "https://datasciencedev.esri.com/portal"
+    username = "arcgispyapibot"  # "portaladmin"
+    password = "geosaurus_automation123"  # "esri.agp"
     gis = GIS(
         url=url,
         username=username,
@@ -78,7 +78,7 @@ class TestNotebookService(unittest.TestCase):
                     "title": "nb_title",
                     "properties": {
                         'notebookRuntimeName': 'ArcGIS Notebook Python 3 Standard',
-                        'notebookRuntimeVersion': '8.0',
+                        'notebookRuntimeVersion': '9.0',
                     },
                     "text": json_data,
                 }

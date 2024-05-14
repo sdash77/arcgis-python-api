@@ -5,9 +5,9 @@ from arcgis.gis.nb import NotebookServer
 from utils.decorators import integration_test
 
 try:
-    url = "https://datasciencedev.esri.com/portal"
-    username = "portaladmin"
-    password = "esri.agp"
+    url = "https://pythonapitest.dev.geocloud.com/portal"
+    username = "arcgispyapibot"
+    password = "geosaurus_automation123"
     gis = GIS(
         url=url, username=username, password=password, verify_cert=False, trust_env=True
     )
@@ -68,7 +68,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "5.0",
+            "notebookRuntimeVersion": "9.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -123,7 +123,7 @@ class TestNBS109SnapShotManger(unittest.TestCase):
                     "title": f"item_{uuid.uuid4().hex[:6]}",
                     "properties": {
                         "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                        "notebookRuntimeVersion": "5.0",
+                        "notebookRuntimeVersion": "9.0",
                     },
                 },
                 data=fp,
