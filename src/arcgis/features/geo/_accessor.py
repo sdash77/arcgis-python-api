@@ -3590,7 +3590,7 @@ class GeoAccessor(object):
         )
         for f in date_fields:
             # apply function to each column in date_fields
-            df[f] = pd.to_datetime(df[f]).apply(fn)
+            df[f] = pd.to_datetime(df[f]).apply(fn).astype("Int64")
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
