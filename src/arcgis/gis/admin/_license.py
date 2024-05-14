@@ -445,7 +445,8 @@ class License(object):
         self._gis = gis
         self._con = gis._con
         self._properties = PropertyMap(info)
-        self._entitlements = self._get_entitlements
+        # set the user entitlements property
+        self._get_entitlements()
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -476,7 +477,6 @@ class License(object):
             )
 
     # ----------------------------------------------------------------------
-    @property
     def _get_entitlements(self):
         """returns the entitlements"""
         item_id = self.properties["listing"]["itemId"]
@@ -497,7 +497,7 @@ class License(object):
                 params = {"start": start, "num": num}
                 res = self._con.get(url, params)
                 user_entitlements += res["userEntitlements"]
-        return user_entitlements
+        self._entitlements = user_entitlements
 
     # ----------------------------------------------------------------------
     @property
@@ -629,7 +629,11 @@ class License(object):
     # ----------------------------------------------------------------------
     @property
     def offline_report(self):
-        """Return a DataFrame that shows the usernames and whether they have taken a license offline"""
+        """
+        Return a DataFrame that shows the usernames and whether they have taken a license offline
+
+        :return: pd.DataFrame
+        """
         # now that we have all user_entitlements, filter out the ones that have taken the license offline
         import pandas as pd
 
@@ -704,6 +708,7 @@ class License(object):
         )
         res = self._con.post(url, params)
         if "success" in res:
+            self._get_entitlements()  # refresh entitlements
             return res["success"] == True
         return res
 
