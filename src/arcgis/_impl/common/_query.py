@@ -362,7 +362,7 @@ def _query(layer, url, params, raw=False):
             ):
                 if "resultRecordCount" not in params:
                     # assign initial value after first query
-                    params["resultRecordCount"] = 2000
+                    params["resultRecordCount"] = len(result["features"])
                 if "resultOffset" in params:
                     # add the number we found to the offset so we don't have doubles
                     params["resultOffset"] = params["resultOffset"] + len(
