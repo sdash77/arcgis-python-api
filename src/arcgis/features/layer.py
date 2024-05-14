@@ -2243,7 +2243,7 @@ class FeatureLayer(Layer):
             as_df=as_df,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -4261,7 +4261,7 @@ class Table(FeatureLayer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             as_df=as_df,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 
