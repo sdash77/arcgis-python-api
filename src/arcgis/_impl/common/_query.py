@@ -109,7 +109,7 @@ def _common_query(
         format_3d_objects=format_3d_objects,
         time_reference_unknown_client=time_reference_unknown_client,
         query_3d=query_3d,
-        kwargs=kwargs,
+        **kwargs,
     )
 
     if not return_all_records or "outStatistics" in params:
@@ -471,7 +471,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeDouble": pd.Float64Dtype(),
             "esriFieldTypeFloat": pd.Float64Dtype(),
             "esriFieldTypeString": pd.StringDtype(),
-            "esriFieldTypeDate": object,
+            "esriFieldTypeDate": "<M8[ns]",
             "esriFieldTypeOID": pd.Int64Dtype(),
             "esriFieldTypeGeometry": object,
             "esriFieldTypeBlob": object,
@@ -480,7 +480,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeGlobalID": pd.StringDtype(),
             "esriFieldTypeXML": object,
             "esriFieldTypeTimeOnly": pd.StringDtype(),
-            "esriFieldTypeDateOnly": object,
+            "esriFieldTypeDateOnly": "<M8[ns]",
             "esriFieldTypeTimestampOffset": object,
             "esriFieldTypeBigInteger": pd.Int64Dtype(),
         }
@@ -597,7 +597,7 @@ def _query_df(layer, url, params, **kwargs):
             df.spatial.renderer = layer.renderer
             df.spatial._meta.source = layer
 
-        return pd.DataFrame([], columns=columns)
+        return pd.DataFrame([], columns=columns).astype(columns)
     sr = None
     if "spatialReference" in result:
         sr = result["spatialReference"]
