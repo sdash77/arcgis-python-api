@@ -1,38 +1,19 @@
+
 import os
 import unittest
 from arcgis.gis import GIS
-from arcgis.auth.tools._util import detect_proxy
+#from arcgis.auth.tools._util import detect_proxy
 import urllib
-from utils.decorators import integration_test
-
-GIS(
-    url="https://pythonapitest.dev.geocloud.com/portal",
-    username="arcgispyapibot",
-    password="geosaurus_automation123",
-    verify_cert=False,
-    trust_env=True,
-    use_gen_token=True,
-    proxy=detect_proxy(True),
-).users.me.update(security_question=1, security_answer="TheAnswerIs5")
+from utils.decorators import integration_test, profiles
 
 
-gis = GIS(
-    url="https://pythonapitest.dev.geocloud.com/portal",
-    username="arcgispyapibot",
-    password="geosaurus_automation123",
-    verify_cert=False,
-    trust_env=True,
-    use_gen_token=True,
-    proxy=detect_proxy(True),
-)
-NOTEBOOKS = gis.notebook_server
-
-
+@profiles.admin_enterprise
 @integration_test
 class TestNotebookDataAccess(unittest.TestCase):
     def test_data_access(self):
         """tests the data access workflow"""
         import tempfile
+        NOTEBOOKS = self.gis.notebook_server
 
         fp = os.path.join(tempfile.gettempdir(), "tstore", "dataset.txt")
         os.makedirs(os.path.join(tempfile.gettempdir(), "tstore"), exist_ok=True)
@@ -43,14 +24,14 @@ class TestNotebookDataAccess(unittest.TestCase):
             writer.close()
         da.upload(fp)
         assert (
-            len(
-                [
-                    f.properties.name
-                    for f in da.files
-                    if f.properties.name == "dataset.txt"
-                ]
-            )
-            > 0
+                len(
+                    [
+                        f.properties.name
+                        for f in da.files
+                        if f.properties.name == "dataset.txt"
+                    ]
+                )
+                > 0
         )
         data = [f for f in da.files if f.properties.name == "dataset.txt"]
         local_file_path = data[0].download()

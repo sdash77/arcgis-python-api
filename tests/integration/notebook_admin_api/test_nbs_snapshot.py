@@ -2,8 +2,9 @@ import unittest
 import os, json, uuid
 from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
+'''
 try:
     url = "https://pythonapitest.dev.geocloud.com/portal"
     username = "arcgispyapibot"
@@ -14,6 +15,7 @@ try:
     SKIP_TESTS = False
 except:
     SKIP_TESTS = True
+'''
 notebook_json = {
     "cells": [
         {
@@ -92,13 +94,14 @@ notebook_json = {
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
 @integration_test
+@profiles.admin_enterprise
 class TestNBS109SnapShotManger(unittest.TestCase):
     """Tests the SnapshotManager and SnapShot classes for Notebook Server"""
 
     def test_get_snapshot_manager(self):
         """tests that the snapshot manager is returned."""
-        assert len(gis.notebook_server) >= 0
-        nbs = gis.notebook_server[0]
+        assert len(self.gis.notebook_server) >= 0
+        nbs = self.gis.notebook_server[0]
         assert isinstance(nbs, NotebookServer)
         snapmgr = nbs.notebooks.snapshots
         assert snapmgr
@@ -114,9 +117,9 @@ class TestNBS109SnapShotManger(unittest.TestCase):
             with open(fp, "w") as writer:
                 writer.write(json.dumps(notebook_json))
 
-            nbs = gis.notebook_server[0]
+            nbs = self.gis.notebook_server[0]
 
-            item = gis.content.add(
+            item = self.gis.content.add(
                 {
                     "type": "Notebook",
                     "tags": "delete me",

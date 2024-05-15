@@ -6,24 +6,10 @@ import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test,profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_profile']  # , 'your_enterprise_profile'
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 notebook_json = {
     "cells": [
@@ -79,7 +65,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "5.0",
+            "notebookRuntimeVersion": "8.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -100,7 +86,7 @@ notebook_json = {
     "nbformat_minor": 2,
 }
 
-
+@profiles.agol
 @integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
@@ -109,21 +95,19 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._gis = GIS(profile='your_online_profile', verify_cert=False, proxy=PROXIES)
-
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
-        cls._item = cls._gis.content.add(
+        cls._item = cls.gis.content.add(
             {
                 "type": "Notebook",
                 "tags": "delete me",
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "5.0",
+                    "notebookRuntimeVersion": "8.0",
                 },
             },
             data=fp,
