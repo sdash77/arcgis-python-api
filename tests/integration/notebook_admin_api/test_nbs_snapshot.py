@@ -1,21 +1,9 @@
 import unittest
 import os, json, uuid
-from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer
 from utils.decorators import integration_test, profiles
 
-'''
-try:
-    url = "https://pythonapitest.dev.geocloud.com/portal"
-    username = "arcgispyapibot"
-    password = "geosaurus_automation123"
-    gis = GIS(
-        url=url, username=username, password=password, verify_cert=False, trust_env=True
-    )
-    SKIP_TESTS = False
-except:
-    SKIP_TESTS = True
-'''
+
 notebook_json = {
     "cells": [
         {
@@ -91,8 +79,7 @@ notebook_json = {
     "nbformat_minor": 2,
 }
 
-###########################################################################
-@unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+
 @integration_test
 @profiles.admin_enterprise
 class TestNBS109SnapShotManger(unittest.TestCase):

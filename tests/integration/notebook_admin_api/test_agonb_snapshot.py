@@ -1,15 +1,14 @@
-import sys
 import json
 import os, uuid
 import tempfile
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-from utils.decorators import integration_test,profiles
+
+from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 
+
 enable_verbose_logging()
+
 
 notebook_json = {
     "cells": [
@@ -86,12 +85,10 @@ notebook_json = {
     "nbformat_minor": 2,
 }
 
+
 @profiles.agol
 @integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        assert cls._item.delete()
 
     @classmethod
     def setUpClass(cls):
@@ -113,7 +110,11 @@ class TestAGOLNotebookManager(unittest.TestCase):
             data=fp,
         )
 
-    def test_snapeshots(self):
+    @classmethod
+    def tearDownClass(cls):
+        assert cls._item.delete()
+
+    def test_snapshots(self):
         assert isinstance(self._item.snapshots, list)
 
 

@@ -1,35 +1,17 @@
-"""
-This is 10.8.1+ Functionality Tests for Notebook Server
-"""
-import sys
-
 import unittest
-import os, json
-import arcgis
-from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer, NotebookManager
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
-from utils.decorators import integration_test,profiles
+from utils.decorators import integration_test, profiles
 
-'''
-try:
-    url = "https://pythonapitest.dev.geocloud.com/portal"
-    username = "arcgispyapibot"
-    password = "geosaurus_automation123"
-    gis = GIS(
-        url=url, username=username, password=password, verify_cert=False, trust_env=True
-    )
-    SKIP_TESTS = False
-except:
-    SKIP_TESTS = True
-'''
-###########################################################################
-@unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+
 @profiles.admin_enterprise
 @integration_test
 class TestGISAdminAllTasks1081(unittest.TestCase):
-    # ----------------------------------------------------------------------
+    """
+    This is 10.8.1+ Functionality Tests for Notebook Server
+    """
+
     def test_user_search(self):
         tasks = self.gis.users.me.tasks
         assert isinstance(tasks, TaskManager)
@@ -37,13 +19,12 @@ class TestGISAdminAllTasks1081(unittest.TestCase):
             tasks.search(types="ExecuteNotebook,UpdateInsightsWorkbook"), list
         )
 
-    # ----------------------------------------------------------------------
     def test_list_all_tasks(self):
         """tests listing all the tasks"""
         st = self.gis.admin.scheduled_tasks
         # assert st()
         assert isinstance(st(), list)
-        assert isinstance(st(user=gis.users.me), list)
+        assert isinstance(st(user=self.gis.users.me), list)
         assert isinstance(st(active=False), list)
         assert isinstance(st(active=True), list)
         assert isinstance(
@@ -54,12 +35,10 @@ class TestGISAdminAllTasks1081(unittest.TestCase):
         )
 
 
-###########################################################################
-@unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
 @integration_test
 @profiles.admin_enterprise
 class TestUserScheduleTasks1081(unittest.TestCase):
-    # ----------------------------------------------------------------------
+
     def test_task_properties(self):
         """tests the task's properties"""
         user = self.gis.users.me
@@ -70,7 +49,7 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             assert task.properties
         else:
             items = self.gis.content.search(
-                "owner: %s" % gis.users.me.username, item_type="Notebook"
+                "owner: %s" % self.gis.users.me.username, item_type="Notebook"
             )
             if len(items) > 0:
                 task = st.create(
@@ -82,7 +61,6 @@ class TestUserScheduleTasks1081(unittest.TestCase):
                 assert task.properties
                 task.delete()
 
-    # ----------------------------------------------------------------------
     def test_enable(self):
         """test the Task's Enable/Disable method"""
         user = self.gis.users.me
@@ -100,12 +78,11 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             assert task.enable(enabled=False)
             task.delete()
 
-    # ----------------------------------------------------------------------
     def test_update(self):
         """test the Task's update method"""
         user = self.gis.users.me
         items = self.gis.content.search("owner: %s" % user.username, item_type="Notebook")
-        st = self.user.tasks
+        st = user.tasks
         if len(items) > 0:
             item = items[0]
             itemid = item.itemid
@@ -115,11 +92,10 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             assert t1.properties.title == "TESTUPDATE"
             assert t1.delete()
 
-    # ----------------------------------------------------------------------
     def test_create_delete(self):
         """tests creating and deleting a scheduled task"""
         user = self.gis.users.me
-        st = self.user.tasks
+        st = user.tasks
         isinstance(st, TaskManager)
         items = self.gis.content.search(
             "owner: %s" % self.gis.users.me.username, item_type="Notebook"
@@ -139,7 +115,6 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             assert isinstance(t2, Task)
             assert t2.delete()
 
-    # ----------------------------------------------------------------------
     def test_isinstance(self):
         """tests the isinstance checks for the scheduling"""
         user = self.gis.users.me
@@ -158,13 +133,11 @@ class TestUserScheduleTasks1081(unittest.TestCase):
                 runs[0].properties
 
 
-@unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
 @integration_test
 @profiles.admin_enterprise
 class TestNotebookServer1081(unittest.TestCase):
     """Tests New 10.8.1 Functionality"""
 
-    # ----------------------------------------------------------------------
     def test_recent_stats(self):
         """tests the recent statistics"""
         servers = self.gis.admin.servers.list()
@@ -175,13 +148,11 @@ class TestNotebookServer1081(unittest.TestCase):
         assert isinstance(server.system.recent_statistics, dict)
 
 
-@unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
 @integration_test
 @profiles.admin_enterprise
 class TestNotebookServer109(unittest.TestCase):
     """Tests New 10.9 Functionality"""
 
-    # ----------------------------------------------------------------------
     def test_list_jobs(self):
         """tests the `list_jobs` method added at 10.9"""
         servers = self.gis.admin.servers.list()

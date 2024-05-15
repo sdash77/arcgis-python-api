@@ -1,14 +1,5 @@
-"""
-Unittests for Notebook Server Admin API
-"""
-
-import os
-import sys
 import unittest
-
-from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
-
 from arcgis.gis.nb import NotebookServer  #
 from arcgis.gis.nb._logs import LogManager  #
 from arcgis.gis.nb._machines import Machine, MachineManager  #
@@ -19,13 +10,8 @@ from arcgis.gis.nb._system import Container, DirectoryManager
 from utils.decorators import integration_test,profiles
 
 
-#profiles = ["pythonapitest"]
-
-###########################################################################
 @profiles.admin_enterprise
 @integration_test
-
-
 class TestNBLogManager(unittest.TestCase):
     """tests the log functionality of the notebook server"""
 
@@ -56,7 +42,6 @@ class TestNBLogManager(unittest.TestCase):
         assert isinstance(logs.settings, PropertyMap)
         assert len(dict(logs.settings)) > 0
 
-
     def test_updating_settings(self):
         """tests getting the settings"""
         nb = self._find_nb_server(gis=self.gis)
@@ -64,7 +49,6 @@ class TestNBLogManager(unittest.TestCase):
         isinstance(logs, LogManager)
         v = nb.logs.settings
         logs.settings = v
-
 
     def test_query(self):
         """tests getting the settings"""
@@ -74,7 +58,6 @@ class TestNBLogManager(unittest.TestCase):
         val = logs.query()
         print(val)
 
-
     def test_clean(self):
         """tests getting the settings"""
         nb = self._find_nb_server(gis=self.gis)
@@ -83,8 +66,7 @@ class TestNBLogManager(unittest.TestCase):
         assert logs.clean()
 
 
-
-###########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestNotebookServer(unittest.TestCase):
     """tests the base level to the notebook server"""
@@ -112,8 +94,6 @@ class TestNotebookServer(unittest.TestCase):
             assert isinstance(nbs.security, SecurityManager)
             assert isinstance(nbs.system, SystemManager)
 
-
-    # ----------------------------------------------------------------------
     def test_str_repr_method(self):
         nbs = self._find_nb_server(gis=self.gis)
         if nbs:
@@ -121,7 +101,7 @@ class TestNotebookServer(unittest.TestCase):
             assert str(nbs.__repr__()).find("<NotebookServer @") > -1
 
 
-###########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestNBSecurityModule(unittest.TestCase):
     """
@@ -138,7 +118,6 @@ class TestNBSecurityModule(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_configuration_get(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -148,9 +127,6 @@ class TestNBSecurityModule(unittest.TestCase):
             isinstance(security, SecurityManager)
             assert isinstance(security.configuration, (dict, PropertyMap))
 
-
-
-    # ----------------------------------------------------------------------
     def test_configuration_set(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -163,7 +139,7 @@ class TestNBSecurityModule(unittest.TestCase):
             security.configuration = vals
 
 
-###########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestNBMachineManager(unittest.TestCase):
     """tests the MachineManager methods"""
@@ -178,7 +154,6 @@ class TestNBMachineManager(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_machine_manager(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -190,8 +165,6 @@ class TestNBMachineManager(unittest.TestCase):
             assert isinstance(mm.list(), list)
             assert isinstance(mm.properties, (PropertyMap, dict))
 
-
-    # ----------------------------------------------------------------------
     def test_machine(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -203,8 +176,6 @@ class TestNBMachineManager(unittest.TestCase):
             m = mm.list()[0]
             assert isinstance(m, Machine)
 
-
-    # ----------------------------------------------------------------------
     def test_machine_properties_get(self):
         """tests the property get operation"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -217,10 +188,7 @@ class TestNBMachineManager(unittest.TestCase):
             assert isinstance(m, Machine)
             assert isinstance(m.properties, (dict, PropertyMap))
 
-
-    # ----------------------------------------------------------------------
-    # Skipped due to REST API error
-    @unittest.SkipTest
+    @unittest.skip("Skipped due to REST API error")
     def test_machine_properties_set(self):
         """tests the property get operation"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -234,8 +202,6 @@ class TestNBMachineManager(unittest.TestCase):
             v = dict(m.properties)
             m.properties = v
 
-
-    # ----------------------------------------------------------------------
     def test_machine_hardware(self):
         """tests the hardware property"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -248,8 +214,6 @@ class TestNBMachineManager(unittest.TestCase):
             assert isinstance(m, Machine)
             assert isinstance(m.hardware, dict)
 
-
-    # ----------------------------------------------------------------------
     def test_status(self):
         nbs = self._find_nb_server(gis=self.gis)
         isinstance(nbs, NotebookServer)
@@ -261,8 +225,6 @@ class TestNBMachineManager(unittest.TestCase):
             assert isinstance(m, Machine)
             assert isinstance(m.status, dict)
 
-
-    # ----------------------------------------------------------------------
     def test_create_ss_cert(self):
         nbs = self._find_nb_server(gis=self.gis)
         isinstance(nbs, NotebookServer)
@@ -286,8 +248,7 @@ class TestNBMachineManager(unittest.TestCase):
             )
 
 
-
-########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestNBNotebookManager(unittest.TestCase):
     """Tests the Notebook Manager Class"""
@@ -302,7 +263,6 @@ class TestNBNotebookManager(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_nb_manager(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -313,8 +273,6 @@ class TestNBNotebookManager(unittest.TestCase):
             assert isinstance(nbm.properties, (dict, PropertyMap))
             assert isinstance(nbm.runtimes, list)
 
-
-    # ----------------------------------------------------------------------
     def test_runtime(self):
         """tests the runtime class operations"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -330,7 +288,8 @@ class TestNBNotebookManager(unittest.TestCase):
                 assert isinstance(runtime.properties, (dict, PropertyMap))
                 assert runtime.update(max_cpu=2)
 
-########################################################################
+
+@profiles.admin_enterprise
 @integration_test
 class TestSystemManager(unittest.TestCase):
     """Tests the SystemManager Class"""
@@ -345,7 +304,6 @@ class TestSystemManager(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_sys_manager(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -362,9 +320,6 @@ class TestSystemManager(unittest.TestCase):
             assert isinstance(system.config_store, (dict, PropertyMap))
             assert isinstance(system.web_adaptors, WebAdaptorManager)
 
-
-
-    # ----------------------------------------------------------------------
     def test_job_details(self):
         """tests getting the job details"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -380,8 +335,7 @@ class TestSystemManager(unittest.TestCase):
                 break
 
 
-
-########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestWebAdaptorManager(unittest.TestCase):
     """Tests the WebAdaptor, WebAdaptorManager Classes"""
@@ -396,7 +350,6 @@ class TestWebAdaptorManager(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_wa_manager(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -416,9 +369,7 @@ class TestWebAdaptorManager(unittest.TestCase):
             assert isinstance(wa, WebAdaptor)
 
 
-
-
-########################################################################
+@profiles.admin_enterprise
 @integration_test
 class TestDirectoryManager(unittest.TestCase):
     """Tests the DirectoryManager Classes"""
@@ -433,7 +384,6 @@ class TestDirectoryManager(unittest.TestCase):
             return nbs[0]
         return None
 
-    # ----------------------------------------------------------------------
     def test_dir_manager(self):
         """ensures that the proper types are returning for the root getters"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -456,8 +406,6 @@ class TestDirectoryManager(unittest.TestCase):
             d = [d["id"] for d in sd.list() if d["name"] == "amazingdirtest"]
             assert len(d) == 1
             assert sd.unregister(d[0])
-
-
 
 
 if __name__ == "__main__":

@@ -1,9 +1,5 @@
-
 import os
 import unittest
-from arcgis.gis import GIS
-#from arcgis.auth.tools._util import detect_proxy
-import urllib
 from utils.decorators import integration_test, profiles
 
 
