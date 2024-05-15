@@ -169,6 +169,8 @@ class KnowledgeGraph:
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
+        if query_dec.has_error():
+            raise Exception(query_dec.error.error_message)
         return rows
 
     def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
@@ -279,6 +281,11 @@ class KnowledgeGraph:
         while gqd.next_row():
             r = gqd.get_current_row()
             rows.append(r)
+        if gqd.has_error():
+            if gqd.error.error_code == 111098:
+                raise ValueError(gqd.error.error_message)
+            else:
+                raise RuntimeError(gqd.error.error_message)
         return rows
 
     def query_streaming(
@@ -452,6 +459,11 @@ class KnowledgeGraph:
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
                 yield query_dec.get_current_row()
+            if query_dec.has_error():
+                if query_dec.error.error_code == 111098:
+                    raise ValueError(query_dec.error.error_message)
+                else:
+                    raise RuntimeError(query_dec.error.error_message)
 
     @property
     def _datamodel(self) -> object:
