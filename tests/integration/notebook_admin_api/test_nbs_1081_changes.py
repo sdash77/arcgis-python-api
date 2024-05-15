@@ -65,7 +65,9 @@ class TestUserScheduleTasks1081(unittest.TestCase):
         """test the Task's Enable/Disable method"""
         user = self.gis.users.me
         st = user.tasks
-        items = self.gis.content.search("owner: %s" % user.username, item_type="Notebook")
+        items = self.gis.content.search(
+            "owner: %s" % user.username, item_type="Notebook"
+        )
 
         if len(items) > 0:
             task = st.create(
@@ -81,7 +83,9 @@ class TestUserScheduleTasks1081(unittest.TestCase):
     def test_update(self):
         """test the Task's update method"""
         user = self.gis.users.me
-        items = self.gis.content.search("owner: %s" % user.username, item_type="Notebook")
+        items = self.gis.content.search(
+            "owner: %s" % user.username, item_type="Notebook"
+        )
         st = user.tasks
         if len(items) > 0:
             item = items[0]

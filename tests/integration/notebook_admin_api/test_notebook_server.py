@@ -7,7 +7,7 @@ from arcgis.gis.nb._nbm import Runtime, NotebookManager  #
 from arcgis.gis.nb._security import SecurityManager  #
 from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
 from arcgis.gis.nb._system import Container, DirectoryManager
-from utils.decorators import integration_test,profiles
+from utils.decorators import integration_test, profiles
 
 
 @profiles.admin_enterprise

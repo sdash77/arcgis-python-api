@@ -9,6 +9,7 @@ class TestNotebookDataAccess(unittest.TestCase):
     def test_data_access(self):
         """tests the data access workflow"""
         import tempfile
+
         NOTEBOOKS = self.gis.notebook_server
 
         fp = os.path.join(tempfile.gettempdir(), "tstore", "dataset.txt")
@@ -20,14 +21,14 @@ class TestNotebookDataAccess(unittest.TestCase):
             writer.close()
         da.upload(fp)
         assert (
-                len(
-                    [
-                        f.properties.name
-                        for f in da.files
-                        if f.properties.name == "dataset.txt"
-                    ]
-                )
-                > 0
+            len(
+                [
+                    f.properties.name
+                    for f in da.files
+                    if f.properties.name == "dataset.txt"
+                ]
+            )
+            > 0
         )
         data = [f for f in da.files if f.properties.name == "dataset.txt"]
         local_file_path = data[0].download()

@@ -18,7 +18,7 @@ class TestNotebookService(unittest.TestCase):
     Tests the Services Manager and Service class for notebook server
     This is 10.8.1+ Functionality Tests for Notebook Server
     """
-    
+
     def test_get_services_manager(self):
         """tests that the snapshot manager is returned."""
         servers = self.gis.admin.servers.list()
@@ -49,8 +49,8 @@ class TestNotebookService(unittest.TestCase):
                     "type": "Notebook",
                     "title": "nb_title",
                     "properties": {
-                        'notebookRuntimeName': 'ArcGIS Notebook Python 3 Standard',
-                        'notebookRuntimeVersion': '9.0',
+                        "notebookRuntimeName": "ArcGIS Notebook Python 3 Standard",
+                        "notebookRuntimeVersion": "9.0",
                     },
                     "text": json_data,
                 }
