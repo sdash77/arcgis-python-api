@@ -78,7 +78,7 @@ class StoryMap(object):
         if gis is None:
             # If no gis, find active env
             gis = arcgis.env.active_gis
-            self._gis = gis
+        self._gis = gis
 
         if not (gis and gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
