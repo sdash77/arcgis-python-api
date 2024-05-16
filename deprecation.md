@@ -33,6 +33,14 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 ## Deprecation Removals
 
 Several classes, functions, and methods have been completely removed from the ArcGIS API for Python. This means your code relying on them will no longer function properly. For a smooth transition, consult the API documentation to find alternative approaches and update your code accordingly.
+### `arcgis.mapping` Module
+- `WebMap` - removed in **2.4.0**. Use `arcgis.map.Map` instead.
+- `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
+- `forms` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.forms` module instead.
+- `renderer` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.renderers` and methods in `arcgis.map.SmartMappingManager`.
+
+### `arcgis.widgets` Module
+- `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.
 
 ### `arcgis.gis.server` Module
 
