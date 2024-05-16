@@ -1,0 +1,70 @@
+# ArcGIS API for Python Deprecation Announcements
+
+The ArcGIS API for Python occasionally deprecates functionalities, scheduling their removal in future releases. The API reference itself clearly identifies these deprecated features. To ensure your applications continue to function flawlessly and avoid compatibility issues, proactively migrate your code away from them.
+
+## Deprecation Candidates
+
+These classes, functions, and modules in the ArcGIS API for Python are deprecated and may cause compatibility issues in future versions:
+
+### `arcgis.apps.dashboard` 
+
+- `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future release. 
+
+### `arcgis.apps.expbuilder`
+
+- `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
+
+### `arcgis.apps.storymap`
+
+- `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
+
+### `arcgis.learn` 
+
+- `categorize_features` - depreacted in **1.7.1** and will be removed in a future release.  Please use `arcgis.learn.classify_objects` instead.
+
+## Deprecation Removals
+
+Several classes, functions, and methods have been completely removed from the ArcGIS API for Python. This means your code relying on them will no longer function properly. For a smooth transition, consult the API documentation to find alternative approaches and update your code accordingly.
+
+### ArcGIS Server Administration
+
+- Mode.update - deprecated in **1.7.1** removed in **2.4.0**. Use `Mode.update_mode` instead.
+
+### Enterprise Administration
+
+- `Securit.ssl property` - deprecated in **2.1.0** removed in **2.4.0**.  Use `Machine.ssl_certificate` instead.
+- `UX.enable_comments` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+- `UX.set_background` -deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+- `UX.set_banner` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+- `UX.default_extent` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+- `UX.default_basemap` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+- `UX.vector_basemap` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
+
+### Raster Module
+
+- `calculate_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output) instead.
+- `calculate_travel_cost` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output), instead.
+- `cost_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
+- `cost_backlink` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead.
+- `cost_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
+- `cost_path` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.optimal_path_as_raster instead.
+- `costpath_as_polyline` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.analytics.optimal_path_as_line instead.
+- `determine_travel_costpath_as_polyline` - deprecated in **1.8.1** removed in **2.4.0**. lease use arcgis.raster.functions.gbl.distance_accumulation followed by arcgis.raster.analytics.optimal_path_as_line instead.
+- `euclidean_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_allocation instead.
+- `euclidean_back_direction` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead.
+- `euclidean_direction` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_allocation instead with value specified for output_source_direction_raster_name, instead.
+- `euclidean_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_allocation instead.
+- `least_cost_path` - deprecated in **1.9.0** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation and arcgis.raster.functions.gbl.optimal_path_as_raster instead.
+- `optimum_travel_cost_network` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.analytics.optimal_region_connections instead.
+- `path_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
+- `path_distance_back_link` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead..
+- `path_distance_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation.
+
+### Utility Network Service
+
+- `UtilityNetworkManager.query_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
+- `UtilityNetworkManager.apply_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
+
+### `apps` Module
+
+- `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
