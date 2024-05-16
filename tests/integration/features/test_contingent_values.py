@@ -8,7 +8,7 @@ from utils._logging import enable_verbose_logging
 
 
 enable_verbose_logging()
-FILE_PATH = (QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas.zip")
+FILE_PATH = QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas.zip"
 
 
 @profiles.enterprise
@@ -33,7 +33,7 @@ class TestContingentValues(unittest.TestCase):
             cls.pitem_ent = cls.sditem_ent.publish(
                 publish_parameters={
                     "name": "CV_Gas",
-                    'capabilities': "Create,Delete,Query,Update,Editing,Extract",
+                    "capabilities": "Create,Delete,Query,Update,Editing,Extract",
                 }
             )
 

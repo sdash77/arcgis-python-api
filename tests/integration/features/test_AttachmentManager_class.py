@@ -24,7 +24,9 @@ class TestAttachmentManager(unittest.TestCase):
         cls.new_attachment = os.path.join(cls.qalab_cls_path, "cows3.jpg")
         cls.update_attachment = os.path.join(cls.qalab_cls_path, "cows4.jpg")
 
-        cls.test_item = cls.gis.content.search("dino_AttachmentManager_basic", "Feature Layer")[0]
+        cls.test_item = cls.gis.content.search(
+            "dino_AttachmentManager_basic", "Feature Layer"
+        )[0]
 
     def test_create_AttachmentManager_object(self):
         """
@@ -52,12 +54,12 @@ class TestAttachmentManager(unittest.TestCase):
         assert attachment_list[0]["name"] == "cows.jpg", "attachment name mismatch"
 
         # download png
-        png_id = fl_am.get_list(1)[2]['id']
+        png_id = fl_am.get_list(1)[2]["id"]
         download_result_png = fl.attachments.download(1, png_id)
         assert isinstance(download_result_png[0], str)
 
         # download pdf
-        pdf_id = fl_am.get_list(1)[1]['id']
+        pdf_id = fl_am.get_list(1)[1]["id"]
         download_result_pdf = fl.attachments.download(1, pdf_id)
         assert isinstance(download_result_pdf[0], str)
 
@@ -82,16 +84,16 @@ class TestAttachmentManager(unittest.TestCase):
 
         # add
         add_res = fl_am.add(2, self.new_attachment)
-        assert add_res['addAttachmentResult']['success']
+        assert add_res["addAttachmentResult"]["success"]
 
         # update
-        attachment_id = fl_am.get_list(2)[1]['id']
+        attachment_id = fl_am.get_list(2)[1]["id"]
         update_res = fl_am.update(2, attachment_id, self.update_attachment)
-        assert update_res['updateAttachmentResult']['success']
+        assert update_res["updateAttachmentResult"]["success"]
 
         # delete
         delete_res = fl_am.delete(2, attachment_id)
-        assert delete_res['deleteAttachmentResults'][0]['success']
+        assert delete_res["deleteAttachmentResults"][0]["success"]
 
 
 if __name__ == "__main__":
