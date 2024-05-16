@@ -16854,7 +16854,6 @@ class Item(dict):
         """
         if self.type == None:
             raise ValueError("Unknown item type. Input must of type FeatureService")
-        
         if self.type.lower() == "Feature Service".lower():
             p = self.layers[0].container
             if cache_info is None:
