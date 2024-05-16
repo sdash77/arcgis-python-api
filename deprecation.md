@@ -6,21 +6,29 @@ The ArcGIS API for Python occasionally deprecates functionalities, scheduling th
 
 These classes, functions, and modules in the ArcGIS API for Python are deprecated and may cause compatibility issues in future versions:
 
-### `arcgis.apps.dashboard` 
+### `arcgis.apps` Module 
 
 - `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future release. 
-
-### `arcgis.apps.expbuilder`
-
 - `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
-
-### `arcgis.apps.storymap`
-
 - `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
 
-### `arcgis.learn` 
+### `arcgis.learn` Module
 
 - `categorize_features` - depreacted in **1.7.1** and will be removed in a future release.  Please use `arcgis.learn.classify_objects` instead.
+
+### `arcgis.gis.nb` Module 
+
+- `Container.terminate` - deprecated in **2.3.0** will be removed in **2.4.2**. Use `Container.shutdown` instead.
+
+### `arcgis.gis` Module
+
+- `ContentManager.add` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.add` instead.
+- `ContentManager.create_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `gis.content.folders.create` instead.
+- `ContentManager.delete_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.delete()` instead.
+- `ContentManager.rename_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.rename()` instead.
+- `Item.share' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `Item.shared_with' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `Item.unshare' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
 
 ## Deprecation Removals
 
@@ -30,9 +38,9 @@ Several classes, functions, and methods have been completely removed from the Ar
 
 - Mode.update - deprecated in **1.7.1** removed in **2.4.0**. Use `Mode.update_mode` instead.
 
-### Enterprise Administration
+### `arcgis.gis.admin` Module
 
-- `Securit.ssl property` - deprecated in **2.1.0** removed in **2.4.0**.  Use `Machine.ssl_certificate` instead.
+- `Security.ssl property` - deprecated in **2.1.0** removed in **2.4.0**.  Use `Machine.ssl_certificate` instead.
 - `UX.enable_comments` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
 - `UX.set_background` -deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
 - `UX.set_banner` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
@@ -40,7 +48,7 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `UX.default_basemap` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
 - `UX.vector_basemap` - deprecated in **2.1.0** removed in **2.4.0**. This applies to the getter and setter of the property. 
 
-### Raster Module
+### `arcgis.raster` Module
 
 - `calculate_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output) instead.
 - `calculate_travel_cost` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation (or arcgis.raster.functions.gbl.distance_allocation for allocation output), instead.
@@ -60,11 +68,15 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `path_distance_back_link` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead..
 - `path_distance_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation.
 
-### Utility Network Service
+### `arcgis.features` Module
 
 - `UtilityNetworkManager.query_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
 - `UtilityNetworkManager.apply_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
 
-### `apps` Module
+### `arcgis.apps` Module
 
 - `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
+
+#### `arcgis.gis` Module
+
+- `Group.invite_by_email` - deprecated in **1.5.1** removed in **2.4.0**.  Use `Group.invite` instead.
