@@ -11,8 +11,10 @@ from arcgis._impl.common._clone import (
 )
 import tempfile
 
-
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 
 class _WebExperience(_ItemDefinition):
@@ -158,10 +160,7 @@ class _WebExperience(_ItemDefinition):
                 new_item.resources.add(self.resources, archive=True)
             config_dict = self.portal_item.resources.get("config/config.json")
             new_dict = _clone_dict(
-                config_dict,
-                self.portal_item._gis,
-                self.target,
-                self._search_existing,
+                config_dict, self.portal_item._gis, self.target, self._search_existing
             )
             with tempfile.NamedTemporaryFile(
                 mode="w+", suffix=".json", delete=False
