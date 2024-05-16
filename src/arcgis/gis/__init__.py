@@ -728,10 +728,17 @@ class GIS(object):
                 if self._is_hosted_nb_home:
                     import warnings
 
+                    orin_fn = warnings.formatwarning
+
+                    def warning_on_one_line(message, *args, **kwargs):
+                        return "%s\n" % (message)
+
+                    warnings.formatwarning = warning_on_one_line
                     warnings.warn(
                         "You are logged on as %s with an administrator role, proceed with caution."
                         % self.users.me.username
                     )
+                    warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
                     from arcgis.gis.kubernetes._admin.kadmin import (
                         KubernetesAdmin,
@@ -2036,7 +2043,12 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items: Optional[list[Item]] = None, future: bool = True):
+    def create(
+        self,
+        items: list[Item] | None = None,
+        output_filename: str | None = None,
+        future: bool = True,
+    ):
         """
         The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
         an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
@@ -2061,6 +2073,10 @@ class GroupMigrationManager(object):
         items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
                                from the group.  If argument is not provided, the method will attempt
                                to export all group content items.
+        ------------------     --------------------------------------------------------------------
+        output_filename        Optional String. The name of the output file in the exported item
+                               file. This parameter is only supported in enterprises `11.3` and
+                               over.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When `True`, the operation runs asynchronously
                                and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
@@ -2111,6 +2127,12 @@ class GroupMigrationManager(object):
             params = {"itemIdList": items}
 
             params["async"] = json.dumps(True)
+            if self._gis.version >= [2024, 1] and output_filename:
+                params["outputFilename"] = output_filename
+            elif self._gis.version < [2024, 1] and output_filename:
+                _log.warning(
+                    "Output filename is not support on this version of enterprise"
+                )
             res = self._gis._con.post(url, params)
             if not "jobId" in res:
                 raise Exception(
@@ -6623,6 +6645,12 @@ class ContentManager(object):
             return int(35 * (1024 * 1024))
 
     # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.add()` instead.",
+    )
     def add(
         self,
         item_properties: dict[str, Any] | ItemProperties,
@@ -10467,90 +10495,6 @@ class Group(dict):
         return self._portal.invite_group_users(
             usernames, self.groupid, role, expiration
         )
-
-    # ----------------------------------------------------------------------
-    @_common_deprecated.deprecated(
-        deprecated_in="v1.5.1",
-        removed_in=None,
-        current_version=None,
-        details="Use `Group.invite` instead.",
-    )
-    def invite_by_email(
-        self,
-        email: str,
-        message: str,
-        role: str = "member",
-        expiration: str = "1 Day",
-    ):
-        """
-        .. Warning::
-            Deprecated: The ``invite_by_email`` function is no longer supported.
-
-        The ``invite_by_email`` method invites a user by email to the existing group.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        email             Required string. The user to send join email to.
-        ----------------  --------------------------------------------------------
-        message           Required string. The message to send to the user.
-        ----------------  --------------------------------------------------------
-        role              Optional string. Either member (the default) or admin.
-        ----------------  --------------------------------------------------------
-        expiration        Optional string.  The is the time out of the invite.
-                          The values are: 1 Day (default), 3 Days, 1 Week, or
-                          2 Weeks.
-        ================  ========================================================
-
-        :return: A boolean indicating success (True) or failure (False)
-        """
-
-        if self._gis.version >= [6, 4]:
-            return False
-
-        time_lookup = {
-            "1 Day".upper(): 1440,
-            "3 Days".upper(): 4320,
-            "1 Week".upper(): 10080,
-            "2 Weeks".upper(): 20160,
-        }
-        role_lookup = {"member": "group_member", "admin": "group_admin"}
-        url = "community/groups/" + self.groupid + "/inviteByEmail"
-        params = {
-            "f": "json",
-            "emails": email,
-            "message": message,
-            "role": role_lookup[role.lower()],
-            "expiration": time_lookup[expiration.upper()],
-        }
-        return self._portal.con.post(url, params)
-
-    def reassign_to(self, target_owner: Union[str, User]):
-        """
-        The ``reassign_to`` method reassigns this group from its current owner to another owner.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        target_owner      Required string or User.  The username of the new group owner.
-        ================  ========================================================
-
-        :return:
-            A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json"}
-        if isinstance(target_owner, User):
-            params["targetUsername"] = target_owner.username
-        else:
-            params["targetUsername"] = target_owner
-        res = self._gis._con.post(
-            "community/groups/" + self.groupid + "/reassign", params
-        )
-        if res:
-            self._hydrated = False
-            self._hydrate()
-            return res.get("success")
-        return False
 
     # ----------------------------------------------------------------------
     def notify(

@@ -78,7 +78,7 @@ class StoryMap(object):
         if gis is None:
             # If no gis, find active env
             gis = arcgis.env.active_gis
-            self._gis = gis
+        self._gis = gis
 
         if not (gis and gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
@@ -341,28 +341,6 @@ class StoryMap(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.2.0",
-        removed_in="2.3.2",
-        current_version="2.3.1",
-        details="`nodes` property has been deprecated, use `content_list` property instead.",
-    )
-    @property
-    def nodes(self):
-        """
-        Get main nodes in order of appearance in the story. This will return a list
-        of dictionaries specifying the node ids and the class content they correspond to.
-        If there is no class for the content, a string is returned with the content type.
-        """
-        # node_dict contains key-value pairs where the value is the class instance
-        node_dict = self._create_node_dict()
-        # make the value the string representation of the class
-        nodes = []
-        for node in node_dict:
-            nodes.append({k: node[k] for k in node})
-        return nodes
-
-    # ----------------------------------------------------------------------
     @property
     def content_list(self):
         """
@@ -416,7 +394,7 @@ class StoryMap(object):
     @deprecated(
         deprecated_in="2.2.0",
         removed_in="3.0.0",
-        current_version="2.3.1",
+        current_version="2.4.0",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -508,6 +486,55 @@ class StoryMap(object):
         # call method to update cover
         utils.cover(self, title, type, summary, by_line, image)
         return True
+
+    # ----------------------------------------------------------------------
+    def get_logo(self):
+        """
+        Get the logo image for the story. The logo is seen in the header of the story.
+        """
+        # logo is found in story node (i.e. root node id)
+        root = self._properties["root"]
+        logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
+        resource = self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+        return self._item.resources.get(resource)
+
+    # ----------------------------------------------------------------------
+    def set_logo(
+        self,
+        image: Optional[str] = None,
+        link: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
+        """
+        Set the logo for the story. The logo is seen in the header of the story.
+
+        .. note::
+            To remove the logo, link, or alt text, pass in an empty string. If they are None, nothing
+            will be changed for that parameter. For example if you only want to update the link but leave
+            the image and alt text as is, pass in None for the image and alt text. Pass in the new link
+            for the link parameter.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        image               Required string. The file path to the image to be used as the
+                            logo.
+        ---------------     --------------------------------------------------------------------
+        link                Optional string. The url to link to when the logo is clicked.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. The alt text to be used for screen readers.
+        ===============     ====================================================================
+
+        :return: True if successful.
+
+        .. code-block:: python
+
+            story = StoryMap("<story item>")
+            story.set_logo("<image-path>.jpg/jpeg/png/gif")
+        """
+        # call method to update logo
+        return utils.set_logo(self, image, link, alt_text)
 
     # ----------------------------------------------------------------------
     def navigation(
