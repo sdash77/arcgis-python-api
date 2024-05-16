@@ -8,13 +8,13 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 
 ### `arcgis.apps` Module 
 
-- `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future release. 
+- `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future major release (example: 2.x to 3.x). 
 - `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
 - `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
 
 ### `arcgis.learn` Module
 
-- `categorize_features` - depreacted in **1.7.1** and will be removed in a future release.  Please use `arcgis.learn.classify_objects` instead.
+- `categorize_features` - depreacted in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
 
 ### `arcgis.gis.nb` Module 
 
@@ -22,13 +22,13 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 
 ### `arcgis.gis` Module
 
-- `ContentManager.add` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.add` instead.
-- `ContentManager.create_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `gis.content.folders.create` instead.
-- `ContentManager.delete_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.delete()` instead.
-- `ContentManager.rename_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.rename()` instead.
-- `Item.share` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
-- `Item.shared_with` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
-- `Item.unshare` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `ContentManager.add` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Folder.add` instead.
+- `ContentManager.create_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `gis.content.folders.create` instead.
+- `ContentManager.delete_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Folder.delete()` instead.
+- `ContentManager.rename_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Folder.rename()` instead.
+- `Item.share` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
+- `Item.shared_with` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
+- `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 
 ## Deprecation Removals
 
