@@ -1,28 +1,11 @@
-import sys
-import logging
 import unittest
 import pandas as pd
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-from arcgis.features import FeatureLayer
-from utils.decorators import integration_test
-
-__logger__ = logging.getLogger()
+from arcgis.features import FeatureLayer, FeatureSet
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
 
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 DATA = {
     'features': [
         {
@@ -285,14 +268,11 @@ DATA = {
 }
 
 
+@profiles.agol
 @integration_test
 class TestApplyEditsSeDF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=PROXIES
-        )
-        cm = cls.gis.content
         rows = []
         for feat in DATA['features'][:5]:
             geom = feat['geometry']
@@ -301,22 +281,19 @@ class TestApplyEditsSeDF(unittest.TestCase):
             rows.append(att)
         df = pd.DataFrame(rows)
         df.spatial.set_geometry("SHAPE")
-        cls.item = cm.import_data(df)
+        cls.item = cls.gis.content.import_data(df)
 
     def test_apply_edits_adds(self):
-        gis = self.gis
-        item = self.item
-        lyr: FeatureLayer = item.layers[0]
+        lyr: FeatureLayer = self.item.layers[0]
         count_old = lyr.query(return_count_only=True)
         sdf = lyr.query(as_df=True).head().copy()
-        lyr.edit_features(adds=sdf)
+        print(sdf)
+        res = lyr.edit_features(adds=sdf, future=True)
         count = lyr.query(return_count_only=True)
         assert count > count_old
 
     def test_apply_edits_update(self):
-        gis = self.gis
-        item = self.item
-        lyr: FeatureLayer = item.layers[0]
+        lyr: FeatureLayer = self.item.layers[0]
         sdf = lyr.query(as_df=True).head().copy()
         results = lyr.edit_features(updates=sdf)
         assert all(
