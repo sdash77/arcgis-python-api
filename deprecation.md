@@ -26,9 +26,9 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `ContentManager.create_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `gis.content.folders.create` instead.
 - `ContentManager.delete_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.delete()` instead.
 - `ContentManager.rename_folder` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Folder.rename()` instead.
-- `Item.share' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
-- `Item.shared_with' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
-- `Item.unshare' - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `Item.share` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `Item.shared_with` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
+- `Item.unshare` - deprecated in **2.3.0** will be removed in a majore version change.  Use `Item.sharing` instead.
 
 ## Deprecation Removals
 
@@ -36,7 +36,7 @@ Several classes, functions, and methods have been completely removed from the Ar
 
 ### `arcgis.gis.server` Module
 
-- Mode.update - deprecated in **1.7.1** removed in **2.4.0**. Use `Mode.update_mode` instead.
+- `Mode.update` - deprecated in **1.7.1** removed in **2.4.0**. Use `Mode.update_mode` instead.
 
 ### `arcgis.gis.admin` Module
 
