@@ -22,6 +22,7 @@ from arcgis.geoanalytics._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
@@ -235,6 +236,7 @@ def calculate_motion_statistics(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateMotionStatistics"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -403,6 +405,7 @@ def enrich_from_grid(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "EnrichFromMultiVariableGrid"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
