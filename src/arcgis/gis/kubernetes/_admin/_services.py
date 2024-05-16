@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-try:
-    import ujson as json
-except ImportError:
-    import json
+
+import json
 import time
 import concurrent.futures
 from functools import lru_cache
@@ -414,7 +412,8 @@ class ServicesManager(object):
         See main ``service_properties`` docstring
         """
         res = self._con.post(
-            self._url + "/properties", {"f": "json", "properties": properties}
+            self._url + "/properties",
+            {"f": "json", "properties": properties},
         )
         if res["status"] != "success":
             raise Exception(res)
@@ -515,7 +514,11 @@ class ServicesManager(object):
 
     # ----------------------------------------------------------------------
     def exists(
-        self, *, service_name: str = None, folder: str = None, service_type: str = None
+        self,
+        *,
+        service_name: str = None,
+        folder: str = None,
+        service_type: str = None,
     ) -> dict:
         """
         This operation checks if a folder or service exists on the server.

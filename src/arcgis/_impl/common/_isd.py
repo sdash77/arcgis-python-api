@@ -1,5 +1,4 @@
-import json
-import ujson as _ujson
+import json as _ujson
 from collections import OrderedDict
 from collections.abc import MutableMapping, Mapping
 from copy import deepcopy

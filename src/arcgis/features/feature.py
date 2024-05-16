@@ -10,7 +10,7 @@ import geomet.esri
 
 copy = LazyLoader("copy")
 json = LazyLoader("json")
-_ujson = LazyLoader("ujson")
+_ujson = LazyLoader("json")
 os = LazyLoader("os")
 re = LazyLoader("re")
 tempfile = LazyLoader("tempfile")
@@ -1143,8 +1143,8 @@ class FeatureSet(object):
         return FeatureSet(
             features=features,
             fields=fields,
-            has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
-            has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
+            has_z=(featureset_dict["hasZ"] if "hasZ" in featureset_dict else False),
+            has_m=(featureset_dict["hasM"] if "hasM" in featureset_dict else False),
             geometry_type=(
                 featureset_dict["geometryType"]
                 if "geometryType" in featureset_dict
