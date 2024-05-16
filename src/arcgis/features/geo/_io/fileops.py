@@ -10,7 +10,7 @@ import copy
 from pathlib import Path, PurePath
 import logging
 import datetime
-import json as _ujson
+import ujson as _ujson
 import numpy as np
 import pandas as pd
 from contextlib import closing

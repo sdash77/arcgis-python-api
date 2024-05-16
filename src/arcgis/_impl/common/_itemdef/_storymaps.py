@@ -10,8 +10,10 @@ from arcgis._impl.common._clone import (
     _share_item_with_groups,
 )
 
-
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 
 class _StoryMapDefinition(CloneNode):
@@ -120,10 +122,7 @@ class _StoryMapDefinition(CloneNode):
                         folder_name = os.path.dirname(resource_name)
                         resource_name = os.path.basename(resource_name)
                     resource_path = resources.get(
-                        resource["resource"],
-                        False,
-                        resources_dir,
-                        resource_name,
+                        resource["resource"], False, resources_dir, resource_name
                     )
                     new_item.resources.add(resource_path, folder_name, resource_name)
 
@@ -149,10 +148,7 @@ class _StoryMapDefinition(CloneNode):
         extent = _deep_get(item_properties, "extent")
         if item_extent is not None and extent is not None and len(extent) > 0:
             item_properties["extent"] = "{0}, {1}, {2}, {3}".format(
-                item_extent.xmin,
-                item_extent.ymin,
-                item_extent.xmax,
-                item_extent.ymax,
+                item_extent.xmin, item_extent.ymin, item_extent.xmax, item_extent.ymax
             )
 
         return item_properties
@@ -317,8 +313,7 @@ class _StoryMapDefinition(CloneNode):
             for resource in new_item.resources.list():
                 if ".json" in resource["resource"]:
                     s_res = json.dumps(
-                        new_item.resources.get(resource["resource"]),
-                        ensure_ascii=False,
+                        new_item.resources.get(resource["resource"]), ensure_ascii=False
                     )
                     for k, v in webmap_mapper.items():
                         s_res = s_res.replace(k, v)
@@ -335,10 +330,7 @@ class _StoryMapDefinition(CloneNode):
                     {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
                 )
             with tempfile.NamedTemporaryFile(
-                mode="w",
-                suffix=".json",
-                dir=tempfile.gettempdir(),
-                delete=False,
+                mode="w", suffix=".json", dir=tempfile.gettempdir(), delete=False
             ) as jsonfile:
                 jsonfile.write(story_map_text)
                 new_item.resources.add(file=jsonfile.name)
