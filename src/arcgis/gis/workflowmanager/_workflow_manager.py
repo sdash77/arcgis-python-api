@@ -2029,8 +2029,13 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(f"{self._url}/templates/{template_type}")[
-                "templates"
+            template_list = self._gis._con.get(
+                f"{self._url}/templates/{template_type}"
+            )["templates"]
+
+            return [
+                Template(template_dict, self._gis, self._url)
+                for template_dict in template_list
             ]
         except:
             self._handle_error(sys.exc_info())
