@@ -2237,7 +2237,7 @@ class WorkflowManager:
                          \"cc\":[\"boss@esri.com\"],
                          \"bcc\":[\"supervisor@esri.com\"],
                          \"subject\":\"Workflow Manager Templates\",
-                         \"body\":\"Look how easy it is to make a email template!\",
+                         \"body\":\"Look how easy it is to make an email template!\",
                          \"attachmentSelection\":\"None\",
                          \"attachmentFolder\":null }
             details_str = json.dumps(details)
