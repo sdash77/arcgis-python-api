@@ -3413,7 +3413,7 @@ class TestWorkflowManager(unittest.TestCase):
             + '"cc":["boss@esri.com"],'
             + '"bcc":["supervisor@esri.com"],'
             + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make a email template!",'
+            + '"body":"Look how easy it is to make an email template!",'
             + '"attachmentSelection":"None",'
             + '"attachmentFolder":null }',
         }
@@ -3447,7 +3447,7 @@ class TestWorkflowManager(unittest.TestCase):
             + '"cc":["boss@esri.com"],'
             + '"bcc":["supervisor@esri.com"],'
             + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make a email template!",'
+            + '"body":"Look how easy it is to make an email template!",'
             + '"attachmentSelection":"None",'
             + '"attachmentFolder":null }',
         }
@@ -3502,7 +3502,7 @@ class TestWorkflowManager(unittest.TestCase):
             + '"cc":["boss@esri.com"],'
             + '"bcc":["supervisor@esri.com"],'
             + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make a email template!",'
+            + '"body":"Look how easy it is to make an email template!",'
             + '"attachmentSelection":"None",'
             + '"attachmentFolder":null }',
         }
@@ -3535,7 +3535,7 @@ class TestWorkflowManager(unittest.TestCase):
             + '"cc":["boss@esri.com"],'
             + '"bcc":["supervisor@esri.com"],'
             + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make a email template!",'
+            + '"body":"Look how easy it is to make an email template!",'
             + '"attachmentSelection":"None",'
             + '"attachmentFolder":null }',
         }
@@ -3572,7 +3572,7 @@ class TestWorkflowManager(unittest.TestCase):
             + '"cc":["boss@esri.com"],'
             + '"bcc":["supervisor@esri.com"],'
             + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make a email template!",'
+            + '"body":"Look how easy it is to make an email template!",'
             + '"attachmentSelection":"None",'
             + '"attachmentFolder":null }',
         }

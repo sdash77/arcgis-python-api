@@ -2129,19 +2129,19 @@ class WorkflowManager:
         """
         Returns a boolean indicating whether or not the template was updated.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_type       Required string. The type of template stored in the workflow item.
-                            Update an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or enter your own value to update a custom template.
-        ---------------     --------------------------------------------------------------------
-        template_id         Required string. The id of the template to be updated
-        ---------------     --------------------------------------------------------------------
-        template_name       Required string. The new name to be given to the template
-        ---------------     --------------------------------------------------------------------
-        template_details    Required string. The new information to be stored in the template
-        ===============     ====================================================================
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        template_type         Required string. The type of template stored in the workflow item.
+                              Update an email template by entering 'email', a Web Request Template by entering
+                              'webRequest', or enter your own value to update a custom template.
+        -----------------     --------------------------------------------------------------------
+        template_id           Required string. The id of the template to be updated
+        -----------------     --------------------------------------------------------------------
+        template_name         Required string. The new name to be given to the template
+        -----------------     --------------------------------------------------------------------
+        template_details      Required string. The new information to be stored in the template
+        =================     ====================================================================
 
         :return:
            Boolean
@@ -2205,22 +2205,23 @@ class WorkflowManager:
         template_details: str,
         template_id: Optional[str] = None,
     ):
+
         """
         Returns the newly created template id.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        template_type       Required string. The type of template stored in the workflow item.
-                            Create an email template by entering 'email', a Web Request Template by entering
-                            'webRequest', or enter your own value to define a custom template.
-        ---------------     --------------------------------------------------------------------
-        template_name       Required string. The new name to be given to the template
-        ---------------     --------------------------------------------------------------------
-        template_details    Required string. The new information to be stored in the template
-        ---------------     --------------------------------------------------------------------
-        template_id         Optional string. The id of the template to be created
-        ===============     ====================================================================
+        =================     ====================================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------------------------
+        template_type         Required string. The type of template stored in the workflow item.
+                              Create an email template by entering 'email', a Web Request Template by entering
+                              'webRequest', or enter your own value to define a custom template.
+        -----------------     --------------------------------------------------------------------
+        template_name         Required string. The new name to be given to the template
+        -----------------     --------------------------------------------------------------------
+        template_details      Required string. The new information to be stored in the template
+        -----------------     --------------------------------------------------------------------
+        template_id           Optional string. The id of the template to be created
+        =================     ====================================================================
 
         :return:
            Workflow Manager :class:`Template <arcgis.gis.workflowmanager.Template>` ID
