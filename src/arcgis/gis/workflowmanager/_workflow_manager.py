@@ -2205,7 +2205,6 @@ class WorkflowManager:
         template_details: str,
         template_id: Optional[str] = None,
     ):
-
         """
         Returns the newly created template id.
 
