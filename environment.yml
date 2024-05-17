@@ -15,7 +15,6 @@ dependencies:
 - python>=3.9, <3.12
 - setuptools
 - widgetsnbextension >=3
-- jupyter_client <=6.1.12
 - keyring>=23.3.0
 - keyrings.alt
 - nbconvert
