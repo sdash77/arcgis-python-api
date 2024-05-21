@@ -18066,7 +18066,9 @@ class Item(dict):
         elif self.type == "StoryMap":
 
             def _replace_layer_names(structure, expanded_dict):
-                for k, v in expanded_dict:
+                if 'resources' not in structure:
+                    return structure
+                for k, v in expanded_dict.items():
                     r_name = "r-" + k
                     if r_name in structure['resources']:
                         if structure['resources'][r_name]['type'] == "webmap":
@@ -18098,10 +18100,20 @@ class Item(dict):
             )
 
             data = self.get_data()
-            if data != {'unpublished' : True}:
-                data = _replace_layer_names(data, expanded_dict)
-                old_string = json.dumps(data)
+            if data != {'unpublished' : True} and data != {}:
+                pub_data = self.resources.get("published_data.json")
+                pub_data = _replace_layer_names(pub_data, expanded_dict)
+                old_string = json.dumps(pub_data)
                 new_string = _common_utils._text_replace(old_string, expanded_dict)
+                with tempfile.NamedTemporaryFile(
+                    mode="w+", suffix=".json", delete=False
+                ) as tfile:
+                    tfile.write(new_string)
+                    tfile.close()
+                self.resources.update(
+                    file_name="published_data.json",
+                    file=tfile.name,
+                )
                 new_data = json.loads(new_string)
 
                 return self.update(item_properties={}, data = new_data)
