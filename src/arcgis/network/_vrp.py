@@ -1,14 +1,22 @@
+from __future__ import annotations
 import logging as _logging
 import json
 from typing import Optional
 import arcgis
 from datetime import datetime
+from arcgis.auth.tools import LazyLoader
 from arcgis.features import FeatureSet
 from arcgis.gis import GIS
 from arcgis.geoprocessing import LinearUnit
 from arcgis._impl.common._utils import _validate_url
 from arcgis.network import _utils
-from ._routing_utils import _create_toolbox
+
+pd = LazyLoader("pandas")
+try:
+
+    from ._routing_utils import _create_toolbox
+except:
+    from arcgis.network._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -18,9 +26,22 @@ _use_async = True
 
 default_orders = {
     "fields": [
-        {"alias": "ObjectID", "name": "ObjectID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
-        {"alias": "ServiceTime", "name": "ServiceTime", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "ObjectID",
+            "name": "ObjectID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
+        {
+            "alias": "ServiceTime",
+            "name": "ServiceTime",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "TimeWindowStart1",
             "name": "TimeWindowStart1",
@@ -79,7 +100,11 @@ default_orders = {
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "Revenue", "name": "Revenue", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Revenue",
+            "name": "Revenue",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "SpecialtyNames",
             "name": "SpecialtyNames",
@@ -97,7 +122,11 @@ default_orders = {
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "Sequence", "name": "Sequence", "type": "esriFieldTypeInteger"},
+        {
+            "alias": "Sequence",
+            "name": "Sequence",
+            "type": "esriFieldTypeInteger",
+        },
         {
             "alias": "CurbApproach",
             "name": "CurbApproach",
@@ -114,8 +143,17 @@ default_orders = {
 
 default_depots = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
         {
             "alias": "TimeWindowStart1",
             "name": "TimeWindowStart1",
@@ -145,9 +183,21 @@ default_depots = {
             "name": "CurbApproach",
             "type": "esriFieldTypeInteger",
         },
-        {"alias": "Bearing", "name": "Bearing", "type": "esriFieldTypeDouble"},
-        {"alias": "BearingTol", "name": "BearingTol", "type": "esriFieldTypeDouble"},
-        {"alias": "NavLatency", "name": "NavLatency", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Bearing",
+            "name": "Bearing",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "BearingTol",
+            "name": "BearingTol",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "NavLatency",
+            "name": "NavLatency",
+            "type": "esriFieldTypeDouble",
+        },
     ],
     "geometryType": "esriGeometryPoint",
     "displayFieldName": "",
@@ -157,8 +207,17 @@ default_depots = {
 }
 default_routes = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
         {
             "alias": "StartDepotName",
             "name": "StartDepotName",
@@ -204,7 +263,11 @@ default_routes = {
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "FixedCost", "name": "FixedCost", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "FixedCost",
+            "name": "FixedCost",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "CostPerUnitTime",
             "name": "CostPerUnitTime",
@@ -264,15 +327,27 @@ default_routes = {
 
 default_breaks = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "alias": "RouteName",
             "name": "RouteName",
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "Precedence", "name": "Precedence", "type": "esriFieldTypeInteger"},
-        {"alias": "ServiceTime", "name": "ServiceTime", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Precedence",
+            "name": "Precedence",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "ServiceTime",
+            "name": "ServiceTime",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "TimeWindowStart",
             "name": "TimeWindowStart",
@@ -300,8 +375,16 @@ default_breaks = {
             "name": "MaxCumulWorkTime",
             "type": "esriFieldTypeDouble",
         },
-        {"alias": "IsPaid", "name": "IsPaid", "type": "esriFieldTypeInteger"},
-        {"alias": "Sequence", "name": "Sequence", "type": "esriFieldTypeInteger"},
+        {
+            "alias": "IsPaid",
+            "name": "IsPaid",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Sequence",
+            "name": "Sequence",
+            "type": "esriFieldTypeInteger",
+        },
     ],
     "features": [],
     "displayFieldName": "",
@@ -309,20 +392,32 @@ default_breaks = {
 }
 default_route_zones = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "alias": "RouteName",
             "name": "RouteName",
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "IsHardZone", "name": "IsHardZone", "type": "esriFieldTypeInteger"},
+        {
+            "alias": "IsHardZone",
+            "name": "IsHardZone",
+            "type": "esriFieldTypeInteger",
+        },
         {
             "alias": "Shape_Length",
             "name": "Shape_Length",
             "type": "esriFieldTypeDouble",
         },
-        {"alias": "Shape_Area", "name": "Shape_Area", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Shape_Area",
+            "name": "Shape_Area",
+            "type": "esriFieldTypeDouble",
+        },
     ],
     "geometryType": "esriGeometryPolygon",
     "displayFieldName": "",
@@ -333,7 +428,11 @@ default_route_zones = {
 
 default_route_renewals = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "alias": "RouteName",
             "name": "RouteName",
@@ -346,7 +445,11 @@ default_route_renewals = {
             "type": "esriFieldTypeString",
             "length": 128,
         },
-        {"alias": "ServiceTime", "name": "ServiceTime", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "ServiceTime",
+            "name": "ServiceTime",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "Sequences",
             "name": "Sequences",
@@ -361,7 +464,11 @@ default_route_renewals = {
 
 default_order_pairs = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "alias": "FirstOrderName",
             "name": "FirstOrderName",
@@ -387,8 +494,17 @@ default_order_pairs = {
 
 default_point_barriers = {
     "fields": [
-        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "OBJECTID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
         {
             "alias": "Barrier Type",
             "name": "BarrierType",
@@ -419,8 +535,17 @@ default_point_barriers = {
 
 default_line_barriers = {
     "fields": [
-        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "OBJECTID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
         {
             "alias": "SHAPE_Length",
             "name": "SHAPE_Length",
@@ -436,10 +561,27 @@ default_line_barriers = {
 
 default_polygon_barriers = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
-        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
-        {"alias": "BarrierType", "name": "BarrierType", "type": "esriFieldTypeInteger"},
-        {"alias": "Scaled_Time", "name": "Scaled_Time", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
+        {
+            "alias": "Name",
+            "name": "Name",
+            "type": "esriFieldTypeString",
+            "length": 128,
+        },
+        {
+            "alias": "BarrierType",
+            "name": "BarrierType",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Scaled_Time",
+            "name": "Scaled_Time",
+            "type": "esriFieldTypeDouble",
+        },
         {
             "alias": "Scaled_Distance",
             "name": "Scaled_Distance",
@@ -450,7 +592,11 @@ default_polygon_barriers = {
             "name": "Shape_Length",
             "type": "esriFieldTypeDouble",
         },
-        {"alias": "Shape_Area", "name": "Shape_Area", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Shape_Area",
+            "name": "Shape_Area",
+            "type": "esriFieldTypeDouble",
+        },
     ],
     "geometryType": "esriGeometryPolygon",
     "displayFieldName": "",
@@ -463,7 +609,11 @@ default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Drivin
 
 default_param_values = {
     "fields": [
-        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "ObjectID",
+            "name": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "alias": "AttributeName",
             "name": "AttributeName",
@@ -858,6 +1008,238 @@ default_param_values = {
 }
 
 default_tolerance = {"distance": 10, "units": "esriMeters"}
+
+
+def solve_last_mile_delivery(
+    orders: FeatureSet | dict | pd.DataFrame,
+    depots: FeatureSet | dict | pd.DataFrame,
+    routes: FeatureSet | dict | pd.DataFrame,
+    travel_mode: str | None = None,
+    earliest_route_start_date: str | None = None,
+    earliest_route_start_time: str | None = None,
+    max_route_total_time: int | float | None = None,
+    sequence_gap: int = 1,
+    time_units: str = "Minutes",
+    distance_units: str = "Miles",
+    time_zone: str = "GEO_LOCAL",
+    order_specialties: FeatureSet | None = None,
+    route_specialties: FeatureSet | None = None,
+    zones: FeatureSet | None = None,
+    point_barriers: FeatureSet | None = None,
+    polygon_barriers: FeatureSet | None = None,
+    line_barriers: FeatureSet | None = None,
+    locate_settings: dict | None = None,
+    ignore_invalid_order_locations=False,
+    route_shape="Straight Line",
+    populate_directions=False,
+    directions_language="en",
+    save_route_data=False,
+    save_output_network_analysis_layer=False,
+    output_format="Feature Set",
+    overrides=None,
+    analysis_region=None,
+    gis: GIS | None = None,
+) -> "GPJob":
+    """
+    The Last Mile Delivery service is a use case specific Vehicle Routing
+    Problem (VRP) algorithm designed for a fleet of vehicles that are
+    delivering packages to the final customers. For example, this can be
+    used for a single distribution center or store delivering to the final
+    customer location and can be quite dense delivering to a few customers
+    on most streets but is not intended to visit every house on every
+    street.
+
+    Delivery companies need to determine which orders (package delivery
+    location) should be serviced by each route (delivery vehicle and
+    driver) and in what sequence the orders should be visited. The primary
+    goal is to best service the orders by producing geographically
+    clustered routes so the drivers can easily deliver to everyone and
+    minimize the overall operating cost for the fleet of vehicles.
+
+    The Network Analyst Route service finds the best route for a single
+    vehicle to visit many stops whereas the Last Mile Delivery service and
+    the Vehicle Routing Problem service both find the best routes for a
+    fleet of vehicles to service many orders. The Vehicle Routing Problem
+    service has lots of flexibility and can model many different
+    constraints, but the algorithm is also limited by this flexibility. The
+    Last Mile Delivery service supports a subset of the constraints but for
+    the ones it does support is able to provide a better quality and
+    performant algorithm.
+
+    ======================================      ==========================================================================================================================================
+    **Parameter**                               **Description**
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    orders                                      Required FeatureSet. Specifies one or more locations that the routes of the last mile delivery analysis will visit. These are the final
+                                                customer locations where the routes deliver the packages, or the initial customer location where they are picking up packages for shipment.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    depots                                      Required FeatureSet. The depots parameter stores the depots that are part of a given last mile delivery analysis layer. A depot is a
+                                                location that a vehicle departs from at the beginning of its workday and returns to at the end of the workday. Depots are locations where
+                                                the vehicles are loaded (for deliveries) or unloaded (for pickups). For the Last Mile Delivery solver, the routes must all start at the
+                                                same depot location and must all end at the same depot location. However, the start and end depot locations can be different or can be
+                                                modeled as virtual depot locations not explicitly specified in the problem.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    routes                                      Required FeatureSet. The routes parameter identifies one or more routes that describe vehicle and driver characteristics. A route can have
+                                                start and end depot service times, a fixed or flexible starting time, time-based operating costs, distance-based operating costs, multiple
+                                                capacities, various constraints on a driver's workday, and so on.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    travel_mode                                 Optional String. Choose the mode of transportation for the analysis.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    earliest_route_start_date                   Optional String. Use this parameter to specify the default earliest start date for routes. This date is used for all routes for which the
+                                                `earliest_route_start_date` attribute in the routes parameter is null. When this property is not specified, all rows in the routes
+                                                parameter must specify a value in the `EarliestStartDate` attribute.
+
+                                                The format to provide the start date is YYYY-MM-DD, for example, 2023-03-15.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    earliest_route_start_time                   Optional String. Use this parameter to specify the default earliest start time for routes. This time of day is used for all routes for
+                                                which the `EarliestStartTime` attribute in the routes parameter is null. When this property is not specified, all rows in the routes
+                                                parameter must specify a value in the `EarliestStartTime` attribute.
+
+                                                The format to provide the start date is hh:mm:ss, for example, 14:30:30.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    max_route_total_time                        Optional int | float. Use this parameter to specify the maximum allowed total time for each route. The value can be any positive number.
+
+                                                The value is used for all routes when the MaxTotalTime attribute in the routes parameter is null. When no value is specified for max_route_total_time, all rows in the routes parameter must specify a value in the MaxTotalTime attribute. The value is interpreted in the units specified in the time_units parameter.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    sequence_gap                                Optional int. Use this parameter to specify the gap in numerical values to leave in the Sequence attribute in the orders parameter between adjacent orders when the analysis is solved. The value acts as a multiplier for the actual sequence of orders on each route. For instance, if the gap is 5, the first order on the route would have a Sequence attribute value of 5, the second order on the route would have a Sequence attribute value of 10, the third 15, and so on. This parameter helps support inserting orders after the initial route plan has been created because the new orders can be inserted into the sequence gaps.
+
+                                                The first time the analysis is solved, the Sequence attribute values will be populated with sequential values using the designated sequence gap. On subsequent solves of the same analysis, the Sequence attribute values of existing orders with a PreserveRouteAndRelativeSequence assignment rule will be maintained, and new orders will be inserted into the gaps using available integer values for the Sequence attribute that are not in use by other orders. If the sequence gap is set to 1, the sequence values will always be updated to contiguous values for every solve.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    time_units                                  Optional String. Use this parameter to specify the time units for all time-based attribute values specified with different parameters.
+
+                                                The parameter is specified using one of the following values:
+
+                                                - `Seconds`
+                                                - `Minutes`
+                                                - `Hours`
+                                                - `Days`
+
+                                                Many parameters in a last mile delivery problem analysis have attributes for storing time values, such as ServiceTime for the orders parameter and CostPerUnitTime for the routes parameter. To minimize data entry requirements, these attribute values don't include units. Instead, all time-based attribute values must be entered in the same units, and this parameter is used to specify the units of those values.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    distance_units                              Optional String. Use this parameter to specify the distance units for all distance-based attribute values specified with different parameters. Allowed values: `Miles`, `Kilometers`, `Meters`, `Feet`, `Yards`, `NauticalMiles`.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    time_zone                                   Optional String. Use this parameter to specify the time zone for the input date-time fields.
+
+                                                `GEO_LOCAL`: The date-time values associated with the orders or depots are in the time zone in which the orders and depots are located. For routes, the date-time values are based on the time zone in which the starting depot for the route is located. If a route does not have a starting depot, all orders and depots across all the routes must be in a single time zone. For example, if a depot is located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart and TimeWindowEnd) of 8 AM and 5 PM, the time window values will be treated as 8:00 a.m. and 5:00 p.m. in eastern standard time.
+                                                `UTC`: The date-time values associated with the orders or depots are in coordinated universal time (UTC) and are not based on the time zone in which the orders or depots are located. For example, if a depot is located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart and TimeWindowEnd) of 8 AM and 5 PM, the time window values will be treated as 3:00 a.m. and 12:00 p.m. in eastern standard time.
+
+                                                This parameter specifies the time zone for the following fields:
+
+                                                TimeWindowStart, TimeWindowEnd, InboundArriveTime, and OutboundDepartTime on orders. EarliestStartDate and EarliestStartTime on routes.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    order_specialties                           Optional FeatureSet. The order_specialties parameter lists the specialties that can be required by orders and supported by routes. A route can service an order only if it supports all the specialties required for that order.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    route_specialties                           Optional FeatureSet. The route_specialties parameter lists the specialties that can be required by orders and supported by routes. A route can service an order only if it supports all the specialties required for that order.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    zones                                       Optional FeatureSet. Zones specify a work territory. It is a polygon feature and is used to constrain servicing only those orders that fall within or near an area.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    point_barriers                              Optional FeatureSet. Use this parameter to specify one or more points that will act as temporary restrictions or represent additional time or distance that may be required to travel on the underlying streets. For example, a point barrier can be used to represent a fallen tree along a street or a time delay spent at a railroad crossing. The tool imposes a limit of 250 points that can be added as barriers.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    line_barriers                               Optional FeatureSet. Use this parameter to specify one or more lines that prohibit travel anywhere the lines intersect the streets. For example, a parade or protest that blocks traffic across several street segments can be modeled with a line barrier. A line barrier can also quickly fence off several roads from being traversed, thereby channeling possible routes away from undesirable parts of the street network.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    polygon_barriers                            Optional FeatureSet. Use this parameter to specify polygons that either completely restrict travel or proportionately scale the time or distance required to travel on the streets intersected by the polygons.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    locate_settings                             Optional dict. Use this parameter to specify settings that affect how inputs are located, such as the maximum search distance to use when locating the inputs on the network or the network sources being used for locating.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    ignore_invalid_order_locations              Optional Bool. Use this parameter to specify whether invalid orders will be ignored when solving the last mile delivery problem.
+
+                                                `True` - The solve operation will ignore any invalid orders and return a solution, given it didn't encounter any other errors. To generate routes and deliver them to drivers immediately, you may be able to ignore invalid orders, solve, and distribute the routes to your drivers. Then, resolve any invalid orders from the last solve and include them in the fleet routing analysis for the next workday or work shift.
+
+                                                `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the fleet routing solver can't reach. An order may be unreachable for a variety of reasons, including when the order is located on a prohibited network element, isn't located on the network at all, or is located on a disconnected portion of the network.
+
+                                                The default is `False`.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    route_shape                                 Optional String. Use this parameter to specify the type of route features that are output by the service.
+
+
+                                                Allowed values: `True Shape with Measures`, `Straight Line`, `None`
+
+
+
+                                                The parameter can be specified using one of the following values:
+
+                                                - `True Shape with Measures` - The exact shape of the resulting route that is based on the underlying streets will be returned. Additionally, construct measures will be used so the shape can be used in linear referencing. The measurements increase from the first stop and record the cumulative travel time in the units specified by the time_units parameter. To get M value on the output features, request output with returnM set to True.
+                                                - `Straight Line` - A straight line between the depots and orders will be returned.
+                                                - `None` - No shape for any route will be returned. This value can be useful when you want to optimize performance and are only interested in determining the route's total travel time or travel distance, not the route paths.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    populate_directions                         Optional Bool. Use this parameter to specify whether the service will generate driving directions for each route.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    directions_language                         Optional String. Use this parameter to specify the language that will be used when generating travel directions.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    save_route_data                             Optional Bool. Use this parameter to specify whether the service will create a .zip file that contains a file geodatabase with the inputs and outputs of the analysis in a format that can be used to share route layers with your portal.
+
+                                                - `True` - The route data will be saved as a .zip file. This file can be downloaded from the URL provided as part of the output_route_data parameter.
+                                                - `False` - The route data will not be saved.
+
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    save_output_network_analysis_layer          Optional Bool. Use this parameter to specify whether the service will save the analysis settings as a network analysis layer file.
+
+                                                You cannot work directly with this file even when you open the file in an ArcGIS Desktop application such as ArcGIS Pro. It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the service.
+
+                                                - `True` - The network analysis layer file will be saved. The file can be downloaded from the URL provided as part of the output_network_analysis_layer_package parameter.
+                                                - `False` - The network analysis layer file will not be saved.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    output_format                               Optional String. Use this parameter to specify the format in which the output features will be returned. Allowed values: Feature Set,JSON File,GeoJSON File
+
+                                                - `Feature Set` - The output features will be returned as feature classes and tables. This is the default.
+                                                - `JSON File` - The output features will be returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
+                                                - `GeoJSON File` - The output features will be returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
+
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    analysis_region                             Optional String. Specify the region in which to perform the analysis. If a value is not specified for this parameter, the tool will automatically calculate the region name based on the location of the input points.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    context                                     Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output features.
+    --------------------------------------      ------------------------------------------------------------------------------------------------------------------------------------------
+    gis                                         Optional GIS. The optional `GIS` class to use besides the active one.
+    ======================================      ==========================================================================================================================================
+
+    :returns: GPJob
+    """
+    if gis is None:
+        gis = arcgis.env.active_gis or GIS()
+
+    if sequence_gap < 1 or not isinstance(sequence_gap, int):
+        raise ValueError("`sequence_gap` must be an integer greater than 0")
+    future: bool = True  #  run all tasks asynchronously to meet new pattern
+    if locate_settings is None:
+        locate_settings = "{'default': {'allowAutoRelocate': True, 'tolerance': 20000, 'toleranceUnits': 'esriMeters', 'sources': [{'name': 'main.Routing_Streets'}]}}"
+    url: str = gis.properties["helperServices"]["asyncFleetRouting"]["url"]
+    tbx = _create_toolbox(url=url, gis=gis, verbose=False)
+    if hasattr(tbx, "solve_last_mile_delivery") == False:
+        raise Exception(
+            "last_mile_delivery is not supported on this organization. Please contact your administrator for further details."
+        )
+    job = tbx.solve_last_mile_delivery(
+        orders=orders,
+        depots=depots,
+        routes=routes,
+        travel_mode=travel_mode,
+        earliest_route_start_date=earliest_route_start_date,
+        earliest_route_start_time=earliest_route_start_time,
+        max_route_total_time=max_route_total_time,
+        sequence_gap=sequence_gap,
+        time_units=time_units,
+        distance_units=distance_units,
+        time_zone_usage_for_time_fields=time_zone,
+        order_specialties=order_specialties,
+        route_specialties=route_specialties,
+        zones=zones,
+        point_barriers=point_barriers,
+        line_barriers=line_barriers,
+        polygon_barriers=polygon_barriers,
+        locate_settings=locate_settings,
+        ignore_invalid_order_locations=ignore_invalid_order_locations,
+        route_shape=route_shape,
+        populate_directions=populate_directions,
+        directions_language=directions_language,
+        save_route_data=save_route_data,
+        save_output_network_analysis_layer=save_output_network_analysis_layer,
+        output_format=output_format,
+        overrides=overrides,
+        analysis_region=analysis_region,
+        gis=gis,
+        future=future,
+    )
+    return job
 
 
 def edit_vehicle_routing_problem(
