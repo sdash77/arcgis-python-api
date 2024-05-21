@@ -18064,6 +18064,19 @@ class Item(dict):
             return self.update(item_properties={}, data = new_data)
         
         elif self.type == "StoryMap":
+
+            def _replace_layer_names(structure, expanded_dict):
+                for k, v in expanded_dict:
+                    r_name = "r-" + k
+                    if r_name in structure['resources']:
+                        if structure['resources'][r_name]['type'] == "webmap":
+                            new_layers = []
+                            for layer in self._gis.content.get(v).get_data()['operationalLayers']:
+                                lay = {'id' : layer['id'], 'title' : layer['title'], 'visible' : True}
+                                new_layers.append(lay)
+                            structure['resources'][r_name]['data']['mapLayers'] = new_layers
+                return structure
+
             for res in self.resources.list():
                 res_name = res["resource"]
                 if "draft" in res_name and ".json" in res_name and "express" not in res_name:
@@ -18071,6 +18084,7 @@ class Item(dict):
                     break
 
             draft_dict = self.resources.get(draft_name)
+            draft_dict = _replace_layer_names(draft_dict, expanded_dict)
             config_string = json.dumps(draft_dict)
             new_config_string = _common_utils._text_replace(config_string, expanded_dict)
             with tempfile.NamedTemporaryFile(
@@ -18085,6 +18099,7 @@ class Item(dict):
 
             data = self.get_data()
             if data != {'unpublished' : True}:
+                data = _replace_layer_names(data, expanded_dict)
                 old_string = json.dumps(data)
                 new_string = _common_utils._text_replace(old_string, expanded_dict)
                 new_data = json.loads(new_string)

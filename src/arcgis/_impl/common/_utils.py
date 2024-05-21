@@ -199,8 +199,9 @@ def timestamp_to_datetime(timestamp):
 # ----------------------------------------------------------------------
 def _text_replace(text, replacements: dict[str, str]):
     """
-    Uses regex all occurrences of keys in the replacements dictionary
-    with their corresponding values in the text string.
+    Uses regex to replace all occurrences of keys in the 
+    replacements dictionary with their corresponding values 
+    in the text string.
 
     Inputs:
         text - string
