@@ -349,6 +349,15 @@ class profiles:
         """Run tests for kubernetes admin profile"""
         return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
 
+    @classproperty
+    def admin_all(cls):
+        """Run tests for all admin profiles"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_admin_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+            cls._k8s_admin_profile_parameters,
+        )
+
     # endregion
 
 

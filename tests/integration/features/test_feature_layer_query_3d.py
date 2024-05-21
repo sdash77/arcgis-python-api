@@ -1,12 +1,7 @@
-import os
 import unittest
-
-from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureSet
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-# Needs to be on devext for now
-gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # TODO: get better service with more features to be able to test better. Placeholder service
 layer = FeatureLayer(
@@ -14,6 +9,7 @@ layer = FeatureLayer(
 )
 
 
+@profiles.agol
 @integration_test
 class TestQuery3DFeatureLayer(unittest.TestCase):
     def test_query_result_offset(self):
@@ -32,7 +28,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert len(object_ids_result["features"]) == 0
 
     def test_query_out_fields(self):
-        """ "
+        """
         Test query with limited out_fields indicated
         Test return_distinct_values
         """
@@ -48,7 +44,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert len(distinct_values["fields"]) == 3
 
     def test_query_order_by_fields(self):
-        """ "
+        """
         Test query with order_by_fields=True
         """
         ordered = layer.query_3d(
@@ -58,7 +54,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert ordered
 
     def test_query_all_records(self):
-        """ "
+        """
         Test query with return_all_records=False. ! In this case we only have one feature...
         """
         limit_records = layer.query_3d(result_record_count=2000)
@@ -68,7 +64,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert limit_records
 
     def test_query_historic_moments_and_time(self):
-        """ "
+        """
         Test query with historic_moments parameter
         Test query with time_filter parameter
         """
@@ -79,14 +75,14 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert time_filter_results
 
     def test_query_sql_format(self):
-        """ "
+        """
         Test query with sql_format
         """
         sql = layer.query_3d(sql_format="standard")
         assert sql
 
     def test_query_units(self):
-        """ "
+        """
         Test query with different units
         """
         km = layer.query_3d(units="esriSRUnit_Kilometer")
@@ -98,7 +94,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert nautical
 
     def test_query_geometry_filter(self):
-        """ "
+        """
         Test query with geometry_filter
         """
         geom_filter = layer.query_3d(
@@ -113,7 +109,7 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         assert geom_filter["spatialReference"]["wkid"] == 4326
 
     def test_query_group_by_field(self):
-        """ "
+        """
         Test query with group_by_field_for_statistics
         """
         group_field = layer.query_3d(
