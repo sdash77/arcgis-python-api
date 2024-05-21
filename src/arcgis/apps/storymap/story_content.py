@@ -1766,13 +1766,14 @@ class Map:
                 ]
 
         if change_made:
-            # Once the update made, remove the original information from resources
-            new_data = {
-                "itemId": rdata_dict["itemId"],
-                "itemType": rdata_dict["itemType"],
-                "type": "minimal",
-            }
-            self._story._properties["resources"][self.resource_node]["data"] = new_data
+            # Once the update made, remove the original information from resources so 
+            # that the new information is used.
+            rdata_dict.pop("extent", None)
+            rdata_dict.pop("center", None)
+            rdata_dict.pop("viewpoint", None)
+            rdata_dict.pop("zoom", None)
+            rdata_dict["type"] = "minimal"
+            self._story._properties["resources"][self.resource_node]["data"] = rdata_dict
 
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
