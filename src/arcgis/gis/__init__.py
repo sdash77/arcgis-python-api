@@ -17978,37 +17978,15 @@ class Item(dict):
 
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
-            "Feature Service",
             "Map Service",
-            "Operation View",
             "Dashboard",
-            "Image Service",
             "Feature Collection",
-            "Feature Collection Template",
             "Web Mapping Application",
-            "Mobile Application",
-            "Symbol Set",
-            "Color Set",
-            "Document Link",
-            "Geocode Service",
-            "Geodata Service",
             "Application",
-            "Geometry Service",
-            "Geoprocessing Service",
-            "Network Analysis Service",
-            "Workflow Manager Service",
             "Web Scene",
             "Data Pipeline",
-            "360 VR Experience",
-            "Workforce Project",
-            "Insights Model",
-            "Insights Page",
-            "Insights Workbook",
-            "Hub Initiative",
             "Hub Site Application",
             "Hub Page",
-            "Content Category Set",
-            "Windows Viewer Configuration",
         ]
 
         def _replace_related_items(item, item_mapping):
@@ -18121,6 +18099,18 @@ class Item(dict):
             else:
                 return True
             
+        elif self.type == "Notebook":
+            nb_file = self.get_data()
+            with open(nb_file, "r", encoding="utf8") as file:
+                json_str = file.read()
+            new_string = _common_utils._text_replace(json_str, expanded_dict)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".ipynb", delete=False, encoding="utf8"
+            ) as tfile:
+                tfile.write(new_string)
+                tfile.close()
+            return self.update(item_properties={}, data = tfile.name)
+        
         else:
             raise ValueError(f"Item type {self.type} is not supported for remapping data")
 
