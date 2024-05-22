@@ -908,6 +908,19 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             _r.headers.pop("X-Esri-Authorization", None)
             _r.history.append(r)
             return _r
+        elif r.status_code >= 400 and r.status_code < 500:
+            self._no_go_token.add((parsed.scheme, parsed.netloc, parsed.path))
+            # Recreate the request without the token
+            #
+            r.content
+            r.raw.release_conn()
+            r.request.headers["referer"] = self._referer  # or "http"
+            r.request.headers.pop("X-Esri-Authorization", None)
+            _r = r.connection.send(r.request, **kwargs)
+            _r.headers["referer"] = self._referer  # or "http"
+            _r.headers.pop("X-Esri-Authorization", None)
+            _r.history.append(r)
+            return _r
         elif r.text.lower().find("token required") > -1:
             r.content
             r.raw.release_conn()

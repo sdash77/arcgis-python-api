@@ -40,3 +40,6 @@ get_travel_modes
 -----------------------
 .. autofunction:: arcgis.network.analysis.get_travel_modes
 
+get_tool_info
+-------------
+.. autofunction:: arcgis.network.analysis.get_tool_info

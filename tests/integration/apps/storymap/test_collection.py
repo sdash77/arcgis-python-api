@@ -31,6 +31,7 @@ class TestStoryMap(unittest.TestCase):
 
                 """Change the story theme"""
                 collection.theme(Themes.SLATE)
+                assert collection.get_theme() == Themes.SLATE.value
 
                 assert collection.save()
 

@@ -851,7 +851,6 @@ class IntegratedMeshLayer(Layer):
 
 ###########################################################################
 class Tiles3DLayerManager(_GISResource):
-
     def __init__(self, url, gis=None, tiles3d_service=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")

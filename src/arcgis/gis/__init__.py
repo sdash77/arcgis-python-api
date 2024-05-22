@@ -729,10 +729,17 @@ class GIS(object):
                 if self._is_hosted_nb_home:
                     import warnings
 
+                    orin_fn = warnings.formatwarning
+
+                    def warning_on_one_line(message, *args, **kwargs):
+                        return "%s\n" % (message)
+
+                    warnings.formatwarning = warning_on_one_line
                     warnings.warn(
                         "You are logged on as %s with an administrator role, proceed with caution."
                         % self.users.me.username
                     )
+                    warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
                     from arcgis.gis.kubernetes._admin.kadmin import (
                         KubernetesAdmin,
@@ -2037,7 +2044,12 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items: Optional[list[Item]] = None, future: bool = True):
+    def create(
+        self,
+        items: list[Item] | None = None,
+        output_filename: str | None = None,
+        future: bool = True,
+    ):
         """
         The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
         an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
@@ -2062,6 +2074,10 @@ class GroupMigrationManager(object):
         items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
                                from the group.  If argument is not provided, the method will attempt
                                to export all group content items.
+        ------------------     --------------------------------------------------------------------
+        output_filename        Optional String. The name of the output file in the exported item
+                               file. This parameter is only supported in enterprises `11.3` and
+                               over.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When `True`, the operation runs asynchronously
                                and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
@@ -2112,6 +2128,12 @@ class GroupMigrationManager(object):
             params = {"itemIdList": items}
 
             params["async"] = json.dumps(True)
+            if self._gis.version >= [2024, 1] and output_filename:
+                params["outputFilename"] = output_filename
+            elif self._gis.version < [2024, 1] and output_filename:
+                _log.warning(
+                    "Output filename is not support on this version of enterprise"
+                )
             res = self._gis._con.post(url, params)
             if not "jobId" in res:
                 raise Exception(
@@ -6624,6 +6646,12 @@ class ContentManager(object):
             return int(35 * (1024 * 1024))
 
     # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.add()` instead.",
+    )
     def add(
         self,
         item_properties: dict[str, Any] | ItemProperties,
@@ -10470,90 +10498,6 @@ class Group(dict):
         )
 
     # ----------------------------------------------------------------------
-    @_common_deprecated.deprecated(
-        deprecated_in="v1.5.1",
-        removed_in=None,
-        current_version=None,
-        details="Use `Group.invite` instead.",
-    )
-    def invite_by_email(
-        self,
-        email: str,
-        message: str,
-        role: str = "member",
-        expiration: str = "1 Day",
-    ):
-        """
-        .. Warning::
-            Deprecated: The ``invite_by_email`` function is no longer supported.
-
-        The ``invite_by_email`` method invites a user by email to the existing group.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        email             Required string. The user to send join email to.
-        ----------------  --------------------------------------------------------
-        message           Required string. The message to send to the user.
-        ----------------  --------------------------------------------------------
-        role              Optional string. Either member (the default) or admin.
-        ----------------  --------------------------------------------------------
-        expiration        Optional string.  The is the time out of the invite.
-                          The values are: 1 Day (default), 3 Days, 1 Week, or
-                          2 Weeks.
-        ================  ========================================================
-
-        :return: A boolean indicating success (True) or failure (False)
-        """
-
-        if self._gis.version >= [6, 4]:
-            return False
-
-        time_lookup = {
-            "1 Day".upper(): 1440,
-            "3 Days".upper(): 4320,
-            "1 Week".upper(): 10080,
-            "2 Weeks".upper(): 20160,
-        }
-        role_lookup = {"member": "group_member", "admin": "group_admin"}
-        url = "community/groups/" + self.groupid + "/inviteByEmail"
-        params = {
-            "f": "json",
-            "emails": email,
-            "message": message,
-            "role": role_lookup[role.lower()],
-            "expiration": time_lookup[expiration.upper()],
-        }
-        return self._portal.con.post(url, params)
-
-    def reassign_to(self, target_owner: Union[str, User]):
-        """
-        The ``reassign_to`` method reassigns this group from its current owner to another owner.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        target_owner      Required string or User.  The username of the new group owner.
-        ================  ========================================================
-
-        :return:
-            A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json"}
-        if isinstance(target_owner, User):
-            params["targetUsername"] = target_owner.username
-        else:
-            params["targetUsername"] = target_owner
-        res = self._gis._con.post(
-            "community/groups/" + self.groupid + "/reassign", params
-        )
-        if res:
-            self._hydrated = False
-            self._hydrate()
-            return res.get("success")
-        return False
-
-    # ----------------------------------------------------------------------
     def notify(
         self,
         users: Union[list[str], list[User]],
@@ -12076,7 +12020,26 @@ class User(dict):
     @property
     def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group["id"]) for group in self["groups"]]
+        if (
+            self._gis.users.me.username != self["username"]
+            and self._gis._is_arcgisonline
+        ):
+            groups: list[Group] = []
+            for grp in self["groups"]:
+                try:
+                    group = Group(self._gis, grp["id"])
+                    group.__str__()
+                    if "orgId" in grp and grp["orgId"] == self._gis.properties["id"]:
+                        groups.append(group)
+                    elif not "orgId" in grp:
+                        groups.append(group)
+                    elif grp["owner"] == self["username"]:
+                        groups.append(group)
+                except:
+                    pass
+            return groups
+        else:
+            return [Group(self._gis, grp["id"]) for grp in self["groups"]]
 
     def update_license_type(self, user_type: str):
         """
@@ -13274,29 +13237,19 @@ class Item(dict):
         """
         Gets/Sets if the Item is in the user's favorites
         """
-        user: User = self._gis.users.get(self.owner)
+        user: User = self._gis.users.me
+        grp_shr = self.sharing.groups
+        # get(self.owner)
         if value == True:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
-        elif value == False:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
-        else:
-            raise ValueError("'value' must be a boolean.")
-
-        params = {
-            "f": "json",
-            "everyone": self.shared_with["everyone"],
-            "org": self.shared_with["org"],
-            "items": self.itemid,
-            "groups": user.favGroupId,
-        }
-
-        res = self._gis._con.post(url, params=params)
-        assert self.shared_with
-        if "error" in res:
-            raise Exception(f"An error has occurred: {str(res)}")
-        else:
+            grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
+        elif value == False:
+            grp_shr.remove(user.favGroupId)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("'value' must be a boolean.")
 
     # ----------------------------------------------------------------------
     @property
@@ -14468,7 +14421,16 @@ class Item(dict):
         metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
 
         try:
-            response = self._portal.con.get(metadataurlpath, try_json=False)
+            save_path: str = os.path.join(
+                tempfile.gettempdir(), self.itemid, "metadata"
+            )
+            os.makedirs(save_path, exist_ok=True)
+            response = self._portal.con.get(
+                metadataurlpath,
+                try_json=False,
+                out_folder=save_path,
+                file_name="metadata.xml",
+            )
             if response.find("Metadata for item not found") > -1:
                 return None
             else:
@@ -16207,10 +16169,16 @@ class Item(dict):
                                `Geocoder` can be supplied in order to specify which service
                                geocodes the information. If no geocoder is given, the first
                                registered `Geocoder` is used.
+        -------------------    ---------------------------------------------------------------
+        future                 Optional Boolean indicating whether to run the operation in an
+                               asynchronous manner. When *True*, the return value is a
+                               *concurrent.futures.Future* object that can be queried for
+                               job status and results. The default is *False*.
         ===================    ===============================================================
 
         :return:
-            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
+            When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
+            published web layer. When *future=True*, a *concurrent.futures.Future* object.
 
         .. code-block:: python
 

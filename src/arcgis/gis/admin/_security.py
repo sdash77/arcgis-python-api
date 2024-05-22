@@ -389,27 +389,6 @@ class Security(BasePortalAdmin):
 
         return self._con.post(path=url, postdata=params)
 
-    # ----------------------------------------------------------------------
-    @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.3.0")
-    def ssl(self):
-        """
-        .. note::
-            It is best practice and highly recommended to use the `ssl_certificates`
-            property on the Machine class.
-
-        Provides access to managing and updating SSL Certificates on a
-        Portal site.
-
-        :return:
-            :class:`~arcgis.gis.admin.SSLCertificates` object
-
-        """
-        if self._ssl is None:
-            url = "%s/sslCertificates" % self._url
-            self._ssl = SSLCertificates(url=url, gis=self._gis)
-        return self._ssl
-
 
 ########################################################################
 class OAuth(BasePortalAdmin):

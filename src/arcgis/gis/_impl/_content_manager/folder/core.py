@@ -623,6 +623,12 @@ class Folder:
                 for key, value in item_properties.to_dict().items()
                 if not value is None
             }
+            if "overwrite" in item_properties and item_properties["overwrite"] == True:
+
+                logger.warning(
+                    "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
+                )
+            item_properties.pop("overwrite", None)
         if not file:
             stream = False
         elif file and item_id:
@@ -886,7 +892,9 @@ class Folders:
             >>> h2o_folder
                 < Folder: Water_Resources Owner: h2o_project_user>
         """
-        if folder in ["/", "root", None, "Root Folder"]:
+        if folder is None:
+            folder = "Root Folder"
+        elif folder.lower() in ["/", "root", "Root Folder", "root folder"]:
             folder = "Root Folder"
         for fld in self.list(owner=owner):
             if (

@@ -4,7 +4,14 @@ from ... import __version__ as ArcGISLearnVersion
 from .._data import prepare_data, _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family, _EmptyData, _get_device
+    from ._arcgis_model import (
+        ArcGISModel,
+        _resnet_family,
+        _EmptyData,
+        _get_device,
+        _set_ddp_multigpu,
+        _isnotebook,
+    )
     from ._superres_utils import (
         compute_metrics,
         create_loss,
@@ -66,37 +73,38 @@ class SuperResolution(ArcGISModel):
     norm_groups             Optional int. Group normalization.
                             Default: 32
     ---------------------   -------------------------------------------
-    channel_mults           Optional int. Depth or channel multipliers.
+    channel_mults           Optional list. Depth or channel multipliers.
                             Default: [1, 2, 4, 4, 8, 8]
     ---------------------   -------------------------------------------
-    attn_res                Optional int. Number of attention in residual blocks.
-                            Default: 16
+    attn_res                Optional int. Number of attention in residual
+                            blocks. Default: 16
     ---------------------   -------------------------------------------
     res_blocks              Optional int. Number of resnet block.
                             Default: 3
     ---------------------   -------------------------------------------
-    dropout                 Optional bool. Dropout.
+    dropout                 Optional float. Dropout.
                             Default: 0
     ---------------------   -------------------------------------------
-    schedule                Optional int. Type of noise schedule. available types
-                            are "linear", 'warmup10', 'warmup50', 'const', 'jsd',
-                            'cosine'. Default: 'linear'
+    schedule                Optional string. Type of noise schedule.
+                            Available types are "linear", 'warmup10',
+                            'warmup50', 'const', 'jsd', 'cosine'.
+                            Default: 'linear'
     ---------------------   -------------------------------------------
     n_timestep              Optional int. Number of time-steps.
                             Default: 1000
     ---------------------   -------------------------------------------
-    linear_start            Optional bool. Schedule start.
+    linear_start            Optional float. Schedule start.
                             Default: 1e-06
     ---------------------   -------------------------------------------
-    linear_end              Optional bool. Schedule end.
+    linear_end              Optional float. Schedule end.
                             Default: 1e-02
     =====================   ===========================================
 
     And, with 'SR3_UViT' backbone supports the below optional key word arguments:
 
     =====================   ===========================================
-    patch_size              Optional int. Patch size for generating patch embeddings.
-                            Default: 16
+    patch_size              Optional int. Patch size for generating patch
+                            embeddings. Default: 16
     ---------------------   -------------------------------------------
     embed_dim               Optional int. Dimension of embeddings.
                             Default: 768
@@ -107,7 +115,7 @@ class SuperResolution(ArcGISModel):
     num_heads               Optional int. Number of attention heads.
                             Default: 12
     ---------------------   -------------------------------------------
-    mlp_ratio               Optional bool. Ratio of MLP.
+    mlp_ratio               Optional float. Ratio of MLP.
                             Default: 4.0
     ---------------------   -------------------------------------------
     qkv_bias                Optional bool. Addition of bias in QK Vector.
@@ -142,13 +150,13 @@ class SuperResolution(ArcGISModel):
             super().__init__(data_bunch, backbone, **kwargs)
             self.kwargs = kwargs
             self._data = data_bunch if data_bunch else data
+            self._backbone = backbone
             if backbone == "SR3_UViT":
                 denoiseUnet = UViT(
                     img_size=self._data.chip_size,
                     in_chans=self._data._n_channel,  # 3,
                     **kwargs
                 )
-                self.model_type = "SR3_UViT"
             else:
                 denoiseUnet = UNet(
                     in_channel=(self._data._n_channel) * 2,
@@ -157,7 +165,6 @@ class SuperResolution(ArcGISModel):
                     with_noise_level_emb=True,
                     **kwargs
                 )
-                self.model_type = "SR3"
             sr3model = GaussianDiffusion(
                 denoiseUnet,
                 image_size=self._data.chip_size,
@@ -166,12 +173,32 @@ class SuperResolution(ArcGISModel):
             )
             init_weights(sr3model, init_type="orthogonal")
             sr3model.set_new_noise_schedule(self._device.type, **kwargs)
-            self.learn = Learner(
-                self._data,
-                sr3model,
-                loss_func=l1Loss(self._device.type),
-                opt_func=optim.Adam,
-            )
+            if not _isnotebook():
+                _set_ddp_multigpu(self)
+                if self._multigpu_training:
+                    self.learn = Learner(
+                        self._data,
+                        sr3model,
+                        loss_func=l1Loss(self._device.type),
+                        opt_func=optim.Adam,
+                    ).to_distributed(self._rank_distributed)
+                    self._map_location = {
+                        "cuda:%d" % 0: "cuda:%d" % self._rank_distributed
+                    }
+                else:
+                    self.learn = Learner(
+                        self._data,
+                        sr3model,
+                        loss_func=l1Loss(self._device.type),
+                        opt_func=optim.Adam,
+                    )
+            else:
+                self.learn = Learner(
+                    self._data,
+                    sr3model,
+                    loss_func=l1Loss(self._device.type),
+                    opt_func=optim.Adam,
+                )
         else:
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
@@ -215,7 +242,6 @@ class SuperResolution(ArcGISModel):
                     self_attention=attention,
                     norm_type=NormType.Weight,
                 )
-            self.model_type = "UNet"
         self.learn.data = self._data
         self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
@@ -236,7 +262,7 @@ class SuperResolution(ArcGISModel):
     @property
     def supported_backbones(self):
         """
-        Supported torchvision backbones for this model.
+        Supported backbones for this model.
         """
         return SuperResolution._supported_backbones()
 
@@ -291,7 +317,7 @@ class SuperResolution(ArcGISModel):
         model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-        modtype = emd.get("ModelArch", "SR3")
+        modtype = emd.get("ModelArch", "UNet")
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
         n_channel = emd.get("n_channel", 3)
@@ -357,7 +383,9 @@ class SuperResolution(ArcGISModel):
         _emd_template["ModelType"] = "SuperResolution"
 
         if self._data.train_ds.__class__.__name__ == "SR3Dataset":
-            _emd_template["ModelArch"] = self.model_type
+            _emd_template["ModelArch"] = (
+                self._backbone if self._backbone.startswith("SR3") else "UNet"
+            )
             _emd_template["image_stats"] = {
                 i: j.tolist() for i, j in self._data.batch_stats_a.items() if j != None
             }
@@ -407,10 +435,10 @@ class SuperResolution(ArcGISModel):
 
         """
         if not rows:
-            if self.model_type == "UNet":
-                rows = 5
-            else:
+            if not hasattr(self._backbone, "__call__"):
                 rows = 1
+            else:
+                rows = 5
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 

@@ -12,7 +12,7 @@ import textwrap
 import warnings
 import re
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 # This is mostly here so automodule docs are ordered more ideally.
 __all__ = [
@@ -184,8 +184,10 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None, detail
             # makes for a nicely constructed sentence with or without any
             # of the parts.
             parts = {
-                "deprecated_in": " %s" % deprecated_in if deprecated_in else "",
-                "removed_in": "\n   Removed in: %s." % removed_in if removed_in else "",
+                "deprecated_in": (" %s" % deprecated_in if deprecated_in else ""),
+                "removed_in": (
+                    "\n   Removed in: %s." % removed_in if removed_in else ""
+                ),
                 "details": " %s" % details if details else "",
             }
 
