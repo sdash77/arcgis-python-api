@@ -11,7 +11,8 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Envelope
-from utils.decorators import integration_test
+from utils.decorators import integration_test,profiles
+
 
 # region PreCondition check
 test_skip = False
@@ -54,6 +55,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@profiles.enterprise
 @integration_test
 class Test_geometry_functions_portal(unittest.TestCase):
     """
@@ -71,11 +73,6 @@ class Test_geometry_functions_portal(unittest.TestCase):
         # region Read config data
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["admin_user"]
-        cls.portal_password = _conf_reader["teamportal"]["admin_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -86,11 +83,10 @@ class Test_geometry_functions_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(cls.gis.url)
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -194,6 +190,7 @@ class Test_geometry_functions_portal(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@profiles.agol
 @integration_test
 class Test_geometry_functions_AGO(unittest.TestCase):
     """
@@ -211,11 +208,6 @@ class Test_geometry_functions_AGO(unittest.TestCase):
         # region Read config data
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["admin_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["admin_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -226,11 +218,10 @@ class Test_geometry_functions_AGO(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(cls.gis.url)
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         if cls.gis is None:
             cls.class_skip = True
 
