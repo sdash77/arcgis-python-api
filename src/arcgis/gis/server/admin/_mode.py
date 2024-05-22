@@ -46,40 +46,6 @@ class Mode(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="1.7.1",
-        removed_in="2.3.2",
-        current_version="2.3.1",
-        details="Use `Mode.update_mode` instead.",
-    )
-    def update(self, siteMode: str, runAsync: bool = False) -> bool:
-        """
-        The update operation is used to move between the two types of site
-        modes. Switching to READ_ONLY mode will restart all your services
-        as the default behavior. Moving to EDITABLE mode will not restart
-        services.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        siteMode:           Required string. The mode you will set your site to. Values:
-                            READ_ONLY or EDITABLE.
-        ---------------     --------------------------------------------------------------------
-        runAsync            Optional boolean. Determines if this operation must run asynchronously.
-        ===============     ====================================================================
-
-
-        :return: Boolean
-
-        """
-        params = {"siteMode": siteMode, "runAsync": runAsync, "f": "json"}
-        url = self._url + "/update"
-        res = self._con.post(path=url, postdata=params)
-        if "status" in res:
-            return res["status"] == "success"
-        return res
-
-    # ----------------------------------------------------------------------
     def update_mode(
         self,
         site_mode: str,

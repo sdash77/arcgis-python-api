@@ -892,7 +892,9 @@ class Folders:
             >>> h2o_folder
                 < Folder: Water_Resources Owner: h2o_project_user>
         """
-        if folder in ["/", "root", None, "Root Folder"]:
+        if folder is None:
+            folder = "Root Folder"
+        elif folder.lower() in ["/", "root", "Root Folder", "root folder"]:
             folder = "Root Folder"
         for fld in self.list(owner=owner):
             if (
