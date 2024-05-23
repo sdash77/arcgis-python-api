@@ -3,12 +3,11 @@ from arcgis import geometry
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Envelope
 from utils.decorators import integration_test, profiles
 
-
 @profiles.enterprise_and_agol
 @integration_test
 class TestGeometryFunctions(unittest.TestCase):
     """
-    Test to check if a ContentManager object works with builtin portal
+    Test to check if a ContentManager object works with builtin portal and AGOL
     """
 
     def test_project_point_webmerc_wgs84(self):
