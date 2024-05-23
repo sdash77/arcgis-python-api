@@ -17942,7 +17942,7 @@ class Item(dict):
         return url
 
     # ----------------------------------------------------------------------
-    def remap_data(self, item_mapping: dict[str, str], force = False):
+    def remap_data(self, item_mapping: dict[str, str], force=False):
 
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
@@ -17965,8 +17965,10 @@ class Item(dict):
                 if self._gis.content.get(v) is None:
                     raise ValueError(f"Item with id {v} does not exist in the GIS")
                 if self._gis.content.get(k).type != self._gis.content.get(v).type:
-                    raise ValueError(f"Items with ids {k} and {v} are not of the same type")
-                
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type"
+                    )
+
         # _replace_related_items(self, item_mapping)
         expanded_dict = copy.deepcopy(item_mapping)
         for k, v in item_mapping.items():
@@ -17985,12 +17987,14 @@ class Item(dict):
             new_string = _common_utils._text_replace(old_string, expanded_dict)
             new_data = json.loads(new_string)
 
-            return self.update(item_properties={}, data = new_data)
-        
+            return self.update(item_properties={}, data=new_data)
+
         elif self.type == "Web Experience":
             config_dict = self.resources.get("config/config.json")
             config_string = json.dumps(config_dict)
-            new_config_string = _common_utils._text_replace(config_string, expanded_dict)
+            new_config_string = _common_utils._text_replace(
+                config_string, expanded_dict
+            )
             with tempfile.NamedTemporaryFile(
                 mode="w+", suffix=".json", delete=False
             ) as tfile:
@@ -18007,34 +18011,48 @@ class Item(dict):
             new_string = _common_utils._text_replace(old_string, expanded_dict)
             new_data = json.loads(new_string)
 
-            return self.update(item_properties={}, data = new_data)
-        
+            return self.update(item_properties={}, data=new_data)
+
         elif self.type == "StoryMap":
 
             def _replace_layer_names(structure, expanded_dict):
-                if 'resources' not in structure:
+                if "resources" not in structure:
                     return structure
                 for k, v in expanded_dict.items():
                     r_name = "r-" + k
-                    if r_name in structure['resources']:
-                        if structure['resources'][r_name]['type'] == "webmap":
+                    if r_name in structure["resources"]:
+                        if structure["resources"][r_name]["type"] == "webmap":
                             new_layers = []
-                            for layer in self._gis.content.get(v).get_data()['operationalLayers']:
-                                lay = {'id' : layer['id'], 'title' : layer['title'], 'visible' : True}
+                            for layer in self._gis.content.get(v).get_data()[
+                                "operationalLayers"
+                            ]:
+                                lay = {
+                                    "id": layer["id"],
+                                    "title": layer["title"],
+                                    "visible": True,
+                                }
                                 new_layers.append(lay)
-                            structure['resources'][r_name]['data']['mapLayers'] = new_layers
+                            structure["resources"][r_name]["data"][
+                                "mapLayers"
+                            ] = new_layers
                 return structure
 
             for res in self.resources.list():
                 res_name = res["resource"]
-                if "draft" in res_name and ".json" in res_name and "express" not in res_name:
+                if (
+                    "draft" in res_name
+                    and ".json" in res_name
+                    and "express" not in res_name
+                ):
                     draft_name = res_name
                     break
 
             draft_dict = self.resources.get(draft_name)
             draft_dict = _replace_layer_names(draft_dict, expanded_dict)
             config_string = json.dumps(draft_dict)
-            new_config_string = _common_utils._text_replace(config_string, expanded_dict)
+            new_config_string = _common_utils._text_replace(
+                config_string, expanded_dict
+            )
             with tempfile.NamedTemporaryFile(
                 mode="w+", suffix=".json", delete=False
             ) as tfile:
@@ -18046,7 +18064,7 @@ class Item(dict):
             )
 
             data = self.get_data()
-            if data != {'unpublished' : True} and data != {}:
+            if data != {"unpublished": True} and data != {}:
                 pub_data = self.resources.get("published_data.json")
                 pub_data = _replace_layer_names(pub_data, expanded_dict)
                 old_string = json.dumps(pub_data)
@@ -18062,11 +18080,11 @@ class Item(dict):
                 )
                 new_data = json.loads(new_string)
 
-                return self.update(item_properties={}, data = new_data)
-            
+                return self.update(item_properties={}, data=new_data)
+
             else:
                 return True
-            
+
         elif self.type == "Notebook":
             nb_file = self.get_data()
             with open(nb_file, "r", encoding="utf8") as file:
@@ -18077,10 +18095,13 @@ class Item(dict):
             ) as tfile:
                 tfile.write(new_string)
                 tfile.close()
-            return self.update(item_properties={}, data = tfile.name)
-        
+            return self.update(item_properties={}, data=tfile.name)
+
         else:
-            raise ValueError(f"Item type {self.type} is not supported for remapping data")
+            raise ValueError(
+                f"Item type {self.type} is not supported for remapping data"
+            )
+
 
 ########################################################################
 class ViewManager:

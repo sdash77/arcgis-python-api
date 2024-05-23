@@ -196,11 +196,12 @@ def timestamp_to_datetime(timestamp):
     """
     return datetime.datetime.fromtimestamp(timestamp / 1000)
 
+
 # ----------------------------------------------------------------------
 def _text_replace(text, replacements: dict[str, str]):
     """
-    Uses regex to replace all occurrences of keys in the 
-    replacements dictionary with their corresponding values 
+    Uses regex to replace all occurrences of keys in the
+    replacements dictionary with their corresponding values
     in the text string.
 
     Inputs:
