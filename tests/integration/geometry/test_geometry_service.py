@@ -1,36 +1,14 @@
 import unittest
-from arcgis.gis import GIS, ProfileManager
+from arcgis.gis import GIS
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
-from utils.decorators import integration_test
-
-profiles = [
-    None,
-    "your_online_profile",
-    "your_enterprise_profile",
-    "your_kubernetes_profile",
-]
-profiles_no_anon = [
-    "your_online_profile",
-    "your_enterprise_profile",
-    "your_kubernetes_profile",
-]
-
-if not "your_kubernetes_profile" in ProfileManager().list():
-    from arcgis.gis import GIS, ProfileManager
-
-    pm = ProfileManager()
-    pm.create(
-        "your_kubernetes_profile",
-        url="https://11-1-k8s.python.geocloud.com/arcgis/home",
-        username="geosaurusaccnt",
-        password="geosaurus_automation123",
-    )
+from utils.decorators import integration_test,profiles
 
 
 ###########################################################################
 # @unittest.skip('said so')
 @integration_test
+@profiles.enterprise_and_agol
 class TestGSSettingSR(unittest.TestCase):
     """
     Tests that async and sync operations set the spatial reference on the geometry objects
@@ -68,7 +46,7 @@ class TestGSSettingSR(unittest.TestCase):
             }
         )
         sr = 4326
-        gis = GIS(verify_cert=False)
+        gis = self.gis
         geom_async = intersect(
             spatial_ref=4326,
             geometries=geoms,
@@ -90,6 +68,7 @@ class TestGSSettingSR(unittest.TestCase):
 
 ###########################################################################
 @integration_test
+@profiles.enterprise_and_agol
 class TestGeometryService(unittest.TestCase):
     """Tests the underlying Geometry Service"""
 
@@ -99,21 +78,16 @@ class TestGeometryService(unittest.TestCase):
         """
         Tests Accessing Geometry Service from anonymous, built-in (AGOL/Enterprise)
         """
+        gis = self.gis
 
-        for profile in profiles:
+        url = gis.properties.helperServices.geometry.url
 
-            print(profile)
+        if gis._portal.is_kubernetes == False:
+            gs = _GeometryService(url=url)
 
-            gis = GIS(profile=profile, verify_cert=False)
+            assert isinstance(gs, _GeometryService)
 
-            url = gis.properties.helperServices.geometry.url
-
-            if gis._portal.is_kubernetes == False:
-                gs = _GeometryService(url=url)
-
-                assert isinstance(gs, _GeometryService)
-
-            del gis, profile
+        del gis
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -129,180 +103,188 @@ class TestGeometryService(unittest.TestCase):
     # @unittest.skip('said so')
     def test_gs_area_and_lengths(self):
         """Tests the areas and lengths using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            polygons = [
-                {
-                    "rings": [
-                        [
-                            [-97.06138, 32.837],
-                            [-97.06133, 32.836],
-                            [-97.06124, 32.834],
-                            [-97.06127, 32.832],
-                            [-97.06138, 32.837],
-                        ],
-                        [
-                            [-97.06326, 32.759],
-                            [-97.06298, 32.755],
-                            [-97.06153, 32.749],
-                            [-97.06326, 32.759],
-                        ],
+        #for profile in profiles:
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        polygons = [
+            {
+                "rings": [
+                    [
+                        [-97.06138, 32.837],
+                        [-97.06133, 32.836],
+                        [-97.06124, 32.834],
+                        [-97.06127, 32.832],
+                        [-97.06138, 32.837],
                     ],
-                    "spatialReference": {"wkid": 4326},
-                }
-            ]
-            lengthUnit = 9095
-            areaUnit = 9095
-            calculationType = "preserveShape"
-            sr = 4326
-            for fut in [True, False]:
-                if fut:
-                    j = gs.areas_and_lengths(
-                        polygons,
-                        lengthUnit,
-                        areaUnit,
-                        calculationType,
-                        sr=sr,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.areas_and_lengths(
-                        polygons,
-                        lengthUnit,
-                        areaUnit,
-                        calculationType,
-                        sr=sr,
-                        future=fut,
-                    )
+                    [
+                        [-97.06326, 32.759],
+                        [-97.06298, 32.755],
+                        [-97.06153, 32.749],
+                        [-97.06326, 32.759],
+                    ],
+                ],
+                "spatialReference": {"wkid": 4326},
+            }
+        ]
+        lengthUnit = 9095
+        areaUnit = 9095
+        calculationType = "preserveShape"
+        sr = 4326
+        for fut in [True, False]:
+            if fut:
+                j = gs.areas_and_lengths(
+                    polygons,
+                    lengthUnit,
+                    areaUnit,
+                    calculationType,
+                    sr=sr,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.areas_and_lengths(
+                    polygons,
+                    lengthUnit,
+                    areaUnit,
+                    calculationType,
+                    sr=sr,
+                    future=fut,
+                )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_auto_complete(self):
         """Tests the autocomplete using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            polygons = [
-                {
-                    "rings": [
-                        [[0, 0], [110, 0], [110, -60], [0, -60], [0, 0]],
-                        [
-                            [120, 0],
-                            [180, 0],
-                            [180, -60],
-                            [120, -60],
-                            [120, 0],
-                        ],
-                    ]
-                }
-            ]
-            polylines = [{"paths": [[[109, 0], [121, 0]], [[109, -60], [121, -60]]]}]
-            sr = 4269
-            for fut in [True, False]:
-                if fut:
-                    j = gs.auto_complete(polygons, polylines, sr, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.auto_complete(polygons, polylines, sr, future=fut)
+        # for profile in profiles:
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        polygons = [
+            {
+                "rings": [
+                    [[0, 0], [110, 0], [110, -60], [0, -60], [0, 0]],
+                    [
+                        [120, 0],
+                        [180, 0],
+                        [180, -60],
+                        [120, -60],
+                        [120, 0],
+                    ],
+                ]
+            }
+        ]
+        polylines = [{"paths": [[[109, 0], [121, 0]], [[109, -60], [121, -60]]]}]
+        sr = 4269
+        for fut in [True, False]:
+            if fut:
+                j = gs.auto_complete(polygons, polylines, sr, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.auto_complete(polygons, polylines, sr, future=fut)
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_buffer(self):
         """Tests the buffer using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        #for profile in profiles:
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            a = Geometry({"x": -8575158.562007815, "y": 4705980.159522079})
-            geometries = [a]
-            inSR = 4269
-            outSR = None
-            bufferSR = None
-            distances = [10, 50]
-            unit = 9035
-            unionResults = False
-            geodesic = True
-            for fut in [True, False]:
-                if fut:
-                    j = gs.buffer(
-                        geometries,
-                        inSR,
-                        distances,
-                        unit,
-                        outSR=outSR,
-                        bufferSR=bufferSR,
-                        unionResults=unionResults,
-                        geodesic=geodesic,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.buffer(
-                        geometries,
-                        inSR,
-                        distances,
-                        unit,
-                        outSR=outSR,
-                        bufferSR=bufferSR,
-                        unionResults=unionResults,
-                        geodesic=geodesic,
-                        future=fut,
-                    )
+        a = Geometry({"x": -8575158.562007815, "y": 4705980.159522079})
+        geometries = [a]
+        inSR = 4269
+        outSR = None
+        bufferSR = None
+        distances = [10, 50]
+        unit = 9035
+        unionResults = False
+        geodesic = True
+        for fut in [True, False]:
+            if fut:
+                j = gs.buffer(
+                    geometries,
+                    inSR,
+                    distances,
+                    unit,
+                    outSR=outSR,
+                    bufferSR=bufferSR,
+                    unionResults=unionResults,
+                    geodesic=geodesic,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.buffer(
+                    geometries,
+                    inSR,
+                    distances,
+                    unit,
+                    outSR=outSR,
+                    bufferSR=bufferSR,
+                    unionResults=unionResults,
+                    geodesic=geodesic,
+                    future=fut,
+                )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_convex_hull(self):
         """Tests the buffer using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            geoms = [
-                Geometry(
-                    {
-                        "paths": [
-                            [[-117, 34], [-116, 34], [-117, 33]],
-                            [[-115, 44], [-114, 43], [-115, 43]],
-                        ]
-                    }
-                ),
-                Geometry({"paths": [[[32, 17], [31, 17], [30, 17], [30, 16]]]}),
-            ]
-            for fut in [True, False]:
-                if fut:
-                    j = gs.convex_hull(geometries=geoms, sr=4326, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.convex_hull(geometries=geoms, sr=4326, future=fut)
+        geoms = [
+            Geometry(
+                {
+                    "paths": [
+                        [[-117, 34], [-116, 34], [-117, 33]],
+                        [[-115, 44], [-114, 43], [-115, 43]],
+                    ]
+                }
+            ),
+            Geometry({"paths": [[[32, 17], [31, 17], [30, 17], [30, 16]]]}),
+        ]
+        for fut in [True, False]:
+            if fut:
+                j = gs.convex_hull(geometries=geoms, sr=4326, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.convex_hull(geometries=geoms, sr=4326, future=fut)
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_cutter(self):
         """Tests the cutter using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            cutter = Geometry(
+        cutter = Geometry(
+            {
+                "paths": [
+                    [[-117, 34], [-116, 34], [-117, 33]],
+                    [[-115, 44], [-114, 43], [-115, 43]],
+                ]
+            }
+        )
+        target = [
+            Geometry(
                 {
                     "paths": [
                         [[-117, 34], [-116, 34], [-117, 33]],
@@ -310,202 +292,194 @@ class TestGeometryService(unittest.TestCase):
                     ]
                 }
             )
-            target = [
-                Geometry(
-                    {
-                        "paths": [
-                            [[-117, 34], [-116, 34], [-117, 33]],
-                            [[-115, 44], [-114, 43], [-115, 43]],
-                        ]
-                    }
-                )
-            ]
-            for fut in [True, False]:
-                if fut:
+        ]
+        for fut in [True, False]:
+            if fut:
 
-                    j = gs.cut(cutter=cutter, target=target, sr=4326, future=True)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.cut(cutter=cutter, target=target, sr=4326)
+                j = gs.cut(cutter=cutter, target=target, sr=4326, future=True)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.cut(cutter=cutter, target=target, sr=4326)
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_densify(self):
         """Tests the densify using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            target = [
-                Geometry(
-                    {
-                        "paths": [
-                            [[-117, 34], [-116, 34], [-117, 33]],
-                            [[-115, 44], [-114, 43], [-115, 43]],
-                        ]
-                    }
+        target = [
+            Geometry(
+                {
+                    "paths": [
+                        [[-117, 34], [-116, 34], [-117, 33]],
+                        [[-115, 44], [-114, 43], [-115, 43]],
+                    ]
+                }
+            )
+        ]
+        for fut in [True, False]:
+            if fut:
+
+                j = gs.densify(
+                    geometries=target,
+                    sr=4326,
+                    maxSegmentLength=10,
+                    lengthUnit=9001,
+                    geodesic=True,
+                    future=fut,
                 )
-            ]
-            for fut in [True, False]:
-                if fut:
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.densify(
+                    geometries=target,
+                    sr=4326,
+                    maxSegmentLength=10,
+                    lengthUnit=9001,
+                    geodesic=True,
+                    future=fut,
+                )
 
-                    j = gs.densify(
-                        geometries=target,
-                        sr=4326,
-                        maxSegmentLength=10,
-                        lengthUnit=9001,
-                        geodesic=True,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.densify(
-                        geometries=target,
-                        sr=4326,
-                        maxSegmentLength=10,
-                        lengthUnit=9001,
-                        geodesic=True,
-                        future=fut,
-                    )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_difference(self):
         """Tests the difference using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            target = [
-                Geometry(
-                    {
-                        "paths": [
-                            [[-117, 34], [-116, 34], [-117, 33]],
-                            [[-115, 44], [-114, 43], [-115, 43]],
-                        ]
-                    }
-                ),
-                Geometry(
-                    {
-                        "paths": [
-                            [
-                                [32.49, 17.83],
-                                [31.96, 17.59],
-                                [30.87, 17.01],
-                                [30.11, 16.86],
-                            ]
-                        ]
-                    }
-                ),
-            ]
-            g = Geometry(
+        target = [
+            Geometry(
                 {
-                    "rings": [
-                        [[-117, 34], [-116, 34], [-117, 33], [-117, 34]],
-                        [[-115, 44], [-114, 43], [-115, 43], [-115, 44]],
+                    "paths": [
+                        [[-117, 34], [-116, 34], [-117, 33]],
+                        [[-115, 44], [-114, 43], [-115, 43]],
                     ]
                 }
-            )
-            for fut in [True, False]:
-                if fut:
-                    j = gs.difference(
-                        geometries=target, sr=4326, geometry=g, future=fut
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.difference(
-                        geometries=target, sr=4326, geometry=g, future=fut
-                    )
+            ),
+            Geometry(
+                {
+                    "paths": [
+                        [
+                            [32.49, 17.83],
+                            [31.96, 17.59],
+                            [30.87, 17.01],
+                            [30.11, 16.86],
+                        ]
+                    ]
+                }
+            ),
+        ]
+        g = Geometry(
+            {
+                "rings": [
+                    [[-117, 34], [-116, 34], [-117, 33], [-117, 34]],
+                    [[-115, 44], [-114, 43], [-115, 43], [-115, 44]],
+                ]
+            }
+        )
+        for fut in [True, False]:
+            if fut:
+                j = gs.difference(
+                    geometries=target, sr=4326, geometry=g, future=fut
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.difference(
+                    geometries=target, sr=4326, geometry=g, future=fut
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_distance(self):
         """Tests the distance using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            target = Geometry({"x": -118.15, "y": 33.80})
-            g = Geometry({"x": -95.23, "y": 31.71})
-            geodesic = True
-            sr = 4326
+        target = Geometry({"x": -118.15, "y": 33.80})
+        g = Geometry({"x": -95.23, "y": 31.71})
+        geodesic = True
+        sr = 4326
 
-            for fut in [True, False]:
-                if fut:
+        for fut in [True, False]:
+            if fut:
 
-                    j = gs.distance(
-                        sr=sr,
-                        geometry1=target,
-                        geometry2=g,
-                        distanceUnit="",
-                        geodesic=geodesic,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.distance(
-                        sr=sr,
-                        geometry1=target,
-                        geometry2=g,
-                        distanceUnit="",
-                        geodesic=geodesic,
-                        future=fut,
-                    )
+                j = gs.distance(
+                    sr=sr,
+                    geometry1=target,
+                    geometry2=g,
+                    distanceUnit="",
+                    geodesic=geodesic,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.distance(
+                    sr=sr,
+                    geometry1=target,
+                    geometry2=g,
+                    distanceUnit="",
+                    geodesic=geodesic,
+                    future=fut,
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_from_geo_coordinate_string(self):
         """Tests the to_geo_coordinate_string using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            strings = [
-                "ZGQA5999999900000000",
-                "EJCE3864000012728040",
-                "NKBH1196052000273924",
-            ]
-            conversionType = "GeoRef"
-            sr = 4326
+        strings = [
+            "ZGQA5999999900000000",
+            "EJCE3864000012728040",
+            "NKBH1196052000273924",
+        ]
+        conversionType = "GeoRef"
+        sr = 4326
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.from_geo_coordinate_string(
-                        sr,
-                        strings,
-                        conversionType,
-                        conversionMode=None,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.from_geo_coordinate_string(
-                        sr,
-                        strings,
-                        conversionType,
-                        conversionMode=None,
-                        future=fut,
-                    )
+                j = gs.from_geo_coordinate_string(
+                    sr,
+                    strings,
+                    conversionType,
+                    conversionMode=None,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.from_geo_coordinate_string(
+                    sr,
+                    strings,
+                    conversionType,
+                    conversionMode=None,
+                    future=fut,
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -535,34 +509,34 @@ class TestGeometryService(unittest.TestCase):
         max_dev = 20
         units = 9035
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.generalize(
-                        sr,
-                        geometries=geoms,
-                        maxDeviation=max_dev,
-                        deviationUnit=units,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.generalize(
-                        sr,
-                        geometries=geoms,
-                        maxDeviation=max_dev,
-                        deviationUnit=units,
-                        future=fut,
-                    )
+                j = gs.generalize(
+                    sr,
+                    geometries=geoms,
+                    maxDeviation=max_dev,
+                    deviationUnit=units,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.generalize(
+                    sr,
+                    geometries=geoms,
+                    maxDeviation=max_dev,
+                    deviationUnit=units,
+                    future=fut,
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -590,24 +564,24 @@ class TestGeometryService(unittest.TestCase):
             }
         )
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.intersect(sr=sr, geometries=geoms, geometry=geom, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.intersect(
-                        sr=sr, geometries=geoms, geometry=geom, future=fut
-                    )
+                j = gs.intersect(sr=sr, geometries=geoms, geometry=geom, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.intersect(
+                    sr=sr, geometries=geoms, geometry=geom, future=fut
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -628,25 +602,25 @@ class TestGeometryService(unittest.TestCase):
         ]
 
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.label_points(sr=sr, polygons=geoms, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert isinstance(
-                        gs.label_points(sr=sr, polygons=geoms, future=fut),
-                        list,
-                    )
+                j = gs.label_points(sr=sr, polygons=geoms, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert isinstance(
+                    gs.label_points(sr=sr, polygons=geoms, future=fut),
+                    list,
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -667,34 +641,34 @@ class TestGeometryService(unittest.TestCase):
         ]
 
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.lengths(
-                        sr=sr,
-                        polylines=geoms,
-                        lengthUnit=9001,
-                        calculationType="preserveShape",
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.lengths(
-                        sr=sr,
-                        polylines=geoms,
-                        lengthUnit=9001,
-                        calculationType="preserveShape",
-                        future=fut,
-                    )
+                j = gs.lengths(
+                    sr=sr,
+                    polylines=geoms,
+                    lengthUnit=9001,
+                    calculationType="preserveShape",
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.lengths(
+                    sr=sr,
+                    polylines=geoms,
+                    lengthUnit=9001,
+                    calculationType="preserveShape",
+                    future=fut,
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -705,35 +679,34 @@ class TestGeometryService(unittest.TestCase):
         geoms = [Geometry({"paths": [[[0, 0], [2000, 2000], [3000, 0]]]})]
         off_dist = 1000
         sr = 2229
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        for fut in [True, False]:
+            import json
 
-            for fut in [True, False]:
-                import json
+            if fut:
 
-                if fut:
+                j = gs.offset(
+                    geometries=geoms,
+                    offsetDistance=1000,
+                    offsetUnit=9001,
+                    sr=sr,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.offset(
+                    geometries=geoms,
+                    offsetDistance=1000,
+                    offsetUnit=9001,
+                    sr=sr,
+                    future=fut,
+                )
 
-                    j = gs.offset(
-                        geometries=geoms,
-                        offsetDistance=1000,
-                        offsetUnit=9001,
-                        sr=sr,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.offset(
-                        geometries=geoms,
-                        offsetDistance=1000,
-                        offsetUnit=9001,
-                        sr=sr,
-                        future=fut,
-                    )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -754,25 +727,24 @@ class TestGeometryService(unittest.TestCase):
         ]
         off_dist = 1000
         sr = 2229
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        for fut in [True, False]:
+            import json
 
-            for fut in [True, False]:
-                import json
+            if fut:
 
-                if fut:
+                j = gs.project(geometries=geoms, inSR=4326, outSR=3857, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.project(
+                    geometries=geoms, inSR=4326, outSR=3857, future=fut
+                )
 
-                    j = gs.project(geometries=geoms, inSR=4326, outSR=3857, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.project(
-                        geometries=geoms, inSR=4326, outSR=3857, future=fut
-                    )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -795,35 +767,35 @@ class TestGeometryService(unittest.TestCase):
             ),
             Geometry({"paths": [[[32, 17], [31, 17], [30, 17], [30, 16]]]}),
         ]
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        for fut in [True, False]:
+            import json
 
-            for fut in [True, False]:
-                import json
+            if fut:
 
-                if fut:
+                j = gs.relation(
+                    geometries1=geoms,
+                    geometries2=geoms2,
+                    sr=4326,
+                    relationParam="",
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.relation(
+                    geometries1=geoms,
+                    geometries2=geoms2,
+                    sr=4326,
+                    relationParam="",
+                    future=fut,
+                )
 
-                    j = gs.relation(
-                        geometries1=geoms,
-                        geometries2=geoms2,
-                        sr=4326,
-                        relationParam="",
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.relation(
-                        geometries1=geoms,
-                        geometries2=geoms2,
-                        sr=4326,
-                        relationParam="",
-                        future=fut,
-                    )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -845,24 +817,24 @@ class TestGeometryService(unittest.TestCase):
         )
 
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.reshape(sr=sr, target=geoms, reshaper=reshaper, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.reshape(
-                        sr=sr, target=geoms, reshaper=reshaper, future=fut
-                    )
+                j = gs.reshape(sr=sr, target=geoms, reshaper=reshaper, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.reshape(
+                    sr=sr, target=geoms, reshaper=reshaper, future=fut
+                )
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
@@ -882,67 +854,67 @@ class TestGeometryService(unittest.TestCase):
         ]
 
         sr = 4326
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.simplify(sr=sr, geometries=geoms, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.simplify(sr=sr, geometries=geoms, future=fut)
+                j = gs.simplify(sr=sr, geometries=geoms, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.simplify(sr=sr, geometries=geoms, future=fut)
+
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')
     def test_gs_to_geo_coordinate_string(self):
         """Tests the to_geo_coordinate_string using auth and no auth"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
-            from arcgis.geometry import Geometry
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
+        from arcgis.geometry import Geometry
 
-            target = Geometry({"x": -118.15, "y": 33.80})
-            g = Geometry({"x": -95.23, "y": 31.71})
-            geodesic = True
-            sr = 4326
+        target = Geometry({"x": -118.15, "y": 33.80})
+        g = Geometry({"x": -95.23, "y": 31.71})
+        geodesic = True
+        sr = 4326
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.to_geo_coordinate_string(
-                        sr=4326,
-                        coordinates=[[10, 10], [10, 20], [30, 30]],
-                        conversionType="MGRS",
-                        conversionMode="mgrsDefault",
-                        numOfDigits=8,
-                        addSpaces=True,
-                        rounding=False,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.to_geo_coordinate_string(
-                        sr=4326,
-                        coordinates=[[10, 10], [10, 20], [30, 30]],
-                        conversionType="MGRS",
-                        conversionMode="mgrsDefault",
-                        numOfDigits=8,
-                        addSpaces=True,
-                        rounding=False,
-                        future=fut,
-                    )
+                j = gs.to_geo_coordinate_string(
+                    sr=4326,
+                    coordinates=[[10, 10], [10, 20], [30, 30]],
+                    conversionType="MGRS",
+                    conversionMode="mgrsDefault",
+                    numOfDigits=8,
+                    addSpaces=True,
+                    rounding=False,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.to_geo_coordinate_string(
+                    sr=4326,
+                    coordinates=[[10, 10], [10, 20], [30, 30]],
+                    conversionType="MGRS",
+                    conversionMode="mgrsDefault",
+                    numOfDigits=8,
+                    addSpaces=True,
+                    rounding=False,
+                    future=fut,
+                )
+
 
     # ----------------------------------------------------------------------
     #
@@ -956,22 +928,22 @@ class TestGeometryService(unittest.TestCase):
             {"rings": [[[0, 0], [0, 1000000], [1000000, 1000000], [0, 0]]]},
         ]
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.union(sr=3857, geometries=geoms, future=fut)
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.union(sr=3857, geometries=geoms, future=fut)
+                j = gs.union(sr=3857, geometries=geoms, future=fut)
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.union(sr=3857, geometries=geoms, future=fut)
+
 
     # ----------------------------------------------------------------------
     #
@@ -1001,34 +973,35 @@ class TestGeometryService(unittest.TestCase):
         sr = 2229
         how = 1
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url=url, gis=gis)
-            assert isinstance(gs, _GeometryService)
+        gis = self.gis
+        url = gis.properties.helperServices.geometry.url
+        gs = _GeometryService(url=url, gis=gis)
+        assert isinstance(gs, _GeometryService)
 
-            for fut in [True, False]:
-                import json
+        for fut in [True, False]:
+            import json
 
-                if fut:
+            if fut:
 
-                    j = gs.trim_extend(
-                        sr,
-                        polylines=geoms,
-                        trimExtendTo=to_geom,
-                        extendHow=how,
-                        future=fut,
-                    )
-                    assert isinstance(j, GeometryJob)
-                    assert j.result()
-                else:
-                    assert gs.trim_extend(
-                        sr,
-                        polylines=geoms,
-                        trimExtendTo=to_geom,
-                        extendHow=how,
-                        future=fut,
-                    )
+                j = gs.trim_extend(
+                    sr,
+                    polylines=geoms,
+                    trimExtendTo=to_geom,
+                    extendHow=how,
+                    future=fut,
+                )
+                assert isinstance(j, GeometryJob)
+                assert j.result()
+            else:
+                assert gs.trim_extend(
+                    sr,
+                    polylines=geoms,
+                    trimExtendTo=to_geom,
+                    extendHow=how,
+                    future=fut,
+                )
+
+
 
 
 if __name__ == "__main__":
