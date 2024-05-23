@@ -1,6 +1,4 @@
 import unittest
-import sys
-from arcgis.gis import GIS
 from arcgis.geometry import (
     areas_and_lengths,
     Geometry,
@@ -8,7 +6,7 @@ from arcgis.geometry import (
     LengthUnits,
     AreaUnits,
 )
-from utils.decorators import integration_test,profiles
+from utils.decorators import integration_test, profiles
 
 
 @profiles.enterprise_and_agol
@@ -43,11 +41,6 @@ class TestGeometryServiceWithEnums(unittest.TestCase):
         )
         assert "areas" in res
         assert "lengths" in res
-        #for profile in [p1,p2]:
-
-            #self.gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-
-
 
     def test_area_units(self):
         assert AreaUnits.SQUAREINCHES.value == {"areaUnit": "esriSquareInches"}
