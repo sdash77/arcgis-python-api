@@ -776,6 +776,9 @@ class FeatureSet(object):
                 # add check for MultiPolygon
                 if geometry["type"] == "Polygon" and len(geometry["coordinates"]) > 1:
                     geometry["type"] = "MultiPolygon"
+                    # for multipolygons, each set of rings should be nested an extra level
+                    new_coords = [[poly] for poly in geometry["coordinates"]]
+                    geometry["coordinates"] = new_coords
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -815,12 +818,6 @@ class FeatureSet(object):
             feats = []
             for feat in features:
                 feats.append(extract(feat, esri_geom_type))
-            # need to add extra level for mulitpolygon. Need 4
-            # levels of nested arrays
-            if feats[0]["geometry"]["type"] == "MultiPolygon":
-                feats[0]["geometry"]["coordinates"] = [
-                    feats[0]["geometry"]["coordinates"]
-                ]
 
             # assign to the geojson object
             geojson["features"] = feats
