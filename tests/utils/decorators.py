@@ -339,6 +339,7 @@ class profiles:
             cls._enterprise_admin_profile_parameters,
         )
 
+    @classproperty
     def admin_enterprise_and_non_admin_agol(cls):
         """Run tests for admin enterprise and non-admin agol profiles"""
         return cls._get_profile_parameterized_class(
