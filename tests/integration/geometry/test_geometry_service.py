@@ -1,12 +1,9 @@
 import unittest
-from arcgis.gis import GIS
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
-from utils.decorators import integration_test,profiles
+from utils.decorators import integration_test, profiles
 
 
-###########################################################################
-# @unittest.skip('said so')
 @integration_test
 @profiles.enterprise_and_agol
 class TestGSSettingSR(unittest.TestCase):
@@ -66,14 +63,11 @@ class TestGSSettingSR(unittest.TestCase):
         assert "spatialReference" in geom_sync[0]
 
 
-###########################################################################
 @integration_test
 @profiles.enterprise_and_agol
 class TestGeometryService(unittest.TestCase):
     """Tests the underlying Geometry Service"""
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_auth_forms(self):
         """
         Tests Accessing Geometry Service from anonymous, built-in (AGOL/Enterprise)
@@ -89,8 +83,6 @@ class TestGeometryService(unittest.TestCase):
 
         del gis
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_direct_access(self):
         """
         Tests Direct Accessing Geometry Service
@@ -99,11 +91,8 @@ class TestGeometryService(unittest.TestCase):
         gs = _GeometryService(url=url)
         assert isinstance(gs, _GeometryService)
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_area_and_lengths(self):
         """Tests the areas and lengths using auth and no auth"""
-        #for profile in profiles:
         gis = self.gis
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
@@ -154,11 +143,8 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_auto_complete(self):
         """Tests the autocomplete using auth and no auth"""
-        # for profile in profiles:
         gis = self.gis
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
@@ -187,11 +173,8 @@ class TestGeometryService(unittest.TestCase):
             else:
                 assert gs.auto_complete(polygons, polylines, sr, future=fut)
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_buffer(self):
         """Tests the buffer using auth and no auth"""
-        #for profile in profiles:
         gis = self.gis
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
@@ -235,8 +218,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_convex_hull(self):
         """Tests the buffer using auth and no auth"""
         gis = self.gis
@@ -264,9 +245,6 @@ class TestGeometryService(unittest.TestCase):
             else:
                 assert gs.convex_hull(geometries=geoms, sr=4326, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_cutter(self):
         """Tests the cutter using auth and no auth"""
         gis = self.gis
@@ -302,9 +280,6 @@ class TestGeometryService(unittest.TestCase):
             else:
                 assert gs.cut(cutter=cutter, target=target, sr=4326)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_densify(self):
         """Tests the densify using auth and no auth"""
         gis = self.gis
@@ -346,9 +321,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_difference(self):
         """Tests the difference using auth and no auth"""
         gis = self.gis
@@ -389,19 +361,12 @@ class TestGeometryService(unittest.TestCase):
         )
         for fut in [True, False]:
             if fut:
-                j = gs.difference(
-                    geometries=target, sr=4326, geometry=g, future=fut
-                )
+                j = gs.difference(geometries=target, sr=4326, geometry=g, future=fut)
                 assert isinstance(j, GeometryJob)
                 assert j.result()
             else:
-                assert gs.difference(
-                    geometries=target, sr=4326, geometry=g, future=fut
-                )
+                assert gs.difference(geometries=target, sr=4326, geometry=g, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_distance(self):
         """Tests the distance using auth and no auth"""
         gis = self.gis
@@ -438,9 +403,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_from_geo_coordinate_string(self):
         """Tests the to_geo_coordinate_string using auth and no auth"""
         gis = self.gis
@@ -480,9 +442,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_generalize(self):
         """Tests the generalize using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -537,9 +496,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_intersect(self):
         """Tests the intersect using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -578,13 +534,8 @@ class TestGeometryService(unittest.TestCase):
                 assert isinstance(j, GeometryJob)
                 assert j.result()
             else:
-                assert gs.intersect(
-                    sr=sr, geometries=geoms, geometry=geom, future=fut
-                )
+                assert gs.intersect(sr=sr, geometries=geoms, geometry=geom, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_label_points(self):
         """Tests the label points using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -621,9 +572,6 @@ class TestGeometryService(unittest.TestCase):
                     list,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_lengths(self):
         """Tests the lengths using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -669,9 +617,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_offset(self):
         """Tests the offset using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -707,9 +652,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_project(self):
         """Tests the project using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -741,13 +683,8 @@ class TestGeometryService(unittest.TestCase):
                 assert isinstance(j, GeometryJob)
                 assert j.result()
             else:
-                assert gs.project(
-                    geometries=geoms, inSR=4326, outSR=3857, future=fut
-                )
+                assert gs.project(geometries=geoms, inSR=4326, outSR=3857, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_relation(self):
         """Tests the relation using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -795,10 +732,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_reshape(self):
         """Tests the reshape using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -831,13 +764,8 @@ class TestGeometryService(unittest.TestCase):
                 assert isinstance(j, GeometryJob)
                 assert j.result()
             else:
-                assert gs.reshape(
-                    sr=sr, target=geoms, reshaper=reshaper, future=fut
-                )
+                assert gs.reshape(sr=sr, target=geoms, reshaper=reshaper, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_simplify(self):
         """Tests the simplify using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -870,9 +798,6 @@ class TestGeometryService(unittest.TestCase):
             else:
                 assert gs.simplify(sr=sr, geometries=geoms, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    # @unittest.skip('said so')
     def test_gs_to_geo_coordinate_string(self):
         """Tests the to_geo_coordinate_string using auth and no auth"""
         gis = self.gis
@@ -915,10 +840,6 @@ class TestGeometryService(unittest.TestCase):
                     future=fut,
                 )
 
-
-    # ----------------------------------------------------------------------
-    #
-    # @unittest.skip('said so')
     def test_gs_union(self):
         """Tests the union using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -944,10 +865,6 @@ class TestGeometryService(unittest.TestCase):
             else:
                 assert gs.union(sr=3857, geometries=geoms, future=fut)
 
-
-    # ----------------------------------------------------------------------
-    #
-    # @unittest.skip('said so')
     def test_gs_trim_extend(self):
         """Tests the trim_extend using auth and no auth"""
         from arcgis.geometry import Geometry
@@ -1000,8 +917,6 @@ class TestGeometryService(unittest.TestCase):
                     extendHow=how,
                     future=fut,
                 )
-
-
 
 
 if __name__ == "__main__":
