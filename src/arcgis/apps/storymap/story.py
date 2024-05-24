@@ -78,7 +78,7 @@ class StoryMap(object):
         if gis is None:
             # If no gis, find active env
             gis = arcgis.env.active_gis
-            self._gis = gis
+        self._gis = gis
 
         if not (gis and gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
@@ -341,28 +341,6 @@ class StoryMap(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.2.0",
-        removed_in="2.3.2",
-        current_version="2.3.1",
-        details="`nodes` property has been deprecated, use `content_list` property instead.",
-    )
-    @property
-    def nodes(self):
-        """
-        Get main nodes in order of appearance in the story. This will return a list
-        of dictionaries specifying the node ids and the class content they correspond to.
-        If there is no class for the content, a string is returned with the content type.
-        """
-        # node_dict contains key-value pairs where the value is the class instance
-        node_dict = self._create_node_dict()
-        # make the value the string representation of the class
-        nodes = []
-        for node in node_dict:
-            nodes.append({k: node[k] for k in node})
-        return nodes
-
-    # ----------------------------------------------------------------------
     @property
     def content_list(self):
         """
@@ -416,7 +394,7 @@ class StoryMap(object):
     @deprecated(
         deprecated_in="2.2.0",
         removed_in="3.0.0",
-        current_version="2.3.1",
+        current_version="2.4.0",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
