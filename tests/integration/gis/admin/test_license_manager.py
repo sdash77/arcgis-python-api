@@ -1,5 +1,5 @@
 import unittest
-from utils.decorators import profiles
+from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
 
 @profiles.admin_enterprise_and_agol
