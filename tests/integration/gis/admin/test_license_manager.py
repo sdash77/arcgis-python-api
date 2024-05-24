@@ -3,7 +3,7 @@ from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
 
 @profiles.admin_enterprise_and_agol
-# @integration_test
+@integration_test
 class TestLicenseClass(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -35,13 +35,13 @@ class TestLicenseClass(unittest.TestCase):
     def test_check(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.check(self.gis.username)
+            assert isinstance(lic.check(self.gis._username), list)
     
     def test_user_entitlement(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert isInstance(lic.user_entitlement(self.gis._username), dict)
+            assert isinstance(lic.user_entitlement(self.gis._username), dict)
    
    
-   if __name__ == "__main__":
-            unittest.main()
+if __name__ == "__main__":
+        unittest.main()
