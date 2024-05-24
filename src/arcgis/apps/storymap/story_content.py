@@ -1661,25 +1661,19 @@ class Map:
             self._update_map(map)
             return self.map
 
-    def _calculate_z_value(self, extent: dict, scale: int):
+    # ----------------------------------------------------------------------
+    def _calculate_z_value(self, scale: int = None):
         import math
-
-        dpi = 96  # Typical screen DPI for monitors
-        inch_to_meter = 0.0254  # 1 inch = 0.0254 meters
-
-        # Calculate resolution (meters per pixel)
-        resolution = (dpi * inch_to_meter) / scale  # meters per pixel
-
-        # Calculate the extent width in meters
-        extent_width = extent["xmax"] - extent["xmin"]
 
         # Calculate the camera height (z-coordinate)
         # We assume a 45-degree field of view vertically
         fov = 45  # degrees
         fov_radians = math.radians(fov)
 
-        # Calculate the required camera height to view the whole extent
-        return (extent_width / 2) / math.tan(fov_radians / 2)
+        # Calculate camera height based on meters per pixel
+        z_value = scale / (2 * math.tan(fov_radians / 2))
+
+        return z_value
 
     # ----------------------------------------------------------------------
     def _update_extent(self, extent: dict):
@@ -1717,7 +1711,8 @@ class Map:
                 if "zmin" and "zmax" in extent:
                     center_z = (extent["zmin"] + extent["zmax"]) / 2
                 else:
-                    center_z = self._calculate_z_value(extent, self._viewpoint["scale"])
+                    # z based on scale
+                    center_z = self._calculate_z_value(self._viewpoint["scale"])
                 new_center = {
                     "spatialReference": extent["spatialReference"],
                     "x": center_x,
@@ -1754,7 +1749,6 @@ class Map:
         if self._type == "Web Scene":
             # Update the z value for the new scale
             new_z = self._calculate_z_value(
-                self._story._properties["nodes"][self.node]["data"]["extent"],
                 scale["scale"],
             )
             # update camera
