@@ -1661,6 +1661,112 @@ class Map:
             self._update_map(map)
             return self.map
 
+    def _calculate_z_value(self, extent: dict, scale:int):
+        import math
+        dpi = 96  # Typical screen DPI for monitors
+        inch_to_meter = 0.0254  # 1 inch = 0.0254 meters
+
+        # Calculate resolution (meters per pixel)
+        resolution = (dpi * inch_to_meter) / scale  # meters per pixel
+
+        # Calculate the extent width in meters
+        extent_width = extent["xmax"] - extent["xmin"]
+
+        # Calculate the camera height (z-coordinate)
+        # We assume a 45-degree field of view vertically
+        fov = 45  # degrees
+        fov_radians = math.radians(fov)
+
+        # Calculate the required camera height to view the whole extent
+        return (extent_width / 2) / math.tan(fov_radians / 2)
+
+    # ----------------------------------------------------------------------
+    def _update_extent(self, extent:dict):
+        if isinstance(extent, dict):
+            if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
+                raise ValueError(
+                    "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
+                )
+            if "spatialReference" not in extent:
+                try:
+                    extent["spatialReference"] = self._story._properties[
+                        "resources"
+                    ][self.resource_node]["data"]["extent"]["spatialReference"]
+                except Exception:
+                    extent["spatialReference"] = {"wkid": 4326}
+
+            # In order to correctly edit, the viewpoint, extent, and center must be updated.
+            # update extent
+            self._story._properties["nodes"][self.node]["data"]["extent"] = extent
+            # update center
+            center_x = (extent["xmin"] + extent["xmax"]) / 2
+            center_y = (extent["ymin"] + extent["ymax"]) / 2
+
+            if self._type == "Web Map":
+                new_center = {
+                    "spatialReference": extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                }
+                self._story._properties["nodes"][self.node]["data"]["center"] = new_center
+            else:
+                # Need to account for z value
+                if "zmin" and "zmax" in extent:
+                    center_z = (extent["zmin"] + extent["zmax"]) / 2
+                else:
+                    center_z = self._calculate_z_value(extent, self._viewpoint["scale"])
+                new_center = {
+                    "spatialReference": extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                    "z": center_z,
+                }
+                self._story._properties["nodes"][self.node]["data"]["center"] = new_center
+                # update the camera with the new center
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "camera"
+                ]["position"] = new_center
+            # update viewpoint
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "targetGeometry"
+            ] = new_center
+        else:
+            raise ValueError("Extent must be a dictionary")
+    
+    # ----------------------------------------------------------------------
+    def _update_scale(self, scale: Scales | str):
+        if isinstance(scale, Scales):
+            scale = scale.value
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "scale"
+            ] = scale["scale"]
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = (
+                scale["zoom"]
+            )
+        elif isinstance(scale, dict):
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "scale"
+            ] = scale["scale"]
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
+                "zoom"
+            ]
+        if self._type == "Web Scene":
+            # Update the z value for the new scale
+            new_z = self._calculate_z_value(
+                self._story._properties["nodes"][self.node]["data"]["extent"],
+                scale["scale"],
+            )
+            # update camera
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "camera"
+            ]["position"]["z"] = new_z
+            # update target geometry
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "targetGeometry"
+            ]["z"] = new_z
+            #update center
+            self._story._properties["nodes"][self.node]["data"]["center"]["z"] = new_z
+
     # ----------------------------------------------------------------------
     def set_viewpoint(self, extent: dict = None, scale: Scales = None):
         """
@@ -1717,53 +1823,12 @@ class Map:
         change_made = False
         # set new extent if specified
         if extent:
-            if isinstance(extent, dict):
-                if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
-                    raise ValueError(
-                        "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
-                    )
-                if "spatialReference" not in extent:
-                    try:
-                        extent["spatialReference"] = self._story._properties[
-                            "resources"
-                        ][self.resource_node]["data"]["extent"]["spatialReference"]
-                    except Exception:
-                        extent["spatialReference"] = {"wkid": 4326}
-
-                # In order to correctly edit, the viewpoint, extent, and center must be updated.
-                # update extent
-                self._story._properties["nodes"][self.node]["data"]["extent"] = extent
-                # update center
-                center_x = (extent["xmin"] + extent["xmax"]) / 2
-                center_y = (extent["ymin"] + extent["ymax"]) / 2
-                self._story._properties["nodes"][self.node]["data"]["center"] = {
-                    "spatialReference": extent["spatialReference"],
-                    "x": center_x,
-                    "y": center_y,
-                }
-                # update viewpoint
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "targetGeometry"
-                ] = self._story._properties["nodes"][self.node]["data"]["center"]
-
-                change_made = True
+            self._update_extent(extent)
+            change_made = True
         # set new scale if specified
         if scale:
-            if isinstance(scale, Scales):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale.value["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = (
-                    scale.value["zoom"]
-                )
-                change_made = True
-            elif isinstance(scale, dict):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
-                    "zoom"
-                ]
+            self._update_scale(scale)
+            change_made = True
 
         if change_made:
             # Once the update made, remove the original information from resources so 
