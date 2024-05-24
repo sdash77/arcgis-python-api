@@ -5284,7 +5284,9 @@ class _FormDefinition(_ItemDefinition):
                         file.write(json.dumps(dict(new_item)))
 
                 elif path.lower() == "form.json":
-                    with open(os.path.join(zip_dir, path), "r") as file:
+                    with open(
+                        os.path.join(zip_dir, path), "r", encoding="utf8"
+                    ) as file:
                         form_json = file.read()
                         for key, value in clone_mapping["Item IDs"].items():
                             form_json = re.sub(
@@ -5298,7 +5300,9 @@ class _FormDefinition(_ItemDefinition):
                             form_json = re.sub(
                                 key, value["url"], form_json, 0, re.IGNORECASE
                             )
-                        with open(os.path.join(zip_dir, path), "w") as file:
+                        with open(
+                            os.path.join(zip_dir, path), "w", encoding="utf8"
+                        ) as file:
                             file.write(form_json)
                         for new_id in clone_mapping["Item IDs"].values():
                             new_flayer = target.content.get(new_id)
@@ -5307,7 +5311,10 @@ class _FormDefinition(_ItemDefinition):
                                 and new_flayer.type == "Feature Service"
                             ):
                                 with tempfile.NamedTemporaryFile(
-                                    mode="w+", suffix=".json", delete=False
+                                    mode="w+",
+                                    suffix=".json",
+                                    delete=False,
+                                    encoding="utf8",
                                 ) as tfile:
                                     json.dump(json.loads(form_json), tfile)
                                     tfile.close()
