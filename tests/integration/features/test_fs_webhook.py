@@ -17,10 +17,12 @@ from integration.config import QALAB_ROOT_PATH
 
 
 hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
-fp = os.path.join(QALAB_ROOT_PATH, "features_mod_WebhookService_cls", "webhook_data.zip")
+fp = os.path.join(
+    QALAB_ROOT_PATH, "features_mod_WebhookService_cls", "webhook_data.zip"
+)
 
 
-@profiles.admin_enterprise_and_non_admin_agol
+@profiles.admin_enterprise_and_agol
 @integration_test
 class TestFeatureServiceWebHook(unittest.TestCase):
     """
