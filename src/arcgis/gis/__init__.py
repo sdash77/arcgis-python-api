@@ -8112,8 +8112,19 @@ class ContentManager(object):
         """
         params = {"f": "json", "items": ""}
 
-        # applicable to online and to enterprise 11.3 and higher
-        if permanent and (self._gis._is_agol or self._gis.version > [2023, 2]):
+        # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+        rsupport = self._gis.properties.recycleBinSupported
+        renabled = (
+            self._gis.properties.recycleBinEnabled
+            if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+            else False
+        )
+        if (
+            permanent
+            and (self._gis._is_agol or self._gis.version > [2023, 2])
+            and rsupport
+            and renabled
+        ):
             params["permanentDelete"] = permanent
         else:
             _log.warning(
@@ -15178,9 +15189,27 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            return self._portal.delete_item(
-                self.itemid, self._user_id, folder, force, permanent
-            )
+            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            if permanent:
+                rsupport = self._gis.properties.recycleBinSupported
+                renabled = (
+                    self._gis.properties.recycleBinEnabled
+                    if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                    else False
+                )
+                if (
+                    (self._gis._is_agol or self._gis.version > [2023, 2])
+                    and rsupport
+                    and renabled
+                ):
+                    return self._portal.delete_item(
+                        self.itemid, self._user_id, folder, force, permanent
+                    )
+                else:
+                    _log.warning(
+                        "Permanent delete parameter is not supported on this version of Enterprise."
+                    )
+            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
     # ----------------------------------------------------------------------
     def update(
