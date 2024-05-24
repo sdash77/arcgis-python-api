@@ -1661,8 +1661,9 @@ class Map:
             self._update_map(map)
             return self.map
 
-    def _calculate_z_value(self, extent: dict, scale:int):
+    def _calculate_z_value(self, extent: dict, scale: int):
         import math
+
         dpi = 96  # Typical screen DPI for monitors
         inch_to_meter = 0.0254  # 1 inch = 0.0254 meters
 
@@ -1681,7 +1682,7 @@ class Map:
         return (extent_width / 2) / math.tan(fov_radians / 2)
 
     # ----------------------------------------------------------------------
-    def _update_extent(self, extent:dict):
+    def _update_extent(self, extent: dict):
         if isinstance(extent, dict):
             if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
                 raise ValueError(
@@ -1689,9 +1690,9 @@ class Map:
                 )
             if "spatialReference" not in extent:
                 try:
-                    extent["spatialReference"] = self._story._properties[
-                        "resources"
-                    ][self.resource_node]["data"]["extent"]["spatialReference"]
+                    extent["spatialReference"] = self._story._properties["resources"][
+                        self.resource_node
+                    ]["data"]["extent"]["spatialReference"]
                 except Exception:
                     extent["spatialReference"] = {"wkid": 4326}
 
@@ -1708,7 +1709,9 @@ class Map:
                     "x": center_x,
                     "y": center_y,
                 }
-                self._story._properties["nodes"][self.node]["data"]["center"] = new_center
+                self._story._properties["nodes"][self.node]["data"][
+                    "center"
+                ] = new_center
             else:
                 # Need to account for z value
                 if "zmin" and "zmax" in extent:
@@ -1721,7 +1724,9 @@ class Map:
                     "y": center_y,
                     "z": center_z,
                 }
-                self._story._properties["nodes"][self.node]["data"]["center"] = new_center
+                self._story._properties["nodes"][self.node]["data"][
+                    "center"
+                ] = new_center
                 # update the camera with the new center
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                     "camera"
@@ -1732,7 +1737,7 @@ class Map:
             ] = new_center
         else:
             raise ValueError("Extent must be a dictionary")
-    
+
     # ----------------------------------------------------------------------
     def _update_scale(self, scale: Scales | str):
         if isinstance(scale, Scales):
@@ -1740,16 +1745,12 @@ class Map:
             self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                 "scale"
             ] = scale["scale"]
-            self._story._properties["nodes"][self.node]["data"]["zoom"] = (
-                scale["zoom"]
-            )
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale["zoom"]
         elif isinstance(scale, dict):
             self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                 "scale"
             ] = scale["scale"]
-            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
-                "zoom"
-            ]
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale["zoom"]
         if self._type == "Web Scene":
             # Update the z value for the new scale
             new_z = self._calculate_z_value(
@@ -1757,14 +1758,14 @@ class Map:
                 scale["scale"],
             )
             # update camera
-            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                "camera"
-            ]["position"]["z"] = new_z
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"]["camera"][
+                "position"
+            ]["z"] = new_z
             # update target geometry
             self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                 "targetGeometry"
             ]["z"] = new_z
-            #update center
+            # update center
             self._story._properties["nodes"][self.node]["data"]["center"]["z"] = new_z
 
     # ----------------------------------------------------------------------
@@ -1831,14 +1832,16 @@ class Map:
             change_made = True
 
         if change_made:
-            # Once the update made, remove the original information from resources so 
+            # Once the update made, remove the original information from resources so
             # that the new information is used.
             rdata_dict.pop("extent", None)
             rdata_dict.pop("center", None)
             rdata_dict.pop("viewpoint", None)
             rdata_dict.pop("zoom", None)
             rdata_dict["type"] = "minimal"
-            self._story._properties["resources"][self.resource_node]["data"] = rdata_dict
+            self._story._properties["resources"][self.resource_node][
+                "data"
+            ] = rdata_dict
 
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
