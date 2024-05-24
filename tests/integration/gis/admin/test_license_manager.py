@@ -40,4 +40,8 @@ class TestLicenseClass(unittest.TestCase):
     def test_user_entitlement(self):
         licenses = self.admin.license.all()
         for lic in licenses:
-            assert lic.user_entitlement(self.gis.username)
+            assert isInstance(lic.user_entitlement(self.gis._username), dict)
+   
+   
+   if __name__ == "__main__":
+            unittest.main()
