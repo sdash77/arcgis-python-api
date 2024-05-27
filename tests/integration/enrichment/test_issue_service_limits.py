@@ -3,6 +3,9 @@ import pandas as pd
 from arcgis.gis import GIS
 from arcgis.geoenrichment import service_limits
 from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
+
+enable_verbose_logging()
 
 ###########################################################################
 @integration_test

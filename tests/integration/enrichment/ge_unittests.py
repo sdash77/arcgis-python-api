@@ -12,9 +12,11 @@ import pandas as pd
 from arcgis.gis import GIS, ProfileManager
 from arcgis import geoenrichment
 from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
 
 _ADD_ITEM_SETUP = {}
+enable_verbose_logging()
 
 
 def _setup_ge_service(gis: GIS):
