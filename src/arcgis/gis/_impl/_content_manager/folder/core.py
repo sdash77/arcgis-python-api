@@ -303,8 +303,8 @@ class Folder:
             ):
                 params["permanentDelete"] = True
             else:
-                _log.warning(
-                    "Permanent delete parameter is not supported on this version of Enterprise."
+                logger.warning(
+                    "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
                 )
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()

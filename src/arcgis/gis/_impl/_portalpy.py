@@ -770,23 +770,8 @@ class Portal(object):
         else:
             post_data = self._postdata()
         if permanent:
-            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
-            rsupport = self._gis.properties.recycleBinSupported
-            renabled = (
-                self._gis.properties.recycleBinEnabled
-                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
-                else False
-            )
-            if (
-                (self._gis._is_agol or self._gis.version > [2023, 2])
-                and rsupport
-                and renabled
-            ):
-                post_data["permanentDelete"] = True
-            else:
-                _log.warning(
-                    "Permanent delete parameter is not supported on this version of Enterprise."
-                )
+            # applicable to online 2024.2 and enterprise 11.3 and higher if recycle bin is enabled
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:
