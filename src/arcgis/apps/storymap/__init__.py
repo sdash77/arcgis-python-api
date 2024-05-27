@@ -29,6 +29,9 @@ from .story_content import (
     Block,
     Table,
     ExpressMap,
+    Navigation,
+    Cover,
+    CollectionNavigation,
 )
 
 __all__ = ["StoryMap", "Briefing"]
