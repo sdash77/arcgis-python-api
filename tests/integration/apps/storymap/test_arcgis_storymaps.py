@@ -8,7 +8,7 @@ from utils.decorators import integration_test, profiles
 
 
 @integration_test
-@profiles.agol
+@profiles.enterprise_and_agol
 class TestStoryMap(unittest.TestCase):
     """Test Basic Story Map Methods"""
 

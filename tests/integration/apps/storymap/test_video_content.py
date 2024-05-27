@@ -6,7 +6,7 @@ from utils.decorators import integration_test, profiles
 
 
 @integration_test
-@profiles.agol
+@profiles.enterprise_and_agol
 class TestVideoContent(unittest.TestCase):
     """Test adding an video and seeing properties"""
 
