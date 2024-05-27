@@ -49,7 +49,6 @@ class TestGSSettingSR(unittest.TestCase):
             geometries=geoms,
             geometry=geom,
             gis=None,
-            future=False,
         )
         assert "spatialReference" in geom_sync[0]
 
@@ -112,14 +111,12 @@ class TestGeometryService(unittest.TestCase):
         areaUnit = 9095
         calculationType = "preserveShape"
         sr = 4326
-        fut = False
         assert gs.areas_and_lengths(
             polygons,
             lengthUnit,
             areaUnit,
             calculationType,
             sr=sr,
-            future=fut,
         )
 
     def test_gs_auto_complete(self):
@@ -144,8 +141,7 @@ class TestGeometryService(unittest.TestCase):
         ]
         polylines = [{"paths": [[[109, 0], [121, 0]], [[109, -60], [121, -60]]]}]
         sr = 4269
-        fut = False
-        assert gs.auto_complete(polygons, polylines, sr, future=fut)
+        assert gs.auto_complete(polygons, polylines, sr)
 
     def test_gs_buffer(self):
         """Tests the buffer using auth and no auth"""
@@ -164,7 +160,6 @@ class TestGeometryService(unittest.TestCase):
         unit = 9035
         unionResults = False
         geodesic = True
-        fut = False
         assert gs.buffer(
             geometries,
             inSR,
@@ -174,7 +169,6 @@ class TestGeometryService(unittest.TestCase):
             bufferSR=bufferSR,
             unionResults=unionResults,
             geodesic=geodesic,
-            future=fut,
         )
 
     def test_gs_convex_hull(self):
@@ -196,8 +190,7 @@ class TestGeometryService(unittest.TestCase):
             ),
             Geometry({"paths": [[[32, 17], [31, 17], [30, 17], [30, 16]]]}),
         ]
-        fut = False
-        assert gs.convex_hull(geometries=geoms, sr=4326, future=fut)
+        assert gs.convex_hull(geometries=geoms, sr=4326)
 
     def test_gs_cutter(self):
         """Tests the cutter using auth and no auth"""
@@ -225,8 +218,7 @@ class TestGeometryService(unittest.TestCase):
                 }
             )
         ]
-        fut = False
-        assert gs.cut(cutter=cutter, target=target, sr=4326, future=fut)
+        assert gs.cut(cutter=cutter, target=target, sr=4326)
 
     def test_gs_densify(self):
         """Tests the densify using auth and no auth"""
@@ -246,14 +238,12 @@ class TestGeometryService(unittest.TestCase):
                 }
             )
         ]
-        fut = False
         assert gs.densify(
             geometries=target,
             sr=4326,
             maxSegmentLength=10,
             lengthUnit=9001,
             geodesic=True,
-            future=fut,
         )
 
     def test_gs_difference(self):
@@ -294,8 +284,7 @@ class TestGeometryService(unittest.TestCase):
                 ]
             }
         )
-        fut = False
-        assert gs.difference(geometries=target, sr=4326, geometry=g, future=fut)
+        assert gs.difference(geometries=target, sr=4326, geometry=g)
 
     def test_gs_distance(self):
         """Tests the distance using auth and no auth"""
@@ -309,14 +298,12 @@ class TestGeometryService(unittest.TestCase):
         g = Geometry({"x": -95.23, "y": 31.71})
         geodesic = True
         sr = 4326
-        fut = False
         assert gs.distance(
             sr=sr,
             geometry1=target,
             geometry2=g,
             distanceUnit="",
             geodesic=geodesic,
-            future=fut,
         )
 
     def test_gs_from_geo_coordinate_string(self):
@@ -334,13 +321,11 @@ class TestGeometryService(unittest.TestCase):
         ]
         conversionType = "GeoRef"
         sr = 4326
-        fut = False
         assert gs.from_geo_coordinate_string(
             sr,
             strings,
             conversionType,
             conversionMode=None,
-            future=fut,
         )
 
     def test_gs_generalize(self):
@@ -373,13 +358,11 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert gs.generalize(
             sr,
             geometries=geoms,
             maxDeviation=max_dev,
             deviationUnit=units,
-            future=fut,
         )
 
     def test_gs_intersect(self):
@@ -410,8 +393,7 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
-        assert gs.intersect(sr=sr, geometries=geoms, geometry=geom, future=fut)
+        assert gs.intersect(sr=sr, geometries=geoms, geometry=geom)
 
     def test_gs_label_points(self):
         """Tests the label points using auth and no auth"""
@@ -434,9 +416,8 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert isinstance(
-            gs.label_points(sr=sr, polygons=geoms, future=fut),
+            gs.label_points(sr=sr, polygons=geoms),
             list,
         )
 
@@ -461,13 +442,11 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert gs.lengths(
             sr=sr,
             polylines=geoms,
             lengthUnit=9001,
             calculationType="preserveShape",
-            future=fut,
         )
 
     def test_gs_offset(self):
@@ -481,13 +460,11 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert gs.offset(
             geometries=geoms,
             offsetDistance=off_dist,
             offsetUnit=9001,
             sr=sr,
-            future=fut,
         )
 
     def test_gs_project(self):
@@ -509,8 +486,7 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
-        assert gs.project(geometries=geoms, inSR=4326, outSR=3857, future=fut)
+        assert gs.project(geometries=geoms, inSR=4326, outSR=3857)
 
     def test_gs_relation(self):
         """Tests the relation using auth and no auth"""
@@ -535,13 +511,11 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert gs.relation(
             geometries1=geoms,
             geometries2=geoms2,
             sr=4326,
             relationParam="",
-            future=fut,
         )
 
     def test_gs_reshape(self):
@@ -566,8 +540,7 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
-        assert gs.reshape(sr=sr, target=geoms, reshaper=reshaper, future=fut)
+        assert gs.reshape(sr=sr, target=geoms, reshaper=reshaper)
 
     def test_gs_simplify(self):
         """Tests the simplify using auth and no auth"""
@@ -589,8 +562,7 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
-        assert gs.simplify(sr=sr, geometries=geoms, future=fut)
+        assert gs.simplify(sr=sr, geometries=geoms)
 
     def test_gs_to_geo_coordinate_string(self):
         """Tests the to_geo_coordinate_string using auth and no auth"""
@@ -604,7 +576,6 @@ class TestGeometryService(unittest.TestCase):
         # g = Geometry({"x": -95.23, "y": 31.71})
         # geodesic = True
         # sr = 4326
-        fut = False
         assert gs.to_geo_coordinate_string(
             sr=4326,
             coordinates=[[10, 10], [10, 20], [30, 30]],
@@ -613,7 +584,6 @@ class TestGeometryService(unittest.TestCase):
             numOfDigits=8,
             addSpaces=True,
             rounding=False,
-            future=fut,
         )
 
     def test_gs_union(self):
@@ -629,8 +599,7 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
-        assert gs.union(sr=3857, geometries=geoms, future=fut)
+        assert gs.union(sr=3857, geometries=geoms,)
 
     def test_gs_trim_extend(self):
         """Tests the trim_extend using auth and no auth"""
@@ -661,13 +630,11 @@ class TestGeometryService(unittest.TestCase):
         url = gis.properties.helperServices.geometry.url
         gs = _GeometryService(url=url, gis=gis)
         assert isinstance(gs, _GeometryService)
-        fut = False
         assert gs.trim_extend(
             sr,
             polylines=geoms,
             trimExtendTo=to_geom,
             extendHow=how,
-            future=fut,
         )
 
 
