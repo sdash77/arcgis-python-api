@@ -3184,8 +3184,6 @@ class Swipe:
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the content property to get and set.",
     )
     @property
@@ -3261,8 +3259,6 @@ class Swipe:
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the content property to get and set.",
     )
     def edit(

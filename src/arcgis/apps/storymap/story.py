@@ -282,8 +282,6 @@ class StoryMap(object):
     @property
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the Cover class instead found when calling `content_list` property.",
     )
     def cover_date(self):
@@ -399,8 +397,6 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -448,8 +444,6 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the Cover class instead found when calling `content_list` property.",
     )
     def cover(
@@ -551,8 +545,6 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the Navigation class instead found when calling `content_list` property.",
     )
     def navigation(

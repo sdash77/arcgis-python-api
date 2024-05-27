@@ -275,8 +275,6 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="Use the Cover class that can be accessed through the cover property in the cover slide.",
     )
     def cover(
