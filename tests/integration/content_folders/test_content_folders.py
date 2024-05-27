@@ -1,33 +1,17 @@
-import sys
 import os
 import io
 import uuid
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._content_manager import Folder, Folders
 from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 from integration.config import QALAB_ROOT_PATH
 import pandas as pd
 
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
+enable_verbose_logging()
 QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "folder_add_content")
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
 TEXT_DATA = {
     "operationalLayers": [
         {
@@ -1027,11 +1011,8 @@ TEXT_DATA = {
 }
 
 
-###########################################################################
-
-
 @integration_test
-@profiles.enterprise_and_agol
+@profiles.admin_enterprise_and_agol
 class TestFolderAddContent(unittest.TestCase):
 
     def test_add_by_io(self):
@@ -1195,9 +1176,6 @@ class TestFolderAddContent(unittest.TestCase):
         item.delete()
 
 
-###########################################################################
-
-
 @integration_test
 @profiles.enterprise_and_agol
 class TestFolder(unittest.TestCase):
@@ -1242,11 +1220,8 @@ class TestFolder(unittest.TestCase):
         assert folder.delete()
 
 
-###########################################################################
-
-
 @integration_test
-@profiles.enterprise_and_agol
+@profiles.admin_enterprise_and_agol
 class TestFolders(unittest.TestCase):
 
     def test_property_folders(self):
