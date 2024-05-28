@@ -67,14 +67,6 @@ class RecycleItem:
         ---------------------     ----------------------------------------------
         folder                    Optional string. Name of the folder to restore
                                   the *item* to.
-        ---------------------     ----------------------------------------------
-        owner                     Optional string. Owner of the folder to restore
-                                  items to.
-                                  
-                                  .. note::
-                                      Only a user with administrator privileges
-                                      can restore an item to a folder they do
-                                      not own.
         =====================     ==============================================
 
         :return: :class:`~arcgis.gis.Item` | None
