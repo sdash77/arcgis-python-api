@@ -1,4 +1,5 @@
 from os import environ, name as os_name
+import sys
 from parameterized import parameterized, parameterized_class
 from unittest import SkipTest
 from .timeout_decorator import (
@@ -12,9 +13,11 @@ from integration.config import get_resource_path
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
-DEFAULT_TIMEOUT_SECONDS = 60
-EXTENDED_TIMEOUT_SECONDS = 300
-MAXIMUM_TIMEOUT_SECONDS = 600
+NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in ("true", "1", "y", "yes")
+
+DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else sys.maxsize
+EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else sys.maxsize
+MAXIMUM_TIMEOUT_SECONDS = 600 if not NO_TIMEOUT else sys.maxsize
 
 
 def timeout(seconds):
