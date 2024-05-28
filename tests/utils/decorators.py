@@ -343,6 +343,13 @@ class profiles:
         )
 
     @classproperty
+    def admin_enterprise_and_non_admin_agol(cls):
+        """Run tests for admin enterprise and non-admin agol profiles"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters, cls._enterprise_admin_profile_parameters
+        )
+
+    @classproperty
     def k8s(cls):
         """Run tests for kubernetes profile"""
         return cls._get_profile_parameterized_class(cls._k8s_profile_parameters)
@@ -351,6 +358,23 @@ class profiles:
     def admin_k8s(cls):
         """Run tests for kubernetes admin profile"""
         return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
+
+    @classproperty
+    def all(cls):
+        """Run tests for all 3 profiles (agol, enterprise, k8s)"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters,
+            cls._enterprise_profile_parameters,
+            cls._k8s_profile_parameters,
+        )
+
+    def admin_all(cls):
+        """Run tests for all 3 admin profiles (agol, enterprise, k8s)"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_admin_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+            cls._k8s_admin_profile_parameters,
+        )
 
     # endregion
 
