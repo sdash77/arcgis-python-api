@@ -58,9 +58,24 @@ class RecycleItem:
         return self._properties
 
     # ---------------------------------------------------------------------
-    def restore(self) -> _arcgis_gis.Item | None:
+    def restore(self, folder: str) -> _arcgis_gis.Item | None:
         """
         Restores the Item from the recycling bin.
+        
+        =====================     ==============================================
+        **Parameter**              **Description**
+        ---------------------     ----------------------------------------------
+        folder                    Optional string. Name of the folder to restore
+                                  the *item* to.
+        ---------------------     ----------------------------------------------
+        owner                     Optional string. Owner of the folder to restore
+                                  items to.
+                                  
+                                  .. note::
+                                      Only a user with administrator privileges
+                                      can restore an item to a folder they do
+                                      not own.
+        =====================     ==============================================
 
         :return: :class:`~arcgis.gis.Item` | None
 
@@ -80,6 +95,13 @@ class RecycleItem:
         params = {
             "f": "json",
         }
+        if folder:
+            try:
+                folder_id = self._gis.content.folders.get(folder).properties["id"]
+                params.update({"folder": folder_id})
+            except AttributeError as ae:
+                print(f"Could not get {folder} for {self.owner}")
+                print(f"{ae}")
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
