@@ -49,7 +49,7 @@ def _delete_setup_ge_service(item, gis):
 
 
 @integration_test
-@profiles.enterprise_and_agol
+@profiles.all
 class ge_unittest(unittest.TestCase):
     """
     AGOL GeoEnrichment Tests
