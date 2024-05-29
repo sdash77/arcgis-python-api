@@ -60,6 +60,9 @@ class TextStyles(Enum):
     HEADING = "h2"
     SUBHEADING = "h3"
     QUOTE = "quote"
+    HEADING1 = "h2"
+    HEADING2 = "h3"
+    HEADING3 = "h4"
 
 
 class Scales(Enum):
@@ -2273,6 +2276,8 @@ class Text:
             self._text = text
             if isinstance(style, TextStyles):
                 self._style = style.value
+            else:
+                self._style = style if style is not None else TextStyles.PARAGRAPH.value
 
             # Color only applies certain styles
             if self._style in [
@@ -5859,7 +5864,7 @@ class Navigation:
 
         To add, remove, or reorder the navigation link list, use the setter.
         Pass in the list of story content you want in the navigation. The content
-        can be any of the Storymap content classes. (Text, Image, Map, etc.)
+        can only be Text with style of "h2", "h3", or "h4".
         """
         links = []
         for link in self._links:
@@ -5870,10 +5875,16 @@ class Navigation:
     @links.setter
     def links(self, link_list: list):
         if not isinstance(link_list, list):
-            raise ValueError("Links must be a list of Storymap content classes.")
+            raise ValueError(
+                "Links must be a list of Storymap Text classes that are in your story."
+            )
 
         # update the links
-        self._links = [link.node for link in link_list]
+        self._links = [
+            link.node
+            for link in link_list
+            if isinstance(link, Text) and link._style in ["h2", "h3", "h4"]
+        ]
         self._story._properties["nodes"][self._node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
