@@ -1364,13 +1364,22 @@ class WorkflowManager:
 
         """
         try:
-            return WMRole.delete(
-                self,
-                self._gis,
-                "{base}/community/roles/{role}".format(
+            url = "{base}/community/roles/{role}".format(
                     base=self._url, role=urllib.parse.quote(name), item=self._item.id
-                ),
-            )
+                )
+            return_obj = json.loads(self._gis._con.delete(url, try_json=False))
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+            elif "found" in return_obj:
+                return return_obj["found"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
         except:
             self._handle_error(sys.exc_info())
 
@@ -3358,21 +3367,6 @@ class WMRole(object):
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
             return return_obj["success"]
-        return return_obj
-
-    def delete(self, gis, url):
-        return_obj = json.loads(gis._con.delete(url, try_json=False))
-        if "error" in return_obj:
-            gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj:
-            return return_obj["success"]
-        elif "found" in return_obj:
-            return return_obj["found"]
-        return_obj = {
-            _camelCase_to_underscore(k): v
-            for k, v in return_obj.items()
-            if v is not None and not k.startswith("_")
-        }
         return return_obj
 
 
