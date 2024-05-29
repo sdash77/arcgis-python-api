@@ -25,6 +25,8 @@ class Job(object):
     _start_time = None
     _end_time = None
     _verbose = None
+    _has_id = None
+    _jobid = None
 
     # ----------------------------------------------------------------------
     def __init__(
