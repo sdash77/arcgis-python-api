@@ -288,6 +288,24 @@ class Folder:
         params = {
             "f": "json",
         }
+        if permanent:
+            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            rsupport = self._gis.properties.recycleBinSupported
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
+            if (
+                (self._gis._is_agol or self._gis.version > [2023, 2])
+                and rsupport
+                and renabled
+            ):
+                params["permanentDelete"] = True
+            else:
+                logger.warning(
+                    "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
+                )
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
@@ -295,7 +313,7 @@ class Folder:
             return True
         else:
             logger.warning(
-                f"Could not erase the folder: {self.name}. Recieved the error: {data}."
+                f"Could not erase the folder: {self.name}. Received the error: {data}."
             )
             return False
 

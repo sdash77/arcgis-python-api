@@ -2,14 +2,16 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Image, Gallery
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
+
 
 @integration_test
+@profiles.enterprise_and_agol
 class TestGallery(unittest.TestCase):
     """Test Story Map Gallery content"""
 
     def test_create_swipe(self):
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         gallery = Gallery()
 
@@ -24,7 +26,7 @@ class TestGallery(unittest.TestCase):
         story.delete_story()
 
     def add_content_to_gallery(self):
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         gallery = Gallery()
 
