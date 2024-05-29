@@ -5779,7 +5779,7 @@ class Cover:
             # remove media
             self._story._properties["nodes"][self._node]["children"] = []
             return
-        if media.node not in story._properties["nodes"]:
+        if media.node not in self._story._properties["nodes"]:
             # must be added to story resources
             media._add_to_story(story=self._story)
         self._story._properties["nodes"][self._node]["children"] = [media.node]
@@ -5840,7 +5840,9 @@ class Navigation:
         self._hidden = self._story._properties["nodes"][self._node]["config"][
             "isHidden"
         ]
-        self._links = self._story._properties["nodes"][self._node]["data"]["links"]
+        self._links = (
+            self._story._properties["nodes"][self._node]["data"]["links"] or []
+        )
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -5866,12 +5868,12 @@ class Navigation:
 
     # ----------------------------------------------------------------------
     @links.setter
-    def links(self, links: list):
-        if not isinstance(links, list):
+    def links(self, link_list: list):
+        if not isinstance(link_list, list):
             raise ValueError("Links must be a list of Storymap content classes.")
 
         # update the links
-        self._links = [link._node for link in links]
+        self._links = [link._node for link in link_list]
         self._story._properties["nodes"][self._node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
