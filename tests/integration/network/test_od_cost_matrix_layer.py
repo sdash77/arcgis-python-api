@@ -5,6 +5,7 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.network import ODCostMatrixLayer, NAJob
 from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test
 
 PROFILE = "your_online_profile"
 gis = GIS(profile=PROFILE, verify_cert=False)
@@ -15,6 +16,7 @@ else:
 
 
 @unittest.skipIf(SKIP_TEST == True, "Test site does not support this operation.")
+@integration_test
 class Test_ODCostMatricLayer(unittest.TestCase):
     """tests the OD Cost Matric Layer and it's functionality"""
 

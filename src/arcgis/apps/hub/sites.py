@@ -9,6 +9,7 @@ import json
 import os
 import re
 from arcgis.gis import Item
+from arcgis.gis import SharingLevel
 from functools import wraps
 
 
@@ -189,17 +190,13 @@ class Site(OrderedDict):
             items = [self._gis.content.get(item_id) for item_id in items_list]
         else:
             items = items_list
-        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        # Share each item with content group
         for item in items:
-            sharing = item.shared_with
-            everyone = sharing["everyone"]
-            org = sharing["org"]
-            groups = sharing["groups"]
-            # add current site's content group to list of groups to share to
-            groups.append(self.content_group_id)
-            # share item to this group
-            status = item.share(everyone=everyone, org=org, groups=groups)
-            if status["results"][0]["success"] == False:
+            # Fetch the content group
+            group = self._gis.groups.get(self.content_group_id)
+            # Share item with group
+            status = item.sharing.groups.add(group)
+            if status == False:
                 return status
         return status
 
@@ -791,7 +788,9 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
+        site_data["values"]["map"] = {
+            "basemaps": {"primary": self._gis.properties["defaultBasemap"]}
+        }
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
         return site_data
@@ -1045,7 +1044,7 @@ class SiteManager(object):
 
         # Share with necessary group if group exists
         try:
-            site.share(groups=[collab_group])
+            site.sharing.groups.add(collab_group)
         except:
             pass
 
@@ -1228,7 +1227,7 @@ class SiteManager(object):
 
         # Share with necessary group
         try:
-            new_item.share(groups=[collab_group])
+            new_item.sharing.groups.add(collab_group)
         except:
             pass
 

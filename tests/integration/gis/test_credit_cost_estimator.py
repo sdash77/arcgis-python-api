@@ -2,8 +2,10 @@ import sys
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestCostEstimation(unittest.TestCase):
     def test_cost_estimation_all_nones(self):
         gis = GIS(

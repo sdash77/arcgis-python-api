@@ -1,44 +1,28 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10971\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+from utils._logging import enable_verbose_logging
+from utils.decorators import profiles, integration_test
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
+@profiles.admin_agol
+@integration_test
 class TestAcceptPartneredCollab(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis_source = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=PROXIES
-        )
         cls.gis_dest = GIS(
             username='python_collaboration',
             password='FrankTheTank1!',
             verify_cert=False,
             proxy=PROXIES,
         )
-        cls.admin_source = cls.gis_source.admin
+        cls.admin_source = cls.gis.admin
         pc_source = cls.admin_source.partnered_collaboration
 
         cls.admin_dest = cls.gis_dest.admin

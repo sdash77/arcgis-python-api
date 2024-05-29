@@ -599,7 +599,7 @@ class Mission:
     def delete_image(self, where: str):
         """
 
-        ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset) of a mission.
+        ``delete_image`` allows users to remove existing images from the image collection of a mission.
 
         ==================                   ====================================================================
         **Parameter**                         **Description**

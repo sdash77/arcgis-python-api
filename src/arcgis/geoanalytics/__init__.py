@@ -20,7 +20,7 @@ Note: GeoAnalytics operations use the following context parameters defined in th
 """
 
 from typing import Optional, Union
-
+from arcgis.auth.tools import LazyLoader
 from arcgis.gis import GIS, Datastore
 from . import (
     summarize_data,
@@ -30,6 +30,8 @@ from . import (
     find_locations,
     data_enrichment,
 )
+
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
 
 def get_datastores(gis: Optional[GIS] = None):
@@ -52,7 +54,8 @@ def get_datastores(gis: Optional[GIS] = None):
 
 
 def define_output_datastore(
-    datastore: Optional[Union[str, Datastore]] = None, template: Optional[str] = None
+    datastore: Optional[Union[str, Datastore]] = None,
+    template: Optional[str] = None,
 ):
     """
     Sets the `arcgis.env.output_datastore` by providing the datastore and template name

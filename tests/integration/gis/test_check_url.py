@@ -1,9 +1,7 @@
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
@@ -22,6 +20,7 @@ URLS = {
 }
 
 
+@integration_test
 class TestCheckUrl(unittest.TestCase):
     """Tests the check url functionality on the ContentManager class"""
 

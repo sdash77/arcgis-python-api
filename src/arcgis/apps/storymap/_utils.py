@@ -15,6 +15,7 @@ briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
 sharing = LazyLoader("gis._impl._content_manager_sharing.api")
+_dt = LazyLoader("datetime")
 
 
 # ----------------------------------------------------------------------
@@ -126,6 +127,76 @@ def cover(
 
 
 # ----------------------------------------------------------------------
+def set_logo(
+    story, logo: str, link: Optional[str] = None, alt_text: Optional[str] = None
+):
+    """
+    Set the logo image, link, and/or alt text for the story or briefing.
+    """
+    # If empty string is passed in then remove the logo
+    # This wipes out everything
+    if logo == "":
+        root = story._properties["root"]
+        if "storyLogoResource" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoResource"]
+        if "storyLogoLink" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoLink"]
+        if "storyLogoAltText" in story._properties["nodes"][root]["data"]:
+            del story._properties["nodes"][root]["data"]["storyLogoAltText"]
+    elif logo:
+        # check the logo is a path to an image and not a url
+        if "http" in logo:
+            raise ValueError("Please provide a path to an image not a url.")
+        # create unique resource name
+        name = "logo_" + _dt.datetime.now().strftime("%Y%m%d%H%M%S")
+        # add the image type to end of name
+        if logo.endswith(".png"):
+            name = name + ".png"
+        elif logo.endswith(".jpg"):
+            name = name + ".jpg"
+        elif logo.endswith(".jpeg"):
+            name = name + ".jpeg"
+        else:
+            raise ValueError(
+                "Please provide a path to an image with a valid extension."
+            )
+        # add the logo to the story item resources
+        _add_resource(story, file=logo, resource_name=name)
+        # create resource node id
+        resource_node = "r-" + uuid.uuid4().hex[0:6]
+        # add the resource node to the story properties
+        story._properties["resources"][resource_node] = {
+            "type": "image",
+            "data": {
+                "resourceId": name,
+                "provider": "item-resource",
+                "height": 2304,
+                "width": 1536,
+            },
+        }
+        # set the logo to the story properties
+        story._properties["nodes"][story._properties["root"]]["data"][
+            "storyLogoResource"
+        ] = resource_node
+
+        # if link is empty string then remove
+        if link == "":
+            if "storyLogoLink" in story._properties["nodes"][root]["data"]:
+                del story._properties["nodes"][root]["data"]["storyLogoLink"]
+        elif link:
+            story._properties["nodes"][root]["data"]["storyLogoLink"] = link
+
+        # if alt text is empty string then remove
+        if alt_text == "":
+            if "storyLogoAltText" in story._properties["nodes"][root]["data"]:
+                del story._properties["nodes"][root]["data"]["storyLogoAltText"]
+        elif alt_text:
+            story._properties["nodes"][root]["data"]["storyLogoAltText"] = alt_text
+
+        return True
+
+
+# ----------------------------------------------------------------------
 def theme(story, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
     """
     Each story/briefing has a theme node in its resources. This method can be used to change the theme.
@@ -144,6 +215,18 @@ def theme(story, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
                 if isinstance(theme, str):
                     # theme is an item of type Story Theme
                     story._properties["resources"][node]["data"]["themeItemId"] = theme
+
+
+# ----------------------------------------------------------------------
+def get_theme(story):
+    """
+    Get the theme of the story, briefing, or collection.
+    """
+    # see if there is a resource that is the story-theme
+    for node, node_info in story._properties["resources"].items():
+        for key, val in node_info.items():
+            if key == "type" and val == "story-theme":
+                return story._properties["resources"][node]["data"]["themeId"]
 
 
 # ----------------------------------------------------------------------

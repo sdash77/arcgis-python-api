@@ -2,8 +2,10 @@ import unittest
 from arcgis.gis import GIS, Item, User, Group, ProfileManager
 from arcgis._impl.common._utils import local_time_to_online
 import datetime
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestAdvancedUserSearch(unittest.TestCase):
     """
     Tests the advanced User Search

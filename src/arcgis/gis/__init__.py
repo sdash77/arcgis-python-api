@@ -23,6 +23,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+import datetime as _dt
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -727,10 +728,17 @@ class GIS(object):
                 if self._is_hosted_nb_home:
                     import warnings
 
+                    orin_fn = warnings.formatwarning
+
+                    def warning_on_one_line(message, *args, **kwargs):
+                        return "%s\n" % (message)
+
+                    warnings.formatwarning = warning_on_one_line
                     warnings.warn(
                         "You are logged on as %s with an administrator role, proceed with caution."
                         % self.users.me.username
                     )
+                    warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
                     from arcgis.gis.kubernetes._admin.kadmin import (
                         KubernetesAdmin,
@@ -2035,7 +2043,12 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items: Optional[list[Item]] = None, future: bool = True):
+    def create(
+        self,
+        items: list[Item] | None = None,
+        output_filename: str | None = None,
+        future: bool = True,
+    ):
         """
         The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
         an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
@@ -2060,6 +2073,10 @@ class GroupMigrationManager(object):
         items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
                                from the group.  If argument is not provided, the method will attempt
                                to export all group content items.
+        ------------------     --------------------------------------------------------------------
+        output_filename        Optional String. The name of the output file in the exported item
+                               file. This parameter is only supported in enterprises `11.3` and
+                               over.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When `True`, the operation runs asynchronously
                                and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
@@ -2110,6 +2127,12 @@ class GroupMigrationManager(object):
             params = {"itemIdList": items}
 
             params["async"] = json.dumps(True)
+            if self._gis.version >= [2024, 1] and output_filename:
+                params["outputFilename"] = output_filename
+            elif self._gis.version < [2024, 1] and output_filename:
+                _log.warning(
+                    "Output filename is not support on this version of enterprise"
+                )
             res = self._gis._con.post(url, params)
             if not "jobId" in res:
                 raise Exception(
@@ -6622,6 +6645,12 @@ class ContentManager(object):
             return int(35 * (1024 * 1024))
 
     # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.add()` instead.",
+    )
     def add(
         self,
         item_properties: dict[str, Any] | ItemProperties,
@@ -6767,6 +6796,11 @@ class ContentManager(object):
             item_properties = item_properties.to_dict()
             item_properties.pop("thumbnail", None)
             item_properties.pop("metadata", None)
+        if "overwrite" in item_properties:
+            _log.warning(
+                "The `overwrite` parameter is no longer support on adding of items."
+            )
+            item_properties.pop("overwrite", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -8078,12 +8112,23 @@ class ContentManager(object):
         """
         params = {"f": "json", "items": ""}
 
-        # applicable to online and to enterprise 11.3 and higher
-        if permanent and (self._gis._is_agol or self._gis.version > [2023, 2]):
+        # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+        rsupport = self._gis.properties.recycleBinSupported
+        renabled = (
+            self._gis.properties.recycleBinEnabled
+            if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+            else False
+        )
+        if (
+            permanent
+            and (self._gis._is_agol or self._gis.version > [2023, 2])
+            and rsupport
+            and renabled
+        ):
             params["permanentDelete"] = permanent
         else:
             _log.warning(
-                "Permanent delete parameter is not supported on this version of Enterprise."
+                "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
             )
 
         items_dict = {}  # key will be ownner and value is list of their items
@@ -10463,90 +10508,6 @@ class Group(dict):
         )
 
     # ----------------------------------------------------------------------
-    @_common_deprecated.deprecated(
-        deprecated_in="v1.5.1",
-        removed_in=None,
-        current_version=None,
-        details="Use `Group.invite` instead.",
-    )
-    def invite_by_email(
-        self,
-        email: str,
-        message: str,
-        role: str = "member",
-        expiration: str = "1 Day",
-    ):
-        """
-        .. Warning::
-            Deprecated: The ``invite_by_email`` function is no longer supported.
-
-        The ``invite_by_email`` method invites a user by email to the existing group.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        email             Required string. The user to send join email to.
-        ----------------  --------------------------------------------------------
-        message           Required string. The message to send to the user.
-        ----------------  --------------------------------------------------------
-        role              Optional string. Either member (the default) or admin.
-        ----------------  --------------------------------------------------------
-        expiration        Optional string.  The is the time out of the invite.
-                          The values are: 1 Day (default), 3 Days, 1 Week, or
-                          2 Weeks.
-        ================  ========================================================
-
-        :return: A boolean indicating success (True) or failure (False)
-        """
-
-        if self._gis.version >= [6, 4]:
-            return False
-
-        time_lookup = {
-            "1 Day".upper(): 1440,
-            "3 Days".upper(): 4320,
-            "1 Week".upper(): 10080,
-            "2 Weeks".upper(): 20160,
-        }
-        role_lookup = {"member": "group_member", "admin": "group_admin"}
-        url = "community/groups/" + self.groupid + "/inviteByEmail"
-        params = {
-            "f": "json",
-            "emails": email,
-            "message": message,
-            "role": role_lookup[role.lower()],
-            "expiration": time_lookup[expiration.upper()],
-        }
-        return self._portal.con.post(url, params)
-
-    def reassign_to(self, target_owner: Union[str, User]):
-        """
-        The ``reassign_to`` method reassigns this group from its current owner to another owner.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        target_owner      Required string or User.  The username of the new group owner.
-        ================  ========================================================
-
-        :return:
-            A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json"}
-        if isinstance(target_owner, User):
-            params["targetUsername"] = target_owner.username
-        else:
-            params["targetUsername"] = target_owner
-        res = self._gis._con.post(
-            "community/groups/" + self.groupid + "/reassign", params
-        )
-        if res:
-            self._hydrated = False
-            self._hydrate()
-            return res.get("success")
-        return False
-
-    # ----------------------------------------------------------------------
     def notify(
         self,
         users: Union[list[str], list[User]],
@@ -12063,9 +12024,32 @@ class User(dict):
         )
 
     @property
-    def groups(self):
+    def _group_dict(self) -> list[dict]:
+        return self["groups"]
+
+    @property
+    def groups(self) -> list[Group]:
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group["id"]) for group in self["groups"]]
+        if (
+            self._gis.users.me.username != self["username"]
+            and self._gis._is_arcgisonline
+        ):
+            groups: list[Group] = []
+            for grp in self["groups"]:
+                try:
+                    group = Group(self._gis, grp["id"])
+                    group.__str__()
+                    if "orgId" in grp and grp["orgId"] == self._gis.properties["id"]:
+                        groups.append(group)
+                    elif not "orgId" in grp:
+                        groups.append(group)
+                    elif grp["owner"] == self["username"]:
+                        groups.append(group)
+                except:
+                    pass
+            return groups
+        else:
+            return [Group(self._gis, grp["id"]) for grp in self["groups"]]
 
     def update_license_type(self, user_type: str):
         """
@@ -12927,13 +12911,19 @@ class User(dict):
         if reassign_to:
             # reassigns the group owner to the reassigned_to user.
             [
-                grp.reassign_to(User(gis=self._gis, username=reassign_to))
-                for grp in self.groups
-                if grp.owner == self.username
+                Group(self._gis, grp["id"]).reassign_to(
+                    User(gis=self._gis, username=reassign_to)
+                )
+                for grp in self["groups"]
+                if grp["owner"] == self.username
             ]
         else:
             # delete the groups owned by the user
-            [grp.delete() for grp in self.groups if grp.owner == self.username]
+            [
+                Group(self._gis, grp["id"]).delete()
+                for grp in self["groups"]
+                if grp["owner"] == self.username
+            ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
@@ -13257,29 +13247,19 @@ class Item(dict):
         """
         Gets/Sets if the Item is in the user's favorites
         """
-        user: User = self._gis.users.get(self.owner)
+        user: User = self._gis.users.me
+        grp_shr = self.sharing.groups
+        # get(self.owner)
         if value == True:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
-        elif value == False:
-            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
-        else:
-            raise ValueError("'value' must be a boolean.")
-
-        params = {
-            "f": "json",
-            "everyone": self.shared_with["everyone"],
-            "org": self.shared_with["org"],
-            "items": self.itemid,
-            "groups": user.favGroupId,
-        }
-
-        res = self._gis._con.post(url, params=params)
-        assert self.shared_with
-        if "error" in res:
-            raise Exception(f"An error has occurred: {str(res)}")
-        else:
+            grp_shr.add(user.favGroupId)
             self._hydrated = False
             self._hydrate()
+        elif value == False:
+            grp_shr.remove(user.favGroupId)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("'value' must be a boolean.")
 
     # ----------------------------------------------------------------------
     @property
@@ -14451,7 +14431,16 @@ class Item(dict):
         metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
 
         try:
-            response = self._portal.con.get(metadataurlpath, try_json=False)
+            save_path: str = os.path.join(
+                tempfile.gettempdir(), self.itemid, "metadata"
+            )
+            os.makedirs(save_path, exist_ok=True)
+            response = self._portal.con.get(
+                metadataurlpath,
+                try_json=False,
+                out_folder=save_path,
+                file_name="metadata.xml",
+            )
             if response.find("Metadata for item not found") > -1:
                 return None
             else:
@@ -14560,7 +14549,10 @@ class Item(dict):
         elif self.type.lower() == "map service":
             icon = "mapimages16.png"
         elif self.type.lower() == "image service":
-            icon = "imagery16.png"
+            if "tiled imagery" in [keyword.lower() for keyword in self.typeKeywords]:
+                icon = "tiledimagerylayer16.png"
+            else:
+                icon = "imagery16.png"
         elif self.type.lower() == "kml":
             icon = "features16.png"
         elif self.type.lower() == "wms":
@@ -14621,7 +14613,10 @@ class Item(dict):
         elif self.type.lower() == "map service":
             item_type = "Map Image Layer"
         elif self.type.lower() == "image service":
-            item_type = "Imagery Layer"
+            if "tiled imagery" in [keyword.lower() for keyword in self.typeKeywords]:
+                item_type = "Tiled Imagery Layer"
+            else:
+                item_type = "Imagery Layer"
         elif self.type.lower().endswith("service"):
             item_type = self.type.replace("Service", "Layer")
         return item_type
@@ -15194,9 +15189,27 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            return self._portal.delete_item(
-                self.itemid, self._user_id, folder, force, permanent
-            )
+            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            if permanent:
+                rsupport = self._gis.properties.recycleBinSupported
+                renabled = (
+                    self._gis.properties.recycleBinEnabled
+                    if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                    else False
+                )
+                if (
+                    (self._gis._is_agol or self._gis.version > [2023, 2])
+                    and rsupport
+                    and renabled
+                ):
+                    return self._portal.delete_item(
+                        self.itemid, self._user_id, folder, force, permanent
+                    )
+                else:
+                    _log.warning(
+                        "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
+                    )
+            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
     # ----------------------------------------------------------------------
     def update(
@@ -15627,7 +15640,7 @@ class Item(dict):
             return results
 
     # ----------------------------------------------------------------------
-    @cached(cache=TTLCache(maxsize=255, ttl=60))
+    @cached(cache=TTLCache(maxsize=255, ttl=900))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
 
@@ -16184,10 +16197,16 @@ class Item(dict):
                                `Geocoder` can be supplied in order to specify which service
                                geocodes the information. If no geocoder is given, the first
                                registered `Geocoder` is used.
+        -------------------    ---------------------------------------------------------------
+        future                 Optional Boolean indicating whether to run the operation in an
+                               asynchronous manner. When *True*, the return value is a
+                               *concurrent.futures.Future* object that can be queried for
+                               job status and results. The default is *False*.
         ===================    ===============================================================
 
         :return:
-            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
+            When *future=False*, an :class:`~arcgis.gis.Item` object corresponding to the
+            published web layer. When *future=True*, a *concurrent.futures.Future* object.
 
         .. code-block:: python
 
@@ -16245,106 +16264,6 @@ class Item(dict):
         item_id: Optional[str] = None,
         geocode_service=None,
     ):
-        """
-        The ``_publish`` method is used to publish a hosted service based on an existing source item (this item).
-        Publishers can then create feature, tiled map, vector tile and scene services.
-        Feature services can be created from  input files of various types, including
-            1. csv files
-            2. shapefiles
-            3. service definition files
-            4. feature collection files
-            5. file geodatabase files
-        CSV files that contain location fields (i.e. address fields or XY fields) are spatially enabled during the process of publishing.
-        Shapefiles and file geodatabases should be packaged as *.zip files.
-
-        Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-
-        Vector tile services can be created from vector tile package (*.vtpk) files.
-
-        Scene services can be created from scene layer package (*.spk, *.slpk) files.
-
-        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map
-        as well as its packaged data together with the definition of the geo-service to be created.
-
-        .. note::
-            ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
-
-        .. note::
-            ArcGIS for Enterprise for Kubernetes does not support publishing service definition file generated by ArcMap.
-
-        ===================    ===============================================================
-        **Parameter**           **Description**
-        -------------------    ---------------------------------------------------------------
-        publish_parameters     Optional dictionary. containing publish instructions and customizations.
-                               Cannot be combined with overwrite.
-                               See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
-                               in the ArcGIS REST API for details.
-        -------------------    ---------------------------------------------------------------
-        address_fields         Optional dictionary. containing mapping of df columns to address fields,
-        -------------------    ---------------------------------------------------------------
-        output_type            Optional string.  Only used when a feature service is published as a tile service or 3D tile service.
-                               Values: "Tiles" | "3DTilesService"
-        -------------------    ---------------------------------------------------------------
-        overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
-                               Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
-        -------------------    ---------------------------------------------------------------
-        file_type              Optional string.  Some formats are not automatically detected,
-                               when this occurs, the file_type can be specified:
-                               serviceDefinition, shapefile, csv, excel, tilePackage,
-                               featureService, featureCollection, fileGeodatabase, geojson,
-                               scenepackage, vectortilepackage, imageCollection, mapService,
-                               and sqliteGeodatabase are valid entries. This is an
-                               optional parameter.
-        -------------------    ---------------------------------------------------------------
-        build_initial_cache    Optional boolean.  The boolean value (default False), if true
-                               and applicable for the file_type, the value will built cache
-                               for the service.
-        -------------------    ---------------------------------------------------------------
-        item_id                Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
-                               This parameter allows the desired item id to be specified during creation which
-                               can be useful for cloning and automated content creation scenarios.
-                               The specified id must be a 32 character GUID string without any special characters.
-
-                               If the `item_id` is already being used, an error will be raised
-                               during the `publish` process.
-
-        -------------------    ---------------------------------------------------------------
-        geocode_service        Optional Geocoder. When publishing a table of data, an optional
-                               `Geocoder` can be supplied in order to specify which service
-                               geocodes the information. If no geocoder is given, the first
-                               registered `Geocoder` is used.
-        ===================    ===============================================================
-
-        :return:
-            An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
-
-        .. code-block:: python
-
-            # Publishing a Hosted Table Example
-
-            >>> csv_item = gis.content.get('<csv item id>')
-            >>> analyzed = gis.content.analyze(item=csv_item)
-            >>> publish_parameters = analyzed['publishParameters']
-            >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
-            >>> publish_parameters['locationType'] = None # this makes it a hosted table
-            >>> published_item = csv_item.publish(publish_parameters)
-
-        .. code-block:: python
-
-            # Publishing a Tile Service Example
-
-            >>> item.publish(address_fields= { "CountryCode" : "Country"},
-            >>>               output_type="Tiles",
-            >>>               file_type="CSV",
-            >>>               item_id=9311d21a9a2047d19c0faaebd6f2cca6
-            >>>             )
-
-        .. note::
-            For publish_parameters, see `Publish Item
-            <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
-            in the ArcGIS REST API for more details.
-        """
-
         from arcgis.geocoding._functions import Geocoder
 
         if geocode_service and isinstance(geocode_service, str):

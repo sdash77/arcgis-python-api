@@ -21,6 +21,7 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox
@@ -30,6 +31,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
+# -------------------------------------------------------------------------
 def group_by_proximity(
     input_layer: Union[
         Item,
@@ -129,6 +131,7 @@ def group_by_proximity(
     input_features = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -204,6 +207,7 @@ def group_by_proximity(
     return
 
 
+# -------------------------------------------------------------------------
 def trace_proximity_events(
     input_points: Union[
         Item,
@@ -355,6 +359,7 @@ def trace_proximity_events(
         )
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url_or_item=url, gis=gis)
 
@@ -436,6 +441,7 @@ def trace_proximity_events(
     return
 
 
+# -------------------------------------------------------------------------
 def create_buffers(
     input_layer: Union[
         Item,
@@ -599,6 +605,7 @@ def create_buffers(
     input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
 
     if (

@@ -68,7 +68,7 @@ class PublishJob(object):
         Checks the cache status.
         """
         i: int = 1
-        has_error: bool = True
+        has_error: bool = False
         while True:
             res: list = []
             if i < 5:

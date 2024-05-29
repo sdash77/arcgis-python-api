@@ -1,8 +1,6 @@
-import sys, os
+import os
 import random
 import tempfile
-
-#sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\src")
 import pandas as pd
 import unittest  # pytest,
 import dask.dataframe as dd
@@ -18,13 +16,13 @@ from arcgis.features.geo._dask import (
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import create_viewshed
+from utils.decorators import integration_test, profiles
 
-gis = GIS(profile='your_online_profile', verify_cert=False, trust_env=True)
-
-
+@profiles.agol
+@integration_test
 class TestSDF2Dask(unittest.TestCase):
     def test_consume_sdf(self):
-        item = gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
+        item = self.gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
         sdf = item.layers[0].query(as_df=True)
         sdf.spatial.name
         ddf = dd.from_pandas(sdf, npartitions=100)
@@ -35,7 +33,7 @@ class TestSDF2Dask(unittest.TestCase):
 
     def test_into_the_gp_tool(self):
         """tests passing a dask DF into a GP tool"""
-        item = gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
+        item = self.gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
         sdf = item.layers[0].query(as_df=True)
         sdf.spatial.name
 
@@ -47,7 +45,7 @@ class TestSDF2Dask(unittest.TestCase):
 
     def test_dask_to_feature_collection(self):
         """tests passing a dask DF as FeatureCollection"""
-        item = gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
+        item = self.gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
         sdf = item.layers[0].query(as_df=True)
         sdf.spatial.name
 
@@ -58,7 +56,7 @@ class TestSDF2Dask(unittest.TestCase):
 
     def test_dask_to_feature_set(self):
         """tests passing a dask DF as feature set (dict)"""
-        item = gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
+        item = self.gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
         sdf = item.layers[0].query(as_df=True)
         sdf.spatial.name
 
@@ -67,7 +65,7 @@ class TestSDF2Dask(unittest.TestCase):
 
     def test_dask_to_feature_class(self):
         """tests passing a dask DF as feature class"""
-        item = gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
+        item = self.gis.content.get("85d0ca4ea1ca4b9abf0c51b9bd34de2e")
         sdf = item.layers[0].query(as_df=True)
         sdf.spatial.name
 

@@ -1,15 +1,14 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_viz_take_3\src")
 import os
 import unittest
 from arcgis.gis import GIS, ContentManager
 from arcgis.features import FeatureLayer
 from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile"]
 
 
+@integration_test
 class TestRendererProperty(unittest.TestCase):
     def test_get_renderer(self):
         for profile in profiles:

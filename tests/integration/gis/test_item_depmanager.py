@@ -4,11 +4,13 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.gis.sharing._dependency import DependencyManager
+from utils.decorators import integration_test
 
 PROFILES = ["your_ent_admin_profile"]
 ALL_HTTP = True
 
 
+@integration_test
 class TestDependencyManager(unittest.TestCase):
     def test_agol_is_none(self):
         profile = "your_online_profile"

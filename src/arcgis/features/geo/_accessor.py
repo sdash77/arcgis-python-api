@@ -671,15 +671,15 @@ class GeoSeriesAccessor:
 
 
         """
-        if isinstance(second_geometry, _geometry.Geometry):
+        if isinstance(second_geometry, GeoSeriesAccessor):
+            # Do a GeoArray eq
+            return self._data == second_geometry._data
+        else:
             return pd.Series(
                 self._data.equals(**{"second_geometry": second_geometry}),
                 name="equals",
                 index=self._index,
             )
-        elif isinstance(second_geometry, GeoSeriesAccessor):
-            # Do a GeoArray eq
-            return self._data == second_geometry._data
 
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
@@ -1532,7 +1532,6 @@ class GeoAccessor(object):
             self._name = col
             sdf = self._data
         elif self._data[col].dtype.name.lower() != "geometry" and inplace == False:
-
             sdf = self._data.copy()
             sdf.loc[self._data[col].isna(), col] = None
             sdf.loc[self._data[col].isnull(), col] = None
@@ -3287,14 +3286,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
-                            ge[0] - 0.001,
-                            ge[1] - 0.001,
-                            ge[2] + 0.001,
-                            ge[3] - 0.001,
+                            ge[0],
+                            ge[1],
+                            ge[2],
+                            ge[3],
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:
@@ -3312,14 +3311,14 @@ class GeoAccessor(object):
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
                     if g.type.lower() == "point":
-                        ge = g.geoextent
+                        ge = g.extent
                         gext = (
                             ge[0] - 0.001,
                             ge[1] - 0.001,
                             ge[2] + 0.001,
                             ge[3] - 0.001,
                         )
-                        self._sindex.insert(oid=idx, bbox=gext)
+                        self._sindex.insert(oid=idx, bbox=ge)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
                     if c >= int(l / 4) + 1:
@@ -3591,7 +3590,7 @@ class GeoAccessor(object):
         )
         for f in date_fields:
             # apply function to each column in date_fields
-            df[f] = pd.to_datetime(df[f]).apply(fn)
+            df[f] = pd.to_datetime(df[f]).apply(fn).astype("Int64")
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:

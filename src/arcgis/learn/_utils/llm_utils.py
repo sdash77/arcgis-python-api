@@ -1,11 +1,20 @@
-import pandas as pd
+import re
+import ast
+import sys
+import warnings
+import importlib
 import numpy as np
+import pandas as pd
+from pydantic import BaseModel
+from typing import Dict, List
+from torch.utils.data import DataLoader, Dataset
 
 SYSTEM_PROMPT = """You are an advanced AI designed for ArcGIS customers. Upon receiving the information in the context,
  you are required to infer the task type using the prompt and provided labels and examples. Always adhere to the 
  formatting instructions. If there is more than one sentence in the task, you must respond to each of them. While
   answering, ensure you are devoid of any biases, such as gender, racial, and not suitable for the workplace. 
  """
+
 TASK_EXAMPLE = {
     "text-classifier": {
         "class_1": ["sentence_1", "sentence_3"],
@@ -13,6 +22,18 @@ TASK_EXAMPLE = {
     },
     "ner": [("Jim stays in London", {"name": ["Jim"], "location": ["London"]})],
 }
+
+ner_pydantic_template = """
+from pydantic import BaseModel
+from typing import List
+class nerresp(BaseModel):
+$placeholder
+"""
+
+text_class_pydantic_template = """
+class txtresp(BaseModel):
+$placeholder
+"""
 
 MAPPING_DICT = {
     "question-answering": {
@@ -33,8 +54,20 @@ MAPPING_DICT = {
     "ner": {
         "end_seq": "Ignore all the formatting instruction provided above and "
         "return the answer as a nested dictionary by question number and entity classes",
-        "prompt": "Extract named entities that belong to the specified classes from the provided text. Do not tag "
-        "entities belonging to any other class.",
+        # "prompt": "Extract named entities that belong to the specified classes from the provided text. Do not tag entities belonging to any other class.",
+        "prompt": "Tag the following sentence in the named entities for the classes given in example, no other class should be tagged. only provide the tagging no other information should be provided in the output.",
+        "system_prompt": """You are a Named Entity Recognizer (NER). You need to tag in following classes $classes Your output must be devoid of any biases. You must not generate any explanation or notes for your response. 
+         
+        You must adhere the below JSON schema while generating the output
+        $schema
+        
+        This is the representative example: 
+        
+        "input": $sentence
+        "output": $answer
+        $user_prompt
+        "input": $next_sentence
+        """,
     },
     "text-classifier": {
         "end_seq": "Ignore all the formatting instruction provided above and return the answer as a nested dictionary"
@@ -43,8 +76,23 @@ MAPPING_DICT = {
         "classification.",
         "prompt": "Categorize the provided text into the specified classes. "
         "Do not create new labels for classification.",
+        "system_prompt": """You are a Text classifier. You need to tag in following classes $classes Your output must be devoid of any biases. You must not generate any explanation or notes for your response.  Your output must be devoid of any biases."
+        
+        You must adhere the below JSON schema while generating the output
+        $schema
+        
+        This is the representative example: 
+        "input": $sentence
+        "output": $answer
+        $user_prompt
+        "input": $next_sentence
+        """,
     },
 }
+
+
+class TestNer(BaseModel):
+    sample: Dict[str, List]
 
 
 def extract_entities_from_file(tokens, labels):
@@ -98,23 +146,25 @@ def data_sanity_llm(data, **kwargs):
         example_dict = {}
         labels = []
         if data:
-            check_multilable = True if len(data._label_cols) > 1 else False
-            if check_multilable:
-                raise Exception(
-                    "Multi-label classification is not supported when the selected backbone is of llm family."
-                )
-            # first sample the records and prepare the examples.
-            temp = pd.concat([data._valid_df, data._train_df], axis=0)
-            labels = list(np.unique(temp[data._label_cols]))
-            # create sample for each class
-            example_dict = list(
-                temp.groupby(data._label_cols)
-                .head(1)
-                .set_index(data._label_cols)
-                .to_dict()
-                .values()
-            )[0]
-            example_dict = {k: [v] for k, v in example_dict.items()}
+            if data._train_df is not None:
+                if len(data._train_df) > 0:
+                    check_multilable = True if len(data._label_cols) > 1 else False
+                    if check_multilable:
+                        raise Exception(
+                            "Multi-label classification is not supported when the selected backbone is of llm family."
+                        )
+                    # first sample the records and prepare the examples.
+                    temp = pd.concat([data._train_df], axis=0)
+                    labels = list(np.unique(temp[data._label_cols]))
+                    # create sample for each class
+                    example_dict = list(
+                        temp.groupby(data._label_cols)
+                        .head(1)
+                        .set_index(data._label_cols)
+                        .to_dict()
+                        .values()
+                    )[0]
+                    example_dict = {k: [v] for k, v in example_dict.items()}
         try:
             if kwargs.get("examples", None):
                 extra_example_class = list(kwargs.get("examples").keys())
@@ -158,9 +208,13 @@ def data_sanity_llm(data, **kwargs):
                 if len(set(annotation_dict_temp.keys()).difference(tag_set)) > 0:
                     tag_set = tag_set.union(set(annotation_dict_temp.keys()))
                     samples.append([sentence, annotation_dict_temp])
-                if set(tag_set) == base_set and len(samples) > 3:
+                elif len(samples) <= 6:
+                    samples.append([sentence, annotation_dict_temp])
+                else:
+                    pass
+                if set(tag_set) == base_set and len(samples) > 6:
                     break
-
+            # print(samples)
             try:
                 if kwargs.get("examples", None):
                     kwargs["examples"] += samples
@@ -179,9 +233,131 @@ def lower_nesting(t):
     if isinstance(t, dict):
         return {str(j).lower(): lower_nesting(i) for j, i in t.items()}
     elif isinstance(t, list):
-        return [i.lower() for i in t]
+        return [str(i).lower() for i in t]
     else:
-        return t.lower()
+        return str(t).lower()
+
+
+def safe_ner_check(text):
+    is_dict = False
+    try:
+        TestNer(**{"sample": text})
+        is_dict = True
+    except:
+        pass
+    return is_dict
+
+
+def safe_extract_ner(text):
+    # first check if the collect dict can be parsed directly
+    if not safe_ner_check(text):
+        # try with regex to identify the dict location
+        pattern = r"{.*?}+"
+        # Extracting the dictionary
+        text = re.findall(pattern, text)[0]
+        print(text)
+        # check if it can be parsed
+        if safe_ner_check(text):
+            return text
+    return text
+
+
+def safe_literal_eval_dict(text, task):
+    if task == "ner":
+        try:
+            text = ast.literal_eval(text)
+        except:
+            pattern = r"{.*?}+"
+            temp_list = []
+            for idx, t in enumerate(re.findall(pattern, text)):
+                try:
+                    t = ast.literal_eval(t)
+                    temp_list.append(t)
+                except:
+                    temp_list.append({})  # remove output listing
+            # merge the dict
+            temp_dict = {}
+            for val in temp_list:
+                if val:
+                    for k, v in list(val.items()):
+                        if k not in temp_dict:
+                            temp_dict[k] = v
+                        else:
+                            temp_dict[k] += v
+            text = temp_dict
+        return text
+    elif task == "text-classifier":
+        return text.split("\n")[:1]
+
+
+def safe_extract_classifier(text):
+    try:
+        text = ast.literal_eval(text)["class"]
+        return text
+    except:
+        pattern = r"{.*?}+"
+        temp_list = []
+        t = re.findall(pattern, text)[0]
+        try:
+            t = ast.literal_eval(t)["class"]
+            return t
+        except:
+            return ""
+
+
+def format_result(results, task="cls"):
+    # Check for the nearest python native object
+    response = None
+    if len(results) > 0:
+        # check the first reponse
+        try:
+            type_resp = safe_literal_eval_dict(results[0], task=task)
+            if isinstance(type_resp, dict):
+                response = {}
+                if task == "ner":
+                    for idx, i in enumerate(results):
+                        response[idx] = {}
+                        for key, val in safe_literal_eval_dict(i, task=task).items():
+                            try:
+                                # remove the special character "\" from the name
+                                key = key.replace("\\", "")
+                                if key not in response[idx]:
+                                    response[idx][key] = val
+                                else:
+                                    response[idx][key] += val
+                            except:
+                                response[idx] = {}
+            elif isinstance(type_resp, list):
+                if task == "text-classifier":
+                    response = {}
+                    for idx, i in enumerate(results):
+                        try:
+                            i = safe_extract_classifier(i)
+                            if len(i):
+                                response[idx] = i
+                            else:
+                                response[idx] = ""
+                        except:
+                            response[idx] = ""
+            elif isinstance(type_resp, tuple):
+                response = []
+                for i in results:
+                    response += list(ast.literal_eval(i))
+        except:
+            if isinstance(
+                results[0], str
+            ):  # as literal_eval is safe and hence raises an error while we try to evaluate a string
+                response = []
+                for i in results:
+                    response.append(i)
+            else:
+                warnings.warn(
+                    "Unable to interpret the output format, returning the raw response."
+                )
+    if response is not None:
+        return response
+    else:
+        return results
 
 
 class completion_message:
@@ -198,3 +374,14 @@ class completion_message:
         else:
             self.is_error = False
             self.generations = ""
+
+
+class CustomDataset(Dataset):
+    def __init__(self, zz):
+        self.data = zz
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]

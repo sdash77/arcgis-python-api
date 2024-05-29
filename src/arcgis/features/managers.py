@@ -140,7 +140,62 @@ class AttachmentManager(object):
         size: tuple[int] | list[int] | None = None,
         keywords: str | None = None,
     ) -> int:
-        """"""
+        """
+        The count operation returns the total number of attachments that satisfy
+        the specific criteria entered as arguments to the method. The default
+        count is the number of attachments for all features in the layer.
+
+        =====================   =======================================================
+        **Parameters**          **Description**
+        ---------------------   -------------------------------------------------------
+        where                   Optional String. Clause to specify the set of features
+                                for which to return the attachment count.
+        ---------------------   -------------------------------------------------------
+        attachment_where        Optional String. Clause to specify criteria to apply to
+                                the attachments table for which specific attachments to
+                                include in the count value.
+        ---------------------   -------------------------------------------------------
+        object_ids              Optional List. List of *object_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        global_ids              Optional List. List of *global_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        attachment_types        Optional String. Value specifying the specific format
+                                of attachments to count. See *attachmentTypes* at
+                                the `Query Attachments <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm>`_
+                                page for a list of options to use.
+        ---------------------   -------------------------------------------------------
+        size                    Optional Integer or integer range. Value or values to
+                                to query attachments of a specific size.
+        =====================   =======================================================
+
+        :returns:
+            Integer of total number of attachments.
+
+        .. code-block:: python
+
+            # Usage Example 1: Default
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organizational_profile")
+
+            >>> flyr_item = gis.content.get("<item id>")
+
+            >>> att_mgr = flyr_item.attachments
+            >>> att_mgr.count()
+
+            9
+
+            # Usage Example 2: List of Object Ids:
+            >>> att_mgr.count(object_ids=[1, 3])
+
+            5
+
+            # Usage Example 3: List of Global Ids:
+            >>> att_mgr.count(global_ids=['{D432BA85-8702-437D-B740-C214DDE65846}'])
+
+            2
+        """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
             object_ids = []
@@ -148,8 +203,8 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None:
-            where = ""
+        if where is None and not object_ids and not global_ids:
+            where = "1=1"
         if keywords is None:
             keywords = []
         params: dict[str, Any] = {
@@ -158,7 +213,6 @@ class AttachmentManager(object):
             "attachmentTypes": ",".join(attachment_types),
             "objectIds": ",".join([str(v) for v in object_ids]),
             "globalIds": ",".join([str(v) for v in global_ids]),
-            "definitionExpression": where,
             "attachmentsDefinitionExpression": attachment_where or "",
             "keywords": ",".join([str(v) for v in keywords]),
             "size": size,
@@ -2013,7 +2067,13 @@ class WebHookServiceManager(object):
             params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
-            hook_url = self._url + f"/{resp['globalId']}"
+            if "globalId" in resp:
+                guid = resp.get("globalId")
+            elif "id" in resp:
+                guid = resp.get("id")
+            else:
+                raise Exception(str(resp))
+            hook_url = self._url + f"/{guid}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
             return WebHook(url=resp["url"], gis=self._gis)
@@ -2385,7 +2445,8 @@ class FeatureLayerCollectionManager(_GISResource):
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
-                               JSON object.
+                               JSON object. This parameter is only honored for the ArcGIS Online
+                               platform.
         ==================     ====================================================================
 
         :return: dict | concurrent.futures.Future
@@ -2482,7 +2543,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
             )
             props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
-                new_source.manager.properties["name"]
+                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
             )
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
@@ -2492,9 +2553,13 @@ class FeatureLayerCollectionManager(_GISResource):
             delete_json: dict = {"layers": [], "tables": [{"id": index}]}
             add_json: dict = {"tables": [props]}
         view.manager.delete_from_definition(delete_json)
-        if future:
+        if future and self._gis._is_arcgisonline:
             return view.manager.add_to_definition(add_json, future=True)
         else:
+            if future and self._gis._is_arcgisonline == False:
+                _log.warning(
+                    "Enterprise does not support asynchronous view swap, using synchronous method."
+                )
             return view.manager.add_to_definition(add_json, future=False)
 
     # ----------------------------------------------------------------------
@@ -2658,6 +2723,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
+                    "options": {"dataSourceType": "relational"},
                 }
             ),
             "tags": tags if tags else ",".join(item.tags),
@@ -2864,7 +2930,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         _log.error("Unable to parse the view_tables parameter")
 
-        fs_view.manager.add_to_definition(add_def)
+        if self._gis._is_arcgisonline:
+            fs_view.manager.add_to_definition(add_def, future=True).result()
+        else:
+            fs_view.manager.add_to_definition(add_def, future=False)
+
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
                 vw_lyr.manager.update_definition(
@@ -2919,7 +2989,11 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc = FeatureLayerCollection.fromitem(item)
                 lyr = flc.layers[0]
                 mgr = lyr.manager
-                mgr.update_definition(values)
+                if self._gis._is_arcgisonline:
+                    res = mgr.update_definition(values, future=True).result()
+                else:
+                    res = mgr.update_definition(values)
+
         return item
 
     # ----------------------------------------------------------------------

@@ -16,7 +16,7 @@ dependencies:
 - setuptools
 - widgetsnbextension >=3
 - jupyter_client <=6.1.12
-- keyring>19, <21.8.0
+- keyring>=23.3.0
 - keyrings.alt
 - nbconvert
 - beautifulsoup4

@@ -166,6 +166,24 @@ def _create_output_service(
     return output_service
 
 
+def _check_ga_status(gis):
+    from arcgis import geoanalytics
+
+    if not geoanalytics.is_supported(gis):
+        raise RuntimeError("GeoAnalytics is not supported for this GIS.")
+    try:
+        ga_url = gis.properties.helperServices.geoanalytics.url
+        resp = gis.session.get(ga_url)
+        if resp.status_code == 200:
+            return True
+        else:
+            resp.raise_for_status()
+    except:
+        raise RuntimeError(
+            "The GeoAnalytics service is currently unavailable or invalid."
+        )
+
+
 class GAJob(object):
     """
     Represents a Single GeoAnalytics Job.  The `GAJob` class allows for the asynchronous operation
@@ -220,11 +238,11 @@ class GAJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the elapse time for the Job
         """
-        return self._gpjob.ellapse_time
+        return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
     @property

@@ -7,6 +7,7 @@ import tempfile
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 import pandas as pd
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -242,6 +243,7 @@ test_data = [
 ]
 
 
+@integration_test
 class TestImportTable(unittest.TestCase):
     """Tests the import_table logic"""
 

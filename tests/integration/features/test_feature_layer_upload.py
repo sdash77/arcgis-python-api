@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9705\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -10,6 +6,7 @@ from arcgis.gis import GIS, ContentManager
 from io import StringIO
 import json, uuid
 from arcgis.features._uploads.upload import UploadManager, Upload
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -30,6 +27,7 @@ enable_verbose_logging(__logger__)
 FEATURE_CLASS = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\issue_9705\USA_Major_Cities.zip"
 
 
+@integration_test
 class TestUploadManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

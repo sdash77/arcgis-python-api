@@ -2,16 +2,13 @@
 GIS Connection Testing for Pro and NBAUTH files
 """
 import os
-import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\tests")
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import imp
 import json
 import tempfile
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock
+from utils.decorators import integration_test
 
 
 class ArcPyMock(object):
@@ -46,9 +43,11 @@ except:
 
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
+from utils.decorators import integration_test
 
 ###########################################################################
 @unittest.skipIf(_HAS_ARCPY == False, "No ArcPy, Skipping!")
+@integration_test
 class TestProHomeLogic(unittest.TestCase):
     """Tests the 'home' logic"""
 
@@ -133,6 +132,7 @@ class TestProHomeLogic(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(_HAS_KEYRING == False, "Keyring not setup, Skipping!")
+@integration_test
 class TestHomeNBAUTHLogic(unittest.TestCase):
     """Test the 'home' logic for NBAUTH file"""
 

@@ -15,6 +15,7 @@ from arcgis._impl.common._clone import (
     _get_org_url,
     _ItemCreateException,
 )
+from utils.decorators import integration_test
 
 
 class ClassCustomItemDef(BaseCloneTextItemDefinition):
@@ -111,6 +112,7 @@ class ClassCustomItemDef(BaseCloneTextItemDefinition):
 
 
 @unittest.skip("I work")
+@integration_test
 class TestCloningExtension(unittest.TestCase):
     def test_registry_checker(self):
         """asserts the get of the registry for cloning"""
@@ -139,6 +141,7 @@ class TestCloningExtension(unittest.TestCase):
         assert unregister("Notebook") == False
 
 
+@integration_test
 class TestCustomCloning(unittest.TestCase):
     def setUp(self):
         self._source = GIS(

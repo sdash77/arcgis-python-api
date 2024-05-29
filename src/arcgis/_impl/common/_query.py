@@ -53,10 +53,14 @@ def _common_query(
     time_reference_unknown_client: Optional[bool] = None,
     **kwargs,
 ):
-    raw = kwargs.pop("raw", False)
+    query_3d = kwargs.pop("query_3d", False)
+    raw = False  # default to False
     # get url
-    if hasattr(layer, "_is_3d") and layer._is_3d:
+    # if raw is True it means it came from query 3D layer
+    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
         url = layer._url + "/query3D"
+        raw = True
+    # else query normal
     elif layer._dynamic_layer is None:
         url = layer._url + "/query"
     else:
@@ -104,7 +108,8 @@ def _common_query(
         parameter_values=parameter_values,
         format_3d_objects=format_3d_objects,
         time_reference_unknown_client=time_reference_unknown_client,
-        kwargs=kwargs,
+        query_3d=query_3d,
+        **kwargs,
     )
 
     if not return_all_records or "outStatistics" in params:
@@ -166,6 +171,7 @@ def _create_parameters(
     parameter_values,
     format_3d_objects,
     time_reference_unknown_client,
+    query_3d,
     **kwargs,
 ):
     # create parameters dictionary
@@ -198,8 +204,8 @@ def _create_parameters(
     # add required parameters
     params["where"] = where
 
-    # Add parameters for non 3D layers and for Tables
-    if getattr(layer, "_is_3d", False) or is_layer is False:
+    # Add parameters for all non 3D querying
+    if query_3d is False:
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
         params["returnIdsOnly"] = return_ids_only
@@ -356,7 +362,7 @@ def _query(layer, url, params, raw=False):
             ):
                 if "resultRecordCount" not in params:
                     # assign initial value after first query
-                    params["resultRecordCount"] = 2000
+                    params["resultRecordCount"] = layer.properties.maxRecordCount
                 if "resultOffset" in params:
                     # add the number we found to the offset so we don't have doubles
                     params["resultOffset"] = params["resultOffset"] + len(
@@ -465,7 +471,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeDouble": pd.Float64Dtype(),
             "esriFieldTypeFloat": pd.Float64Dtype(),
             "esriFieldTypeString": pd.StringDtype(),
-            "esriFieldTypeDate": object,
+            "esriFieldTypeDate": "<M8[ns]",
             "esriFieldTypeOID": pd.Int64Dtype(),
             "esriFieldTypeGeometry": object,
             "esriFieldTypeBlob": object,
@@ -474,7 +480,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeGlobalID": pd.StringDtype(),
             "esriFieldTypeXML": object,
             "esriFieldTypeTimeOnly": pd.StringDtype(),
-            "esriFieldTypeDateOnly": object,
+            "esriFieldTypeDateOnly": "<M8[ns]",
             "esriFieldTypeTimestampOffset": object,
             "esriFieldTypeBigInteger": pd.Int64Dtype(),
         }
@@ -591,7 +597,7 @@ def _query_df(layer, url, params, **kwargs):
             df.spatial.renderer = layer.renderer
             df.spatial._meta.source = layer
 
-        return pd.DataFrame([], columns=columns)
+        return pd.DataFrame([], columns=columns).astype(columns)
     sr = None
     if "spatialReference" in result:
         sr = result["spatialReference"]
@@ -606,6 +612,7 @@ def _query_df(layer, url, params, **kwargs):
     df = pd.DataFrame.from_records(data=rows)
     if "SHAPE" in df.columns:
         df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        df.spatial.set_geometry("SHAPE")
     if "fields" in result:
         dtypes = {}
         names = []
@@ -623,9 +630,6 @@ def _query_df(layer, url, params, **kwargs):
                 dfields.append(fld["name"])
     if dtypes:
         df = df.astype(dtypes)
-
-    if "SHAPE" in result:
-        df.spatial.set_geometry("SHAPE")
 
     # set based on layer
     df.spatial.renderer = layer.renderer

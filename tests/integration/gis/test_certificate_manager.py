@@ -4,8 +4,10 @@
 # -------------------------------------------------------------------------------
 import unittest
 from pathlib import Path
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestCertificateMgr(unittest.TestCase):
     def test_certificate_manager(self):
         from arcgis.gis import GIS

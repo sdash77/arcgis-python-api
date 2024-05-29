@@ -1,7 +1,6 @@
-import sys, os
+import os
 import random
 import tempfile
-#sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\src")
 import pandas as pd
 import unittest #pytest,
 import dask.dataframe as dd
@@ -14,7 +13,9 @@ from arcgis.features.geo._dask import (_from_geometry,
                                        GeoDaskSpatialAccessor)
 from arcgis.features.geo import _is_geoenabled
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
+@integration_test
 class TestDaskSpatialOps(unittest.TestCase):
     """tests the spatial operations select, join, overlay"""
 

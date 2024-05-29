@@ -1,7 +1,4 @@
 import sys
-
-sys.path.insert(0, r"<local_path_to_src>")
-
 import os
 import sys
 import json
@@ -19,6 +16,7 @@ from arcgis.geocoding import (
     reverse_geocode,  #
     suggest,
 )  #
+from utils.decorators import integration_test
 
 # gis = GIS(profile='your_online_profile')
 # lyr = gis.content.search("owner:andrew57", "Feature Layer")[0]
@@ -45,6 +43,7 @@ profiles = [
 
 
 ###########################################################################
+@integration_test
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
         import tempfile
@@ -95,6 +94,7 @@ class TestAnalyzeGeocodingInput(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestGeocoder(unittest.TestCase):
     """test the geocoder operations"""
 

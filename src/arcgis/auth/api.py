@@ -198,7 +198,7 @@ class EsriSession:
             self._session.auth = auth
 
         elif auth and cert:
-            self.auth = EsriPKIAuth(
+            self._session.auth = EsriPKIAuth(
                 cert=cert,
                 referer=referer,
                 verify_cert=verify_cert,
@@ -206,16 +206,20 @@ class EsriSession:
                 session=self,
             )
         elif auth is None and cert:
-            self.auth = EsriPKIAuth(
+            self._session.auth = EsriPKIAuth(
                 cert=cert,
                 referer=referer,
                 verify_cert=verify_cert,
                 session=self,
             )
         elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
-            self.auth = EsriWindowsAuth(referer=referer, verify_cert=verify_cert)
+            self._session.auth = EsriWindowsAuth(
+                referer=referer, verify_cert=verify_cert
+            )
         elif HAS_KERBEROS:
-            self.auth = EsriKerberosAuth(referer=self._referer, verify_cert=verify_cert)
+            self._session.auth = EsriKerberosAuth(
+                referer=self._referer, verify_cert=verify_cert
+            )
 
         proxies = kwargs.get("proxies", None)
         if proxies:
@@ -252,7 +256,7 @@ class EsriSession:
                 max_retries=retry,
             )
             self._session.cert = None
-            self.auth = None
+            # self.auth = None
         else:
             adapter = HTTPAdapter(max_retries=retry)
         self._session.mount("http://", adapter)

@@ -5,11 +5,13 @@ from arcgis.gis import GIS
 import datetime
 import re
 
+from utils.decorators import integration_test
 from . import workflowmanager_setup
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 

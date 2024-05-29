@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 proxies = None
 PROFILES = ["your_online_profile"]
@@ -1785,6 +1786,7 @@ data = [
 ]
 
 
+@integration_test
 class TestFeatureLayerDeleteFeatures(unittest.TestCase):
     """
     Tests the FeatureLayer.delete_features operation

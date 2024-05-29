@@ -1903,7 +1903,6 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}, context=
 
 
 def _get_static_catalog_item_resources(request_link, request_params={}, context=None):
-
     if isinstance(request_link, str):
         item_res = _requests.get(request_link, **request_params)
         if item_res.status_code != 200 or item_res.headers.get("content-type") not in [

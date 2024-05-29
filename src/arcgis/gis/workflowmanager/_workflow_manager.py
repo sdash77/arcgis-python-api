@@ -803,16 +803,17 @@ class JobManager:
         """
         Updates a job object by ID
 
-        ===============             ====================================================================
+        =====================       ====================================================================
         **Parameter**               **Description**
-        ---------------             --------------------------------------------------------------------
+        ---------------------       --------------------------------------------------------------------
         job_id                      Required string. ID for the job to update
-        ---------------             --------------------------------------------------------------------
-        update_object               Required dictionary. A dictionary containing the fields and new values to add to the
-                                    job
-        ---------------             --------------------------------------------------------------------
-        allow_running_step_id       Optional string. Allow updating job properties when the specified step is running
-        ===============             ====================================================================
+        ---------------------       --------------------------------------------------------------------
+        update_object               Required dictionary. A dictionary containing the fields and new
+                                    values to add to the job.
+        ---------------------       --------------------------------------------------------------------
+        allow_running_step_id       Optional string. Allow updating job properties when the specified
+                                    step is running
+        =====================       ====================================================================
 
         :return:
             success object

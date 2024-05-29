@@ -6,12 +6,14 @@ import unittest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import aggregate_points
+from utils.decorators import integration_test
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return "".join(random.choice(chars) for _ in range(size))
 
 
+@integration_test
 class TestPassingDictionaries(unittest.TestCase):
     """Tests passing in output names as dictionaries to WebGIS Tools"""
 

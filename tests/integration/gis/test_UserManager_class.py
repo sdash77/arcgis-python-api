@@ -2,11 +2,6 @@
 # Name:        UserManager class tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-
-# Insert path to tests package so relative imports work
-# import sys
-# sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
-
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -15,6 +10,7 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 import os
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -54,6 +50,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_UserManager_portal_builtin(unittest.TestCase):
     """
     Test to check if a UserManager object works with builtin portal

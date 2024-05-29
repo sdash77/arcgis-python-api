@@ -23,23 +23,23 @@ For point feature layers, the following inputs may additonally be used for conve
 .. automodule:: arcgis.features.analysis
 
 aggregate_points
---------------
+----------------
 .. autofunction:: arcgis.features.analysis.aggregate_points
 
 calculate_composite_index
---------------
+-------------------------
 .. autofunction:: arcgis.features.analysis.calculate_composite_index
     
 calculate_density
---------------
+-----------------
 .. autofunction:: arcgis.features.analysis.calculate_density
 
 choose_best_facilities
---------------
+----------------------
 .. autofunction:: arcgis.features.find_locations.choose_best_facilities
 
 connect_origins_to_destinations
---------------
+-------------------------------
 .. autofunction:: arcgis.features.analysis.connect_origins_to_destinations
 
 create_buffers
@@ -47,27 +47,27 @@ create_buffers
 .. autofunction:: arcgis.features.analysis.create_buffers
 
 create_drive_time_areas
---------------
+-----------------------
 .. autofunction:: arcgis.features.analysis.create_drive_time_areas
 
 create_route_layers
---------------
+-------------------
 .. autofunction:: arcgis.features.analysis.create_route_layers
 
 create_viewshed
---------------
+---------------
 .. autofunction:: arcgis.features.analysis.create_viewshed
 
 create_watersheds
---------------
+-----------------
 .. autofunction:: arcgis.features.analysis.create_watersheds
 
 derive_new_locations
---------------
+--------------------
 .. autofunction:: arcgis.features.analysis.derive_new_locations
 
 dissolve_boundaries
---------------
+-------------------
 .. autofunction:: arcgis.features.analysis.dissolve_boundaries
 
 enrich_layer
@@ -79,7 +79,7 @@ extract_data
 .. autofunction:: arcgis.features.analysis.extract_data
 
 find_existing_locations
---------------
+-----------------------
 .. autofunction:: arcgis.features.analysis.find_existing_locations
 
 find_hot_spots
@@ -91,19 +91,23 @@ find_nearest
 .. autofunction:: arcgis.features.analysis.find_nearest
 
 find_point_clusters
---------------
+-------------------
 .. autofunction:: arcgis.features.analysis.find_point_clusters
 
 find_similar_locations
---------------
+----------------------
 .. autofunction:: arcgis.features.analysis.find_similar_locations
 
 find_centroids
 --------------
 .. autofunction:: arcgis.features.analysis.find_centroids
 
+generate_tessellation
+---------------------
+.. autofunction:: arcgis.features.analysis.generate_tessellation
+
 interpolate_points
---------------
+------------------
 .. autofunction:: arcgis.features.analysis.interpolate_points
 
 join_features
@@ -123,17 +127,17 @@ plan_routes
 .. autofunction:: arcgis.features.analysis.plan_routes
 
 summarize_nearby
---------------
+----------------
 .. autofunction:: arcgis.features.analysis.summarize_nearby
 
 summarize_center_and_dispersion
---------------
+-------------------------------
 .. autofunction:: arcgis.features.analysis.summarize_center_and_dispersion
 
 summarize_within
---------------
+----------------
 .. autofunction:: arcgis.features.analysis.summarize_within
 
 trace_downstream
---------------
+----------------
 .. autofunction:: arcgis.features.analysis.trace_downstream

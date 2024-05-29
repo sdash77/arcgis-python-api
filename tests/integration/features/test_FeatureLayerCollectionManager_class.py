@@ -11,6 +11,7 @@ from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import os
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -54,6 +55,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
     """
     Test to check if a FeatureLayerCollectionManager object works with builtin portal
@@ -595,6 +597,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
             self.fail("Error during test: " + str(testException))
 
 
+@integration_test
 class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
     """
     Test to check if a FeatureLayerCollectionManager object works with ArcGIS Online
