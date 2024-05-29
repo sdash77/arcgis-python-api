@@ -1,4 +1,5 @@
 from os import environ, name as os_name
+import sys
 from parameterized import parameterized, parameterized_class
 from unittest import SkipTest
 from .timeout_decorator import (
@@ -12,9 +13,11 @@ from integration.config import get_resource_path
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
-DEFAULT_TIMEOUT_SECONDS = 60
-EXTENDED_TIMEOUT_SECONDS = 300
-MAXIMUM_TIMEOUT_SECONDS = 600
+NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in ("true", "1", "y", "yes")
+
+DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else sys.maxsize
+EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else sys.maxsize
+MAXIMUM_TIMEOUT_SECONDS = 600 if not NO_TIMEOUT else sys.maxsize
 
 
 def timeout(seconds):
@@ -340,6 +343,13 @@ class profiles:
         )
 
     @classproperty
+    def admin_enterprise_and_non_admin_agol(cls):
+        """Run tests for admin enterprise and non-admin agol profiles"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters, cls._enterprise_admin_profile_parameters
+        )
+
+    @classproperty
     def k8s(cls):
         """Run tests for kubernetes profile"""
         return cls._get_profile_parameterized_class(cls._k8s_profile_parameters)
@@ -348,6 +358,23 @@ class profiles:
     def admin_k8s(cls):
         """Run tests for kubernetes admin profile"""
         return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
+
+    @classproperty
+    def all(cls):
+        """Run tests for all 3 profiles (agol, enterprise, k8s)"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters,
+            cls._enterprise_profile_parameters,
+            cls._k8s_profile_parameters,
+        )
+
+    def admin_all(cls):
+        """Run tests for all 3 admin profiles (agol, enterprise, k8s)"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_admin_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+            cls._k8s_admin_profile_parameters,
+        )
 
     # endregion
 
