@@ -5873,7 +5873,7 @@ class Navigation:
             raise ValueError("Links must be a list of Storymap content classes.")
 
         # update the links
-        self._links = [link._node for link in link_list]
+        self._links = [link.node for link in link_list]
         self._story._properties["nodes"][self._node]["data"]["links"] = self._links
 
     # ----------------------------------------------------------------------
