@@ -1,27 +1,39 @@
 #!/bin/bash
 cd src
 
-DEPENDENCY_HOST=http://geosaurus.esri.com
-DEPENDENCY_PATH=build/geosaurus2/linux/py${PY_VER}
-DEPENDENCY_ROOT_URL=$DEPENDENCY_HOST/$DEPENDENCY_PATH
+ARCGIS_VERSION=2.4.0
 
-TRACKING_ENGINE_URL=$DEPENDENCY_ROOT_URL/tracking-engine
-wget -e robots=off -l1 -r -np -nH -R "index.html" $TRACKING_ENGINE_URL -q
-mkdir -p arcgis/learn/_tracking
-cp $DEPENDENCY_PATH/tracking-engine/* arcgis/learn/_tracking/
+# if PY_VER is 3.10, PY_VER_STRIPPED will be 310
+PY_VER_STRIPPED=${PY_VER/.}
 
-KNN_URL=$DEPENDENCY_ROOT_URL/knn
-wget -e robots=off -l1 -r -np -nH -R "index.html" $KNN_URL -q
-cp $DEPENDENCY_PATH/knn/* arcgis/learn/_utils/
-
-NBAUTH_URL=$DEPENDENCY_ROOT_URL/nbauth
-wget -e robots=off -l1 -r -np -nH -R "index.html" $NBAUTH_URL -q
-cp $DEPENDENCY_PATH/nbauth/* arcgis/gis/_impl/
+DEPENDENCY_ROOT_URL=https://esri-forge.python.geocloud.com/_/build/v$ARCGIS_VERSION/linux/py$PY_VER
 
 GRAPH_URL=$DEPENDENCY_ROOT_URL/graph
-wget -e robots=off -l1 -r -np -nH -R "index.html" $GRAPH_URL -q
-cp $DEPENDENCY_PATH/graph/* arcgis/graph/
+GRAPH_DESTINATION=arcgis/graph
+GRAPH_FILE_1=_arcgisknowledge.cpython-$PY_VER_STRIPPED-x86_64-linux-gnu.so
+mkdir -p $GRAPH_DESTINATION
+curl -o $GRAPH_DESTINATION/$GRAPH_FILE_1 $GRAPH_URL/$GRAPH_FILE_1
 
-rm -rf $DEPENDENCY_PATH
+KNN_URL=$DEPENDENCY_ROOT_URL/knn
+KNN_DESTINATION=arcgis/learn/_utils
+KNN_FILE_1=nearest_neighbors.cpython-$PY_VER_STRIPPED-x86_64-linux-gnu.so
+KNN_FILE_2=nearest_neighbors.py
+mkdir -p $KNN_DESTINATION
+curl -o $KNN_DESTINATION/$KNN_FILE_1 $KNN_URL/$KNN_FILE_1
+curl -o $KNN_DESTINATION/$KNN_FILE_2 $KNN_URL/$KNN_FILE_2
+
+NBAUTH_URL=$DEPENDENCY_ROOT_URL/nbauth
+NBAUTH_DESTINATION=arcgis/gis/_impl
+NBAUTH_FILE_1=_decrypt_nbauth.cpython-$PY_VER_STRIPPED-x86_64-linux-gnu.so
+mkdir -p $NBAUTH_DESTINATION
+curl -o $NBAUTH_DESTINATION/$NBAUTH_FILE_1 $NBAUTH_URL/$NBAUTH_FILE_1
+
+TRACKING_ENGINE_URL=$DEPENDENCY_ROOT_URL/tracking-engine
+TRACKING_ENGINE_DESTINATION=arcgis/learn/_tracking
+mkdir -p $TRACKING_ENGINE_DESTINATION
+TRACKING_ENGINE_FILE_1=_track_processor.so
+TRACKING_ENGINE_FILE_2=libTrackingEngine.so
+curl -o $TRACKING_ENGINE_DESTINATION/$TRACKING_ENGINE_FILE_1 $TRACKING_ENGINE_URL/$TRACKING_ENGINE_FILE_1
+curl -o $TRACKING_ENGINE_DESTINATION/$TRACKING_ENGINE_FILE_2 $TRACKING_ENGINE_URL/$TRACKING_ENGINE_FILE_2
 
 $PYTHON setup.py install --conda-install-mode
