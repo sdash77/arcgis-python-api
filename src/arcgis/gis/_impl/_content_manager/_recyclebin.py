@@ -61,7 +61,7 @@ class RecycleItem:
     def restore(self, folder: str) -> _arcgis_gis.Item | None:
         """
         Restores the Item from the recycling bin.
-        
+
         =====================     ==============================================
         **Parameter**              **Description**
         ---------------------     ----------------------------------------------
