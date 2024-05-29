@@ -1365,8 +1365,8 @@ class WorkflowManager:
         """
         try:
             url = "{base}/community/roles/{role}".format(
-                    base=self._url, role=urllib.parse.quote(name), item=self._item.id
-                )
+                base=self._url, role=urllib.parse.quote(name), item=self._item.id
+            )
             return_obj = json.loads(self._gis._con.delete(url, try_json=False))
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
