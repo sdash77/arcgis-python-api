@@ -91,9 +91,8 @@ notebook_json = {
     "nbformat_minor": 2,
 }
 
-
 @integration_test
-@profiles.admin_agol
+@profiles.admin_enterprise_and_agol
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -107,6 +106,11 @@ class TestAGOLNotebookManager(unittest.TestCase):
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
+        if cls.gis._is_agol:
+            notebookRuntimeVersion = "8.0"
+        else:
+            notebookRuntimeVersion = "9.0"
+
         cls._item = cls._gis.content.add(
             {
                 "type": "Notebook",
@@ -114,7 +118,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "8.0",
+                    "notebookRuntimeVersion": notebookRuntimeVersion,
                 },
             },
             data=fp,
@@ -145,15 +149,22 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
         gis = self._gis
         mgr = gis.notebook_server[0]
-        nbm = mgr.notebooksmanager
-        open_result = nbm.open_notebook(
+        if gis._is_agol:
+            nbm = mgr.notebooksmanager
+            open_result = nbm.open_notebook(
             itemid=self._item,
             templateid=None,
             nb_runtimeid=None,
             template_nb=None,
             instance_type=None,
             future=True,
-        )
+            )
+        else:
+            nbm = mgr.notebooks
+            open_result = nbm.open_notebook(
+                itemid=self._item.id,
+                future=True,
+            )
         assert isinstance(open_result, Job)
         assert open_result.result()
 
@@ -163,15 +174,22 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
         gis = self._gis
         mgr = gis.notebook_server[0]
-        nbm = mgr.notebooksmanager
-        open_result = nbm.open_notebook(
+        if gis._is_agol:
+            nbm = mgr.notebooksmanager
+            open_result = nbm.open_notebook(
             itemid=self._item,
             templateid=None,
             nb_runtimeid=None,
             template_nb=None,
             instance_type=None,
             future=False,
-        )
+            )
+        else:
+            nbm = mgr.notebooks
+            open_result = nbm.open_notebook(
+                itemid=self._item.id,
+                future=False,
+            )
 
         assert open_result
 
@@ -196,113 +214,6 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(res, Job)
         # res = res.result()
         assert res.result()
-
-
-@integration_test
-@profiles.admin_enterprise
-class Test_ExecuteNotebookMethod(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        assert cls._item.delete()
-
-    @classmethod
-    def setUpClass(cls):
-        cls._gis = cls.gis
-        runtimes = list_runtimes(gis=cls._gis)
-        runtimes[-1]
-        d = tempfile.gettempdir()
-        fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
-        writer = open(fp, "w")
-        writer.write(json.dumps(notebook_json))
-        writer.close()
-        cls._item = cls._gis.content.add(
-            {
-                "type": "Notebook",
-                "tags": "delete me",
-                "title": f"item_{uuid.uuid4().hex[:6]}",
-                "properties": {
-                    "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "9.0",
-                },
-            },
-            data=fp,
-        )
-        cls._item.update(
-            {
-                "notebookRuntimeName": runtimes[-1]["name"],
-                "notebookRuntimeVersion": runtimes[-1]["version"],
-            }
-        )
-        print("stop")
-
-    def test_open_notebook_future(self):
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        mgr = gis.notebook_server[0]
-        print(mgr)
-        nbm = mgr.notebooks
-        open_result = nbm.open_notebook(
-            itemid=self._item.id,
-            future=True,
-        )
-        assert isinstance(open_result, Job)
-        assert open_result.result()
-
-    def test_open_notebook(self):
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        mgr = gis.notebook_server[0]
-        nbm = mgr.notebooks
-        open_result = nbm.open_notebook(
-            itemid=self._item.id,
-            future=True,
-        )
-
-        assert open_result
-        assert open_result.result()
-        print("stop")
-
-    # @unittest.skip("i work")
-    def test_execute_notebook(self):
-        """tests the AGOL execute notebook method"""
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=False,
-        )
-        assert isinstance(res, dict)
-        assert "jobUrl" in res
-
-    def test_execute_notebook_future(self):
-        """tests the AGOL execute notebook method"""
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=True,
-        )
-        assert isinstance(res, Job)
-        assert res.result()
-
 
 if __name__ == "__main__":
     unittest.main()
