@@ -1,10 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
-
-
-#######################################################################
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
@@ -14,7 +7,7 @@ from arcgis.gis import GIS, User, UserManager
 enable_verbose_logging()
 
 
-@profiles.enterprise_and_agol
+@profiles.admin_enterprise_and_agol
 @integration_test
 class TestFeature(unittest.TestCase):
     def test_user_groups_over_20(self):

@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import extract_data
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = [
     "d3cb37b9636d47888268ca086810bd9b",  # Cougar Habitat
@@ -15,6 +16,7 @@ setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
 
+@integration_test
 class TestExtractData(unittest.TestCase):
     def test_extracting(self):
         # establish gis connection

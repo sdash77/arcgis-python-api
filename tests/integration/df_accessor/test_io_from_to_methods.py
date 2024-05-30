@@ -13,6 +13,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from integration.dino_utils.dino_configs import DinoConfigs
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 ##--------------------------------------------------------------------------
 ##
@@ -47,6 +48,7 @@ qalab_gax_datasets = (
 local_data_path = os.path.dirname(os.path.abspath(__file__))
 
 
+@integration_test
 class TestIOFromToMethods(unittest.TestCase):
 
     def test_chunks(self):
@@ -448,23 +450,4 @@ class TestIOFromToMethods(unittest.TestCase):
     #     print('Can successfully export SeDF to GPD')
 
 if __name__ == "__main__":
-
-    test_inst = TestIOFromToMethods()
-
-    test_inst.test_chunks()
-    test_inst.test_from_layer()
-    if SKIP == False:
-        test_inst.test_from_gpd_df_sanity()
-        test_inst.test_from_gpd_df_verify_crs_gcs_points()
-        test_inst.test_from_gpd_df_verify_crs_pcs_points()
-        test_inst.test_from_gpd_df_verify_crs_gcs_lines()
-        # test_inst.test_from_gpd_df_verify_crs_pcs_lines()
-        test_inst.test_from_gpd_df_verify_crs_gcs_polygons()
-        # test_inst.test_from_gpd_df_verify_crs_pcs_polygons()
-        test_inst.test_from_gpd_df_large_data_points()
-        # test_inst.test_from_gpd_df_massive_3m_points()
-    # test_inst.test_to_layer()  # SKIPPED
-    test_inst.test_export_df_with_invalid_column_names()
-    test_inst.test_sanitize_column_names()
-    test_inst.test_sanitize_column_names_inplace()
-    test_inst.test_sanitize_column_casing_leadnum()
+    unittest.main()

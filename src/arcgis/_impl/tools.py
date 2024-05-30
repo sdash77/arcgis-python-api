@@ -1073,8 +1073,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def calculate_composite_index(
         self,
-        input_layer=None,
-        input_variables=None,
+        input_layer,
+        input_variables,
         index_method=None,
         output_index_reverse=False,
         output_index_min_max=None,
@@ -1103,11 +1103,37 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_variables                             Required list of dictionaries. The variables that will be combined to create the index.
                                                     Provide at least two variables. For each variable, specify the following:
 
-                                                    * `field` is the numeric field from the inputLayer containing the variable. Any records in the field with missing values will not be included in the analysis.
-                                                    * `reverseVariable` specifies whether the values of the variable will be reversed. If no value is specified, the value will be set to False. When True the feature or record that originally had the highest value will have the lowest value, and vice versa. Values will be reversed after scaling. To create an index, variables must be on a compatible scale; reversing some variables may be required to ensure the meaning of low and high values in each variable is consistent.
-                                                    * `weight` is the relative influence of the variable on the index. If each variable should have equal contribution, set the value to 1. Increase or decrease the weight to reflect the relative importance of the variable. For example, if a variable is twice as important as the others, use a weight of 2.
+                                                    * `field` is the numeric field from the inputLayer containing the variable.
+                                                      Any records in the field with missing values will not be included in the analysis.
+                                                    * `reverseVariable` specifies whether the values of the variable will be reversed.
+                                                      If no value is specified, the value will be set to *False*. When *True* the feature
+                                                      or record that originally had the highest value will have the lowest value,
+                                                      and vice versa. Values will be reversed after scaling. To create an index, variables
+                                                      must be on a compatible scale; reversing some variables may be required to ensure
+                                                      the meaning of low and high values in each variable is consistent.
+                                                    * `weight` is the relative influence of the variable on the index. If each
+                                                      variable should have equal contribution, set the value to 1. Increase or decrease
+                                                      the weight to reflect the relative importance of the variable. For example, if a
+                                                      variable is twice as important as the others, use a weight of 2.
 
-                                                    Example: input_variables = [{"field":"median_income", "reverseVariable": True, "weight": 2}, {"field": "pct_uninsured", "reverseVariable": False, "weight": 1}, {"field": "pct_unemployed", "reverseVariable": False, "weight": 1}]
+                                                    .. code-block:: python
+
+                                                        #Example:
+                                                        >>> output = calculate_composite_index(
+                                                                                ...,
+                                                                                input_variables = [
+                                                                                    {"field":"median_income",
+                                                                                     "reverseVariable": True,
+                                                                                     "weight": 2},
+                                                                                    {"field": "pct_uninsured",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1},
+                                                                                    {"field": "pct_unemployed",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1}
+                                                                                    ],
+                                                                                ...,
+                                                                            )
         -------------------------------------       ---------------------------------------------------------
         index_method                                Optional string. The methods that will be used to scale the inputVariables and combine
                                                     the scaled variables to create the index.
@@ -3961,15 +3987,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                     See :ref:`Feature Input<FeatureInput>`.
         -------------------------------------    ------------------------------------------------------------------------------------------------------
-        expressions                              Required dict. There are two types of expressions, attribute and spatial.
+        expressions                              Required list of dicts. There are two types of expressions, attribute and spatial.
 
                                                     Example attribute expression:
 
-                                                    {
+                                                    [{
                                                     "operator": "and",
                                                     "layer": 0,
                                                     "where": "STATUS = 'VACANT'"
-                                                    }
+                                                    }]
 
                                                     **Note**
 
@@ -9371,7 +9397,9 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         if estimate:
             return self._output_name_dict(
-                output_name=output_name, task=task, output_properties=output_properties
+                output_name=output_name,
+                task=task,
+                output_properties=output_properties,
             )
 
         gis = self._gis
@@ -9448,7 +9476,9 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         if estimate:
             return self._output_name_dict(
-                output_name=output_name, task=task, output_properties=output_properties
+                output_name=output_name,
+                task=task,
+                output_properties=output_properties,
             )
 
         gis = self._gis
@@ -10223,7 +10253,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.3.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -11562,7 +11592,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_objects, output_service = self._output_name_dict(
-                output_name=output_objects, task=task, output_properties=kwargs
+                output_name=output_objects,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_objects is None:
@@ -11713,12 +11745,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_cost_raster = self._layer_input(input_cost_raster)
 
         if estimate:
-            output_optimum_network_name, output_optimum_network_service = (
-                self._output_name_dict(
-                    output_name=output_optimum_network_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_optimum_network_name,
+                output_optimum_network_service,
+            ) = self._output_name_dict(
+                output_name=output_optimum_network_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_optimum_network_name is None:
@@ -11784,12 +11817,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 )
 
         if estimate:
-            output_neighbor_network_name, output_neighbor_network_service = (
-                self._output_name_dict(
-                    output_name=output_neighbor_network_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_neighbor_network_name,
+                output_neighbor_network_service,
+            ) = self._output_name_dict(
+                output_name=output_neighbor_network_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_neighbor_network_name is None:
@@ -12007,7 +12041,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
@@ -12963,7 +12999,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, item=item).result()
 
     def list_datastore_content(
-        self, data_store_name=None, filter=None, future=False, estimate=False, **kwargs
+        self,
+        data_store_name=None,
+        filter=None,
+        future=False,
+        estimate=False,
+        **kwargs,
     ):
         """
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
@@ -13521,18 +13562,31 @@ class _RasterAnalysisTools(BaseAnalytics):
         if self._current_version is not None:
             current_version = self._current_version
             if current_version is not None and current_version >= 11.1:
-                gpjob = self._tbx.train_classifier(
-                    input_raster=input_raster,
-                    input_training_sample_json=input_training_sample_json,
-                    classifier_parameters=classifier_parameters,
-                    segmented_raster=segmented_raster,
-                    segment_attributes=segment_attributes,
-                    dimension_value_field=dimension_value_field,
-                    output_ecd_item_name=output_ecd_item_name,
-                    gis=gis,
-                    future=True,
-                    estimate=estimate,
-                )
+                if self._gis._is_agol:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
+                else:
+                    gpjob = self._tbx.train_classifier(
+                        input_raster=input_raster,
+                        input_training_sample_json=input_training_sample_json,
+                        classifier_parameters=classifier_parameters,
+                        segmented_raster=segmented_raster,
+                        segment_attributes=segment_attributes,
+                        dimension_value_field=dimension_value_field,
+                        output_ecd_item_name=output_ecd_item_name,
+                        gis=gis,
+                        future=True,
+                        estimate=estimate,
+                    )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.train_classifier(
                     input_raster=input_raster,
@@ -15160,7 +15214,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
@@ -15345,7 +15401,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_feature_class, output_service = self._output_name_dict(
-                output_name=output_feature_class, task=task, output_properties=kwargs
+                output_name=output_feature_class,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_feature_class is None:
@@ -15560,7 +15618,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if estimate:
             output_polyline_name, output_polyline_service = self._output_name_dict(
-                output_name=output_polyline_name, task=task, output_properties=kwargs
+                output_name=output_polyline_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             if output_polyline_name is None:
@@ -15796,20 +15856,22 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if estimate:
-            output_optimal_lines_name, output_optimal_lines_service = (
-                self._output_name_dict(
-                    output_name=output_optimal_lines_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_optimal_lines_name,
+                output_optimal_lines_service,
+            ) = self._output_name_dict(
+                output_name=output_optimal_lines_name,
+                task=task,
+                output_properties=kwargs,
             )
 
-            output_neighbor_connections_name, output_neighbor_connections_service = (
-                self._output_name_dict(
-                    output_name=output_neighbor_connections_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
+            (
+                output_neighbor_connections_name,
+                output_neighbor_connections_service,
+            ) = self._output_name_dict(
+                output_name=output_neighbor_connections_name,
+                task=task,
+                output_properties=kwargs,
             )
         else:
             folderId = None
@@ -19106,6 +19168,150 @@ class _RasterAnalysisTools(BaseAnalytics):
             region_resolution=region_resolution,
             selection_method=selection_method,
             output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+            estimate=estimate,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def tabulate_area(
+        self,
+        input_zone_raster_or_features,
+        zone_field,
+        input_class_raster_or_features,
+        class_field,
+        analysis_cell_size=None,
+        classes_as_rows=False,
+        output_table_name=None,
+        context=None,
+        future=False,
+        estimate=False,
+        **kwargs,
+    ):
+        task = "TabulateArea"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
+            input_zone_raster_or_features = self._feature_input(
+                input_layer=input_zone_raster_or_features
+            )
+        elif isinstance(input_zone_raster_or_features, Item):
+            input_zone_raster_or_features = {
+                "itemId": input_zone_raster_or_features.itemid
+            }
+        elif input_zone_raster_or_features is not None:
+            input_zone_raster_or_features = self._layer_input(
+                input_layer=input_zone_raster_or_features
+            )
+
+        if isinstance(input_class_raster_or_features, _FEATURE_INPUTS):
+            input_class_raster_or_features = self._feature_input(
+                input_layer=input_class_raster_or_features
+            )
+        elif isinstance(input_class_raster_or_features, Item):
+            input_class_raster_or_features = {
+                "itemId": input_class_raster_or_features.itemid
+            }
+        elif input_class_raster_or_features is not None:
+            input_class_raster_or_features = self._layer_input(
+                input_layer=input_class_raster_or_features
+            )
+
+        if classes_as_rows is not None:
+            if not isinstance(classes_as_rows, bool):
+                raise RuntimeError("classes_as_rows should be of type bool")
+
+        (
+            output_feature_name,
+            output_feature_service,
+        ) = self._set_output_feature(
+            output_name=output_table_name,
+            task=task,
+            output_properties=kwargs,
+            estimate=estimate,
+        )
+
+        gpjob = self._tbx.tabulate_area(
+            input_zone_raster_or_features=input_zone_raster_or_features,
+            zone_field=zone_field,
+            input_class_raster_or_features=input_class_raster_or_features,
+            class_field=class_field,
+            analysis_cell_size=analysis_cell_size,
+            classes_as_rows=classes_as_rows,
+            output_table_name=output_feature_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+            estimate=estimate,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def zonal_geometry_as_table(
+        self,
+        input_zone_raster_or_features,
+        zone_field,
+        analysis_cell_size=None,
+        classes_as_rows=False,
+        output_table_name=None,
+        context=None,
+        future=False,
+        estimate=False,
+        **kwargs,
+    ):
+        task = "ZonalGeometryAsTable"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
+            input_zone_raster_or_features = self._feature_input(
+                input_layer=input_zone_raster_or_features
+            )
+        elif isinstance(input_zone_raster_or_features, Item):
+            input_zone_raster_or_features = {
+                "itemId": input_zone_raster_or_features.itemid
+            }
+        elif input_zone_raster_or_features is not None:
+            input_zone_raster_or_features = self._layer_input(
+                input_layer=input_zone_raster_or_features
+            )
+
+        (
+            output_feature_name,
+            output_feature_service,
+        ) = self._set_output_feature(
+            output_name=output_table_name,
+            task=task,
+            output_properties=kwargs,
+            estimate=estimate,
+        )
+
+        gpjob = self._tbx.zonal_geometry_as_table(
+            input_zone_raster_or_features=input_zone_raster_or_features,
+            zone_field=zone_field,
+            analysis_cell_size=analysis_cell_size,
+            output_table_name=output_feature_name,
             context=context,
             gis=self._gis,
             future=True,

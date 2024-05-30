@@ -5,6 +5,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import summarize_within
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 
 data = [
@@ -116,6 +117,7 @@ setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
 
+@integration_test
 class TestSummarizeWithin(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""

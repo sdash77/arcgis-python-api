@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
 import unittest
 
 import datetime
@@ -95,8 +92,10 @@ geoms = [
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
 from arcgis.features.geo import _io
+from utils.decorators import integration_test
 
 
+@integration_test
 class DataframeSpatialTests(unittest.TestCase):
 
     ##-------------------------------------------------------------------------
@@ -646,82 +645,4 @@ class DataframeSpatialTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
-    test_inst = DataframeSpatialTests()
-
-    print("#######################################################")
-    print("visualize test")
-    test_inst.test_print()
-    print("#######################################################")
-    print("Testing Constructors")
-    test_inst.test_dataframe_constructor()
-    test_inst.test_series_constructor()
-    test_inst.test_dataframe_head()
-    test_inst.test_set_geometry_accessor_series()
-    test_inst.test_set_geometry_accessor_list()
-    test_inst.test_set_geometry_accessor_tuple()
-    test_inst.test_set_geometry_accessor_geo_array()
-    test_inst.test_set_geometry_accessor_string()
-    test_inst.test_set_geometry_accessor_string_not_valid()
-    print("End of Testing Constructors")
-    print("#######################################################")
-
-    print("#######################################################")
-    print("Testing Dataset Properties")
-    test_inst.test_area()
-    test_inst.test_bbox()
-    test_inst.test_centroid()
-    test_inst.test_sr_single()
-    test_inst.test_full_extent()
-    test_inst.test_geometry_type()
-    test_inst.test_true_centroid()
-    print("End of Testing Dataset Properties")
-    print("#######################################################")
-    test_inst.test_import_gis_content()
-    print("#######################################################")
-    print("Testing IO/Data Converstion Operations")
-    test_inst.test_from_df()
-    test_inst.test_from_xy()
-    test_inst.test_geo_interface()
-    test_inst.test__feature_set__()
-    test_inst.test_to_feature_collection()
-    print("End of Testing IO/Data Converstion Operations")
-    print("#######################################################")
-
-    print("#######################################################")
-    print("Testing Package Specific Operations")
-    if HASPYSHP and HASARCPY == False:
-        test_inst.test_to_featureclass_pyshp()
-    if HASARCPY:
-        test_inst.test_to_featureclass_arcpy()
-        test_inst.test_project_as()
-        test_inst.test_from_fc_arcpy_datum_tfm()
-    print("End Testing Package Specific Operations")
-    print("#######################################################")
-
-    print("#######################################################")
-    print("Begin Testing from_featureclass")
-    if HASARCPY:
-        print("++++ Testing ArcPy Import Feature Class")
-        test_inst.test_from_fc_arcpy()
-        print("++++ End Testing ArcPy Import Feature Class")
-    else:
-        print("++++ Skipping ArcPy Test, ArcPy not found")
-    if HASPYSHP:
-        print("++++ Testing pyshp Import Feature Class")
-        test_inst.test_from_fc_pyshp()
-        print("++++ End Testing pyshp Import Feature Class")
-    else:
-        print("++++ Skipping pyshp Test, pyshp not found")
-    if HASFIONA:
-        print("++++ Testing fiona Import Feature Class")
-        test_inst.test_from_fc_fiona()
-        test_inst.test_from_fc_fiona_shp()
-        print("++++ End Testing fiona Import Feature Class")
-    else:
-        print("++++ Skipping fiona Test, fiona not found")
-
-    print("End Testing from_featureclass")
-
-    print("#######################################################")
-    print("DataFrame Accessor Testing Finished")
+    unittest.main()

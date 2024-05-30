@@ -4,6 +4,7 @@ import json
 import time
 import datetime
 import unittest
+from utils.decorators import integration_test
 
 from arcgis.gis import GIS, Item
 
@@ -145,6 +146,7 @@ def _stage_data(gis):
 
 
 ###########################################################################
+@integration_test
 class TestItemCopy(unittest.TestCase):
     """Tests the Copy Method on Item"""
 

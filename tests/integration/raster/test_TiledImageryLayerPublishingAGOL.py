@@ -9,6 +9,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -49,6 +50,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_TiledImageryPublishing(unittest.TestCase):
     """
     Publish Tiled Imagery Layer from local files

@@ -1,8 +1,4 @@
 import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-#
-#  Update the Path to set the test area
 import json
 import os, uuid
 import tempfile
@@ -10,6 +6,7 @@ import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 from arcgis.notebook import list_runtimes
 
 __logger__ = logging.getLogger()
@@ -109,6 +106,7 @@ notebook_json = {
 }
 
 
+@integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -220,6 +218,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert res.result()
 
 
+@integration_test
 class Test_ExecuteNotebookMethod(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):

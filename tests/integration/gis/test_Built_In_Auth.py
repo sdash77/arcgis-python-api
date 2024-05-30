@@ -1,8 +1,10 @@
 import platform
 import unittest
+from utils.decorators import integration_test
 
 if platform.platform().lower().find("windows") > -1:
 
+    @integration_test
     class TestBuiltInAuth(unittest.TestCase):
 
         def test_built_in_auth(self):

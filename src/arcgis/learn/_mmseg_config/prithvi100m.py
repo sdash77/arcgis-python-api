@@ -1,20 +1,3 @@
-import torch, os
-import torch.hub
-from mmcv.utils import load_url
-from collections import OrderedDict
-
-chk = load_url(
-    "https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt"
-)
-hub_dir = torch.hub.get_dir()
-modchkp = OrderedDict(
-    (i, j) for i, j in chk.items() if not (i.startswith("decoder") or i == "mask_token")
-)
-torch.save(modchkp, os.path.join(hub_dir, "checkpoints", "Prithvi_100M_Encoder.pth"))
-
-# model settings
-custom_imports = dict(imports=["arcgis.learn.models._prithvi_archs"])
-
 bands = [0, 1, 2, 3, 4, 5]
 nframes = 3
 
@@ -24,7 +7,7 @@ model = dict(
     frozen_backbone=True,
     backbone=dict(
         type="TemporalViTEncoder",
-        pretrained=os.path.join(hub_dir, "checkpoints", "Prithvi_100M_Encoder.pth"),
+        pretrained="https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M/resolve/main/Prithvi_100M.pt",
         img_size=224,
         patch_size=16,
         num_frames=nframes,

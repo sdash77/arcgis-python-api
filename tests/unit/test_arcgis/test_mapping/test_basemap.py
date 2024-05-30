@@ -1,8 +1,4 @@
-import sys
 import unittest
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
-sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\tests")
 
 gen_input_item_prop = {"title": "title", "snippet": "snippet", "tags": ["tags"]}
 class TestBasemap(unittest.TestCase):

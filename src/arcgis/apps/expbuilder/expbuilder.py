@@ -332,7 +332,10 @@ class WebExperience(object):
                 temp_dict = self._gis._con.get(temp_url, {"f": "json"})
             else:
                 json_path = os.path.join(
-                    os.path.dirname(__file__), "_ref", "templates", "dash.json"
+                    os.path.dirname(__file__),
+                    "_ref",
+                    "templates",
+                    "dash.json",
                 )
                 with open(json_path, "r") as f:
                     temp_dict = json.load(f)
@@ -343,7 +346,8 @@ class WebExperience(object):
                 temp_dict["attributes"] = {"portalUrl": self._gis.url}
             if self._gis._is_agol:
                 exb_version = self._gis._con.get(
-                    "https://experience.arcgis.com/version.json", {"f": "json"}
+                    "https://experience.arcgis.com/version.json",
+                    {"f": "json"},
                 )["exbVersion"]
             else:
                 url = self._gis.url + "/apps/experiencebuilder/version.json"
@@ -814,7 +818,10 @@ class WebExperience(object):
 
         # create a new portal experience using the config
         self._create_new_experience(
-            config=new_config, name=title, gis=gis, item_properties=item_properties
+            config=new_config,
+            name=title,
+            gis=gis,
+            item_properties=item_properties,
         )
         self._local = False
 
@@ -880,8 +887,8 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.3.0",
-        removed_in="3.0.0",
-        current_version="2.3.0",
+        removed_in="2.4.2",
+        current_version="2.4.0",
         details="Pass in the Web Experience item to `gis.content.clone_items()` instead.",
     )
     def clone(self, target, owner, **kwargs):

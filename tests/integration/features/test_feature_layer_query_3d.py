@@ -1,11 +1,9 @@
-import sys
-
-sys.path.insert(0, r"C:\\workspace\\geosaurus\\src")
 import os
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureSet
+from utils.decorators import integration_test
 
 # Needs to be on devext for now
 gis = GIS(profile="your_online_profile", verify_cert=False)
@@ -16,6 +14,7 @@ layer = FeatureLayer(
 )
 
 
+@integration_test
 class TestQuery3DFeatureLayer(unittest.TestCase):
     def test_query_result_offset(self):
         """

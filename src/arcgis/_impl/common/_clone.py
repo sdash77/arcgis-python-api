@@ -129,7 +129,7 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        if self._clone_mapping.get("Item IDs") is not None:
+        if self._clone_mapping["Item IDs"] != {}:
             raise Exception(
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
@@ -3139,123 +3139,104 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         original_feature_service = os.path.dirname(url)
                         original_id = os.path.basename(url)
 
-                        if len(self.view_sources[layer["id"]]) > 1:
-                            new_service = None
-                            for key, value in self._clone_mapping["Services"].items():
-                                if _compare_url(key, original_feature_service):
-                                    new_service = value
-                                    break
+                        new_service = None
+                        for key, value in self._clone_mapping["Services"].items():
+                            if _compare_url(key, original_feature_service):
+                                new_service = value
+                                break
 
-                            # validate admin_layer_info
+                        # validate admin_layer_info
+                        if (
+                            new_service is not None
+                            and "adminLayerInfo" in layer
+                            and "viewLayerDefinition" in layer["adminLayerInfo"]
+                            and "table"
+                            in layer["adminLayerInfo"]["viewLayerDefinition"]
+                        ):
+                            layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                "sourceServiceName"
+                            ] = os.path.basename(os.path.dirname(new_service["url"]))
+                            layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                "sourceLayerId"
+                            ] = new_service["layer_id_mapping"][int(original_id)]
                             if (
-                                new_service is not None
-                                and "adminLayerInfo" in layer
-                                and "viewLayerDefinition" in layer["adminLayerInfo"]
+                                "relatedTables"
+                                in layer["adminLayerInfo"]["viewLayerDefinition"][
+                                    "table"
+                                ]
                             ):
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceServiceName"
-                                ] = os.path.basename(
-                                    os.path.dirname(new_service["url"])
+                                # Update the name of the related table to use the new items name
+                                for related_table in layer["adminLayerInfo"][
+                                    "viewLayerDefinition"
+                                ]["table"]["relatedTables"]:
+                                    name = related_table["sourceServiceName"]
+                                    for k, v in self._clone_mapping["Services"].items():
+                                        if os.path.basename(os.path.dirname(k)) == name:
+                                            related_table["sourceServiceName"] = (
+                                                os.path.basename(
+                                                    os.path.dirname(v["url"])
+                                                )
+                                            )
+                                            if (
+                                                "sourceLayerId" in related_table
+                                                and "layer_id_mapping" in v
+                                                and int(related_table["sourceLayerId"])
+                                                in v["layer_id_mapping"]
+                                            ):
+                                                related_table["sourceLayerId"] = v[
+                                                    "layer_id_mapping"
+                                                ][int(related_table["sourceLayerId"])]
+
+                            admin_layer_info = layer["adminLayerInfo"]
+                            if (
+                                _deep_get(
+                                    admin_layer_info,
+                                    "viewLayerDefinition",
+                                    "table",
                                 )
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceLayerId"
-                                ] = new_service["layer_id_mapping"][int(original_id)]
+                                is not None
+                                and "isMultiServicesView" in layer
+                                and layer["isMultiServicesView"]
+                                and "geometryType" in layer
+                            ):
+                                admin_layer_info["geometryField"]["name"] = (
+                                    admin_layer_info["viewLayerDefinition"]["table"][
+                                        "name"
+                                    ]
+                                    + "."
+                                    + admin_layer_info["geometryField"]["name"]
+                                )
+
+                            if "tableName" in admin_layer_info:
+                                del admin_layer_info["tableName"]
+                            if "xssTrustedFields" in admin_layer_info:
+                                del admin_layer_info["xssTrustedFields"]
+                            if (
+                                "viewLayerDefinition" in admin_layer_info
+                                and "table" in admin_layer_info["viewLayerDefinition"]
+                            ):
+                                if (
+                                    "sourceId"
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
+                                ):
+                                    del admin_layer_info["viewLayerDefinition"][
+                                        "table"
+                                    ]["sourceId"]
                                 if (
                                     "relatedTables"
-                                    in layer["adminLayerInfo"]["viewLayerDefinition"][
-                                        "table"
-                                    ]
-                                ):
-                                    # Update the name of the related table to use the new items name
-                                    for related_table in layer["adminLayerInfo"][
-                                        "viewLayerDefinition"
-                                    ]["table"]["relatedTables"]:
-                                        name = related_table["sourceServiceName"]
-                                        for k, v in self._clone_mapping[
-                                            "Services"
-                                        ].items():
-                                            if (
-                                                os.path.basename(os.path.dirname(k))
-                                                == name
-                                            ):
-                                                related_table["sourceServiceName"] = (
-                                                    os.path.basename(
-                                                        os.path.dirname(v["url"])
-                                                    )
-                                                )
-                                                if (
-                                                    "sourceLayerId" in related_table
-                                                    and "layer_id_mapping" in v
-                                                    and int(
-                                                        related_table["sourceLayerId"]
-                                                    )
-                                                    in v["layer_id_mapping"]
-                                                ):
-                                                    related_table["sourceLayerId"] = v[
-                                                        "layer_id_mapping"
-                                                    ][
-                                                        int(
-                                                            related_table[
-                                                                "sourceLayerId"
-                                                            ]
-                                                        )
-                                                    ]
-
-                                admin_layer_info = layer["adminLayerInfo"]
-                                if (
-                                    _deep_get(
-                                        admin_layer_info,
-                                        "viewLayerDefinition",
-                                        "table",
-                                    )
-                                    is not None
-                                    and "isMultiServicesView" in layer
-                                    and layer["isMultiServicesView"]
-                                    and "geometryType" in layer
-                                ):
-                                    admin_layer_info["geometryField"]["name"] = (
+                                    in admin_layer_info["viewLayerDefinition"]["table"]
+                                    and len(
                                         admin_layer_info["viewLayerDefinition"][
                                             "table"
-                                        ]["name"]
-                                        + "."
-                                        + admin_layer_info["geometryField"]["name"]
+                                        ]["relatedTables"]
                                     )
-
-                                if "tableName" in admin_layer_info:
-                                    del admin_layer_info["tableName"]
-                                if "xssTrustedFields" in admin_layer_info:
-                                    del admin_layer_info["xssTrustedFields"]
-                                if (
-                                    "viewLayerDefinition" in admin_layer_info
-                                    and "table"
-                                    in admin_layer_info["viewLayerDefinition"]
+                                    > 0
                                 ):
-                                    if (
-                                        "sourceId"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                    ):
-                                        del admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]["sourceId"]
-                                    if (
-                                        "relatedTables"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                        and len(
-                                            admin_layer_info["viewLayerDefinition"][
-                                                "table"
-                                            ]["relatedTables"]
-                                        )
-                                        > 0
-                                    ):
-                                        for related_table in admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]["relatedTables"]:
-                                            if "sourceId" in related_table:
-                                                del related_table["sourceId"]
+                                    for related_table in admin_layer_info[
+                                        "viewLayerDefinition"
+                                    ]["table"]["relatedTables"]:
+                                        if "sourceId" in related_table:
+                                            del related_table["sourceId"]
 
                         else:
                             for key, value in self._clone_mapping["Services"].items():
@@ -4069,15 +4050,23 @@ class _WebMapDefinition(_TextItemDefinition):
                 feature_collections = []
                 map_service_layers = []
                 vector_tile_layers = []
+
+                def _append_layer(layer_list, layer):
+                    if "layerType" in layer:
+                        if (
+                            layer["layerType"] == "ArcGISFeatureLayer"
+                            and "url" in layer
+                            and layer["url"] is not None
+                        ):
+                            layer_list.append(layer)
+                        elif layer["layerType"] == "GroupLayer":
+                            for sublayer in layer["layers"]:
+                                _append_layer(layer_list, sublayer)
+                    return layer_list
+
                 if "operationalLayers" in webmap_json:
-                    layers += [
-                        layer
-                        for layer in webmap_json["operationalLayers"]
-                        if "layerType" in layer
-                        and layer["layerType"] == "ArcGISFeatureLayer"
-                        and "url" in layer
-                        and layer["url"] is not None
-                    ]
+                    for layer in webmap_json["operationalLayers"]:
+                        layers = _append_layer(layers, layer)
                     feature_collections += [
                         layer
                         for layer in webmap_json["operationalLayers"]

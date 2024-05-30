@@ -6,6 +6,7 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item, ContentManager, User, UserManager
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -30,6 +31,7 @@ FILE_PATH = (
 
 
 @unittest.skipIf(os.path.isfile(FILE_PATH) == False, "Missing Test Data")
+@integration_test
 class TestContingentValues(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

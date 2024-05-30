@@ -288,6 +288,24 @@ class Folder:
         params = {
             "f": "json",
         }
+        if permanent:
+            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            rsupport = self._gis.properties.recycleBinSupported
+            renabled = (
+                self._gis.properties.recycleBinEnabled
+                if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
+                else False
+            )
+            if (
+                (self._gis._is_agol or self._gis.version > [2023, 2])
+                and rsupport
+                and renabled
+            ):
+                params["permanentDelete"] = True
+            else:
+                logger.warning(
+                    "Recycle bin not enabled on this organization. Permanent delete parameter ignored."
+                )
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
@@ -295,7 +313,7 @@ class Folder:
             return True
         else:
             logger.warning(
-                f"Could not erase the folder: {self.name}. Recieved the error: {data}."
+                f"Could not erase the folder: {self.name}. Received the error: {data}."
             )
             return False
 
@@ -623,6 +641,12 @@ class Folder:
                 for key, value in item_properties.to_dict().items()
                 if not value is None
             }
+            if "overwrite" in item_properties and item_properties["overwrite"] == True:
+
+                logger.warning(
+                    "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
+                )
+            item_properties.pop("overwrite", None)
         if not file:
             stream = False
         elif file and item_id:
@@ -886,7 +910,9 @@ class Folders:
             >>> h2o_folder
                 < Folder: Water_Resources Owner: h2o_project_user>
         """
-        if folder in ["/", "root", None, "Root Folder"]:
+        if folder is None:
+            folder = "Root Folder"
+        elif folder.lower() in ["/", "root", "Root Folder", "root folder"]:
             folder = "Root Folder"
         for fld in self.list(owner=owner):
             if (

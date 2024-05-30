@@ -1,16 +1,17 @@
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Image, Timeline, Text
+from utils.decorators import integration_test, profiles
 
 
+@integration_test
+@profiles.enterprise_and_agol
 class TestSideCar(unittest.TestCase):
     """Test Story Map Timeline content"""
 
     def test_create_timeline(self):
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         timeline = Timeline("single-side")
 
@@ -26,7 +27,7 @@ class TestSideCar(unittest.TestCase):
 
     def add_content_to_timeline(self):
         print("Testing adding")
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         timeline = Timeline("single-side")
 

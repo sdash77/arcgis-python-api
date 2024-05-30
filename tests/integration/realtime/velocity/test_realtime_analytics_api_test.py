@@ -2,6 +2,7 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.realtime_analytics_manager import RealTimeAnalytics
+from utils.decorators import integration_test
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -17,6 +18,7 @@ except:
 
 
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
+@integration_test
 class TestRealTimeAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     realtime_analytics = velocity.realtime_analytics

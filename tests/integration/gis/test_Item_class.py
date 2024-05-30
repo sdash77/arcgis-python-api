@@ -10,6 +10,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 from configparser import ConfigParser
 import datetime
@@ -56,6 +57,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_Item_portal_builtin(unittest.TestCase):
     """
     Test to check if a Item object works with builtin portal
@@ -1337,6 +1339,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@integration_test
 class Test_Item_arcgis_online(unittest.TestCase):
     """
     Test to check if a Item object works with ArcGIS Online org
@@ -2952,6 +2955,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@integration_test
 class Test_Item_arcgis_kubernetes(unittest.TestCase):
     """
     Test to check if a Item object works with ArcGIS Online org

@@ -1,16 +1,14 @@
-import sys
 import types
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7160\src")
-
 import unittest
 from arcgis.gis import GIS
 from arcgis.geoprocessing import GPService, GPTask, GPJob
+from utils.decorators import integration_test
 
 SYNC_URL = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer"
 ASYNC_URL = "https://sampleserver5.arcgisonline.com/arcgis/rest/services/911CallsHotspot/GPServer"
 
 
+@integration_test
 class TestGPService(unittest.TestCase):
     """
     Tests the Geoprocessing Service Parent.
@@ -39,6 +37,7 @@ class TestGPService(unittest.TestCase):
         assert gp._tasks is None
 
 
+@integration_test
 class TestGPServiceInfo(unittest.TestCase):
     def test_info(self):
         """tests that the `info`"""
@@ -61,6 +60,7 @@ class TestGPServiceInfo(unittest.TestCase):
         assert gp.info.thumbnail
 
 
+@integration_test
 class TestGPTask(unittest.TestCase):
     """
     Tests a single Geoprocessing Service Task.

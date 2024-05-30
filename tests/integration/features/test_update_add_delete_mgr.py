@@ -9,6 +9,7 @@ from arcgis.geometry import Geometry
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features.managers import FeatureLayerManager, FeatureLayerCollectionManager
+from utils.decorators import integration_test
 
 geoms = [
     Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}}),
@@ -60,6 +61,7 @@ geoms = [
 ]
 
 
+@integration_test
 class TestAddUpdateDeleteDef(unittest.TestCase):
     """
     Tests the Add, Update and Delete from Definitions

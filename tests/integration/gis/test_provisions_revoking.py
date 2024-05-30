@@ -1,8 +1,10 @@
 import uuid
 import unittest
 from arcgis.gis import GIS, UserManager
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestLicenseProvisions(unittest.TestCase):
     def test_assign_provisions(self):
         """tests assign provision"""

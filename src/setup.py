@@ -71,7 +71,6 @@ else:
         "cryptography",
         "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
-        "jupyter-client <=6.1.12",
         "pandas >=2.0.0,<2.2.0",
         "numpy >=1.21.6,<2",
         "matplotlib",
@@ -84,7 +83,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.31.0,<3",
+        "requests >=2.30.0,<2.32.0",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
@@ -221,7 +220,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "3"
+    MINOR = "4"
     try:
         import os
 

@@ -1208,8 +1208,6 @@ class ArcGISModel(object):
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
-        elif getattr(self, "model_type", False) == "SR3":
-            model_params = {"backbone": "SR3", "backend": self._backend}
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:

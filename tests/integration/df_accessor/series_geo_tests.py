@@ -1,9 +1,4 @@
-import sys
 import unittest
-
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
-
 from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
@@ -11,6 +6,7 @@ import pandas as pd
 from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
+from utils.decorators import integration_test
 
 try:
     HASARCPY = True
@@ -95,6 +91,7 @@ MIXED_GEOMS = GeoArray(geoms)
 ##--------------------------------------------------------------------------
 ## Creation Tests
 ##--------------------------------------------------------------------------
+@integration_test
 class SeriesGeoTests(unittest.TestCase):
 
     def test_series_gen(selef):
@@ -591,6 +588,4 @@ class SeriesGeoTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()
-    print("series tests finished")

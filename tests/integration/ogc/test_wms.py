@@ -4,10 +4,12 @@ import unittest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import WMSLayer
+from utils.decorators import integration_test
 
 wm_url = "http://ows.mundialis.de/services/service"
 
 
+@integration_test
 class TestWMSLayer(unittest.TestCase):
     """Tests working with a WMS Layer"""
 

@@ -92,7 +92,10 @@ def set_segmentor_parms(data, cfg, **kwargs):
                 class_weight if class_weight else [1.0] * data.c
             ) + [0.1]
         else:
-            cfg.model.decode_head.loss_decode.class_weight = class_weight
+            if cfg.model.decode_head.loss_decode.type == "DiceLoss":
+                pass
+            else:
+                cfg.model.decode_head.loss_decode.class_weight = class_weight
 
     if hasattr(cfg.model, "auxiliary_head"):
         if isinstance(cfg.model.auxiliary_head, list):
@@ -101,7 +104,10 @@ def set_segmentor_parms(data, cfg, **kwargs):
                 aux_head.loss_decode.class_weight = class_weight
         else:
             cfg.model.auxiliary_head.num_classes = data.c
-            cfg.model.auxiliary_head.loss_decode.class_weight = class_weight
+            if cfg.model.auxiliary_head.loss_decode.type == "DiceLoss":
+                pass
+            else:
+                cfg.model.auxiliary_head.loss_decode.class_weight = class_weight
     if cfg.model.backbone.type == "CGNet" and getattr(data, "_is_multispectral", False):
         cfg.model.backbone.in_channels = len(data._extract_bands)
 

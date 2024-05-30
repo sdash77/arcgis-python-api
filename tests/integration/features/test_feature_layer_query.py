@@ -1,10 +1,8 @@
-import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 gis = GIS(profile="your_online_profile", verify_cert=False)
 
@@ -33,6 +31,7 @@ layer = pitem.layers[0]
 print(layer)
 
 
+@integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
     def test_query_count_only(self):
         """ "

@@ -1,15 +1,14 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import time
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
+from utils.decorators import integration_test
 from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestTransferParcels(unittest.TestCase):
     """Tests the Transfer Parcel function from the parcel fabric SOE"""
 

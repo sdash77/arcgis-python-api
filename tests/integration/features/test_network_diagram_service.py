@@ -1,12 +1,14 @@
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._network_diagram import NetworkDiagramManager, Diagram
+from utils.decorators import integration_test
 
 gis = GIS(
     "https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109", verify_cert=False
 )
 
 
+@integration_test
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 

@@ -6,6 +6,7 @@ import arcgis
 from arcgis.gis import GIS
 from arcgis.gis._impl._datastores import PortalDataStore
 from arcgis.gis._impl._jb import StatusJob
+from utils.decorators import integration_test
 
 try:
     gis = GIS(
@@ -18,6 +19,7 @@ except:
 
 
 @unittest.skipIf(SKIPTEST, "Could not connect to test server")
+@integration_test
 class TestPortalDataStore1081(unittest.TestCase):
     """
     Tests the 10.7/10.7.1/10.8.1 functionality for Portal Datastores

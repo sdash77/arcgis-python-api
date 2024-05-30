@@ -2,10 +2,12 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.gis.server.catalog import ServicesDirectory
 from arcgis.gis._impl._profile import ServerProfileManager
+from utils.decorators import integration_test
 
 PROFILES = ["your_enterprise_profile"]
 
 
+@integration_test
 class TestServerProfileSD(unittest.TestCase):
     """Tests the server profile"""
 

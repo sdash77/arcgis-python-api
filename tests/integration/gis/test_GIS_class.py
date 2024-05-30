@@ -7,6 +7,7 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -45,6 +46,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_GIS_ago(unittest.TestCase):
     """
     Test to check if a GIS object can be created with AGO
@@ -131,6 +133,7 @@ class Test_GIS_ago(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
+@integration_test
 class Test_GIS_portal(unittest.TestCase):
     """
     Test to check if a GIS object can be created with Portal

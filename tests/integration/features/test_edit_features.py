@@ -4,6 +4,7 @@ from pandas import Timestamp
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from arcgis.features import Feature, FeatureSet, FeatureLayer
+from utils.decorators import integration_test
 
 ###########################################################################
 test_data = {
@@ -3300,6 +3301,7 @@ test_data = {
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestFeatureLayerEditFeatures(unittest.TestCase):
     """Tests the FeatureLayer.edit_features method"""
 

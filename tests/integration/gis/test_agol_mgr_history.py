@@ -1,14 +1,11 @@
 import sys
-
-#
-#  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_issue_10450\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 import datetime as _dt
 import os
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -28,6 +25,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestAGOLHistory(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

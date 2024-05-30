@@ -8,6 +8,7 @@ from pandas import Timestamp
 from arcgis.gis import GIS
 import arcgis.geoanalytics
 from arcgis.geoanalytics.manage_data import copy_to_data_store
+from utils.decorators import integration_test
 
 try:
     url = "https://gplinux.esri.com/portal"
@@ -20,6 +21,7 @@ except:
     SKIP_TESTS = True
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, reason="Cannot connect to the GIS")
+@integration_test
 class TestIssue1224BDSPrevention(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_bsd_item_error_raised(self):

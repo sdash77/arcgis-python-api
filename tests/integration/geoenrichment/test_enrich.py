@@ -1,6 +1,3 @@
-import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from typing import Union, Iterable
 
@@ -12,6 +9,7 @@ from arcgis.geometry import Point
 from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
+from utils.decorators import integration_test
 
 from .configtest import (
     does_not_raise,
@@ -223,6 +221,7 @@ def enrich_geometry_list_check(
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
+@integration_test
 class TestEnrichLocal(unittest.TestCase):
     def setUp(self):
         self.usa_agol_inst = usa_agol()
@@ -451,6 +450,7 @@ class TestEnrichLocal(unittest.TestCase):
         self.assertTrue(pro_at_least_version("3.0.3"))
 
 
+@integration_test
 class TestEnrichOnline(unittest.TestCase):
     def setUp(self):
         self.usa_agol_inst = usa_agol()
