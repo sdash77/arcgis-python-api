@@ -3409,13 +3409,14 @@ class TestWorkflowManager(unittest.TestCase):
         template = {
             "template_name": "Email Template",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make an email template!",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
         }
 
         # Act
@@ -3443,25 +3444,27 @@ class TestWorkflowManager(unittest.TestCase):
         template = {
             "template_name": "Email Template",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make an email template!",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
         }
 
         template_two = {
             "template_name": "Email Template 2",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"NEW EMAIL BODY",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "NEW BODY",
+                "attachmentSelection": "None",
+            },
         }
 
         # Act
@@ -3476,7 +3479,7 @@ class TestWorkflowManager(unittest.TestCase):
             "email",
             "Ef42tu_QQMS-IgZc7pOPnQ",
             "NEW NAME",
-            template_two["template_details"],
+            {"body": "NEW EMAIL BODY"},
         )
         testing = self.connection.workflow_manager.get_template(
             "email", "Ef42tu_QQMS-IgZc7pOPnQ"
@@ -3486,7 +3489,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertEqual(actual, True, "Incorrect size")
         self.assertEqual(testing.template_name, "NEW NAME", "Incorrect size")
         self.assertEqual(
-            "NEW EMAIL BODY" in testing.template_details, True, "Incorrect size"
+            "NEW EMAIL BODY" in testing.template_details["body"], True, "Incorrect size"
         )
 
         self.connection.workflow_manager.delete_template(
@@ -3498,13 +3501,14 @@ class TestWorkflowManager(unittest.TestCase):
         template = {
             "template_name": "Email Template",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make an email template!",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
         }
 
         self.connection.workflow_manager.create_template(
@@ -3531,13 +3535,14 @@ class TestWorkflowManager(unittest.TestCase):
         template = {
             "template_name": "Email Template",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make an email template!",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
         }
 
         # Act
@@ -3568,13 +3573,14 @@ class TestWorkflowManager(unittest.TestCase):
         template = {
             "template_name": "Email Template",
             "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-            "template_details": '{"to":["user@esri.com"],'
-            + '"cc":["boss@esri.com"],'
-            + '"bcc":["supervisor@esri.com"],'
-            + '"subject":"Workflow Manager Templates",'
-            + '"body":"Look how easy it is to make an email template!",'
-            + '"attachmentSelection":"None",'
-            + '"attachmentFolder":null }',
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
         }
 
         # Act

@@ -2043,7 +2043,7 @@ class WorkflowManager:
             )["templates"]
 
             return [
-                Template(template_dict, self._gis, self._url)
+                self.get_template(template_type, template_dict["templateId"])
                 for template_dict in template_list
             ]
         except:
@@ -2090,7 +2090,13 @@ class WorkflowManager:
         try:
             url = f"{self._url}/templates/{template_type}/{template_id}"
             template_dict = self._gis._con.get(url, {})
-            return Template(template_dict, self._gis, url)
+            return Template(
+                template_dict["templateName"],
+                template_dict["templateId"],
+                template_dict["templateDetails"],
+                self._gis,
+                url,
+            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -2116,7 +2122,7 @@ class WorkflowManager:
             url = f"{self._url}/templates/{template_type}/{template_id}"
             return_obj = json.loads(self._gis._con.delete(url, try_json=False))
             if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
+                raise Exception(return_obj["error"].get("message"))
             elif "success" in return_obj:
                 return return_obj["success"]
             return_obj = {
@@ -2149,7 +2155,7 @@ class WorkflowManager:
         -----------------     --------------------------------------------------------------------
         template_name         Required string. The new name to be given to the template
         -----------------     --------------------------------------------------------------------
-        template_details      Required string. The new information to be stored in the template
+        template_details      Required dict. The new information to be stored in the template
         =================     ====================================================================
 
         :return:
@@ -2163,26 +2169,27 @@ class WorkflowManager:
             wm = WorkflowManager(wf_item)
 
             # update the template object
-            details = { \"to\":[\"user@esri.com\"],
-                         \"cc\":[\"boss@esri.com\"],
-                         \"bcc\":[\"supervisor@esri.com\"],
-                         \"subject\":\"Workflow Manager Templates\",
-                         \"body\":\"Look how easy it is to make an email template!\",
-                         \"attachmentSelection\":\"None\",
-                         \"attachmentFolder\":null }
-            details_str = json.dumps(details)
+            details = { "to":["user@esri.com"],
+                         "cc":["boss@esri.com"],
+                         "bcc":["supervisor@esri.com"],
+                         "subject": "Workflow Manager Templates",
+                         "body": "Look how easy it is to make an email template!",
+                         "attachmentSelection":"None" }
 
             wm.update_template(template_type="email",
                                template_id='Ef42tu_QQMS-IgZc7pOPnQ'
                                template_name="Email Template",
-                               template_details=details_str)
+                               template_details=details)
             >> True  # returns True if updated successfully
         """
         try:
+            details = self.get_template(template_type, template_id).template_details
+            details = {**details, **template_details}
+            details_str = json.dumps(details)
             obj = {
                 "templateId": template_id,
                 "templateName": template_name,
-                "templateDetails": template_details,
+                "templateDetails": details_str,
             }
             url = f"{self._url}/templates/{template_type}/{template_id}"
             return_obj = json.loads(
@@ -2195,7 +2202,7 @@ class WorkflowManager:
                 )
             )
             if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
+                raise Exception(return_obj["error"].get("message"))
             elif "success" in return_obj:
                 return return_obj["success"]
             return_obj = {
@@ -2211,7 +2218,7 @@ class WorkflowManager:
         self,
         template_type: str,
         template_name: str,
-        template_details: str,
+        template_details: dict,
         template_id: Optional[str] = None,
     ):
         """
@@ -2226,7 +2233,7 @@ class WorkflowManager:
         -----------------     --------------------------------------------------------------------
         template_name         Required string. The new name to be given to the template
         -----------------     --------------------------------------------------------------------
-        template_details      Required string. The new information to be stored in the template
+        template_details      Required dict. The new information to be stored in the template
         -----------------     --------------------------------------------------------------------
         template_id           Optional string. The id of the template to be created
         =================     ====================================================================
@@ -2242,22 +2249,21 @@ class WorkflowManager:
             wm = WorkflowManager(wf_item)
 
             # create the template object
-            details = { \"to\":[\"user@esri.com\"],
-                         \"cc\":[\"boss@esri.com\"],
-                         \"bcc\":[\"supervisor@esri.com\"],
-                         \"subject\":\"Workflow Manager Templates\",
-                         \"body\":\"Look how easy it is to make an email template!\",
-                         \"attachmentSelection\":\"None\",
-                         \"attachmentFolder\":null }
-            details_str = json.dumps(details)
+            details = { "to":["user@esri.com"],
+                         "cc":["boss@esri.com"],
+                         "bcc":["supervisor@esri.com"],
+                         "subject":"Workflow Manager Templates",
+                         "body":"Look how easy it is to make an email template!",
+                         "attachmentSelection":"None" }
 
-            wm.create_template(template_type="email", template_name="Email Template", template_details=details_str)
+            wm.create_template(template_type="email", template_name="Email Template", template_details=details)
             >> Ef42tu_QQMS-IgZc7pOPnQ  # returns Template ID if created successfully
         """
         try:
+            details_str = json.dumps(template_details)
             obj = {
                 "templateName": template_name,
-                "templateDetails": template_details,
+                "templateDetails": details_str,
             }
             if template_id is not None:
                 obj["templateId"] = template_id
@@ -2273,7 +2279,7 @@ class WorkflowManager:
                 )
             )
             if "error" in return_obj:
-                self._gis._con._handle_json_error(return_obj["error"], 0)
+                raise Exception(return_obj["error"].get("message"))
             elif "success" in return_obj:
                 return return_obj["success"]
             return return_obj
@@ -2370,9 +2376,12 @@ class Template(object):
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
-    def __init__(self, init_data, gis=None, url=None):
-        for key in init_data:
-            setattr(self, _camelCase_to_underscore(key), init_data[key])
+    def __init__(
+        self, template_name, template_id, template_details, gis=None, url=None
+    ):
+        self.template_name = template_name
+        self.template_id = template_id
+        self.template_details = json.loads(template_details)
         self._gis = gis
         self._url = url
 
