@@ -4517,7 +4517,10 @@ def delete_image_collection(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.delete_image_collection(
-        image_collection=image_collection, future=future, estimate=estimate, **kwargs
+        image_collection=image_collection,
+        future=future,
+        estimate=estimate,
+        **kwargs,
     )
 
 
@@ -4686,112 +4689,6 @@ def _calculate_travel_cost(
         allocation_field=allocation_field,
         future=future,
         estimate=estimate,
-        **kwargs,
-    )
-
-
-@deprecated(
-    deprecated_in="1.8.1",
-    details="Please use arcgis.raster.analytics.optimal_region_connections instead. ",
-)
-def optimum_travel_cost_network(
-    input_regions_raster,
-    input_cost_raster,
-    output_optimum_network_name: Optional[str] = None,
-    output_neighbor_network_name: Optional[str] = None,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png
-
-    Calculates the optimum cost network from a set of input regions.
-
-    ====================================     ====================================================================
-    **Parameter**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    input_regions_raster                     Required Imagery Layer object. The layer that defines the regions to find the optimum travel cost netork for.
-                                             The layer can be raster or feature.
-    ------------------------------------     --------------------------------------------------------------------
-    input_cost_raster                        Required Imagery Layer object. A raster defining the impedance or cost to
-                                             move planimetrically through each cell.
-    ------------------------------------     --------------------------------------------------------------------
-    output_optimum_network_name              Optional. If not provided, a feature layer is created by the method and used as the output.
-                                             You can pass in an existing feature layer Item from your GIS to use that instead.
-                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
-                                             A RuntimeError is raised if a service by that name already exists
-    ------------------------------------     --------------------------------------------------------------------
-    output_neighbor_network_name             Optional. This is the name of the output neighbour network feature layer that will be created.
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution.
-
-                                             context parameter overwrites values set through arcgis.env parameter
-
-                                             This function has the following settings:
-
-                                             - Extent (extent): A bounding box that defines the analysis area.
-
-                                               Example:
-
-                                                    {"extent": {"xmin": -122.68,
-                                                    "ymin": 45.53,
-                                                    "xmax": -122.45,
-                                                    "ymax": 45.6,
-                                                    "spatialReference": {"wkid": 4326}}}
-
-                                             - Output Spatial Reference (outSR): The output raster will be
-                                               projected into the output spatial reference.
-
-                                               Example:
-
-                                                    {"outSR": {spatial reference}}
-
-                                             - Parallel Processing Factor (parallelProcessingFactor): controls
-                                               Raster Processing (CPU) service instances.
-
-                                               Example:
-
-                                               Syntax example with a specified number of processing instances:
-
-                                                    {"parallelProcessingFactor": "2"}
-
-                                               Syntax example with a specified percentage of total
-                                               processing instances:
-
-                                                    {"parallelProcessingFactor": "60%"}
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
-                                             is used.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
-                                             results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                             not exist, with the given folder name and persists the output in this folder.
-                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
-
-                                             Example:
-
-                                                | {'username': 'user1',
-                                                | 'id': '6a3b77c187514ef7873ba73338cf1af8',
-                                                | 'title': 'trial'}
-    ====================================     ====================================================================
-
-    :return:
-    output_raster : Imagery layer item
-    """
-
-    gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.determine_optimum_travel_cost_network(
-        input_regions_raster_or_features=input_regions_raster,
-        input_cost_raster=input_cost_raster,
-        output_optimum_network_name=output_optimum_network_name,
-        output_neighbor_network_name=output_neighbor_network_name,
-        context=context,
-        future=future,
         **kwargs,
     )
 
@@ -5105,121 +5002,6 @@ def calculate_statistics(
         context=context,
         future=future,
         estimate=estimate,
-        **kwargs,
-    )
-
-
-@deprecated(
-    deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation "
-    "followed by arcgis.raster.analytics.optimal_path_as_line instead.",
-)
-def determine_travel_costpath_as_polyline(
-    input_source_data,
-    input_cost_raster,
-    input_destination_data,
-    path_type="BEST_SINGLE",
-    output_polyline_name=None,
-    destination_field=None,
-    context=None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    .. image:: _static/images/ra_determine_travel_costpath_as_polyline/ra_determine_travel_costpath_as_polyline.png 
-
-    Calculates the least cost polyline path between sources and known destinations.
-
-    ====================================     ====================================================================
-    **Parameter**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    input_source_data                        The layer that identifies the cells to determine the least 
-                                             costly path from. This parameter can have either a raster input or 
-                                             a feature input.
-    ------------------------------------     --------------------------------------------------------------------
-    input_cost_raster                        A raster defining the impedance or cost to move planimetrically through
-                                             each cell.
-    
-                                             The value at each cell location represents the cost-per-unit distance for 
-                                             moving through the cell. Each cell location value is multiplied by the 
-                                             cell resolution while also compensating for diagonal movement to 
-                                             obtain the total cost of passing through the cell. 
-    
-                                             The values of the cost raster can be an integer or a floating point, but they 
-                                             cannot be negative or zero as you cannot have a negative or zero cost.
-    ------------------------------------     --------------------------------------------------------------------
-    input_destination_data                   The layer that defines the destinations used to calculate the distance. 
-                                             This parameter can have either a raster input or a feature input.
-    ------------------------------------     --------------------------------------------------------------------
-    path_type                                A keyword defining the manner in which the values and zones on the 
-                                             input destination data will be interpreted in the cost path calculations.
-
-                                             A string describing the path type, which can either be BEST_SINGLE, 
-                                             EACH_CELL, or EACH_ZONE.
-
-                                             - BEST_SINGLE: For all cells on the input destination data, the \
-                                             least-cost path is derived from the cell with the minimum of \
-                                             the least-cost paths to source cells. This is the default.
-
-                                             - EACH_CELL: For each cell with valid values on the input \
-                                             destination data, at least-cost path is determined and saved \
-                                             on the output raster. With this option, each cell of the input \
-                                             destination data is treated separately, and a least-cost path \
-                                             is determined for each from cell.
-
-                                             - EACH_ZONE: For each zone on the input destination data, \
-                                             a least-cost path is determined and saved on the output raster. \
-                                             With this option, the least-cost path for each zone begins at \
-                                             the cell with the lowest cost distance weighting in the zone.
-    ------------------------------------     --------------------------------------------------------------------
-    output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
-                                             and used as the output.
-
-                                             You can pass in an existing feature layer Item from your GIS to use 
-                                             that instead.
-
-                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
-                                             A RuntimeError is raised if a service by that name already exists
-    ------------------------------------     --------------------------------------------------------------------
-    destination_field                         The field used to obtain values for the destination locations.
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs.
-                                             If not specified, the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
-                                             results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                             not exist, with the given folder name and persists the output in this folder.
-                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
-
-                                             Example:
-                                                | {'username': 'user1',
-                                                | 'id': '6a3b77c187514ef7873ba73338cf1af8',
-                                                | 'title': 'trial'}
-    ====================================     ====================================================================
-
-    :return:
-        The imagery layer url
-
-    """
-
-    # task = "DetermineTravelCostPathAsPolyline"
-
-    gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.determine_travel_costpath_as_polyline(
-        input_source_raster_or_features=input_source_data,
-        input_cost_raster=input_cost_raster,
-        input_destination_raster_or_features=input_destination_data,
-        output_polyline_name=output_polyline_name,
-        path_type=path_type,
-        destination_field=destination_field,
-        context=context,
-        future=future,
         **kwargs,
     )
 
@@ -7107,122 +6889,6 @@ def subset_multidimensional_raster(
         context=context,
         future=future,
         estimate=estimate,
-        **kwargs,
-    )
-
-
-@deprecated(
-    deprecated_in="1.8.1",
-    details="Please use arcgis.raster.analytics.optimal_path_as_line instead. ",
-)
-def costpath_as_polyline(
-    input_destination_data,
-    input_cost_distance_raster,
-    input_cost_backlink_raster,
-    path_type="BEST_SINGLE",
-    destination_field=None,
-    output_polyline_name=None,
-    context=None,
-    *,
-    gis=None,
-    future=False,
-    **kwargs,
-):
-    """
-    .. image:: _static/images/ra_costpath_as_polyline/ra_costpath_as_polyline.png 
-
-    Calculates the least cost polyline path between sources and known destinations.
-    Function available in ArcGIS Image Server 10.8 and higher.
-
-    ====================================     ====================================================================
-    **Parameter**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    input_destination_data                   A raster or feature layer that identifies those cells from which the 
-                                             least-cost path is determined to the least costly source.
-                                             If the input is a raster, the input consists of cells that have valid 
-                                             values (zero is a valid value), and the remaining cells must be 
-                                             assigned NoData.
-    ------------------------------------     --------------------------------------------------------------------
-    input_cost_distance_raster               The cost distance raster to be used to determine the least-cost path 
-                                             from the sources to the destinations.
-                                             The cost distance raster is usually created with the Cost Distance, 
-                                             Cost Allocation or Cost Back Link functions. The cost distance raster stores, 
-                                             for each cell, the minimum accumulative cost distance over a cost surface 
-                                             from each cell to a set of source cells.
-    ------------------------------------     --------------------------------------------------------------------
-    input_cost_backlink_raster               The name of a cost back link raster used to determine the path to return 
-                                             to a source via the least-cost path.
-                                             For each cell in the back link raster, a value identifies the neighbor 
-                                             that is the next cell on the least accumulative cost path from the cell 
-                                             to a single source cell or set of source cells.
-    ------------------------------------     --------------------------------------------------------------------
-    path_type                                A keyword defining the manner in which the values and zones on the 
-                                             input destination data will be interpreted in the cost path calculations.
-                                             A string describing the path type, which can either be BEST_SINGLE, 
-                                             EACH_CELL, or EACH_ZONE.
-
-                                             - BEST_SINGLE: For all cells on the input destination data, the \
-                                             least-cost path is derived from the cell with the minimum of \
-                                             the least-cost paths to source cells. This is the default.
-
-                                             - EACH_CELL: For each cell with valid values on the input \
-                                             destination data, at least-cost path is determined and saved \
-                                             on the output raster. With this option, each cell of the input \
-                                             destination data is treated separately, and a least-cost path \
-                                             is determined for each from cell.
-
-                                             - EACH_ZONE: For each zone on the input destination data, \
-                                             a least-cost path is determined and saved on the output raster. \
-                                             With this option, the least-cost path for each zone begins at \
-                                             the cell with the lowest cost distance weighting in the zone.
-    ------------------------------------     --------------------------------------------------------------------
-    destination_field                        Optional. If not provided, a feature layer is created by the method 
-                                             and used as the output.
-                                             You can pass in an existing feature layer Item from your GIS to use 
-                                             that instead.
-                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
-                                             A RuntimeError is raised if a service by that name already exists
-    ------------------------------------     --------------------------------------------------------------------
-    output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
-                                             and used as the output.
-                                             You can pass in an existing feature layer Item from your GIS to use 
-                                             that instead.
-                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
-                                             A RuntimeError is raised if a service by that name already exists
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. The GIS on which this tool runs. If not specified,
-                                             the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
-                                             results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                             not exist, with the given folder name and persists the output in this folder.
-                                             The properties property on the Folder object returned by the :meth:`~arcgis.gis._impl._content_manager.Folders.create` can also be passed in as input.
-
-                                             Example:
-
-                                                | {'username': 'user1',
-                                                | 'id': '6a3b77c187514ef7873ba73338cf1af8',
-                                                | 'title': 'trial'}
-    ====================================     ====================================================================
-
-    :return:
-        output_raster : Imagery layer item
-    """
-
-    gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.cost_path_as_polyline(
-        input_destination_raster_or_features=input_destination_data,
-        input_cost_distance_raster=input_cost_distance_raster,
-        input_cost_backlink_raster=input_cost_backlink_raster,
-        output_polyline_name=output_polyline_name,
-        path_type=path_type,
-        destination_field=destination_field,
-        context=context,
-        future=future,
         **kwargs,
     )
 
@@ -9930,7 +9596,13 @@ def train_random_trees_regression_model(
 
 
 def export_to_tile_package(
-    input_data, output_name=None, *, gis=None, future=False, estimate=False, **kwargs
+    input_data,
+    output_name=None,
+    *,
+    gis=None,
+    future=False,
+    estimate=False,
+    **kwargs,
 ):
     """
 

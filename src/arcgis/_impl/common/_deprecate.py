@@ -12,7 +12,7 @@ import textwrap
 import warnings
 import re
 
-__version__ = "2.3.1"
+__version__ = "2.4.0"
 
 # This is mostly here so automodule docs are ordered more ideally.
 __all__ = [

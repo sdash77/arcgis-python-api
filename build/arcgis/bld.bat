@@ -1,23 +1,39 @@
 cd src
 
-set DEPENDENCY_ROOT_PATH=\\geosaurus.esri.com\Public\build\geosaurus2\windows\py%PY_VER%
+set ARCGIS_VERSION=2.4.0
 
-set TRACKER_PATH=%DEPENDENCY_ROOT_PATH%\tracking-engine
-ECHO Getting tracker artifacts from %TRACKER_PATH%
-if not exist arcgis\learn\_tracking mkdir arcgis\learn\_tracking
-copy %TRACKER_PATH%\* arcgis\learn\_tracking\ /Y
+REM if PY_VER is 3.10, PY_VER_STRIPPED will be 310
+set PY_VER_STRIPPED=%PY_VER:.=%
 
-set KNN_PATH=%DEPENDENCY_ROOT_PATH%\knn
-ECHO Getting knn artifacts from %KNN_PATH%
-copy %KNN_PATH%\* arcgis\learn\_utils\ /Y
+set DEPENDENCY_ROOT_URL=https://esri-forge.python.geocloud.com/_/build/v%ARCGIS_VERSION%/windows/py%PY_VER%
 
-set NBAUTH_PATH=%DEPENDENCY_ROOT_PATH%\nbauth
-ECHO Getting nbauth artifacts from %NBAUTH_PATH%
-copy %NBAUTH_PATH%\* arcgis\gis\_impl\ /Y
+set GRAPH_URL=%DEPENDENCY_ROOT_URL%/graph
+set GRAPH_DESTINATION=arcgis\graph
+set GRAPH_FILE_1=_arcgisknowledge.cp%PY_VER_STRIPPED%-win_amd64.pyd
+mkdir %GRAPH_DESTINATION%
+curl -o %GRAPH_DESTINATION%\%GRAPH_FILE_1% %GRAPH_URL%/%GRAPH_FILE_1%
 
-set GRAPH_PATH=%DEPENDENCY_ROOT_PATH%\graph
-ECHO Getting knowledge graph artifacts from %GRAPH_PATH%
-copy %GRAPH_PATH%\* arcgis\graph\ /Y
+set KNN_URL=%DEPENDENCY_ROOT_URL%/knn
+set KNN_DESTINATION=arcgis\learn\_utils
+set KNN_FILE_1=nearest_neighbors.cp%PY_VER_STRIPPED%-win_amd64.pyd
+set KNN_FILE_2=nearest_neighbors.py
+mkdir %KNN_DESTINATION%
+curl -o %KNN_DESTINATION%\%KNN_FILE_1% %KNN_URL%/%KNN_FILE_1%
+curl -o %KNN_DESTINATION%\%KNN_FILE_2% %KNN_URL%/%KNN_FILE_2%
+
+set NBAUTH_URL=%DEPENDENCY_ROOT_URL%/nbauth
+set NBAUTH_DESTINATION=arcgis\gis\_impl
+set NBAUTH_FILE_1=_decrypt_nbauth.cp%PY_VER_STRIPPED%-win_amd64.pyd
+mkdir %NBAUTH_DESTINATION%
+curl -o %NBAUTH_DESTINATION%\%NBAUTH_FILE_1% %NBAUTH_URL%/%NBAUTH_FILE_1%
+
+set TRACKING_ENGINE_URL=%DEPENDENCY_ROOT_URL%/tracking-engine
+set TRACKING_ENGINE_DESTINATION=arcgis\learn\_tracking
+set TRACKING_ENGINE_FILE_1=_track_processor.pyd
+set TRACKING_ENGINE_FILE_2=tracking_engine.dll
+mkdir %TRACKING_ENGINE_DESTINATION%
+curl -o %TRACKING_ENGINE_DESTINATION%\%TRACKING_ENGINE_FILE_1% %TRACKING_ENGINE_URL%/%TRACKING_ENGINE_FILE_1%
+curl -o %TRACKING_ENGINE_DESTINATION%\%TRACKING_ENGINE_FILE_2% %TRACKING_ENGINE_URL%/%TRACKING_ENGINE_FILE_2%
 
 "%PYTHON%" setup.py install --conda-install-mode
 if errorlevel 1 exit 1
