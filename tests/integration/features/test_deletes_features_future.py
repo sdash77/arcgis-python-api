@@ -1784,6 +1784,7 @@ data = [
     },
 ]
 
+
 @profiles.agol
 @integration_test
 class TestFeatureLayerDeleteFeatures(unittest.TestCase):
@@ -1890,6 +1891,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                 item.related_items("Service2Data", "forward")[0].delete()
             if item:
                 assert item.delete()
+
 
 if __name__ == "__main__":
     unittest.main()
