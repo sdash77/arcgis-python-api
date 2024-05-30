@@ -18,7 +18,6 @@ requirements:
   - pillow
   - cachetools
   - notebook
-  - jupyter_client <=6.1.12
   - ipywidgets >=7,<8
   - widgetsnbextension >=3
   - pandas >=2.0.0,<2.2.0
