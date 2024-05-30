@@ -1,17 +1,12 @@
-import sys
 import json
 import os, uuid
 import tempfile
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
-from arcgis.notebook import list_runtimes
 
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
+
 enable_verbose_logging()
-
 notebook_json = {
     "cells": [
         {
@@ -91,6 +86,7 @@ notebook_json = {
     "nbformat_minor": 2,
 }
 
+
 @integration_test
 @profiles.admin_enterprise_and_agol
 class TestAGOLNotebookManager(unittest.TestCase):
@@ -124,7 +120,6 @@ class TestAGOLNotebookManager(unittest.TestCase):
             data=fp,
         )
 
-    # @unittest.skip("I work")
     def test_execute_notebook(self):
         """tests the AGOL execute notebook method"""
         gis = self._gis
@@ -143,7 +138,6 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(res, dict)
         assert "jobUrl" in res
 
-    # @unittest.skip("said so")
     def test_open_notebook_future(self):
         from arcgis._impl._async.jobs import Job
 
@@ -152,12 +146,12 @@ class TestAGOLNotebookManager(unittest.TestCase):
         if gis._is_agol:
             nbm = mgr.notebooksmanager
             open_result = nbm.open_notebook(
-            itemid=self._item,
-            templateid=None,
-            nb_runtimeid=None,
-            template_nb=None,
-            instance_type=None,
-            future=True,
+                itemid=self._item,
+                templateid=None,
+                nb_runtimeid=None,
+                template_nb=None,
+                instance_type=None,
+                future=True,
             )
         else:
             nbm = mgr.notebooks
@@ -168,21 +162,19 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(open_result, Job)
         assert open_result.result()
 
-    # @unittest.skip("said so")
     def test_open_notebook(self):
-        from arcgis._impl._async.jobs import Job
 
         gis = self._gis
         mgr = gis.notebook_server[0]
         if gis._is_agol:
             nbm = mgr.notebooksmanager
             open_result = nbm.open_notebook(
-            itemid=self._item,
-            templateid=None,
-            nb_runtimeid=None,
-            template_nb=None,
-            instance_type=None,
-            future=False,
+                itemid=self._item,
+                templateid=None,
+                nb_runtimeid=None,
+                template_nb=None,
+                instance_type=None,
+                future=False,
             )
         else:
             nbm = mgr.notebooks
@@ -193,7 +185,6 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
         assert open_result
 
-    # @unittest.skip("said so")
     def test_execute_notebook_future(self):
         """tests the AGOL execute notebook method"""
         from arcgis._impl._async.jobs import Job
@@ -212,8 +203,8 @@ class TestAGOLNotebookManager(unittest.TestCase):
             future=True,
         )
         assert isinstance(res, Job)
-        # res = res.result()
         assert res.result()
+
 
 if __name__ == "__main__":
     unittest.main()
