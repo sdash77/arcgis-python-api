@@ -16,8 +16,10 @@ from dataclasses import dataclass
 import tempfile
 from arcgis._impl.common._deprecate import deprecated
 
-
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 _arcgis_gis = LazyLoader("arcgis.gis")
 arcgis = LazyLoader("arcgis")

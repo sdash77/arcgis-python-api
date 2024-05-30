@@ -17,8 +17,10 @@ from arcgis._impl.common._clone import (
     _TextItemDefinition,
 )
 
-
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 from arcgis.gis.clone import BaseCloneItemDefinition
 

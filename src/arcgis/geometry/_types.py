@@ -7,7 +7,7 @@ from arcgis.auth.tools import LazyLoader
 import copy
 import json
 from typing import Any, Optional, Union
-import json as _ujson
+import ujson as _ujson
 
 try:
     import numpy as np
@@ -3614,8 +3614,7 @@ class Envelope(Geometry):
                     dtype=float,
                 )
             return np.array(
-                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]],
-                dtype=float,
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
             )
         else:
             return np.array([])

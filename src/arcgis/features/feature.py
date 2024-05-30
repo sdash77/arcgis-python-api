@@ -10,7 +10,7 @@ import geomet.esri
 
 copy = LazyLoader("copy")
 json = LazyLoader("json")
-_ujson = LazyLoader("json")
+_ujson = LazyLoader("ujson")
 os = LazyLoader("os")
 re = LazyLoader("re")
 tempfile = LazyLoader("tempfile")
@@ -776,6 +776,9 @@ class FeatureSet(object):
                 # add check for MultiPolygon
                 if geometry["type"] == "Polygon" and len(geometry["coordinates"]) > 1:
                     geometry["type"] = "MultiPolygon"
+                    # for multipolygons, each set of rings should be nested an extra level
+                    new_coords = [[poly] for poly in geometry["coordinates"]]
+                    geometry["coordinates"] = new_coords
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -815,6 +818,8 @@ class FeatureSet(object):
             feats = []
             for feat in features:
                 feats.append(extract(feat, esri_geom_type))
+
+            # assign to the geojson object
             geojson["features"] = feats
             return geojson
 
@@ -1143,8 +1148,8 @@ class FeatureSet(object):
         return FeatureSet(
             features=features,
             fields=fields,
-            has_z=(featureset_dict["hasZ"] if "hasZ" in featureset_dict else False),
-            has_m=(featureset_dict["hasM"] if "hasM" in featureset_dict else False),
+            has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
+            has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
             geometry_type=(
                 featureset_dict["geometryType"]
                 if "geometryType" in featureset_dict
