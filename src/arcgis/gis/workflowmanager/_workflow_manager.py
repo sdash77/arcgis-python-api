@@ -2078,13 +2078,13 @@ class WorkflowManager:
 
             >> { "template_name": "Email Template",
                  "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
-                 "template_details": '{\"to\":[\"user@esri.com\"],
-                                      \"cc\":[\"boss@esri.com\"],
-                                      \"bcc\":[\"supervisor@esri.com\"],
-                                      \"subject\":\"Workflow Manager Templates\",
-                                      \"body\":\"Look how easy it is to make an email template!\",
-                                      \"attachmentSelection\":\"None\",
-                                      \"attachmentFolder\":null }'
+                 "template_details": {"to":["user@esri.com"],
+                                      "cc":["boss@esri.com"],
+                                      "bcc":["supervisor@esri.com"],
+                                      "subject":"Workflow Manager Templates",
+                                      "body":"Look how easy it is to make an email template!",
+                                      "attachmentSelection":"None",
+                                      "attachmentFolder":null }
                }
         """
         try:
@@ -2366,11 +2366,15 @@ class Template(object):
     """
     Represents a Workflow Manager Template object with accompanying GET, POST, and DELETE methods.
 
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    init_data           data object containing the relevant properties for a Template to complete REST calls
-    ===============     ====================================================================
+    =================     ====================================================================
+    **Parameter**          **Description**
+    -----------------     --------------------------------------------------------------------
+    template_name         The template name
+    -----------------     --------------------------------------------------------------------
+    template_details      The details of the template
+    -----------------     --------------------------------------------------------------------
+    template_id           The template ID
+    =================     ====================================================================
     """
 
     _camelCase_to_underscore = _camelCase_to_underscore
