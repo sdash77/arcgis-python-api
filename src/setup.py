@@ -83,7 +83,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.31.0,<3",
+        "requests >=2.30.0,<2.32.0",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",

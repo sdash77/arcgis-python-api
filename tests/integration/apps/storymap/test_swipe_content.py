@@ -2,16 +2,16 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Image, Swipe
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
 @integration_test
+@profiles.enterprise_and_agol
 class TestSwipe(unittest.TestCase):
     """Test Story Map Swipe content"""
 
     def test_create_swipe(self):
-        gis = GIS(profile="your_online_profile")
-
+        gis = self.gis
         swipe = Swipe()
 
         assert swipe
@@ -25,7 +25,7 @@ class TestSwipe(unittest.TestCase):
         story.delete_story()
 
     def add_content_to_swipe(self):
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         swipe = Swipe()
 
