@@ -3485,7 +3485,8 @@ class GeoAccessor(object):
                 added_rows = added_rows.drop(columns=[column])
             # Renaming the new
             if column.endswith("_new"):
-                added_rows = added_rows.rename(columns={column: column.rstrip("_new")})
+                new_column_name = column[: -len("_new")]
+                added_rows = added_rows.rename(columns={column: new_column_name})
         diff["added_rows"] = added_rows
 
         # Finding deleted rows
@@ -3497,7 +3498,8 @@ class GeoAccessor(object):
             if column.endswith("_new"):
                 deleted_rows = deleted_rows.drop(columns=[column])
             # Renaming the old
-            deleted_rows = deleted_rows.rename(columns={column: column.rstrip("_old")})
+            new_column_name = column[: -len("_old")]
+            deleted_rows = deleted_rows.rename(columns={column: new_column_name})
         diff["deleted_rows"] = deleted_rows
 
         # Finding modified rows
@@ -3505,22 +3507,27 @@ class GeoAccessor(object):
             match_field
         ].to_list()
 
-        # Looking at the rows that are existing in both the old and new layers so that we can compare them
-        common_rows_new = new_df[new_df[match_field].isin(common_rows_match_field_list)]
-        common_rows_old = old_df[old_df[match_field].isin(common_rows_match_field_list)]
+        if len(common_rows_match_field_list) > 0:
+            # Looking at the rows that are existing in both the old and new layers so that we can compare them
+            common_rows_new = new_df[
+                new_df[match_field].isin(common_rows_match_field_list)
+            ]
+            common_rows_old = old_df[
+                old_df[match_field].isin(common_rows_match_field_list)
+            ]
 
-        # Compare common columns attributes
-        merged_common_rows = common_rows_new.merge(
-            common_rows_old,
-            on=None,
-            how="outer",
-            indicator=True,
-        )
+            # Compare common columns attributes
+            merged_common_rows = common_rows_new.merge(
+                common_rows_old,
+                on=None,
+                how="outer",
+                indicator=True,
+            )
 
-        modified_rows = merged_common_rows[
-            merged_common_rows["_merge"] == "left_only"
-        ].drop(columns=["_merge"])
-        diff["modified_rows"] = modified_rows
+            modified_rows = merged_common_rows[
+                merged_common_rows["_merge"] == "left_only"
+            ].drop(columns=["_merge"])
+            diff["modified_rows"] = modified_rows
 
         return diff
 
