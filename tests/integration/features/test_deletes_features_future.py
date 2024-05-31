@@ -1,7 +1,10 @@
 import unittest
 import pandas as pd
-from utils.decorators import integration_test, profiles
+from arcgis.gis import GIS
+from utils.decorators import integration_test
 
+proxies = None
+PROFILES = ["your_online_profile"]
 
 data = [
     {
@@ -1783,7 +1786,6 @@ data = [
 ]
 
 
-@profiles.agol
 @integration_test
 class TestFeatureLayerDeleteFeatures(unittest.TestCase):
     """
@@ -1792,97 +1794,103 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
 
     def test_delete_features_sync(self):
         """Tests the deletes_features operation with future=False"""
-        item = None
-        try:
-            sdf = pd.DataFrame(data)
-            item = self.gis.content.import_data(sdf)
-            flyr = item.layers[0]
-            where = "FID=2"
-            d = flyr.delete_features(
-                deletes=None,
-                where=where,
-                rollback_on_failure=True,
-                return_delete_results=True,
-                future=False,
-            )
-            resp = d
-            assert "deleteResults" in resp
-            resp = flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=True,
-                return_delete_results=True,
-                future=False,
-            )
-            assert "deleteResults" in resp
-            resp = flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=True,
-                return_delete_results=False,
-                future=False,
-            )
-            assert "success" in resp
-            flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=False,
-                return_delete_results=False,
-                future=False,
-            )
-            assert "success" in resp
-        except Exception as e:
-            raise e
-        finally:
-            if item:
-                assert item.delete()
+        for profile in PROFILES:
+            item = None
+            try:
+
+                gis = GIS(profile=profile, verify_cert=False, proxy=proxies)
+                sdf = pd.DataFrame(data)
+                item = gis.content.import_data(sdf)
+                flyr = item.layers[0]
+                where = "FID=2"
+                d = flyr.delete_features(
+                    deletes=None,
+                    where=where,
+                    rollback_on_failure=True,
+                    return_delete_results=True,
+                    future=False,
+                )
+                resp = d
+                assert "deleteResults" in resp
+                resp = flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=True,
+                    return_delete_results=True,
+                    future=False,
+                )
+                assert "deleteResults" in resp
+                resp = flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=True,
+                    return_delete_results=False,
+                    future=False,
+                )
+                assert "success" in resp
+                flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=False,
+                    return_delete_results=False,
+                    future=False,
+                )
+                assert "success" in resp
+            except Exception as e:
+                raise e
+            finally:
+                if item:
+                    assert item.delete()
 
     def test_delete_features_async(self):
         """Tests the deletes_features operation with future=True"""
-        item = None
-        try:
-            sdf = pd.DataFrame(data)
-            item = self.gis.content.import_data(sdf)
-            flyr = item.layers[0]
-            where = "FID=2"
-            d = flyr.delete_features(
-                deletes=None,
-                where=where,
-                rollback_on_failure=True,
-                return_delete_results=True,
-                future=True,
-            )
-            resp = d
-            assert "status" in resp.result()
-            resp = flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=True,
-                return_delete_results=True,
-                future=True,
-            )
-            assert "status" in resp.result()
-            resp = flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=True,
-                return_delete_results=False,
-                future=True,
-            )
-            assert "status" in resp.result()
-            resp = flyr.delete_features(
-                deletes="1",
-                where=None,
-                rollback_on_failure=False,
-                return_delete_results=False,
-                future=True,
-            )
-            assert "status" in resp.result()
-        except Exception as e:
-            raise e
-        finally:
-            if item:
-                assert item.delete()
+        for profile in PROFILES:
+            item = None
+            try:
+
+                gis = GIS(profile=profile, verify_cert=False, proxy=proxies)
+                sdf = pd.DataFrame(data)
+                item = gis.content.import_data(sdf)
+                flyr = item.layers[0]
+                where = "FID=2"
+                d = flyr.delete_features(
+                    deletes=None,
+                    where=where,
+                    rollback_on_failure=True,
+                    return_delete_results=True,
+                    future=True,
+                )
+                resp = d
+                assert "status" in resp.result()
+                resp = flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=True,
+                    return_delete_results=True,
+                    future=True,
+                )
+                assert "status" in resp.result()
+                resp = flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=True,
+                    return_delete_results=False,
+                    future=True,
+                )
+                assert "status" in resp.result()
+                resp = flyr.delete_features(
+                    deletes="1",
+                    where=None,
+                    rollback_on_failure=False,
+                    return_delete_results=False,
+                    future=True,
+                )
+                assert "status" in resp.result()
+            except Exception as e:
+                raise e
+            finally:
+                if item:
+                    assert item.delete()
 
 
 if __name__ == "__main__":
