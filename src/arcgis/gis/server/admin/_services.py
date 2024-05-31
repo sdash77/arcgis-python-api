@@ -306,6 +306,66 @@ class ServiceManager(BaseServer):
         return self._sm.publish_sd(sd_file, folder, service_config=service_config)
 
     # ----------------------------------------------------------------------
+    @property
+    def service_properties(self) -> dict[str, Any]:
+        """
+        The properties resource returns the default settings for newly
+        published services. Currently, the only supported property is
+        `preferSharedInstances`. The `preferSharedInstances` property
+        controls whether new, compatible services published from ArcGIS Pro
+        will use shared or dedicated instances. This property can be
+        modified using the update operation.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        properties          Required dict[str,Any]. A JSON object that describes each property
+                            to be set. Currently, the only supported property is
+                            `preferSharedInstances`. When set to true, compatible services will
+                            use shared instances when first published. When set to false, they
+                            will use dedicated instances. The default is true.
+        ===============     ====================================================================
+
+        :return: dict[str,Any]
+        """
+        url: str = f"{self.url}/properties"
+        params = {"f": "json"}
+        res: dict = self._con.get(url, params)
+        return res
+
+    # ----------------------------------------------------------------------
+    @service_properties.setter
+    def service_properties(self, properties: dict[str, Any]):
+        """
+        The properties resource returns the default settings for newly
+        published services. Currently, the only supported property is
+        `preferSharedInstances`. The `preferSharedInstances` property
+        controls whether new, compatible services published from ArcGIS Pro
+        will use shared or dedicated instances. This property can be
+        modified using the update operation.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        properties          Required dict[str,Any]. A JSON object that describes each property
+                            to be set. Currently, the only supported property is
+                            `preferSharedInstances`. When set to true, compatible services will
+                            use shared instances when first published. When set to false, they
+                            will use dedicated instances. The default is true.
+        ===============     ====================================================================
+
+        :return: dict[str,Any]
+        """
+        url: str = f"{self.url}/properties/update"
+        params = {
+            "f": "json",
+            "properties": json.dumps(properties),
+        }
+        res: dict = self._con.post(url, params)
+        if res["status"] != "success":
+            raise Exception(f"Could not update the `service_properties` {res}")
+
+    # ----------------------------------------------------------------------
     def _find_services(self, service_type: str = "*") -> list:
         """
             returns a list of a particular service type on AGS

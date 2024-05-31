@@ -140,7 +140,62 @@ class AttachmentManager(object):
         size: tuple[int] | list[int] | None = None,
         keywords: str | None = None,
     ) -> int:
-        """"""
+        """
+        The count operation returns the total number of attachments that satisfy
+        the specific criteria entered as arguments to the method. The default
+        count is the number of attachments for all features in the layer.
+
+        =====================   =======================================================
+        **Parameters**          **Description**
+        ---------------------   -------------------------------------------------------
+        where                   Optional String. Clause to specify the set of features
+                                for which to return the attachment count.
+        ---------------------   -------------------------------------------------------
+        attachment_where        Optional String. Clause to specify criteria to apply to
+                                the attachments table for which specific attachments to
+                                include in the count value.
+        ---------------------   -------------------------------------------------------
+        object_ids              Optional List. List of *object_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        global_ids              Optional List. List of *global_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        attachment_types        Optional String. Value specifying the specific format
+                                of attachments to count. See *attachmentTypes* at
+                                the `Query Attachments <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm>`_
+                                page for a list of options to use.
+        ---------------------   -------------------------------------------------------
+        size                    Optional Integer or integer range. Value or values to
+                                to query attachments of a specific size.
+        =====================   =======================================================
+
+        :returns:
+            Integer of total number of attachments.
+
+        .. code-block:: python
+
+            # Usage Example 1: Default
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organizational_profile")
+
+            >>> flyr_item = gis.content.get("<item id>")
+
+            >>> att_mgr = flyr_item.attachments
+            >>> att_mgr.count()
+
+            9
+
+            # Usage Example 2: List of Object Ids:
+            >>> att_mgr.count(object_ids=[1, 3])
+
+            5
+
+            # Usage Example 3: List of Global Ids:
+            >>> att_mgr.count(global_ids=['{D432BA85-8702-437D-B740-C214DDE65846}'])
+
+            2
+        """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
             object_ids = []
@@ -148,8 +203,8 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None:
-            where = ""
+        if where is None and not object_ids and not global_ids:
+            where = "1=1"
         if keywords is None:
             keywords = []
         params: dict[str, Any] = {
@@ -158,7 +213,6 @@ class AttachmentManager(object):
             "attachmentTypes": ",".join(attachment_types),
             "objectIds": ",".join([str(v) for v in object_ids]),
             "globalIds": ",".join([str(v) for v in global_ids]),
-            "definitionExpression": where,
             "attachmentsDefinitionExpression": attachment_where or "",
             "keywords": ",".join([str(v) for v in keywords]),
             "size": size,

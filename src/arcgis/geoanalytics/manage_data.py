@@ -23,6 +23,7 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
@@ -214,6 +215,7 @@ def run_python_script(
 
     tool_name = "RunPythonScript"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -360,6 +362,7 @@ def dissolve_boundaries(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "DissolveBoundaries"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -553,6 +556,7 @@ def merge_layers(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "MergeLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -696,6 +700,7 @@ def clip_layer(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "ClipLayer"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -889,6 +894,7 @@ def overlay_data(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "OverlayLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1057,6 +1063,7 @@ def append_data(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "AppendData"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1205,6 +1212,7 @@ def calculate_fields(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateField"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1335,6 +1343,7 @@ def copy_to_data_store(
     """
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {

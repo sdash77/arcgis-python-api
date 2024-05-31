@@ -28,6 +28,7 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
@@ -111,6 +112,7 @@ def summarize_center_and_dispersion(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "SummarizeCenterAndDispersion"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
 
     params = {
@@ -413,6 +415,7 @@ def build_multivariable_grid(
             flayers.append(il)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -707,6 +710,7 @@ def aggregate_points(
     """
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -892,6 +896,7 @@ def describe_dataset(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "DescribeDataset"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1224,6 +1229,7 @@ def join_features(
     target_layer = _prevent_bds_item(target_layer)
     join_layer = _prevent_bds_item(join_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1529,6 +1535,7 @@ def reconstruct_tracks(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -1745,6 +1752,7 @@ def summarize_attributes(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -2046,6 +2054,7 @@ def summarize_within(
     """
     summarized_layer = _prevent_bds_item(summarized_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
