@@ -1,17 +1,11 @@
+import os
 import unittest
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
-from utils.decorators import integration_test
-
-# Import the module
-try:
-    import arcgis
-    from arcgis.gis import GIS
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
+from utils.decorators import integration_test, profiles
+from arcgis.gis import GIS
+from integration.config import get_resource_path
 
 
+@profiles.admin_k8s
 @integration_test
 class TestLicense(unittest.TestCase):
     """tests the license manager"""
@@ -23,22 +17,11 @@ class TestLicense(unittest.TestCase):
         Setup GIS connection
         Store License information for an org
         """
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
+        cls.resources_root = get_resource_path('authorization_files/k8s')
+        cls.lic_file1 = get_resource_path(f'{cls.resources_root}/AllUTs_AllAddOnApps_K8S.json')
+        cls.lic_file2 = get_resource_path(f'{cls.resources_root}/CreatorViewerUTs_NoAddOnApps_K8S.json')
 
-        cls.data_folder_path = _conf_reader2["license_data"]["data_folder"]
-        cls.lic_file1 = (
-            cls.data_folder_path + _conf_reader2["license_data"]["lic_file1"]
-        )
-        cls.lic_file2 = (
-            cls.data_folder_path + _conf_reader2["license_data"]["lic_file2"]
-        )
-
-        _profiles = [
-            "your_kubernetes_profile"
-        ]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
-        cls.k_gis = GIS(profile=_profiles[0], verify_cert=False, trust_env=True)
-        cls.org = cls.k_gis.admin.organizations.orgs[0]
+        cls.org = cls.gis.admin.organizations.orgs[0]
         cls.lic1 = cls.org.license
 
     def test_import_license(self):
@@ -70,7 +53,7 @@ class TestLicense(unittest.TestCase):
         """tests updates to license manager"""
         config = {"hostname": "change.me1", "port": 1234}
         assert self.lic1.update_license_manager(config=config)
-        org2 = self.k_gis.admin.organizations.orgs[0]
+        org2 = self.gis.admin.organizations.orgs[0]
         lic2 = org2.license
         info = lic2.properties["licenseManagerInfo"]
         self.assertDictEqual(config, info)

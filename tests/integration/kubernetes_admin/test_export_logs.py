@@ -1,4 +1,3 @@
-import sys
 import os
 import unittest
 from utils.decorators import integration_test, profiles
@@ -7,7 +6,7 @@ from utils._logging import enable_verbose_logging
 enable_verbose_logging()
 
 
-@profiles.k8s
+@profiles.admin_k8s
 @integration_test
 class TestKubernetesExportLogs(unittest.TestCase):
     def test_export_log(self):

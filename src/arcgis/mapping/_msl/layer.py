@@ -982,7 +982,7 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -1685,7 +1685,7 @@ class MapTable(MapFeatureLayer):
             as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 

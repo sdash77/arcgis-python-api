@@ -128,7 +128,13 @@ jobs:
       - name: Get arcgis release info
         id: arcgis-info
         run: |
-          echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # osx-arm64 is currently only available on prerelease label
+            echo "latest-version=$(conda search -c esri -c esri/label/prerelease arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          else
+            echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          fi
+          
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
@@ -139,7 +145,11 @@ jobs:
         run: |
           conda install -c main nose2 --yes
           conda install conda-forge::requests-mock --yes
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            conda install -c esri -c esri/label/prerelease arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          else
+            conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          fi
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache

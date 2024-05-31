@@ -27,6 +27,7 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
@@ -290,6 +291,7 @@ def forest(
     else:
         prediction_type = allowed_prediction_types[prediction_type.lower()]
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
 
     if gis.version < [7]:
         return None
@@ -499,7 +501,7 @@ def gwr(
         gis = _env.active_gis
     if gis.version < [8, 1]:
         return None
-
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
 
     if output_name is None:
@@ -795,7 +797,7 @@ def glr(
         raise ValueError("Invalid regression_family.")
 
     gis = _arcgis.env.active_gis if gis is None else gis
-
+    _check_ga_status(gis)
     if gis.version < [7]:
         return None
     url = gis.properties.helperServices.geoanalytics.url
@@ -975,6 +977,7 @@ def find_point_clusters(
     input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1266,6 +1269,7 @@ def calculate_density(
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1494,6 +1498,7 @@ def find_hot_spots(
     """
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
@@ -1736,6 +1741,7 @@ def create_space_time_cube(
 
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
     params = {
