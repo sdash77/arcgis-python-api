@@ -2321,8 +2321,21 @@ class FeatureLayerCollectionManager(_GISResource):
                     )
                 elif file_type == "File Geodatabase":
                     # When filegdb not supported through append, use edit features
-                    features = new_item.layers[0].query().features
-                    orig_item.layers[index].edit_features(adds=features)
+                    layer = new_item.layers[0]
+                    features = layer.query().features
+                    if self._gis._is_agol or (
+                        "advancedEditingCapabilities" in layer.properties
+                        and "supportsAsyncApplyEdits"
+                        in layer.properties["advancedEditingCapabilities"]
+                        and layer.properties["advancedEditingCapabilities"][
+                            "supportsAsyncApplyEdits"
+                        ]
+                    ):
+                        orig_item.layers[index].edit_features(
+                            adds=features, future=True
+                        )
+                    else:
+                        orig_item.layers[index].edit_features(adds=features)
             elif len(new_item.tables) > 0:
                 publish_parameters = new_item.tables[0].properties
                 index = _perform_insert(self, publish_parameters)
