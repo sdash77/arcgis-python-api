@@ -15,7 +15,7 @@ from arcgis.auth import EsriSession
 import arcgis
 import shutil
 from arcgis.gis import ItemTypeEnum, ItemProperties
-import arcgismapping
+import arcgis.map as arcgismapping
 from ._publish_functions import (
     _get_version,
     _xform2webform,

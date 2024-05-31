@@ -1,7 +1,7 @@
 import unittest
 from arcgis.gis import GIS
 from datetime import timedelta, datetime
-from arcgismapping import Map
+from arcgis.map import Map
 from utils.decorators import integration_test
 
 # Note this is only supported for AGOL as of now

@@ -15,7 +15,7 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
-arcgismapping = LazyLoader("arcgismapping")
+arcgismapping = LazyLoader("arcgis.map")
 utils = LazyLoader("arcgis.apps.storymap._utils")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 pd = LazyLoader("pandas")
@@ -1446,8 +1446,8 @@ class Map:
     =================       ====================================================================
     **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
-    item                    An Item of type :class:`~arcgismapping.Map` or
-                            :class:`~arcgismapping.Scene` or a String representing the item
+    item                    An Item of type :class:`~arcgis.map.Map` or
+                            :class:`~arcgis.map.Scene` or a String representing the item
                             id to add to the story map.
     =================       ====================================================================
     """
@@ -1635,12 +1635,12 @@ class Map:
         map                 One of three choices:
 
                             * String being an item id for an Item of type
-                            :class:`~arcgismapping.Map`
-                            or :class:`~arcgismapping.Scene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
 
                             * An :class:`~arcgis.gis.Item` of type
-                            :class:`~arcgismapping.Map`
-                            or :class:`~arcgismapping.Scene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
         ==================  ========================================
 
         .. note::
@@ -1670,10 +1670,10 @@ class Map:
 
         If you have an extent to use from a bookmark,
         find this extent by using the `bookmarks` property in
-        the :class:`~arcgismapping.Map` Class.
+        the :class:`~arcgis.map.Map` Class.
         The `map` property on this class will return the Web Map
         Item being used. By passing this item into
-        the :class:`~arcgismapping.Map` Class you can retrieve a list of all
+        the :class:`~arcgis.map.Map` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
 
         To see the current viewpoint call the `properties` property on the Map

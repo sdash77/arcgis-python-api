@@ -28,7 +28,7 @@ else:
 try:
     from arcgis.gis import GIS, Group, User, Item
     from arcgis.features import Feature, FeatureLayer
-    from arcgismapping import Map
+    from arcgis.map import Map
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce.managers import *
 except ImportError:

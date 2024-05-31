@@ -1575,7 +1575,7 @@ class GIS(object):
         using the GIS's configured geocoders. Provided a match is found, the geographic
         extent of the matched address is used as the extent of the map. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgismapping.Map` for more information.
+        to the specified zoomlevel. See :class:`~arcgis.map.Map` for more information.
 
         .. note::
             The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
@@ -1610,10 +1610,10 @@ class GIS(object):
             >>> gis.map("Durham,NC")
 
         :return:
-          A :class:`map<arcgismapping.Map>` or :class:`scene<arcgismapping.Scene>`.
+          A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
         try:
-            import arcgismapping
+            import arcgis.map as arcgismapping
             from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")

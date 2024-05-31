@@ -20,7 +20,7 @@ import dask.dataframe as dd
 from dask.base import normalize_token
 from arcgis.auth.tools import LazyLoader
 
-arcgismapping = LazyLoader("arcgismapping")
+arcgismapping = LazyLoader("arcgis.map")
 from dask.dataframe.extensions import (
     make_array_nonempty,
     make_scalar,

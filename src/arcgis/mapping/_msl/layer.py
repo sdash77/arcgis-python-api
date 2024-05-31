@@ -168,7 +168,7 @@ class MapFeatureLayer(Layer):
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
-            :class:`~arcgismapping.Map`.
+            :class:`~arcgis.map.Map`.
 
         :return:
             ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON

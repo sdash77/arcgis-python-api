@@ -34,7 +34,7 @@ class TestRendererProperty(unittest.TestCase):
                 assert isinstance(lyr.renderer, InsensitiveDict)
 
     def test_plot_mapview(self):
-        from arcgismapping import Map
+        from arcgis.map import Map
 
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
@@ -46,7 +46,7 @@ class TestRendererProperty(unittest.TestCase):
             assert list(wm.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
 
     def test_plot_webmap(self):
-        from arcgismapping import Map
+        from arcgis.map import Map
 
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)

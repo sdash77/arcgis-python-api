@@ -11,7 +11,7 @@ import datetime, time
 from arcgis.gis import GIS
 from arcgis.gis import ContentManager
 from arcgis.features import Feature
-from arcgismapping import Map
+from arcgis.map import Map
 from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_ent_admin_profile"]

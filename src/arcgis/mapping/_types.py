@@ -10,7 +10,7 @@ from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
 
-arcgismapping = LazyLoader("arcgismapping")
+arcgismapping = LazyLoader("arcgis.map")
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -246,13 +246,13 @@ class OfflineMapAreaManager(object):
     The ``OfflineMapAreaManager`` is a helper class to manage offline map areas
     for a Web Map :class:`~arcgis.gis.Item`. Objects of this class should not
     be initialized directly, but rather accessed using the
-    :attr:`~arcgismapping.Map.offline_areas` property on a
-    :class:`~arcgismapping.Map` object.
+    :attr:`~arcgis.map.Map.offline_areas` property on a
+    :class:`~arcgis.map.Map` object.
 
     .. code-block:: python
 
         >>> from arcgis.gis import GIS
-        >>> from arcgismapping import Map
+        >>> from arcgis.map import Map
 
         >>> gis = GIS(profile="your_Web_GIS_profile")
 
@@ -361,7 +361,7 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE
 
             >>> from arcgis.gis import GIS
-            >>> from arcgismapping import Map
+            >>> from arcgis.map import Map
 
             >>> wm_item = gis.content.get("<web_map_id>")
             >>> wm_obj = Map(wm_item)
@@ -779,7 +779,7 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE #1: Creating offline map areas using *scale* argument
 
             >>> from arcgis.gis import GIS
-            >>> from arcgismapping import Map
+            >>> from arcgis.map import Map
 
             >>> gis = GIS(profile="your_online_organization_profile")
 
@@ -1492,7 +1492,7 @@ class OfflineMapAreaManager(object):
     def list(self):
         """
         Retrieves a list of all *Map Area* items for the
-        :class:`~arcgismapping.Map` object.
+        :class:`~arcgis.map.Map` object.
 
         .. note::
             *Map Area* items and the corresponding offline packages share a relationship
@@ -1505,7 +1505,7 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE: Listing Map Area Items
 
             >>> from arcgis.gis import GIS
-            >>> from arcgismapping import Map
+            >>> from arcgis.map import Map
 
             >>> wm_item = gis.content.search("*", "Web Map")[0]
             >>> wm_obj = Map(wm_item)

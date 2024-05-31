@@ -210,7 +210,7 @@ class DataframeSpatialTests(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_plot_not_mapwidget_obj(self):
         """tests plot with invalid map widget"""
-        from arcgismapping import Map
+        from arcgis.map import Map
         v = GeoArray(geoms)
         data = [[1, 2, 3, 4]] * len(geoms)
         columns = ["A", "B", "C", "D"]

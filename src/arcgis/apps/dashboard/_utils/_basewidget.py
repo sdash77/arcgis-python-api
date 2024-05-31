@@ -1,5 +1,5 @@
 import uuid
-import arcgismapping
+import arcgis.map as arcgismapping
 
 
 class _BaseWidget(object):

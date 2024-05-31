@@ -181,9 +181,9 @@ jobs:
       - name: Install arcgis from source
         run: |
           python -m pip install -e ./src --no-deps
-      - name: Install arcgismapping
+      - name: Install arcgis-mapping
         run: |
-          conda install -c https://esri-forge.python.geocloud.com -c esri -c esri/label/jupyterlab arcgismapping --yes
+          conda install -c https://esri-forge.python.geocloud.com -c esri -c esri/label/jupyterlab arcgis-mapping --yes
       - name: Run smoke tests
         working-directory: ./tests
         run: |

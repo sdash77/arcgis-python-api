@@ -332,8 +332,8 @@ class Test_Feature_class(unittest.TestCase):
                         name=ea.get_value("title"),
                     )
                 else:  # Polygon
-                    from arcgismapping import SimpleRenderer
-                    from arcgismapping import SimpleMarkerSymbolEsriSMS, SimpleLineSymbolStyle, SimpleMarkerSymbolStyle, SimpleLineSymbolEsriSLS
+                    from arcgis.map import SimpleRenderer
+                    from arcgis.map import SimpleMarkerSymbolEsriSMS, SimpleLineSymbolStyle, SimpleMarkerSymbolStyle, SimpleLineSymbolEsriSLS
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
                     # create the simple renderer dataclass
                     simple_renderer = SimpleRenderer(

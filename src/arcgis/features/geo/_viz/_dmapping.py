@@ -7,7 +7,7 @@ import json
 import dask.dataframe as dd
 from arcgis.auth.tools import LazyLoader
 
-arcgismapping = LazyLoader("arcgismapping")
+arcgismapping = LazyLoader("arcgis.map")
 
 
 ###########################################################################

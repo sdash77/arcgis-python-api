@@ -8,7 +8,7 @@ import pandas as pd
 
 from arcgis.auth.tools import LazyLoader
 
-arcgismapping = LazyLoader("arcgismapping")
+arcgismapping = LazyLoader("arcgis.map")
 
 
 def plot(
@@ -46,7 +46,7 @@ def plot(
     ----------------------  ---------------------------------------------------------
     renderer                Optional Renderer object. The renderer to use to draw the data.
                             To create a renderer dataclass use the renderers module in the
-                            arcgismapping package.
+                            arcgis.map module.
     ======================  =========================================================
 
     """

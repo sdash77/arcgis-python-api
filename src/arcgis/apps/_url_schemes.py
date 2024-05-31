@@ -1,7 +1,7 @@
 import urllib.parse
 import arcgis
 import json
-import arcgismapping
+import arcgis.map as arcgismapping
 
 
 def build_collector_url(
@@ -23,7 +23,7 @@ def build_collector_url(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgis.map.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
     ------------------     --------------------------------------------------------------------
     center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
@@ -291,7 +291,7 @@ def build_explorer_url(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgis.map.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Explorer.
                            Item can be of type Web Map or Mobile Map Package.
     ------------------     --------------------------------------------------------------------
@@ -414,7 +414,7 @@ def build_field_maps_url(
                            and the user is signed in. This correlates to the URL param "referenceContext"
                            The following values are supported: addFeature, center, open, search, updateFeature.
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgis.map.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Field Maps.
                            Item can be of type Web Map or Mobile Map Package.
     ------------------     --------------------------------------------------------------------
@@ -933,7 +933,7 @@ def build_workforce_url(
     ------------------     --------------------------------------------------------------------
     url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
     ------------------     --------------------------------------------------------------------
-    webmap                 Optional :class:`String`, :class:`~arcgismapping.Map`, :class:`~arcgis.gis.Item`.
+    webmap                 Optional :class:`String`, :class:`~arcgis.map.Map`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Workforce.
                            Item can be of type Web Map. This can be referenced
                            at the project level using project.worker_webmap

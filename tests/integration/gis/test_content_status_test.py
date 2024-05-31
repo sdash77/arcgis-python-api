@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, Mock
 from arcgis.gis import GIS, Item
 from arcgis import env
-from arcgismapping import Map
+from arcgis.map import Map
 from utils.decorators import integration_test
 
 PROFILES = ["your_enterprise_profile", "your_online_profile"]

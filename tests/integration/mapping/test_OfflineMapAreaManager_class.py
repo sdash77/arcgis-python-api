@@ -29,7 +29,7 @@ else:
 try:
     import arcgis
     from arcgis.gis import GIS
-    from arcgismapping import Map
+    from arcgis.map import Map
 except ImportError:
     print("API import error. Quitting test")
     raise (exit())
