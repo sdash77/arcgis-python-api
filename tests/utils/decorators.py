@@ -368,6 +368,7 @@ class profiles:
             cls._k8s_profile_parameters,
         )
 
+    @classproperty
     def admin_all(cls):
         """Run tests for all 3 admin profiles (agol, enterprise, k8s)"""
         return cls._get_profile_parameterized_class(

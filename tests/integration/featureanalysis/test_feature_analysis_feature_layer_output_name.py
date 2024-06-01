@@ -27,7 +27,7 @@ class TestPassingDictionaries(unittest.TestCase):
             polygon_layer=polygon_layer,
             keep_boundaries_with_no_points=False,
             summary_fields=["DeclValNu mean", "DeclValNu2 mean"],
-            group_by_field="Declared_V",
+            group_by_field="ZIP_code",
             output_name="agg" + id_generator(),
         )
         existing_lyr = agg_init.layers[0]
@@ -37,7 +37,7 @@ class TestPassingDictionaries(unittest.TestCase):
             polygon_layer=polygon_layer,
             keep_boundaries_with_no_points=False,
             summary_fields=["DeclValNu mean", "DeclValNu2 mean"],
-            group_by_field="Declared_V",
+            group_by_field="ZIP_code",
             output_name=existing_lyr,
         )
         assert agg_add_item.itemid == agg_init.itemid

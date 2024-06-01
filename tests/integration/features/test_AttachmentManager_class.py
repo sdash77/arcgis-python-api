@@ -22,7 +22,7 @@ class TestAttachmentManager(unittest.TestCase):
             cls.qalab_base_path, "features_mod_AttachmentManager_cls"
         )
         cls.new_attachment = os.path.join(cls.qalab_cls_path, "cows3.jpg")
-        cls.update_attachment = os.path.join(cls.qalab_cls_path, "cows4.jpg")
+        cls.update_attachment = os.path.join(cls.qalab_cls_path, "cows4.jpg") 
 
         cls.test_item = cls.gis.content.search(
             "dino_AttachmentManager_basic", "Feature Layer"
@@ -94,7 +94,6 @@ class TestAttachmentManager(unittest.TestCase):
         # delete
         delete_res = fl_am.delete(2, attachment_id)
         assert delete_res["deleteAttachmentResults"][0]["success"]
-
 
 if __name__ == "__main__":
     unittest.main()
