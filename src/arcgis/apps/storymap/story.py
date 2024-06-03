@@ -280,6 +280,10 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the Cover class instead found when calling `content_list` property.",
+    )
     def cover_date(self):
         """
         Get/Set the date type shown on the story cover.
@@ -393,8 +397,6 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -440,6 +442,10 @@ class StoryMap(object):
         return utils.get(self, node, type)
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the Cover class instead found when calling `content_list` property.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -537,6 +543,10 @@ class StoryMap(object):
         return utils.set_logo(self, image, link, alt_text)
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the Navigation class instead found when calling `content_list` property.",
+    )
     def navigation(
         self,
         nodes: Optional[list[str]] = None,
