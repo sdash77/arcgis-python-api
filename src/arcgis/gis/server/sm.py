@@ -180,25 +180,7 @@ class ServerManager(object):
                     c.properties
                     c.logs.properties
                     servers.append(c)
-            """
-            elif str(function).lower() in server["serverFunction"].lower():
-                admin_url = server["adminUrl"]
-                public_url = server["url"]
-                try:
-                    c = Server(url=admin_url, gis=self._gis)
-                    if hasattr(c, "admin"):
-                        c.admin.logs.properties
-                    else:
-                        c.logs.properties
-                    servers.append(c)
-                except:
-                    c = Server(url=public_url, gis=self._gis)
-                    if hasattr(c, "admin"):
-                        c.admin.logs.properties
-                    else:
-                        c.logs.properties
-                    servers.append(c)
-            """
+
         return servers
 
     # ----------------------------------------------------------------------
