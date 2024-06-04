@@ -157,7 +157,17 @@ class ServerManager(object):
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
         for server in self._federation.servers["servers"]:
-            if str(role).lower() == server["serverRole"].lower():
+            if (
+                (str(role).lower() == server["serverRole"].lower() and function is None)
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and role is None
+                )
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and str(role).lower() == server["serverRole"].lower()
+                )
+            ):
                 admin_url = server["adminUrl"]
                 public_url = server["url"]
                 try:
@@ -170,6 +180,7 @@ class ServerManager(object):
                     c.properties
                     c.logs.properties
                     servers.append(c)
+            """
             elif str(function).lower() in server["serverFunction"].lower():
                 admin_url = server["adminUrl"]
                 public_url = server["url"]
@@ -187,6 +198,7 @@ class ServerManager(object):
                     else:
                         c.logs.properties
                     servers.append(c)
+            """
         return servers
 
     # ----------------------------------------------------------------------
