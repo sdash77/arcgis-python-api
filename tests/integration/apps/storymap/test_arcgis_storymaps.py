@@ -33,13 +33,11 @@ class TestStoryMap(unittest.TestCase):
         )
 
         # Edit story cover
-        story.cover(
-            "My First Story",
-            type="minimal",
-            summary="Testing the Python API",
-            by_line="Python Tester",
-            image=river,
-        )
+        cover = story.content[0]
+        cover.title = "My First Story"
+        cover.summary = "Testing the Python API"
+        cover.by_line = "Python Tester"
+        cover.media = river
         assert story.cover_date
         assert story.nodes
 

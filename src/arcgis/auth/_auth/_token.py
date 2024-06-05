@@ -534,7 +534,12 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             proxies=self.proxies,
             verify=self._verify_cert,
         ).text
-        if "oauth_state" in auth_response:
+        match = re.search(r"\{.*\}", auth_response, re.MULTILINE)
+        if match:
+            match = json.loads(match[0])
+        if "oauth_state" in match:
+            oauth_state = match.get("oauth_state")
+        elif "oauth_state" in auth_response:
             oauth_state = auth_response.split('"oauth_state":"')[1].split('"')[0]
         else:
             raise Exception("Unable to generate oauth token")

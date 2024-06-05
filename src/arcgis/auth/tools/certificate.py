@@ -20,7 +20,7 @@ import ssl
 
 import tempfile
 import cryptography
-
+import truststore
 
 try:
     from ssl import PROTOCOL_TLS_CLIENT as default_ssl_protocol
@@ -57,7 +57,7 @@ def _handle_cert_context(
     elif isinstance(cert, (tuple, list)):
         # case 3 tuple[str]
         ssl_protocol = ssl_protocol
-        ssl_context = ssl.SSLContext(ssl_protocol)
+        ssl_context = truststore.SSLContext(ssl_protocol)
         with tempfile.NamedTemporaryFile(delete=False) as c:
             with open(cert[0], "rb") as reader:
                 public_cert = x509.load_pem_x509_certificate(reader.read())
