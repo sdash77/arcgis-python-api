@@ -13287,6 +13287,8 @@ class Item(dict):
     # ----------------------------------------------------------------------
     @_lazy_property
     def _is_notebook(self) -> bool:
+        if self.type == None:
+            return False
         return self.type.lower() == "notebook"
 
     # ----------------------------------------------------------------------
@@ -14534,7 +14536,9 @@ class Item(dict):
 
     def _get_icon(self):
         icon = "layers16.png"
-        if self.type.lower() == "web map":
+        if self.type == None:
+            pass
+        elif self.type.lower() == "web map":
             icon = "maps16.png"
         elif self.type.lower() == "web scene":
             icon = "websceneglobal16.png"
@@ -14604,7 +14608,9 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def _ux_item_type(self):
         item_type = self.type
-        if self.type == "Geoprocessing Service":
+        if self.type == None:
+            item_type = "Unknown"
+        elif self.type == "Geoprocessing Service":
             item_type = "Geoprocessing Toolbox"
         elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
             item_type = "Table Layer"
@@ -16697,7 +16703,8 @@ class Item(dict):
             >>> item.create_tile_service(title="SeasideHeightsNJTiles", min_scale= 70000.0,max_scale=80000.0)
 
         """
-
+        if self.type == None:
+            raise ValueError("Unknown item type. Input must of type FeatureService")
         if self.type.lower() == "Feature Service".lower():
             p = self.layers[0].container
             if cache_info is None:
