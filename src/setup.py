@@ -71,7 +71,6 @@ else:
         "cryptography",
         "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
-        "jupyter-client <=6.1.12",
         "pandas >=2.0.0,<2.2.0",
         "numpy >=1.21.6,<2",
         "matplotlib",
