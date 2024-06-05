@@ -1,10 +1,5 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_la_issue_10955\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_la_issue_10955\tests")
-
-
 #######################################################################
+import sys
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging

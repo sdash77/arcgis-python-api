@@ -55,13 +55,20 @@ class LivingAtlasManager:
     Provides a collection of tools to update living atlas on an existing enterprise configuration.
     """
 
-    gis: GIS | None = None
     url: str | None = None
     session: EsriSession | None = None
 
     def __init__(self, url: str, session: EsriSession):
         self.url = url
         self.session = session
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return "< %s @ %s >" % (type(self).__name__, self.url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     @property
     def properties(self) -> dict:
