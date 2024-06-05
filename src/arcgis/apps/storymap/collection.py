@@ -5,6 +5,7 @@ from arcgis.auth.tools import LazyLoader
 import re
 import os
 import copy
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -253,6 +254,12 @@ class Collection(object):
         return utils.show(self._item, width, height)
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="3.0.0",
+        current_version="2.4.0",
+        details="Use the Cover class that is accessed in the cover property.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -389,7 +396,7 @@ class Collection(object):
     @property
     def content(self):
         """
-        Returns the content of the collection.
+        Returns the content of the collection. This includes the cover and navigation.
         """
         # content is found in the collection-ui node.
         root_node = self._properties["root"]
@@ -397,6 +404,12 @@ class Collection(object):
         ui = self._properties["nodes"][ui_node]
 
         content = []
+        # first look in children
+        for child in ui["children"]:
+            # get the node id
+            node = utils._assign_node_class(self, child)
+            content.append(node)
+        # then look in items
         for item in ui["data"]["items"]:
             if "nodeId" in item:
                 # Either a node that is a story content type
