@@ -478,6 +478,28 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         return f"<{self.__class__.__name__}, token=.....>"
 
     # ----------------------------------------------------------------------
+    def create_authorization_response(self, redirect_uri: str | None = None) -> str:
+        """creats the authorization URL"""
+        if redirect_uri is None:
+            redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+
+        session = requests_oauthlib.OAuth2Session(
+            self._clientid,
+            client=self._client,
+            redirect_uri=redirect_uri,  # "urn:ietf:wg:oauth:2.0:oob",  #
+        )
+        auth_url, state = session.authorization_url(
+            self._auth_url,
+            expiration=self._expiration,
+            **{
+                "allow_verification": "false",
+                "style": "dark",
+                "locale": "en-US",
+            },
+        )
+        return auth_url, state
+
+    # ----------------------------------------------------------------------
     def suspend(self) -> bool:
         """
         Invalidates the login and checks any licenses back in
@@ -511,14 +533,30 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
 
     def _init_response_type_token(self):
         """"""
-        import requests_oauthlib
 
-        redirect_uri = f"https://{parse_url(self._auth_url).netloc}"  # "urn:ietf:wg:oauth:2.0:oob" does not work for MobileApplicationClient
+        redirect_uris = [
+            f"https://{parse_url(self._auth_url).netloc}",
+            "urn:ietf:wg:oauth:2.0:oob",
+            "https://www.arcgis.com",
+        ]
+        redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+        for ru in redirect_uris:
+            auth_url, state = self.create_authorization_response(ru)
+            auth_response = requests.get(
+                url=auth_url,
+                proxies=self.proxies,
+                verify=self._verify_cert,
+            ).text
+            if auth_response.find("Invalid redirect_uri") > -1:
+                continue
+            else:
+                redirect_uri = ru
+                break
 
         session = requests_oauthlib.OAuth2Session(
             self._clientid,
             client=self._client,
-            redirect_uri=redirect_uri,
+            redirect_uri=redirect_uri,  # "urn:ietf:wg:oauth:2.0:oob",  #
         )
         auth_url, state = session.authorization_url(
             self._auth_url,
@@ -534,7 +572,12 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             proxies=self.proxies,
             verify=self._verify_cert,
         ).text
-        if "oauth_state" in auth_response:
+        match = re.search(r"\{.*\}", auth_response, re.MULTILINE)
+        if match:
+            match = json.loads(match[0])
+        if "oauth_state" in match:
+            oauth_state = match.get("oauth_state")
+        elif "oauth_state" in auth_response:
             oauth_state = auth_response.split('"oauth_state":"')[1].split('"')[0]
         else:
             raise Exception("Unable to generate oauth token")

@@ -32,13 +32,11 @@ class TestStoryMap(unittest.TestCase):
         )
 
         # Edit briefing cover
-        briefing.cover(
-            "My First briefing",
-            type="minimal",
-            summary="Testing the Python API",
-            by_line="Python Tester",
-            media=river,
-        )
+        cover = briefing.slides[0].cover
+        cover.title = "My First briefing"
+        cover.summary = "Testing the Python API"
+        cover.by_line = "Python Tester"
+        cover.media = river
 
         """Change the story theme"""
         briefing.theme(Themes.SLATE)
