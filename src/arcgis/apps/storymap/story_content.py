@@ -1595,9 +1595,11 @@ class Map:
                 self._zoom = 2
                 self._viewpoint = map_item["initialState"]["viewpoint"]
                 self._camera = map_item["initialState"]["viewpoint"]["camera"]
-                self._lighting_date = map_item["initialState"]["environment"][
-                    "lighting"
-                ]["datetime"]
+                self._lighting_date = (
+                    map_item["initialState"]["environment"]["lighting"]["datetime"]
+                    if "datetime" in map_item["initialState"]["environment"]["lighting"]
+                    else None
+                )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -1717,7 +1719,11 @@ class Map:
                     center_z = (extent["zmin"] + extent["zmax"]) / 2
                 else:
                     # z based on scale
-                    center_z = self._calculate_z_value(self._viewpoint["scale"])
+                    center_z = self._calculate_z_value(
+                        self._viewpoint["scale"]
+                        if "scale" in self._viewpoint
+                        else 3000000
+                    )
                 new_center = {
                     "spatialReference": extent["spatialReference"],
                     "x": center_x,
@@ -1807,6 +1813,8 @@ class Map:
 
         :return: The current viewpoint dictionary
         """
+        if self._existing is False:
+            raise ValueError("Map must be added to the story before setting viewpoint")
         rdata_dict = self._story._properties["resources"][self.resource_node]["data"]
         if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
             try:
