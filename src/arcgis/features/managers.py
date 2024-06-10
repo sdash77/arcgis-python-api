@@ -2291,6 +2291,7 @@ class FeatureLayerCollectionManager(_GISResource):
         data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
+            name = re.sub(r"\.", "_", name)
 
         # Get the file type
         file_type = os.path.splitext(data_path)[1]
@@ -2341,6 +2342,7 @@ class FeatureLayerCollectionManager(_GISResource):
             publish_parameters = self._gis.content.analyze(item=file_item)[
                 "publishParameters"
             ]
+            source_info = publish_parameters
         else:
             # start creating publish params from new file item
             publish_parameters = {
@@ -2350,50 +2352,62 @@ class FeatureLayerCollectionManager(_GISResource):
                 "layerInfo": {"capabilities": "Query"},
                 "targetSR": {"wkid": 102100, "latestWkid": 3857},
             }
+            source_info = None
 
         # Publish the item
         new_item = file_item.publish(publish_parameters=publish_parameters)
 
-        # Insert layer or table
-        source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
-        if len(new_item.layers) > 0:
-            publish_parameters = new_item.layers[0].properties
-            index = _perform_insert(self, publish_parameters)
-            if (
-                file_type == "File Geodatabase"
-                and "filegdb"
-                in orig_item.layers[index].properties.supportedAppendFormats
-            ) or file_type != "File Geodatabase":
-                if file_type == "File Geodatabase":
-                    upload_format = "filegdb"
-                else:
-                    upload_format = file_type.lower()
-                # Workflow for all file types and file geo databases that support append
+        try:
+            # Insert layer or table
+            if len(new_item.layers) > 0:
+                publish_parameters = new_item.layers[0].properties
+                index = _perform_insert(self, publish_parameters)
+                if (
+                    file_type == "File Geodatabase"
+                    and "filegdb"
+                    in orig_item.layers[index].properties.supportedAppendFormats
+                ) or file_type != "File Geodatabase":
+                    # Workflow for all file types and file geo databases that support append
+                    ItemDependency(orig_item).add("itemid", file_item.id)
+                    orig_item.layers[index].append(
+                        item_id=file_item.id,
+                        upload_format="filegdb",
+                    )
+                elif file_type == "File Geodatabase":
+                    # When filegdb not supported through append, use edit features
+                    layer = new_item.layers[0]
+                    features = layer.query().features
+                    if self._gis._is_agol or (
+                        "advancedEditingCapabilities" in layer.properties
+                        and "supportsAsyncApplyEdits"
+                        in layer.properties["advancedEditingCapabilities"]
+                        and layer.properties["advancedEditingCapabilities"][
+                            "supportsAsyncApplyEdits"
+                        ]
+                    ):
+                        orig_item.layers[index].edit_features(
+                            adds=features, future=True
+                        )
+                    else:
+                        orig_item.layers[index].edit_features(adds=features)
+            elif len(new_item.tables) > 0:
+                publish_parameters = new_item.tables[0].properties
+                index = _perform_insert(self, publish_parameters)
                 ItemDependency(orig_item).add("itemid", file_item.id)
-                orig_item.layers[index].append(
+                orig_item.tables[index].append(
                     item_id=file_item.id,
-                    upload_format=upload_format,
+                    upload_format=file_type,
                     source_info=source_info,
                 )
-            elif file_type == "File Geodatabase":
-                # When filegdb not supported through append, use edit features
-                features = new_item.layers[0].query().features
-                orig_item.layers[index].edit_features(adds=features)
-        elif len(new_item.tables) > 0:
-            publish_parameters = new_item.tables[0].properties
-            index = _perform_insert(self, publish_parameters)
-            ItemDependency(orig_item).add("itemid", file_item.id)
-            orig_item.tables[index].append(
-                item_id=file_item.id,
-                upload_format=file_type,
-                source_info=source_info,
-            )
 
-        # Add relationship between service and data
-        orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
-
-        # Remove newly published item since inserted into service
-        new_item.delete()
+            # Add relationship between service and data
+            orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+            # Remove newly published item since inserted into service
+            new_item.delete()
+        except Exception as e:
+            # Remove newly published item since inserted into service
+            new_item.delete()
+            raise e
         return orig_item
 
     def swap_view(

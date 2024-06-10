@@ -825,59 +825,64 @@ def _remove_resource(story, file=None):
 
 # ----------------------------------------------------------------------
 def _assign_node_class(story, node_id):
-    # Find the node type to assign to correct class
-    node_type = story._properties["nodes"][node_id]["type"]
-    # Create an instance of this class using existing node properties
-    if node_type == "separator":
-        node = Content.Separator(story=story, node_id=node_id)
-    elif node_type == "briefing-slide":
-        node = Content.BriefingSlide(story=story, node_id=node_id)
-    elif node_type == "code":
-        node = Content.Code(story=story, node_id=node_id)
-    elif node_type == "image":
-        node = Content.Image(story=story, node_id=node_id)
-    elif node_type == "video":
-        node = Content.Video(story=story, node_id=node_id)
-    elif node_type == "audio":
-        node = Content.Audio(story=story, node_id=node_id)
-    elif node_type == "table":
-        node = Content.Table(story=story, node_id=node_id)
-    elif node_type == "embed":
-        # embed has subtype: video or link
-        subtype = story._properties["nodes"][node_id]["data"]["embedType"]
-        if subtype == "video":
-            node = Content.Video(story=story, node_id=node_id)
+    NODE_TYPE_CLASS_MAP = {
+        "separator": Content.Separator,
+        "briefing-slide": Content.BriefingSlide,
+        "code": Content.Code,
+        "image": Content.Image,
+        "video": Content.Video,
+        "audio": Content.Audio,
+        "embed": {
+            "video": Content.Video,
+            "link": Content.Embed,
+        },
+        "webmap": Content.Map,
+        "text": Content.Text,
+        "button": Content.Button,
+        "swipe": Content.Swipe,
+        "gallery": Content.Gallery,
+        "timeline": Content.Timeline,
+        "tour": Content.MapTour,
+        "table": Content.Table,
+        "immersive": {
+            "sidecar": Content.Sidecar,
+            # Add more subtypes as needed
+        },
+        "action-button": Content.MapAction,
+        "expressmap": Content.ExpressMap,
+        "navigation": Content.Navigation,
+        "storycover": Content.Cover,
+        "collection-cover": Content.Cover,
+        "collection-nav": Content.CollectionNavigation,
+    }
+
+    node_properties = story._properties["nodes"][node_id]
+    node_type = node_properties["type"]
+
+    if node_type in NODE_TYPE_CLASS_MAP:
+        node_class_or_subtype = NODE_TYPE_CLASS_MAP[node_type]
+
+        if isinstance(node_class_or_subtype, dict):
+            # Handle subtypes
+            if "sidecar" in node_class_or_subtype:
+                # Immersive sidecar has subtypes
+                subtype_key = node_properties["data"].get("type")
+            else:
+                subtype_key = node_properties["data"].get(
+                    "embedType"
+                )  # Adjust based on actual subtype key
+            node_class = node_class_or_subtype.get(subtype_key, node_type.capitalize())
         else:
-            node = Content.Embed(story=story, node_id=node_id)
-    elif node_type == "webmap":
-        node = Content.Map(story=story, node_id=node_id)
-    elif node_type == "text":
-        node = Content.Text(story=story, node_id=node_id)
-    elif node_type == "button":
-        node = Content.Button(story=story, node_id=node_id)
-    elif node_type == "swipe":
-        node = Content.Swipe(story=story, node_id=node_id)
-    elif node_type == "gallery":
-        node = Content.Gallery(story=story, node_id=node_id)
-    elif node_type == "timeline":
-        node = Content.Timeline(story=story, node_id=node_id)
-    elif node_type == "tour":
-        node = Content.MapTour(story=story, node_id=node_id)
-    elif node_type == "expressmap":
-        node = Content.ExpressMap(story=story, node_id=node_id)
-    elif node_type == "immersive":
-        # immersive has subtype sidecar (more to add later)
-        subtype = story._properties["nodes"][node_id]["data"]["type"]
-        if subtype == "sidecar":
-            node = Content.Sidecar(story=story, node_id=node_id)
-        else:
-            node = subtype
-    elif node_type == "action-button":
-        node = Content.MapAction(story=story, node_id=node_id)
+            # No subtypes, use the class directly
+            node_class = node_class_or_subtype
     else:
-        # if not of type story content then just return name of type
-        node = node_type.capitalize()
-    return node
+        # Unknown type, return the type name capitalized
+        node_class = node_type.capitalize()
+
+    if isinstance(node_class, str):
+        return node_class
+    else:
+        return node_class(story=story, node_id=node_id)
 
 
 # ----------------------------------------------------------------------
