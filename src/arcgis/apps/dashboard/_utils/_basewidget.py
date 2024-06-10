@@ -1,5 +1,7 @@
 import uuid
-import arcgis.map as arcgismapping
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 
 class _BaseWidget(object):

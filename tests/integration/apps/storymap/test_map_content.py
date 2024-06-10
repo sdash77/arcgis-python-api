@@ -3,7 +3,8 @@ from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps import storymap
 from utils.decorators import integration_test, profiles
-from arcgis.map import Map
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 
 
 @integration_test
@@ -22,7 +23,7 @@ class TestMapContent(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False)
                 story = storymap.StoryMap()
 
-                wm_test = Map()
+                wm_test = arcgismapping.Map()
                 wm_item = wm_test.save(
                     item_properties={
                         "title": "Test WebMap for ArcGIS StoryMap Test",
@@ -30,7 +31,7 @@ class TestMapContent(unittest.TestCase):
                         "snippet": "Creating a map for the purpose of the ArcGIS StoryMap in Python API Test.",
                     }
                 )
-                map_content = Map(wm_item.id)
+                map_content = arcgismapping.Map(wm_item.id)
                 map = story.add(
                     map_content, caption="This is a map that has nothing special on it."
                 )

@@ -15,7 +15,7 @@ from arcgis.auth import EsriSession
 import arcgis
 import shutil
 from arcgis.gis import ItemTypeEnum, ItemProperties
-import arcgis.map as arcgismapping
+from arcgis.auth.tools import LazyLoader
 from ._publish_functions import (
     _get_version,
     _xform2webform,
@@ -27,6 +27,7 @@ from ._publish_functions import (
     _modify_schema,
 )
 
+arcgismapping = LazyLoader("arcgis.map")
 ########################################################################
 
 

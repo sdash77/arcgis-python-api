@@ -66,6 +66,7 @@ from arcgis.auth import EsriSession
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
+arcgismapping = LazyLoader("arcgis.map")
 features = LazyLoader("arcgis.features")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -1613,7 +1614,6 @@ class GIS(object):
           A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
         try:
-            import arcgis.map as arcgismapping
             from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")

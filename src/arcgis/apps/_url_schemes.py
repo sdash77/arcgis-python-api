@@ -1,7 +1,9 @@
 import urllib.parse
 import arcgis
 import json
-import arcgis.map as arcgismapping
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 
 def build_collector_url(

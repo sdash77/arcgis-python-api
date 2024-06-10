@@ -11,8 +11,9 @@ import datetime, time
 from arcgis.gis import GIS
 from arcgis.gis import ContentManager
 from arcgis.features import Feature
-from arcgis.map import Map
+from arcgis.auth.tools import LazyLoader
 from utils.decorators import integration_test
+arcgismapping=LazyLoader("arcgis.map")
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_ent_admin_profile"]
 
@@ -46,7 +47,7 @@ class TestCloneItems(unittest.TestCase):
         )
         source_item_id = item.itemid
         pitem = item.publish()
-        wm = Map()
+        wm = arcgismapping.Map()
         wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
@@ -92,7 +93,7 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = Map()
+        wm = arcgismapping.Map()
         wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
@@ -136,7 +137,7 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = Map()
+        wm = arcgismapping.Map()
         wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
@@ -179,7 +180,7 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = Map()
+        wm = arcgismapping.Map()
         wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
@@ -222,7 +223,7 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = Map()
+        wm = arcgismapping.Map()
         wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={

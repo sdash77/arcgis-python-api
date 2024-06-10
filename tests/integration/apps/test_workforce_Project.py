@@ -7,7 +7,8 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
-
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 # region PreCondition check
 test_skip = False
 class_skip = False
@@ -28,7 +29,6 @@ else:
 try:
     from arcgis.gis import GIS, Group, User, Item
     from arcgis.features import Feature, FeatureLayer
-    from arcgis.map import Map
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce.managers import *
 except ImportError:
@@ -137,7 +137,7 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.assignments_layer_url, str, "Incorrect type")
 
             self.assertIsInstance(project.dispatcher_web_map_id, str, "Incorrect type")
-            self.assertIsInstance(project.dispatcher_webmap, Map, "Incorrect type")
+            self.assertIsInstance(project.dispatcher_webmap, arcgismapping.Map, "Incorrect type")
             self.assertIsInstance(
                 project.dispatchers, DispatcherManager, "Incorrect type"
             )
@@ -167,7 +167,7 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.version, str, "Incorrect type")
 
             self.assertIsInstance(project.worker_web_map_id, str, "Incorrect type")
-            self.assertIsInstance(project.worker_webmap, Map, "Incorrect type")
+            self.assertIsInstance(project.worker_webmap, arcgismapping.Map, "Incorrect type")
             self.assertIsInstance(project.workers, WorkerManager, "Incorrect type")
             self.assertIsInstance(project.workers_item, Item, "Incorrect type")
             self.assertIsInstance(project.workers_layer, FeatureLayer, "Incorrect type")
