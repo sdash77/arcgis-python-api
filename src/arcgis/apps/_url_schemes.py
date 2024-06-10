@@ -1,9 +1,6 @@
 import urllib.parse
 import arcgis
 import json
-from arcgis.auth.tools import LazyLoader
-
-arcgismapping = LazyLoader("arcgis.map")
 
 
 def build_collector_url(
@@ -86,7 +83,7 @@ def build_collector_url(
                 raise ValueError("Invalid parameters -- Must specify a webmap")
             else:
                 item_id = webmap
-                if isinstance(item_id, arcgismapping.Map):
+                if item_id.__class__.__name__ == "Map":
                     item_id = item_id.item.id
                 elif isinstance(item_id, arcgis.gis.Item):
                     item_id = item_id.id
@@ -114,11 +111,11 @@ def build_collector_url(
         item_id = webmap
         # webmap falsy bug #1244
         if webmap is not None:
-            if isinstance(webmap, arcgismapping.Map):
+            if webmap.__class__.__name__ == "Map":
                 item_id = webmap.item.id
             elif isinstance(webmap, arcgis.gis.Item):
                 item_id = webmap.id
-            params.append("itemID=" + item_id)
+            params.append(f"itemID={item_id}")
         if center:
             if isinstance(center, (list, tuple)):
                 center = "{},{}".format(center[0], center[1])
@@ -251,7 +248,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgismapping.Map),
+            webmap.__class__.__name__ == "Map",
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -327,7 +324,7 @@ def build_explorer_url(
     params = []
     item_id = webmap
     if webmap is not None:
-        if isinstance(webmap, arcgismapping.Map):
+        if hasattr(webmap, "item"):
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
@@ -362,7 +359,7 @@ def _validate_explorer_url(
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgismapping.Map),
+            webmap.__class__.__name__ == "Map",
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -509,7 +506,7 @@ def build_field_maps_url(
     if action:
         params.append("referenceContext=" + action)
         item_id = webmap
-        if isinstance(item_id, arcgismapping.Map):
+        if item_id.__class__.__name__ == "Map":
             item_id = item_id.item.id
         elif isinstance(item_id, arcgis.gis.Item):
             item_id = item_id.id
@@ -576,7 +573,7 @@ def _validate_field_maps_url(
         [
             isinstance(webmap, str),
             isinstance(webmap, arcgis.gis.Item),
-            isinstance(webmap, arcgismapping.Map),
+            webmap.__class__.__name__ == "Map",
         ]
     ):
         raise ValueError("Invalid type for webmap parameter")
@@ -710,7 +707,7 @@ def build_navigator_url(
     params = []
     item_id = webmap
     if webmap is not None:
-        if isinstance(webmap, arcgismapping.Map):
+        if webmap.__class__.__name__ == "Map":
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
@@ -965,7 +962,7 @@ def build_workforce_url(
     if assignment is None and assignment_status is not None:
         raise ValueError("Assignment status provided without assignment parameter")
     if webmap is not None:
-        if isinstance(webmap, arcgismapping.Map):
+        if webmap.__class__.__name__ == "Map":
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
