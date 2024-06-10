@@ -2,12 +2,11 @@ import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Map, Scales
-from utils.decorators import integration_test
-
-profiles = ["your_online_profile", "your_enterprise_profile"]
+from utils.decorators import integration_test, profiles
 
 
 @integration_test
+@profiles.enterprise_and_agol
 class TestMapContent(unittest.TestCase):
     """Test adding an map and seeing properties"""
 
@@ -21,7 +20,7 @@ class TestMapContent(unittest.TestCase):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                import arcgismapping
+                import arcgis.map as arcgismapping
 
                 wm_test = arcgismapping.Map()
                 wm_item = wm_test.save(
@@ -42,8 +41,8 @@ class TestMapContent(unittest.TestCase):
                 assert map_content.caption
                 assert isinstance(map.set_viewpoint(scale=Scales.CONTINENT), dict)
 
-                item = gis.content.get(story._itemid)
-                assert item.delete()
+        item = gis.content.get(story._itemid)
+        assert item.delete()
 
 
 if __name__ == "__main__":

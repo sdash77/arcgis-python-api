@@ -1,12 +1,15 @@
-import os
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.geoenrichment import service_limits
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
+enable_verbose_logging()
 
-# gis = GIS(profile='your_kubernetes_profile')
 ###########################################################################
+@integration_test
+@profiles.enterprise_and_agol
 class TestGEHorizontalScaling(unittest.TestCase):
     def setup_ge_service(self, gis: GIS):
         """configures the site's GeoEnrichment if not present"""
@@ -39,25 +42,19 @@ class TestGEHorizontalScaling(unittest.TestCase):
     def test_get_service_limits(self):
         """tests getting the service limits"""
 
-        for profile in [
-            "your_kubernetes_profile",
-            "your_online_profile",
-            "your_enterprise_profile",
-        ]:
-            print(f'Using profile: {profile}')
-            gis = GIS(profile=profile, verify_cert=False)
+        gis = self.gis
+        item = None
+        if (
+            "geoenrichment" in gis.properties.helperServices
+            and gis.properties.helperServices.geoenrichment.url is None
+        ) or "geoenrichment" not in gis.properties.helperServices:
+            item = self.setup_ge_service(gis)
+        info = service_limits()
+        assert isinstance(info, pd.DataFrame)
+        if item:
+            item = self.delete_setup_ge_service(item=item, gis=gis)
+            del item
             item = None
-            if (
-                "geoenrichment" in gis.properties.helperServices
-                and gis.properties.helperServices.geoenrichment.url is None
-            ) or "geoenrichment" not in gis.properties.helperServices:
-                item = self.setup_ge_service(gis)
-            info = service_limits()
-            assert isinstance(info, pd.DataFrame)
-            if item:
-                item = self.delete_setup_ge_service(item=item, gis=gis)
-                del item
-                item = None
 
 
 if __name__ == "__main__":

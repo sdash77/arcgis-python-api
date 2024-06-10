@@ -129,7 +129,7 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        if self._clone_mapping.get("Item IDs") is not None:
+        if self._clone_mapping["Item IDs"] != {}:
             raise Exception(
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
@@ -3150,6 +3150,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             new_service is not None
                             and "adminLayerInfo" in layer
                             and "viewLayerDefinition" in layer["adminLayerInfo"]
+                            and "table"
+                            in layer["adminLayerInfo"]["viewLayerDefinition"]
                         ):
                             layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                 "sourceServiceName"

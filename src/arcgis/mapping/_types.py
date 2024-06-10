@@ -121,9 +121,10 @@ class PackagingJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
+        Reports the total amout of time that passed while the
+        :class:`~arcgis.mapping.PackagingJob` ran.
 
         :return:
             The elapsed time

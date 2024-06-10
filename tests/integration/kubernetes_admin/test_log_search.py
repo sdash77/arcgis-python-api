@@ -1,19 +1,8 @@
 import unittest
-from arcgis.gis import GIS
-from utils.decorators import integration_test
-
-try:
-
-    username = "ACadmin"
-    password = "ACadmin82"
-    url = "https://1091pubbi-1091pubbi.apps.openshift46release.esri.com/web"
-    _gis = GIS(url=url, username=username, password=password, verify_cert=False)
-    skip = False
-except:
-    skip = True
+from utils.decorators import integration_test, profiles
 
 
-@unittest.skipIf(condition=skip, reason="GIS FAILED TO CONNECT")
+@profiles.admin_k8s
 @integration_test
 class TestSearchKubernetesLogs(unittest.TestCase):
     """
@@ -21,8 +10,7 @@ class TestSearchKubernetesLogs(unittest.TestCase):
     """
 
     def test_search_result_count(self):
-        isinstance(_gis, GIS)
-        logs = _gis.admin.logs
+        logs = self.gis.admin.logs
         assert isinstance(
             logs.search(
                 query="item",
@@ -35,8 +23,7 @@ class TestSearchKubernetesLogs(unittest.TestCase):
         )
 
     def test_search_query(self):
-        isinstance(_gis, GIS)
-        logs = _gis.admin.logs
+        logs = self.gis.admin.logs
         assert isinstance(
             logs.search(
                 query="item",
@@ -49,8 +36,7 @@ class TestSearchKubernetesLogs(unittest.TestCase):
         )
 
     def test_search_show_stack(self):
-        isinstance(_gis, GIS)
-        logs = _gis.admin.logs
+        logs = self.gis.admin.logs
         messages = logs.search(
             query="item",
             sort_by="time",
