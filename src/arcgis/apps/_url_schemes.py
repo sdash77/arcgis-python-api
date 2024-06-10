@@ -324,7 +324,7 @@ def build_explorer_url(
     params = []
     item_id = webmap
     if webmap is not None:
-        if hasattr(webmap, "item"):
+        if webmap.__class__.__name__ == "Map":
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
