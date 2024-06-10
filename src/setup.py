@@ -63,7 +63,6 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "arcgis-mapping",
         "urllib3>=1.26.1,<3",
         "cachetools",
         "lxml",
