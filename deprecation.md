@@ -84,6 +84,13 @@ Several classes, functions, and methods have been completely removed from the Ar
 ### `arcgis.apps` Module
 
 - `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
+- `StoryMap.cover_date` - deprecated in **2.4.0** removed in future major release. Use the `date` property in the Cover class.
+- `StoryMap.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
+- `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `Swipe.properties` - deprecated in **2.4.0** removed in future major release. Use the `content` property instead.
+- `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
 
 #### `arcgis.gis` Module
 
