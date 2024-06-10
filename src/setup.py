@@ -18,7 +18,6 @@ from os import path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
-import atexit
 import logging
 import site
 
@@ -64,6 +63,7 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
+        "arcgis-mapping",
         "urllib3>=1.26.1,<3",
         "cachetools",
         "lxml",
