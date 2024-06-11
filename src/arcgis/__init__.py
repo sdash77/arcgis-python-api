@@ -2,6 +2,7 @@ __version__ = "2.4.0"
 
 from arcgis.auth.tools import LazyLoader
 
+from arcgis import env
 os = LazyLoader("os")
 features = LazyLoader("arcgis.features")
 geoanalytics = LazyLoader("arcgis.geoanalytics")
@@ -74,6 +75,7 @@ except Exception as e:
 
 __all__ = [
     "GIS",
+    "env",
     "geocode",
     "features",
     "geoanalytics",
