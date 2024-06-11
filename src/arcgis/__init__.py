@@ -116,14 +116,3 @@ __all__ = [
     "summarize_within",
     "trace_downstream",
 ]
-
-
-def _jupyter_nbextension_paths():
-    return [
-        {
-            "section": "notebook",
-            "src": "widgets/js/dist",
-            "dest": "arcgis",
-            "require": "arcgis/extension",
-        }
-    ]

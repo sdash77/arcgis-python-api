@@ -66,6 +66,7 @@ from arcgis.auth import EsriSession
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
+arcgismapping = LazyLoader("arcgis.map")
 features = LazyLoader("arcgis.features")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -1575,7 +1576,7 @@ class GIS(object):
         using the GIS's configured geocoders. Provided a match is found, the geographic
         extent of the matched address is used as the extent of the map. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgiswidgets.Map` for more information.
+        to the specified zoomlevel. See :class:`~arcgis.map.Map` for more information.
 
         .. note::
             The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
@@ -1610,28 +1611,22 @@ class GIS(object):
             >>> gis.map("Durham,NC")
 
         :return:
-          A :class:`Map <arcgiswidgets.Map>` (the widget is displayed in Jupyter Notebook when queried).
+          A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
         try:
-            from arcgiswidgets.widgets.map_widget import Map
-            from arcgiswidgets.widgets.scene_widget import Scene
-        except Error:
+            from arcgis.geocoding import get_geocoders, geocode, Geocoder
+        except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
         if isinstance(location, Item) and location.type == "Web Map":
-            mapwidget = Map(webmap=location, gis=self)
-        elif isinstance(location, str):
-            if mode == "3D":
-                mapwidget = Scene(location=location, gis=self)
-                pass
-            else:
-                mapwidget = Map(location=location, gis=self)
+            mapwidget = arcgismapping.Map(gis=self, item=location)
+        elif isinstance(location, Item) and location.type == "Web Scene":
+            mapwidget = arcgismapping.Scene(gis=self, item=location)
+        elif mode == "3D":
+            mapwidget = arcgismapping.Scene(gis=self, location=location)
         else:
-            if mode == "3D":
-                mapwidget = Scene(gis=self)
-            else:
-                mapwidget = Map(gis=self)
+            mapwidget = arcgismapping.Map(gis=self, location=location)
 
         return mapwidget
 
@@ -5920,7 +5915,6 @@ class GroupManager(object):
             users_update_items = False
 
         if isinstance(tags, list):
-            tags = ",".join(tags)
             tags = ",".join(tags)
         params = {
             "title": title,
@@ -12278,6 +12272,7 @@ class User(dict):
             "lastName": last_name,
             "clearEmptyFields": True,
             "cultureFormat": culture_format,
+            "region": region,
         }
         if categories:
             params["categories"] = categories

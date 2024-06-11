@@ -13,7 +13,7 @@ from ._schemas import *
 from .managers import *
 from arcgis.apps.workforce.exceptions import WorkforceError
 
-arcgiswidgets = LazyLoader("arcgiswidgets")
+arcgismapping = LazyLoader("arcgis.map")
 
 
 class Project:
@@ -444,13 +444,13 @@ class Project:
 
     @_lazy_property
     def dispatcher_webmap(self):
-        """The dispatcher :class:`~arcgiswidgets.Map` for the project"""
-        return arcgiswidgets.Map(self.gis.content.get(self.dispatcher_web_map_id))
+        """The dispatcher :class:`~arcgis.map.Map` for the project"""
+        return arcgismapping.Map(self.gis.content.get(self.dispatcher_web_map_id))
 
     @_lazy_property
     def worker_webmap(self):
-        """The worker :class:`~arcgiswidgets.Map` for the project"""
-        return arcgiswidgets.Map(self.gis.content.get(self.worker_web_map_id))
+        """The worker :class:`~arcgis.map.Map` for the project"""
+        return arcgismapping.Map(self.gis.content.get(self.worker_web_map_id))
 
     @_lazy_property
     def group(self):

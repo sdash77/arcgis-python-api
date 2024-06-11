@@ -6,27 +6,22 @@ import json
 from typing import Optional, Union
 import pandas as pd
 
-from arcgiswidgets.widgets.map_widget import Map
-from arcgiswidgets.widgets.renderers import (
-    HeatmapRenderer,
-    SimpleRenderer,
-    UniqueValueRenderer,
-    ClassBreaksRenderer,
-    DotDensityRenderer,
-)
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 
 def plot(
     df,
-    map: Optional[Map] = None,
+    map: Optional[arcgismapping.Map] = None,
     name: Optional[str] = None,
     renderer: Optional[
         Union[
-            HeatmapRenderer,
-            SimpleRenderer,
-            UniqueValueRenderer,
-            ClassBreaksRenderer,
-            DotDensityRenderer,
+            arcgismapping.HeatmapRenderer,
+            arcgismapping.SimpleRenderer,
+            arcgismapping.UniqueValueRenderer,
+            arcgismapping.ClassBreaksRenderer,
+            arcgismapping.DotDensityRenderer,
         ]
     ] = None,
     **kwargs,
@@ -34,7 +29,7 @@ def plot(
     """
 
     Plot draws the data on a web map. The user can describe in simple terms how to
-    renderer spatial data using symbol.  To make the process simplier a palette
+    renderer spatial data using symbol.  To make the process simpler a palette
     for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -51,7 +46,7 @@ def plot(
     ----------------------  ---------------------------------------------------------
     renderer                Optional Renderer object. The renderer to use to draw the data.
                             To create a renderer dataclass use the renderers module in the
-                            arcgiswidgets package.
+                            arcgis.map module.
     ======================  =========================================================
 
     """

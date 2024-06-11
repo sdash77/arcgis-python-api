@@ -8090,7 +8090,7 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     extent                                   Optional dict. If the input raster's extent cannot be automatically
                                              inferred, pass in a dictionary representing the raster's extent
-                                             for when viewing on a :class:`~arcgiswidgets.Map` widget.
+                                             for when viewing on a :class:`~arcgis.map.Map` widget.
 
                                              Example:
                                                 | { "xmin" : -74.22655,
@@ -8102,12 +8102,12 @@ class Raster:
                                                 | }
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
-                                             :class:`~arcgiswidgets.Map` widget, what matplotlib colormap
+                                             :class:`~arcgis.map.Map` widget, what matplotlib colormap
                                              to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
                                              for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
-                                             :class:`~arcgiswidgets.Map` widget, what opacity to apply. 0
+                                             :class:`~arcgis.map.Map` widget, what opacity to apply. 0
                                              is completely transparent, 1 is completely opaque.
                                              Default: 1
     ------------------------------------     --------------------------------------------------------------------
@@ -8351,7 +8351,7 @@ class Raster:
     def opacity(self):
         """
         Get/Set what opacity to apply when displaying the raster in a
-        :class:`~arcgiswidgets.Map` widget.
+        :class:`~arcgis.map.Map` widget.
 
         .. note::
             0 is completely transparent, 1 is completely opaque. The default value of ``opacity`` is 1.

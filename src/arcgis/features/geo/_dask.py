@@ -14,11 +14,13 @@ from ._io.fileops import to_featureclass, from_featureclass
 from ._index._dqtree import DaskSpatialIndex
 from ._viz._dmapping import dask_plot
 from distutils.version import LooseVersion
-from arcgiswidgets.widgets.map_widget import Map
 import dask
 from dask.dataframe import Series, from_pandas
 import dask.dataframe as dd
 from dask.base import normalize_token
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 from dask.dataframe.extensions import (
     make_array_nonempty,
     make_scalar,
@@ -644,7 +646,7 @@ class GeoDaskSpatialAccessor:
         return self._data[self.name].geom.length.sum()
 
     # ----------------------------------------------------------------------
-    def plot(self, map_widget: "Map" = None, renderer: dict = None):
+    def plot(self, map_widget: arcgismapping.Map = None, renderer: dict = None):
         """Displays the Dask DataFrame on a Map Widget"""
         return dask_plot(
             df=self._data,  # dask dataframe

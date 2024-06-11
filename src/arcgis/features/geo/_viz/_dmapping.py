@@ -5,7 +5,9 @@ Mapping Holds the Plot function for creating a FeatureCollection JSON plus the r
 import uuid
 import json
 import dask.dataframe as dd
-from arcgiswidgets.widgets.map_widget import Map
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 
 ###########################################################################
@@ -20,7 +22,7 @@ def dask_plot(df, map_widget=None, renderer=None):
     """
 
     Plot draws the data on a web map. The user can describe in simple terms how to
-    renderer spatial data using symbol.  To make the process simplier a pallette
+    renderer spatial data using symbol.  To make the process simpler a pallette
     for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -29,7 +31,7 @@ def dask_plot(df, map_widget=None, renderer=None):
     ----------------------  ---------------------------------------------------------
     df                      required Dask DataFrame. This is the data to map.
     ----------------------  ---------------------------------------------------------
-    map_widget              optional WebMap object. This is the map to display the
+    map_widget              optional Map object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
     renderer                Optional Renderer dataclass.  The renderer definition for the dataset.
@@ -50,7 +52,7 @@ def dask_plot(df, map_widget=None, renderer=None):
         name = uuid.uuid4().hex[:7]
     if map_widget is None:
         map_exists = False
-        map_widget = Map()
+        map_widget = arcgismapping.Map()
     assert isinstance(df, dd.DataFrame)
 
     feature_collections = df.map_partitions(

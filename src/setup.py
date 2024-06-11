@@ -18,7 +18,6 @@ from os import path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
-import atexit
 import logging
 import site
 

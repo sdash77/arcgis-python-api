@@ -12,6 +12,9 @@ import datetime
 import os
 import tempfile
 from utils.decorators import integration_test
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 # region PreCondition check
 test_skip = False
@@ -332,17 +335,15 @@ class Test_Feature_class(unittest.TestCase):
                         name=ea.get_value("title"),
                     )
                 else:  # Polygon
-                    from arcgiswidgets.widgets.renderers import SimpleRenderer
-                    from arcgiswidgets.widgets.symbols import SimpleMarkerSymbolEsriSMS, SimpleLineSymbolStyle, SimpleMarkerSymbolStyle, SimpleLineSymbolEsriSLS
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
                     # create the simple renderer dataclass
-                    simple_renderer = SimpleRenderer(
-                        symbol=SimpleMarkerSymbolEsriSMS(
-                            style=SimpleMarkerSymbolStyle.esriSMSCircle,
+                    simple_renderer = arcgismapping.SimpleRenderer(
+                        symbol=arcgismapping.SimpleMarkerSymbolEsriSMS(
+                            style=arcgismapping.SimpleMarkerSymbolStyle.esriSMSCircle,
                             color=[255, 0, 0, 255],
                             size=12,
-                            outline=SimpleLineSymbolEsriSLS(
-                                style=SimpleLineSymbolStyle.esriSLSSolid,
+                            outline=arcgismapping.SimpleLineSymbolEsriSLS(
+                                style=arcgismapping.SimpleLineSymbolStyle.esriSLSSolid,
                                 color=[0, 0, 0, 255],
                                 width=1,
                             ),

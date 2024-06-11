@@ -1833,7 +1833,7 @@ class GeoAccessor(object):
                                     the data on.
         ----------------------      ---------------------------------------------------------
         renderer                    optional renderer dataclass. This can be created from the
-                                    renderers module in the arcgiswidgets package.
+                                    renderers module in the arcgis.map module.
         ======================      =========================================================
 
         """

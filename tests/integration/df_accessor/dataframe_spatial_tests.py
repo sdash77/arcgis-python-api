@@ -14,6 +14,8 @@ from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.geometry import Geometry
 import pandas as pd
 from pandas.core.internals import ExtensionBlock
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 
 try:
     import pandas.util.testing as tm
@@ -210,13 +212,12 @@ class DataframeSpatialTests(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_plot_not_mapwidget_obj(self):
         """tests plot with invalid map widget"""
-        from arcgiswidgets.widgets.map_widget import Map
         v = GeoArray(geoms)
         data = [[1, 2, 3, 4]] * len(geoms)
         columns = ["A", "B", "C", "D"]
         df = pd.DataFrame(data=data, columns=columns)
         df.spatial.set_geometry(v)
-        assert isinstance(df.spatial.plot(), Map)
+        assert isinstance(df.spatial.plot(), arcgismapping.Map)
 
     ##-------------------------------------------------------------------------
     ## Geometry Property Call Tests
