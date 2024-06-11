@@ -22,6 +22,8 @@ import time
 import pathlib
 import random
 import string
+from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import import_toolbox
 
 
 _TEXT_BASED_ITEM_TYPES = [
@@ -2923,7 +2925,17 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
 
             if not new_item:
-                export_service = False
+                export_113 = False # sd file workflow for enterprise 11.3+
+                export_service = False # file gdb workflow for other applicable cases
+
+                try:
+                    if self.portal_item._gis._is_agol == False:
+                        vers = self.portal_item._gis.properties.enterpriseVersion
+                        if float(vers[:4]) >= 11.3:
+                            export_113 = True
+                except:
+                    pass
+
                 try:
                     source_user = self.portal_item._gis.users.me
                     if (
@@ -2948,7 +2960,77 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
 
-                if export_service:
+                if export_113 and export_service:
+                    serv_url = self.portal_item._gis.hosting_servers[0].url
+                    pt = import_toolbox(serv_url + "/System/PublishingTools/GPServer", gis=self.portal_item._gis)
+                    service_name = self.portal_item.url.split("/")[-2]
+                    folder_name = self.portal_item.url.split("/")[-3]
+                    sd_res = pt.export_service(service_name = service_name, service_type = "FeatureServer", service_folder = folder_name, gis = self.portal_item._gis)
+                    temp_dir = tempfile.mkdtemp()
+                    temp_local = sd_res.download(temp_dir)
+                    rand_name = "".join(random.choices(string.ascii_letters, k=12))
+                    rand_temp = temp_local.split(".sd")[0] + "_" + rand_name + ".sd"
+                    os.rename(temp_local, rand_temp)
+
+                    item_id = None
+                    if (
+                        self._preserve_item_id
+                        and self.target._portal.is_arcgisonline == False
+                    ):
+                        item_id = self.portal_item.itemid
+                    
+                    try:
+                        temp_name = self.portal_item.title
+                        propus = {
+                            "title": name,
+                            "type": "Service Definition",
+                            "url": self.target.url,
+                        }
+                        service_item = self.target.content.add(
+                            item_properties=propus,
+                            data=rand_temp,
+                            folder=self.folder,
+                            owner=self.owner,
+                            item_id=item_id,
+                        )
+                        if service_item is None:
+                            raise RuntimeError("already exists")
+                        try:
+                            new_item = service_item.publish()
+                        except:
+                            name = self._get_unique_name(self.target, name, True)
+                            pub_params = {'name' : name}
+                            service_definition["name"] = name
+                            new_item = service_item.publish(pub_params)
+                        if new_item is None:
+                            raise RuntimeError("already exists")
+                        self.created_items.append(new_item)
+                    except Exception as ex:
+                        if "already exists" in str(ex):
+                            name = self._get_unique_name(self.target, name, True)
+                            rand_name = "".join(random.choices(string.ascii_letters, k=12))
+                            rand_temp = temp_local.split(".sd")[0] + "_" + rand_name + ".sd"
+                            os.rename(temp_local, rand_temp)
+                            propus["title"] = name
+                            service_definition["name"] = name
+
+                            service_item = self.target.content.add(
+                                item_properties=propus,
+                                data=rand_temp,
+                                folder=self.folder,
+                                owner=self.owner,
+                                item_id=item_id,
+                            )
+                            new_item = service_item.publish()
+                            self.created_items.append(new_item)
+                        elif "managed database" in str(ex):
+                            raise Exception(
+                                "The target portal's managed database must be an ArcGIS Data Store."
+                            )
+                        else:
+                            raise
+
+                elif export_service:
                     temp_export = self.portal_item.export(
                         "temp export", "File Geodatabase"
                     )
