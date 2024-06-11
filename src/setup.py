@@ -172,7 +172,7 @@ def get_version():
             MICRO = open(__path("build.info")).read().strip()
     except:
         MICRO = "0"
-    return f"{MAJOR}.{MINOR}.{MICRO}a0+jupyterlab"
+    return f"{MAJOR}.{MINOR}.{MICRO}"
 
 
 kwargs = {
