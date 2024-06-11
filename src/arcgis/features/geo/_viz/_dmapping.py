@@ -5,12 +5,16 @@ Mapping Holds the Plot function for creating a FeatureCollection JSON plus the r
 import uuid
 import json
 import dask.dataframe as dd
-from arcgis.widgets import MapView
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
+
 
 ###########################################################################
 ##  Helper Lambda
 ###########################################################################
-_fn_method = lambda a, op, **kwargs: getattr(a, op)(**kwargs)
+def _fn_method(a, op, **kwargs):
+    return getattr(a, op)(**kwargs)
 
 
 ###########################################################################
@@ -18,7 +22,7 @@ def dask_plot(df, map_widget=None, renderer=None):
     """
 
     Plot draws the data on a web map. The user can describe in simple terms how to
-    renderer spatial data using symbol.  To make the process simplier a pallette
+    renderer spatial data using symbol.  To make the process simpler a pallette
     for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -27,10 +31,10 @@ def dask_plot(df, map_widget=None, renderer=None):
     ----------------------  ---------------------------------------------------------
     df                      required Dask DataFrame. This is the data to map.
     ----------------------  ---------------------------------------------------------
-    map_widget              optional WebMap object. This is the map to display the
+    map_widget              optional Map object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
-    renderer                Optional dict-like.  The renderer definition for the dataset.
+    renderer                Optional Renderer dataclass.  The renderer definition for the dataset.
     ======================  =========================================================
 
 
@@ -48,7 +52,7 @@ def dask_plot(df, map_widget=None, renderer=None):
         name = uuid.uuid4().hex[:7]
     if map_widget is None:
         map_exists = False
-        map_widget = MapView()
+        map_widget = arcgismapping.Map()
     assert isinstance(df, dd.DataFrame)
 
     feature_collections = df.map_partitions(
@@ -56,27 +60,31 @@ def dask_plot(df, map_widget=None, renderer=None):
     ).compute()
     if len(feature_collections) == 1:
         if map_exists:
-            feature_collections[0].layer["layerDefinition"]["drawingInfo"][
-                "renderer"
-            ] = renderer
-            map_widget.add_layer(feature_collections[0], options={"title": name})
+            drawing_info = {"renderer": renderer} if renderer else {}
+            map_widget.content.add(
+                feature_collections[0],
+                drawing_info=drawing_info,
+                options={"title": name},
+            )
         else:
-            feature_collections[0].layer["layerDefinition"]["drawingInfo"][
-                "renderer"
-            ] = renderer
-            map_widget.add_layer(feature_collections[0], options={"title": name})
+            drawing_info = {"renderer": renderer} if renderer else {}
+            map_widget.content.add(
+                feature_collections[0],
+                drawing_info=drawing_info,
+                options={"title": name},
+            )
     else:
         main_fc = feature_collections[0]
-        main_fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
+        main_fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer.dict()
         for fc in feature_collections[1:]:
             main_fc.properties["featureSet"]["features"].extend(
                 fc.properties["featureSet"]["features"]
             )
             # fc.layer['layerDefinition']['drawingInfo']['renderer'] = renderer
         if map_exists:
-            map_widget.add_layer(main_fc, options={"title": name})
+            map_widget.content.add(main_fc, options={"title": name})
         else:
-            map_widget.add_layer(main_fc, options={"title": name})
-    if map_exists == False:
+            map_widget.content.add(main_fc, options={"title": name})
+    if map_exists is False:
         return map_widget
     return True

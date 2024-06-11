@@ -12,6 +12,9 @@ import datetime
 import os
 import tempfile
 from utils.decorators import integration_test
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 # region PreCondition check
 test_skip = False
@@ -323,8 +326,6 @@ class Test_Feature_class(unittest.TestCase):
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        symbol_type="simple",
-                        symbol_style="s.",
                     )
 
                 elif ea.get_value("type") == "Point":
@@ -332,20 +333,26 @@ class Test_Feature_class(unittest.TestCase):
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        symbol_type="simple",
-                        symbol_style="x",
                     )
                 else:  # Polygon
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
+                    # create the simple renderer dataclass
+                    simple_renderer = arcgismapping.SimpleRenderer(
+                        symbol=arcgismapping.SimpleMarkerSymbolEsriSMS(
+                            style=arcgismapping.SimpleMarkerSymbolStyle.esriSMSCircle,
+                            color=[255, 0, 0, 255],
+                            size=12,
+                            outline=arcgismapping.SimpleLineSymbolEsriSLS(
+                                style=arcgismapping.SimpleLineSymbolStyle.esriSLSSolid,
+                                color=[0, 0, 0, 255],
+                                width=1,
+                            ),
+                        )
+                    )
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        cmap="RdPu",
-                        symbol_type="simple",
-                        symbol_style="s",
-                        outline_style="s",
-                        outline_color=[0, 0, 0, 255],
-                        line_width=1.0,
+                        renderer = simple_renderer
                     )
 
             wm_title = "Unit Test Natural Disasters (FC only) Collection"
