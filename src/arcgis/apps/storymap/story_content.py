@@ -4377,8 +4377,163 @@ class MapTour:
         # Node is not in the story if no story or node id is present
         return self._story is not None and self.node is not None
 
+###############################################################################################################
+class MediaAction:
+    """
+    Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
+    to deliver an immersive experience. If the media panel consists of a web map or web scene, the map actions
+    functionality allows authors to include options for further interactivity.
+    Simply put, map actions are buttons that change something on the map or scene when toggled.
+    These buttons can be configured to modify the map extent, the visibility of different layers etc., and this can be
+    useful to include additional details without deviating from the primary narrative.
+
+    There are two main types: Inline text map actions and map action blocks in sidecar.
+
+    To create a media action you must use the `add_action` method found in the sidecar.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, **kwargs) -> None:
+        node = kwargs.pop("node_id", None)
+        story = kwargs.pop("story", None)
+        if node:
+            self.node = node
+            self._story = story
+            actions = story._properties["actions"]
+            for action in actions:
+                if action["origin"] == node:
+                    self.target = action["target"]
+                    self.properties = action
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._story = story
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Media Action"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Media Action"
+
+    # ----------------------------------------------------------------------
+    @property
+    def viewpoint(self) -> dict:
+        for action in self._story._properties["actions"]:
+            if action["origin"] == self.node:
+                return action["data"]["viewpoint"] if "viewpoint" in action["data"] else {}
+            
+    # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get the media node id for the media action.
+        """
+        return utils._assign_node_class(self._story, self.target)
+
+    # ----------------------------------------------------------------------
+    @property
+    def text(self) -> str:
+        """
+        Get/Set the button text for a map action button.
+        """
+        node_dict = self._story._properties["nodes"][self.node]
+        if "text" in node_dict["data"]:
+            return node_dict["data"]["text"]
+        return ""
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text: str) -> None:
+        """"""
+        if isinstance(text, str):
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+        else:
+            raise TypeError("Text must be of type string.")
+
+    # ----------------------------------------------------------------------
+    def set_viewpoint(
+        self, target_geometry: dict, scale: Scales, rotation: int | None = None
+    ):
+        """
+        Set the extent and/or scale for the map action in the story.
+
+        To see the current viewpoint call the `viewpoint` property on the Map Action
+        node.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        target_geometry     Required dictionary representing the target geometry of the
+                            viewpoint.
+
+                            Example:
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'x': -609354.6306080809,
+                                | 'y': 2885721.2797636474}
+        ------------------  ----------------------------------------
+        scale               Required Scales enum class value or int.
+
+                            Scale is a unit-less way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
+        ------------------  ----------------------------------------
+        rotation            Optional float. Determine the rotation for an
+                            action on a 3D map.
+        ==================  ========================================
+
+        :return: The current viewpoint dictionary
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                if rotation is None:
+                    if "viewpoint" in self._story._properties["actions"][idx]["data"]:
+                        rotation = (
+                            self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]["rotation"]
+                            if "rotation"
+                            in self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]
+                            else 0
+                        )
+                if isinstance(scale, Scales):
+                    scale = scale.value
+                self._story._properties["actions"][idx]["data"]["viewpoint"] = {
+                    "rotation": rotation,
+                    "scale": scale,
+                    "targetGeometry": target_geometry,
+                }
+        return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        return self._story is not None and self.node is not None
+
 
 ###############################################################################################################
+@deprecated(deprecated_in="2.4.0", details="Use MediaAction class instead. This will have the same methods and properties but the class name has changed.")
 class MapAction:
     """
     Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
