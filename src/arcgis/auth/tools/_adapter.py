@@ -24,6 +24,12 @@ from requests.utils import (
     select_proxy,
     urldefragauth,
 )
+from requests.adapters import (
+    HTTPAdapter,
+    DEFAULT_POOLSIZE,
+    DEFAULT_RETRIES,
+    DEFAULT_POOLBLOCK,
+)
 from requests.compat import basestring, urlparse
 
 __all__ = ["PKIAdapter", "TruststoreAdapter", "EsriHostHeaderSSLAdapter"]
@@ -161,6 +167,24 @@ class EsriHostHeaderSSLAdapter(HTTPAdapter):
 
 ###########################################################################
 class TruststoreAdapter(HTTPAdapter):
+    def __init__(
+        self,
+        pool_connections=DEFAULT_POOLSIZE,
+        pool_maxsize=DEFAULT_POOLSIZE,
+        max_retries=DEFAULT_RETRIES,
+        pool_block=DEFAULT_POOLBLOCK,
+        ssl_context: truststore.SSLContext | ssl.SSLContext | None = None,
+    ):
+        if ssl_context is None:
+            ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.custom_context = ssl_context
+
+        super().__init__(
+            pool_connections=pool_connections,
+            pool_maxsize=pool_maxsize,
+            max_retries=max_retries,
+            pool_block=pool_block,
+        )
 
     # ---------------------------------------------------------------------
     def __str__(self) -> str:
@@ -215,7 +239,9 @@ class TruststoreAdapter(HTTPAdapter):
             conn.cert_reqs = "CERT_NONE"
             conn.ca_certs = None
             conn.ca_cert_dir = None
-            conn.conn_kw["ssl_context"].check_hostname = verify
+            if "ssl_context" in conn.conn_kw:
+
+                conn.conn_kw["ssl_context"].check_hostname = verify
 
         if cert:
             if not isinstance(cert, basestring):
