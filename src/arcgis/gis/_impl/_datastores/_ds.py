@@ -329,7 +329,7 @@ class PortalDataStore(object):
             >>>                    "snippet": "Adding a datastore item to use api for management."}
             >>>
             >>> ds_item = folder.add(item_properties=item_properties,
-            >>>                      text=text_param)
+            >>>                      text=text_param).result()
             >>>
             >>> # Get the Enteprises PortalDataStore and register with the server
             >>> portal_ds = gis.datastore
