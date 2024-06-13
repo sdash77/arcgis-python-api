@@ -66,7 +66,6 @@ from arcgis.auth import EsriSession
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
-arcgismapping = LazyLoader("arcgis.map")
 features = LazyLoader("arcgis.features")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -1619,16 +1618,21 @@ class GIS(object):
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
-        if isinstance(location, Item) and location.type == "Web Map":
-            mapwidget = arcgismapping.Map(gis=self, item=location)
-        elif isinstance(location, Item) and location.type == "Web Scene":
-            mapwidget = arcgismapping.Scene(gis=self, item=location)
-        elif mode == "3D":
-            mapwidget = arcgismapping.Scene(gis=self, location=location)
-        else:
-            mapwidget = arcgismapping.Map(gis=self, location=location)
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "`arcgis-mapping` is required to view a map in Jupyter Lab."
+            )
 
-        return mapwidget
+        if isinstance(location, Item) and location.type == "Web Map":
+            return arcgismapping.Map(gis=self, item=location)
+        elif isinstance(location, Item) and location.type == "Web Scene":
+            return arcgismapping.Scene(gis=self, item=location)
+        elif mode == "3D":
+            return arcgismapping.Scene(gis=self, location=location)
+        else:
+            return arcgismapping.Map(gis=self, location=location)
 
 
 ###########################################################################

@@ -10,8 +10,6 @@ from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
 
-arcgismapping = LazyLoader("arcgis.map")
-
 collections = LazyLoader("collections")
 json = LazyLoader("json")
 os = LazyLoader("os")
@@ -285,6 +283,11 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError("arcgis-mapping is required to work with offline areas.")
+
         self._gis = gis
         self._portal = gis._portal
         self._item = item
@@ -539,6 +542,12 @@ class OfflineMapAreaManager(object):
             "text": json.dumps(self._map._webmap.dict()),
         }
         if self._item.update(item_properties=update_items):
+            try:
+                import arcgis.map as arcgismapping
+            except (ImportError, ModuleNotFoundError):
+                raise ImportError(
+                    "arcgis-mapping is required to work with offline areas."
+                )
             self._item._hydrated = False
             self._item._hydrate()
             self._map = arcgismapping.Map(self._item)

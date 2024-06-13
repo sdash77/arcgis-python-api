@@ -27,7 +27,6 @@ from ._publish_functions import (
     _modify_schema,
 )
 
-arcgismapping = LazyLoader("arcgis.map")
 ########################################################################
 
 
@@ -1814,6 +1813,12 @@ class Survey:
 
         # Create web map
         if create_web_map is True and initial_publish is True:
+            try:
+                import arcgis.map as arcgismapping
+            except (ImportError, ModuleNotFoundError):
+                raise ImportError(
+                    "`arcgis-mapping` must be installed to create a web map."
+                )
             wm = arcgismapping.Map()
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.add_layer(

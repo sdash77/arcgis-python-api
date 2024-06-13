@@ -13,8 +13,6 @@ from ._schemas import *
 from .managers import *
 from arcgis.apps.workforce.exceptions import WorkforceError
 
-arcgismapping = LazyLoader("arcgis.map")
-
 
 class Project:
     """
@@ -445,10 +443,22 @@ class Project:
     @_lazy_property
     def dispatcher_webmap(self):
         """The dispatcher :class:`~arcgis.map.Map` for the project"""
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "`arcgis-mapping` must be installed to view the 'dispatcher_webmap'"
+            )
         return arcgismapping.Map(self.gis.content.get(self.dispatcher_web_map_id))
 
     @_lazy_property
     def worker_webmap(self):
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "`arcgis-mapping` must be installed to view the 'worker_webmap'"
+            )
         """The worker :class:`~arcgis.map.Map` for the project"""
         return arcgismapping.Map(self.gis.content.get(self.worker_web_map_id))
 
