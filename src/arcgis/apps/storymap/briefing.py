@@ -163,10 +163,11 @@ class Briefing(object):
             "typeKeywords": keywords,
             "type": "StoryMap",
         }
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
         # Add item to active gis and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._itemid = self._item.itemid
         # Make a resource call with the template to create json draft needed
@@ -466,7 +467,10 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def move(
-        self, slide: int, position: Optional[int] = None, delete_current: bool = False
+        self,
+        slide: int,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a slide to another position. The slide currently at that position will

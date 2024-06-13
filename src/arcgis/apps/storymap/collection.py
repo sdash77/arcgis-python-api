@@ -171,9 +171,10 @@ class Collection(object):
             "type": "StoryMap",
         }
         # Add item to active gis and set properties
-        item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+        item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._item = item
         self._itemid = item.itemid

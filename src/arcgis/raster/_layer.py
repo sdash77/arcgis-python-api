@@ -4391,7 +4391,9 @@ class ImageryLayer(Layer):
 
         if self._fnra is not None:
             self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(
-                self._fnra["rasterFunctionArguments"], mosaic_rule, self._url
+                self._fnra["rasterFunctionArguments"],
+                mosaic_rule,
+                self._url,
             )
         self._mosaic_rule = mosaic_rule
 
@@ -5695,8 +5697,8 @@ class ImageryLayer(Layer):
                     ),
                     "text": json.dumps(text_data),
                 }
-
-                return g.content.add(item_properties)
+                folder = g.content.folders.get()
+                return folder.add(item_properties).result()
             else:
                 raise RuntimeError("You need to be signed in to a GIS to create Items")
         else:
@@ -9005,7 +9007,10 @@ class Raster:
         item = json_data
         item_href = stac_item.self_href if is_pystac_item else stac_item
 
-        from ._util import _get_stac_metadata_file, _get_static_catalog_item_resources
+        from ._util import (
+            _get_stac_metadata_file,
+            _get_static_catalog_item_resources,
+        )
         from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item, context)
@@ -13510,7 +13515,10 @@ class RasterCollection:
 
         """
 
-        from ._util import _get_stac_metadata_file, _get_stac_api_search_items
+        from ._util import (
+            _get_stac_metadata_file,
+            _get_stac_api_search_items,
+        )
 
         if not isinstance(stac_api, str):
             raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
