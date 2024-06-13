@@ -166,9 +166,12 @@ class StoryMap(object):
         }
 
         # Step 10: Add item to active GIS and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties).result()
+
         self._itemid = self._item.itemid
 
         # Step 11: Make a resource call with the template to create json draft needed
