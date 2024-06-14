@@ -5487,13 +5487,14 @@ class FeatureLayerCollection(_GISResource):
                 dl_url = res["responseUrl"]
 
             if dl_url is not None:
-                return self._con.get(
+                download_url = self._con.get(
                     path=dl_url,
                     file_name=dl_url.split("/")[-1],
                     out_folder=out_path,
                     try_json=False,
                 )
-
+                res["download_url"] = download_url
+                return res
             else:
                 return res
         elif res is not None:
