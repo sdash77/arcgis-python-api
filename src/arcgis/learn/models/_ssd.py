@@ -522,13 +522,19 @@ class SingleShotDetector(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        from ._hf_weightutils import hf_resnet_cfgs
 
-        return [
-            *_resnet_family,
-            *_densenet_family,
-            *_vgg_family,
-            models.mobilenet_v2.__name__,
-        ] + timm_backbones
+        hf_backbones = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return (
+            [
+                *_resnet_family,
+                *_densenet_family,
+                *_vgg_family,
+                models.mobilenet_v2.__name__,
+            ]
+            + timm_backbones
+            + hf_backbones
+        )
 
     @property
     def supported_datasets(self):

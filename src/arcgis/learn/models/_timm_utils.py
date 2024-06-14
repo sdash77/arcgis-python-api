@@ -23,7 +23,8 @@ try:
     import fnmatch
     from timm.models.hub import (
         has_hf_hub,
-        load_state_dict_from_hf,
+        # load_state_dict_from_hf,
+        _download_from_hf,
         load_state_dict_from_url,
     )
     from timm.models.helpers import (
@@ -39,6 +40,10 @@ try:
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
+
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 # same function with modification fastai.vision.learner._test_cnn
@@ -133,6 +138,16 @@ hosted_weights = {
 }
 
 
+def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
+    assert has_hf_hub(True)
+    cached_file = _download_from_hf(model_id, filename)
+    state_dict = torch.load(cached_file, map_location="cpu")
+    return state_dict
+
+
+timm.models.hub.load_state_dict_from_hf = load_state_dict_from_hf
+
+
 # same function with modification timm.models.helpers.load_pretrained
 def load_timm_bckbn_pretrained(
     model,
@@ -180,7 +195,11 @@ def load_timm_bckbn_pretrained(
 
     elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
         _logger.info(f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})")
-        state_dict = load_state_dict_from_hf(hf_hub_id)
+        hf_filename = default_cfg.get("filename", None)
+        if hf_filename is not None:
+            state_dict = load_state_dict_from_hf(hf_hub_id, hf_filename)
+        else:
+            state_dict = load_state_dict_from_hf(hf_hub_id)
     else:
         _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
         state_dict = load_state_dict_from_url(

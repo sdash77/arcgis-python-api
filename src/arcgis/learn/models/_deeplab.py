@@ -452,7 +452,13 @@ class DeepLab(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family, *_densenet_family, *_vgg_family]
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):

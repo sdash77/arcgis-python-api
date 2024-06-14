@@ -390,6 +390,8 @@ def _get_ms_tail(tail, data, type_init="random"):
         padding_mode=tail.padding_mode,
     )
     # referred from https://github.com/rwightman/pytorch-image-models/blob/7c67d6aca992f039eece0af5f7c29a43d48c00e4/timm/models/helpers.py#L143
+    if in_chanls == tail.weight.shape[1]:
+        return tail
     if in_chanls == 1:
         new_tail.weight.data = tail.weight.data.float().sum(dim=1, keepdim=True)
     else:
@@ -577,6 +579,12 @@ class ArcGISModel(object):
                 bckbn = backbone.split(":")[1]
                 if hasattr(timm.models, bckbn):
                     self._backbone = getattr(timm.models, bckbn)
+            elif "hf:" in backbone:
+                bckbn = backbone.split(":")[1]
+                from . import _hf_weightutils as hfwu
+
+                if "resnet" in bckbn:
+                    self._backbone = getattr(hfwu, bckbn)
         else:
             self._backbone = backbone
 
@@ -673,8 +681,11 @@ class ArcGISModel(object):
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
-        if type(backbone) is not str and "timm" in backbone.__module__:
-            backbone_name = "timm:" + backbone.__name__
+        if type(backbone) is not str:
+            if "timm" in backbone.__module__:
+                backbone_name = "timm:" + backbone.__name__
+            elif "_hf_" in backbone.__module__:
+                backbone_name = "hf:" + backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
 
     def _check_dataset_support(self, data):
