@@ -18,7 +18,6 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
-arcgismapping = LazyLoader("arcgis.map")
 utils = LazyLoader("arcgis.apps.storymap._utils")
 pd = LazyLoader("pandas")
 
@@ -1458,6 +1457,10 @@ class Map:
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError("This feature requires `arcgis-mapping`.")
         # Can be created from scratch or already exist in story
         # Map is not an immersive node
         self._story = kwargs.pop("story", None)
@@ -2115,6 +2118,10 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
+        try:
+            import arcgis.map as arcgismapping
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError("This feature requires `arcgis-mapping`.")
         # Check for error.
         # First find the type of the new map
         if isinstance(map, str):
