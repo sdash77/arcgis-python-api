@@ -129,8 +129,8 @@ class Collection(object):
 
     # ----------------------------------------------------------------------
     def _create_new_collection(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.collection)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["collection"])
         # Add correct by-line and locale
         template["nodes"]["n-U3Ou63"]["data"]["byline"] = self._gis._username
 

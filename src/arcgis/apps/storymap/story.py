@@ -183,7 +183,7 @@ class StoryMap(object):
         )
 
     def _get_storymap_template(self):
-        return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
+        return copy.deepcopy(utils._TEMPLATES["storymap_2"])
 
     def _customize_template(self, template):
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username

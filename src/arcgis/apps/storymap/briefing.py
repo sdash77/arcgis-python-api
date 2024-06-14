@@ -121,8 +121,8 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def _create_new_briefing(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["briefing"])
         # Add correct by-line and locale
         template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
 
