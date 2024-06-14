@@ -30,3 +30,9 @@ from .admin._uploads import Uploads
 from .admin._usagereports import Report, ReportManager
 from .admin._mode import Mode
 from .admin._services import ServiceWebHook, ServiceWebHookManager
+from .admin._types import (
+    TypesManager,
+    ProvidersManager,
+    ExtensionManager,
+    RegisteredExtension,
+)

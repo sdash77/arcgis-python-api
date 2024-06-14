@@ -26,6 +26,7 @@ from ._util import (
     _create_output_service,
     GAJob,
     _prevent_bds_item,
+    _check_ga_status,
 )
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
@@ -169,6 +170,7 @@ def geocode_locations(
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -453,6 +455,7 @@ def snap_tracks(
     point_layer = _prevent_bds_item(point_layer)
     polyline_layer = _prevent_bds_item(polyline_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
@@ -681,6 +684,7 @@ def detect_incidents(
     """
     tool_name = "DetectIncidents"
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
@@ -943,6 +947,7 @@ def find_dwell_locations(
         gis = _env.active_gis
     if gis.version < [8, 1]:
         return None
+    _check_ga_status(gis)
 
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _arcgis.geoprocessing.import_toolbox(url, gis=gis)
@@ -1196,6 +1201,7 @@ def find_similar_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    _check_ga_status(gis)
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
