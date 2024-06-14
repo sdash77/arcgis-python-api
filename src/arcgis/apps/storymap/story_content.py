@@ -1457,10 +1457,7 @@ class Map:
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError("This feature requires `arcgis-mapping`.")
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
         # Can be created from scratch or already exist in story
         # Map is not an immersive node
         self._story = kwargs.pop("story", None)
@@ -2118,10 +2115,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError("This feature requires `arcgis-mapping`.")
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
         # Check for error.
         # First find the type of the new map
         if isinstance(map, str):

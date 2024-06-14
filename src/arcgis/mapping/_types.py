@@ -283,10 +283,7 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError("arcgis-mapping is required to work with offline areas.")
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
 
         self._gis = gis
         self._portal = gis._portal
@@ -542,14 +539,9 @@ class OfflineMapAreaManager(object):
             "text": json.dumps(self._map._webmap.dict()),
         }
         if self._item.update(item_properties=update_items):
-            try:
-                import arcgis.map as arcgismapping
-            except (ImportError, ModuleNotFoundError):
-                raise ImportError(
-                    "arcgis-mapping is required to work with offline areas."
-                )
             self._item._hydrated = False
             self._item._hydrate()
+            arcgismapping = arcgis._get_arcgis_map_mod(True)
             self._map = arcgismapping.Map(self._item)
         else:
             raise Exception("Could not update the offline properties.")

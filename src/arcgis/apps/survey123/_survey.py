@@ -1813,12 +1813,7 @@ class Survey:
 
         # Create web map
         if create_web_map is True and initial_publish is True:
-            try:
-                import arcgis.map as arcgismapping
-            except (ImportError, ModuleNotFoundError):
-                raise ImportError(
-                    "`arcgis-mapping` must be installed to create a web map."
-                )
+            arcgismapping = arcgis._get_arcgis_map_mod(True)
             wm = arcgismapping.Map()
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.add_layer(

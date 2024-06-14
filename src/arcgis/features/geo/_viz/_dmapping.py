@@ -5,6 +5,7 @@ Mapping Holds the Plot function for creating a FeatureCollection JSON plus the r
 import uuid
 import json
 import dask.dataframe as dd
+import arcgis
 
 
 ###########################################################################
@@ -48,10 +49,7 @@ def dask_plot(df, map_widget=None, renderer=None):
     if name is None:
         name = uuid.uuid4().hex[:7]
     if not map_widget:
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError("`arcgis-mapping` is required to plot.")
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
         map_exists = False
         map_widget = arcgismapping.Map()
     assert isinstance(df, dd.DataFrame)

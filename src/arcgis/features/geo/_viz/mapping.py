@@ -70,10 +70,7 @@ def plot(
 
         name = uuid.uuid4().hex[:7]
     if map is None:
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError("`arcgis-mapping` is required to plot.")
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
         map = arcgismapping.Map()
     import string
 

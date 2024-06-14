@@ -1618,12 +1618,7 @@ class GIS(object):
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
-        try:
-            import arcgis.map as arcgismapping
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "`arcgis-mapping` is required to view a map in Jupyter Lab."
-            )
+        arcgismapping = arcgis._get_arcgis_map_mod(True)
 
         if isinstance(location, Item) and location.type == "Web Map":
             return arcgismapping.Map(gis=self, item=location)
