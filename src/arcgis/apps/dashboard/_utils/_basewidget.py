@@ -291,7 +291,7 @@ def _auto_calculate_width(elements):
 
     for el in elements:
         element_width = getattr(el, "width", 1)
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and el.__class__.__name__ != "Map":
             element_width = el.get("width", 1)
 
         if element_width != 1:
@@ -302,7 +302,7 @@ def _auto_calculate_width(elements):
         available_width = float(available_width / remaining_elements)
 
     for el in elements:
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and el.__class__.__name__ != "Map":
             if el.get("width", 1) == 1:
                 el["width"] = available_width
         elif getattr(el, "width", 1) == 1:
@@ -319,7 +319,7 @@ def _auto_calculate_height(elements):
 
     for el in elements:
         element_height = getattr(el, "height", 1)
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and el.__class__.__name__ != "Map":
             element_height = el.get("height", 1)
 
         if element_height != 1:
@@ -330,7 +330,7 @@ def _auto_calculate_height(elements):
         available_height = float(available_height / remaining_elements)
 
     for el in elements:
-        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and el.__class__.__name__ != "Map":
             if el.get("height", 1) == 1:
                 el["height"] = available_height
         elif getattr(el, "height", 1) == 1:

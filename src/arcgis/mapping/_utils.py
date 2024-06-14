@@ -203,11 +203,11 @@ def export_map(
     **kwargs,
 ):
     """
-    The ``export_map`` function takes the state of the :class:`~arcgis.mapping.WebMap` object (for example, included services, layer visibility
+    The ``export_map`` function takes the state of the :class:`~arcgis.map.Map` object (for example, included services, layer visibility
     settings, client-side graphics, and so forth) and returns either (a) a page layout or
     (b) a map without page surrounds of the specified area of interest in raster or vector format.
     The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
-    graphics, and other settings in the web map. The JSON must be structured according to the WebMap specification
+    graphics, and other settings in the web map. The JSON must be structured according to the Map specification
     in the ArcGIS Help.
 
     .. note::
