@@ -7,6 +7,7 @@ from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+_imports = LazyLoader("arcgis._impl.imports")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 story = LazyLoader("arcgis.apps.storymap.story")
 collection = LazyLoader("arcgis.apps.storymap.collection")
@@ -1457,7 +1458,7 @@ class Map:
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Can be created from scratch or already exist in story
         # Map is not an immersive node
         self._story = kwargs.pop("story", None)
@@ -2115,7 +2116,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Check for error.
         # First find the type of the new map
         if isinstance(map, str):

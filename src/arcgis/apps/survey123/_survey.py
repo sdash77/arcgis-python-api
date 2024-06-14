@@ -16,6 +16,8 @@ import arcgis
 import shutil
 from arcgis.gis import ItemTypeEnum, ItemProperties
 from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 from ._publish_functions import (
     _get_version,
     _xform2webform,
@@ -1852,7 +1854,7 @@ class Survey:
 
         # Create web map
         if create_web_map is True and initial_publish is True:
-            arcgismapping = arcgis._get_arcgis_map_mod(True)
+            arcgismapping = _imports.get_arcgis_map_mod(True)
             wm = arcgismapping.Map()
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.add_layer(

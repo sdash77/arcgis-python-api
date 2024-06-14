@@ -58,24 +58,6 @@ from arcgis.features.analysis import (
 from .geocoding import geocode
 
 
-def _get_arcgis_map_mod(raise_import_error_if_not_installed=False):
-    """
-    Returns the arcgis.map module from `arcgis-mapping` package, if installed.
-    If not installed and raise_import_error_if_not_installed is True, raises ImportError.
-    If not installed and raise_import_error_if_not_installed is False, returns None.
-    """
-    try:
-        import arcgis.map as arcgismapping
-
-        return arcgismapping
-    except (ImportError, ModuleNotFoundError):
-        if raise_import_error_if_not_installed:
-            raise ImportError(
-                "`arcgis-mapping` is not installed. Use `conda install -c esri arcgis-mapping` or `pip install arcgis-mapping` to install it."
-            )
-        return None
-
-
 try:
     import pandas as pd
     from arcgis.features.geo import GeoAccessor
@@ -136,5 +118,4 @@ __all__ = [
     "summarize_nearby",
     "summarize_within",
     "trace_downstream",
-    "_get_arcgis_map_mod",
 ]

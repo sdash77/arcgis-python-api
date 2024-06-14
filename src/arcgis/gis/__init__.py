@@ -30,6 +30,9 @@ from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
 
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
     ItemTypeEnum,
@@ -60,7 +63,6 @@ import concurrent.futures
 
 from cachetools import cached, TTLCache
 
-from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 
 
@@ -1618,7 +1620,7 @@ class GIS(object):
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
 
         if isinstance(location, Item) and location.type == "Web Map":
             return arcgismapping.Map(gis=self, item=location)

@@ -7,6 +7,9 @@ from typing import Optional, Union
 import pandas as pd
 
 import arcgis
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 
 
 def plot(
@@ -70,7 +73,7 @@ def plot(
 
         name = uuid.uuid4().hex[:7]
     if map is None:
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         map = arcgismapping.Map()
     import string
 

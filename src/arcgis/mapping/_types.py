@@ -24,6 +24,7 @@ _mixins = LazyLoader("arcgis._impl.common._mixins")
 _geometry = LazyLoader("arcgis.geometry")
 _services = LazyLoader("arcgis.gis.server.admin._services")
 _log = logging.getLogger(__name__)
+_imports = LazyLoader("arcgis._impl.imports")
 
 
 ###########################################################################
@@ -283,7 +284,7 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
 
         self._gis = gis
         self._portal = gis._portal
@@ -541,7 +542,7 @@ class OfflineMapAreaManager(object):
         if self._item.update(item_properties=update_items):
             self._item._hydrated = False
             self._item._hydrate()
-            arcgismapping = arcgis._get_arcgis_map_mod(True)
+            arcgismapping = _imports.get_arcgis_map_mod(True)
             self._map = arcgismapping.Map(self._item)
         else:
             raise Exception("Could not update the offline properties.")

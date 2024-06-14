@@ -6,6 +6,9 @@ import uuid
 import json
 import dask.dataframe as dd
 import arcgis
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 
 
 ###########################################################################
@@ -49,7 +52,7 @@ def dask_plot(df, map_widget=None, renderer=None):
     if name is None:
         name = uuid.uuid4().hex[:7]
     if not map_widget:
-        arcgismapping = arcgis._get_arcgis_map_mod(True)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         map_exists = False
         map_widget = arcgismapping.Map()
     assert isinstance(df, dd.DataFrame)
