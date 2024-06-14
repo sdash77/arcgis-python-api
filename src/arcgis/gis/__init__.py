@@ -2156,11 +2156,11 @@ class GroupMigrationManager(object):
             >>> download_path = source_epk_item.download(save_path="path_on_system",
                                                          file_name="file_name.epk")
 
-            >>> target_epk_item = target.content.add(item_properties={"title": "Group data export item",
+            >>> target_epk_item = folder.add(item_properties={"title": "Group data export item",
                                                                       "tags": "group_content_migration",
                                                                       "snippet": "Sample of loading package.",
                                                                       "type": "Export Package:},
-                                                     date=download_path)
+                                                     file=download_path)
 
             >>> target_grp_mig = target.groups.get("<target_group_id>").migration
             >>> grp_import_job = target_grp_mig.load(epk_item=target_epk_item)
@@ -17476,8 +17476,10 @@ class Item(dict):
                     "typeKeywords": ",".join(item.typeKeywords),
                     "title": title,
                 }
+                folder = self._gis.content.folders.get()
+                job = folder.add(item_properties=ip, file=nfp)
+                item = job.result()
 
-                item = self._gis.content.add(item_properties=ip, data=nfp)
                 return item
         elif item.type in FILE_BASED_ITEM_TYPES:
             fp = self.get_data()
@@ -17493,7 +17495,9 @@ class Item(dict):
                 "typeKeywords": ",".join(item.typeKeywords),
                 "title": title,
             }
-            item = self._gis.content.add(item_properties=ip, data=nfp)
+            folder = self._gis.content.folders.get()
+            job = folder.add(item_properties=ip, file=nfp)
+            item = job.result()
             os.remove(nfp)
             return item
         elif item.type in TEXT_BASED_ITEM_TYPES:
@@ -17509,7 +17513,9 @@ class Item(dict):
             }
             if item.type == "Notebook":
                 ip["properties"] = item.properties
-            new_item = self._gis.content.add(item_properties=ip)
+            folder = self._gis.content.folders.get()
+            job = folder.add(item_properties=ip, text=ip["text"])
+            new_item = job.result()
             if item.url and item.url.find(item.id) > -1:
                 new_item.update({"url": item.url.replace(item.id, new_item.id)})
             return new_item
