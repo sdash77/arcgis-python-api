@@ -170,7 +170,7 @@ class StoryMap(object):
             item_properties["thumbnail"] = thumbnail
 
         folder = self._gis.content.folders.get()
-        self._item = folder.add(item_properties).result()
+        self._item = folder.add(item_properties, text=" ").result()
 
         self._itemid = self._item.itemid
 
