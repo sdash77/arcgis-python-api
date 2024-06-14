@@ -14,6 +14,7 @@ from ._url_schemes import build_survey123_url
 from ._url_schemes import build_tracker_url
 from ._url_schemes import build_workforce_url
 
+
 try:
     from arcgis.widgets._mapview import MapView
 except ImportError as e:

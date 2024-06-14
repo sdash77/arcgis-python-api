@@ -87,7 +87,9 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(
-        output_name, create_params=create_parameters, service_type="imageService"
+        output_name,
+        create_params=create_parameters,
+        service_type="imageService",
     )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
@@ -231,7 +233,8 @@ def _create_project(
         definition = {}
 
     item_properties["text"] = json.dumps(definition)
-    item = gis.content.add(item_properties, folder=folder)
+    folder = gis.content.folders.get(folder)
+    item = folder.add(item_properties).result()
     return item
 
 
@@ -428,7 +431,11 @@ def _add_mission(
         mission_json = {
             "items": {"imageCollection": {}},
             "jobs": {
-                "imageCollection": {"checked": True, "progress": 100, "success": True},
+                "imageCollection": {
+                    "checked": True,
+                    "progress": 100,
+                    "success": True,
+                },
                 "adjustment": {"checked": False, "mode": "Quick"},
                 "ortho": {"checked": False},
                 "matchControlPoint": {"checked": False},
@@ -922,7 +929,11 @@ def alter_processing_states(
 ## Get processing states
 ###################################################################################################
 def get_processing_states(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    image_collection,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Retrieve the processing states of the image collection
@@ -2667,7 +2678,11 @@ def query_control_points(
 ## Reset image collection
 ###################################################################################################
 def reset_image_collection(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    image_collection,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Reset the image collection. It is used to reset the image collection to its
@@ -2815,7 +2830,12 @@ class Project:
     """
 
     def __init__(
-        self, project=None, definition=None, *, gis: Optional[GIS] = None, **kwargs
+        self,
+        project=None,
+        definition=None,
+        *,
+        gis: Optional[GIS] = None,
+        **kwargs,
     ):
         if not isinstance(project, Item):
             try:
