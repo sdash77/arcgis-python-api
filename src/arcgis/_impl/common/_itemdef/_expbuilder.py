@@ -91,13 +91,24 @@ class _WebExperience(_ItemDefinition):
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
         item_properties["text"] = data
-        new_item = self.target.content.add(
-            item_properties=item_properties,
-            thumbnail=thumbnail,
-            folder=self.folder,
-            owner=self.owner,
-            item_id=item_id,
+
+        if self.folder:
+            folder = self.target.content.folders.get(
+                folder=self.folder, owner=self.owner
+            )
+        else:
+            folder = self.target.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        job = folder.add(
+            **{
+                "item_properties": item_properties,
+                "item_id": item_id,
+            }
         )
+        new_item = job.result()
+
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -160,7 +171,10 @@ class _WebExperience(_ItemDefinition):
                 new_item.resources.add(self.resources, archive=True)
             config_dict = self.portal_item.resources.get("config/config.json")
             new_dict = _clone_dict(
-                config_dict, self.portal_item._gis, self.target, self._search_existing
+                config_dict,
+                self.portal_item._gis,
+                self.target,
+                self._search_existing,
             )
             with tempfile.NamedTemporaryFile(
                 mode="w+", suffix=".json", delete=False

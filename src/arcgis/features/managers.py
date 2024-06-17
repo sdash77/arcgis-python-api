@@ -1615,14 +1615,15 @@ class SyncManager(object):
         if os.path.isfile(db) == False:
             raise Exception("Could not create the replica")
         destination_content = destination_gis.content
-        item = destination_content.add(
+        folder = destination_content.folders().get()
+        item = folder.add(
             item_properties={
                 "type": "SQLite Geodatabase",
                 "tags": "replication",
                 "title": replica_name,
             },
-            data=db,
-        )
+            file=db,
+        ).result()
         published = item.publish()
         return published
 
@@ -2326,15 +2327,19 @@ class FeatureLayerCollectionManager(_GISResource):
             folder_name = None
 
         # Add the file as an item to portal
-        file_item = self._gis.content.add(
+        if folder_name:
+            folder = self._gis.content.folders.get(
+                folder_name, self._gis.users.me.username
+            )
+        else:
+            folder = self._gis.content.folders.get()
+        file_item = folder.add(
             item_properties={
                 "type": file_type,
                 "title": name,
                 "tags": "inserted",
             },
-            data=data_path,
-            owner=self._gis.users.me.username,
-            folder=folder_name,
+            file=data_path,
         )
 
         # Analyze the file to get publish parameters

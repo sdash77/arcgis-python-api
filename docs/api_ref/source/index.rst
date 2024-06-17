@@ -27,7 +27,6 @@ Contents:
    arcgis.mapping.toc
    arcgis.realtime
    arcgis.schematics
-   arcgis.widgets
    arcgis.apps
    arcgis.learn.toc
    arcgis.auth

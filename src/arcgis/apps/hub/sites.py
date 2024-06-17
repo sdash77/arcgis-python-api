@@ -1040,7 +1040,9 @@ class SiteManager(object):
             _datafile = "sites-data.json"
 
         # Create site item, share with group
-        site = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+
+        folder = self._gis.content.folders.get()
+        site = folder.add(_item_dict).result()
 
         # Share with necessary group if group exists
         try:
@@ -1221,9 +1223,8 @@ class SiteManager(object):
                 _site_properties["properties"]["collaborationGroupId"] = collab_group_id
 
         # Create site item, share with group
-        new_item = self._gis.content.add(
-            _site_properties, owner=self._gis.users.me.username
-        )
+        folder = self._gis.content.folders.get()
+        new_item = folder.add(_site_properties).result()
 
         # Share with necessary group
         try:
