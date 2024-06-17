@@ -17,6 +17,118 @@ time = LazyLoader("time")
 sharing = LazyLoader("gis._impl._content_manager_sharing.api")
 _dt = LazyLoader("datetime")
 
+_TEMPLATES = {
+    "storymap_2": {
+        "root": "n-4xkUEe",
+        "nodes": {
+            "n-4xkUEe": {
+                "type": "story",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "config": {"coverDate": "first-published"},
+                "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"],
+            },
+            "n-aTn8ak": {
+                "type": "storycover",
+                "data": {
+                    "type": "minimal",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+            },
+            "n-1AItUD": {
+                "type": "navigation",
+                "data": {"links": []},
+                "config": {"isHidden": True},
+            },
+            "n-cOeTah": {"type": "credits"},
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "briefing": {
+        "root": "n-k23c2p",
+        "nodes": {
+            "n-XK0GeP": {"type": "briefing-ui", "children": ["n-11SuEF"]},
+            "n-11SuEF": {
+                "type": "briefing-slide",
+                "data": {"layout": "cover"},
+                "children": ["n-3r3mhh"],
+            },
+            "n-3r3mhh": {
+                "type": "storycover",
+                "data": {
+                    "type": "sidebyside",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+                "children": [],
+            },
+            "n-k23c2p": {
+                "type": "briefing",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "children": ["n-XK0GeP"],
+            },
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "collection": {
+        "root": "n-vCW523",
+        "nodes": {
+            "n-vCW523": {
+                "type": "collection",
+                "data": {"storyTheme": "r-QvId58"},
+                "children": ["n-eERiZz"],
+            },
+            "n-eERiZz": {
+                "type": "collection-ui",
+                "data": {"items": []},
+                "children": ["n-U3Ou63", "n-JTJJo2"],
+            },
+            "n-U3Ou63": {
+                "type": "collection-cover",
+                "data": {
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "type": "tiles",
+                },
+            },
+            "n-JTJJo2": {
+                "type": "collection-nav",
+                "data": {"type": "compact"},
+            },
+        },
+        "resources": {
+            "r-QvId58": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+}
+
 
 # ----------------------------------------------------------------------
 def _get_thumbnail(gis) -> str:
@@ -128,7 +240,10 @@ def cover(
 
 # ----------------------------------------------------------------------
 def set_logo(
-    story, logo: str, link: Optional[str] = None, alt_text: Optional[str] = None
+    story,
+    logo: str,
+    link: Optional[str] = None,
+    alt_text: Optional[str] = None,
 ):
     """
     Set the logo image, link, and/or alt text for the story or briefing.
@@ -365,7 +480,10 @@ def save(
             # Make a call to the StoryMaps publish endpoint
             story._gis._con.post(
                 path=story._url + "/publish",
-                params={"f": "json", "token": story._gis._con._session.auth.token},
+                params={
+                    "f": "json",
+                    "token": story._gis._con._session.auth.token,
+                },
             )
     else:
         # Set the type keywords
@@ -512,7 +630,9 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
 
 # ----------------------------------------------------------------------
 def copy_content(
-    story, target_story: Union[briefing.Briefing, storymap.StoryMap], content: list
+    story,
+    target_story: Union[briefing.Briefing, storymap.StoryMap],
+    content: list,
 ):
     """
     Copy the content from one briefing/story to another. This will copy the content
@@ -612,7 +732,10 @@ def copy_content(
         for node in node_list:
             # add node info for copying
             _add_to_dicts(
-                node, complete_node_list, complete_node_dict, complete_resource_dict
+                node,
+                complete_node_list,
+                complete_node_dict,
+                complete_resource_dict,
             )
             # check type of node to see if need to find children
             node_children = _has_children(story, node)

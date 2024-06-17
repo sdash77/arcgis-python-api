@@ -672,7 +672,8 @@ class UX(object):
                 "tags": ["SharedTheme", "Logo"],
                 "type": "Image",
             }
-            im_item = self._gis.content.add(item_props, logo)
+            folder = self._gis.content.folders.get()
+            im_item = folder.add(item_props, file=logo).result()
             # share to everyone
             im_item.sharing.sharing_level = "EVERYONE"
             # set in shared_theme dict
