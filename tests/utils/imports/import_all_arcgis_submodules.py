@@ -40,7 +40,6 @@ def import_all_arcgis_submodules(import_learn=True):
     import arcgis.mapping
     import arcgis.realtime
     import arcgis.schematics
-    import arcgis.widgets
     import arcgis.apps
     import arcgis.apps.hub
     if import_learn:
