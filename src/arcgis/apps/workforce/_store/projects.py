@@ -93,7 +93,8 @@ def _get_basemap(gis):
     try:
         if gis.properties["useVectorBasemaps"]:
             bm_group = gis.groups.search(
-                gis.properties["vectorBasemapGalleryGroupQuery"], outside_org=True
+                gis.properties["vectorBasemapGalleryGroupQuery"],
+                outside_org=True,
             )[0]
             query = 'group:{} AND name: "0220_Navigation_Title"'.format(bm_group.id)
             items = gis.content.search(query, outside_org=True)
@@ -241,7 +242,11 @@ def _v2_create_project(gis, summary, title):
     workers_webmap = workers_webmap_future.result()
     dispatchers_webmap = dispatchers_webmap_future.result()
 
-    project_items = [workforce_service_item, workers_webmap, dispatchers_webmap]
+    project_items = [
+        workforce_service_item,
+        workers_webmap,
+        dispatchers_webmap,
+    ]
     # share and protect items
     for i in project_items:
         i.sharing.groups.add(group)
@@ -373,7 +378,8 @@ def _v1_create_project_item(
         "folderId": folder_id,
     }
     item_properties["text"] = json.dumps(project_data)
-    item = gis.content.add(item_properties, folder=folder_name)
+    folder = gis.content.folders.get(folder_name)
+    item = folder.add(item_properties).result()
     return item
 
 
@@ -398,7 +404,10 @@ def _v2_create_worker_webmap(
     :return: The worker webmap item
     """
     extent = _get_default_extent(gis)
-    array_extent = [[extent["xmin"], extent["ymin"]], [extent["xmax"], extent["ymax"]]]
+    array_extent = [
+        [extent["xmin"], extent["ymin"]],
+        [extent["xmax"], extent["ymax"]],
+    ]
     item_properties = {
         "title": "{}".format(title),
         "snippet": summary,
@@ -449,8 +458,13 @@ def _v2_create_worker_webmap(
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=1))
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=2))
     item_properties["text"] = json.dumps(webmap_data)
-
-    item = gis.content.add(item_properties, folder=folder_name, thumbnail=thumbnail)
+    if thumbnail:
+        item_properties["thumbnail"] = thumbnail
+    if folder_name:
+        folder = gis.content.folders.get(folder_name)
+    else:
+        folder = gis.content.folders.get()
+    item = folder.add(item_properties).result()
     return item
 
 
@@ -475,7 +489,10 @@ def _v2_create_dispatcher_webmap(
     :return: The dispatcher webmap item
     """
     extent = _get_default_extent(gis)
-    array_extent = [[extent["xmin"], extent["ymin"]], [extent["xmax"], extent["ymax"]]]
+    array_extent = [
+        [extent["xmin"], extent["ymin"]],
+        [extent["xmax"], extent["ymax"]],
+    ]
     item_properties = {
         "title": "{} Dispatcher Map".format(title),
         "snippet": summary,
@@ -510,7 +527,13 @@ def _v2_create_dispatcher_webmap(
         )
     )
     item_properties["text"] = json.dumps(webmap_data)
-    item = gis.content.add(item_properties, folder=folder_name, thumbnail=thumbnail)
+    if thumbnail:
+        item_properties["thumbnail"] = thumbnail
+    if folder_name:
+        folder = gis.content.folders.get(folder_name)
+    else:
+        folder = gis.content.folders.get()
+    item = folder.add(item_properties).result()
     return item
 
 
@@ -583,7 +606,11 @@ def _v2_create_service_with_layers(
             "typeKeywords": "Workforce Project",
         }
         item = _v2_create_service(
-            gis, service_name, folder_name, spatial_reference, item_properties
+            gis,
+            service_name,
+            folder_name,
+            spatial_reference,
+            item_properties,
         )
         feature_layer_collection = arcgis.features.FeatureLayerCollection.fromitem(item)
     else:
@@ -803,7 +830,10 @@ def _v1_create_worker_webmap(
     :return: The worker webmap item
     """
     extent = _get_default_extent(gis)
-    array_extent = [[extent["xmin"], extent["ymin"]], [extent["xmax"], extent["ymax"]]]
+    array_extent = [
+        [extent["xmin"], extent["ymin"]],
+        [extent["xmax"], extent["ymax"]],
+    ]
     item_properties = {
         "title": "{}_workers".format(title),
         "tags": "workforce-worker",
@@ -844,7 +874,9 @@ def _v1_create_worker_webmap(
     )
     webmap_data["operationalLayers"].append(
         _build_operational_layers(
-            assignments_item, assignments_popup_def, capabilities="Query,Sync"
+            assignments_item,
+            assignments_popup_def,
+            capabilities="Query,Sync",
         )
     )
     webmap_data["operationalLayers"].append(
@@ -854,7 +886,12 @@ def _v1_create_worker_webmap(
     )
     item_properties["text"] = json.dumps(webmap_data)
 
-    item = gis.content.add(item_properties, folder=folder_name)
+    if folder_name:
+        folder = gis.content.folders.get(folder_name)
+    else:
+        folder = gis.content.folders.get()
+    item = folder.add(item_properties).result()
+
     return item
 
 
@@ -879,7 +916,10 @@ def _v1_create_dispatcher_webmap(
     :return: The dispatcher webmap item
     """
     extent = _get_default_extent(gis)
-    array_extent = [[extent["xmin"], extent["ymin"]], [extent["xmax"], extent["ymax"]]]
+    array_extent = [
+        [extent["xmin"], extent["ymin"]],
+        [extent["xmax"], extent["ymax"]],
+    ]
     item_properties = {
         "title": "{}_dispatchers".format(title),
         "tags": "workforce-dispatcher",
@@ -898,7 +938,9 @@ def _v1_create_dispatcher_webmap(
     }
     webmap_data["operationalLayers"].append(
         _build_operational_layers(
-            assignments_item, assignments_popup_def, capabilities="Query,Sync"
+            assignments_item,
+            assignments_popup_def,
+            capabilities="Query,Sync",
         )
     )
     webmap_data["operationalLayers"].append(
@@ -907,12 +949,23 @@ def _v1_create_dispatcher_webmap(
         )
     )
     item_properties["text"] = json.dumps(webmap_data)
-    item = gis.content.add(item_properties, folder=folder_name)
+
+    if folder_name:
+        folder = gis.content.folders.get(folder_name)
+    else:
+        folder = gis.content.folders.get()
+    item = folder.add(item_properties).result()
+
     return item
 
 
 def _v1_create_service_with_layer(
-    gis, folder_name, service_name, layer_definition, attachments=False, sync=True
+    gis,
+    folder_name,
+    service_name,
+    layer_definition,
+    attachments=False,
+    sync=True,
 ):
     """
     Creates a service, adds, and layer and optionally enables attachments
@@ -980,7 +1033,10 @@ def _v1_create_service_with_location_tracking_layer(
                 "startTimeField": item.layers[0].properties["editFieldsInfo"][
                     "creationDateField"
                 ],
-                "timeReference": {"timeZone": "UTC", "respectDaylightSaving": False},
+                "timeReference": {
+                    "timeZone": "UTC",
+                    "respectDaylightSaving": False,
+                },
                 "timeInterval": 0,
                 "exportOptions": {
                     "useTime": True,

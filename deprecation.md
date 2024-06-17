@@ -12,6 +12,7 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
 - `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
 
+
 ### `arcgis.learn` Module
 
 - `categorize_features` - depreacted in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
@@ -91,6 +92,7 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
 - `Swipe.properties` - deprecated in **2.4.0** removed in future major release. Use the `content` property instead.
 - `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
+- `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
 
 #### `arcgis.gis` Module
 

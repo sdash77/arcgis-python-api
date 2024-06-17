@@ -340,7 +340,8 @@ class SaveModelCallback(TrackerCallback):
 
             try:
                 self.model.save(
-                    f"{self.name}_epoch_{self.best_epoch}", compute_metrics=False
+                    f"{self.name}_epoch_{self.best_epoch}",
+                    compute_metrics=False,
                 )
             except:
                 # logging this to notify about possible errors.
@@ -1035,7 +1036,10 @@ class ArcGISModel(object):
             if early_stopping:
                 callbacks.append(
                     EarlyStoppingCallback(
-                        learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
+                        learn=self.learn,
+                        monitor=monitor,
+                        min_delta=0.001,
+                        patience=5,
                     )
                 )
             self._is_checkpointed = checkpoint
@@ -1049,7 +1053,8 @@ class ArcGISModel(object):
                     )
                 every = "improvement" if checkpoint is True else "epoch"
                 save_callback_params = kwargs.get(
-                    "save_callback_params", {"monitor": monitor, "every": every}
+                    "save_callback_params",
+                    {"monitor": monitor, "every": every},
                 )
                 callbacks.append(
                     SaveModelCallback(
@@ -1065,7 +1070,9 @@ class ArcGISModel(object):
                     import tensorboardX
 
                     # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
-                    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+                    from fastai.callbacks.tensorboard import (
+                        LearnerTensorboardWriter,
+                    )
                     from .._utils.tensorboard_utils import ArcGISTBCallback
                 except:
                     raise
@@ -1134,7 +1141,11 @@ class ArcGISModel(object):
 
             if not _emd_template.get("LearningRate"):
                 _emd_template["LearningRate"] = "0.0"
-            if _emd_template["ModelName"] in ["MaskRCNN", "UnetClassifier", "CycleGAN"]:
+            if _emd_template["ModelName"] in [
+                "MaskRCNN",
+                "UnetClassifier",
+                "CycleGAN",
+            ]:
                 _emd_template["SupportsVariableTileSize"] = True
             else:
                 _emd_template["SupportsVariableTileSize"] = False
@@ -1600,7 +1611,9 @@ class ArcGISModel(object):
                     if isinstance(self.learn.model, DistributedDataParallel):
                         if not int(os.environ.get("RANK", 0)):
                             saved_path = self.learn.save(
-                                name, return_path=True, with_opt=save_optimizer
+                                name,
+                                return_path=True,
+                                with_opt=save_optimizer,
                             )
                         return
                 if self._backbone != "llm":
@@ -1625,7 +1638,10 @@ class ArcGISModel(object):
                         # temp_path = os.getcwd()
                         saved_path = Path(
                             os.path.join(
-                                temp_path, "models", name_or_path, name_or_path
+                                temp_path,
+                                "models",
+                                name_or_path,
+                                name_or_path,
                             )
                         )
                         # print(f"Save path {saved_path}")
@@ -1653,7 +1669,9 @@ class ArcGISModel(object):
             )
         else:
             _emd_template = self._create_emd_template(
-                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+                saved_path.with_suffix(".pth"),
+                compute_metrics,
+                save_inference_file,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1668,13 +1686,19 @@ class ArcGISModel(object):
 
         if self._backend != "tensorflow" and framework.lower() == "tflite":
             if len(tflite_paths) != 0:
-                _script_save_params = {"tf": tflite_paths[0], "sm": tflite_paths[1]}
+                _script_save_params = {
+                    "tf": tflite_paths[0],
+                    "sm": tflite_paths[1],
+                }
                 _emd_template["TFLite"] = _script_save_params
 
         # TODO: merge all
         if framework.lower() == "torchscript":
             if len(script_paths) != 0:  # TODO: change_siammask
-                _script_save_params = {"GPU": script_paths[1], "CPU": script_paths[0]}
+                _script_save_params = {
+                    "GPU": script_paths[1],
+                    "CPU": script_paths[0],
+                }
                 _emd_template["TorchScript"] = _script_save_params
             else:
                 from ._siammask_utils import Custom
@@ -1796,7 +1820,8 @@ class ArcGISModel(object):
                     _emd_template["InferenceFunction"] = inference_file
 
                 with open(
-                    saved_path.parent / _emd_template["InferenceFunction"], "w"
+                    saved_path.parent / _emd_template["InferenceFunction"],
+                    "w",
                 ) as f:
                     f.write(self._code)
             if not save_inference_file:
@@ -1830,7 +1855,8 @@ class ArcGISModel(object):
 
         if _emd_template.get("ModelConfigurationFile", False):
             with open(
-                saved_path.parent / _emd_template["ModelConfigurationFile"], "w"
+                saved_path.parent / _emd_template["ModelConfigurationFile"],
+                "w",
             ) as f:
                 f.write(inspect.getsource(self._model_conf_class))
 
@@ -2028,16 +2054,16 @@ class ArcGISModel(object):
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
             )
-
-        item = gis_user.content.add(
+        folder = gis_user.content.folders.get()
+        item = folder.add(
             {
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
                 "overwrite": "true" if overwrite else "false",
             },
-            data=str(dlpk_path.absolute()),
-        )
+            file=str(dlpk_path.absolute()),
+        ).result()
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
@@ -2221,7 +2247,10 @@ class ArcGISModel(object):
             if hasattr(self, "_is_mmsegdet"):
                 logging.disable(logging.INFO)
             self.learn.load(
-                name, purge=False, device=device, strict=kwargs.get("strict", "True")
+                name,
+                purge=False,
+                device=device,
+                strict=kwargs.get("strict", "True"),
             )
             logging.disable(logging.NOTSET)
         except Exception as e:

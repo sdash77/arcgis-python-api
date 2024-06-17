@@ -166,9 +166,12 @@ class StoryMap(object):
         }
 
         # Step 10: Add item to active GIS and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties, text=" ").result()
+
         self._itemid = self._item.itemid
 
         # Step 11: Make a resource call with the template to create json draft needed
@@ -180,7 +183,7 @@ class StoryMap(object):
         )
 
     def _get_storymap_template(self):
-        return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
+        return copy.deepcopy(utils._TEMPLATES["storymap_2"])
 
     def _customize_template(self, template):
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username

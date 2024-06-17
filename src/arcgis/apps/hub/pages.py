@@ -303,7 +303,8 @@ class PageManager(object):
             "description": description,
             "culture": self._gis.properties.user.culture,
         }
-        item = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+        folder = self._gis.content.folders.get()
+        item = folder.add(_item_dict).result()
 
         # share page with content and core team groups
         if collab_group:
