@@ -3,7 +3,7 @@ import sys
 import json
 import uuid
 from arcgis.gis import GIS
-from arcgis.mapping import create_symbol
+from arcgis.mapping._symbol import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 

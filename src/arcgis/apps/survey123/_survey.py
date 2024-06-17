@@ -15,7 +15,9 @@ from arcgis.auth import EsriSession
 import arcgis
 import shutil
 from arcgis.gis import ItemTypeEnum, ItemProperties
-import arcgismapping
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 from ._publish_functions import (
     _get_version,
     _xform2webform,
@@ -108,7 +110,9 @@ class SurveyManager:
         r.close()
 
         with open(
-            os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
+            os.path.join(dir_path, xlsx_name + ".webform"),
+            "w",
+            encoding="utf-8",
         ) as fp:
             response_json["surveyFormJson"]["portalUrl"] = portalUrl
             webform = {
@@ -623,10 +627,14 @@ class Survey:
             )
         # 1). Submit the request.
         submit = self._si._gis._con.post(
-            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+            url,
+            params,
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
         )
         return self._check_status(
-            res=submit, status_type="generate_report", save_folder=save_folder
+            res=submit,
+            status_type="generate_report",
+            save_folder=save_folder,
         )
 
     # ----------------------------------------------------------------------
@@ -751,7 +759,10 @@ class Survey:
             base=self._baseurl
         )
         file = {
-            "templateFile": (os.path.basename(template_file), open(template_file, "rb"))
+            "templateFile": (
+                os.path.basename(template_file),
+                open(template_file, "rb"),
+            )
         }
         gis = self._si._gis
         params = {
@@ -772,7 +783,9 @@ class Survey:
     # ----------------------------------------------------------------------
 
     def upload_report_template(
-        self, template_file: Optional[str] = None, template_name: Optional[str] = None
+        self,
+        template_file: Optional[str] = None,
+        template_name: Optional[str] = None,
     ):
         """
         Check report template syntax to identify any syntax which will lead to a failure
@@ -815,9 +828,13 @@ class Survey:
             )
             folder = survey_folder["title"]
             # folder = "Survey-" + self._si.title
-            template_item = gis.content.add(
-                item_properties=properties, data=template_file, folder=folder
-            )
+            if folder:
+                folder = gis.content.folders.get(folder)
+            else:
+                folder = gis.content.folders.get()
+            template_item = folder.add(
+                item_properties=properties, file=template_file
+            ).result()
             add_relationship = self._si.add_relationship(template_item, "Survey2Data")
         else:
             return check["details"][0]["description"]
@@ -907,7 +924,9 @@ class Survey:
         }
 
         estimate = gis._con.get(
-            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+            url,
+            params,
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
         )
         return estimate
 
@@ -1031,10 +1050,14 @@ class Survey:
 
         # 1). Submit the request.
         submit = self._si._gis._con.post(
-            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+            url,
+            params,
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
         )
         return self._check_status(
-            res=submit, status_type="generate_report", save_folder=save_folder
+            res=submit,
+            status_type="generate_report",
+            save_folder=save_folder,
         )
 
     # ----------------------------------------------------------------------
@@ -1111,7 +1134,9 @@ class Survey:
 
                     files = [
                         self._si._gis._con.get(
-                            url, file_name=os.path.basename(url), out_folder=save_folder
+                            url,
+                            file_name=os.path.basename(url),
+                            out_folder=save_folder,
                         )
                         for url in urls
                     ] + [gis.content.get(i) for i in items]
@@ -1454,7 +1479,8 @@ class Survey:
                 os.mkdir(os.path.join(directory, "media"))
             [
                 shutil.copy2(
-                    os.path.join(media, x), os.path.join(directory, "media", x)
+                    os.path.join(media, x),
+                    os.path.join(directory, "media", x),
                 )
                 for x in os.listdir(media)
                 if not (os.path.isdir(os.path.join(media, x)))
@@ -1476,7 +1502,8 @@ class Survey:
                 os.mkdir(os.path.join(directory, "scripts"))
             [
                 shutil.copy2(
-                    os.path.join(scripts, x), os.path.join(directory, "scripts", x)
+                    os.path.join(scripts, x),
+                    os.path.join(directory, "scripts", x),
                 )
                 for x in os.listdir(scripts)
                 if not (os.path.isdir(os.path.join(scripts, x)))
@@ -1508,7 +1535,11 @@ class Survey:
                 "viewEnabled": False,
                 "where": "",
             },
-            "sentInfo": {"copyEnabled": True, "editEnabled": False, "enabled": True},
+            "sentInfo": {
+                "copyEnabled": True,
+                "editEnabled": False,
+                "enabled": True,
+            },
         }
         if info is None and initial_publish is True:
             # No info supplied new publish, use default .info config
@@ -1570,7 +1601,9 @@ class Survey:
             # Generate webform file if desired
             if create_web_form is True:
                 _xform2webform(
-                    xform=xform, portalUrl=self._gis.url, connectVersion=connect_version
+                    xform=xform,
+                    portalUrl=self._gis.url,
+                    connectVersion=connect_version,
                 )
 
             # sub is a boolean true if it is a submission_url survey and false if it is not. Also returns the URL for the submission URL feature service.
@@ -1698,7 +1731,11 @@ class Survey:
                 else:
                     if hosted is False:
                         mod_schema = _modify_schema(
-                            self, service, False, deltas, use_non_globalid_relationships
+                            self,
+                            service,
+                            False,
+                            deltas,
+                            use_non_globalid_relationships,
                         )
                         if mod_schema is not None:
                             raise RuntimeError(mod_schema)
@@ -1764,7 +1801,11 @@ class Survey:
                                 raise RuntimeError(mod_schema)
                     else:
                         mod_schema = _modify_schema(
-                            self, service, False, deltas, use_non_globalid_relationships
+                            self,
+                            service,
+                            False,
+                            deltas,
+                            use_non_globalid_relationships,
                         )
                         if mod_schema is not None:
                             raise RuntimeError(mod_schema)
@@ -1813,10 +1854,12 @@ class Survey:
 
         # Create web map
         if create_web_map is True and initial_publish is True:
+            arcgismapping = _imports.get_arcgis_map_mod(True)
             wm = arcgismapping.Map()
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.add_layer(
-                    lyr, {"title": f"{self._si.title} - {lyr.properties.name}"}
+                    lyr,
+                    {"title": f"{self._si.title} - {lyr.properties.name}"},
                 )
             wm_properties = {
                 "title": self._si.title,
@@ -1825,7 +1868,9 @@ class Survey:
                 "typeKeywords": "ArcGIS Online,Data Editing,Explorer Web Map,Map,Offline,Online Map,Survey123Python,useOnly,Web Map",
             }
             web_map = wm.save(
-                wm_properties, thumbnail=thumbnail, folder=self._si.ownerFolder
+                wm_properties,
+                thumbnail=thumbnail,
+                folder=self._si.ownerFolder,
             )
             self._si.add_relationship(web_map, "Survey2Data")
 
@@ -2036,8 +2081,10 @@ class Survey:
         params = {
             "f": "json",
             "webhook": {
-                "active": active if active is not None else existing_webhook["active"],
-                "name": name if name is not None else existing_webhook["name"],
+                "active": (
+                    active if active is not None else existing_webhook["active"]
+                ),
+                "name": (name if name is not None else existing_webhook["name"]),
                 "url": (
                     payload_url if payload_url is not None else existing_webhook["url"]
                 ),

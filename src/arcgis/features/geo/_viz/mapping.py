@@ -6,22 +6,23 @@ import json
 from typing import Optional, Union
 import pandas as pd
 
+import arcgis
 from arcgis.auth.tools import LazyLoader
 
-arcgismapping = LazyLoader("arcgismapping")
+_imports = LazyLoader("arcgis._impl.imports")
 
 
 def plot(
     df,
-    map: Optional[arcgismapping.Map] = None,
+    map: Optional["arcgis.map.Map"] = None,
     name: Optional[str] = None,
     renderer: Optional[
         Union[
-            arcgismapping.HeatmapRenderer,
-            arcgismapping.SimpleRenderer,
-            arcgismapping.UniqueValueRenderer,
-            arcgismapping.ClassBreaksRenderer,
-            arcgismapping.DotDensityRenderer,
+            "arcgis.map.HeatmapRenderer",
+            "arcgis.map.SimpleRenderer",
+            "arcgis.map.UniqueValueRenderer",
+            "arcgis.map.ClassBreaksRenderer",
+            "arcgis.map.DotDensityRenderer",
         ]
     ] = None,
     **kwargs,
@@ -46,7 +47,7 @@ def plot(
     ----------------------  ---------------------------------------------------------
     renderer                Optional Renderer object. The renderer to use to draw the data.
                             To create a renderer dataclass use the renderers module in the
-                            arcgismapping package.
+                            arcgis.map module.
     ======================  =========================================================
 
     """
@@ -72,7 +73,8 @@ def plot(
 
         name = uuid.uuid4().hex[:7]
     if map is None:
-        map = Map()
+        arcgismapping = _imports.get_arcgis_map_mod(True)
+        map = arcgismapping.Map()
     import string
 
     trantab = str.maketrans(string.punctuation, "_" * len(string.punctuation))

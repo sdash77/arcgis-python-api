@@ -18,9 +18,8 @@ import dask
 from dask.dataframe import Series, from_pandas
 import dask.dataframe as dd
 from dask.base import normalize_token
-from arcgis.auth.tools import LazyLoader
+import arcgis
 
-arcgismapping = LazyLoader("arcgismapping")
 from dask.dataframe.extensions import (
     make_array_nonempty,
     make_scalar,
@@ -646,7 +645,7 @@ class GeoDaskSpatialAccessor:
         return self._data[self.name].geom.length.sum()
 
     # ----------------------------------------------------------------------
-    def plot(self, map_widget: arcgismapping.Map = None, renderer: dict = None):
+    def plot(self, map_widget: "arcgis.map.Map" = None, renderer: dict = None):
         """Displays the Dask DataFrame on a Map Widget"""
         return dask_plot(
             df=self._data,  # dask dataframe

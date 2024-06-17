@@ -30,6 +30,9 @@ from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
 
+from arcgis.auth.tools import LazyLoader
+
+_imports = LazyLoader("arcgis._impl.imports")
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
     ItemTypeEnum,
@@ -60,7 +63,6 @@ import concurrent.futures
 
 from cachetools import cached, TTLCache
 
-from arcgis.auth.tools import LazyLoader
 from arcgis.auth import EsriSession
 
 
@@ -535,7 +537,7 @@ class GIS(object):
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
         self.resturl = _create_base_url(url)
-        self._url = url
+        self._url = url.replace("http://", "https://")
         self._username = username
         self._password = password
         self._key_file = key_file
@@ -1575,7 +1577,7 @@ class GIS(object):
         using the GIS's configured geocoders. Provided a match is found, the geographic
         extent of the matched address is used as the extent of the map. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgismapping.Map` for more information.
+        to the specified zoomlevel. See :class:`~arcgis.map.Map` for more information.
 
         .. note::
             The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
@@ -1610,25 +1612,24 @@ class GIS(object):
             >>> gis.map("Durham,NC")
 
         :return:
-          A :class:`map<arcgismapping.Map>` or :class:`scene<arcgismapping.Scene>`.
+          A :class:`map<arcgis.map.Map>` or :class:`scene<arcgis.map.Scene>`.
         """
         try:
-            import arcgismapping
             from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
-        if isinstance(location, Item) and location.type == "Web Map":
-            mapwidget = arcgismapping.Map(gis=self, item=location)
-        elif isinstance(location, Item) and location.type == "Web Scene":
-            mapwidget = arcgismapping.Scene(gis=self, item=location)
-        elif mode == "3D":
-            mapwidget = arcgismapping.Scene(gis=self, location=location)
-        else:
-            mapwidget = arcgismapping.Map(gis=self, location=location)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
 
-        return mapwidget
+        if isinstance(location, Item) and location.type == "Web Map":
+            return arcgismapping.Map(gis=self, item=location)
+        elif isinstance(location, Item) and location.type == "Web Scene":
+            return arcgismapping.Scene(gis=self, item=location)
+        elif mode == "3D":
+            return arcgismapping.Scene(gis=self, location=location)
+        else:
+            return arcgismapping.Map(gis=self, location=location)
 
 
 ###########################################################################
@@ -2156,11 +2157,11 @@ class GroupMigrationManager(object):
             >>> download_path = source_epk_item.download(save_path="path_on_system",
                                                          file_name="file_name.epk")
 
-            >>> target_epk_item = target.content.add(item_properties={"title": "Group data export item",
+            >>> target_epk_item = folder.add(item_properties={"title": "Group data export item",
                                                                       "tags": "group_content_migration",
                                                                       "snippet": "Sample of loading package.",
                                                                       "type": "Export Package:},
-                                                     date=download_path)
+                                                     file=download_path)
 
             >>> target_grp_mig = target.groups.get("<target_group_id>").migration
             >>> grp_import_job = target_grp_mig.load(epk_item=target_epk_item)
@@ -13205,6 +13206,8 @@ class Item(dict):
     # ----------------------------------------------------------------------
     @_lazy_property
     def _is_notebook(self) -> bool:
+        if self.type == None:
+            return False
         return self.type.lower() == "notebook"
 
     # ----------------------------------------------------------------------
@@ -14449,7 +14452,9 @@ class Item(dict):
 
     def _get_icon(self):
         icon = "layers16.png"
-        if self.type.lower() == "web map":
+        if self.type == None:
+            pass
+        elif self.type.lower() == "web map":
             icon = "maps16.png"
         elif self.type.lower() == "web scene":
             icon = "websceneglobal16.png"
@@ -14519,7 +14524,9 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def _ux_item_type(self):
         item_type = self.type
-        if self.type == "Geoprocessing Service":
+        if self.type == None:
+            item_type = "Unknown"
+        elif self.type == "Geoprocessing Service":
             item_type = "Geoprocessing Toolbox"
         elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
             item_type = "Table Layer"
@@ -16610,7 +16617,8 @@ class Item(dict):
             >>> item.create_tile_service(title="SeasideHeightsNJTiles", min_scale= 70000.0,max_scale=80000.0)
 
         """
-
+        if self.type == None:
+            raise ValueError("Unknown item type. Input must of type FeatureService")
         if self.type.lower() == "Feature Service".lower():
             if cache_info is None:
                 cache_info = {
@@ -17469,8 +17477,10 @@ class Item(dict):
                     "typeKeywords": ",".join(item.typeKeywords),
                     "title": title,
                 }
+                folder = self._gis.content.folders.get()
+                job = folder.add(item_properties=ip, file=nfp)
+                item = job.result()
 
-                item = self._gis.content.add(item_properties=ip, data=nfp)
                 return item
         elif item.type in FILE_BASED_ITEM_TYPES:
             fp = self.get_data()
@@ -17486,7 +17496,9 @@ class Item(dict):
                 "typeKeywords": ",".join(item.typeKeywords),
                 "title": title,
             }
-            item = self._gis.content.add(item_properties=ip, data=nfp)
+            folder = self._gis.content.folders.get()
+            job = folder.add(item_properties=ip, file=nfp)
+            item = job.result()
             os.remove(nfp)
             return item
         elif item.type in TEXT_BASED_ITEM_TYPES:
@@ -17502,7 +17514,9 @@ class Item(dict):
             }
             if item.type == "Notebook":
                 ip["properties"] = item.properties
-            new_item = self._gis.content.add(item_properties=ip)
+            folder = self._gis.content.folders.get()
+            job = folder.add(item_properties=ip, text=ip["text"])
+            new_item = job.result()
             if item.url and item.url.find(item.id) > -1:
                 new_item.update({"url": item.url.replace(item.id, new_item.id)})
             return new_item

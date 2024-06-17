@@ -2,6 +2,8 @@ __version__ = "2.4.0"
 
 from arcgis.auth.tools import LazyLoader
 
+from arcgis import env
+
 os = LazyLoader("os")
 features = LazyLoader("arcgis.features")
 geoanalytics = LazyLoader("arcgis.geoanalytics")
@@ -74,21 +76,8 @@ except Exception as e:
 
 __all__ = [
     "GIS",
-    "geocode",
-    "features",
-    "geoanalytics",
-    "geocoding",
-    "geometry",
-    "geoprocessing",
-    "network",
-    "notebook",
-    "raster",
-    "apps",
-    "realtime",
-    "schematics",
-    "mapping",
-    "learn",
     "aggregate_points",
+    "apps",
     "calculate_composite_index",
     "calculate_density",
     "connect_origins_to_destinations",
@@ -100,30 +89,33 @@ __all__ = [
     "derive_new_locations",
     "dissolve_boundaries",
     "enrich_layer",
+    "env",
     "extract_data",
+    "features",
+    "find_centroids",
     "find_existing_locations",
     "find_hot_spots",
     "find_nearest",
     "find_similar_locations",
-    "find_centroids",
+    "geoanalytics",
+    "geocode",
+    "geocoding",
+    "geometry",
+    "geoprocessing",
     "interpolate_points",
     "join_features",
+    "learn",
+    "mapping",
     "merge_layers",
+    "network",
+    "notebook",
     "overlay_layers",
     "plan_routes",
-    "summarize_nearby",
+    "raster",
+    "realtime",
+    "schematics",
     "summarize_center_and_dispersion",
+    "summarize_nearby",
     "summarize_within",
     "trace_downstream",
 ]
-
-
-def _jupyter_nbextension_paths():
-    return [
-        {
-            "section": "notebook",
-            "src": "widgets/js/dist",
-            "dest": "arcgis",
-            "require": "arcgis/extension",
-        }
-    ]

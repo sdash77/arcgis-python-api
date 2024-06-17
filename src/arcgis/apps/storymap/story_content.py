@@ -3,10 +3,14 @@ from enum import Enum
 import struct
 from typing import Optional, Union
 import uuid
+from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+_imports = LazyLoader("arcgis._impl.imports")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
+story = LazyLoader("arcgis.apps.storymap.story")
+collection = LazyLoader("arcgis.apps.storymap.collection")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
@@ -15,9 +19,7 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
-arcgismapping = LazyLoader("arcgismapping")
 utils = LazyLoader("arcgis.apps.storymap._utils")
-briefing = LazyLoader("arcgis.apps.storymap.briefing")
 pd = LazyLoader("pandas")
 
 
@@ -59,6 +61,9 @@ class TextStyles(Enum):
     HEADING = "h2"
     SUBHEADING = "h3"
     QUOTE = "quote"
+    HEADING1 = "h2"
+    HEADING2 = "h3"
+    HEADING3 = "h4"
 
 
 class Scales(Enum):
@@ -1446,13 +1451,14 @@ class Map:
     =================       ====================================================================
     **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
-    item                    An Item of type :class:`~arcgismapping.Map` or
-                            :class:`~arcgismapping.Scene` or a String representing the item
+    item                    An Item of type :class:`~arcgis.map.Map` or
+                            :class:`~arcgis.map.Scene` or a String representing the item
                             id to add to the story map.
     =================       ====================================================================
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Can be created from scratch or already exist in story
         # Map is not an immersive node
         self._story = kwargs.pop("story", None)
@@ -1635,12 +1641,12 @@ class Map:
         map                 One of three choices:
 
                             * String being an item id for an Item of type
-                            :class:`~arcgismapping.Map`
-                            or :class:`~arcgismapping.Scene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
 
                             * An :class:`~arcgis.gis.Item` of type
-                            :class:`~arcgismapping.Map`
-                            or :class:`~arcgismapping.Scene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
         ==================  ========================================
 
         .. note::
@@ -1670,10 +1676,10 @@ class Map:
 
         If you have an extent to use from a bookmark,
         find this extent by using the `bookmarks` property in
-        the :class:`~arcgismapping.Map` Class.
+        the :class:`~arcgis.map.Map` Class.
         The `map` property on this class will return the Web Map
         Item being used. By passing this item into
-        the :class:`~arcgismapping.Map` Class you can retrieve a list of all
+        the :class:`~arcgis.map.Map` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
 
         To see the current viewpoint call the `properties` property on the Map
@@ -1944,6 +1950,25 @@ class Map:
 
     # ----------------------------------------------------------------------
     @property
+    def popup_docked(self) -> bool:
+        """
+        Get/Set the popup docked toggle. True if enabled and False if disabled.
+        """
+        if self._existing is True:
+            if "popupDocked" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "popupDocked"
+                ]
+            else:
+                return False
+
+    # ----------------------------------------------------------------------
+    @popup_docked.setter
+    def popup_docked(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["popupDocked"] = value
+
+    # ----------------------------------------------------------------------
+    @property
     def offline_media(self):
         """
         Get/Set the offline media. This is an alternative version of this media
@@ -2091,6 +2116,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Check for error.
         # First find the type of the new map
         if isinstance(map, str):
@@ -2262,6 +2288,8 @@ class Text:
             self._text = text
             if isinstance(style, TextStyles):
                 self._style = style.value
+            else:
+                self._style = style if style is not None else TextStyles.PARAGRAPH.value
 
             # Color only applies certain styles
             if self._style in [
@@ -3053,67 +3081,128 @@ class Swipe:
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, content: Optional[list[Map | Image]] = None, **kwargs):
         self._story = kwargs.pop("story", None)
-        self._type = "swipe"
-        if "node" in kwargs:
-            # legacy
-            self.node = kwargs.pop("node", None)
-        else:
-            self.node = kwargs.pop("node_id", None)
-
-        # Find the type of media that the swipe supports.
-        # Both contents are of the same type so only need to look at one.
-        # Check if node exists else create new instance
+        self.node = kwargs.pop("node_id", "n-" + uuid.uuid4().hex[0:6])
         self._existing = self._check_node()
-        if self._existing is True:
+
+        if self._existing:
+            # swipe exists in story
             if "data" in self._story._properties["nodes"][self.node]:
-                self._slides = self._story._properties["nodes"][self.node]["data"][
-                    "contents"
-                ]
-                # get the media for the swipe (image or map)
-                media_node = self._story._properties["nodes"][self.node]["data"][
+                self._left_node = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]["0"]
-
-                # Find the type, this is important since swipe must only have one media type
-                if media_node == "":
-                    # First position is empty
-                    # Check the second position
-                    second_media = self._story._properties["nodes"][self.node]["data"][
-                        "contents"
-                    ]["1"]
-                    if second_media == "":
-                        # No media set yet, type is empty
-                        self._media_type = ""
-                    else:
-                        self._media_type = self._story._properties["nodes"][
-                            second_media
-                        ]["type"]
+                self._right_node = self._story._properties["nodes"][self.node]["data"][
+                    "contents"
+                ]["1"]
+                self._left_content = utils._assign_node_class(
+                    story=self._story, node_id=self._left_node
+                )
+                self._right_content = utils._assign_node_class(
+                    story=self._story, node_id=self._left_node
+                )
+                # Get the media type since has to be same for both sides
+                if self._left_node is not None:
+                    node = self._left_node
                 else:
-                    # Use the media type of the first position
-                    self._media_type = self._story._properties["nodes"][media_node][
-                        "type"
-                    ]
-
+                    node = self._right_node
+                if self._story._properties["nodes"][node]["type"] == "image":
+                    self._media_type = "image"
+                elif self._story._properties["nodes"][node]["type"] == "webmap":
+                    self._media_type = "webmap"
             else:
-                # Empty swipe node
-                self._slides = []
+                self._right_node = ""
+                self._left_node = ""
                 self._media_type = ""
         else:
-            self.node = "n-" + uuid.uuid4().hex[0:6]
-            self._slides = []
-            self._media_type = ""
+            if content is not None:
+                # set the content and media type
+                if len(content) > 2:
+                    raise ValueError("Swipe can only have up to 2 items.")
+                if isinstance(content[0], Image):
+                    self._media_type = "image"
+                elif isinstance(content[0], Map):
+                    self._media_type = "webmap"
+                else:
+                    raise ValueError("Swipe can only accept Image or Map content.")
+                self._left_node = content[0].node if content[0] is not None else ""
+                self._left_content = content[0]
+                if len(content) == 2:
+                    self._right_node = content[1].node if content[1] is not None else ""
+                    self._right_content = content[1]
+            else:
+                # empty swipe
+                self._right_node = ""
+                self._left_node = ""
+                self._media_type = ""
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return f"Swipe: {self._media_type}"
 
-    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
+    @property
+    def content(self) -> list[Union[Image, Map]]:
+        """
+        Get the content that is in the swipe. There can be up to 2 items in a swipe.
+
+        The content will be returned as their class instance.
+
+        ==================  ==================================================
+        **Parameter**        **Description**
+        ------------------  --------------------------------------------------
+        content             Optional list of Image or Map instances. The content that will be
+                            displayed in the swipe. There can be up to 2 items in a swipe. The items
+                            must be of the same type (Image or Map). If you want to add content to only
+                            one side of the swipe, use None for the other side.
+        ==================  ==================================================
+
+        :return:
+            A list of class:`~arcgis.apps.storymap.Image` or class:`~arcgis.apps.storymap.Map` instances.
+        """
+        return [self._left_content, self._right_content]
+
+    # ----------------------------------------------------------------------
+    @content.setter
+    def content(self, content: list[Union[Image, Map]]):
+        if len(content) > 2:
+            raise ValueError("Swipe can only have up to 2 items.")
+        if isinstance(content[0], Image):
+            self._media_type = "image"
+        elif isinstance(content[0], Map):
+            self._media_type = "webmap"
+        else:
+            raise ValueError("Swipe can only accept Image or Map content.")
+
+        self._left_node = content[0].node if content[0] is not None else ""
+        self._left_content = content[0]
+        if len(content) == 2:
+            self._right_node = content[1].node if content[1] is not None else ""
+            self._right_content = content[1]
+
+        if self._existing:
+            # if the nodes are not in the story, add them
+            if self._left_node not in self._story._properties["nodes"]:
+                self._left_content._add_to_story(story=self._story)
+            if self._right_node not in self._story._properties["nodes"]:
+                self._right_content._add_to_story(story=self._story)
+
+            # change in the story properties as well
+            self._story._properties["nodes"][self.node]["data"]["contents"][
+                "0"
+            ] = self._left_node
+            self._story._properties["nodes"][self.node]["data"]["contents"][
+                "1"
+            ] = self._right_node
+
+    # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the content property to get and set.",
+    )
     @property
     def properties(self):
         """
@@ -3185,6 +3274,10 @@ class Swipe:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the content property to get and set.",
+    )
     def edit(
         self,
         content: Optional[Union[Image, Map]] = None,
@@ -3262,11 +3355,16 @@ class Swipe:
         alt_text = kwargs.pop("alt_text", None)
         display = kwargs.pop("display", None)
 
+        if self._left_content is not None:
+            self._left_content._add_to_story(story=self._story)
+        if self._right_content is not None:
+            self._right_content._add_to_story(story=self._story)
+
         # Create swipe node
         self._story._properties["nodes"][self.node] = {
             "type": "swipe",
             "data": {
-                "contents": {"0": "", "1": ""},
+                "contents": {"0": self._left_node, "1": self._right_node},
                 "caption": "" if caption is None else caption,
                 "alt": "" if alt_text is None else alt_text,
             },
@@ -3275,18 +3373,8 @@ class Swipe:
             self._story._properties["nodes"][self.node]["config"] = {"size": display}
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content: Union[Image, Map]):
-        if content and content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-
-        content._add_to_story(story=self._story)
-        if isinstance(content, Image):
-            self._media_type = "image"
-        elif isinstance(content, Map):
-            self._media_type = "webmap"
-
-    # ----------------------------------------------------------------------
-    def _check_node(self):
+    def _check_node(self) -> bool:
+        """Check if the content exists in the story or briefing. Some methods and manipulations are dependent on this."""
         return self._story is not None and self.node is not None
 
 
@@ -4923,6 +5011,23 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     @property
+    def cover(self):
+        """
+        Get the cover of the briefing. The cover is the first slide in the briefing.
+        """
+        # property only accessed through the cover slide
+        if self._layout != "cover":
+            raise Warning(
+                "This is not a cover slide. The cover class can only be accessed through the cover slide."
+            )
+            return None
+        # The storycover in a Briefing is the child of the first slide
+        cover = self._story._properties["nodes"][self.node]["children"][0]
+        # create a class from the node id
+        return utils._assign_node_class(self._story, cover)
+
+    # ----------------------------------------------------------------------
+    @property
     def blocks(self) -> list[Block]:
         """
         Get blocks of the Slide. Blocks hold content of various types such as
@@ -5095,6 +5200,29 @@ class BriefingSlide:
         self._story._properties["nodes"][self.node]["data"][
             "titlePanelPosition"
         ] = position
+
+    # ----------------------------------------------------------------------
+    @property
+    def hidden(self) -> bool:
+        """
+        Get/Set the visibility of the slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        hide                Bool. Set to True if you want the slide to be hidden, False otherwise.
+        ===============     ====================================================================
+        """
+        if "config" in self._story._properties["nodes"][self.node]:
+            return self._story._properties["nodes"][self.node]["config"]["isHidden"]
+        return False
+
+    # ----------------------------------------------------------------------
+    @hidden.setter
+    def hidden(self, hide: bool):
+        if "config" not in self._story._properties["nodes"][self.node]:
+            self._story._properties["nodes"][self.node]["config"] = {}
+        self._story._properties["nodes"][self.node]["config"]["isHidden"] = hide
 
     # ----------------------------------------------------------------------
     def delete(self) -> bool:
@@ -5481,3 +5609,357 @@ class Table:
             return False
         else:
             return True
+
+
+###############################################################################################################
+class Cover:
+    """
+    Represents the cover slide of a Briefing or the cover of a Storymap.
+
+    """
+
+    def __init__(self, **kwargs):
+        self._story = kwargs.pop("story")
+        self._node = kwargs.pop("node_id")
+        self._existing = self._check_node()
+        if self._existing:
+            self._title = self._story._properties["nodes"][self._node]["data"].get(
+                "title", None
+            )
+            self._summary = self._story._properties["nodes"][self._node]["data"].get(
+                "summary", None
+            )
+            self._byline = self._story._properties["nodes"][self._node]["data"].get(
+                "byline", None
+            )
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Cover"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    @property
+    def title(self) -> str | None:
+        """
+        Get/Set the title of the cover slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Text instance or string depicting the title of the cover slide.
+        ===============     ====================================================================
+        """
+        return self._title if self._title else None
+
+    # ----------------------------------------------------------------------
+    @title.setter
+    def title(self, title: Union[Text, str]):
+        if self._existing is True:
+            # If string then need to create text node and add to story
+            if isinstance(title, Text):
+                title = title.text
+            # Set the title node id in data of slide
+            self._story._properties["nodes"][self._node]["data"]["title"] = title
+        self._title = title
+
+    # ----------------------------------------------------------------------
+    @property
+    def summary(self) -> str | None:
+        """
+        Get/Set the summary of the cover slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        summary             Text instance or string depicting the summary of the cover slide.
+        ===============     ====================================================================
+        """
+        return self._summary if self._summary else None
+
+    # ----------------------------------------------------------------------
+    @summary.setter
+    def summary(self, summary: Union[Text, str]):
+        if self._existing is True:
+            # If string then need to create text node and add to story
+            if isinstance(summary, Text):
+                summary = summary.text
+            # Set the title node id in data of slide
+            self._story._properties["nodes"][self._node]["data"]["summary"] = summary
+        self._summary = summary
+
+    # ----------------------------------------------------------------------
+    @property
+    def byline(self) -> str | None:
+        """
+        Get/Set the byline of the cover slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        byline              Text instance or string depicting the byline of the cover slide.
+        ===============     ====================================================================
+        """
+        return self._byline if self._byline else None
+
+    # ----------------------------------------------------------------------
+    @byline.setter
+    def byline(self, byline: Union[Text, str]):
+        if self._existing is True:
+            # If string then need to create text node and add to story
+            if isinstance(byline, Text):
+                byline = byline.text
+            # Set the title node id in data of slide
+            self._story._properties["nodes"][self._node]["data"]["byline"] = byline
+        self._byline = byline
+
+    # ----------------------------------------------------------------------
+    @property
+    def type(self) -> str:
+        """
+        Get the type of the cover.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        type                Optional string. The type of story cover to be used in the story.
+
+                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal"``
+                            ``Values for Collection: "grid" | "magazine" | "journal"``
+        ===============     ====================================================================
+
+        :return:
+            A string of the cover type.
+        """
+        if self._existing:
+            return self._story._properties["nodes"][self._node]["data"]["type"]
+        return None
+
+    # ----------------------------------------------------------------------
+    @type.setter
+    def type(self, cover_type: str):
+        if self._existing:
+            if (
+                isinstance(self._story, story.StoryMap)
+                or isinstance(self._story, briefing.Briefing)
+            ) and cover_type in ["full", "sidebyside", "minimal"]:
+                self._story._properties["nodes"][self._node]["data"][
+                    "type"
+                ] = cover_type
+            elif isinstance(self._story, collection.Collection) and cover_type in [
+                "grid",
+                "magazine",
+                "journal",
+            ]:
+                self._story._properties["nodes"][self._node]["data"][
+                    "type"
+                ] = cover_type
+            else:
+                raise ValueError(
+                    "Invalid cover type. Please provide 'full', 'sidebyside', or 'minimal'."
+                )
+
+    # ----------------------------------------------------------------------
+    @property
+    def media(self) -> str | None:
+        """
+        Get/Set the media of the cover slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        media               Optional string. The media of the cover slide. This can be an instance of
+                            Image or Video.
+        ===============     ====================================================================
+        """
+        if self._existing:
+            if "children" in self._story._properties["nodes"][self._node]:
+                media_node = self._story._properties["nodes"][self._node]["children"][0]
+                return utils._assign_node_class(self._story, media_node)
+        return None
+
+    # ----------------------------------------------------------------------
+    @media.setter
+    def media(self, media: Union[Image, Video, None]):
+        if (
+            not isinstance(media, Image)
+            and not isinstance(media, Video)
+            or media is None
+        ):
+            raise ValueError(
+                "Media must be an Image or video object or None to remove the media."
+            )
+        if media is None:
+            # remove media
+            self._story._properties["nodes"][self._node]["children"] = []
+            return
+        if media.node not in self._story._properties["nodes"]:
+            # must be added to story resources
+            media._add_to_story(story=self._story)
+        self._story._properties["nodes"][self._node]["children"] = [media.node]
+
+    # ----------------------------------------------------------------------
+    @property
+    def date(self) -> str:
+        """
+        Get/Set the date of the cover slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        date                Optional string. How the date should be shown on the cover.
+
+                            ``Values: "first-published" | "last-published" | "current-date" | "none"``
+        ===============     ====================================================================
+        """
+        # date info found in root node
+        if (
+            "config"
+            in self._story._properties["nodes"][self._story._properties["root"]]
+        ):
+            return self._story._properties["nodes"][self._story._properties["root"]][
+                "config"
+            ]["coverDate"]
+        else:
+            return "first-published"
+
+    # ----------------------------------------------------------------------
+    @date.setter
+    def date(self, date: str):
+        if date not in ["first-published", "last-published", "current-date", "none"]:
+            raise ValueError(
+                "Invalid date value. Please provide 'first-published', 'last-published', 'current-date', or 'none'."
+            )
+        self._story._properties["nodes"][self._story._properties["root"]]["config"][
+            "coverDate"
+        ] = date
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None or self._node is None:
+            return False
+        return True
+
+
+###############################################################################################################
+class Navigation:
+    """
+    A class to represent the Storymap's Navigation.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        self._story = kwargs.pop("story")
+        self._node = kwargs.pop("node_id")
+
+        self._hidden = self._story._properties["nodes"][self._node]["config"][
+            "isHidden"
+        ]
+        self._links = (
+            self._story._properties["nodes"][self._node]["data"]["links"] or []
+        )
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Navigation"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    @property
+    def links(self):
+        """
+        Get/Set the links in the navigation.
+
+        To add, remove, or reorder the navigation link list, use the setter.
+        Pass in the list of story content you want in the navigation. The content
+        can only be Text with style of "h2", "h3", or "h4".
+        """
+        links = []
+        for link in self._links:
+            links.append(utils._assign_node_class(self._story, link))
+        return links
+
+    # ----------------------------------------------------------------------
+    @links.setter
+    def links(self, link_list: list):
+        if not isinstance(link_list, list):
+            raise ValueError(
+                "Links must be a list of Storymap Text classes that are in your story."
+            )
+
+        # update the links
+        self._links = [
+            link.node
+            for link in link_list
+            if isinstance(link, Text) and link._style in ["h2", "h3", "h4"]
+        ]
+        self._story._properties["nodes"][self._node]["data"]["links"] = self._links
+
+    # ----------------------------------------------------------------------
+    @property
+    def hidden(self):
+        """
+        Get/Set the hidden property of the navigation.
+        """
+        return self._hidden
+
+    # ----------------------------------------------------------------------
+    @hidden.setter
+    def hidden(self, hidden: bool):
+        if not isinstance(hidden, bool):
+            raise ValueError("Hidden must be a boolean.")
+
+        # update the hidden property
+        self._hidden = hidden
+        self._story._properties["nodes"][self._node]["config"][
+            "isHidden"
+        ] = self._hidden
+
+
+###############################################################################################################
+class CollectionNavigation:
+    """
+    A class to represent the Storymap's Collection Navigation.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        self._story = kwargs.pop("story")
+        self._node = kwargs.pop("node_id")
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Collection Navigation"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    @property
+    def type(self):
+        """
+        Get/Set the type of the navigations.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        type                Optional string. The type of collection navigation to be used in the story.
+
+                            ``Values: "compact" | "tab" | "bullet"``
+        ===============     ====================================================================
+
+        :return:
+            A string of the navigation type.
+        """
+        return self._story._properties["nodes"][self._node]["data"]["type"]
+
+    @type.setter
+    def type(self, nav_type: str):
+        if nav_type not in ["compact", "tab", "bullet"]:
+            raise ValueError(
+                "Invalid navigation type. Please provide 'compact', 'tab', or 'bullet'."
+            )
+        self._story._properties["nodes"][self._node]["data"]["type"] = nav_type

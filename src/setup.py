@@ -18,7 +18,6 @@ from os import path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
-import atexit
 import logging
 import site
 
@@ -173,7 +172,7 @@ def get_version():
             MICRO = open(__path("build.info")).read().strip()
     except:
         MICRO = "0"
-    return f"{MAJOR}.{MINOR}.{MICRO}a0+jupyterlab"
+    return f"{MAJOR}.{MINOR}.{MICRO}"
 
 
 kwargs = {
