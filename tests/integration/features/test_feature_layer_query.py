@@ -58,15 +58,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with return geometries = True and then False
         """
-        geometry_true = self.major_cities_layer.query(
-            return_geometry=True)
+        geometry_true = self.major_cities_layer.query(return_geometry=True)
         assert geometry_true.features[0].geometry
         assert "x" in list(geometry_true.features[0].geometry.keys())
         assert "y" in list(geometry_true.features[0].geometry.keys())
 
         geometry_false = self.major_cities_layer.query(return_geometry=False)
         assert geometry_false.features[0].geometry is None
-        
+
         geom_df = self.major_cities_layer.query(
             where="class = 'city'", return_geometry=True, as_df=True
         )
@@ -114,7 +113,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         distinct_values = self.major_cities_layer.query(
             out_fields=["class", "families"],
             return_distinct_values=True,
-            return_geometry=False
+            return_geometry=False,
         )
         # ObjectId field not included
         assert len(distinct_values.fields) == 2
@@ -127,13 +126,11 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with return_extent_only=True
         """
         extent = self.major_cities_layer.query(
-            where="st = 'ID'",
-            return_extent_only=True
+            where="st = 'ID'", return_extent_only=True
         )
         assert extent["extent"]
         assert isinstance(extent, dict)
         assert extent["extent"]["spatialReference"]
-
 
     def test_query_order_by_fields(self):
         """
@@ -142,11 +139,17 @@ class TestQueryFeatureLayer(unittest.TestCase):
         ordered = self.major_cities_layer.query(
             out_fields=["class", "families", "females"],
             order_by_fields="families ASC",
-            return_geometry=False
+            return_geometry=False,
         )
         assert ordered
-        assert ordered.features[0].attributes["families"] < ordered.features[1].attributes["families"]
-        assert ordered.features[1].attributes["families"] < ordered.features[2].attributes["families"] 
+        assert (
+            ordered.features[0].attributes["families"]
+            < ordered.features[1].attributes["families"]
+        )
+        assert (
+            ordered.features[1].attributes["families"]
+            < ordered.features[2].attributes["families"]
+        )
 
     def test_query_return_m_and_z_and_centroid(self):
         """
@@ -184,13 +187,12 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test query with sql_format
         """
-        sql = self.major_cities_layer.query(where="name like '%Park'",
-                                            sql_format="standard")
-        assert sql
-        assert sql.features[0].attributes['name'].endswith("Park")
-        assert len(sql.features) < self.major_cities_layer.query(
-            return_count_only=True
+        sql = self.major_cities_layer.query(
+            where="name like '%Park'", sql_format="standard"
         )
+        assert sql
+        assert sql.features[0].attributes["name"].endswith("Park")
+        assert len(sql.features) < self.major_cities_layer.query(return_count_only=True)
 
     def test_query_units(self):
         """
@@ -198,17 +200,17 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         sr = self.major_cities_layer.properties.extent["spatialReference"]
         ext1 = Envelope(
-            iterable= {
+            iterable={
                 "xmin": -12331108.041,
                 "ymin": 4309825.403,
                 "xmax": -11417150.495,
                 "ymax": 4941634.769,
-                "spatialReference": sr
+                "spatialReference": sr,
             }
-        )        
-        
+        )
+
         gfilter = intersects(ext1, sr)
-        
+
         km = self.major_cities_layer.query(
             geometry_filter=gfilter, distance=75, units="esriSRUnit_Kilometer"
         )
@@ -220,9 +222,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
 
         assert km
-        assert len(km.features) < self.major_cities_layer.query(
-            return_count_only=True
-        )
+        assert len(km.features) < self.major_cities_layer.query(return_count_only=True)
         assert foot
         assert len(foot.features) < self.major_cities_layer.query(
             return_count_only=True
@@ -237,7 +237,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with geometry_filter
         """
         geom_env = Envelope(
-            iterable= {
+            iterable={
                 "xmin": -10687568.614261,
                 "ymin": 3822997.969683,
                 "xmax": -9587687.5503808,
@@ -245,7 +245,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
                 "spatialReference": {"wkid": 102100},
             }
         )
-        
+
         geom_filter = self.major_cities_layer.query(
             geometry_filter=intersects(geom_env, sr={"wkid": 102100})
         )
@@ -262,8 +262,8 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with group_by_field_for_statistics
         """
         group_field = self.major_cities_layer.query(
-            out_statistics=[{"statisticType": "avg", "onStatisticField": "females"}], 
-            group_by_fields_for_statistics="pop_class"
+            out_statistics=[{"statisticType": "avg", "onStatisticField": "females"}],
+            group_by_fields_for_statistics="pop_class",
         )
         assert group_field
         assert isinstance(group_field, FeatureSet)

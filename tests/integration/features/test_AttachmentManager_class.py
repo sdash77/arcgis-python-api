@@ -95,5 +95,6 @@ class TestAttachmentManager(unittest.TestCase):
         delete_res = fl_am.delete(2, attachment_id)
         assert delete_res["deleteAttachmentResults"][0]["success"]
 
+
 if __name__ == "__main__":
     unittest.main()
