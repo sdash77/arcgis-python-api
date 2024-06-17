@@ -3915,7 +3915,12 @@ class FeatureLayer(Layer):
             print(result)
         """
         if not where:
-            where = "1=1"
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
         return _query._common_query(
             layer=self,
             is_layer=True,

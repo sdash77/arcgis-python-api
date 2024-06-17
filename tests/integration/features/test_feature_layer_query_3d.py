@@ -163,15 +163,6 @@ class TestQuery3DFeatureLayer(unittest.TestCase):
         """
         Test query with geometry_filter
         """
-        #geom_filter = self.ned_3do_layer.query_3d(
-            #geometry_filter={
-                #"xmin": -13228997.10497058,
-                #"ymin": 3961002.843403707,
-                #"xmax": -13014973.425772188,
-                #"ymax": 4113876.899973986,
-                #"spatialReference": {"wkid": 4326},
-            #}
-        #)
         
         geom_env = Envelope(
             {
