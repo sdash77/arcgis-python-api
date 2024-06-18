@@ -23,7 +23,11 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
-    from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
+    from .._utils.tabular_data import (
+        TabularDataObject,
+        explain_prediction,
+        add_h3,
+    )
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
@@ -114,7 +118,12 @@ class FullyConnectedNetwork(ArcGISModel):
         emb_drop = kwargs.get("emb_drop", 0)
 
         self.learn = _get_learner_object(
-            data, layers, emb_szs, ps, emb_drop, kwargs.get("pretrained_path", None)
+            data,
+            layers,
+            emb_szs,
+            ps,
+            emb_drop,
+            kwargs.get("pretrained_path", None),
         )
         self._layers = layers
         self.learn.model = self.learn.model.to(self._device)
@@ -168,7 +177,10 @@ class FullyConnectedNetwork(ArcGISModel):
         cell_sizes = emd.get("cell_sizes", None)
         if data is None:
             data = TabularDataObject._empty(
-                categorical_variables, continuous_variables, dependent_variable, None
+                categorical_variables,
+                continuous_variables,
+                dependent_variable,
+                None,
             )
             data._is_classification = _is_classification
             data._cell_sizes = cell_sizes
@@ -235,7 +247,12 @@ class FullyConnectedNetwork(ArcGISModel):
 
         # with io.capture_output() as captured:
         super().save(
-            path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+            path,
+            framework,
+            publish,
+            gis,
+            save_optimizer=save_optimizer,
+            **kwargs,
         )
         # print(captured.stdout)
         return Path(path)
@@ -446,7 +463,11 @@ class FullyConnectedNetwork(ArcGISModel):
                 )
 
             return self._predict_rasters(
-                output_raster_path, rasters, match_field_names, explain, explain_index
+                output_raster_path,
+                rasters,
+                match_field_names,
+                explain,
+                explain_index,
             )
 
     def _predict_features(
@@ -559,9 +580,11 @@ class FullyConnectedNetwork(ArcGISModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
+                folder = gis.content.folders.get()
+                online_table = folder.add(
+                    {"type": "Microsoft Excel", "overwrite": True},
+                    file=table_file,
+                ).result()
                 return online_table.publish(overwrite=True)
 
     def _predict_rasters(
@@ -685,7 +708,10 @@ class FullyConnectedNetwork(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -708,7 +734,10 @@ class FullyConnectedNetwork(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -749,7 +778,8 @@ class FullyConnectedNetwork(ArcGISModel):
             explain_prediction(
                 self,
                 pd.DataFrame(
-                    data=np.array(processed_data), columns=sorted(raster_data)
+                    data=np.array(processed_data),
+                    columns=sorted(raster_data),
                 ),
                 index=explain_index,
                 random_index=random_index,
@@ -758,7 +788,10 @@ class FullyConnectedNetwork(ArcGISModel):
 
         processed_numpy = np.array(
             self._df_predict(
-                pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
+                pd.DataFrame(
+                    data=np.array(processed_data),
+                    columns=sorted(raster_data),
+                )
             ),
             dtype="float64",
         )

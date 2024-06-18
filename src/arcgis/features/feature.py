@@ -1610,7 +1610,7 @@ class FeatureCollection(Layer):
                                If not specified, a default symbol will be created.
         ------------------     --------------------------------------------------------------------
         name                   Optional String. The name of the feature collection. This is used
-                               when feature collections are being persisted on a WebMap. If None is
+                               when feature collections are being persisted on a Map. If None is
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 

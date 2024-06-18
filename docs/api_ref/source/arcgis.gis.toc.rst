@@ -147,6 +147,13 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+OrgRecycleBin
+---------------------------
+.. autoclass:: arcgis.gis._impl._content_manager.OrgRecycleBin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 RecycleBin
 ---------------------------
 .. autoclass:: arcgis.gis._impl._content_manager.RecycleBin
