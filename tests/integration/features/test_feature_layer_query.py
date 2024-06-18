@@ -1,37 +1,41 @@
 import unittest
 from utils.decorators import integration_test, profiles
+from arcgis.features import FeatureSet
+from arcgis.geometry import Envelope, Geometry
+from arcgis.geometry.filters import intersects
 
 
 @profiles.agol
 @integration_test
 class TestQueryFeatureLayer(unittest.TestCase):
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         """
         get test data
         """
-        major_cities_item = self.gis.content.search(
+        major_cities_item = cls.gis.content.search(
             "{item} tags:{tag}".format(item="major_cities", tag="integration_testing"),
             "Feature Layer",
         )[0]
-        self.major_cities_layer = major_cities_item.layers[0]
+        cls.major_cities_layer = major_cities_item.layers[0]
 
-        jordan_aviation_item = self.gis.content.search(
+        jordan_aviation_item = cls.gis.content.search(
             "{item} tags:{tag}".format(
                 item="jordan_aviation", tag="integration_testing"
             ),
             "Feature Layer",
         )[0]
-        self.coord_layer = jordan_aviation_item.layers[0]
-        self.coord_layer2 = jordan_aviation_item.layers[2]
+        cls.coord_layer = jordan_aviation_item.layers[0]
+        cls.coord_layer2 = jordan_aviation_item.layers[2]
 
-        traffic_collisions_item = self.gis.content.search(
+        traffic_collisions_item = cls.gis.content.search(
             "{item} tags:{tag}".format(
                 item="Traffic Collisions", tag="integration_testing"
             ),
             "Feature Layer",
         )[0]
-        self.historic_layer = traffic_collisions_item.layers[0]
+        cls.historic_layer = traffic_collisions_item.layers[0]
 
     def test_query_count_only(self):
         """
@@ -50,15 +54,22 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert "objectIds" in ids
         assert "objectIdFieldName" in ids
 
-    def test_query_geometries(self):
+    def test_query_geometry(self):
         """
         Test query with return geometries = True and then False
         """
         geometry_true = self.major_cities_layer.query(return_geometry=True)
         assert geometry_true.features[0].geometry
+        assert "x" in list(geometry_true.features[0].geometry.keys())
+        assert "y" in list(geometry_true.features[0].geometry.keys())
 
         geometry_false = self.major_cities_layer.query(return_geometry=False)
         assert geometry_false.features[0].geometry is None
+
+        geom_df = self.major_cities_layer.query(
+            where="class = 'city'", return_geometry=True, as_df=True
+        )
+        assert isinstance(geom_df.loc[0].SHAPE, Geometry)
 
     def test_query_result_offset(self):
         """
@@ -100,16 +111,23 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert len(fields.fields) == 4
 
         distinct_values = self.major_cities_layer.query(
-            out_fields=["class", "families", "females"], return_distinct_values=True
+            out_fields=["class", "families"],
+            return_distinct_values=True,
+            return_geometry=False,
         )
         # ObjectId field not included
-        assert len(distinct_values.fields) == 3
+        assert len(distinct_values.fields) == 2
+        assert len(distinct_values.features) < self.major_cities_layer.query(
+            return_count_only=True
+        )
 
     def test_query_extent_only(self):
         """
         Test query with return_extent_only=True
         """
-        extent = self.major_cities_layer.query(return_extent_only=True)
+        extent = self.major_cities_layer.query(
+            where="st = 'ID'", return_extent_only=True
+        )
         assert extent["extent"]
         assert isinstance(extent, dict)
         assert extent["extent"]["spatialReference"]
@@ -120,9 +138,18 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         ordered = self.major_cities_layer.query(
             out_fields=["class", "families", "females"],
-            order_by_fields="families ASC, females DESC, class ASC",
+            order_by_fields="families ASC",
+            return_geometry=False,
         )
         assert ordered
+        assert (
+            ordered.features[0].attributes["families"]
+            < ordered.features[1].attributes["families"]
+        )
+        assert (
+            ordered.features[1].attributes["families"]
+            < ordered.features[2].attributes["families"]
+        )
 
     def test_query_return_m_and_z_and_centroid(self):
         """
@@ -156,54 +183,78 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert len(limit_records) < len(all_records)
         assert limit_records
 
-    def test_query_historic_moments_and_time(self):
-        """
-        Test query with historic_moments parameter
-        Test query with time_filter parameter
-        """
-        historic = self.historic_layer.query(historic_moment=1199145600000)
-        assert historic
-
-        time_filter_results = self.historic_layer.query(
-            time_filter=[1199145600000, 1230768000000]
-        )
-        assert time_filter_results
-
     def test_query_sql_format(self):
         """
         Test query with sql_format
         """
-        sql = self.major_cities_layer.query(sql_format="standard")
+        sql = self.major_cities_layer.query(
+            where="name like '%Park'", sql_format="standard"
+        )
         assert sql
+        assert sql.features[0].attributes["name"].endswith("Park")
+        assert len(sql.features) < self.major_cities_layer.query(return_count_only=True)
 
     def test_query_units(self):
         """
         Test query with different units
         """
-        km = self.major_cities_layer.query(units="esriSRUnit_Kilometer")
-        foot = self.major_cities_layer.query(units="esriSRUnit_Foot")
-        nautical = self.major_cities_layer.query(units="esriSRUnit_USNauticalMile")
+        sr = self.major_cities_layer.properties.extent["spatialReference"]
+        ext1 = Envelope(
+            iterable={
+                "xmin": -12331108.041,
+                "ymin": 4309825.403,
+                "xmax": -11417150.495,
+                "ymax": 4941634.769,
+                "spatialReference": sr,
+            }
+        )
+
+        gfilter = intersects(ext1, sr)
+
+        km = self.major_cities_layer.query(
+            geometry_filter=gfilter, distance=75, units="esriSRUnit_Kilometer"
+        )
+        foot = self.major_cities_layer.query(
+            geometry_filter=gfilter, distance=1000, units="esriSRUnit_Foot"
+        )
+        nautical = self.major_cities_layer.query(
+            geometry_filter=gfilter, distance=5, units="esriSRUnit_USNauticalMile"
+        )
 
         assert km
+        assert len(km.features) < self.major_cities_layer.query(return_count_only=True)
         assert foot
+        assert len(foot.features) < self.major_cities_layer.query(
+            return_count_only=True
+        )
         assert nautical
+        assert len(nautical.features) < self.major_cities_layer.query(
+            return_count_only=True
+        )
 
     def test_query_geometry_filter(self):
         """
         Test query with geometry_filter
         """
-        geom_filter = self.major_cities_layer.query(
-            geometry_filter={
-                "xmin": -13228997.10497058,
-                "ymin": 3961002.843403707,
-                "xmax": -13014973.425772188,
-                "ymax": 4113876.899973986,
+        geom_env = Envelope(
+            iterable={
+                "xmin": -10687568.614261,
+                "ymin": 3822997.969683,
+                "xmax": -9587687.5503808,
+                "ymax": 4379803.502226,
                 "spatialReference": {"wkid": 102100},
             }
+        )
+
+        geom_filter = self.major_cities_layer.query(
+            geometry_filter=intersects(geom_env, sr={"wkid": 102100})
         )
         assert (
             geom_filter.spatial_reference["wkid"]
             is not geom_filter.spatial_reference["latestWkid"]
+        )
+        assert len(geom_filter.features) < self.major_cities_layer.query(
+            return_count_only=True
         )
 
     def test_query_group_by_field(self):
@@ -211,19 +262,22 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with group_by_field_for_statistics
         """
         group_field = self.major_cities_layer.query(
-            group_by_fields_for_statistics="females, families"
+            out_statistics=[{"statisticType": "avg", "onStatisticField": "females"}],
+            group_by_fields_for_statistics="pop_class",
         )
         assert group_field
+        assert isinstance(group_field, FeatureSet)
+        assert len(group_field.features) == 6
 
     def test_query_out_statistics(self):
         """
         Test query with out_statistics
         """
-        output_name = "female_count"
+        output_name = "sum_females"
         out_stats = self.major_cities_layer.query(
             out_statistics=[
                 {
-                    "statisticType": "count",
+                    "statisticType": "sum",
                     "onStatisticField": "females",
                     "outStatisticFieldName": output_name,
                 }

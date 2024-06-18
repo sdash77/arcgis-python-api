@@ -1,6 +1,6 @@
 import os
 import unittest
-from arcgis.gis import Item
+from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Feature
 from pandas import DataFrame
 from integration.config import QALAB_ROOT_PATH
@@ -70,7 +70,7 @@ class TestFeatureLayerClass(unittest.TestCase):
                 {"title": layer_name_delfeatures}, data=fgdb_path
             )
             cls.feature_layer2_item = fgdb_item.publish(
-                {"title": layer_name_delfeatures}
+                {"name": layer_name_delfeatures}
             )
             assert isinstance(cls.feature_layer2_item, Item)
 
@@ -187,6 +187,28 @@ class TestFeatureLayerClass(unittest.TestCase):
             0,
             "Feature count after delete_features not equal to 0",
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            source_item = cls.feature_layer1_item.related_items(
+                "Service2Data", "forward"
+            )[0]
+            if source_item:
+                source_item.delete()
+                cls.feature_layer1_item.delete()
+        except IndexError as ie:
+            cls.feature_layer1_item.delete()
+
+        try:
+            source_item2 = cls.feature_layer2_item.related_items(
+                "Service2Data", "forward"
+            )[0]
+            if source_item2:
+                source_item2.delete()
+                cls.feature_layer2_item.delete()
+        except IndexError as ie:
+            cls.feature_layer2_item.delete()
 
 
 if __name__ == "__main__":

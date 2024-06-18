@@ -302,8 +302,16 @@ class TestApplyEditsSeDF(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.item:
+        try:
+            if cls.item:
+                source_item = cls.item.related_items("Service2Data", "forward")[0]
+                source_item.delete()
+                cls.item.delete()
+            else:
+                pass
+        except IndexError as e:
             cls.item.delete()
+            print(f"Could not delete source item.")
 
 
 if __name__ == "__main__":
