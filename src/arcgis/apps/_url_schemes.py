@@ -1,6 +1,8 @@
-import urllib.parse
-import arcgis
-import json
+from arcgis.auth.api import LazyLoader
+
+arcgis = LazyLoader("arcgis")
+json = LazyLoader("json")
+urllib = LazyLoader("urllib")
 
 
 def build_collector_url(
