@@ -13,7 +13,6 @@ from arcgis.network import _utils
 
 pd = LazyLoader("pandas")
 try:
-
     from ._routing_utils import _create_toolbox
 except:
     from arcgis.network._routing_utils import _create_toolbox

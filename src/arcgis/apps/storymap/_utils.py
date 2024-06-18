@@ -17,6 +17,118 @@ time = LazyLoader("time")
 sharing = LazyLoader("gis._impl._content_manager_sharing.api")
 _dt = LazyLoader("datetime")
 
+_TEMPLATES = {
+    "storymap_2": {
+        "root": "n-4xkUEe",
+        "nodes": {
+            "n-4xkUEe": {
+                "type": "story",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "config": {"coverDate": "first-published"},
+                "children": ["n-aTn8ak", "n-1AItUD", "n-cOeTah"],
+            },
+            "n-aTn8ak": {
+                "type": "storycover",
+                "data": {
+                    "type": "minimal",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+            },
+            "n-1AItUD": {
+                "type": "navigation",
+                "data": {"links": []},
+                "config": {"isHidden": True},
+            },
+            "n-cOeTah": {"type": "credits"},
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "briefing": {
+        "root": "n-k23c2p",
+        "nodes": {
+            "n-XK0GeP": {"type": "briefing-ui", "children": ["n-11SuEF"]},
+            "n-11SuEF": {
+                "type": "briefing-slide",
+                "data": {"layout": "cover"},
+                "children": ["n-3r3mhh"],
+            },
+            "n-3r3mhh": {
+                "type": "storycover",
+                "data": {
+                    "type": "sidebyside",
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "titlePanelPosition": "start",
+                },
+                "children": [],
+            },
+            "n-k23c2p": {
+                "type": "briefing",
+                "data": {"storyTheme": "r-vlc4Kp"},
+                "children": ["n-XK0GeP"],
+            },
+        },
+        "resources": {
+            "r-vlc4Kp": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+    "collection": {
+        "root": "n-vCW523",
+        "nodes": {
+            "n-vCW523": {
+                "type": "collection",
+                "data": {"storyTheme": "r-QvId58"},
+                "children": ["n-eERiZz"],
+            },
+            "n-eERiZz": {
+                "type": "collection-ui",
+                "data": {"items": []},
+                "children": ["n-U3Ou63", "n-JTJJo2"],
+            },
+            "n-U3Ou63": {
+                "type": "collection-cover",
+                "data": {
+                    "title": "",
+                    "summary": "",
+                    "byline": "",
+                    "type": "tiles",
+                },
+            },
+            "n-JTJJo2": {
+                "type": "collection-nav",
+                "data": {"type": "compact"},
+            },
+        },
+        "resources": {
+            "r-QvId58": {
+                "type": "story-theme",
+                "data": {
+                    "themeId": "summit",
+                    "themeBaseVariableOverrides": {},
+                },
+            }
+        },
+    },
+}
+
 
 # ----------------------------------------------------------------------
 def _get_thumbnail(gis) -> str:
@@ -128,7 +240,10 @@ def cover(
 
 # ----------------------------------------------------------------------
 def set_logo(
-    story, logo: str, link: Optional[str] = None, alt_text: Optional[str] = None
+    story,
+    logo: str,
+    link: Optional[str] = None,
+    alt_text: Optional[str] = None,
 ):
     """
     Set the logo image, link, and/or alt text for the story or briefing.
@@ -365,7 +480,10 @@ def save(
             # Make a call to the StoryMaps publish endpoint
             story._gis._con.post(
                 path=story._url + "/publish",
-                params={"f": "json", "token": story._gis._con._session.auth.token},
+                params={
+                    "f": "json",
+                    "token": story._gis._con._session.auth.token,
+                },
             )
     else:
         # Set the type keywords
@@ -512,7 +630,9 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
 
 # ----------------------------------------------------------------------
 def copy_content(
-    story, target_story: Union[briefing.Briefing, storymap.StoryMap], content: list
+    story,
+    target_story: Union[briefing.Briefing, storymap.StoryMap],
+    content: list,
 ):
     """
     Copy the content from one briefing/story to another. This will copy the content
@@ -612,7 +732,10 @@ def copy_content(
         for node in node_list:
             # add node info for copying
             _add_to_dicts(
-                node, complete_node_list, complete_node_dict, complete_resource_dict
+                node,
+                complete_node_list,
+                complete_node_dict,
+                complete_resource_dict,
             )
             # check type of node to see if need to find children
             node_children = _has_children(story, node)
@@ -825,59 +948,64 @@ def _remove_resource(story, file=None):
 
 # ----------------------------------------------------------------------
 def _assign_node_class(story, node_id):
-    # Find the node type to assign to correct class
-    node_type = story._properties["nodes"][node_id]["type"]
-    # Create an instance of this class using existing node properties
-    if node_type == "separator":
-        node = Content.Separator(story=story, node_id=node_id)
-    elif node_type == "briefing-slide":
-        node = Content.BriefingSlide(story=story, node_id=node_id)
-    elif node_type == "code":
-        node = Content.Code(story=story, node_id=node_id)
-    elif node_type == "image":
-        node = Content.Image(story=story, node_id=node_id)
-    elif node_type == "video":
-        node = Content.Video(story=story, node_id=node_id)
-    elif node_type == "audio":
-        node = Content.Audio(story=story, node_id=node_id)
-    elif node_type == "table":
-        node = Content.Table(story=story, node_id=node_id)
-    elif node_type == "embed":
-        # embed has subtype: video or link
-        subtype = story._properties["nodes"][node_id]["data"]["embedType"]
-        if subtype == "video":
-            node = Content.Video(story=story, node_id=node_id)
+    NODE_TYPE_CLASS_MAP = {
+        "separator": Content.Separator,
+        "briefing-slide": Content.BriefingSlide,
+        "code": Content.Code,
+        "image": Content.Image,
+        "video": Content.Video,
+        "audio": Content.Audio,
+        "embed": {
+            "video": Content.Video,
+            "link": Content.Embed,
+        },
+        "webmap": Content.Map,
+        "text": Content.Text,
+        "button": Content.Button,
+        "swipe": Content.Swipe,
+        "gallery": Content.Gallery,
+        "timeline": Content.Timeline,
+        "tour": Content.MapTour,
+        "table": Content.Table,
+        "immersive": {
+            "sidecar": Content.Sidecar,
+            # Add more subtypes as needed
+        },
+        "action-button": Content.MapAction,
+        "expressmap": Content.ExpressMap,
+        "navigation": Content.Navigation,
+        "storycover": Content.Cover,
+        "collection-cover": Content.Cover,
+        "collection-nav": Content.CollectionNavigation,
+    }
+
+    node_properties = story._properties["nodes"][node_id]
+    node_type = node_properties["type"]
+
+    if node_type in NODE_TYPE_CLASS_MAP:
+        node_class_or_subtype = NODE_TYPE_CLASS_MAP[node_type]
+
+        if isinstance(node_class_or_subtype, dict):
+            # Handle subtypes
+            if "sidecar" in node_class_or_subtype:
+                # Immersive sidecar has subtypes
+                subtype_key = node_properties["data"].get("type")
+            else:
+                subtype_key = node_properties["data"].get(
+                    "embedType"
+                )  # Adjust based on actual subtype key
+            node_class = node_class_or_subtype.get(subtype_key, node_type.capitalize())
         else:
-            node = Content.Embed(story=story, node_id=node_id)
-    elif node_type == "webmap":
-        node = Content.Map(story=story, node_id=node_id)
-    elif node_type == "text":
-        node = Content.Text(story=story, node_id=node_id)
-    elif node_type == "button":
-        node = Content.Button(story=story, node_id=node_id)
-    elif node_type == "swipe":
-        node = Content.Swipe(story=story, node_id=node_id)
-    elif node_type == "gallery":
-        node = Content.Gallery(story=story, node_id=node_id)
-    elif node_type == "timeline":
-        node = Content.Timeline(story=story, node_id=node_id)
-    elif node_type == "tour":
-        node = Content.MapTour(story=story, node_id=node_id)
-    elif node_type == "expressmap":
-        node = Content.ExpressMap(story=story, node_id=node_id)
-    elif node_type == "immersive":
-        # immersive has subtype sidecar (more to add later)
-        subtype = story._properties["nodes"][node_id]["data"]["type"]
-        if subtype == "sidecar":
-            node = Content.Sidecar(story=story, node_id=node_id)
-        else:
-            node = subtype
-    elif node_type == "action-button":
-        node = Content.MapAction(story=story, node_id=node_id)
+            # No subtypes, use the class directly
+            node_class = node_class_or_subtype
     else:
-        # if not of type story content then just return name of type
-        node = node_type.capitalize()
-    return node
+        # Unknown type, return the type name capitalized
+        node_class = node_type.capitalize()
+
+    if isinstance(node_class, str):
+        return node_class
+    else:
+        return node_class(story=story, node_id=node_id)
 
 
 # ----------------------------------------------------------------------

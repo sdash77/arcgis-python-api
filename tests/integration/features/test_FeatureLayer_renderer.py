@@ -2,10 +2,10 @@ import os
 import unittest
 from arcgis.gis import GIS, ContentManager
 from arcgis.features import FeatureLayer
-from arcgis.widgets import MapView
-from arcgis.mapping import WebMap
 from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test, profiles
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 
 
 @profiles.agol
@@ -33,7 +33,7 @@ class TestRendererProperty(unittest.TestCase):
     def test_plot_mapview(self):
         item = self.gis.content.search("*", "Feature Layer", outside_org=True)[0]
         lyr = item.layers[0]
-        wm = MapView()
+        wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [0, 255, 0, 100]
         wm.add_layer(lyr)
         assert list(wm.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
@@ -41,7 +41,7 @@ class TestRendererProperty(unittest.TestCase):
     def test_plot_webmap(self):
         item = self.gis.content.search("*", "Feature Layer", outside_org=True)[0]
         lyr = item.layers[0]
-        wm = WebMap()
+        wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [255, 0, 0, 100]
         wm.add_layer(lyr)
         assert list(
