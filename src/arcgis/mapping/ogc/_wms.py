@@ -220,7 +220,7 @@ class WMSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView's widget JSON format"""
+        """Represents the Map's widget JSON format"""
         layers = self.layers
         if not isinstance(layers, list):
             layers = [layers]
@@ -239,7 +239,7 @@ class WMSLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         new_layer = self._lyr_json
         layers = self.layers
         if not isinstance(layers, list):

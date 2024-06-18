@@ -27,6 +27,61 @@ logger = logging.getLogger(__name__)
 
 __all__ = ["Folder", "Folders"]
 
+_JSON_ITEMS: list[str] = [
+    "360 VR Experience",
+    "Map Area",
+    "Web Map",
+    "Web Scene",
+    "Feature Collection",
+    "Feature Collection Template",
+    "Feature Service",
+    "Group Layer",
+    "Image Service",
+    "Map Service",
+    "Oriented Imagery Catalog",
+    "Relational Database Connection",
+    "3DTilesService",
+    "Scene Service",
+    "Vector Tile Service",
+    "WFS",
+    "WMTS",
+    "Dashboard",
+    "Data Pipeline",
+    "Deep Learning Studio Project",
+    "Esri Classification Schema",
+    "Excalibur Imagery Project",
+    "GeoBIM Application",
+    "GeoBIM Project",
+    "Hub Event",
+    "Hub Initiative",
+    "Hub Initiative Template",
+    "Hub Page",
+    "Hub Project",
+    "Hub Site Application",
+    "Insights Workbook",
+    "Insights Model",
+    "Insights Page",
+    "Insights Theme",
+    "Investigation",
+    "Knowledge Studio Project",
+    "Mission",
+    "Mobile Application",
+    "Ortho Mapping Project",
+    "Ortho Mapping Template",
+    "Solution",
+    "StoryMap",
+    "Web AppBuilder Widget",
+    "Web Experience",
+    "Web Experience Template",
+    "Web Mapping Application",
+    "Workforce Project",
+    "Color Set",
+    "Content Category Set",
+    "StoryMap Theme",
+    "Style",
+    "Symbol Set",
+]
+
 
 ###########################################################################
 class Folder:
@@ -724,7 +779,12 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif text and file is None and url is None and data_url is None:
+            elif (text and file is None and url is None and data_url is None) or (
+                text is None
+                and file is None
+                and url is None
+                and item_properties["type"] in _JSON_ITEMS
+            ):
                 #  text workflow
                 params["async"] = False
                 if not isinstance(text, str):
@@ -810,7 +870,6 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-
             else:
                 raise ValueError(
                     "A single value of `file`, `text`, `url`, or `data_url` must be provided to add content to the WebGIS."

@@ -1,37 +1,23 @@
-import sys
-import logging
+import os.path
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, ContentManager
 from io import StringIO
 import json, uuid
 from arcgis.features._uploads.upload import UploadManager, Upload
-from utils.decorators import integration_test
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
+from integration.config import QALAB_ROOT_PATH
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-FEATURE_CLASS = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\issue_9705\USA_Major_Cities.zip"
+enable_verbose_logging()
+FEATURE_CLASS = os.path.join(QALAB_ROOT_PATH, r"esri_requests\issue_9705\USA_Major_Cities.zip")
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestUploadManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis = GIS(profile=profiles[0], verify_cert=False, proxy=PROXIES)
         content: ContentManager = cls.gis.content
         item = content.add(
             item_properties={"title": "test_data_abc", "type": "Shapefile"},
