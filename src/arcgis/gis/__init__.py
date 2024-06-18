@@ -23,8 +23,6 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
-import datetime as _dt
-from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
@@ -35,7 +33,6 @@ from arcgis.auth.tools import LazyLoader
 _imports = LazyLoader("arcgis._impl.imports")
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
-    ItemTypeEnum,
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
@@ -69,6 +66,7 @@ from arcgis.auth import EsriSession
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
+_geo = LazyLoader("arcgis.features.geo")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
@@ -111,14 +109,6 @@ def _lazy_property(fn):
         return getattr(self, attr_name)
 
     return _lazy_property
-
-
-try:
-    from arcgis.features.geo import _is_geoenabled
-except ImportError:
-
-    def _is_geoenabled(o):
-        return False
 
 
 class GIS(object):
@@ -6732,7 +6722,7 @@ class ContentManager(object):
             filetype = "Feature Collection"
             item_properties["text"] = {"layers": [data._lyr_dict]}
             data = None
-        elif _is_geoenabled(data) and hasattr(data, "spatial"):
+        elif _geo._is_geoenabled(data) and hasattr(data, "spatial"):
             filetype = "Feature Collection"
             item_properties["text"] = {
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
@@ -8550,7 +8540,7 @@ class ContentManager(object):
         # Check which workflow to do
         overwrite = kwargs.get("overwrite", False)
         insert = kwargs.get("append", False)
-        if _is_geoenabled(df) or (overwrite or insert):
+        if _geo._is_geoenabled(df) or (overwrite or insert):
             # Item Workflow
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
@@ -15473,29 +15463,29 @@ class Item(dict):
         """
         if dr_type == "6m":
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
+                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
                 "4": [
-                    sd + timedelta(days=181),
-                    ed + timedelta(days=1),
+                    sd + _dt.timedelta(days=181),
+                    ed + _dt.timedelta(days=1),
                 ],
             }
         elif dr_type == "12m":
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
-                "4": [sd + timedelta(days=181), sd + timedelta(days=240)],
-                "5": [sd + timedelta(days=241), sd + timedelta(days=320)],
-                "6": [sd + timedelta(days=321), sd + timedelta(days=366)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
+                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
+                "4": [sd + _dt.timedelta(days=181), sd + _dt.timedelta(days=240)],
+                "5": [sd + _dt.timedelta(days=241), sd + _dt.timedelta(days=320)],
+                "6": [sd + _dt.timedelta(days=321), sd + _dt.timedelta(days=366)],
             }
         else:
             # custom date range
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
+                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
             }
             # since over 5 months we know that there are at least 4 ranges and up to 6 for 1 year.
             stop = False
@@ -15503,19 +15493,19 @@ class Item(dict):
             days = 181
             # need to check if time delta will surpass our end_date or not
             while stop is False:
-                next_time = sd + timedelta(days=days + 59)
+                next_time = sd + _dt.timedelta(days=days + 59)
                 if next_time >= ed:
                     # we reached the end time specified by user
                     ranges[str(range_add)] = [
-                        sd + timedelta(days=days),
-                        ed + timedelta(days=1),
+                        sd + _dt.timedelta(days=days),
+                        ed + _dt.timedelta(days=1),
                     ]
                     stop = True
                 else:
                     # add a range
                     ranges[str(range_add)] = [
-                        sd + timedelta(days=days),
-                        sd + timedelta(days=days + 59),
+                        sd + _dt.timedelta(days=days),
+                        sd + _dt.timedelta(days=days + 59),
                     ]
                 range_add = range_add + 1
                 days = days + 60
@@ -15714,28 +15704,32 @@ class Item(dict):
                 return results
         elif date_range.lower() in ["24h", "1d"]:
             params["period"] = "1h"
-            params["startTime"] = int((end_date - timedelta(days=1)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - _dt.timedelta(days=1)).timestamp() * 1000
+            )
         elif date_range.lower() == "7d":
             params["period"] = "1d"
-            params["startTime"] = int((end_date - timedelta(days=7)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - _dt.timedelta(days=7)).timestamp() * 1000
+            )
         elif date_range.lower() == "14d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=14)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=14)).timestamp() * 1000
             )
         elif date_range.lower() == "30d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=30)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=30)).timestamp() * 1000
             )
         elif date_range.lower() == "60d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=60)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=60)).timestamp() * 1000
             )
         elif date_range.lower() == "6m":
             params["period"] = "1d"
-            sd = end_date - timedelta(days=int(365 / 2))
+            sd = end_date - _dt.timedelta(days=int(365 / 2))
             results = self._interval_times(sd, end_date, params, as_df, "6m")
             return results
         elif date_range.lower() in ["12m", "1y"]:
