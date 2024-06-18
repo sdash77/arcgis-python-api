@@ -33,6 +33,7 @@ from arcgis.auth.tools import LazyLoader
 _imports = LazyLoader("arcgis._impl.imports")
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
+    ItemTypeEnum,
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
