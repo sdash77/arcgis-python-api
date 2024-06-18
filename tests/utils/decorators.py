@@ -13,7 +13,12 @@ from integration.config import get_resource_path
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
-NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in ("true", "1", "y", "yes")
+NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in (
+    "true",
+    "1",
+    "y",
+    "yes",
+)
 
 DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else sys.maxsize
 EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else sys.maxsize
@@ -368,6 +373,7 @@ class profiles:
             cls._k8s_profile_parameters,
         )
 
+    @classproperty
     def admin_all(cls):
         """Run tests for all 3 admin profiles (agol, enterprise, k8s)"""
         return cls._get_profile_parameterized_class(
