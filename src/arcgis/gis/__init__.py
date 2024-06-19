@@ -17873,6 +17873,62 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def remap_data(self, item_mapping: dict[str, str], force=False):
 
+        """
+        Method to help users easily replace data in web maps, applications, and other item types
+        that may contain references to other items. Users pass in a dictionary of item ids
+        specifying the original item id and the item id of the item meant to replace it, and the
+        function will automatically replace the id's and other associated data with the item.
+        Useful for workflows such as replacing corrupted datasources in an application with
+        valid ones, updating outdated datasources, replacing test data with production data, 
+        and more. Can be used by advanced users to replace any string in the item's structure.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_mapping        Required dict. A dictionary of the items to be remapped. The key is
+                            the item id of the original item and the value is the item id of the
+                            item meant to replace the original.
+
+                            .. note::
+                                This dictionary can also be used for regex replacements of other
+                                strings that are in the structure of the item (not just item 
+                                id's), but only if the `force` parameter is set to `True`. This 
+                                is only recommended for advanced users with a thorough 
+                                understanding of their item's data structure.
+        ---------------     --------------------------------------------------------------------
+        force               Optional boolean. If `False`, the function will check if the item
+                            ids in the `item_mapping` dictionary exist correspond to valid,
+                            accessible items item in the GIS, and that all original/replacement
+                            item pairs are of matching type. If `True`, the function will not
+                            check and replace all instances of the `item_mapping` keys with their
+                            corresponding values in the item's data. Default is `False`, is 
+                            strongly recommended to remain `False` unless the user has a 
+                            specific reason to circumvent item id validation.
+        ===============     ====================================================================
+
+        :return:
+            A boolean indicating success (True) or failure (False).
+        
+        .. code-block:: python
+
+            # Usage Example 1: Replace web maps within an application
+
+            storymap = gis.content.get("storyid12345")
+
+            # say we have a webmap with id 'webmapid12345' and want to replace it with another
+            map_dict = {"webmapid12345": "webmapid67890"}
+            storymap.remap_data(map_dict)
+
+            # Usage Example 2: Fix a typo everywhere in an item
+
+            dashboard = gis.content.get("dashboardid12345")
+            
+            # say we realized we've been spelling "arcgis" wrong this whole time
+            repl_dict = {"arkgis": "arcgis"}
+            dashboard.remap_data(repl_dict, force=True)
+            
+        """
+
         _TEXT_BASED_ITEM_TYPES = [
             "Web Map",
             "Map Service",
