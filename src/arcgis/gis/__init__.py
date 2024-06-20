@@ -8310,7 +8310,7 @@ class ContentManager(object):
 
         df.to_csv(fname)
         if title is None:
-            now: datetime = datetime.now()
+            now: _dt.datetime = _dt.datetime.now()
             title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
         if service_name is None:
             service_name = f"import_table_{uuid.uuid4().hex[:3]}"
@@ -9998,7 +9998,7 @@ class Group(dict):
             + str(owner)
             + """
                         <br/><b>Created</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
@@ -11252,8 +11252,6 @@ class User(dict):
 
         """
 
-        import datetime as _dt
-
         assert report_type in [
             "users",
             "credits",
@@ -11884,7 +11882,7 @@ class User(dict):
             + str(self.username)
             + """
                         <br/><b>Joined</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
@@ -14547,7 +14545,7 @@ class Item(dict):
             + self.owner
             + """
                         <br/>Last Modified: """
-            + datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
+            + _dt.datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
             + """
                         <br/>"""
             + str(self.numComments)
@@ -15646,7 +15644,7 @@ class Item(dict):
             raise ValueError("Usage() only supported for ArcGIS Online items.")
 
         # Set end date and params dict
-        end_date = datetime.now()
+        end_date = _dt.datetime.now()
         params = {
             "f": "json",
             "startTime": None,
@@ -17381,7 +17379,7 @@ class Item(dict):
         from datetime import timezone
         from uuid import uuid4
 
-        now = datetime.now(timezone.utc)
+        now = _dt.datetime.now(timezone.utc)
         if title is None:
             title = item.title + " - Copy %s" % uuid4().hex[:6]
         if tags is None:
