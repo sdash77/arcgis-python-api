@@ -522,7 +522,9 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                key_file, cert_file = self._pfx_to_pem(cert_file, password)
+                from arcgis.auth.tools.certificate import pfx_to_pem
+
+                cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
@@ -995,51 +997,6 @@ class GIS(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def _pfx_to_pem(self, pfx_path, pfx_password):
-        """Decrypts the .pfx file to be used with requests.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        pfx_path            Required string.  File pathname to .pfx file to parse.
-        ---------------     --------------------------------------------------------------------
-        pfx_password        Required string.  Password to open .pfx file to extract key/cert.
-        ===============     ====================================================================
-
-        :return:
-           File path to key_file located in a tempfile location
-           File path to cert_file located in a tempfile location
-        """
-        try:
-            import OpenSSL.crypto
-        except ImportError:
-            raise RuntimeError(
-                "OpenSSL.crypto library is not installed.  You must install this in order "
-                + "to use a PFX for connecting to a PKI protected portal."
-            )
-        key_file = tempfile.NamedTemporaryFile(suffix=".pem", delete=False)
-        cert_file = tempfile.NamedTemporaryFile(suffix=".pem", delete=False)
-        k = open(key_file.name, "wb")
-        c = open(cert_file.name, "wb")
-        try:
-            pfx = open(pfx_path, "rb").read()
-            p12 = OpenSSL.crypto.load_pkcs12(pfx, pfx_password)
-        except OpenSSL.crypto.Error:
-            raise RuntimeError("Invalid PFX password.  Unable to parse file.")
-        k.write(
-            OpenSSL.crypto.dump_privatekey(
-                OpenSSL.crypto.FILETYPE_PEM, p12.get_privatekey()
-            )
-        )
-        c.write(
-            OpenSSL.crypto.dump_certificate(
-                OpenSSL.crypto.FILETYPE_PEM, p12.get_certificate()
-            )
-        )
-        k.close()
-        c.close()
-        return key_file.name, cert_file.name
-
     def _config_is_in_new_format(self, config):
         """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
@@ -15465,8 +15422,14 @@ class Item(dict):
         if dr_type == "6m":
             ranges = {
                 "1": [sd, sd + _dt.timedelta(days=60)],
-                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
-                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
                 "4": [
                     sd + _dt.timedelta(days=181),
                     ed + _dt.timedelta(days=1),
@@ -15475,18 +15438,39 @@ class Item(dict):
         elif dr_type == "12m":
             ranges = {
                 "1": [sd, sd + _dt.timedelta(days=60)],
-                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
-                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
-                "4": [sd + _dt.timedelta(days=181), sd + _dt.timedelta(days=240)],
-                "5": [sd + _dt.timedelta(days=241), sd + _dt.timedelta(days=320)],
-                "6": [sd + _dt.timedelta(days=321), sd + _dt.timedelta(days=366)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
+                "4": [
+                    sd + _dt.timedelta(days=181),
+                    sd + _dt.timedelta(days=240),
+                ],
+                "5": [
+                    sd + _dt.timedelta(days=241),
+                    sd + _dt.timedelta(days=320),
+                ],
+                "6": [
+                    sd + _dt.timedelta(days=321),
+                    sd + _dt.timedelta(days=366),
+                ],
             }
         else:
             # custom date range
             ranges = {
                 "1": [sd, sd + _dt.timedelta(days=60)],
-                "2": [sd + _dt.timedelta(days=61), sd + _dt.timedelta(days=120)],
-                "3": [sd + _dt.timedelta(days=121), sd + _dt.timedelta(days=180)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
             }
             # since over 5 months we know that there are at least 4 ranges and up to 6 for 1 year.
             stop = False
