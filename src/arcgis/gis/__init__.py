@@ -15716,7 +15716,7 @@ class Item(dict):
             results = self._interval_times(sd, end_date, params, as_df, "6m")
             return results
         elif date_range.lower() in ["12m", "1y"]:
-            sd = end_date - timedelta(days=int(365))
+            sd = end_date - _dt.timedelta(days=int(365))
             params["period"] = "1d"
             results = self._interval_times(sd, end_date, params, as_df, "12m")
             return results
