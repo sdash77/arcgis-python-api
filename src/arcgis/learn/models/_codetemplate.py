@@ -174,7 +174,7 @@ class ArcGISObjectDetector:
                     if "tta_scales" not in self.json_info
                     else str(self.json_info["tta_scales"]),
                     "displayName": "Perform test time augmentation while predicting using different scales",
-                    "description": "provide different scales sepearted by comma e.g. 0.9,1,1.1",
+                    "description": "provide different scales separated by comma e.g. 0.9,1,1.1",
                 }
             ]
         )
