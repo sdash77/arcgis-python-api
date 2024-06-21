@@ -87,6 +87,9 @@ class credentials:
 
     If multiple credentials are injected, the test will be run once for each credential.
     """
+    _avworld_username = "creator2"
+    _avworld_username_with_domain = fr"avworld\{_avworld_username}"
+    _avworld_password = "portalaccount1"
 
     _enterprise_credential_parameters = (
         "enterprise",
@@ -133,8 +136,8 @@ class credentials:
     _enterprise_iwa_credential_parameters = (
         "enterprise_iwa",
         environ.get("ENTERPRISE_IWA_URL", "https://rqawiniwa02pt.ags.esri.com/gis"),
-        environ.get("ENTERPRISE_IWA_USERNAME", r"avworld\creator2"),
-        environ.get("ENTERPRISE_IWA_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_IWA_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_IWA_PASSWORD", _avworld_password),
     )
     _enterprise_multi_iwa_credential_parameters = (
         "enterprise_multi_iwa",
@@ -142,8 +145,20 @@ class credentials:
             "ENTERPRISE_MULTI_IWA_URL",
             "https://rqawinmiwa05pt.ags.esri.com/gis",
         ),
-        environ.get("ENTERPRISE_MULTI_IWA_USERNAME", r"avworld\creator2"),
-        environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_MULTI_IWA_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", _avworld_password),
+    )
+    _enterprise_kerberos_credential_parameters = (
+        "enterprise_kerberos",
+        environ.get("ENTERPRISE_KERBEROS_URL", "https://rqawinkb08pt.ags.esri.com/gis"),
+        environ.get("ENTERPRISE_KERBEROS_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_KERBEROS_PASSWORD", _avworld_password),
+    )
+    _enterprise_ldap_credential_parameters = (
+        "enterprise_ldap",
+        environ.get("ENTERPRISE_LDAP_URL", "https://rqalnxldap02pt.esri.com/gis"),
+        environ.get("ENTERPRISE_LDAP_USERNAME", _avworld_username),
+        environ.get("ENTERPRISE_LDAP_PASSWORD", _avworld_password),
     )
     _agol_credential_parameters = (
         "agol",
@@ -192,6 +207,20 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
+        )
+
+    @classproperty
+    def enterprise_kerberos(cls):
+        """Run tests for kerberos enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_kerberos_credential_parameters
+        )
+
+    @classproperty
+    def enterprise_ldap(cls):
+        """Run tests for ldap enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_ldap_credential_parameters
         )
 
     @classproperty
