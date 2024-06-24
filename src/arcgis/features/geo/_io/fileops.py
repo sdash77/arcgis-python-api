@@ -522,7 +522,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     elif HASARCPY:
         import arcpy
 
-        columns = df.columns.tolist()
+        columns = df.convert_dtypes().columns.tolist()
         join_dummy = "AEIOUYAJC81Z"
         try:
             columns.pop(columns.index(df.spatial.name))
@@ -570,7 +570,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     dtypes.append((col, "<U%s" % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][0])))
+                        dtypes.append((col, u))
                     except:
                         dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "string":
