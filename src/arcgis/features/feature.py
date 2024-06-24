@@ -776,6 +776,9 @@ class FeatureSet(object):
                 # add check for MultiPolygon
                 if geometry["type"] == "Polygon" and len(geometry["coordinates"]) > 1:
                     geometry["type"] = "MultiPolygon"
+                    # for multipolygons, each set of rings should be nested an extra level
+                    new_coords = [[poly] for poly in geometry["coordinates"]]
+                    geometry["coordinates"] = new_coords
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -815,6 +818,8 @@ class FeatureSet(object):
             feats = []
             for feat in features:
                 feats.append(extract(feat, esri_geom_type))
+
+            # assign to the geojson object
             geojson["features"] = feats
             return geojson
 
@@ -1605,7 +1610,7 @@ class FeatureCollection(Layer):
                                If not specified, a default symbol will be created.
         ------------------     --------------------------------------------------------------------
         name                   Optional String. The name of the feature collection. This is used
-                               when feature collections are being persisted on a WebMap. If None is
+                               when feature collections are being persisted on a Map. If None is
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 

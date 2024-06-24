@@ -119,15 +119,18 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 my_csv.close()
 
         # add item to portal
-        file_item = gis.content.add(
+        if folder:
+            folder = gis.content.folders.get(folder)
+        else:
+            folder = gis.content.folders.get()
+        file_item = folder.add(
             item_properties={
                 "title": title,
                 "type": file_type,
                 "tags": tags,
             },
-            data=file,
-            folder=folder,
-        )
+            file=file,
+        ).result()
 
         if file_type == "CSV":
             # analyze the csv for publish params

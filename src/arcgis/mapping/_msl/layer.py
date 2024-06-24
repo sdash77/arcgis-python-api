@@ -168,11 +168,11 @@ class MapFeatureLayer(Layer):
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
-            :class:`~arcgis.mapping.WebMap`.
+            :class:`~arcgis.map.Map`.
 
         :return:
             ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -189,7 +189,7 @@ class MapFeatureLayer(Layer):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -982,7 +982,7 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -1685,7 +1685,7 @@ class MapTable(MapFeatureLayer):
             as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 

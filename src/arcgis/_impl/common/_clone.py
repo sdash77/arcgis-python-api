@@ -129,7 +129,7 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        if self._clone_mapping.get("Item IDs") is not None:
+        if self._clone_mapping["Item IDs"] != {}:
             raise Exception(
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
@@ -2107,6 +2107,25 @@ class _ItemDefinition(CloneNode):
         """Gets the data of the item"""
         return copy.deepcopy(self._data)
 
+    def _data_type_lu(self, data) -> str:
+        regex = re.compile(
+            r"^(?:http|ftp)s?://"  # http:// or https://
+            r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
+            r"localhost|"  # localhost...
+            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
+            r"(?::\d+)?"  # optional port
+            r"(?:/?|[/?]\S+)$",
+            re.IGNORECASE,
+        )
+        try:
+            if os.path.isfile(data):
+                return "file"
+        except:
+            pass
+        if re.match(regex, data) is not None:
+            return "url"
+        return "text"
+
     def _add_new_item(self, item_properties, data=None):
         """Add the new item to the portal"""
         thumbnail = self.thumbnail
@@ -2118,14 +2137,24 @@ class _ItemDefinition(CloneNode):
         item_id = None
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
-        new_item = self.target.content.add(
-            item_properties=item_properties,
-            data=data,
-            thumbnail=thumbnail,
-            folder=self.folder,
-            owner=self.owner,
-            item_id=item_id,
+        if self.folder:
+            folder = self.target.content.folders.get(
+                folder=self.folder, owner=self.owner
+            )
+        else:
+            folder = self.target.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        job = folder.add(
+            **{
+                "item_properties": item_properties,
+                "item_id": item_id,
+                self._data_type_lu[data]: data,
+            }
         )
+        new_item = job.result()
+
         if self.metadata_xml:
             new_item.metadata = self.metadata_xml
         self.created_items.append(new_item)
@@ -3150,6 +3179,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             new_service is not None
                             and "adminLayerInfo" in layer
                             and "viewLayerDefinition" in layer["adminLayerInfo"]
+                            and "table"
+                            in layer["adminLayerInfo"]["viewLayerDefinition"]
                         ):
                             layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                 "sourceServiceName"
@@ -4968,12 +4999,20 @@ class _ApplicationDefinition(_TextItemDefinition):
                         and self.target._portal.is_arcgisonline == False
                     ):
                         item_id = self.portal_item.itemid
-                    code_attachment = self.target.content.add(
-                        item_properties=code_attachment_properties,
-                        folder=self.folder,
-                        owner=self.owner,
-                        item_id=item_id,
+                    if self.folder:
+                        folder = self.target.content.folders.get(
+                            folder=self.folder, owner=self.owner
+                        )
+                    else:
+                        folder = self.target.content.folders.get()
+
+                    job = folder.add(
+                        **{
+                            "item_properties": item_properties,
+                            "item_id": item_id,
+                        }
                     )
+                    code_attachment = job.result()
 
                 # With Portal sometimes after sharing the application the url is reset.
                 # Check if the url is incorrect after sharing and set back to correct url.
@@ -5294,7 +5333,11 @@ class _FormDefinition(_ItemDefinition):
                             )
                         for key, value in clone_mapping["Services"].items():
                             form_json = re.sub(
-                                key, value["url"], form_json, 0, re.IGNORECASE
+                                key,
+                                value["url"],
+                                form_json,
+                                0,
+                                re.IGNORECASE,
                             )
                         with open(os.path.join(zip_dir, path), "w") as file:
                             file.write(form_json)
@@ -5427,7 +5470,8 @@ class _FormDefinition(_ItemDefinition):
 
             # Upload the zip to the item
             new_form = shutil.copy2(
-                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+                form_zip,
+                os.path.join(temp_dir, new_item["id"] + "-1" + ".zip"),
             )
             new_item.update(data=new_form)
         except Exception as ex:

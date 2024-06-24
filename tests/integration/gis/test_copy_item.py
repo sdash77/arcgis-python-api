@@ -1,5 +1,8 @@
 import os
 import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_11678\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_11678\tests")
 import json
 import time
 import datetime
@@ -79,7 +82,10 @@ def _stage_data(gis):
                                 "extent": None,
                                 "layers": None,
                                 "popup": None,
-                                "legend": {"enable": False, "openByDefault": False},
+                                "legend": {
+                                    "enable": False,
+                                    "openByDefault": False,
+                                },
                                 "altText": "",
                             },
                         },
@@ -103,7 +109,10 @@ def _stage_data(gis):
                                 },
                                 "layers": None,
                                 "popup": None,
-                                "legend": {"enable": False, "openByDefault": False},
+                                "legend": {
+                                    "enable": False,
+                                    "openByDefault": False,
+                                },
                                 "altText": "",
                             },
                         },
@@ -130,7 +139,9 @@ def _stage_data(gis):
             "text": json.dumps(web_map_json),
         }
     )
-    web_app_json["values"]["story"]["entries"][0]["media"]["webmap"]["id"] = wm_item.id
+    web_app_json["values"]["story"]["entries"][0]["media"]["webmap"][
+        "id"
+    ] = wm_item.id
     web_app_item = gis.content.add(
         {
             "title": web_app_name,
@@ -140,7 +151,9 @@ def _stage_data(gis):
         }
     )
     web_app_item.update(
-        {"url": f"{gis._url}/apps/MapSeries/index.html?appid={web_app_item.id}"}
+        {
+            "url": f"{gis._url}/apps/MapSeries/index.html?appid={web_app_item.id}"
+        }
     )
     return web_app_item, wm_item
 
@@ -152,11 +165,13 @@ class TestItemCopy(unittest.TestCase):
 
     _app_data = None
     _gis_objs = None
+
     # ----------------------------------------------------------------------
     @classmethod
     def setUpClass(cls):
         cls._gis_objs = [
-            GIS(profile=p, verify_cert=False, set_active=False) for p in PROFILES
+            GIS(profile=p, verify_cert=False, set_active=False)
+            for p in PROFILES
         ]
         cls._app_data = {}
         for gis in cls._gis_objs:

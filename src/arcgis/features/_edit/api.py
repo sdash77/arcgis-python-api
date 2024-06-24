@@ -20,48 +20,45 @@ _arcgis_features = LazyLoader("arcgis.features")
 _log = logging.getLogger()
 
 
-def _status(session: EsriSession, result: dict[str, Any]) -> dict[str, Any]:
+def _status(
+    session: EsriSession, result: dict[str, Any], job_url: str
+) -> dict[str, Any]:
     """Checks the status of the apply edits call"""
-    if "statusUrl" in result:
-        status_url = result.get("statusUrl", None)
-        if status_url is None:
-            return result
-        else:
-            i: int = 1
-            while True:
-                time.sleep(i)
-
-                resp: requests.Response = session.get(
-                    url=status_url,
-                    params={
-                        "f": "json",
-                    },
-                )
-                resp.raise_for_status()
-                result: dict[str, Any] = resp.json()
-
-                if "resultUrl" in result:
-                    # return the payload
-                    return session.get(
-                        url=result["resultUrl"],
-                        params={
-                            "f": "json",
-                        },
-                    ).json()
-                elif "error" in result:
-                    return result
-                elif result.get("status", None) in [
-                    "FAILED",
-                    "failed",
-                    "completed",
-                    "COMPLETED",
-                ]:
-                    return result
-                else:
-                    status_url = result.get("statusUrl", None)
-                i += 1
-                if i > 5:
-                    i = 5
+    # handles case where job is put into pending status mode (this is rare)
+    i: int = 1
+    resp: requests.Response = session.get(
+        url=job_url,
+        params={
+            "f": "json",
+        },
+    )
+    resp.raise_for_status()
+    result: dict[str, Any] = resp.json()
+    while not result.get("status", "none").lower() in [
+        "completed",
+        "failed",
+    ]:
+        if result.get("status", "none").lower() == "none":
+            return result  # null case, something went wrong.
+        time.sleep(i)
+        resp: requests.Response = session.get(
+            url=job_url,
+            params={
+                "f": "json",
+            },
+        )
+        resp.raise_for_status()
+        result: dict[str, Any] = resp.json()
+        if i < 5:
+            i += 1
+    if "resultUrl" in result:
+        # return the payload
+        return session.get(
+            url=result["resultUrl"],
+            params={
+                "f": "json",
+            },
+        ).json()
     return result
 
 
@@ -197,6 +194,7 @@ def apply_edits(
                 **{
                     "session": session,
                     "result": result,
+                    "job_url": status_url,
                 },
             )
             executor.shutdown(wait=True)

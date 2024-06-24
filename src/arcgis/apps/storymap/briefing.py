@@ -4,6 +4,7 @@ import uuid
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -120,8 +121,8 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def _create_new_briefing(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["briefing"])
         # Add correct by-line and locale
         template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
 
@@ -162,10 +163,11 @@ class Briefing(object):
             "typeKeywords": keywords,
             "type": "StoryMap",
         }
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
         # Add item to active gis and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._itemid = self._item.itemid
         # Make a resource call with the template to create json draft needed
@@ -272,6 +274,10 @@ class Briefing(object):
         return actions
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        details="Use the Cover class that can be accessed through the cover property in the cover slide.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -315,6 +321,55 @@ class Briefing(object):
         # call method to update cover
         utils.cover(self, title, type, summary, by_line, media)
         return True
+
+    # ----------------------------------------------------------------------
+    def get_logo(self):
+        """
+        Get the logo image for the briefing. The logo is seen in the header of the briefing.
+        """
+        # logo is found in story node (i.e. root node id)
+        root = self._properties["root"]
+        logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
+        resource = self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+        return self._item.resources.get(resource)
+
+    # ----------------------------------------------------------------------
+    def set_logo(
+        self,
+        image: Optional[str] = None,
+        link: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
+        """
+        Set the logo for the briefing. The logo is seen in the header of the story.
+
+        .. note::
+            To remove the logo, link, or alt text, pass in an empty string. If they are None, nothing
+            will be changed for that parameter. For example if you only want to update the link but leave
+            the image and alt text as is, pass in None for the image and alt text. Pass in the new link
+            for the link parameter.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        image               Required string. The file path to the image to be used as the
+                            logo.
+        ---------------     --------------------------------------------------------------------
+        link                Optional string. The url to link to when the logo is clicked.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. The alt text to be used for screen readers.
+        ===============     ====================================================================
+
+        :return: True if successful.
+
+        .. code-block:: python
+
+            story = Briefing("<story item>")
+            story.set_logo("<image-path>.jpg/jpeg/png/gif")
+        """
+        # call method to update logo
+        return utils.set_logo(self, image, link, alt_text)
 
     # ----------------------------------------------------------------------
     def get_theme(self) -> str:
@@ -412,7 +467,10 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def move(
-        self, slide: int, position: Optional[int] = None, delete_current: bool = False
+        self,
+        slide: int,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a slide to another position. The slide currently at that position will
