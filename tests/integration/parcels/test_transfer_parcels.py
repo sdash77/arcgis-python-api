@@ -2,7 +2,7 @@ import unittest
 import time
 import concurrent.futures
 from arcgis.gis import GIS
-from arcgis.features.layer import FeatureLayerCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
 from utils.decorators import integration_test
 from . import parcel_fabric_utils as pfutils
@@ -39,7 +39,9 @@ class TestTransferParcels(unittest.TestCase):
         cls.vms = cls.parcel_fabric_flc.versions
 
     def test_scenario_1(self):
-        fq_version_name = pfutils.create_version(self.vms, f"api-{int(time.time())}")
+        fq_version_name = pfutils.create_version(
+            self.vms, f"api-{int(time.time())}"
+        )
         transfer_parcel = {
             "id": "{D664B654-D8F2-453C-966F-6FA66E1AE2E2}",
             "layerId": "24",
@@ -65,41 +67,43 @@ class TestTransferParcels(unittest.TestCase):
 
             try:
                 res = parcel_fabric.transfer_parcel(
-                    transfer_parcel, target_parcels, parcel_record, source_parcels
+                    transfer_parcel_feature=transfer_parcel,
+                    target_parcel_features=target_parcels,
+                    record=parcel_record,
+                    default_area_unit=109405,
+                    source_parcel_features=source_parcels,
                 )
-                print(res)
+                self.assertTrue(res["success"])
             except Exception as ex:
                 print(ex)
 
-        # Check that one encumbrance feature is created
-        retired_features = pfutils.query_service(
-            url=self.service_urls["FeatureServer"],
-            fl_id=21,
-            gis=self.gis,
-            where=f"CreatedByRecord = '{parcel_record}'",
-            out_fields=["GlobalID"],
-            version_name=fq_version_name,
-        ).to_dict()
-        self.assertEqual(
-            1,
-            len(retired_features["features"]),
-            "Did not find the transferred parcel.",
-        )
+            # Check that one feature is now retired
+            lot_fl = FeatureLayer(f"{self.service_urls['FeatureServer']}/21", self.gis)
+            retired_features = lot_fl.query(
+                where=f"CreatedByRecord = '{parcel_record}'",
+                out_fields=["GlobalID"],
+                gdb_version=fq_version_name,
+            ).to_dict()
+            self.assertEqual(
+                1,
+                len(retired_features["features"]),
+                "Did not find the transferred parcel.",
+            )
 
-        # Check that one line feature is now retired
-        retired_lines = pfutils.query_service(
-            url=self.service_urls["FeatureServer"],
-            fl_id=20,
-            gis=self.gis,
-            where=f"RetiredByRecord = '{parcel_record}'",
-            out_fields=["GlobalID"],
-            version_name=fq_version_name,
-        ).to_dict()
-        self.assertEqual(
-            3,
-            len(retired_lines["features"]),
-            "Did not find a retired line.",
-        )
+            # Check that one feature is now retired
+            lot_lines = FeatureLayer(
+                f"{self.service_urls['FeatureServer']}/20", self.gis
+            )
+            retired_lines = lot_lines.query(
+                where=f"RetiredByRecord = '{parcel_record}'",
+                out_fields=["GlobalID"],
+                gdb_version=fq_version_name,
+            ).to_dict()
+            self.assertEqual(
+                3,
+                len(retired_lines["features"]),
+                "Did not find a retired line.",
+            )
 
     @classmethod
     def tearDownClass(cls):

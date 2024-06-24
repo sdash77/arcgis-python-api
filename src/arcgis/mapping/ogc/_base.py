@@ -154,7 +154,7 @@ class BaseOGC(object):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView's JSON format"""
+        """Represents the Map's JSON format"""
         return {
             "id": uuid.uuid4().hex,
             "title": self._title or "Layer",
@@ -167,7 +167,7 @@ class BaseOGC(object):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json
 
 

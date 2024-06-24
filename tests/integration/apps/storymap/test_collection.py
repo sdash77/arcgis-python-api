@@ -20,11 +20,10 @@ class TestStoryMap(unittest.TestCase):
         assert collection
 
         # Edit briefing cover
-        collection.cover(
-            "My First Collection",
-            summary="Testing the Python API",
-            by_line="Python Tester",
-        )
+        cover = collection.content[0]
+        cover.title = "My First Collection"
+        cover.summary = "Testing the Python API"
+        cover.by_line = "Python Tester"
 
         """Change the story theme"""
         collection.theme(Themes.SLATE)

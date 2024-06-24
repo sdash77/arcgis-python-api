@@ -68,7 +68,7 @@ def _create_metadata(df):
         if _HASARCPY:
             sr = SpatialReference(df.spatial.sr).as_arcpy.exportToString()
         else:
-            sr = f"ESPG:{df.spatial.sr.get('wkid', 4326)}"
+            sr = f"EPSG:{df.spatial.sr.get('wkid', 4326)}"
         gt = [_gt_lu[g.lower()] for g in df.spatial.geometry_type]
         if len(gt) == 1:
             gt = gt[0]
@@ -342,11 +342,11 @@ def _arrow_to_sedf(table) -> "pandas.DataFrame":
                     if (
                         "crs" in data
                         and data["crs"]
-                        and data["crs"].find("ESPG:") == -1
+                        and data["crs"].find("EPSG:") == -1
                     ):
                         df.spatial.sr = {"wkt": data["crs"]}
                     elif (
-                        "crs" in data and data["crs"] and data["crs"].find("ESPG:") > -1
+                        "crs" in data and data["crs"] and data["crs"].find("EPSG:") > -1
                     ):
                         df.spatial.sr = {"wkid": int(data["crs"].split(":")[0])}
                     else:
@@ -356,11 +356,11 @@ def _arrow_to_sedf(table) -> "pandas.DataFrame":
                     if (
                         "crs" in data
                         and data["crs"]
-                        and data["crs"].find("ESPG:") == -1
+                        and data["crs"].find("EPSG:") == -1
                     ):
                         df.spatial.sr = {"wkt": data["crs"]}
                     elif (
-                        "crs" in data and data["crs"] and data["crs"].find("ESPG:") > -1
+                        "crs" in data and data["crs"] and data["crs"].find("EPSG:") > -1
                     ):
                         df.spatial.sr = {"wkid": int(data["crs"].split(":")[0])}
                     else:
