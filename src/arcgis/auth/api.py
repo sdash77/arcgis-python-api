@@ -14,10 +14,10 @@ from ._auth._winauth import HAS_KERBEROS
 from ._auth._negotiate import HAS_GSSAPI
 from .tools import LazyLoader
 from .tools._adapter import (
-    TruststoreAdapter,
     EsriHostHeaderSSLAdapter,
     PKIAdapter,
 )
+from .tools.cert import TruststoreAdapter
 
 urllib3 = LazyLoader("urllib3")
 __USERAGENT__ = f"Geosaurus/{__version__}"
