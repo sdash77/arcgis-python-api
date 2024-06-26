@@ -702,6 +702,8 @@ class Folder:
                     "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
                 )
             item_properties.pop("overwrite", None)
+        if text == None and "text" in item_properties:
+            text = item_properties.pop("text")
         if not file:
             stream = False
         elif file and item_id:

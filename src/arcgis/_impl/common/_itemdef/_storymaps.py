@@ -57,7 +57,7 @@ class _StoryMapDefinition(CloneNode):
             "typeKeywords",
             "extent",
             "url",
-            "properties",
+            # "properties",
         ]
         self.portal_item = portal_item
         self.folder = folder
@@ -85,14 +85,13 @@ class _StoryMapDefinition(CloneNode):
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             item_id = self.portal_item.itemid
         if self.folder:
-            folder = self.target.content.folder.get(self.folder, self.owner)
+            folder = self.target.content.folders.get(self.folder, self.owner)
         else:
-            folder = self.target.content.folder.get(owner=self.owner)
+            folder = self.target.content.folders.get(owner=self.owner)
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
         new_item = folder.add(
             item_properties=item_properties,
-            text=data,
             item_id=item_id,
         ).result()
         if self.portal_item.url:
