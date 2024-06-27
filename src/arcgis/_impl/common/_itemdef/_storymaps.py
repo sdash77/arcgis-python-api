@@ -57,7 +57,6 @@ class _StoryMapDefinition(CloneNode):
             "typeKeywords",
             "extent",
             "url",
-            # "properties",
         ]
         self.portal_item = portal_item
         self.folder = folder
