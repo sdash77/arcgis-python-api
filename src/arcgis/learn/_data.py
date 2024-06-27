@@ -2977,6 +2977,18 @@ def prepare_data(
         data._estimate_batch = _estimate_batch
         return data
 
+    elif dataset_type == "ClimaX":
+        from ._data_utils.climax_data import prepare_climax_data
+
+        data = prepare_climax_data(
+            path,
+            batch_size,
+            val_split_pct,
+            working_dir,
+            **kwargs,
+        )
+        return data
+
     elif dataset_type == "WNet_cGAN":
         from osgeo import gdal
         from ._utils.cyclegan import get_files, image_extensions
