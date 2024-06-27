@@ -12729,7 +12729,7 @@ class User(dict):
 
         return passed
 
-    def delete(self, reassign_to: Optional[str] = None):
+    def delete(self, reassign_to: str | User = None):
         """
         The ``delete`` method deletes this user from the portal, optionally deleting or reassigning groups and items.
 
@@ -12758,6 +12758,21 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
+        url: str = f"{self._gis.resturl}content/users/{self.username}"
+        params: dict = {
+            "f": "json",
+            "types": "",
+            "sortField": "",
+            "sortOrder": "",
+            "folders": "true",
+            "foldersContent": "true",
+            "num": 50,
+        }
+        data: dict = self._gis.session.get(url=url, params=params).json()
+        if len(data["items"]) > 0 and reassign_to is None:
+            raise Exception(
+                f"User: {self._gis.users.me.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
+            )
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
 
