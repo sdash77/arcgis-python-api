@@ -328,7 +328,7 @@ class _StoryMapDefinition(CloneNode):
                         s_res = s_res.replace(k, v)
                     res = json.loads(s_res)
                     with tempfile.NamedTemporaryFile(
-                        mode="w+", 
+                        mode="w+",
                         suffix=".json",
                         dir=tempfile.gettempdir(),
                         delete=False,
