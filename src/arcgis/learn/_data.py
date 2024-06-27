@@ -1490,13 +1490,27 @@ def prepare_data(
                             number of subprocesses to use for data loading on the
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
+    ---------------------   -------------------------------------------
+    input_variables         Required list. input variables.
+                            Applicable only for dataset_type='ClimaX'.
+    ---------------------   -------------------------------------------
+    max_predict_range       Required int. default set to 1 (month/hrs). how far the 
+                            model should forecast into the future. Applicable only 
+                            for dataset_type='climaX'.
+    ---------------------   -------------------------------------------
+    time_each_step          Optional int. Default set to 1 (). time difference between 
+                            two consecutive recorded data points in the dataset. For example, 
+                            if you want to make a 24-hr forecast, then you should set 
+                            max_predict_range=24 and hrs_each_step=1
     =====================   ===========================================
 
     :return:
         data object
 
     """
-
+out_variables = ['2m_temperature','10m_u_component_of_wind'],
+                    max_predict_range = 1,
+                    time_each_step = 1
     arcgis_init_kwargs = {
         "path": path,
         "class_mapping": class_mapping,
