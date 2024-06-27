@@ -1,7 +1,7 @@
 import unittest
 
 from arcgis.features.layer import FeatureLayer
-from arcgis.mapping import MapImageLayer, MapImageLayerManager, EnterpriseMapImageLayerManager
+from arcgis.mapping_layers import MapImageLayer, MapImageLayerManager, EnterpriseMapImageLayerManager
 from arcgis.gis import GIS, Item
 from utils.decorators import integration_test
 

@@ -10,8 +10,6 @@ from ._types import (
     VectorTileLayer,
     VectorTileLayerManager,
     EnterpriseVectorTileLayerManager,
-    OfflineMapAreaManager,
-    PackagingJob,
 )
 
 from arcgis.mapping_layers._scenelyrs import (

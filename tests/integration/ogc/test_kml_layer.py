@@ -3,7 +3,7 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import KMLLayer
+from arcgis.mapping_layers.ogc import KMLLayer
 from utils.decorators import integration_test
 
 kml_url = "http://quickmap.dot.ca.gov/data/lcs.kml"

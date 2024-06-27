@@ -14,7 +14,7 @@ from arcgis import gis
 from arcgis.gis._impl._content_manager import SharingLevel
 from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
-from arcgis.mapping import MapImageLayer
+from arcgis.mapping_layers import MapImageLayer
 from arcgis.geometry import *
 from arcgis.apps.survey123 import SurveyManager
 import copy

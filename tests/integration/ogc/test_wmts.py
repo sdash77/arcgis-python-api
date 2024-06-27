@@ -6,7 +6,7 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import WMTSLayer
+from arcgis.mapping_layers.ogc import WMTSLayer
 from utils.decorators import integration_test
 
 wm_urls = [

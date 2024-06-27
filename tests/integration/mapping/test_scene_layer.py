@@ -1,7 +1,7 @@
 from uuid import uuid4
 import unittest
 from arcgis.gis import GIS
-from arcgis.mapping import (
+from arcgis.mapping_layers import (
     SceneLayer,  #
     Object3DLayer,  #
     Point3DLayer,

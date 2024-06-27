@@ -1,7 +1,7 @@
 from arcgis.gis import GIS
 import unittest
 import os
-from arcgis.mapping._types import VectorTileLayer
+from arcgis.mapping_layers._types import VectorTileLayer
 from utils.decorators import integration_test
 
 

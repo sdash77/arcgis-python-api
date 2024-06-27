@@ -3,7 +3,7 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import GeoJSONLayer
+from arcgis.mapping_layers.ogc import GeoJSONLayer
 from utils.decorators import integration_test
 
 geo_rss_url = (

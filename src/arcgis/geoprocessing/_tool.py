@@ -22,7 +22,7 @@ from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 from arcgis.gis import Item, _GISResource, Layer
 from arcgis.auth.tools import LazyLoader
 
-mapping = LazyLoader("arcgis.mapping")
+mapping = LazyLoader("arcgis.mapping_layers")
 _features = LazyLoader("arcgis.features")
 from ._uploads import Uploads
 from ._types import LinearUnit, DataFile, RasterData
@@ -566,7 +566,7 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
+from arcgis.mapping_layers import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 import concurrent.futures

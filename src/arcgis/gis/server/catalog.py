@@ -369,7 +369,7 @@ class ServicesDirectory(BaseServer):
         return :class:`~arcgis.features.FeatureLayerCollection` objects,
         ``Geoprocessing Services`` return
         :class:`~arcgis.geoprocessing._tool.Toolbox` objects, while ``Map
-        Services`` return :class:`~arcgis.mapping.MapImageLayer` objects.
+        Services`` return :class:`~arcgis.mapping_layers.MapImageLayer` objects.
 
         .. note::
             This method is not to be confused with the
