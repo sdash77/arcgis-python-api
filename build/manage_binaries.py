@@ -5,7 +5,25 @@ import shutil
 import glob
 import requests
 
+
+def get_version(init_file_path):
+    try:
+        with open(init_file_path, "r") as f:
+            init_file = f.read()
+        for line in init_file.splitlines():
+            if line.startswith("__version__"):
+                delim = '"' if '"' in line else "'"
+                return line.split(delim)[1]
+    except:
+        pass
+    return None
+
+
+SRC_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "src", "arcgis")
+)
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
+ARCGIS_VERSION = get_version(os.path.join(SRC_PATH, "__init__.py"))
 
 
 def copy_binaries(bin_root_path, arcgis_src_path):
@@ -159,9 +177,14 @@ def _glob(path, extension):
 
 
 def _get_argument_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Manage arcgis dependent binaries (such as knn and [knowledge]graph) in your environment.",
+        epilog="Sample usage for local development: %(prog)s copy --local",
+    )
     subparsers = parser.add_subparsers(dest="action", required=True)
-    copy_parser = subparsers.add_parser("copy")
+    copy_parser = subparsers.add_parser(
+        "copy", epilog="Sample usage: %(prog)s copy --local"
+    )
     copy_parser.add_argument(
         "--bin-path",
         action="store",
@@ -171,32 +194,36 @@ def _get_argument_parser():
     copy_parser.add_argument(
         "--arcgis",
         action="store",
-        help="arcgis version to download binaries for",
-        required=True,
+        help=f"arcgis version to download binaries for [default: {ARCGIS_VERSION}]",
+        required=not bool(ARCGIS_VERSION),
+        default=ARCGIS_VERSION,
     )
     copy_parser.add_argument(
         "--python",
         action="store",
-        help="Python version to download binaries for",
+        help=f"Python version to download binaries for [default: {PYTHON_VERSION}]",
         required=False,
         default=PYTHON_VERSION,
     )
     copy_parser.add_argument(
         "--src-path",
         action="store",
-        help="Path of directory to inject pyd/so files",
-        required=True,
+        help=f"Path of directory to inject pyd/so files\n[default: {SRC_PATH}]",
+        required=not os.path.exists(SRC_PATH),
+        default=SRC_PATH,
     )
     copy_parser.add_argument(
         "--linux",
+        "--macos",
+        dest="linux",
         action="store_true",
-        help="Download linux binaries",
+        help=f"Download linux binaries [default: {os.name == 'posix'}]",
         default=os.name == "posix",
     )
     copy_parser.add_argument(
         "--windows",
         action="store_true",
-        help="Download windows binaries",
+        help=f"Download windows binaries [default: {os.name != 'posix'}]",
         default=os.name != "posix",
     )
     copy_parser.add_argument(
@@ -213,7 +240,8 @@ def _get_argument_parser():
         "--src-path",
         action="store",
         help="Path of directory to clean pyd/so files",
-        required=True,
+        required=False,
+        default=SRC_PATH,
     )
     return parser
 
