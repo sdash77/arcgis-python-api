@@ -327,13 +327,18 @@ class _StoryMapDefinition(CloneNode):
                     for k, v in webmap_mapper.items():
                         s_res = s_res.replace(k, v)
                     res = json.loads(s_res)
-                    tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-                    json.dump(res, tfile)
-                    tfile.seek(0)
-                    new_item.resources.update(
-                        file_name=resource["resource"],
-                        file=tfile.name,
-                    )
+                    with tempfile.NamedTemporaryFile(
+                        mode="w+", 
+                        suffix=".json",
+                        dir=tempfile.gettempdir(),
+                        delete=False,
+                    ) as tfile:
+                        json.dump(res, tfile)
+                        tfile.seek(0)
+                        new_item.resources.update(
+                            file_name=resource["resource"],
+                            file=tfile.name,
+                        )
             if new_item.url:
                 new_item.update(
                     {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
