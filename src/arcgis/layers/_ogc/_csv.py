@@ -6,8 +6,6 @@ import pandas as pd
 from ._base import BaseOpenData
 from arcgis.auth.tools import LazyLoader
 
-_gis = LazyLoader("arcgis.gis")
-
 
 ###########################################################################
 class CSVLayer(BaseOpenData):
@@ -53,7 +51,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, url_or_item: _gis.Item | str, gis: _gis.GIS | None = None, **kwargs
+        self, url_or_item: Item | str, gis: GIS | None = None, **kwargs
     ):
         """initializer"""
         super(CSVLayer, self)
@@ -167,7 +165,7 @@ class CSVLayer(BaseOpenData):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         if isinstance(value, dict):
