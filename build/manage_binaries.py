@@ -24,6 +24,7 @@ SRC_PATH = os.path.abspath(
 )
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 ARCGIS_VERSION = get_version(os.path.join(SRC_PATH, "__init__.py"))
+PIP_PYTHON_VERSIONS = ["3.10", "3.11"]
 
 
 def copy_binaries(bin_root_path, arcgis_src_path):
@@ -52,15 +53,15 @@ def copy_binaries(bin_root_path, arcgis_src_path):
 
 
 def download_binaries(
-    python_version, arcgis_version, arcgis_src_path, mode, conda_platform
+    python_versions, arcgis_version, arcgis_src_path, mode, conda_platform
 ):
-    def expand_urls(module, files_by_platform):
+    def expand_urls(module, file_funcs_by_platform):
         return {
             platform: [
-                f"https://esri-forge.python.geocloud.com/_/build/v{arcgis_version}/{platform}/py{python_version}/{module}/{file}"
-                for file in files
+                f"https://esri-forge.python.geocloud.com/_/build/v{arcgis_version}/{platform}/py{python_version}/{module}/{file_func(python_version.replace('.', ''))}"
+                for file_func in file_funcs for python_version in python_versions
             ]
-            for platform, files in files_by_platform.items()
+            for platform, file_funcs in file_funcs_by_platform.items()
         }
 
     def download_file(url, dest):
@@ -80,8 +81,6 @@ def download_binaries(
         for url in urls:
             download_file(url, dest)
 
-    python_version_stripped = python_version.replace(".", "")  # e.g. 3.11 => 311
-
     if mode == "conda":
         knn_dest = os.path.join(arcgis_src_path, "learn/_utils")
         os.makedirs(knn_dest, exist_ok=True)
@@ -89,12 +88,12 @@ def download_binaries(
             "knn",
             {
                 "linux": [
-                    "nearest_neighbors.py",
-                    f"nearest_neighbors.cpython-{python_version_stripped}-x86_64-linux-gnu.so",
+                    lambda _: "nearest_neighbors.py",
+                    lambda python_version_stripped: f"nearest_neighbors.cpython-{python_version_stripped}-x86_64-linux-gnu.so",
                 ],
                 "windows": [
-                    "nearest_neighbors.py",
-                    f"nearest_neighbors.cp{python_version_stripped}-win_amd64.pyd",
+                    lambda _: "nearest_neighbors.py",
+                    lambda python_version_stripped: f"nearest_neighbors.cp{python_version_stripped}-win_amd64.pyd",
                 ],
             },
         )
@@ -105,8 +104,8 @@ def download_binaries(
         tracking_engine_files = expand_urls(
             "tracking-engine",
             {
-                "linux": ["_track_processor.so", "libTrackingEngine.so"],
-                "windows": ["_track_processor.pyd", "tracking_engine.dll"],
+                "linux": [lambda _: "_track_processor.so", lambda _: "libTrackingEngine.so"],
+                "windows": [lambda _: "_track_processor.pyd", lambda _: "tracking_engine.dll"],
             },
         )
         download_files(tracking_engine_files[conda_platform], tracking_engine_dest)
@@ -117,10 +116,10 @@ def download_binaries(
         "graph",
         {
             "linux": [
-                f"_arcgisknowledge.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
+                lambda python_version_stripped: f"_arcgisknowledge.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
             ],
             "windows": [
-                f"_arcgisknowledge.cpython-{python_version_stripped}-win_amd64.pyd"
+                lambda python_version_stripped: f"_arcgisknowledge.cp{python_version_stripped}-win_amd64.pyd"
             ],
         },
     )
@@ -139,9 +138,9 @@ def download_binaries(
         "nbauth",
         {
             "linux": [
-                f"_decrypt_nbauth.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
+                lambda python_version_stripped: f"_decrypt_nbauth.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
             ],
-            "windows": [f"_decrypt_nbauth.cp{python_version_stripped}-win_amd64.pyd"],
+            "windows": [lambda python_version_stripped: f"_decrypt_nbauth.cp{python_version_stripped}-win_amd64.pyd"],
         },
     )
     download_files(
@@ -286,7 +285,7 @@ if __name__ == "__main__":
             copy_binaries(args.bin_path, args.src_path)
         else:
             download_binaries(
-                args.python,
+                [args.python] if args.conda else PIP_PYTHON_VERSIONS,
                 args.arcgis,
                 args.src_path,
                 "conda" if args.conda else "pip",
