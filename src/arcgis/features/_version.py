@@ -304,7 +304,7 @@ class Version(object):
 
         """
         if self._validation is None:
-            from arcgis.mapping_layers import MapImageLayer
+            from arcgis.layers import MapImageLayer
 
             ms = MapImageLayer(
                 url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis

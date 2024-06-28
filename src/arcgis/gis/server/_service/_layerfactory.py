@@ -14,11 +14,11 @@ from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
-from arcgis.mapping_layers import VectorTileLayer
-from arcgis.mapping_layers import MapImageLayer, MapServiceLayer
+from arcgis.layers import VectorTileLayer
+from arcgis.layers import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping_layers._scenelyrs import SceneLayer
+from arcgis.layers._scenelyrs import SceneLayer
 from ..._impl._con import Connection
 from ._geodataservice import GeoData
 

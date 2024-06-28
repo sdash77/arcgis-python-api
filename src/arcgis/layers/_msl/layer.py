@@ -20,7 +20,7 @@ from arcgis._impl.common._utils import _date_handler, chunks
 from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
-from arcgis.mapping_layers import MapImageLayer
+from arcgis.layers import MapImageLayer
 
 
 ###########################################################################
@@ -239,7 +239,7 @@ class MapFeatureLayer(Layer):
             <State Boundaries              <class 'arcgis.mapping_layers._msl.layer.MapFeatureLayer'>>
 
         """
-        from arcgis.mapping_layers import MapImageLayer
+        from arcgis.layers import MapImageLayer
 
         return MapImageLayer.fromitem(item).layers[layer_id]
 

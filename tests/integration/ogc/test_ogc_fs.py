@@ -2,7 +2,7 @@ import os
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping_layers.ogc import OGCCollection, OGCFeatureService
+from arcgis.layers.ogc import OGCCollection, OGCFeatureService
 from collections.abc import Iterable as _Iterable
 from utils.decorators import integration_test
 

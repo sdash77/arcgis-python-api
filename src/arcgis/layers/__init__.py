@@ -12,19 +12,19 @@ from ._types import (
     EnterpriseVectorTileLayerManager,
 )
 
-from arcgis.mapping_layers._scenelyrs import (
+from arcgis.layers._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
     Tiles3DLayer,
     Point3DLayer,
     VoxelLayer,
 )
-from arcgis.mapping_layers._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
-from arcgis.mapping_layers._scenelyrs import (
+from arcgis.layers._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
+from arcgis.layers._scenelyrs import (
     SceneLayerManager,
     EnterpriseSceneLayerManager,
 )
-from arcgis.mapping_layers._msl import (
+from arcgis.layers._msl import (
     MapServiceLayer,
     MapFeatureLayer,
     MapTable,
