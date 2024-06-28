@@ -50,9 +50,7 @@ class CSVLayer(BaseOpenData):
     _type = "CSV"
 
     # ----------------------------------------------------------------------
-    def __init__(
-        self, url_or_item: Item | str, gis: GIS | None = None, **kwargs
-    ):
+    def __init__(self, url_or_item: Item | str, gis: GIS | None = None, **kwargs):
         """initializer"""
         super(CSVLayer, self)
         if isinstance(url_or_item, str):
