@@ -7,13 +7,17 @@ import requests
 
 
 def get_version(init_file_path):
+    def discard_subpatch_version(version):
+        "Returns the full version with the subpatch version discarded (i.e. MAJOR.MINOR.PATCH, if MAJOR.MINOR.PATCH.SUBPATCH provided)"
+        return ".".join(version.split(".")[:3])
+
     try:
         with open(init_file_path, "r") as f:
             init_file = f.read()
         for line in init_file.splitlines():
             if line.startswith("__version__"):
                 delim = '"' if '"' in line else "'"
-                return line.split(delim)[1]
+                return discard_subpatch_version(line.split(delim)[1])
     except:
         pass
     return None
@@ -56,10 +60,14 @@ def download_binaries(
     python_versions, arcgis_version, arcgis_src_path, mode, conda_platform
 ):
     def expand_urls(module, file_funcs_by_platform):
+        def get_python_version_stripped(python_version):
+            return python_version.replace(".", "")
+
         return {
             platform: [
-                f"https://esri-forge.python.geocloud.com/_/build/v{arcgis_version}/{platform}/py{python_version}/{module}/{file_func(python_version.replace('.', ''))}"
-                for file_func in file_funcs for python_version in python_versions
+                f"https://esri-forge.python.geocloud.com/_/build/v{arcgis_version}/{platform}/py{python_version}/{module}/{file_func(get_python_version_stripped(python_version))}"
+                for file_func in file_funcs
+                for python_version in python_versions
             ]
             for platform, file_funcs in file_funcs_by_platform.items()
         }
@@ -104,8 +112,14 @@ def download_binaries(
         tracking_engine_files = expand_urls(
             "tracking-engine",
             {
-                "linux": [lambda _: "_track_processor.so", lambda _: "libTrackingEngine.so"],
-                "windows": [lambda _: "_track_processor.pyd", lambda _: "tracking_engine.dll"],
+                "linux": [
+                    lambda _: "_track_processor.so",
+                    lambda _: "libTrackingEngine.so",
+                ],
+                "windows": [
+                    lambda _: "_track_processor.pyd",
+                    lambda _: "tracking_engine.dll",
+                ],
             },
         )
         download_files(tracking_engine_files[conda_platform], tracking_engine_dest)
@@ -140,7 +154,9 @@ def download_binaries(
             "linux": [
                 lambda python_version_stripped: f"_decrypt_nbauth.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
             ],
-            "windows": [lambda python_version_stripped: f"_decrypt_nbauth.cp{python_version_stripped}-win_amd64.pyd"],
+            "windows": [
+                lambda python_version_stripped: f"_decrypt_nbauth.cp{python_version_stripped}-win_amd64.pyd"
+            ],
         },
     )
     download_files(
@@ -193,7 +209,12 @@ def _get_argument_parser():
     copy_parser.add_argument(
         "--arcgis",
         action="store",
-        help=f"arcgis version to download binaries for [default: {ARCGIS_VERSION}]",
+        help=(
+            "arcgis version to download binaries for [default: {ARCGIS_VERSION}]"
+            "\nNOTE: Default value only uses MAJOR.MINOR.PATCH version. If you need to "
+            "patch binaries for a subpatch version (e.g. MAJOR.MINOR.PATCH.SUBPATCH), "
+            "you must provide the full version with this argument."
+        ),
         required=not bool(ARCGIS_VERSION),
         default=ARCGIS_VERSION,
     )
