@@ -83,7 +83,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping_layers.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
     """
@@ -244,7 +244,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping_layers.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note::
         Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
@@ -324,7 +324,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping_layers import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the tile layer item
@@ -399,7 +399,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping_layers import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -567,7 +567,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping_layers import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS
@@ -781,8 +781,8 @@ class VectorTileLayer(arcgis.gis.Layer):
     @property
     def manager(self) -> VectorTileLayerManager:
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping_layers.VectorTileLayerManager` class or
-        :class:`~arcgis.mapping_layers.EnterpriseVectorTileLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.VectorTileLayerManager` class or
+        :class:`~arcgis.layers.EnterpriseVectorTileLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._gis._portal.is_arcgisonline:

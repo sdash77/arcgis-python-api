@@ -1206,13 +1206,13 @@ class GIS(object):
         return []
 
     @property
-    def symbol_service(self) -> arcgis.mapping_layers._types.SymbolService | None:
+    def symbol_service(self) -> arcgis.layers._types.SymbolService | None:
         """
         Symbol service is an ArcGIS Server utility service that provides access
         to operations to build and generate images for Esri symbols to be
         consumed by internal and external web applications.
 
-        :return: A :class:`~arcgis.mapping_layers._types.SymbolService` object or None
+        :return: A :class:`~arcgis.layers._types.SymbolService` object or None
 
         """
         try:

@@ -1,5 +1,5 @@
 """
-The arcgis.mapping_layers module provides components for visualizing GIS data and analysis.
+The arcgis.layers module provides components for visualizing GIS data and analysis.
 This module also includes mapping layers like MapImageLayer, SceneLayer and VectorTileLayer.
 """
 
@@ -38,6 +38,8 @@ from ._ogc._kml import KMLLayer
 from ._ogc._geojson import GeoJSONLayer
 from ._ogc._service import OGCCollection, OGCFeatureService
 
+from ._service_factory._layerfactory import Service, ServiceFactory
+
 __all__ = [
     "MapImageLayer",
     "MapImageLayerManager",
@@ -70,4 +72,6 @@ __all__ = [
     "GeoJSONLayer",
     "OGCCollection",
     "OGCFeatureService",
+    "Service",
+    "ServiceFactory",
 ]

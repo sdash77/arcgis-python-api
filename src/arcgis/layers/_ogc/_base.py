@@ -1,5 +1,4 @@
 import uuid
-from arcgis._impl.common._mixins import PropertyMap
 
 
 ###########################################################################

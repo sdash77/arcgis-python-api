@@ -14,7 +14,7 @@ from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
 import requests
 
-_basemap_definitions = LazyLoader("arcgis.mapping_layers._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
 
 _log = logging.getLogger(__name__)

@@ -12,7 +12,7 @@ gptool = LazyLoader("arcgis.geoprocessing._tool")
 geommodule = LazyLoader("arcgis._impl.tools")
 network_dataset = LazyLoader("arcgis.network")
 _gis = LazyLoader("arcgis.gis")
-mapping = LazyLoader("arcgis.mapping_layers")
+mapping = LazyLoader("arcgis.layers")
 raster = LazyLoader("arcgis.raster")
 schematics = LazyLoader("arcgis.schematics")
 

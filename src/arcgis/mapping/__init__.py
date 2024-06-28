@@ -1,5 +1,5 @@
 """
-The arcgis.mapping_layers module provides components for visualizing GIS data and analysis.
+The arcgis.layers module provides components for visualizing GIS data and analysis.
 This module also includes mapping layers like MapImageLayer, SceneLayer and VectorTileLayer.
 """
 

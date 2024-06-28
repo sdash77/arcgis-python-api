@@ -70,7 +70,7 @@ class OGCCollection:
         **kwargs,
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """
-        Queries the :class:`~arcgis.mapping_layers.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
+        Queries the :class:`~arcgis.layers.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -236,7 +236,7 @@ class OGCFeatureService:
         """
         Yields all the OGC Feature Service Layers within the service.
 
-        :return: Iterator[:class:`~arcgis.mapping_layers.ogc.OGCCollection`]
+        :return: Iterator[:class:`~arcgis.layers.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
         params = {"f": "json"}

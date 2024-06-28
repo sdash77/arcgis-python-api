@@ -20,7 +20,7 @@ from arcgis.schematics import SchematicLayers
 from arcgis.layers._scenelyrs import SceneLayer
 from ..._impl._con import Connection
 from ._geodataservice import GeoData
-from ._layerfactory import Service
+from ....layers._service_factory._layerfactory import Service
 from ..admin._services import Service as AdminService
 
 

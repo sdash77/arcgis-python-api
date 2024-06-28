@@ -16,7 +16,7 @@ ServiceFactory Tests
 """
 import os
 import arcgis
-from arcgis.gis.server._service._layerfactory import Service
+from arcgis.layers._service_factory._layerfactory import Service
 from arcgis.features.layer import Layer  #
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection  #
 from arcgis.geocoding import Geocoder  #

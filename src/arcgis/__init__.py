@@ -14,7 +14,7 @@ network = LazyLoader("arcgis.network")
 raster = LazyLoader("arcgis.raster")
 realtime = LazyLoader("arcgis.realtime")
 schematics = LazyLoader("arcgis.schematics")
-mapping_layers = LazyLoader("arcgis.mapping_layers")
+mapping_layers = LazyLoader("arcgis.layers")
 apps = LazyLoader("arcgis.apps")
 
 if not os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":

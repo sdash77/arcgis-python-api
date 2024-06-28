@@ -133,7 +133,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # assert
             self.assertIsInstance(
                 oma_manager,
-                arcgis.mapping_layers._types.OfflineMapAreaManager,
+                arcgis.layers._types.OfflineMapAreaManager,
                 "Cannot create OMA manager object from web map object",
             )
 
