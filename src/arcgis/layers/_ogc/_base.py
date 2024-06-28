@@ -198,7 +198,7 @@ class BaseOpenData(BaseOGC):
 
     _sql = None
 
-    def __init__(self, url: str, gis: _gis.GIS | None = None, **kwargs):
+    def __init__(self, url, gis=None, **kwargs):
         super(BaseOpenData, self)
         self._url = url
         self._gis = gis
