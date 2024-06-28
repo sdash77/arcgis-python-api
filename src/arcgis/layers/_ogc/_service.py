@@ -1,10 +1,10 @@
 import os, copy
-from typing import Dict, List, Any, Optional, Union, Iterator
+from typing import Dict, Any, Iterator
 import pandas as pd
+import requests
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from arcgis import env as _env
-from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
 
 
@@ -28,7 +28,7 @@ class OGCCollection:
     _properties = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, url: str, gis: GIS = None) -> "OGCCollection":
+    def __init__(self, url: str, gis: GIS = None) -> None:
         """Constructor"""
         assert (
             str(url).lower().find("ogcfeatureserver") > -1
@@ -38,21 +38,24 @@ class OGCCollection:
             gis = _env.active_gis or GIS()
         self._gis = gis
         self._url = url
+        self._session = gis.session
 
     # ---------------------------------------------------------------------
     @property
-    def properties(self) -> InsensitiveDict:
+    def properties(self) -> dict:
         """returns the service properties"""
         params = {"f": "json"}
         try:
-            res = self._gis._con.get(self._url, params)
-            return InsensitiveDict(res)
+            resp: requests.Response = self._session.get(url=self._url)
+            resp.raise_for_status()
+            return resp.json()
         except:
-            res = self._gis._con.post(self._url, params)
-            return InsensitiveDict(res)
+            resp: requests.Response = self._session.post(url=self._url, data=params)
+            resp.raise_for_status()
+            return resp.json()
 
     # ---------------------------------------------------------------------
-    def _process_row(self, feature: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_row(self, feature: dict[str, Any]) -> Dict[str, Any]:
         """Converts the GeoJSON Geometry to Esri JSON and format the row accordingly"""
         row = {"SHAPE": Geometry(feature["geometry"]) if feature["geometry"] else None}
         row.update(feature["properties"])
@@ -61,14 +64,14 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def query(
         self,
-        query: Optional[str] = None,
+        query: str | None = None,
         limit: int = 10000,
-        bbox: Optional[List[float]] = None,
-        bbox_sr: Optional[int] = None,
-        time_filter: Optional[str] = None,
+        bbox: list[float] | None = None,
+        bbox_sr: int | None = None,
+        time_filter: str | None = None,
         return_all: bool = False,
         **kwargs,
-    ) -> Union[Dict[str, Any], pd.DataFrame]:
+    ) -> dict[str, Any] | pd.DataFrame:
         """
         Queries the :class:`~arcgis.layers.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
@@ -106,7 +109,9 @@ class OGCCollection:
             params[k] = v
         as_dict = kwargs.pop("as_dict", False)
         if as_dict == False:  # returns all records as sedf
-            res = self._gis._con.get(url, params)
+            resp: requests.Response = self._session.get(url=url, params=params)
+            resp.raise_for_status()
+            res = resp.json()
             if len(res["features"]) == 0:
                 return pd.DataFrame([])
             results = [
@@ -114,7 +119,9 @@ class OGCCollection:
             ]
             params["offset"] += limit
             while True:
-                res = self._gis._con.get(url, params)
+                resp: requests.Response = self._session.get(url=url, params=params)
+                resp.raise_for_status()
+                res = resp.json()
                 if res == {} or res["numberReturned"] == 0:
                     break
                 elif return_all == False and len(results) >= limit:
@@ -140,13 +147,17 @@ class OGCCollection:
             df.spatial.name
             return df
         else:
-            results = self._gis._con.get(url, params)
+            resp: requests.Response = self._session.get(url=url, params=params)
+            resp.raise_for_status()
+            results = resp.json()
             if len(results["features"]) == 0:
                 return results
             res = copy.deepcopy(results)
             params["offset"] += limit
             while res["numberReturned"] > 0:
-                res = self._gis._con.get(url, params)
+                resp: requests.Response = self._session.get(url=url, params=params)
+                resp.raise_for_status()
+                res = resp.json()
 
                 if res == {} or res["numberReturned"] == 0:
                     break
@@ -171,8 +182,9 @@ class OGCCollection:
         """
         assert isinstance(feature_id, int)
         url = f"{self._url}/items/{feature_id}"
-        params = {"f": "json"}
-        return self._gis._con.get(url, params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
 
 ###########################################################################
@@ -195,26 +207,31 @@ class OGCFeatureService:
     _properties = None
 
     # ---------------------------------------------------------------------
-    def __init__(self, url, gis=None) -> "OGCFeatureService":
+    def __init__(self, url: str, gis: GIS = None) -> "OGCFeatureService":
         """Constructor"""
         assert str(url).lower().endswith("ogcfeatureserver")
         if gis is None:
             gis = _env.active_gis or GIS()
         self._gis = gis
         self._url = url
+        self._session = gis.session
 
     # ---------------------------------------------------------------------
     @property
-    def properties(self) -> InsensitiveDict:
+    def properties(self) -> dict:
         """returns the service properties"""
         params = {"f": "json"}
         if self._properties is None:
             try:
-                res = self._gis._con.get(self._url, params)
-                self._properties = InsensitiveDict(res)
+                resp: requests.Response = self._session.get(url=self._url)
+                resp.raise_for_status()
+                res = resp.json()
+                self._properties = res
             except:
-                res = self._gis._con.post(self._url, params)
-                self._properties = InsensitiveDict(res)
+                resp: requests.Response = self._session.post(url=self._url, data=params)
+                resp.raise_for_status()
+                res = resp.json()
+                self._properties = res
         return self._properties
 
     # ---------------------------------------------------------------------
@@ -227,8 +244,9 @@ class OGCFeatureService:
         :return: Dict[str, Any]
         """
         url = f"{self._url}/conformance"
-        params = {"f": "json"}
-        return self._gis._con.get(url, params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ---------------------------------------------------------------------
     @property
@@ -239,7 +257,9 @@ class OGCFeatureService:
         :return: Iterator[:class:`~arcgis.layers.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
-        params = {"f": "json"}
-        for idx, lyr in enumerate(self._gis._con.get(url, params)["collections"]):
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        collections = resp.json()["collections"]
+        for _, lyr in enumerate(collections):
             service_url = f"{url}/{lyr['id']}"
             yield OGCCollection(url=service_url, gis=self._gis)

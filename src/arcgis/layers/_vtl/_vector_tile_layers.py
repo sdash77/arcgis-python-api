@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
+import requests
 from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
@@ -16,65 +17,8 @@ time = LazyLoader("time")
 datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _gis = LazyLoader("arcgis.gis")
-_mixins = LazyLoader("arcgis._impl.common._mixins")
 _geometry = LazyLoader("arcgis.geometry")
 _services = LazyLoader("arcgis.gis.server.admin._services")
-
-
-###########################################################################
-@contextmanager
-def _tempinput(data):
-    temp = tempfile.NamedTemporaryFile(delete=False)
-    temp.write((bytes(data, "UTF-8")))
-    temp.close()
-    yield temp.name
-    os.unlink(temp.name)
-
-
-###########################################################################
-class _ApplicationProperties(object):
-    """
-    This class is responsible for containing the viewing and editing
-    properties of the web map. There are specific objects within this
-    object that are applicable only to Collector and Offline Mapping.
-    """
-
-    _app_prop = None
-
-    def __init__(self, prop=None):
-        template = {"viewing": {}, "offline": {}, "editing": {}}
-        if prop and isinstance(prop, (dict, _mixins.PropertyMap)):
-            self._app_prop = _mixins.PropertyMap(dict(prop))
-        else:
-            self._app_prop = _mixins.PropertyMap(template)
-
-    @property
-    def properties(self):
-        """represents the application properties"""
-        return self._app_prop
-
-    # ----------------------------------------------------------------------
-    def __repr__(self):
-        return json.dumps(dict(self._app_prop))
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return json.dumps(dict(self._app_prop))
-
-    # ----------------------------------------------------------------------
-    @property
-    def location_tracking(self):
-        """gets the location_tracking value"""
-        if (
-            "editing" in self._app_prop
-            and "locationTracking" in self._app_prop["editing"]
-        ):
-            return self._app_prop["editing"]["locationTracking"]
-        else:
-            self._app_prop["editing"]["locationTracking"] = {"enabled": False}
-            return self._app_prop["editing"]["locationTracking"]
-
-    # ----------------------------------------------------------------------
 
 
 ###########################################################################
@@ -100,7 +44,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         self._is_hosted = self.properties["portalProperties"]["isHosted"]
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy):
+    def edit(self, service_dictionary):
         """
         This operation edits the properties of a service. To edit a service,
         you need to submit the complete JSON representation of the service,
@@ -142,7 +86,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         :return: boolean
         """
         vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.edit(service_dictionairy)
+        return vtl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
@@ -260,6 +204,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             if "sourceType" in self.properties
             else self.properties["sourceServiceType"]
         )
+        self._session = gis.session
 
     # ----------------------------------------------------------------------
     def edit_tile_service(
@@ -370,7 +315,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
         # endpoint and post call
         url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def update_tiles(self, merge_bundle: bool = False) -> dict:
@@ -420,7 +367,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         else:
             url = "%s/update" % self._url
             params["mergeBundles"] = merge_bundle
-        return self._con.post(url, params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def refresh(self):
@@ -429,7 +378,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
-        return self._con.post(path=url, params=params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def rebuild_cache(self):
@@ -440,8 +391,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         redirects you to the Job Statistics page, or failure.
         """
         url = self._url + "/rebuildCache"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def status(self) -> dict:
@@ -450,8 +402,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         whether a service is started (available) or stopped.
         """
         url = self._url + "/status"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def jobs(self) -> dict:
@@ -463,8 +416,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         url = self._url + "/jobs"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def job_statistics(self, job_id: str) -> dict:
@@ -477,7 +431,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         url = self._url + "/jobs/{job_id}".format(job_id=job_id)
         params = {"f": "json"}
-        return self._con.post(url, params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def delete_job(self, job_id: str) -> dict:
@@ -490,7 +446,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
         params = {"f": "json"}
-        return self._con.post(url, params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id: str) -> dict:
@@ -502,7 +460,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
         params = {"f": "json"}
-        return self._con.post(url, params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def rerun_job(self, code, job_id: str) -> dict:
@@ -526,7 +486,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         url = self._url + "/jobs/%s/rerun" % job_id
         params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
+        resp: requests.Response = self._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
 
     ######################### These Methods Only Apply to VTL Service from a Service Directory #################################
     def swap(self, target_service_name):
@@ -548,7 +510,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         if self._source_type != "FeatureServer":
             url = self._url + "/swap"
             params = {"f": "json", "targetServiceName": target_service_name}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
@@ -584,7 +548,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 "f": "json",
             }
             url = self._url + "/delete"
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
 
@@ -605,14 +571,13 @@ class SymbolService:
         if gis is None:
             gis = arcgis.env.active_gis
         self._gis = gis
+        self._session = gis.session
 
     @property
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-            self._properties = arcgis._impl.common._isd.InsensitiveDict(
-                self._gis._con.get(self._url, {"f": "json"})
-            )
+            self._properties = self._session.get(url=self._url).json()
         return self._properties
 
     def generate_symbol(self, svg: str) -> dict:
@@ -620,7 +585,9 @@ class SymbolService:
         url = f"{self._url}/generateSymbol"
         params = {"f": "json"}
         files = {"svgImage": svg}
-        return self._gis._con.post_multipart(url, params, files=files)
+        resp: requests.Response = self._session.post(url=url, data=params, files=files)
+        resp.raise_for_status()
+        return resp.json()
 
     def generate_image(
         self,
@@ -712,13 +679,11 @@ class SymbolService:
             "imageFormat": image_format,
         }
         url: str = f"{self._url}/generateImage"
-        return self._gis._con.get(
-            url,
-            params,
-            try_json=False,
-            file_name=save_file_name,
-            out_folder=save_folder,
+        resp: requests.Response = self._session.get(
+            url=url, params=params, file_name=save_file_name, out_folder=save_folder
         )
+        resp.raise_for_status()
+        return resp.json()
 
 
 ###########################################################################
@@ -732,6 +697,7 @@ class VectorTileLayer(arcgis.gis.Layer):
 
     def __init__(self, url, gis=None):
         super(VectorTileLayer, self).__init__(url, gis)
+        self._session = gis.session
 
     # ----------------------------------------------------------------------
     @classmethod
@@ -755,8 +721,9 @@ class VectorTileLayer(arcgis.gis.Layer):
         which represents the version of the style specification.
         """
         url = "{url}/resources/styles".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     @property
@@ -775,7 +742,9 @@ class VectorTileLayer(arcgis.gis.Layer):
 
         """
         url = "{url}/tilemap".format(url=self._url)
-        return self._con.get(path=url, params={})
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     @property
@@ -812,12 +781,13 @@ class VectorTileLayer(arcgis.gis.Layer):
            A list of relative paths
         """
         url = "{url}/resources/info".format(url=self._url)
-        params = {"f": "json"}
-        res = self._con.get(path=url, params=params)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        res = resp.json()
         return res["resourceInfo"]
 
     # ----------------------------------------------------------------------
-    def tile_fonts(self, fontstack: str, stack_range: str):
+    def tile_fonts(self, fontstack: str, stack_range: str) -> str:
         """
         The ``tile_fonts`` method retrieves glyphs in
         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
@@ -841,11 +811,12 @@ class VectorTileLayer(arcgis.gis.Layer):
         url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
             url=self._url, fontstack=fontstack, stack_range=stack_range
         )
-        params = {}
-        return self._con.get(path=url, params=params, force_bytes=True)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.text
 
     # ----------------------------------------------------------------------
-    def vector_tile(self, level: int, row: int, column: int):
+    def vector_tile(self, level: int, row: int, column: int) -> str:
         """
         The ``vector_tile`` method represents a single vector tile for the map.
 
@@ -871,8 +842,9 @@ class VectorTileLayer(arcgis.gis.Layer):
         url = "{url}/tile/{level}/{row}/{column}.pbf".format(
             url=self._url, level=level, row=row, column=column
         )
-        params = {}
-        return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.text
 
     # ----------------------------------------------------------------------
     def tile_sprite(self, out_format: str = "sprite.json") -> dict:
@@ -891,7 +863,9 @@ class VectorTileLayer(arcgis.gis.Layer):
             Sprite image and metadata.
         """
         url = "{url}/resources/sprites/{f}".format(url=self._url, f=out_format)
-        return self._con.get(path=url, params={})
+        resp: requests.Response = self._session.get(url=url)
+        resp.raise_for_status()
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def export_tiles(
@@ -986,13 +960,17 @@ class VectorTileLayer(arcgis.gis.Layer):
         url = "{url}/exportTiles".format(url=self._url)
 
         # a job is returned from the get
-        exportJob = self._con.get(path=url, params=params)
+        resp: requests.Response = self._session.get(url=url, params=params)
+        resp.raise_for_status()
+        exportJob = resp.json()
 
         # get the job information
         path = "%s/jobs/%s" % (self._url, exportJob["jobId"])
 
         resp_params = {"f": "json"}
-        job_response = self._con.post(path, resp_params)
+        resp: requests.Response = self._session.post(url=path, data=resp_params)
+        resp.raise_for_status()
+        job_response = resp.json()
 
         if "status" in job_response or "jobStatus" in job_response:
             status = job_response.get("status") or job_response.get("jobStatus")
@@ -1001,8 +979,9 @@ class VectorTileLayer(arcgis.gis.Layer):
                 if i < 10:
                     i = i + 1
                 time.sleep(i)
-
-                job_response = self._con.post(path, resp_params)
+                resp: requests.Response = self._session.post(url=path, data=resp_params)
+                resp.raise_for_status()
+                job_response = resp.json()
                 status = job_response.get("status") or job_response.get("jobStatus")
                 if status in [
                     "esriJobFailed",
@@ -1018,13 +997,15 @@ class VectorTileLayer(arcgis.gis.Layer):
         if "results" in job_response:
             value = job_response["results"]["out_service_url"]["paramUrl"]
             result_path = path + "/" + value
-            params = {"f": "json"}
-            allResults = self._con.get(path=result_path, params=params)
+            resp: requests.Response = self._session.get(url=result_path)
+            resp.raise_for_status()
+            allResults = resp.json()
 
             if "value" in allResults:
                 value = allResults["value"]
-                params = {"f": "json"}
-                gpRes = self._con.get(path=value, params=params)
+                resp: requests.Response = self._session.get(url=value)
+                resp.raise_for_status()
+                gpRes = resp.json()
                 return gpRes["files"]
             else:
                 return None
@@ -1035,13 +1016,11 @@ class VectorTileLayer(arcgis.gis.Layer):
             else:
                 if self._gis._portal.is_arcgisonline:
                     return [
-                        self._con.get(url, try_json=False, add_token=False)
-                        for url in allResults["outputUrl"]
+                        self._session.get(url).json() for url in allResults["outputUrl"]
                     ]
                 else:
                     return [
-                        self._con.get(url, try_json=False)
-                        for url in allResults["outputUrl"]
+                        self._session.get(url).json() for url in allResults["outputUrl"]
                     ]
         else:
             raise Exception(job_response)
@@ -1064,70 +1043,3 @@ class VectorTileLayer(arcgis.gis.Layer):
             regex_obj = patternDict[key]
             mystring = regex_obj.sub(key, mystring)
         return mystring
-
-
-class Events(object):
-    @classmethod
-    def _create_events(cls, enable=False):
-        events = Events()
-
-        events._enable = False
-        events._type = "extentChanged"
-        events._actions = []
-
-        events.enable = enable
-
-        return events
-
-    @property
-    def enable(self):
-        return self._enable
-
-    @enable.setter
-    def enable(self, value):
-        self._enable = bool(value)
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def synced_widgets(self):
-        return self._actions
-
-    def sync_widget(self, widgets):
-        if self.enable == False:
-            raise Exception("Please enable events")
-
-        else:
-            if isinstance(widgets, list):
-                for widget in widgets:
-                    if widget.type == "mapWidget":
-                        action_type = "setExtent"
-                        self._actions.append(
-                            {"type": action_type, "targetId": widget._id}
-                        )
-                    else:
-                        action_type = "filter"
-                        widget_id = str(widget._id) + "#main"
-                        self._actions.append(
-                            {
-                                "type": action_type,
-                                "by": "geometry",
-                                "targetId": widget_id,
-                            }
-                        )
-            else:
-                if widgets.type == "mapWidget":
-                    action_type = "setExtent"
-                    self._actions.append({"type": action_type, "targetId": widgets._id})
-                else:
-                    action_type = "filter"
-                    widget_id = str(widgets._id) + "#main"
-                    self._actions.append(
-                        {
-                            "type": action_type,
-                            "by": "geometry",
-                            "targetId": widget_id,
-                        }
-                    )

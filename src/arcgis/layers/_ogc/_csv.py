@@ -1,19 +1,17 @@
-import os
-import sys
-import json
 import uuid
-import tempfile
+
 from arcgis.gis import GIS, Item
 from arcgis import env as _env
 import pandas as pd
 from ._base import BaseOpenData
+from arcgis.auth.tools import LazyLoader
 
-_PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1, 0, 0]
+_gis = LazyLoader("arcgis.gis")
 
 
 ###########################################################################
 class CSVLayer(BaseOpenData):
-    r"""
+    """
     Represents a CSV File Hosted on a Server.
 
 
@@ -54,7 +52,9 @@ class CSVLayer(BaseOpenData):
     _type = "CSV"
 
     # ----------------------------------------------------------------------
-    def __init__(self, url_or_item, gis=None, **kwargs):
+    def __init__(
+        self, url_or_item: _gis.Item | str, gis: _gis.GIS | None = None, **kwargs
+    ):
         """initializer"""
         super(CSVLayer, self)
         if isinstance(url_or_item, str):
@@ -81,7 +81,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @property
-    def latitude(self):
+    def latitude(self) -> str:
         """
         The latitude field name. If not specified, the class will look for
         following field names in the CSV source:
@@ -111,7 +111,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @property
-    def longitude(self):
+    def longitude(self) -> str:
         """
         The longitude field name. If not specified, the `CSVLayer` will
         look for following field names in the CSV source:
@@ -143,22 +143,20 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @property
-    def renderer(self):
+    def renderer(self) -> dict:
         """
         Get/Set the Renderer of the CSV Layer
 
         :return:
-            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A variant of a case-less dictionary that allows for dot and bracket notation.
+            A ``dict`` like object used to update and alter JSON
 
         """
-        from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None:
             from arcgis.layers import generate_renderer
 
             sr = generate_renderer(geometry_type="point")
-            self._renderer = InsensitiveDict(dict(sr))
+            self._renderer = dict(sr)
         return self._renderer
 
     # ----------------------------------------------------------------------
@@ -172,20 +170,16 @@ class CSVLayer(BaseOpenData):
             A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
-        from arcgis._impl.common._isd import InsensitiveDict
-
         if isinstance(value, dict):
-            self._renderer = InsensitiveDict(dict(value))
+            self._renderer = dict(value)
         elif value is None:
             self._renderer = None
-        elif not isinstance(value, InsensitiveDict):
-            raise ValueError("Invalid renderer type.")
         self._refresh = value
 
     # ----------------------------------------------------------------------
     @property
-    def delimiter(self):
-        r"""
+    def delimiter(self) -> str:
+        """
         Gets/Sets the delimiter for the CSV Layer.  The default is `,`
 
         ===========   ==========================================
@@ -220,7 +214,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @property
-    def fields(self):
+    def fields(self) -> list[str]:
         """
         Returns the fields values for the CSV source.
 
@@ -326,7 +320,7 @@ class CSVLayer(BaseOpenData):
 
     # ----------------------------------------------------------------------
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """
         returns the CSV file as a DataFrame
 

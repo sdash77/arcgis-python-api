@@ -1,4 +1,7 @@
 import uuid
+from arcgis.auth.tools import LazyLoader
+
+_gis = LazyLoader("arcgis.gis")
 
 
 ###########################################################################
@@ -37,9 +40,9 @@ class BaseOGC(object):
     _max_scale = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis=None, **kwargs):
-        self._url = url
-        self._gis = gis
+    def __init__(self, url: str, gis: _gis.GIS = None, **kwargs):
+        self._url: str = url
+        self._gis: _gis.GIS = gis
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._title = kwargs.pop("title", "Layer")
         self._opacity = kwargs.pop("opacity", 1)
@@ -48,13 +51,13 @@ class BaseOGC(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
         Returns the properties of the Layer.
 
-        :return: PropertyMap
+        :return: dict
         """
-        return PropertyMap(self._lyr_json)
+        return self._lyr_json
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -198,7 +201,7 @@ class BaseOpenData(BaseOGC):
 
     _sql = None
 
-    def __init__(self, url, gis=None, **kwargs):
+    def __init__(self, url: str, gis: _gis.GIS | None = None, **kwargs):
         super(BaseOpenData, self)
         self._url = url
         self._gis = gis
@@ -211,7 +214,7 @@ class BaseOpenData(BaseOGC):
 
     # ----------------------------------------------------------------------
     @property
-    def sql_expression(self):
+    def sql_expression(self) -> str:
         """
         The SQL where clause used to filter features on the client. Only
         the features that satisfy the definition expression are displayed

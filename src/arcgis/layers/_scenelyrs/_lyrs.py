@@ -1,8 +1,8 @@
 from __future__ import annotations
 import json
+import requests
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
-from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
 
 _services = LazyLoader("arcgis.gis.server.admin._services")
@@ -14,7 +14,7 @@ class SceneLayerManager(_GISResource):
     A :class:`~arcgis.layers.SceneLayerManager` offers access to map and layer content.
     """
 
-    def __init__(self, url, gis=None, scene_lyr=None):
+    def __init__(self, url: str, gis=None, scene_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
         super(SceneLayerManager, self).__init__(url, gis)
@@ -29,9 +29,10 @@ class SceneLayerManager(_GISResource):
         else:
             # No layers are present so we will not have cache
             self._source_type = "Scene Layer Package"
+        self._session = gis.session
 
     # ----------------------------------------------------------------------
-    def refresh(self):
+    def refresh(self) -> dict | None:
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
@@ -39,8 +40,9 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Scene Layer Package":
             url = self._url + "/refresh"
             params = {"f": "json"}
-
-            res = self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            res = resp.json()
 
             super(SceneLayerManager, self)._refresh()
 
@@ -48,7 +50,7 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def swap(self, target_service_name: str):
+    def swap(self, target_service_name: str) -> dict | None:
         """
         The swap operation replaces the current service cache with an existing one.
 
@@ -67,11 +69,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Scene Layer Package":
             url = self._url + "/swap"
             params = {"f": "json", "targetServiceName": target_service_name}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def jobs(self):
+    def jobs(self) -> dict | None:
         """
         The tile service job summary (jobs) resource represents a
         summary of all jobs associated with a vector tile service.
@@ -81,12 +85,13 @@ class SceneLayerManager(_GISResource):
         """
         if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs"
-            params = {"f": "json"}
-            return self._con.get(url, params)
+            resp: requests.Response = self._session.get(url=url)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def cancel_job(self, job_id: str):
+    def cancel_job(self, job_id: str) -> dict | None:
         """
         The ``cancel_job`` operation supports cancelling a job while update
         tiles is running from a hosted feature service. The result of this
@@ -103,11 +108,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s/cancel" % job_id
             params = {"f": "json"}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def job_statistics(self, job_id: str):
+    def job_statistics(self, job_id: str) -> dict | None:
         """
         Returns the job statistics for the given jobId
 
@@ -115,11 +122,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s" % job_id
             params = {"f": "json"}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # -----------------------------------------------------------------------
-    def rerun_job(self, job_id: str, code: str):
+    def rerun_job(self, job_id: str, code: str) -> dict | None:
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
@@ -141,11 +150,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s/rerun" % job_id
             params = {"f": "json", "rerun": code}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def import_package(self, item: str | Item):
+    def import_package(self, item: str | Item) -> dict | None:
         """
         The ``import`` method imports from an :class:`~arcgis.gis.Item` object.
 
@@ -173,12 +184,14 @@ class SceneLayerManager(_GISResource):
             else:
                 raise ValueError("The `item` must be a string or Item")
             url = self._url + "/import"
-            res = self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            res = resp.json()
             return res
         return None
 
     # ----------------------------------------------------------------------
-    def update(self):
+    def update(self) -> dict | None:
         """
         The ``update`` method starts update generation for ArcGIS Online. It updates
         the underlying source dataset for the service, essentially refreshing the
@@ -190,11 +203,13 @@ class SceneLayerManager(_GISResource):
         if self._gis._portal.is_arcgisonline:
             url = "%s/update" % self._url
             params = {"f": "json"}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def edit(self, item: str | Item):
+    def edit(self, item: str | Item) -> dict | None:
         """
         The ``edit`` method edits from an :class:`~arcgis.gis.Item` object.
 
@@ -223,12 +238,14 @@ class SceneLayerManager(_GISResource):
             else:
                 raise ValueError("The `item` must be a string or Item")
             url = self._url + "/edit"
-            res = self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            res = resp.json()
             return res
         return None
 
     # ----------------------------------------------------------------------
-    def rebuild_cache(self, layers: int | list[int]):
+    def rebuild_cache(self, layers: int | list[int]) -> dict | None:
         """
         The rebuild_cache operation update the scene layer cache to reflect
         any changes made to the feature layer used to publish this scene layer.
@@ -247,11 +264,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Feature Service":
             url = self._url + "/rebuildCache"
             params = {"f": "json", "layers": layers}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def update_cache(self, layers: int | list[int]):
+    def update_cache(self, layers: int | list[int]) -> dict | None:
         """
         Update Cache is a "light rebuild" where attributes and geometries of
         the layers selected are updated and can be used for change tracking on
@@ -262,7 +281,7 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required int or list of int. Comma seperated values indicating
+        layers                      Required int or list of int. Comma separated values indicating
                                     the id of the layers to update in the cache.
 
                                     Ex: [0,1,2]
@@ -271,11 +290,13 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Feature Service":
             url = self._url + "/updateCache"
             params = {"f": "json", "layers": layers}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
     # ----------------------------------------------------------------------
-    def update_attribute(self, layers: int | list[int]):
+    def update_attribute(self, layers: int | list[int]) -> dict | None:
         """
         Update atrribute is a "light rebuild" where attributes of
         the layers selected are updated and can be used for change tracking.
@@ -285,7 +306,7 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required int or list of int. Comma seperated values indicating
+        layers                      Required int or list of int. Comma separated values indicating
                                     the id of the layers to update in the cache.
 
                                     Ex: [0,1,2]
@@ -294,7 +315,9 @@ class SceneLayerManager(_GISResource):
         if self._source_type == "Feature Service":
             url = self._url + "/updateAttribute"
             params = {"f": "json", "layers": layers}
-            return self._con.post(url, params)
+            resp: requests.Response = self._session.post(url=url, data=params)
+            resp.raise_for_status()
+            return resp.json()
         return None
 
 
@@ -309,14 +332,14 @@ class EnterpriseSceneLayerManager(_GISResource):
 
     _gptbx = None
 
-    def __init__(self, url, gis=None, scene_lyr=None):
+    def __init__(self, url: str, gis=None, scene_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
         super(EnterpriseSceneLayerManager, self).__init__(url, gis)
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy: dict):
+    def edit(self, service_dictionary: dict):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -326,14 +349,14 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===================     ====================================================================
         **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary     Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
 
 
         :return: boolean
         """
         sl_service = _services.Service(self.url, self._gis)
-        return sl_service.edit(service_dictionairy)
+        return sl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
@@ -389,7 +412,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         layer: list[int] | None = None,
         extent: dict | None = None,
         area_of_interest: dict | None = None,
-    ):
+    ) -> str:
         """
         The rebuild_cache operation update the scene layer cache to reflect
         any changes made to the feature layer used to publish this scene layer.
@@ -470,7 +493,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         layer: list[int] | None = None,
         extent: dict | None = None,
         area_of_interest: dict | None = None,
-    ):
+    ) -> str:
         """
         Update Cache is a "light rebuild" where attributes and geometries of
         the layers selected are updated and can be used for change tracking on
@@ -552,7 +575,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         layer: list[int] | None = None,
         extent: dict | None = None,
         area_of_interest: dict | None = None,
-    ):
+    ) -> str:
         """
         Update atrribute is a "light rebuild" where attributes of
         the layers selected are updated and can be used for change tracking.
@@ -659,7 +682,7 @@ class Object3DLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -697,7 +720,7 @@ class Object3DLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
@@ -770,7 +793,7 @@ class IntegratedMeshLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -808,7 +831,7 @@ class IntegratedMeshLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
@@ -887,7 +910,7 @@ class Tiles3DLayer(Layer):
     ==================     ====================================================================
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a Tiles3D Layer given a web scene layer URL
         """
@@ -925,7 +948,7 @@ class Tiles3DLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> Tiles3DLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.Tiles3DLayerManager` class
         which provides methods and properties for administering this service.
@@ -999,7 +1022,7 @@ class VoxelLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -1037,7 +1060,7 @@ class VoxelLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of
         :class:`~arcgis.layers.SceneLayerManager` class
@@ -1111,7 +1134,7 @@ class Point3DLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -1150,7 +1173,7 @@ class Point3DLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
@@ -1223,7 +1246,7 @@ class PointCloudLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -1261,7 +1284,7 @@ class PointCloudLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
@@ -1334,7 +1357,7 @@ class BuildingLayer(Layer):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
@@ -1372,7 +1395,7 @@ class BuildingLayer(Layer):
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def manager(self) -> SceneLayerManager | EnterpriseSceneLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
         or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
@@ -1500,7 +1523,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         >> 'your layer name'
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url: str, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """

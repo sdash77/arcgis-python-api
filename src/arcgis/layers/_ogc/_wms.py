@@ -1,13 +1,11 @@
-import json
 import uuid
 import re
-from io import BytesIO, StringIO
+from io import BytesIO
 import xml.etree.cElementTree as ET
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, ParseResult
-
+import requests
 from arcgis.gis import GIS
 from arcgis import env as _env
-from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
 
 
@@ -56,7 +54,7 @@ class WMSLayer(BaseOGC):
         assert isinstance(gis, GIS)
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._version = version
-        self._con = gis._con
+        self._session = gis.session
         self._title = kwargs.pop("title", "WMS Layer")
         self._gis = gis
         if url[-1] == "/":
@@ -68,7 +66,7 @@ class WMSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self) -> PropertyMap:
+    def properties(self) -> dict:
         """
         Returns the properties of the Layer.
 
@@ -81,13 +79,19 @@ class WMSLayer(BaseOGC):
                 )
             else:
                 url = self._capabilities_url(service_url=self._url)
-            text = self._con.get(url, {}, try_json=False, add_token=False)
+            resp: requests.Response = self._session.get(url=url)
+            resp.raise_for_status()
+            text = resp.text
             if text.find("Invalid Token") > -1 or text.find("Get Token") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)
+                resp: requests.Response = self._session.get(url=url)
+                resp.raise_for_status()
+                text = resp.text
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)
+                resp: requests.Response = self._session.get(url=url)
+                resp.raise_for_status()
+                text = resp.text
             elif text.lower().find("<?xml version=") > -1:
                 pass
             else:
@@ -97,7 +101,7 @@ class WMSLayer(BaseOGC):
             sss.seek(0)
             tree = ET.XML(text=sss.read())
             d = self._xml_to_dictionary(tree)
-            self._properties = PropertyMap(d)
+            self._properties = d
         return self._properties
 
     # ---------------------------------------------------------------------

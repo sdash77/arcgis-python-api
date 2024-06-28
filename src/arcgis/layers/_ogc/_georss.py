@@ -1,10 +1,5 @@
-import os
-import sys
-import json
 import uuid
-from arcgis.gis import GIS
 from arcgis.layers._symbol import create_symbol
-from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
 
@@ -46,7 +41,7 @@ class GeoRSSLayer(BaseOGC):
     _type = "GeoRSS"
 
     # ----------------------------------------------------------------------
-    def __init__(self, url, **kwargs):
+    def __init__(self, url: str, **kwargs):
         super(GeoRSSLayer, self)
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._url = url
@@ -64,18 +59,15 @@ class GeoRSSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     @property
-    def point_symbol(self) -> InsensitiveDict:
+    def point_symbol(self) -> dict:
         """
         Gets/Sets the Point Symbol for Point Geometries
 
         :return:
-            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A variants of a case-less dictionary that allows for dot and bracket notation.
+            A ``dict`` object used to update and alter JSON
         """
         if self._point_symbol is None:
-            self._point_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="point"))
-            )
+            self._point_symbol = dict(create_symbol(geometry_type="point"))
         return self._point_symbol
 
     # ----------------------------------------------------------------------
@@ -85,21 +77,19 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Point Symbol for Point Geometries
 
         :return:
-            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A ``dict``  object used to update and alter JSON
             A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
-            self._point_symbol = InsensitiveDict(value)
+            self._point_symbol = value
         elif value is None:
-            self._point_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="point"))
-            )
+            self._point_symbol = dict(create_symbol(geometry_type="point"))
         else:
-            self._point_symbol = InsensitiveDict(value)
+            raise ValueError("Invalid value for point_symbol")
 
     # ----------------------------------------------------------------------
     @property
-    def line_symbol(self) -> InsensitiveDict:
+    def line_symbol(self) -> dict:
         """
         Gets/Sets the Line Symbol for Polyline Geometries
 
@@ -108,9 +98,7 @@ class GeoRSSLayer(BaseOGC):
             A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if self._line_symbol is None:
-            self._line_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="polyline"))
-            )
+            self._line_symbol = dict(create_symbol(geometry_type="polyline"))
         return self._line_symbol
 
     # ----------------------------------------------------------------------
@@ -124,17 +112,15 @@ class GeoRSSLayer(BaseOGC):
             A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
-            self._line_symbol = InsensitiveDict(value)
+            self._line_symbol = value
         elif value is None:
-            self._line_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="polyline"))
-            )
+            self._line_symbol = dict(create_symbol(geometry_type="polyline"))
         else:
-            self._line_symbol = InsensitiveDict(value)
+            raise ValueError("Invalid value for line_symbol")
 
     # ----------------------------------------------------------------------
     @property
-    def polygon_symbol(self) -> InsensitiveDict:
+    def polygon_symbol(self) -> dict:
         """
         Gets/Sets the Polygon Symbol for Polygon Geometries
 
@@ -143,9 +129,7 @@ class GeoRSSLayer(BaseOGC):
             A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if self._polygon_symbol is None:
-            self._polygon_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="polygon"))
-            )
+            self._polygon_symbol = dict(create_symbol(geometry_type="polygon"))
         return self._polygon_symbol
 
     # ----------------------------------------------------------------------
@@ -159,13 +143,11 @@ class GeoRSSLayer(BaseOGC):
             A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
-            self._polygon_symbol = InsensitiveDict(value)
+            self._polygon_symbol = value
         elif value is None:
-            self._polygon_symbol = InsensitiveDict(
-                dict(create_symbol(geometry_type="polygon"))
-            )
+            self._polygon_symbol = dict(create_symbol(geometry_type="polygon"))
         else:
-            self._polygon_symbol = InsensitiveDict(value)
+            raise ValueError("Invalid value for polygon_symbol")
 
     # ----------------------------------------------------------------------
     @property

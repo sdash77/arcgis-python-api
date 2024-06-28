@@ -1,7 +1,5 @@
 import json
 import uuid
-from arcgis.gis import GIS
-from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis._impl._con._url_validator import validate_url
 from pathlib import Path
 from ._base import BaseOGC
@@ -48,7 +46,9 @@ class GeoJSONLayer(BaseOGC):
     _data = {}
 
     # ----------------------------------------------------------------------
-    def __init__(self, url=None, data=None, **kwargs):
+    def __init__(
+        self, url: str | None = None, data: str | dict | None = None, **kwargs
+    ):
         """init"""
         super(GeoJSONLayer, self)
         if url is None and data is None:
@@ -74,7 +74,7 @@ class GeoJSONLayer(BaseOGC):
         if "renderer" in kwargs:
             r = kwargs.pop("renderer", None)
             if isinstance(r, dict):
-                self._renderer = InsensitiveDict(r)
+                self._renderer = r
             else:
                 self._renderer = None
         else:
@@ -82,7 +82,7 @@ class GeoJSONLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     @property
-    def renderer(self) -> InsensitiveDict:
+    def renderer(self) -> dict:
         """Gets/Sets the renderer for the layer"""
         return self._renderer
 
@@ -91,7 +91,9 @@ class GeoJSONLayer(BaseOGC):
     def renderer(self, renderer: dict):
         """Gets/Sets the renderer for the layer"""
         if isinstance(renderer, dict) and renderer:
-            self._renderer = InsensitiveDict(renderer)
+            self._renderer = renderer
+        elif renderer is None:
+            self._renderer = None
 
     # ----------------------------------------------------------------------
     @property
@@ -118,7 +120,7 @@ class GeoJSONLayer(BaseOGC):
         return self._lyr_json
 
     @property
-    def url(self):
+    def url(self) -> str:
         """
         Get/Set the data associated with the GeoJSON Layer
 

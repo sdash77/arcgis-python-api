@@ -1,10 +1,4 @@
-import os
-import sys
-import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
-from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
 
@@ -15,7 +9,7 @@ class KMLLayer(BaseOGC):
     KML is an XML-based file format used to represent geographic features.
 
     ======================  =====================================================================
-    **Arguement**           **Value**
+    **Argument**           **Value**
     ----------------------  ---------------------------------------------------------------------
     url                     Required String.  The web location of the KML file.
     ----------------------  ---------------------------------------------------------------------
@@ -33,7 +27,7 @@ class KMLLayer(BaseOGC):
 
     _type = "KML"
 
-    def __init__(self, url, **kwargs):
+    def __init__(self, url: str, **kwargs):
         """initializer"""
         super(KMLLayer, self)
         self._url = url

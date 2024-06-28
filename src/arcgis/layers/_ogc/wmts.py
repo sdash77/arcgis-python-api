@@ -1,12 +1,11 @@
-import json
+import requests
 import uuid
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, ParseResult
 import xml.etree.cElementTree as ET
-from io import BytesIO, StringIO
+from io import BytesIO
 
 from arcgis.gis import GIS
 from arcgis import env as _env
-from arcgis._impl.common._mixins import PropertyMap
 
 from ._base import BaseOGC
 
@@ -58,7 +57,7 @@ class WMTSLayer(BaseOGC):
         assert isinstance(gis, GIS)
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._version = version
-        self._con = gis._con
+        self._session = gis.session
         self._title = kwargs.pop("title", "WMTS Layer")
         self._gis = gis
         if url[-1] == "/":
@@ -71,11 +70,11 @@ class WMTSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
         Returns the properties of the Layer.
 
-        :return: PropertyMap
+        :return: dict
         """
         if self._properties is None:
             from arcgis._impl.common._mixins import PropertyMap
@@ -86,13 +85,19 @@ class WMTSLayer(BaseOGC):
                 )
             else:
                 url = self._capabilities_url(service_url=self._url)
-            text = self._con.get(url, {}, try_json=False, add_token=False)
+            resp: requests.Response = self._session.get(url=url)
+            resp.raise_for_status()
+            text = resp.text
             if text.find("Invalid Token") > -1 or text.find("Get Token") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)
+                resp: requests.Response = self._session.get(url=url)
+                resp.raise_for_status()
+                text = resp.text
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)
+                resp: requests.Response = self._session.get(url=url)
+                resp.raise_for_status()
+                text = resp.text
             elif text.lower().find("<?xml version=") > -1:
                 pass
             else:
@@ -206,9 +211,7 @@ class WMTSLayer(BaseOGC):
         if isinstance(self.properties.Capabilities.Contents.Layer, (list, tuple)):
             layer = self.properties.Capabilities.Contents.Layer[0]
             tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet[0]
-        elif isinstance(
-            self.properties.Capabilities.Contents.Layer, (dict, PropertyMap)
-        ):
+        elif isinstance(self.properties.Capabilities.Contents.Layer, (dict)):
             layer = self.properties.Capabilities.Contents.Layer
             tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet
         else:
