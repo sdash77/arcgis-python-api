@@ -3,7 +3,7 @@ The arcgis.mapping_layers module provides components for visualizing GIS data an
 This module also includes mapping layers like MapImageLayer, SceneLayer and VectorTileLayer.
 """
 
-from ._types import (
+from ._vtl._vector_tile_layers import (
     MapImageLayer,
     MapImageLayerManager,
     EnterpriseMapImageLayerManager,

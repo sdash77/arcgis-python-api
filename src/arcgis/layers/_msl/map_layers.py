@@ -1,1074 +1,1793 @@
-from __future__ import absolute_import, annotations
+from __future__ import annotations
+from string import digits
+from functools import lru_cache
 
-
-from contextlib import contextmanager
 from typing import Any, Optional, Union
-from arcgis.gis import Item
-from arcgis.geoprocessing import import_toolbox
+
+from arcgis._impl.common import _query
+from arcgis._impl.common._filters import (
+    StatisticFilter,
+    TimeFilter,
+    GeometryFilter,
+)
+from arcgis._impl.common._mixins import PropertyMap
+
+from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 
-collections = LazyLoader("collections")
-json = LazyLoader("json")
+_dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
-pathlib = LazyLoader("pathlib")
+json = LazyLoader("json")
 tempfile = LazyLoader("tempfile")
 time = LazyLoader("time")
-datetime = LazyLoader("datetime")
-arcgis = LazyLoader("arcgis")
-_arcgis_features = LazyLoader("arcgis.features")
-_gis = LazyLoader("arcgis.gis")
-_mixins = LazyLoader("arcgis._impl.common._mixins")
 _geometry = LazyLoader("arcgis.geometry")
+_gis = LazyLoader("arcgis.gis")
 _services = LazyLoader("arcgis.gis.server.admin._services")
+_features = LazyLoader("arcgis.features")
 
 
 ###########################################################################
-@contextmanager
-def _tempinput(data):
-    temp = tempfile.NamedTemporaryFile(delete=False)
-    temp.write((bytes(data, "UTF-8")))
-    temp.close()
-    yield temp.name
-    os.unlink(temp.name)
-
-
-###########################################################################
-class _ApplicationProperties(object):
+class MapFeatureLayer(Layer):
     """
-    This class is responsible for containing the viewing and editing
-    properties of the web map. There are specific objects within this
-    object that are applicable only to Collector and Offline Mapping.
+    The ``MapFeatureLayer`` class represents Map Feature Layers.
+    Map Feature Layers can be added to and visualized using maps.
+
+    Map Feature Layers are created by publishing feature data to a :class:`~arcgis.gis.GIS`, and are exposed as a
+    broader resource (:class:`~arcgis.gis.Item`) in the ``GIS``.
+    `MapFeatureLayer` objects can be obtained through the layers attribute on map image service Items in the ``GIS``.
     """
 
-    _app_prop = None
-
-    def __init__(self, prop=None):
-        template = {"viewing": {}, "offline": {}, "editing": {}}
-        if prop and isinstance(prop, (dict, _mixins.PropertyMap)):
-            self._app_prop = _mixins.PropertyMap(dict(prop))
-        else:
-            self._app_prop = _mixins.PropertyMap(template)
-
-    @property
-    def properties(self):
-        """represents the application properties"""
-        return self._app_prop
+    _metadatamanager = None
+    _renderer = None
+    _storage = None
+    _dynamic_layer = None
+    _attachments = None
+    _time_filter = None
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
-        return json.dumps(dict(self._app_prop))
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return json.dumps(dict(self._app_prop))
-
-    # ----------------------------------------------------------------------
-    @property
-    def location_tracking(self):
-        """gets the location_tracking value"""
-        if (
-            "editing" in self._app_prop
-            and "locationTracking" in self._app_prop["editing"]
-        ):
-            return self._app_prop["editing"]["locationTracking"]
-        else:
-            self._app_prop["editing"]["locationTracking"] = {"enabled": False}
-            return self._app_prop["editing"]["locationTracking"]
-
-    # ----------------------------------------------------------------------
-
-
-###########################################################################
-class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
-    """
-    The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
-    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
-    applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping_layers.VectorTileLayer` offers access to layer content.
-
-    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
-    """
-
-    _gptbx = None
-
-    def __init__(self, url, gis=None, vect_tile_lyr=None):
-        if url.split("/")[-1].isdigit():
-            url = url.replace(f"/{url.split('/')[-1]}", "")
-        if gis.version <= [8, 4]:
-            raise Warning("Manager not available. Update version of Enterprise")
-        super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
-        self._vtl = vect_tile_lyr
-        self._is_hosted = self.properties["portalProperties"]["isHosted"]
-
-    # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy):
+    def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
-        This operation edits the properties of a service. To edit a service,
-        you need to submit the complete JSON representation of the service,
-        which includes the updates to the service properties.
-        Editing a service can cause the service to be restarted with updated properties.
+        Constructs a map feature layer given a feature layer URL
+        :param url: layer url
+        :param gis: optional, the GIS that this layer belongs to. Required for secure map feature layers.
+        :param container: optional, the MapImageLayer to which this layer belongs
+        :param dynamic_layer: optional dictionary. If the layer is given a dynamic layer definition, this will be added to functions.
+        """
+        if gis is None:
+            import arcgis
 
-        The JSON representation of a service contains the following four sections:
+            gis = arcgis.env.active_gis
+        if str(url).lower().endswith("/"):
+            url = url[:-1]
+        super(MapFeatureLayer, self).__init__(url, gis)
 
-        * Service description properties—Common properties that are shared by all services. These properties typically identify a specific service.
-        * Service framework properties—Properties targeted toward the framework that hosts the GIS service. They define the life cycle and load balancing of the service.
-        * Service type properties—Properties targeted toward the core service type as seen by the server administrator. Since these properties are associated with a server object, they vary across the service types.
-        * Extension properties—Represent the extensions that are enabled on the service.
+        self._attachments = None
+        self._dynamic_layer = dynamic_layer
+        self._time_filter = None
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "FeatureLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "FeatureLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    @lru_cache(maxsize=10)
+    def attachements(self):
+        """
+        The ``attachements`` property provides a manager to work with attachments if the ``MapFeatureLayer``
+        supports this functionality.
+        """
+        if (
+            "supportsQueryAttachments" in self.properties
+            and self.properties["supportsQueryAttachments"]
+            and self._attachments is None
+        ):
+            from arcgis.features.managers import AttachmentManager
+
+            self._attachments = AttachmentManager(self)
+        return self._attachments
+
+    # ----------------------------------------------------------------------
+    @property
+    def time_filter(self):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled
+        map service layers or time-enabled feature service layers, a
+        time filter can be set using the ``time_filter`` property.
+        Time can be filtered as Python `_dt.datetime <https://docs.python.org/3/library/_dt.datetime.html#_dt.datetime-objects>`_,
+        objects or strings representing Unix epoch values in milliseconds.
+        An extent can be specified by separating the start and stop values
+        comma.
+
+        .. code-block:: python
+
+            >>> import _dt.datetime as dt
+
+            >>> map_feature_lyr.time_filter = [dt._dt.datetime(2021, 1, 1), dt._dt.datetime(2022, 1, 10)]
+
+        """
+        return self._time_filter
+
+    # ----------------------------------------------------------------------
+    @time_filter.setter
+    def time_filter(self, value: Union[_dt.datetime, list[_dt.datetime], list[str]]):
+        """
+        See main ``time_filter`` property docstring
+        """
+        v = []
+        if isinstance(value, _dt._dt.datetime):
+            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
+        elif isinstance(value, (tuple, list)):
+            for idx, d in enumerate(value):
+                if idx > 1:
+                    break
+                if isinstance(d, _dt._dt.datetime):
+                    v.append(f"{int(value.timestamp() * 1000)}")
+                elif isinstance(d, str):
+                    v.append(d)
+                elif d is None:
+                    v.append("null")
+            self._time_filter = ",".join(v)
+        elif isinstance(value, str):
+            self._time_filter = value
+        elif value is None:
+            self._time_filter = None
+        else:
+            raise Exception("Invalid _dt.datetime filter")
+
+    # ----------------------------------------------------------------------
+    @property
+    def renderer(self):
+        """
+        Get/Set the Renderer of the Map Feature Layer.
 
         .. note::
-            The JSON is submitted to the operation URL as a value of the
-            parameter service. You can leave out the serviceName and type parameters
-            in the JSON representation. Any other properties that are left out are not persisted by the server.
+            The ``renderer`` property overrides the default symbology when displaying it on a
+            :class:`~arcgis.map.Map`.
 
-        ===================     ====================================================================
-        **Parameter**            **Description**
-        -------------------     --------------------------------------------------------------------
-        service_dictionary      Required dict. The JSON representation of the service and the
-                                properties that have been updated or added.
+        :return:
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
-                                Example:
-
-                                    |    {
-                                    |        "serviceName": "RI_Fed2019_WM",
-                                    |        "type": "VectorTileServer",
-                                    |        "description": "",
-                                    |        "capabilities": "TilesOnly,Tilemap",
-                                    |        "extensions": [],
-                                    |        "frameworkProperties": {},
-                                    |        "datasets": []
-                                    |        }
-        ===================     ====================================================================
-
-
-        :return: boolean
         """
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.edit(service_dictionairy)
+        from arcgis._impl.common._isd import InsensitiveDict
+
+        if self._renderer is None and "drawingInfo" in self.properties:
+            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
+        return self._renderer
 
     # ----------------------------------------------------------------------
-    def start(self):
-        """This operation starts a service and loads the service's configuration."""
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.start()
+    @renderer.setter
+    def renderer(self, value):
+        """
+        Get/Set the Renderer of the Map Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+
+        :return:
+            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
+
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+
+        if isinstance(value, (dict, PropertyMap)):
+            self._renderer = InsensitiveDict(dict(value))
+        elif value is None:
+            self._renderer = None
+        elif not isinstance(value, InsensitiveDict):
+            raise ValueError("Invalid renderer type.")
+        self._refresh = value
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    @classmethod
+    def fromitem(cls, item: Item, layer_id: int = 0):
         """
-        This operation stops all instances of a service. Once a service is
-        stopped, it cannot process any incoming requests. Performing this
-        operation will stop the respective servers, terminating all pods
-        that run this service.
-        """
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.stop()
-
-    # ----------------------------------------------------------------------
-    def change_provider(self, provider: str):
-        """
-        The changeProvider operation updates an individual service to use
-        either a dedicated or a shared instance type. When a qualified service
-        is published, the service is automatically set to use shared instances.
-
-        When using this operation, services may populate other provider types
-        as values for the provider parameter, such as ArcObjects and SDS.
-        While these are valid provider types, this operation does not support
-        changing the provider of such services to either ArcObjects11 or DMaps.
-        Services with ArcObjects or SDS as their provider cannot change their instance type.
-
-        ======================      =======================================================
-        **Parameter**                **Description**
-        ----------------------      -------------------------------------------------------
-        provider                    Optional String. Specifies the service instance as either
-                                    a shared ("DMaps") or dedicated ("ArcObjects11") instance
-                                    type. These values are case sensitive.
-        ======================      =======================================================
-
-        :return: Boolean
-
-        """
-        if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _services.Service(self.url, self._gis)
-            return vtl_service.change_provider(provider)
-        return False
-
-    # ----------------------------------------------------------------------
-    def delete(self):
-        """
-        This operation deletes an individual service, stopping the service
-        and removing all associated resources and configurations.
-        """
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.delete()
-
-    # ----------------------------------------------------------------------
-    @property
-    def _tbx(self):
-        """gets the toolbox"""
-        if self._gptbx is None:
-            self._gptbx = import_toolbox(
-                url_or_item=self._gis.hosting_servers[0].url
-                + "/System/CachingControllers/GPServer",
-                gis=self._gis,
-            )
-            self._gptbx._is_fa = True
-        return self._gptbx
-
-    # ----------------------------------------------------------------------
-    def rebuild_cache(self, min_scale=None, max_scale=None):
-        """
-        The rebuild_cache operation updates the vector tile layer cache to reflect
-        any changes made.
-        The results of the operation is the url to the vector tile service once it is
-        done rebuilding.
-
-        ======================      =======================================================
-        **Parameter**                **Description**
-        ----------------------      -------------------------------------------------------
-        min_scale                   Optional Float. Represents the minimum scale of the tiles.
-                                    If nothing is provided, default value is used.
-        ----------------------      -------------------------------------------------------
-        max_scale                   Optional Float. Represents the maximum scale of the tiles.
-                                    If nothing is provided, default value is used.
-        ======================      =======================================================
-        """
-        return self._tbx.manage_vector_tile_cache(
-            service_name=self.properties.serviceName,
-            service_folder="Hosted",
-            min_scale=min_scale,
-            max_scale=max_scale,
-        )
+        The ``fromitem`` method creates a :class:`~arcgis.mapping_layers.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
 
 
-###########################################################################
-class VectorTileLayerManager(arcgis.gis._GISResource):
-    """
-    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
-    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
-    applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping_layers.VectorTileLayer` offers access to layer content.
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
+                                                 a :class:`~arcgis.mapping_layers.MapServiceLayer` object.
+        ------------------------------------     --------------------------------------------------------------------
+        layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
+                                                 The default is 0.
+        ====================================     ====================================================================
 
-    .. note::
-        Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
-    """
-
-    def __init__(self, url, gis=None, vect_tile_lyr=None):
-        if url.split("/")[-1].isdigit():
-            url = url.replace(f"/{url.split('/')[-1]}", "")
-        super(VectorTileLayerManager, self).__init__(url, gis)
-        self._vtl = vect_tile_lyr
-        self._source_type = (
-            self.properties["sourceType"]
-            if "sourceType" in self.properties
-            else self.properties["sourceServiceType"]
-        )
-
-    # ----------------------------------------------------------------------
-    def edit_tile_service(
-        self,
-        source_item_id: str | None = None,
-        export_tiles_allowed: bool | None = None,
-        min_scale: float | None = None,
-        max_scale: float | None = None,
-        max_export_tile_count: int | None = None,
-        layers: list[dict] | None = None,
-        cache_max_age: int | None = None,
-        max_zoom: int | None = None,
-    ) -> dict:
-        """
-        The edit operation enables editing many parameters in the service definition as well as
-        the source_item_id which can be found by looking at the Vector Tile Layer's related items.
-
-        ======================      =======================================================
-        **Parameter**                **Description**
-        ----------------------      -------------------------------------------------------
-        source_item_id              Optional String. The Source Item ID is the GeoWarehouse
-                                    Item ID of the tile service.
-        ----------------------      -------------------------------------------------------
-        export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
-                                    the value to let users export tiles
-        ----------------------      -------------------------------------------------------
-        min_scale                   Optional float. Sets the services minimum scale for
-                                    caching. At the moment this parameter can only be set if
-                                    the Vector Tile Layer was published through a service directory.
-        ----------------------      -------------------------------------------------------
-        max_scale                   Optional float. Sets the services maximum scale for
-                                    caching. At the moment this parameter can only be set if
-                                    the Vector Tile Layer was published through a service directory.
-        ----------------------      -------------------------------------------------------
-        max_export_tile_count       Optional int. ``max_export_tile_count`` sets the
-                                    maximum amount of tiles to be exported from a single
-                                    call.
-        ----------------------      -------------------------------------------------------
-        layers                      Optional list of dictionaries. Each dict representing a layer.
-
-                                    Syntax Example:
-
-                                        | layers = [{
-                                        |        "name": "Layer Name",
-                                        |        "id": 1159321,
-                                        |        "layerId": 0,
-                                        |        "tableName": "tableName",
-                                        |        "type": "Feature Layer",
-                                        |        "xssTrustedFields": ""
-                                        |    }]
-        ----------------------      -------------------------------------------------------
-        cache_max_age               Optional int. The maximum cache age. At the moment this
-                                    parameter can only be set if the Vector Tile Layer was
-                                    published through a feature service.
-        ----------------------      -------------------------------------------------------
-        max_zoom                    Optional int. The maximum zoom level. At the moment this
-                                    parameter can only be set if the Vector Tile Layer was
-                                    published through a feature service.
-        ======================      =======================================================
+        :return:
+            A :class:`~arcgis.mapping_layers.MapFeatureLayer` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping_layers import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the tile layer item
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> source_item_id = vector_tile_item.related_items(rel_type="Service2Data", direction="forward")[0]["id"]
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> vtl_manager.edit_tile_service(
-                                            min_scale = 50,
-                                            max_scale = 100,
-                                            source_item_id = source_item_id,
-                                            export_tiles_allowed = True,
-                                            max_Export_Tile_Count = 10000
-                                            )
-        """
-        # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type == "FeatureServer" else False
-
-        params = {
-            "f": "json",
-            "serviceDefinition": {},
-        }
-        if max_export_tile_count:
-            params["serviceDefinition"]["maxExportTilesCount"] = max_export_tile_count
-        if export_tiles_allowed and export_tiles_allowed in [True, False]:
-            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
-        if source_item_id:
-            params["sourceItemId"] = source_item_id
-        if layers:
-            params["serviceDefinition"]["layerProperties"] = {"layers": layers}
-
-        # These parameters depend on publish source.
-        if min_scale and feature_service_pub is False:
-            params["serviceDefinition"]["minScale"] = min_scale
-        if max_scale and feature_service_pub is False:
-            params["serviceDefinition"]["maxScale"] = max_scale
-        if cache_max_age and feature_service_pub is True:
-            params["serviceDefinition"]["cacheMaxAge"] = cache_max_age
-        if max_zoom and feature_service_pub is False:
-            params["serviceDefinition"]["maxZoom"] = max_zoom
-
-        # endpoint and post call
-        url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def update_tiles(self, merge_bundle: bool = False) -> dict:
-        """
-        The update_tiles operation supports updating the cooking extent and
-        cache levels in a Hosted Vector Tile Service. The results of the
-        operation is a response indicating success and a url
-        to the Job Statistics page, or failure.
-
-        It is recommended to use the `rebuild_cache` method when your layer has been
-        published through a Feature Layer since edits require regeneration of the tiles.
-
-        ===============     ====================================================
-        **Parameter**        **Description**
-        ---------------     ----------------------------------------------------
-        merge_bundle        Optional bool. Default is False. This parameter will
-                            only be set if the Vector Tile Layer has been published
-                            through a service directory.
-        ===============     ====================================================
-
-        :returns:
-           Dictionary. If the product is not ArcGIS Online tile service, the
-           result will be None.
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping_layers import VectorTileLayer
+            >>> from arcgis.mapping_layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> update_tiles = vtl_manager.update_tiles()
-            >>> type(update_tiles)
-            <Dictionary>
-        """
-        # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type == "FeatureServer" else False
 
-        params = {"f": "json"}
-        if feature_service_pub:
-            url = "%s/updateTiles" % self._url
-        else:
-            url = "%s/update" % self._url
-            params["mergeBundles"] = merge_bundle
-        return self._con.post(url, params)
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> print(f"{map_feature_layer.properties.name:30}{type(map_feature_layer)}")
+            <State Boundaries              <class 'arcgis.mapping_layers._msl.layer.MapFeatureLayer'>>
+
+        """
+        from arcgis.layers import MapImageLayer
+
+        return MapImageLayer.fromitem(item).layers[layer_id]
 
     # ----------------------------------------------------------------------
-    def refresh(self):
+    @property
+    def container(self):
         """
-        The refresh operation clears and refreshes the service cache.
+        The ``container`` property represents the :class:`~arcgis.mapping_layers.MapImageLayer` to which this layer belongs.
         """
-        url = self._url + "/refresh"
-        params = {"f": "json"}
-        return self._con.post(path=url, params=params)
+        if self._storage is None:
+            self._storage = MapImageLayer(
+                url=self._url.rstrip(digits)[:-1], gis=self._gis
+            )
+        return self._storage
 
     # ----------------------------------------------------------------------
-    def rebuild_cache(self):
+    def export_attachments(self, output_folder: str, label_field: Optional[str] = None):
         """
-        The rebuild_cache operation update the vector tile layer cache to reflect
-        any changes made to the feature layer used to publish this vector tile layer.
-        The results of the operation is a response indicating success, which
-        redirects you to the Job Statistics page, or failure.
-        """
-        url = self._url + "/rebuildCache"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        The ``export_attachments`` method exports attachments from the map feature layer in ``Imagenet`` format using
+        the ``output_label_field``.
 
-    # ----------------------------------------------------------------------
-    def status(self) -> dict:
-        """
-        The status operation returns a dictionary indicating
-        whether a service is started (available) or stopped.
-        """
-        url = self._url + "/status"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    def jobs(self) -> dict:
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        url = self._url + "/jobs"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    def job_statistics(self, job_id: str) -> dict:
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        url = self._url + "/jobs/{job_id}".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def delete_job(self, job_id: str) -> dict:
-        """
-        This operation deletes the specified asynchronous job being run by
-        the geoprocessing service. If the current status of the job is
-        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
-        it will remove all information about the job from the system. To cancel a
-        job in progress without removing information, use the Cancel Job operation.
-        """
-        url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def cancel_job(self, job_id: str) -> dict:
-        """
-        The cancel operation supports cancelling a job while update
-        tiles is running from a hosted feature service. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
-        """
-        url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id: str) -> dict:
-        """
-        The ``rerun_job`` operation supports re-running a canceled job from a
-        hosted map service. The result of this operation is a response
-        indicating success or failure with error code and description.
-
-        ===============     ====================================================
-        **Parameter**        **Description**
-        ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
-                            jobs with a specific error
-                            code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
-        ===============     ====================================================
-
-        :returns:
-           A boolean or dictionary
-        """
-        url = self._url + "/jobs/%s/rerun" % job_id
-        params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
-
-    ######################### These Methods Only Apply to VTL Service from a Service Directory #################################
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only and can only be used for a Vector
-            Tile Layer published from a service directory.
-
-        ====================        ====================================================
-        **Parameter**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
-
-        :return: Dictionary indicating success or error
-        """
-        if self._source_type != "FeatureServer":
-            url = self._url + "/swap"
-            params = {"f": "json", "targetServiceName": target_service_name}
-            return self._con.post(url, params)
-        return None
-
-    # ----------------------------------------------------------------------
-    def delete_tiles(self):
-        """
-        The ``delete_tiles`` method deletes tiles from the current cache.
-
-        .. note::
-            The ``delete_tiles`` operation is for ArcGIS Online only and can only
-            be used for a Vector Tile Layer published from a service directory.
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        output_folder                            Required String. Output folder path where the attachments will be stored.
+        ------------------------------------     --------------------------------------------------------------------
+        label_field                              Optional. Field which contains the label/category of each feature.
+                                                 If None, a default folder is created.
+        ====================================     ====================================================================
 
         :return:
-           A dictionary
+            A path to the exported attachments
+        """
+        import pandas
+        import urllib
+        import hashlib
+
+        if not self.properties["hasAttachments"]:
+            raise Exception("Map Feature Layer doesn't have any attachments.")
+
+        if not os.path.exists(output_folder):
+            raise Exception("Invalid output folder path.")
+
+        object_attachments_mapping = {}
+
+        object_id_field = self.properties["objectIdField"]
+
+        dataframe_merged = pandas.merge(
+            self.query().sdf,
+            self._attachments.search(as_df=True),
+            left_on=object_id_field,
+            right_on="PARENTOBJECTID",
+        )
+
+        token = self._con.token
+
+        internal_folder = os.path.join(output_folder, "images")
+        if not os.path.exists(internal_folder):
+            os.mkdir(internal_folder)
+
+        folder = "images"
+        for row in dataframe_merged.iterrows():
+            if label_field is not None:
+                folder = row[1][label_field]
+
+            path = os.path.join(internal_folder, folder)
+
+            if not os.path.exists(path):
+                os.mkdir(path)
+
+            if token is not None:
+                url = "{}/{}/attachments/{}?token={}".format(
+                    self.url,
+                    row[1][object_id_field],
+                    row[1]["ID"],
+                    self._con.token,
+                )
+            else:
+                url = "{}/{}/attachments/{}".format(
+                    self.url, row[1][object_id_field], row[1]["ID"]
+                )
+
+            if not object_attachments_mapping.get(row[1][object_id_field]):
+                object_attachments_mapping[row[1][object_id_field]] = []
+
+            content = urllib.request.urlopen(url).read()
+
+            md5_hash = hashlib.md5(content).hexdigest()
+            attachment_path = os.path.join(path, f"{md5_hash}.jpg")
+
+            object_attachments_mapping[row[1][object_id_field]].append(
+                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
+            )
+
+            if os.path.exists(attachment_path):
+                continue
+            file = open(attachment_path, "wb")
+            file.write(content)
+            file.close()
+
+        mapping_path = os.path.join(output_folder, "mapping.txt")
+        file = open(mapping_path, "w")
+        file.write(json.dumps(object_attachments_mapping))
+        file.close()
+
+    # ----------------------------------------------------------------------
+    def generate_renderer(
+        self, definition: dict[str, Any], where: Optional[str] = None
+    ):
+        """
+        The ``generate_renderer`` operation groups data using the supplied definition
+        (classification definition) and an optional where clause. The
+        result is a renderer object. Use ``baseSymbol`` and ``colorRamp`` to define
+        the symbols assigned to each class.
+
+        .. note::
+            If the operation is performed
+            on a table, the result is a renderer object containing the data
+            classes and no symbols.
+
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        definition            Required dict. The definition using the renderer that is generated.
+                              Use either class breaks or unique value classification definitions.
+                              See the
+                              `classification definitions <https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html>`_
+                              page in the ArcGIS REST API documentation for more information.
+        -----------------     --------------------------------------------------------------------
+        where                 Optional string. A where clause for which the data needs to be
+                              classified. Any legal SQL where clause operating on the fields in
+                              the dynamic layer/table is allowed.
+        =================     ====================================================================
+
+        :return: dictionary
+
+        """
+        if self._dynamic_layer:
+            url = "%s/generateRenderer" % self._url.split("?")[0]
+        else:
+            url = "%s/generateRenderer" % self._url
+        params = {"f": "json", "classificationDef": definition}
+        if where:
+            params["where"] = where
+        if self._dynamic_layer is not None:
+            params["layer"] = self._dynamic_layer
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def _add_attachment(self, oid, file_path):
+        """
+        Adds an attachment to a feature service
+
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        file_path             Required string. Location of the file to attach.
+        =================     ====================================================================
+
+        :return: dictionary
+
+        """
+        if (os.path.getsize(file_path) >> 20) <= 9:
+            params = {"f": "json"}
+            if self._dynamic_layer:
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            files = {"attachment": file_path}
+            res = self._con.post(
+                path=attach_url,
+                postdata=params,
+                files=files,
+                token=self._token,
+            )
+            return res
+        else:
+            params = {"f": "json"}
+            container = self.container
+            itemid = container.upload(file_path)
+            if self._dynamic_layer:
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            params["uploadId"] = itemid
+            res = self._con.post(attach_url, params)
+            if res["addAttachmentResult"]["success"] == True:
+                container._delete_upload(itemid)
+            return res
+
+    # ----------------------------------------------------------------------
+    def _delete_attachment(self, oid, attachment_id):
+        """
+        Removes an attachment from a feature service feature
+
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        attachment_id         Required integer. Id of the attachment to erase.
+        =================     ====================================================================
+
+        :return: dictionary
+        """
+        params = {"f": "json", "attachmentIds": "%s" % attachment_id}
+        if self._dynamic_layer:
+            url = self._url.split("?")[0] + "/%s/deleteAttachments" % oid
+            params["layer"] = self._dynamic_layer
+        else:
+            url = self._url + "/%s/deleteAttachments" % oid
+        return self._con.post(url, params, token=self._token)
+
+    # ----------------------------------------------------------------------
+    def _update_attachment(self, oid, attachment_id, file_path):
+        """
+        Updates an existing attachment with a new file
+
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        attachment_id         Required integer. Id of the attachment to erase.
+        -----------------     --------------------------------------------------------------------
+        file_path             Required string. Path to new attachment
+        =================     ====================================================================
+
+        :return: dictionary
+
+        """
+        params = {"f": "json", "attachmentId": "%s" % attachment_id}
+        files = {"attachment": file_path}
+        if self._dynamic_layer is not None:
+            url = self.url.split("?")[0] + f"/{oid}/updateAttachment"
+            params["layer"] = self._dynamic_layer
+        else:
+            url = self._url + f"/{oid}/updateAttachment"
+        res = self._con.post(path=url, postdata=params, files=files, token=self._token)
+        return res
+
+    # ----------------------------------------------------------------------
+    def _list_attachments(self, oid):
+        """list attachments for a given OBJECT ID"""
+
+        params = {"f": "json"}
+        if self._dynamic_layer is not None:
+            url = self.url.split("?")[0] + "/%s/attachments" % oid
+            params["layer"] = self._dynamic_layer
+        else:
+            url = self._url + "/%s/attachments" % oid
+        return self._con.get(path=url, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
+    def get_unique_values(self, attribute: str, query_string: str = "1=1"):
+        """
+        The ``get_unique_values`` method retrieves a list of unique values for a given attribute.
+
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        attribute                           Required string. The map feature layer attribute to query.
+        -------------------------------     --------------------------------------------------------------------
+        query_string                        Optional string. SQL Query that will be used to filter attributes
+                                            before unique values are returned.
+        ===============================     ====================================================================
+
+        :return:
+            A List
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping_layers import VectorTileLayer
+            >>> from arcgis.mapping_layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
-            # connect to your GIS
+            # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
 
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> deleted_tiles = vtl_manager.delete_tiles()
-            >>> type(deleted_tiles)
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> unique_values = map_feature_layer.get_unique_values(attribute ="Name",
+                                                    query_string ="name_2 like '%K%'")
+            >>> type(unique_values)
+            <List>
         """
-        if self._source_type != "FeatureServer":
-            params = {
-                "f": "json",
-            }
-            url = self._url + "/delete"
-            return self._con.post(url, params)
-        return None
 
+        result = self.query(
+            query_string,
+            return_geometry=False,
+            out_fields=attribute,
+            return_distinct_values=True,
+        )
+        return [feature.attributes[attribute] for feature in result.features]
 
-###########################################################################
-class SymbolService:
-    """
-    Symbol service is an ArcGIS Server utility service that provides access
-    to operations to build and generate images for Esri symbols to be
-    consumed by internal and external web applications.
-    """
-
-    _url = None
-    _gis = None
-    _properties = None
-
-    def __init__(self, url: str, gis: arcgis.gis.GIS = None):
-        self._url = url
-        if gis is None:
-            gis = arcgis.env.active_gis
-        self._gis = gis
-
-    @property
-    def properties(self) -> dict[str, Any]:
-        """returns the service's properties"""
-        if self._properties is None:
-            self._properties = arcgis._impl.common._isd.InsensitiveDict(
-                self._gis._con.get(self._url, {"f": "json"})
-            )
-        return self._properties
-
-    def generate_symbol(self, svg: str) -> dict:
-        """converts an SVG Image to a CIM Compatible Image"""
-        url = f"{self._url}/generateSymbol"
-        params = {"f": "json"}
-        files = {"svgImage": svg}
-        return self._gis._con.post_multipart(url, params, files=files)
-
-    def generate_image(
+    # ----------------------------------------------------------------------
+    def query(
         self,
-        item: Item,
-        name: str | None = None,
-        dict_features: dict[str, Any] | None = None,
-        size: str = "200,200",
-        scale: float = 1,
-        anchor: bool = False,
-        image_format: str = "png",
-        dpi: int = 96,
-        file_path: str | pathlib.Path = None,
-    ) -> str:
+        where: str = "1=1",
+        text: Optional[str] = None,  # new
+        out_fields: Union[str, list[str]] = "*",
+        time_filter: Optional[
+            Union[list[int], list[_dt.datetime], dict[str, _dt.datetime]]
+        ] = None,
+        geometry_filter: Optional[GeometryFilter] = None,
+        return_geometry: bool = True,
+        return_count_only: bool = False,
+        return_ids_only: bool = False,
+        return_distinct_values: bool = False,
+        return_extent_only: bool = False,
+        group_by_fields_for_statistics: Optional[str] = None,
+        statistic_filter: Optional[StatisticFilter] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        object_ids: Optional[str] = None,
+        distance: Optional[int] = None,
+        units: Optional[str] = None,
+        max_allowable_offset: Optional[float] = None,
+        out_sr: Optional[int] = None,
+        geometry_precision: Optional[int] = None,
+        gdb_version: Optional[str] = None,
+        order_by_fields: Optional[str] = None,
+        out_statistics: Optional[list[dict[str, Any]]] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        multipatch_option=None,
+        quantization_parameters: Optional[dict[str, Any]] = None,
+        return_centroid: bool = False,
+        return_all_records: bool = True,
+        result_type: Optional[str] = None,
+        historic_moment: Optional[Union[int, _dt.datetime]] = None,
+        sql_format: Optional[str] = None,
+        return_true_curves: bool = False,
+        return_exceeded_limit_features: Optional[bool] = None,
+        as_df: bool = False,
+        datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
+        range_values: Optional[dict[str, Any]] = None,
+        parameter_values: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ):
         """
-        Returns a single symbol based on a web style item.
+        The ``query`` method queries a map feature layer based on a sql statement.
 
-        ============================    ===================================================================================================================
-        **Parameter**                    **Description**
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        item                            Required Item. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
-                                        the ArcGIS Server is federated to.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        name                            Optional String. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
-                                        the ArcGIS Server is federated to.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        dict_features                   Optional dict[str, Any]. The attributes and configuration key and value pairs for dictionary-based styles.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        size                            Optional String. The size (width and height) of the exported image in pixels. If the size is not specified, the
-                                        image will be constrained by the requested symbol's size.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        scale                           Optional Float. A value of 1.0 implies the symbol is not scaled. Setting the value to 1.5 scales the image to 50
-                                        percent more than the image's original size. Settings the value to 0.5 reduces the image's original size by 50
-                                        percent.
-                                        If both the size and scale parameters are specified, both changes will be honored; the symbol will be scaled to the
-                                        value set for scale and resized to the value set for the size parameter.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        anchor                          Optional Bool. The symbol placement in the image. When set to true, the original symbol anchor point placement in
-                                        the image is honored. When set to false, the symbol is centered to the image. Having the image centered can be
-                                        useful if you want to preview the whole symbol without taking symbol offset or anchor points into account. The
-                                        default value is false.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        image_format                    Optional String. The output image format. The default format is png. The allowed values are: png, png8, png24,
-                                        png32, jpg, bmp, gif, svg, and svgz.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        dpi                             Optional Int. The device resolution of the exported image (dots per inch). If the dpi value is not specified, an
-                                        image with a default DPI of 96 will be exported.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        file_path                       Optional String | pathlib.Path. The full save path with the file name to the save location.  The folder must exist.
-        ============================    ===================================================================================================================
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        text                                Optional String. A literal search text. If the layer has a display
+                                            field associated with it, the server searches for this text in this
+                                            field.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values should be a comma-separated string.
+        -------------------------------     --------------------------------------------------------------------
+        distance                            Optional integer. The buffer distance for the input geometries.
+                                            The distance unit is specified by units. For example, if the
+                                            distance is 100, the query geometry is a point, units is set to
+                                            meters, and all points within 100 meters of the point are returned.
+        -------------------------------     --------------------------------------------------------------------
+        units                               Optional string. The unit for calculating the buffer distance. If
+                                            unit is not specified, the unit is derived from the geometry spatial
+                                            reference. If the geometry spatial reference is not specified, the
+                                            unit is derived from the feature service data spatial reference.
+                                            This parameter only applies if `supportsQueryWithDistance` is
+                                            `true`.
 
-        :return: String
+                                            Value options:
+                                                    ``esriSRUnit_Meter`` | ``esriSRUnit_StatuteMile`` |
+                                                    ``esriSRUnit_Foot`` | ``esriSRUnit_Kilometer`` |
+                                                    ``esriSRUnit_NauticalMile`` | ``esriSRUnit_USNauticalMile``
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list of `startTime` and `endTime` values.
+                                            :Syntax:
 
+                                            .. code-block:: python
+
+                                                >>> time_filter=[<startTime>, <endTime>]
+
+                                            .. note::
+                                                Specified as ``_dt.datetime.date``, ``_dt.datetime._dt.datetime`` or
+                                                ``timestamp`` in milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional :class:`filter <arcgis.geometry.filters>` object. Allows for
+                                            the information to be filtered on spatial relationship with another
+                                            geometry.
+        -------------------------------     --------------------------------------------------------------------
+        max_allowable_offset                Optional float. This option can be used to specify the
+                                            `max_allowable_offset` to be used for generalizing geometries
+                                            returned by the query operation in the units of `out_sr`. If
+                                            `out_sr`  is not specified, the value is in units of the spatial
+                                            reference of the layer.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer. The WKID for the spatial reference of the returned
+                                            geometry.
+        -------------------------------     --------------------------------------------------------------------
+        geometry_precision                  Optional Integer. This option can be used to specify the number of
+                                            decimal places in the response geometries returned by the query
+                                            operation.
+                                            This applies to X and Y values only (not m or z-values).
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the `isDataVersioned` property of the layer is true.
+                                            If not specified, the query will apply to the published map's
+                                            version.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If `true`, geometry is returned with the query.
+                                            Default is `true`.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If `True`, it returns distinct values based on
+                                            fields specified in `out_fields`. This parameter applies only if the
+                                            `supportsAdvancedQueries` property of the layer is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_ids_only                     Optional boolean. Default is `False`.  If `True`, the response only
+                                            includes an array of object IDs. Otherwise, the response is a
+                                            :class:`~arcgis.features.FeatureSet`.
+        -------------------------------     --------------------------------------------------------------------
+        return_count_only                   Optional boolean. If `True`, the response only includes the count
+                                            of features/records satisfying the query. Otherwise, the response is
+                                            a :class:`~arcgis.features.FeatureSet`. The default is `False`. This
+                                            option supersedes the `returns_ids_only` parameter. If
+                                            ``returnCountOnly = True`` , the response will return both the count
+                                            and the extent.
+        -------------------------------     --------------------------------------------------------------------
+        return_extent_only                  Optional boolean. If `True`, the response only includes the extent
+                                            of the features satisying the query. If `returnCountOnly=true`, the
+                                            response will return both the count and the extent. The default is
+                                            `False`. This parameter applies only if the
+                                            `supportsReturningQueryExtent` property of the layer is `true`.
+        -------------------------------     --------------------------------------------------------------------
+        order_by_fields                     Optional string. One or more field names by which to order the
+                                            results. Use ``ASC`` or ``DESC`` for ascending
+                                            or descending, respectively, following every field to be ordered:
+
+                                            .. code-block:: python
+
+                                                >>> order_by_fields = "STATE_NAME ASC, RACE DESC, GENDER ASC"
+
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which to group results
+                                            for calculating the statistics.
+
+                                            .. code-block:: python
+
+                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional List. The definitions for one or more field-based
+                                            statistics to be calculated.
+
+                                            :Syntax:
+
+                                            .. code-block:: python
+
+                                                >>> out_statistics = [
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field1",
+                                                                          "outStatisticFieldName": "Out_Field_Name1"
+                                                                        },
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field2",
+                                                                          "outStatisticFieldName": "Out_Field_Name2"
+                                                                        }
+                                                                     ]
+        -------------------------------     --------------------------------------------------------------------
+        return_z                            Optional boolean. If `True`, Z values are included in the results if
+                                            the features have Z values. Otherwise, Z values are not returned.
+                                            The default is `False`.
+        -------------------------------     --------------------------------------------------------------------
+        return_m                            Optional boolean. If `True`, M values are included in the results if
+                                            the features have M values. Otherwise, M values are not returned.
+                                            The default is `False`.
+        -------------------------------     --------------------------------------------------------------------
+        multipatch_option                   Optional x/y footprint. This option dictates how the geometry of
+                                            a multipatch feature will be returned.
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, `resultOffset + ith` value). This option is
+                                            ignored if `return_all_records` is `True` (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the `result_record_count` specified. When `result_offset` is
+                                            specified but this parameter is not, the map service defaults it to
+                                            `max_record_count`. The maximum value for this parameter is the value
+                                            of the layer's `maxRecordCount` property. This option is ignored if
+                                            `return_all_records` is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
+                                            likely representing pixels on the screen.
+        -------------------------------     --------------------------------------------------------------------
+        return_centroid                     Optional boolean. Used to return the geometry centroid associated
+                                            with each feature returned. If `True`, the result includes the
+                                            geometry centroid. The default is `False`.
+        -------------------------------     --------------------------------------------------------------------
+        return_all_records                  Optional boolean. When `True`, the query operation will call the
+                                            service until all records that satisfy the `where_clause` are
+                                            returned.
+
+                                            .. note::
+                                                `result_offset` and `result_record_count` will be
+                                                ignored if set to `True`. If `return_count_only`, `return_ids_only`,
+                                                or `return_extent_only` are `True`, this parameter is ignored.
+        -------------------------------     --------------------------------------------------------------------
+        result_type                         Optional string. Controls the number of features returned by the
+                                            operation.
+                                            Options: ``None`` | ``standard`` | ``tile``
+
+                                            .. note::
+                                                See `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_
+                                                for full explanation.
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            `supportsQueryWithHistoricMoment` property is set to `true`. This
+                                            property is provided in the layer's
+                                            :attr:`~arcgis.features.FeatureLayer.properties` resource. If
+                                            not specified, the query will apply to the current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The `sql_format` parameter can be either standard
+                                            SQL92 or it can use the native SQL of the underlying
+                                            datastore. The default is `None`, which means it depends on the
+                                            `useStandardizedQuery` layer property.
+                                            Values: ``None`` | ``standard`` | ``native``
+        -------------------------------     --------------------------------------------------------------------
+        return_true_curves                  Optional boolean. When set to `True`, returns true curves in output
+                                            geometries. When set to `False`, curves are converted to densified
+                                            polylines or polygons.
+        -------------------------------     --------------------------------------------------------------------
+        return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
+                                            set to true, features are returned even when the results include
+                                            the `exceededTransferLimit: True` property.
+
+                                            When set to `False` and querying with `resultType = tile`, features
+                                            are not returned when the results include
+                                            `exceededTransferLimit: True`. This allows a client to find the
+                                            resolution in which the transfer limit is no longer exceeded without
+                                            making multiple calls.
+        -------------------------------     --------------------------------------------------------------------
+        as_df                               Optional boolean.  If `True`, the results are returned as a
+                                            `DataFrame` instead of a :class:`~arcgis.features.FeatureSet`.
+        -------------------------------     --------------------------------------------------------------------
+        datum_transformation                Optional Integer/Dictionary.  This parameter applies a datum transformation while
+                                            projecting geometries in the results when out_sr is different than the layer's spatial
+                                            reference. When specifying transformations, you need to think about which datum
+                                            transformation best projects the layer (not the feature service) to the `outSR` and
+                                            `sourceSpatialReference` property in the layer properties. For a list of valid datum
+                                            transformation ID values ad well-known text strings, see `Coordinate systems and
+                                            transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
+                                            For more information on datum transformations, please see the transformation
+                                            parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+
+                                            Example:
+
+
+                                            ===========     ===================================
+                                            Inputs          Description
+                                            -----------     -----------------------------------
+                                            WKID            Integer.
+
+                                                            .. code-block:: python
+
+                                                                >>> datum_transformation=4326
+
+                                            -----------     -----------------------------------
+                                            WKT             Dict.
+
+                                                            .. code-block:: python
+
+                                                                >>> datum_transformation = {"wkt": "<WKT>"}
+
+                                            -----------     -----------------------------------
+                                            Composite       Dict.
+
+                                                            .. code-block:: python
+
+                                                                >>> datum_transformation = {"geoTransforms" : [
+                                                                                                               {"wkid" : "<id>",
+                                                                                                                "forward" : True | False},
+                                                                                                               {"wkt" : "WKT",
+                                                                                                                "forward" : True: False}
+                                                                                                              ]
+                                                                                           }
+
+                                            ===========     ===================================
+        -------------------------------     --------------------------------------------------------------------
+        range_values                        Optional List. Allows you to filter features from the layer that are
+                                            within the specified range instant or extent.
+
+                                            .. code-block:: python
+
+                                                >>> range_values = [
+                                                                    {
+                                                                     "name": "range name" ,
+                                                                     # single value or a value-range
+                                                                     "value": <value> or [ <value1>, <value2> ]
+
+                                                                    },
+                                                                    {
+                                                                     "name": "range name 2",
+                                                                     "value": <value> or  [ <value3>, <value4> ]
+                                                                    }
+                                                                   ]
+
+
+                                            .. note::
+
+                                                `None` is allowed in value-range case to indicate infinity
+
+                                                .. code-block:: python
+
+                                                    # all features with values <= 1500
+                                                    >>> range_values = [
+                                                                        {"name" : "range name",
+                                                                         "value" : [None, 1500]}
+                                                                       ]
+
+                                                    # all features with values >= 1000
+                                                    >>> range_values = [
+                                                                        {"name" : "range name",
+                                                                         "value" : [1000, None]}
+                                                                       ]
+
+        -------------------------------     --------------------------------------------------------------------
+        parameter_values                    Optional Dict. Allows you to filter the layers by specifying
+                                            value(s) to an array of pre-authored parameterized filters for those
+                                            layers. When value is not specified for any parameter in a request,
+                                            the default value, that is assigned during authoring time, gets used
+                                            instead.
+
+                                            When a `parameterInfo` allows multiple values, you must pass them in
+                                            an array.
+
+                                            .. note::
+                                                Check `parameterValues` at the `Query (Map Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer-.htm#GUID-403AC0F3-4B48-45BD-B473-E52E790FD296>`_
+                                                for details on parameterized filters.
+        -------------------------------     --------------------------------------------------------------------
+        kwargs                              Optional dict. Optional parameters that can be passed to the Query
+                                            function.  This will allow users to pass additional parameters not
+                                            explicitly implemented on the function. A complete list of functions
+                                            available is documented  at `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_.
+        ===============================     ====================================================================
+
+        :return: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
+        return type is specified, such as ``count``.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping_layers import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> query_count = map_feature_layer.query(where "1=1",
+                                        text = "Hurricane Data",
+                                        units = "esriSRUnit_Meter",
+                                        return_count_only = True,
+                                        out_statistics = [
+                                                            {
+                                                            "statisticType": "count",
+                                                            "onStatisticField": "Field1",
+                                                            "outStatisticFieldName": "Out_Field_Name1"
+                                                            },
+                                                            {
+                                                            "statisticType": "avg",
+                                                            "onStatisticField": "Field2",
+                                                            "outStatisticFieldName": "Out_Field_Name2"
+                                                            }
+                                                        ],
+                                        range_values= [
+                                                {
+                                                  "name": "range name",
+                                                  "value": [None, 1500]
+                                                  },
+                                                  {
+                                                    "name": "range name 2",
+                                                    "value":[1000, None]
+                                                  }
+                                                }
+                                            ]
+                                        )
+            >>> query_count
+            <149>
         """
-        save_file_name: str = None
-        save_folder: str = None
-        if file_path:
-            save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
-                file_path
-            )
-        else:
-            save_folder, save_file_name = (
-                tempfile.gettempdir(),
-                f"symbol_file.{image_format}",
-            )
-        if name is None and dict_features is None:
-            raise ValueError("A name or dict_features must be provided.")
-        image_formats: list[str] = [
-            "png",
-            "png8",
-            "png24",
-            "png32",
-            "jpg",
-            "bmp",
-            "gif",
-            "svg",
-            "svgz",
-        ]
-        if image_format.lower() not in image_formats:
-            raise ValueError(f"Invalid image format: {image_format}")
-        params: dict[str, Any] = {
-            "webstyle": item.itemid,
-            "symbolName": name or "",
-            "dictionaryFeatures": dict_features or "",
-            "size": size,
-            "scaleFactor": scale,
-            "centerAnchorPoint": anchor,
-            "dpi": dpi,
-            "f": "image",
-            "imageFormat": image_format,
-        }
-        url: str = f"{self._url}/generateImage"
-        return self._gis._con.get(
-            url,
-            params,
-            try_json=False,
-            file_name=save_file_name,
-            out_folder=save_folder,
+        return _query._common_query(
+            layer=self,
+            as_df=as_df,
+            is_layer=True,
+            where=where,
+            text=text,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_geometry=return_geometry,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            return_extent_only=return_extent_only,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            max_allowable_offset=max_allowable_offset,
+            out_sr=out_sr,
+            geometry_precision=geometry_precision,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_z=return_z,
+            return_m=return_m,
+            multipatch_option=multipatch_option,
+            quantization_parameters=quantization_parameters,
+            return_centroid=return_centroid,
+            return_all_records=return_all_records,
+            result_type=result_type,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_true_curves=return_true_curves,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            datum_transformation=datum_transformation,
+            range_values=range_values,
+            parameter_values=parameter_values,
+            **kwargs,
         )
 
-
-###########################################################################
-class VectorTileLayer(arcgis.gis.Layer):
-    """
-    A Vector Tile Layer is a type of data layer used to access and display
-    tiled data and its corresponding styles. This is stored as an item in ArcGIS
-    and is used to access a vector tile service. Layer data include its
-    name, description, and any overriding style definition.
-    """
-
-    def __init__(self, url, gis=None):
-        super(VectorTileLayer, self).__init__(url, gis)
-
     # ----------------------------------------------------------------------
-    @classmethod
-    def fromitem(cls, item) -> VectorTileLayer:
-        if not item.type == "Vector Tile Service":
-            raise TypeError(
-                "Item must be a type of Vector Tile Service, not " + item.type
-            )
-
-        return cls(item.url, item._gis)
-
-    # ----------------------------------------------------------------------
-    @property
-    def styles(self) -> dict:
+    def query_related_records(
+        self,
+        object_ids: str,
+        relationship_id: str,
+        out_fields: Union[str, list[str]] = "*",
+        definition_expression: Optional[str] = None,
+        return_geometry: bool = True,
+        max_allowable_offset: Optional[float] = None,
+        geometry_precision: Optional[int] = None,
+        out_wkid: Optional[int] = None,
+        gdb_version: Optional[str] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        historic_moment: Optional[Union[int, _dt.datetime]] = None,
+        return_true_curve: bool = False,
+    ):
         """
-        The styles property returns styles for vector tiles in Mapbox GL
-        Style specification version 8. The response for this styles resource
-        includes the sprite and glyphs properties, with a relative path
-        to the Vector Tile Sprite and Vector Tile Font resources.
-        It also includes the version property,
-        which represents the version of the style specification.
-        """
-        url = "{url}/resources/styles".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def tile_map(self) -> dict:
-        """
-        The tile_map property describes a quadtree of tiles and can be used to
-        avoid requesting tiles that don't exist in the server. Each node
-        of the tree has an associated tile. The root node (lod 0) covers
-        the entire extent of the data. Children are identified by their position
-        with NW, NE, SW, and SE. Tiles are identified by lod/h/v, where h and v
-        are indexes on a 2^lod by 2^lod grid . These values are derived from the
-        position in the tree. The tree has a variable depth. A node doesn't have
-        children if the complexity of the data in the associated tile is below
-        a threshold. This threshold is based on a combination of number of
-        features, attributes, and vertices.
-
-        """
-        url = "{url}/tilemap".format(url=self._url)
-        return self._con.get(path=url, params={})
-
-    # ----------------------------------------------------------------------
-    @property
-    def manager(self) -> VectorTileLayerManager:
-        """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping_layers.VectorTileLayerManager` class or
-        :class:`~arcgis.mapping_layers.EnterpriseVectorTileLayerManager` class
-        which provides methods and properties for administering this service.
-        """
-        if self._gis._portal.is_arcgisonline:
-            rd = {"/rest/services/": "/rest/admin/services/"}
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = VectorTileLayerManager(adminURL, self._gis, self)
-        else:
-            rd = {
-                "/rest/": "/admin/",
-                "/VectorTileServer": ".VectorTileServer",
-            }
-            adminURL = self._str_replace(self._url, rd)
-            if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
-            self._admin = EnterpriseVectorTileLayerManager(adminURL, self._gis, self)
-        return self._admin
-
-    # ----------------------------------------------------------------------
-    @property
-    def info(self) -> list:
-        """
-        The ``info`` property retrieves the relative paths to a list of resource files.
-
-        :return:
-           A list of relative paths
-        """
-        url = "{url}/resources/info".format(url=self._url)
-        params = {"f": "json"}
-        res = self._con.get(path=url, params=params)
-        return res["resourceInfo"]
-
-    # ----------------------------------------------------------------------
-    def tile_fonts(self, fontstack: str, stack_range: str):
-        """
-        The ``tile_fonts`` method retrieves glyphs in
-        `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
-
-        ============================    ===================================================================================================================
-        **Parameter**                    **Description**
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        fontstack                       Required string.
-
-                                        .. note::
-                                            The template url for this font resource is represented in the
-                                            `Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>`_
-                                            resource.
-        ----------------------------    -------------------------------------------------------------------------------------------------------------------
-        stack_range                     Required string that depict a range. Ex: "0-255"
-        ============================    ===================================================================================================================
-
-        :return:
-            Glyphs in PBF format
-        """
-        url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
-            url=self._url, fontstack=fontstack, stack_range=stack_range
-        )
-        params = {}
-        return self._con.get(path=url, params=params, force_bytes=True)
-
-    # ----------------------------------------------------------------------
-    def vector_tile(self, level: int, row: int, column: int):
-        """
-        The ``vector_tile`` method represents a single vector tile for the map.
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.mapping_layers.MapFeatureLayer`
+        resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
+        by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
+        :class:`~arcgis.features.Feature` objects including the values for the fields requested by
+        the user.
 
         .. note::
-            The bytes for the tile at the specified level, row and column are
-            returned in PBF format. If a tile is not found, an error is returned.
+            For related layers, if you request geometry
+            information, the geometry of each feature is also returned in
+            the feature set. For related tables, the feature set does not
+            include geometries.
 
-        ============================    ================================================
-        **Parameter**                    **Description**
-        ----------------------------    ------------------------------------------------
-        level                           Required string. A level number as a string.
-        ----------------------------    ------------------------------------------------
-        row                             Required string. Number of the row that the tile
-                                        belongs to.
-        ----------------------------    ------------------------------------------------
-        column                          Required string. Number of the column that tile
-                                        belongs to.
-        ============================    ================================================
+        .. note::
+            See the :attr:`~arcgis.mapping_layers.MapFeatureLayer.query` method for more information.
 
-        :returns:
-            Bytes in PBF format
+
+        ======================     ====================================================================
+        **Parameter**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        object_ids                 Required string. The object IDs of the table/layer to be queried
+        ----------------------     --------------------------------------------------------------------
+        relationship_id            Required string. The ID of the relationship to be queried.
+        ----------------------     --------------------------------------------------------------------
+        out_fields                 Required string. the list of fields from the related table/layer
+                                   to be included in the returned feature set. This list is a comma
+                                   delimited list of field names. If you specify the shape field in the
+                                   list of return fields, it is ignored. To request geometry, set
+                                   return_geometry to true. You can also specify the wildcard "*" as
+                                   the value of this parameter. In this case, the results will include
+                                   all the field values.
+        ----------------------     --------------------------------------------------------------------
+        definition_expression      Optional string. The definition expression to be applied to the
+                                   related table/layer. From the list of objectIds, only those records
+                                   that conform to this expression are queried for related records.
+        ----------------------     --------------------------------------------------------------------
+        return_geometry            Optional boolean. If true, the feature set includes the geometry
+                                   associated with each feature. The default is true.
+        ----------------------     --------------------------------------------------------------------
+        max_allowable_offset       Optional float. This option can be used to specify the
+                                   max_allowable_offset to be used for generalizing geometries returned
+                                   by the query operation. The max_allowable_offset is in the units of
+                                   the outSR. If out_wkid is not specified, then max_allowable_offset
+                                   is assumed to be in the unit of the spatial reference of the map.
+        ----------------------     --------------------------------------------------------------------
+        geometry_precision         Optional integer. This option can be used to specify the number of
+                                   decimal places in the response geometries.
+        ----------------------     --------------------------------------------------------------------
+        out_wkid                   Optional Integer. The spatial reference of the returned geometry.
+        ----------------------     --------------------------------------------------------------------
+        gdb_version                Optional string. The geodatabase version to query. This parameter
+                                   applies only if the isDataVersioned property of the layer queried is
+                                   true.
+        ----------------------     --------------------------------------------------------------------
+        return_z                   Optional boolean. If true, Z values are included in the results if
+                                   the features have Z values. Otherwise, Z values are not returned.
+                                   The default is false.
+        ----------------------     --------------------------------------------------------------------
+        return_m                   Optional boolean. If true, M values are included in the results if
+                                   the features have M values. Otherwise, M values are not returned.
+                                   The default is false.
+        ----------------------     --------------------------------------------------------------------
+        historic_moment            Optional Integer/_dt.datetime. The historic moment to query. This parameter
+                                   applies only if the supportsQueryWithHistoricMoment property of the
+                                   layers being queried is set to true. This setting is provided in the
+                                   layer resource.
+
+                                   If historic_moment is not specified, the query will apply to the
+                                   current features.
+
+                                   Syntax:
+                                        historic_moment=<Epoch time in milliseconds>
+        ----------------------     --------------------------------------------------------------------
+        return_true_curves         Optional boolean. Optional parameter that is false by default. When
+                                   set to true, returns true curves in output geometries; otherwise,
+                                   curves are converted to densified polylines or polygons.
+        ======================     ====================================================================
+
+
+        :return: dict
+
+
         """
-        url = "{url}/tile/{level}/{row}/{column}.pbf".format(
-            url=self._url, level=level, row=row, column=column
-        )
-        params = {}
-        return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
-
-    # ----------------------------------------------------------------------
-    def tile_sprite(self, out_format: str = "sprite.json") -> dict:
-        """
-        The ``tile_sprite`` resource retrieves sprite images and metadata.
-
-        ============================    ================================================
-        **Parameter**                    **Description**
-        ----------------------------    ------------------------------------------------
-        out_format                      Optional string. Default is "sprite.json".
-
-                                        Values: ``sprite.json`` | ``sprite.png`` | ``sprite@2x.png``
-        ============================    ================================================
-
-        :return:
-            Sprite image and metadata.
-        """
-        url = "{url}/resources/sprites/{f}".format(url=self._url, f=out_format)
-        return self._con.get(path=url, params={})
-
-    # ----------------------------------------------------------------------
-    def export_tiles(
-        self,
-        levels: str | None = None,
-        export_extent: dict[str, Any] | None = None,
-        polygon: dict[str, Any] | _geometry.Polygon | None = None,
-        create_item: bool = False,
-    ) -> str | Item:
-        """
-        Export vector tile layer
-
-        =====================       =======================================================
-        **Parameter**                **Description**
-        ---------------------       -------------------------------------------------------
-        levels                      Optional string.Specifies the tiled service levels to export.
-                                    The values should correspond to Level IDs. The values
-                                    can be comma-separated values or a range of values.
-                                    Ensure that the tiles are present at each specified level.
-
-                                    .. code-block:: python
-
-                                        # Example:
-
-                                        # Comma-separated values
-                                        >>> levels=1,2,3,4,5,6,7,8,9
-
-                                        //Range values
-                                        >>> levels=1-4, 7-9
-        ---------------------       -------------------------------------------------------
-        export_extent               Optional dictionary of the extent (bounding box) of the vector
-                                    tile package to be exported.
-                                    The extent should be within the specified spatial reference.
-                                    The default value is the full extent of the tiled map service.
-
-                                    .. code-block:: python
-
-                                        # Example:
-
-                                        >>> export_extent = {
-                                                             "xmin": -109.55, "ymin" : 25.76,
-                                                             "xmax": -86.39, "ymax" : 49.94,
-                                                             "spatialReference": {"wkid": 4326}
-                                                            }
-        ---------------------       -------------------------------------------------------
-        polygon                     Optional dictionary.
-                                    Introduced at 10.7. A JSON representation of a polygon,
-                                    containing an array of rings and a spatialReference.
-
-                                    .. code-block:: python
-
-                                        # Example:
-
-                                        polygon = {
-                                                   "rings": [
-                                                             [[6453,16815],[10653,16423],
-                                                             [14549,5204],[-7003,6939],
-                                                             [6453,16815]],[[914,7992],
-                                                             [3140,11429],[1510,10525],
-                                                             [914,7992]]
-                                                            ],
-                                                   "spatialReference": {"wkid": 54004}
-                                                  }
-        ---------------------       -------------------------------------------------------
-        create_item                 Optional boolean. Indicated whether an item will be created
-                                    from the export (True) or a path to a downloaded file (False).
-                                    Default is False. ArcGIS Online Only.
-        =====================       =======================================================
-
-        :returns:
-            A list of exported item dictionaries or a single path
-        """
-        if not self.properties.exportTilesAllowed:
-            raise arcgis.gis.Error(
-                "Export Tiles operation is not allowed for this service. Enable offline mode."
-            )
-
         params = {
             "f": "json",
-            "exportBy": "levelId",
-            "storageFormatType": "Compact",
-            "tilePackage": False,
-            "optimizeTilesForSize": False,
+            "objectIds": object_ids,
+            "relationshipId": relationship_id,
+            "outFields": out_fields,
+            "returnGeometry": return_geometry,
+            "returnM": return_m,
+            "returnZ": return_z,
         }
-        params["levels"] = levels if levels else None
-        params["exportExtent"] = export_extent if export_extent else "DEFAULT"
-        # parameter introduced at 10.7
-        if polygon and self.gis.version >= [7, 1]:
-            params["polygon"] = polygon
-        if create_item is True:
-            params["createItem"] = "on"
-        url = "{url}/exportTiles".format(url=self._url)
-
-        # a job is returned from the get
-        exportJob = self._con.get(path=url, params=params)
-
-        # get the job information
-        path = "%s/jobs/%s" % (self._url, exportJob["jobId"])
-
-        resp_params = {"f": "json"}
-        job_response = self._con.post(path, resp_params)
-
-        if "status" in job_response or "jobStatus" in job_response:
-            status = job_response.get("status") or job_response.get("jobStatus")
-            i = 0
-            while not status == "esriJobSucceeded":
-                if i < 10:
-                    i = i + 1
-                time.sleep(i)
-
-                job_response = self._con.post(path, resp_params)
-                status = job_response.get("status") or job_response.get("jobStatus")
-                if status in [
-                    "esriJobFailed",
-                    "esriJobCancelling",
-                    "esriJobCancelled",
-                    "esriJobTimedOut",
-                ]:
-                    print(str(job_response["messages"]))
-                    raise Exception("Job Failed with status " + status)
+        if historic_moment:
+            if hasattr(historic_moment, "timestamp"):
+                historic_moment = int(historic_moment.timestamp() * 1000)
+            params["historicMoment"] = historic_moment
+        if return_true_curve:
+            params["returnTrueCurves"] = return_true_curve
+        if self._dynamic_layer is not None:
+            params["layer"] = self._dynamic_layer
+        if gdb_version is not None:
+            params["gdbVersion"] = gdb_version
+        if definition_expression is not None:
+            params["definitionExpression"] = definition_expression
+        if out_wkid is not None and isinstance(out_wkid, _geometry.SpatialReference):
+            params["outSR"] = out_wkid
+        elif out_wkid is not None and isinstance(out_wkid, dict):
+            params["outSR"] = out_wkid
+        if max_allowable_offset is not None:
+            params["maxAllowableOffset"] = max_allowable_offset
+        if geometry_precision is not None:
+            params["geometryPrecision"] = geometry_precision
+        if self._dynamic_layer is None:
+            qrr_url = self._url + "/queryRelatedRecords"
         else:
-            raise Exception("No job results.")
+            qrr_url = "%s/queryRelatedRecords" % self._url.split("?")[0]
 
-        if "results" in job_response:
-            value = job_response["results"]["out_service_url"]["paramUrl"]
-            result_path = path + "/" + value
-            params = {"f": "json"}
-            allResults = self._con.get(path=result_path, params=params)
-
-            if "value" in allResults:
-                value = allResults["value"]
-                params = {"f": "json"}
-                gpRes = self._con.get(path=value, params=params)
-                return gpRes["files"]
-            else:
-                return None
-        elif "output" in job_response:
-            allResults = job_response["output"]
-            if allResults["itemId"]:
-                return _gis.Item(gis=self._gis, itemid=allResults["itemId"])
-            else:
-                if self._gis._portal.is_arcgisonline:
-                    return [
-                        self._con.get(url, try_json=False, add_token=False)
-                        for url in allResults["outputUrl"]
-                    ]
-                else:
-                    return [
-                        self._con.get(url, try_json=False)
-                        for url in allResults["outputUrl"]
-                    ]
-        else:
-            raise Exception(job_response)
+        return self._con.post(path=qrr_url, postdata=params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def _str_replace(self, mystring, rd):
-        """Replaces a value based on a key/value pair where the
-        key is the text to replace and the value is the new value.
+    def get_html_popup(self, oid: str):
+        """
+        The ``get_html_popup`` resource provides details about the HTML pop-up
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
-        The find/replace is case insensitive.
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Optional string. Object id of the feature to get the HTML popup.
+        ===============     ====================================================================
+
+
+        :return:
+            A string
 
         """
-        import re
+        if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
+            pop_url = self._url + "/%s/htmlPopup" % oid
+            params = {"f": "json"}
 
-        patternDict = {}
-        for key, value in rd.items():
-            pattern = re.compile(re.escape(key), re.IGNORECASE)
-            patternDict[value] = pattern
-        for key in patternDict:
-            regex_obj = patternDict[key]
-            mystring = regex_obj.sub(key, mystring)
-        return mystring
+            return self._con.get(path=pop_url, params=params, token=self._token)
+        return ""
+
+    # ----------------------------------------------------------------------
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = [
+            "Pending",
+            "InProgress",
+            "Completed",
+            "Failed ImportChanges",
+            "ExportChanges",
+            "ExportingData",
+            "ExportingSnapshot",
+            "ExportAttachments",
+            "ImportAttachments",
+            "ProvisioningReplica",
+            "UnRegisteringReplica",
+            "CompletedWithErrors",
+        ]
+        status = con.get(url, params)
+        while status["status"] in status_allowed and status["status"] != "Completed":
+            if status["status"] == "Completed":
+                return status
+            elif status["status"] == "CompletedWithErrors":
+                break
+            elif "fail" in status["status"].lower():
+                break
+            elif "error" in status["status"].lower():
+                break
+            status = con.get(url, params)
+        return status
+
+    # ----------------------------------------------------------------------
+    def _query(self, url, params, raw=False):
+        """returns results of query"""
+        try:
+            result = self._con.post(path=url, postdata=params, token=self._token)
+            if "exceededTransferLimit" in result:
+                while (
+                    "exceededTransferLimit" in result
+                    and result["exceededTransferLimit"] == True
+                ):
+                    params["resultRecordCount"] = params["resultRecordCount"] * 2
+                    result = self._con.post(
+                        path=url, postdata=params, token=self._token
+                    )
+
+        except Exception as queryException:
+            error_list = [
+                "Error performing query operation",
+                "HTTP Error 504: GATEWAY_TIMEOUT",
+            ]
+            if any(ele in queryException.__str__() for ele in error_list):
+                # half the max record count
+                max_record = (
+                    int(params["resultRecordCount"])
+                    if "resultRecordCount" in params
+                    else 1000
+                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
+                # reduce this number to 125 if you still sees 500/504 error
+                if max_record < 250:
+                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
+                    raise queryException
+                else:
+                    max_rec = int((max_record + 1) / 2)
+                    i = 0
+                    result = None
+                    while max_rec * i < max_record:
+                        params["resultRecordCount"] = (
+                            max_rec
+                            if max_rec * (i + 1) <= max_record
+                            else (max_record - max_rec * i)
+                        )
+                        params["resultOffset"] = offset + max_rec * i
+                        try:
+                            records = self._query(url, params, raw=True)
+                            if result:
+                                for feature in records["features"]:
+                                    result["features"].append(feature)
+                            else:
+                                result = records
+                            i += 1
+                        except Exception as queryException2:
+                            raise queryException2
+
+            else:
+                raise queryException
+
+        def is_true(x):
+            if isinstance(x, bool) and x:
+                return True
+            elif isinstance(x, str) and x.lower() == "true":
+                return True
+            else:
+                return False
+
+        if "error" in result:
+            raise ValueError(result)
+        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
+            return result["count"]
+        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
+            return result
+        elif "extent" in result:
+            return result
+        elif is_true(raw):
+            return result
+        else:
+            return _features.FeatureSet.from_dict(result)
 
 
 ###########################################################################
-class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
+class MapRasterLayer(MapFeatureLayer):
+    """
+    The ``MapRasterLayer`` class represents a geo-referenced image hosted in a ``Map Service``.
+    """
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        if "lods" in self.container.properties:
+            lyr_dict = {"type": "ArcGISTiledMapServiceLayer", "url": url}
+
+        else:
+            lyr_dict = {"type": type(self.container).__name__, "url": url}
+
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        if "lods" in self.container.properties:
+            lyr_dict = {
+                "type": "ArcGISTiledMapServiceLayer",
+                "url": self.container.url,
+            }
+
+        else:
+            lyr_dict = {
+                "type": type(self.container).__name__,
+                "url": self.container.url,
+            }
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+
+###########################################################################
+class MapTable(MapFeatureLayer):
+    """
+    The ``MapTable`` class represents entity classes with uniform properties.
+
+    .. note::
+        In addition to working with entities with ``location`` as
+        features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
+
+    Working with tables is similar to working with a :class:`~arcgis.mapping_layers.MapFeatureLayer`, except that the rows
+    (:class:`~arcgis.features.Feature`) in a table do not have a geometry, and tables ignore any geometry related
+    operation.
+    """
+
+    @classmethod
+    def fromitem(cls, item: Item, table_id: int = 0):
+        """
+        The ``fromitem`` method creates a :class:`~arcgis.mapping_layers.MapTable` from a GIS :class:`~arcgis.gis.Item`.
+
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
+                                                 a :class:`~arcgis.mapping_layers.MapImageService` object.
+        ------------------------------------     --------------------------------------------------------------------
+        layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
+                                                 The default is 0.
+        ====================================     ====================================================================
+
+        :return:
+            A :class:`~arcgis.mapping_layers.MapTable` object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping_layers import MapImageLayer, MapTable
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_table = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> print(f"{map_table.properties.name:30}{type(map_table)}")
+            <State Boundaries              <class 'arcgis.mapping_layers.MapTable'>>
+        """
+        return item.tables[table_id]
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "FeatureLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "FeatureLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        where: str = "1=1",
+        out_fields: Union[str, list[str]] = "*",
+        time_filter: Optional[
+            Union[_dt.datetime, list[_dt.datetime], list[str], dict[_dt.datetime]]
+        ] = None,
+        return_count_only: bool = False,
+        return_ids_only: bool = False,
+        return_distinct_values: bool = False,
+        group_by_fields_for_statistics: Optional[str] = None,
+        statistic_filter: Optional[StatisticFilter] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        object_ids: Optional[str] = None,
+        gdb_version: Optional[str] = None,
+        order_by_fields: Optional[str] = None,
+        out_statistics: Optional[str[dict]] = None,
+        return_all_records: bool = True,
+        historic_moment: Optional[Union[int, _dt.datetime]] = None,
+        sql_format: Optional[str] = None,
+        return_exceeded_limit_features: Optional[bool] = None,
+        as_df: bool = False,
+        range_values: Optional[list[dict[str, Any]]] = None,
+        parameter_values: Optional[list[dict[str, Any]]] = None,
+        **kwargs,
+    ):
+        """
+        The ``query`` method queries a Table Layer based on a set of criteria from a sql statement.
+
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values should be a comma-separated string.
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
+                                            _dt.datetime.date, _dt.datetime._dt.datetime or timestamp in milliseconds.
+
+                                            .. code-block:: python
+
+                                                >>> time_filter=[<startTime>, <endTime>]
+
+                                            Specified as ``_dt.datetime.date``, ``_dt.datetime._dt.datetime`` or
+                                            ``timestamp`` in milliseconds.
+
+                                            .. code-block:: python
+
+                                                >>> import _dt.datetime as dt
+
+                                                >>> time_filter = [dt._dt.datetime(2022, 1, 1), dt.dateime(2022, 1, 12)]
+
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the `isDataVersioned` property of the layer is
+                                            `true`. If this is not specified, the query will apply to the
+                                            published map's version.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If `True`, geometry is returned with the query.
+                                            Default is `True`.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If `True`, it returns distinct values based on
+                                            the fields specified in `out_fields`. This parameter applies only if
+                                            the `supportsAdvancedQueries` property of the layer is `true`.
+        -------------------------------     --------------------------------------------------------------------
+        return_ids_only                     Optional boolean. Default is False.  If `True`, the response only
+                                            includes an array of object IDs. Otherwise, the response is a
+                                            :class:`~arcgis.features.FeatureSet`.
+        -------------------------------     --------------------------------------------------------------------
+        return_count_only                   Optional boolean. If `True`, the response only includes the count
+                                            (number of features/records) that would be returned by a query.
+                                            Otherwise, the response is a :class:`~arcgis.features.FeatureSet`.
+                                            The default is `False`. This option supersedes the
+                                            `return_ids_only` parameter. If `return_count_only = True`, the
+                                            response will return both the count and the extent.
+        -------------------------------     --------------------------------------------------------------------
+         order_by_fields                    Optional string. One or more field names by which to order the
+                                            results. Use ``ASC`` or ``DESC`` for ascending
+                                            or descending, respectively, following every field to be ordered:
+
+                                            .. code-block:: python
+
+                                                >>> order_by_fields = "STATE_NAME ASC, RACE DESC, GENDER ASC"
+
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which to group results
+                                            for calculating the statistics.
+
+                                            .. code-block:: python
+
+                                                >>> group_by_fields_for_statiscits = "STATE_NAME, GENDER"
+
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional string. The definitions for one or more field-based
+                                            statistics to be calculated.
+
+                                            :Syntax:
+
+                                            .. code-block:: python
+
+                                                >>> out_statistics = [
+                                                                        {
+                                                                          "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                          "onStatisticField": "Field1",
+                                                                          "outStatisticFieldName": "Out_Field_Name1"
+                                                                        },{
+                                                                           "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                                           "onStatisticField": "Field2",
+                                                                           "outStatisticFieldName": "Out_Field_Name2"
+                                                                          }
+                                                                    ]
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, `result_offset + ith`). This option is ignored
+                                            if `return_all_records` is `True` (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the `result_record_count` specified. When `result_offset` is
+                                            specified but this parameter is not, the map service defaults it to
+                                            `max_record_count`. The maximum value for this parameter is the value
+                                            of the layer's `maxRecordCount` property. This option is ignored if
+                                            `return_all_records` is `True` (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        return_all_records                  Optional boolean. When `True`, the query operation will call the
+                                            service until all records that satisfy the `where_clause` are
+                                            returned. Note: `result_offset` and `result_record_count` will be
+                                            ignored if `return_all_records` is True. Also, if
+                                            `return_count_only`, `return_ids_only`, or `return_extent_only` are
+                                            `True`, this parameter will be ignored.
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            `supportsQueryWithHistoricMoment` property is set to `true`. This
+                                            property is provided in the layer resource.
+
+                                            .. note::
+                                                See `Query (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_
+                                                for full explanation of layer properties. Use :attr:`~arcgis.features.FeatureLayer.properties`
+                                                to examine layer properties.
+
+                                            If `historic_moment` is not specified, the query will apply to the
+                                            current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The `sql_format` parameter can be either standard
+                                            SQL92 or it can use the native SQL of the underlying
+                                            datastore. The default is none which means the sql_format
+                                            depends on the `useStandardizedQuery` parameter.
+                                            Values: ``none`` | ``standard`` | ``native``
+        -------------------------------     --------------------------------------------------------------------
+        return_exceeded_limit_features      Optional boolean. Optional parameter which is `true` by default.
+                                            When set to `true`, features are returned even when the results
+                                            include the `exceededTransferLimit: true` property.
+
+                                            When set to false and querying with `resultType = 'tile'`, features
+                                            are not returned when the results include
+                                            `exceededTransferLimit: True`. This allows a client to find the
+                                            resolution in which the transfer limit is no longer exceeded without
+                                            making multiple calls.
+        -------------------------------     --------------------------------------------------------------------
+        as_df                               Optional boolean.  If `True`, the results are returned as a
+                                            `DataFrame` instead of a :class:`~arcgis.features.FeatureSet`.
+        -------------------------------     --------------------------------------------------------------------
+        range_values                        Optional List. Allows you to filter features from the layer that are
+                                            within the specified range instant or extent.
+
+                                            :Syntax:
+
+                                            .. code-block:: python
+
+                                                >>> range_values =     [
+                                                                        {
+                                                                          "name": "range name",
+                                                                          "value": <value> or [ <value1>, <value2> ]
+                                                                          },
+                                                                          {
+                                                                            "name": "range name 2",
+                                                                            "value": <value> or  [ <value3>, <value4>]
+                                                                          }
+                                                                        }
+                                                                       ]
+
+                                            .. note::
+
+                                                None is allowed in value-range case -- that means infinity
+
+                                                .. code-block:: python
+
+                                                    # all features with values <= 1500
+
+                                                    >>> range_values = {"name" : "range name",
+                                                                         "value :[None, 1500]}
+
+                                                    # all features with values >= 1000
+
+                                                    >>> range_values = {"name" : "range name",
+                                                                        "value" : [1000, None]}
+
+        -------------------------------     --------------------------------------------------------------------
+        parameter_values                    Optional Dict. Allows you to filter the features layers by specifying
+                                            value(s) to an array of pre-authored parameterized filters for those
+                                            layers. When value is not specified for any parameter in a request,
+                                            the default value, that is assigned during authoring time, gets used
+                                            instead.
+
+                                            When `parameterInfo` allows multiple values, you must pass them in
+                                            an array.
+
+                                            Note: Check `parameterInfos` at the layer
+                                            :attr:`properties <arcgis.features.FeatureLayer.properties>` for
+                                            the available parameterized filters, their default values and
+                                            expected data type.
+        -------------------------------     --------------------------------------------------------------------
+        kwargs                              Optional dict. Optional parameters that can be passed to the Query
+                                            function.  This will allow users to pass additional parameters not
+                                            explicitly implemented on the function. A complete list of possible
+                                            parameters is documented at `Query (Map Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer-.htm>`_
+        ===============================     ====================================================================
+
+        :return:
+            A :class:`~arcgis.features.FeatureSet` or Panda's DataFrame containing the :class:`~arcgis.features.Feature`
+            objects matching the query, unless another return type is specified, such as ``count``
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping_layers import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> query_count = map_feature_layer.query(where "1=1",
+                                        text = "Hurricane Data",
+                                        units = "esriSRUnit_Meter",
+                                        return_count_only = True,
+                                        out_statistics = [
+                                                            {
+                                                            "statisticType": "count",
+                                                            "onStatisticField": "Field1",
+                                                            "outStatisticFieldName": "Out_Field_Name1"
+                                                            },
+                                                            {
+                                                            "statisticType": "avg",
+                                                            "onStatisticField": "Field2",
+                                                            "outStatisticFieldName": "Out_Field_Name2"
+                                                            }
+                                                        ],
+                                        range_values= [
+                                                {
+                                                  "name": "range name",
+                                                  "value": [None, 1500]
+                                                  },
+                                                  {
+                                                    "name": "range name 2",
+                                                    "value":[1000, None]
+                                                  }
+                                                }
+                                            ]
+                                        )
+            >>> query_count
+            <149>
+        """
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_all_records=return_all_records,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            range_values=range_values,
+            parameter_values=parameter_values,
+            **kwargs,
+        )
+
+
+###########################################################################
+class _MSILayerFactory(type):
+    """
+    Factory that generates the Map Service Layers
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /MapServer/<index>
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
+
+        from arcgis.mapping_layers import SceneLayer
+        ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
+
+        type(ms_layer)
+        >> arcgis.mapping_layers._types.MapTable
+
+        print(s_layer.properties.name)
+        >> 'pipe_properties'
+    """
+
+    def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
+        lyr = Layer(url=url, gis=gis)
+        props = lyr.properties
+        if "type" in props and props.type.lower() == "table":
+            return MapTable(
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=dynamic_layer,
+            )
+        elif "type" in props and props.type.lower() == "raster layer":
+            return MapRasterLayer(
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=dynamic_layer,
+            )
+        elif "type" in props and props.type.lower() == "feature layer":
+            return MapFeatureLayer(
+                url=url,
+                gis=gis,
+                container=container,
+                dynamic_layer=dynamic_layer,
+            )
+        return lyr
+
+
+###########################################################################
+class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
+    """
+    The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /MapServer/<index>
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
+
+        from arcgis.mapping_layers import MapServiceLayer
+        ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
+
+        type(ms_layer)
+        >> arcgis.mapping_layers._types.MapTable
+
+        print(ms_layer.properties.name)
+        >> 'pipe_properties'
+
+    """
+
+    def __init__(self, url, gis=None, container=None, dynamic_layer=None):
+        """
+        Constructs a Map Services Layer given a URL and GIS
+        """
+        super(MapServiceLayer, self).__init__(
+            url=url,
+            gis=gis,
+            container=container,
+            dynamic_layer=dynamic_layer,
+        )
+
+
+###########################################################################
+class EnterpriseMapImageLayerManager(_gis._GISResource):
     """
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping_layers.MapImageLayer` offers access to layer content.
@@ -1139,7 +1858,7 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
-class MapImageLayerManager(arcgis.gis._GISResource):
+class MapImageLayerManager(_gis._GISResource):
     """
     The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
     or Cached Map Services.
@@ -1541,7 +2260,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
-class MapImageLayer(arcgis.gis.Layer):
+class MapImageLayer(_gis.Layer):
     """
     The ``MapImageLayer`` allows you to display and analyze data from sublayers defined in a map service,
     exporting images instead of features. Map service images are dynamically generated on the server based on a request,
@@ -1623,17 +2342,13 @@ class MapImageLayer(arcgis.gis.Layer):
         if "layers" in self.properties and self.properties.layers:
             for lyr in self.properties.layers:
                 if "subLayerIds" in lyr and lyr.subLayerIds is not None:  # Group Layer
-                    lyr = arcgis.gis.Layer(self.url + "/" + str(lyr.id), self._gis)
+                    lyr = _gis.Layer(self.url + "/" + str(lyr.id), self._gis)
                 else:
-                    lyr = arcgis.mapping_layers._msl.MapServiceLayer(
-                        self.url + "/" + str(lyr.id), self._gis
-                    )
+                    lyr = MapServiceLayer(self.url + "/" + str(lyr.id), self._gis)
                 layers.append(lyr)
         if "tables" in self.properties and self.properties.tables:
             for lyr in self.properties.tables:
-                lyr = arcgis.mapping_layers._msl.MapServiceLayer(
-                    self.url + "/" + str(lyr.id), self._gis, self
-                )
+                lyr = MapServiceLayer(self.url + "/" + str(lyr.id), self._gis, self)
                 tables.append(lyr)
 
         self.layers = layers
@@ -1770,9 +2485,7 @@ class MapImageLayer(arcgis.gis.Layer):
             url = "%s/dynamicLayer" % self._url
             d = urlencode(layer)
             url += "?layer=%s" % d
-            return _arcgis_features.FeatureLayer(
-                url=url, gis=self._gis, dynamic_layer=layer
-            )
+            return _features.FeatureLayer(url=url, gis=self._gis, dynamic_layer=layer)
         return None
 
     # ----------------------------------------------------------------------
@@ -2378,7 +3091,7 @@ class MapImageLayer(arcgis.gis.Layer):
         layer_defs: Optional[dict[str, Any]] = None,
         layers: Optional[str] = None,
         transparent: bool = False,
-        time_value: Optional[Union[list[int], list[datetime.datetime]]] = None,
+        time_value: Optional[Union[list[int], list[_dt.datetime._dt.datetime]]] = None,
         time_options: Optional[dict[str, Any]] = None,
         dynamic_layers: Optional[dict[str, Any]] = None,
         gdb_version: Optional[str] = None,
@@ -2930,70 +3643,3 @@ class MapImageLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
-
-
-class Events(object):
-    @classmethod
-    def _create_events(cls, enable=False):
-        events = Events()
-
-        events._enable = False
-        events._type = "extentChanged"
-        events._actions = []
-
-        events.enable = enable
-
-        return events
-
-    @property
-    def enable(self):
-        return self._enable
-
-    @enable.setter
-    def enable(self, value):
-        self._enable = bool(value)
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def synced_widgets(self):
-        return self._actions
-
-    def sync_widget(self, widgets):
-        if self.enable == False:
-            raise Exception("Please enable events")
-
-        else:
-            if isinstance(widgets, list):
-                for widget in widgets:
-                    if widget.type == "mapWidget":
-                        action_type = "setExtent"
-                        self._actions.append(
-                            {"type": action_type, "targetId": widget._id}
-                        )
-                    else:
-                        action_type = "filter"
-                        widget_id = str(widget._id) + "#main"
-                        self._actions.append(
-                            {
-                                "type": action_type,
-                                "by": "geometry",
-                                "targetId": widget_id,
-                            }
-                        )
-            else:
-                if widgets.type == "mapWidget":
-                    action_type = "setExtent"
-                    self._actions.append({"type": action_type, "targetId": widgets._id})
-                else:
-                    action_type = "filter"
-                    widget_id = str(widgets._id) + "#main"
-                    self._actions.append(
-                        {
-                            "type": action_type,
-                            "by": "geometry",
-                            "targetId": widget_id,
-                        }
-                    )

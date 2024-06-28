@@ -6757,7 +6757,7 @@ class ContentManager(object):
             and item_properties["type"] == "WMTS"
             and "text" not in item_properties
         ):
-            from arcgis.layers.ogc import WMTSLayer
+            from arcgis.layers._ogc import WMTSLayer
 
             item_properties["text"] = json.dumps(
                 WMTSLayer(item_properties["url"], gis=self._gis).__text__
