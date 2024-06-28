@@ -1,7 +1,4 @@
 import uuid
-from arcgis.auth.tools import LazyLoader
-
-_gis = LazyLoader("arcgis.gis")
 
 
 ###########################################################################
@@ -40,9 +37,9 @@ class BaseOGC(object):
     _max_scale = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url: str, gis: _gis.GIS = None, **kwargs):
-        self._url: str = url
-        self._gis: _gis.GIS = gis
+    def __init__(self, url: str, gis=None, **kwargs):
+        self._url = url
+        self._gis = gis
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._title = kwargs.pop("title", "Layer")
         self._opacity = kwargs.pop("opacity", 1)
