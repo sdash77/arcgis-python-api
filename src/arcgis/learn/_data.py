@@ -1494,13 +1494,13 @@ def prepare_data(
     input_variables         Required list. input variables.
                             Applicable only for dataset_type='ClimaX'.
     ---------------------   -------------------------------------------
-    max_predict_range       Required int. default set to 1 (month/hrs). how far the 
-                            model should forecast into the future. Applicable only 
+    max_predict_range       Required int. default set to 1 (month/hrs). how far the
+                            model should forecast into the future. Applicable only
                             for dataset_type='climaX'.
     ---------------------   -------------------------------------------
-    time_each_step          Optional int. Default set to 1 (). time difference between 
-                            two consecutive recorded data points in the dataset. For example, 
-                            if you want to make a 24-hr forecast, then you should set 
+    time_each_step          Optional int. Default set to 1 (). time difference between
+                            two consecutive recorded data points in the dataset. For example,
+                            if you want to make a 24-hr forecast, then you should set
                             max_predict_range=24 and hrs_each_step=1
     =====================   ===========================================
 
@@ -1508,9 +1508,7 @@ def prepare_data(
         data object
 
     """
-out_variables = ['2m_temperature','10m_u_component_of_wind'],
-                    max_predict_range = 1,
-                    time_each_step = 1
+
     arcgis_init_kwargs = {
         "path": path,
         "class_mapping": class_mapping,
@@ -1631,9 +1629,18 @@ out_variables = ['2m_temperature','10m_u_component_of_wind'],
         ):
             dataset_type = "WNet_cGAN"
         elif not has_esri_files:
-            raise Exception(
-                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
-            )
+            try:
+                emd_file = os.path.join(
+                    path, os.listdir(path)[0], "esri_model_definition.emd"
+                )
+                with open(emd_file) as f:
+                    emd = json.load(f)
+                if emd.get("IsMultidimensional"):
+                    dataset_type = "ClimaX"
+            except:
+                raise Exception(
+                    "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
+                )
 
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
