@@ -14,7 +14,7 @@ from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
 import requests
 
-_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
 
 _log = logging.getLogger(__name__)
@@ -672,7 +672,8 @@ class UX(object):
                 "tags": ["SharedTheme", "Logo"],
                 "type": "Image",
             }
-            im_item = self._gis.content.add(item_props, logo)
+            folder = self._gis.content.folders.get()
+            im_item = folder.add(item_props, file=logo).result()
             # share to everyone
             im_item.sharing.sharing_level = "EVERYONE"
             # set in shared_theme dict

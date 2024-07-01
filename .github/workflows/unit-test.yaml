@@ -112,11 +112,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
-      - name: Checkout binaries
-        uses: actions/checkout@v4
-        with:
-          ref: binaries/main
-          path: binaries
       - name: Configure conda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -128,7 +123,13 @@ jobs:
       - name: Get arcgis release info
         id: arcgis-info
         run: |
-          echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # osx-arm64 is currently only available on prerelease label
+            echo "latest-version=$(conda search -c esri -c esri/label/prerelease arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          else
+            echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          fi
+          
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
@@ -139,7 +140,11 @@ jobs:
         run: |
           conda install -c main nose2 --yes
           conda install conda-forge::requests-mock --yes
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            conda install -c esri -c esri/label/prerelease arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          else
+            conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          fi
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache
@@ -157,17 +162,8 @@ jobs:
           conda list
           conda info
       - name: Copy binary dependencies
-        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          cp ./binaries/linux/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/linux/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/linux/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-      - name: Copy binary dependencies
-        if: runner.os == 'Windows'
-        run: |
-          cp ./binaries/windows/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/windows/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/windows/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
+          python build/manage_binaries.py copy --local
       - name: Install arcgis from source
         run: |
           python -m pip install -e ./src --no-deps

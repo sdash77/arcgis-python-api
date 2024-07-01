@@ -6,7 +6,7 @@ from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.features.geo._array import GeoArray
-from arcgis.gis.server._service import Service
+from arcgis.layers import Service
 from arcgis.features import FeatureLayer
 import tempfile, uuid
 import unittest

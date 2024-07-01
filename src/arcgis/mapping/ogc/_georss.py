@@ -3,7 +3,7 @@ import sys
 import json
 import uuid
 from arcgis.gis import GIS
-from arcgis.mapping import create_symbol
+from arcgis.layers._symbol import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
@@ -170,7 +170,7 @@ class GeoRSSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView's widget JSON format"""
+        """Represents the Map's widget JSON format"""
         add_layer = {
             "type": self._type,
             "url": self._url,
@@ -187,5 +187,5 @@ class GeoRSSLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json

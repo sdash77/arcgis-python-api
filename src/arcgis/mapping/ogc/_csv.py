@@ -155,7 +155,7 @@ class CSVLayer(BaseOpenData):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None:
-            from arcgis.mapping import generate_renderer
+            from arcgis.layers import generate_renderer
 
             sr = generate_renderer(geometry_type="point")
             self._renderer = InsensitiveDict(dict(sr))
@@ -263,7 +263,7 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
-        """Represents the MapView's JSON format"""
+        """Represents the Map's JSON format"""
         add_layer = {
             "type": self._type,
             "delimiter": self.delimiter,
@@ -293,7 +293,7 @@ class CSVLayer(BaseOpenData):
 
     @property
     def _operational_layer_json(self):
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json
 
     # ----------------------------------------------------------------------

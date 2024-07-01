@@ -20,7 +20,7 @@ from arcgis._impl.common._utils import _date_handler, chunks
 from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 
 
 ###########################################################################
@@ -168,11 +168,11 @@ class MapFeatureLayer(Layer):
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
-            :class:`~arcgis.mapping.WebMap`.
+            :class:`~arcgis.map.Map`.
 
         :return:
             ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -189,7 +189,7 @@ class MapFeatureLayer(Layer):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -206,27 +206,27 @@ class MapFeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapServiceLayer` object.
+                                                 a :class:`~arcgis.layers.MapServiceLayer` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapFeatureLayer` object
+            A :class:`~arcgis.layers.MapFeatureLayer` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -236,10 +236,10 @@ class MapFeatureLayer(Layer):
             >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_feature_layer.properties.name:30}{type(map_feature_layer)}")
-            <State Boundaries              <class 'arcgis.mapping._msl.layer.MapFeatureLayer'>>
+            <State Boundaries              <class 'arcgis.layers._msl.layer.MapFeatureLayer'>>
 
         """
-        from arcgis.mapping import MapImageLayer
+        from arcgis.layers import MapImageLayer
 
         return MapImageLayer.fromitem(item).layers[layer_id]
 
@@ -247,7 +247,7 @@ class MapFeatureLayer(Layer):
     @property
     def container(self):
         """
-        The ``container`` property represents the :class:`~arcgis.mapping.MapImageLayer` to which this layer belongs.
+        The ``container`` property represents the :class:`~arcgis.layers.MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
             self._storage = MapImageLayer(
@@ -518,7 +518,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -901,7 +901,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -982,7 +982,7 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -1003,7 +1003,7 @@ class MapFeatureLayer(Layer):
         return_true_curve: bool = False,
     ):
         """
-        The ``query_related_records`` operation is performed on a :class:`~arcgis.mapping.MapFeatureLayer`
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.layers.MapFeatureLayer`
         resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
         by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
         :class:`~arcgis.features.Feature` objects including the values for the fields requested by
@@ -1016,7 +1016,7 @@ class MapFeatureLayer(Layer):
             include geometries.
 
         .. note::
-            See the :attr:`~arcgis.mapping.MapFeatureLayer.query` method for more information.
+            See the :attr:`~arcgis.layers.MapFeatureLayer.query` method for more information.
 
 
         ======================     ====================================================================
@@ -1315,7 +1315,7 @@ class MapTable(MapFeatureLayer):
         In addition to working with entities with ``location`` as
         features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
 
-    Working with tables is similar to working with a :class:`~arcgis.mapping.MapFeatureLayer`, except that the rows
+    Working with tables is similar to working with a :class:`~arcgis.layers.MapFeatureLayer`, except that the rows
     (:class:`~arcgis.features.Feature`) in a table do not have a geometry, and tables ignore any geometry related
     operation.
     """
@@ -1323,27 +1323,27 @@ class MapTable(MapFeatureLayer):
     @classmethod
     def fromitem(cls, item: Item, table_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapTable` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapTable` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapImageService` object.
+                                                 a :class:`~arcgis.layers.MapImageService` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapTable` object
+            A :class:`~arcgis.layers.MapTable` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapTable
+            >>> from arcgis.layers import MapImageLayer, MapTable
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -1353,7 +1353,7 @@ class MapTable(MapFeatureLayer):
             >>> map_table = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_table.properties.name:30}{type(map_table)}")
-            <State Boundaries              <class 'arcgis.mapping.MapTable'>>
+            <State Boundaries              <class 'arcgis.layers.MapTable'>>
         """
         return item.tables[table_id]
 
@@ -1621,7 +1621,7 @@ class MapTable(MapFeatureLayer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -1685,7 +1685,7 @@ class MapTable(MapFeatureLayer):
             as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 
@@ -1707,11 +1707,11 @@ class _MSILayerFactory(type):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(s_layer.properties.name)
         >> 'pipe_properties'
@@ -1762,11 +1762,11 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import MapServiceLayer
+        from arcgis.layers import MapServiceLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(ms_layer.properties.name)
         >> 'pipe_properties'

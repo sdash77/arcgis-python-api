@@ -455,7 +455,7 @@ def merge_layers(
     ================    ===============================================================
     **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
-    input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
+    input_layer         Required feature layer. The point, line, or polygon features to merge with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
     merge_layer         Required feature layer. The point, line, or polygon features to merge with the ``input_layer``.
                         The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
