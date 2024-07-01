@@ -128,21 +128,6 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
         assert isinstance(generate, str)
 
-    def test_export_map(self):
-        """
-        Test export_map method
-        """
-        export = layer.export_map(
-            bbox="52.5,18.9,53.4,20.0",
-            bbox_sr=4326,
-            image_format="png",
-            layers="show:4,6,7",
-            transparent=True,
-            scale=220000000,
-            rotation=0,
-        )
-        assert isinstance(export, dict)
-        assert "href" in export
 
     def test_estimate_size_and_export_tiles(self):
         """

@@ -40,7 +40,6 @@ __all__ = [
     "VectorTileLayer",
     "VectorTileLayerManager",
     "EnterpriseVectorTileLayerManager",
-    "export_map",
     "get_layout_templates",
     "OfflineMapAreaManager",
     "SceneLayer",

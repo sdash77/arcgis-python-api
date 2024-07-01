@@ -5,10 +5,11 @@ from typing import Optional, Any
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
-from arcgis.layers import Service
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ServerProfileManager
+from arcgis.auth.tools import LazyLoader
 
+_layers = LazyLoader("arcgis.layers")
 _log = logging.getLogger()
 
 
@@ -326,7 +327,7 @@ class ServicesDirectory(BaseServer):
         if "services" in res:
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
-                    return Service(
+                    return _layers.Service(
                         url="%s/%s/%s" % (self._url, s["name"], s["type"]),
                         server=self._con,
                     )
@@ -377,9 +378,9 @@ class ServicesDirectory(BaseServer):
             :class:`~arcgis.gis.server.ServerManager` class, which returns
             :class:`~arcgis.gis.server.Server` or
             :class:`~arcgis.gis.nb.NotebookServer` objects, or the
-            :class:`~arcgis.gis.server.ServiceManager.list` method of
-            the :class:`~arcgis.gis.server.ServiceManager` class, which
-            returns a list of :class:`~arcgis.gis.server.Service` objects and modules.
+            :class:`~arcgis.layers.ServiceManager.list` method of
+            the :class:`~arcgis.layers.ServiceManager` class, which
+            returns a list of :class:`~arcgis.layers.Service` objects and modules.
 
         """
         services = []
@@ -393,7 +394,7 @@ class ServicesDirectory(BaseServer):
             for s in res["services"]:
                 try:
                     services.append(
-                        Service(
+                        _layers.Service(
                             url="%s/%s/%s" % (self._url, s["name"], s["type"]),
                             server=self._con,
                         )
