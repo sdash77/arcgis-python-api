@@ -17,9 +17,13 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 
 - `categorize_features` - depreacted in **1.7.1** and will be removed in a future major release (example: 2.x to 3.x).  Please use `arcgis.learn.classify_objects` instead.
 
+### `arcgis.gis.agonb` Module 
+
+- `Container.terminate` - deprecated in **2.3.0** will be removed in **2.4.0**. Use `Container.shutdown` instead.
+
 ### `arcgis.gis.nb` Module 
 
-- `Container.terminate` - deprecated in **2.3.0** will be removed in **2.4.2**. Use `Container.shutdown` instead.
+- `Container.terminate` - deprecated in **2.3.0** will be removed in **2.4.0**. Use `Container.shutdown` instead.
 
 ### `arcgis.gis` Module
 
@@ -39,6 +43,8 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
 - `forms` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.forms` module instead.
 - `renderer` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.renderers` and methods in `arcgis.map.SmartMappingManager`.
+- `OfflineMapAreaManager` - removed in **2.4.0**. Use the `arcgis.map.OfflineMapArea`.
+- `arcgis.mapping` -  `arcgis.mapping` has been renamed to `arcgis.layers` to simplify finding the layers you want to work with.
 
 ### `arcgis.widgets` Module
 - `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.

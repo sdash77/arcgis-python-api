@@ -2,7 +2,7 @@ import logging as _logging
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 
