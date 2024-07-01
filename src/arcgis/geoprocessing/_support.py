@@ -16,7 +16,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis.features import FeatureSet, FeatureCollection, Table
 from arcgis.auth.tools import LazyLoader
 
-mapping = LazyLoader("arcgis.mapping")
+mapping = LazyLoader("arcgis.layers")
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
