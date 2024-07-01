@@ -2,7 +2,7 @@ from unittest.case import SkipTest
 import unittest
 import os
 from arcgis.gis import GIS
-from arcgis.layers._vtl._vector_tile_layers import VectorTileLayer, VectorTileLayerManager
+from arcgis.layers import VectorTileLayer, VectorTileLayerManager
 from utils.decorators import integration_test
 
 # Initialize manager

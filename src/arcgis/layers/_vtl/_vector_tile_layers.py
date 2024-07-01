@@ -18,7 +18,7 @@ datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 
 
 ###########################################################################
@@ -85,13 +85,13 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """This operation starts a service and loads the service's configuration."""
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
@@ -102,7 +102,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         operation will stop the respective servers, terminating all pods
         that run this service.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -130,7 +130,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _services.Service(self.url, self._gis)
+            vtl_service = _layers.Service(self.url, self._gis)
             return vtl_service.change_provider(provider)
         return False
 
@@ -140,7 +140,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         This operation deletes an individual service, stopping the service
         and removing all associated resources and configurations.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------

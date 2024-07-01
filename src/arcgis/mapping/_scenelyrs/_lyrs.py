@@ -2,10 +2,9 @@ from __future__ import annotations
 import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
-from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
 
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 
 
 class SceneLayerManager(_GISResource):
@@ -316,7 +315,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy: dict):
+    def edit(self, service_dictionary: dict):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -326,25 +325,25 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===================     ====================================================================
         **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary     Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
 
 
         :return: boolean
         """
-        sl_service = _services.Service(self.url, self._gis)
-        return sl_service.edit(service_dictionairy)
+        sl_service = _layers.Service(self.url, self._gis)
+        return sl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -361,13 +360,13 @@ class EnterpriseSceneLayerManager(_GISResource):
         :return: Boolean
 
         """
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.delete()
 
     # ----------------------------------------------------------------------

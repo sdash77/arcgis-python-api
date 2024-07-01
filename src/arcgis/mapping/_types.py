@@ -22,7 +22,7 @@ _arcgis_features = LazyLoader("arcgis.features")
 _gis = LazyLoader("arcgis.gis")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _geometry = LazyLoader("arcgis.geometry")
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 _log = logging.getLogger(__name__)
 _imports = LazyLoader("arcgis._impl.imports")
 
@@ -1705,13 +1705,13 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.edit(service_dictionairy)
 
     # ----------------------------------------------------------------------
     def start(self):
         """This operation starts a service and loads the service's configuration."""
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
@@ -1722,7 +1722,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         operation will stop the respective servers, terminating all pods
         that run this service.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -1750,7 +1750,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _services.Service(self.url, self._gis)
+            vtl_service = _layers.Service(self.url, self._gis)
             return vtl_service.change_provider(provider)
         return False
 
@@ -1760,7 +1760,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         This operation deletes an individual service, stopping the service
         and removing all associated resources and configurations.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------
@@ -2662,19 +2662,19 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.stop()
 
     # ----------------------------------------------------------------------
@@ -2691,13 +2691,13 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         :return: Boolean
 
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.delete()
 
 

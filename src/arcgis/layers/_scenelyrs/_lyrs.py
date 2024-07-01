@@ -5,7 +5,7 @@ from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 
 
 class SceneLayerManager(_GISResource):
@@ -355,19 +355,19 @@ class EnterpriseSceneLayerManager(_GISResource):
 
         :return: boolean
         """
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -384,13 +384,13 @@ class EnterpriseSceneLayerManager(_GISResource):
         :return: Boolean
 
         """
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.delete()
 
     # ----------------------------------------------------------------------

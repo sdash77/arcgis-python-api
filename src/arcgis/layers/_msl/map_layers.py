@@ -24,7 +24,7 @@ time = LazyLoader("time")
 arcgis = LazyLoader("arcgis")
 _geometry = LazyLoader("arcgis.geometry")
 _gis = LazyLoader("arcgis.gis")
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 _features = LazyLoader("arcgis.features")
 
 
@@ -1794,19 +1794,19 @@ class EnterpriseMapImageLayerManager(_gis._GISResource):
 
         :return: boolean
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.stop()
 
     # ----------------------------------------------------------------------
@@ -1823,13 +1823,13 @@ class EnterpriseMapImageLayerManager(_gis._GISResource):
         :return: Boolean
 
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.delete()
 
 
