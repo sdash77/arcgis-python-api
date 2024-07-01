@@ -246,7 +246,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -321,7 +321,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -477,7 +477,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -8105,7 +8105,7 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
                                              :class:`~arcgis.map.Map` widget, what matplotlib colormap
-                                             to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
+                                             to apply to the raster. See :meth:`arcgis.layers.symbol.display_colormaps`
                                              for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
@@ -8287,7 +8287,7 @@ class Raster:
         in a :class:`~arcgis.widgets.Map` widget).
 
         .. note::
-            The ``cmap`` value must be a string. See :attr:`arcgis.mapping.symbol.display_colormaps`
+            The ``cmap`` value must be a string. See :attr:`arcgis.layers.symbol.display_colormaps`
             for a list of compatible values.
         """
         return self._cmap

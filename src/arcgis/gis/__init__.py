@@ -1206,13 +1206,13 @@ class GIS(object):
         return []
 
     @property
-    def symbol_service(self) -> arcgis.mapping._types.SymbolService | None:
+    def symbol_service(self) -> arcgis.layers._types.SymbolService | None:
         """
         Symbol service is an ArcGIS Server utility service that provides access
         to operations to build and generate images for Esri symbols to be
         consumed by internal and external web applications.
 
-        :return: A :class:`~arcgis.mapping._types.SymbolService` object or None
+        :return: A :class:`~arcgis.layers._types.SymbolService` object or None
 
         """
         try:
@@ -6771,7 +6771,7 @@ class ContentManager(object):
             and item_properties["type"] == "WMTS"
             and "text" not in item_properties
         ):
-            from arcgis.mapping.ogc import WMTSLayer
+            from arcgis.layers._ogc import WMTSLayer
 
             item_properties["text"] = json.dumps(
                 WMTSLayer(item_properties["url"], gis=self._gis).__text__
@@ -13244,7 +13244,7 @@ class Item(dict):
             FeatureLayerCollection,
             Table,
         )
-        from arcgis.mapping import (
+        from arcgis.layers import (
             VectorTileLayer,
             MapImageLayer,
             SceneLayer,
@@ -14105,7 +14105,7 @@ class Item(dict):
         """
         from arcgis.geoprocessing._tool import Toolbox
         from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
+        from arcgis.layers import Service
 
         gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
 

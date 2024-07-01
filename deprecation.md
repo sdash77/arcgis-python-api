@@ -43,6 +43,8 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
 - `forms` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.forms` module instead.
 - `renderer` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.renderers` and methods in `arcgis.map.SmartMappingManager`.
+- `OfflineMapAreaManager` - removed in **2.4.0**. Use the `arcgis.map.OfflineMapArea`.
+- `arcgis.mapping` -  `arcgis.mapping` has been renamed to `arcgis.layers` to simplify finding the layers you want to work with.
 
 ### `arcgis.widgets` Module
 - `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.
