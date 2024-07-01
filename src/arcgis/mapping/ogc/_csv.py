@@ -155,7 +155,7 @@ class CSVLayer(BaseOpenData):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None:
-            from arcgis.mapping import generate_renderer
+            from arcgis.layers import generate_renderer
 
             sr = generate_renderer(geometry_type="point")
             self._renderer = InsensitiveDict(dict(sr))
