@@ -5,7 +5,7 @@ from typing import Optional, Any
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
-from ._service import Service
+from arcgis.layers import Service
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ServerProfileManager
 
@@ -18,7 +18,7 @@ class ServicesDirectory(BaseServer):
     Provides ArcGIS Server Services Directory access.
 
     The Services Directory allows you to browse the contents of an ArcGIS Server and obtain
-    information that can be useful to endusers for developing applications, performing analysis, or
+    information that can be useful to end-users for developing applications, performing analysis, or
     cataloging services. The ServicesDirectory is a view of the ArcGIS Server REST API in a python
     class.
 

@@ -14091,7 +14091,7 @@ class Item(dict):
         """
         from arcgis.geoprocessing._tool import Toolbox
         from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
+        from arcgis.layers import Service
 
         gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
 

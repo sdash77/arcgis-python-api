@@ -4,7 +4,6 @@ from arcgis.gis import GIS, Item
 from arcgis import env as _env
 import pandas as pd
 from ._base import BaseOpenData
-from arcgis.auth.tools import LazyLoader
 
 
 ###########################################################################
