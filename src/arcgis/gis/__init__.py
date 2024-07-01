@@ -3870,9 +3870,19 @@ class UserManager(object):
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if self.user_settings and "userLicenseType" in self.user_settings:
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
                         user_type = self.user_settings["userLicenseType"]
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and role is None
+                    ):
                         role = self.user_settings["role"]
+
         else:
             if self._gis.version >= [7, 1]:
                 if user_type is None and role is None:
@@ -3881,6 +3891,10 @@ class UserManager(object):
                             "defaultUserTypeIdForUser"
                         ]
                         role = self._gis.admin.security.config["defaultRoleForUser"]
+        if role is None and user_type is None:
+            raise ValueError(
+                "The user must supply a role and user_type when defaults are not present."
+            )
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = "publisher"
