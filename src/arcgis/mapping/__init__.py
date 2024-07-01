@@ -1,5 +1,5 @@
 """
-The arcgis.mapping module provides components for visualizing GIS data and analysis.
+The arcgis.layers module provides components for visualizing GIS data and analysis.
 This module also includes mapping layers like MapImageLayer, SceneLayer and VectorTileLayer.
 """
 
@@ -14,26 +14,24 @@ from ._types import (
     PackagingJob,
 )
 
-from arcgis.mapping.basemap_service import BasemapServices, BasemapService
-from arcgis.mapping._scenelyrs import (
+from arcgis.layers._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
     Tiles3DLayer,
     Point3DLayer,
     VoxelLayer,
 )
-from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
-from arcgis.mapping._scenelyrs import (
+from arcgis.layers._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
+from arcgis.layers._scenelyrs import (
     SceneLayerManager,
     EnterpriseSceneLayerManager,
 )
-from arcgis.mapping._msl import (
+from arcgis.layers._msl import (
     MapServiceLayer,
     MapFeatureLayer,
     MapTable,
     MapRasterLayer,
 )
-from ._utils import export_map, get_layout_templates, create_colormap
 
 __all__ = [
     "MapImageLayer",
@@ -42,8 +40,6 @@ __all__ = [
     "VectorTileLayer",
     "VectorTileLayerManager",
     "EnterpriseVectorTileLayerManager",
-    "export_map",
-    "get_layout_templates",
     "OfflineMapAreaManager",
     "SceneLayer",
     "SceneLayerManager",

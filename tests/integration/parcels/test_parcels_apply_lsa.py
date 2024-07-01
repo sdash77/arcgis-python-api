@@ -8,8 +8,8 @@ from utils.decorators import integration_test
 from . import parcel_fabric_utils as pfutils
 
 
-@integration_test
-class TestAnalyzeLSA(unittest.TestCase):
+@integration_testclass 
+TestApplyLSA(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
 
     gis = None

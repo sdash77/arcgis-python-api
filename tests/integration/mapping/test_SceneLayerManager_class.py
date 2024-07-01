@@ -2,7 +2,7 @@ from unittest.case import SkipTest
 import unittest
 import os
 from arcgis.gis import GIS
-from arcgis.mapping import SceneLayer
+from arcgis.layers import SceneLayer
 from utils.decorators import integration_test
 
 # Initialize manager

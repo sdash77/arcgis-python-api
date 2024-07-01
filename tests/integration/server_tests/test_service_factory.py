@@ -16,18 +16,18 @@ ServiceFactory Tests
 """
 import os
 import arcgis
-from arcgis.gis.server._service._layerfactory import Service
+from arcgis.layers._service_factory._layerfactory import Service
 from arcgis.features.layer import Layer  #
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection  #
 from arcgis.geocoding import Geocoder  #
 from arcgis.geoprocessing._tool import Toolbox  #
 from arcgis._impl.tools import _GeometryService as GeometryService  #
 from arcgis.network import NetworkDataset  #
-from arcgis.mapping import VectorTileLayer
-from arcgis.mapping import MapImageLayer  #
+from arcgis.layers import VectorTileLayer
+from arcgis.layers import MapImageLayer  #
 from arcgis.raster import ImageryLayer  #
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping import SceneLayer
+from arcgis.layers import SceneLayer
 from utils.decorators import integration_test
 
 ############################################################################
