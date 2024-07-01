@@ -10972,12 +10972,14 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
     ---------------------    ---------------------------------------------------------
-    storageUsage             | The amount of storage used for the entire organization.
+    storageUsage             | The amount of storage used for the entire organization in bytes.
 
                              **NOTE:** This value is an estimate for the organization, not the specific user.
                              For storage estimate of a user's items, see code example in the :attr:`items` method.
     ---------------------    ---------------------------------------------------------
-    storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
+    storageQuota             The total storage amount available for a deployment or
+                             subscription. The maximum amount for ArcGIS Online
+                             organizations is 2TB.
     ---------------------    ---------------------------------------------------------
     orgId                    The ID of the organization the user belongs to.
     ---------------------    ---------------------------------------------------------
