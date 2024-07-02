@@ -503,13 +503,7 @@ class Container(object):
         url = f"{self._url}/logs"
         return self._con.post(url, params).get("containerLogs", [])
 
-    @_common_deprecated.deprecated(
-        deprecated_in="2.3.0",
-        removed_in="2.4.2",
-        current_version=None,
-        details="Use `shutdown` instead.",
-    )
-    def terminate(self) -> bool:
+    def shutdown(self) -> bool:
         """
         Stops the container
 

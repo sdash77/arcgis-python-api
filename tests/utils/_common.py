@@ -18,10 +18,6 @@ UNIT_TESTS_DIR = os.path.abspath(os.path.join(TESTS_DIR, "unit"))
 SMOKE_TESTS_DIR = os.path.abspath(os.path.join(TESTS_DIR, "smoke"))
 INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(TESTS_DIR, "integration"))
 NOTEBOOK_TESTS_DIR = os.path.abspath(os.path.join(TESTS_DIR, "notebooks"))
-WIDGET_INTEGRATION_TESTS_DIR = os.path.abspath(
-    os.path.join(TESTS_DIR, "widget", "integration", "automated")
-)
-WIDGET_UNIT_TESTS_DIR = os.path.abspath(os.path.join(TESTS_DIR, "widget", "unit"))
 SUITES_DIR = os.path.abspath(os.path.join(TESTS_DIR, "_suites"))
 DEFAULT_EMPTY_SUITE_FILE_PATH = os.path.abspath(
     os.path.join(SUITES_DIR, "default_empty_suite.yml")
@@ -41,9 +37,6 @@ GEOSAURUS_PYTHON_EXEC = [
     '"' + sys.executable + '"',
 ]
 GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
-
-GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + ["-m", "jupyter"]
-GEOSAURUS_JUPYTER_NB_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
@@ -73,8 +66,7 @@ def _bytes_to_str_cp850_workaround(bytes_):
 
 
 def setup_env():
-    """Installs the Python API located at ../../src, installs and activates
-    the widget source located at ../../src/arcgis/widgets/js/. Called before
+    """Installs the Python API located at ../../src. Called before
     test runs when run on Jenkins, not when run from run_tests.py
     """
     log.info(f"Setting up env to use `arcgis` from {GEOSAURUS_ROOT_DIR}...")
@@ -91,31 +83,12 @@ def setup_env():
     ]
     run_shell_command(" ".join(pip_install_cmd))
 
-    jupyter_cmd = python_cmd + ["-m", "jupyter"]
-    widget_install_cmd = jupyter_cmd + [
-        "nbextension",
-        "install",
-        "--py",
-        "--sys-prefix",
-        "arcgis",
-    ]
-    widget_enable_cmd = jupyter_cmd + [
-        "nbextension",
-        "enable",
-        "--py",
-        "--sys-prefix",
-        "arcgis",
-    ]
-    run_shell_command(" ".join(widget_install_cmd))
-    run_shell_command(" ".join(widget_enable_cmd))
-
 def should_smoketest_arcgis_learn():
     test_arcgis_learn = os.environ.get("TEST_ARCGIS_LEARN", "true")
     return test_arcgis_learn.lower() in ["true", "yes", "1"]
 
 def should_allow_testing_against_packaged():
     return os.environ.get("ALLOW_INSTALLED_ARCGIS", "false").lower() in ["true", "yes", "1"]
-
 
 def run_unittest_on(
     paths,

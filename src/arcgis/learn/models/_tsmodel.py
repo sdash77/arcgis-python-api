@@ -344,7 +344,12 @@ class TimeSeriesModel(ArcGISModel):
 
         with io.capture_output() as captured:
             saved_path = super().save(
-                path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
+                path,
+                framework,
+                False,
+                gis,
+                save_optimizer=save_optimizer,
+                **kwargs,
             )
         if publish:
             file_name = os.path.basename(saved_path) + ".dlpk"
@@ -637,7 +642,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -660,7 +668,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -744,7 +755,10 @@ class TimeSeriesModel(ArcGISModel):
             single_swap_pred,
             number_of_predictions,
         ) = self._infer_number_of_pred(
-            orig_dataframe, number_of_predictions, match_field_names, fields_needed
+            orig_dataframe,
+            number_of_predictions,
+            match_field_names,
+            fields_needed,
         )
 
         dataframe = orig_dataframe.copy()
@@ -933,9 +947,11 @@ class TimeSeriesModel(ArcGISModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_layer_name + ".xlsx")
                 orig_dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
+                folder = gis.content.folders.get()
+                online_table = folder.add(
+                    {"type": "Microsoft Excel", "overwrite": True},
+                    file=table_file,
+                ).result()
                 return online_table.publish(overwrite=True)
 
     def _apply_inverse_transform(self, transformed_results):
@@ -952,7 +968,11 @@ class TimeSeriesModel(ArcGISModel):
         return np.stack(transformed_results_ret, axis=1)
 
     def _add_predict_rows(
-        self, number_of_predictions, orig_dataframe, match_field_names, fields_needed
+        self,
+        number_of_predictions,
+        orig_dataframe,
+        match_field_names,
+        fields_needed,
     ):
         # Changed to make code future ready as the previous method of adding
         # pandas series will be deprecated.
@@ -1032,13 +1052,16 @@ class TimeSeriesModel(ArcGISModel):
                 end_value, freq=delta, periods=number_of_predictions + 1
             )
             orig_dataframe.loc[
-                orig_dataframe.tail(number_of_predictions).index, index_field_name
+                orig_dataframe.tail(number_of_predictions).index,
+                index_field_name,
             ] = tindex[1:]
         if len(datetime_dict):
             for key, value in datetime_dict.items():
                 new_delta, end_value_temp = value
                 tindex = pd.period_range(
-                    end_value_temp, freq=new_delta, periods=number_of_predictions + 1
+                    end_value_temp,
+                    freq=new_delta,
+                    periods=number_of_predictions + 1,
                 )
                 orig_dataframe.loc[
                     orig_dataframe.tail(number_of_predictions).index, key
@@ -1047,7 +1070,11 @@ class TimeSeriesModel(ArcGISModel):
         return orig_dataframe
 
     def _infer_number_of_pred(
-        self, orig_dataframe, number_of_predictions, match_field_names, fields_needed
+        self,
+        orig_dataframe,
+        number_of_predictions,
+        match_field_names,
+        fields_needed,
     ):
         # Type of inference
         #     ├── Multivariate

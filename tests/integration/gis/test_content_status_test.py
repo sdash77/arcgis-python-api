@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import MagicMock, Mock
 from arcgis.gis import GIS, Item
 from arcgis import env
-from arcgis.mapping import WebMap
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 from utils.decorators import integration_test
 
 PROFILES = ["your_enterprise_profile", "your_online_profile"]
@@ -24,7 +25,7 @@ class TestItemContentStatus(unittest.TestCase):
         """Tests setting the content for unshared items"""
         for gis in self._gis_objs:
             env.active_gis = gis
-            wm = WebMap()
+            wm = arcgismapping.Map()
             item = wm.save(
                 {"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"}
             )
@@ -55,7 +56,7 @@ class TestItemContentStatus(unittest.TestCase):
         """Tests is the content_status Exception is raised."""
         gis = GIS(profile="your_enterprise_profile", verify_cert=False)
 
-        wm = WebMap()
+        wm = arcgismapping.Map()
         item = wm.save({"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"})
         item.sharing.sharing_level = "EVERYONE"
         with self.assertRaises(Exception) as context:
@@ -68,7 +69,7 @@ class TestItemContentStatus(unittest.TestCase):
         """tests setting properties on public Item"""
         for gis in self._gis_objs:
             env.active_gis = gis
-            wm = WebMap()
+            wm = arcgismapping.Map()
             item = wm.save(
                 {"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"}
             )

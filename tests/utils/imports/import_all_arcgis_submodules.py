@@ -37,10 +37,9 @@ def import_all_arcgis_submodules(import_learn=True):
     import arcgis.geometry
     import arcgis.geometry.filters
     import arcgis.geoprocessing
-    import arcgis.mapping
+    import arcgis.layers
     import arcgis.realtime
     import arcgis.schematics
-    import arcgis.widgets
     import arcgis.apps
     import arcgis.apps.hub
     if import_learn:

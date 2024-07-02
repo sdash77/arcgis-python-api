@@ -8,6 +8,9 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 import datetime
 from utils.decorators import integration_test
+from arcgis.auth.tools import LazyLoader
+
+arcgismapping = LazyLoader("arcgis.map")
 
 # region PreCondition check
 test_skip = False
@@ -29,7 +32,6 @@ else:
 try:
     import arcgis
     from arcgis.gis import GIS
-    from arcgis.mapping import WebMap
 except ImportError:
     print("API import error. Quitting test")
     raise (exit())
@@ -118,7 +120,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_create_OfflineMapAreaManager(self):
         try:
             wmitem = self.gis.content.get("8d1df5a2b82f406b900f7f623806d36e")
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
             try:
                 oma_manager = wm.offline_areas
             except Exception as e:
@@ -131,7 +133,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # assert
             self.assertIsInstance(
                 oma_manager,
-                arcgis.mapping._types.OfflineMapAreaManager,
+                arcgis.layers._types.OfflineMapAreaManager,
                 "Cannot create OMA manager object from web map object",
             )
 
@@ -150,7 +152,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_list_offline_areas(self):
         try:
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -191,7 +193,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         try:
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
 
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
 
             bookmark1 = wm.definition.bookmarks[-1]["name"]
 
@@ -253,7 +255,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -298,7 +300,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -340,7 +342,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
             # wmitem = self.gis.content.get('3e7159ee4c6c4e6faf2ca2bd066ee972')
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
-            wm = WebMap(wmitem)
+            wm = arcgismapping.Map(wmitem)
 
             bookmark1 = wm.definition.bookmarks[-1]["name"]
 

@@ -2,57 +2,26 @@ from __future__ import annotations
 import sys
 import logging
 from typing import Dict, Any, Tuple
-from .tools._util import check_module_exists
-
-__log__ = logging.getLogger()
-
-if sys.platform == "win32" and check_module_exists("certifi_win32"):  # pragma: no cover
-    # when on Windows, append to the certifi
-    # the users trusted certificate store
-    # when certifi_win32 is present.
-    try:
-        import certifi_win32
-
-        certifi_win32.wincerts.verify_combined_pem()
-        certifi_win32.wincerts.where()
-    except ImportError:
-        pass
-elif check_module_exists("truststore"):  # pragma: no cover
-    try:
-        import truststore
-
-        truststore.inject_into_ssl()
-    except ImportError as ie:
-        __log__.warning(f"truststore raised a warning: {ie}")
-    except Exception as e:
-        __log__.warning(f"truststore raised a warning: {e}")
-
-
 from requests.sessions import Session
-from requests.adapters import HTTPAdapter
-
-
 from urllib3 import Retry
-
-
 from ._version import __version__
-
 from ._auth import (
     EsriPKIAuth,
     EsriWindowsAuth,
     EsriKerberosAuth,
 )
-
 from ._auth._winauth import HAS_KERBEROS
 from ._auth._negotiate import HAS_GSSAPI
-
-from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
-
 from .tools import LazyLoader
-
+from .tools._adapter import (
+    EsriHostHeaderSSLAdapter,
+    PKIAdapter,
+)
+from .tools.cert import TruststoreAdapter
 
 urllib3 = LazyLoader("urllib3")
 __USERAGENT__ = f"Geosaurus/{__version__}"
+__log__ = logging.getLogger()
 
 
 ###########################################################################
@@ -154,11 +123,11 @@ class EsriSession:
 
     """
 
-    _session = None
-    _verify = None
-    _baseurl = None  # if partial url given, try the base url
-    _referer = None
-    allow_redirects = None
+    _session: Session | None = None
+    _verify: bool | None = None
+    _baseurl: str | None = None  # if partial url given, try the base url
+    _referer: str | None = None
+    allow_redirects: bool | None = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -174,21 +143,21 @@ class EsriSession:
         super()
 
         self._session = Session()
-        self._session.stream = kwargs.pop("stream", False)
-        check_hostname = kwargs.get("check_hostname", True)
-        self._session.trust_env = kwargs.pop("trust_env", True)
-        self._prevent_keep_alive = kwargs.pop("keep_alive", False)
-        if check_hostname == False:
-            self.mount("https://", HostHeaderSSLAdapter())
-        self._session.cert = cert
-        self._cert = cert
-        self.allow_redirects = allow_redirects
-        self.verify_cert = verify_cert
-        self._useragent = __USERAGENT__
+        self._session.stream: bool = kwargs.pop("stream", False)
+        check_hostname: bool = kwargs.get("check_hostname", True)
+        pki_password: str | None = kwargs.get("pki_password", None)
+        proxies: dict | None = kwargs.get("proxies", None)
+        self._session.trust_env: bool = kwargs.pop("trust_env", True)
+        self._prevent_keep_alive: bool = kwargs.pop("keep_alive", False)
+        self._session.cert: tuple | None = cert
+        self._cert: tuple | None = cert
+        self.allow_redirects: bool = allow_redirects
+        self.verify_cert: bool = verify_cert
+        self._useragent: str = __USERAGENT__
         self._session.headers["User-Agent"] = self._useragent
         if referer is None:
-            referer = ""
-        self._referer = referer
+            referer: str = ""
+        self._referer: str = referer
         if isinstance(headers, dict):
             self.update_headers(headers)
         if not "referer" in self._session.headers:
@@ -221,11 +190,10 @@ class EsriSession:
                 referer=self._referer, verify_cert=verify_cert
             )
 
-        proxies = kwargs.get("proxies", None)
         if proxies:
-            self.proxies = proxies
+            self.proxies: dict = proxies
 
-        retry = Retry(
+        retry: Retry = Retry(
             total=kwargs.get("retries", 5),
             read=kwargs.get("retries", 5),
             connect=kwargs.get("retries", 5),
@@ -247,18 +215,44 @@ class EsriSession:
                 ),
             ),
         )
-        if isinstance(self.auth, EsriPKIAuth):
-            from .tools._pki_adaptor import PKIAdapter
+        self._set_adapter(
+            cert=cert,
+            pki_password=pki_password,
+            retry=retry,
+            check_hostname=check_hostname,
+        )
 
+    # ----------------------------------------------------------------------
+    def _set_adapter(
+        self,
+        cert: str,
+        pki_password: str,
+        retry: Retry,
+        check_hostname: bool,
+    ) -> None:
+        if check_hostname == False and isinstance(self.auth, EsriPKIAuth) == False:
+            adapter = EsriHostHeaderSSLAdapter(max_retries=retry)
+
+        elif check_hostname == False and isinstance(self.auth, EsriPKIAuth):
+            __log__.warning(
+                "Cannot set check_hostname to False when using PKI certificates."
+            )
             adapter = PKIAdapter(
                 pki_data=cert,
-                pki_password=kwargs.pop("pki_password", None),
+                pki_password=pki_password,
                 max_retries=retry,
             )
             self._session.cert = None
-            # self.auth = None
+        elif isinstance(self.auth, EsriPKIAuth):
+            adapter = PKIAdapter(
+                pki_data=cert,
+                pki_password=pki_password,
+                max_retries=retry,
+            )
+            self._session.cert = None
+
         else:
-            adapter = HTTPAdapter(max_retries=retry)
+            adapter = TruststoreAdapter(max_retries=retry)
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
 
