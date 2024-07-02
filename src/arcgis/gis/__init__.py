@@ -1206,13 +1206,13 @@ class GIS(object):
         return []
 
     @property
-    def symbol_service(self) -> arcgis.mapping._types.SymbolService | None:
+    def symbol_service(self) -> arcgis.layers._types.SymbolService | None:
         """
         Symbol service is an ArcGIS Server utility service that provides access
         to operations to build and generate images for Esri symbols to be
         consumed by internal and external web applications.
 
-        :return: A :class:`~arcgis.mapping._types.SymbolService` object or None
+        :return: A :class:`~arcgis.layers._types.SymbolService` object or None
 
         """
         try:
@@ -3870,9 +3870,19 @@ class UserManager(object):
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if self.user_settings and "userLicenseType" in self.user_settings:
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
                         user_type = self.user_settings["userLicenseType"]
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and role is None
+                    ):
                         role = self.user_settings["role"]
+
         else:
             if self._gis.version >= [7, 1]:
                 if user_type is None and role is None:
@@ -3881,6 +3891,10 @@ class UserManager(object):
                             "defaultUserTypeIdForUser"
                         ]
                         role = self._gis.admin.security.config["defaultRoleForUser"]
+        if role is None and user_type is None:
+            raise ValueError(
+                "The user must supply a role and user_type when defaults are not present."
+            )
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = "publisher"
@@ -6757,7 +6771,7 @@ class ContentManager(object):
             and item_properties["type"] == "WMTS"
             and "text" not in item_properties
         ):
-            from arcgis.mapping.ogc import WMTSLayer
+            from arcgis.layers._ogc import WMTSLayer
 
             item_properties["text"] = json.dumps(
                 WMTSLayer(item_properties["url"], gis=self._gis).__text__
@@ -10958,12 +10972,14 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
     ---------------------    ---------------------------------------------------------
-    storageUsage             | The amount of storage used for the entire organization.
+    storageUsage             | The amount of storage used for the entire organization in bytes.
 
                              **NOTE:** This value is an estimate for the organization, not the specific user.
                              For storage estimate of a user's items, see code example in the :attr:`items` method.
     ---------------------    ---------------------------------------------------------
-    storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
+    storageQuota             The total storage amount available for a deployment or
+                             subscription. The maximum amount for ArcGIS Online
+                             organizations is 2TB.
     ---------------------    ---------------------------------------------------------
     orgId                    The ID of the organization the user belongs to.
     ---------------------    ---------------------------------------------------------
@@ -13230,7 +13246,7 @@ class Item(dict):
             FeatureLayerCollection,
             Table,
         )
-        from arcgis.mapping import (
+        from arcgis.layers import (
             VectorTileLayer,
             MapImageLayer,
             SceneLayer,
@@ -14091,7 +14107,7 @@ class Item(dict):
         """
         from arcgis.geoprocessing._tool import Toolbox
         from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
+        from arcgis.layers import Service
 
         gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
 

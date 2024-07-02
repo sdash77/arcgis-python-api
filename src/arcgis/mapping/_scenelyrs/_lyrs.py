@@ -2,16 +2,15 @@ from __future__ import annotations
 import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
-from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
 
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 
 
 class SceneLayerManager(_GISResource):
     """
     The ``SceneLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted scene layers.
-    A :class:`~arcgis.mapping.SceneLayerManager` offers access to map and layer content.
+    A :class:`~arcgis.layers.SceneLayerManager` offers access to map and layer content.
     """
 
     def __init__(self, url, gis=None, scene_lyr=None):
@@ -302,7 +301,7 @@ class SceneLayerManager(_GISResource):
 class EnterpriseSceneLayerManager(_GISResource):
     """
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
-    A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
+    A :class:`~arcgis.layers.SceneLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/``
     """
@@ -316,7 +315,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy: dict):
+    def edit(self, service_dictionary: dict):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -326,25 +325,25 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===================     ====================================================================
         **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary     Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
 
 
         :return: boolean
         """
-        sl_service = _services.Service(self.url, self._gis)
-        return sl_service.edit(service_dictionairy)
+        sl_service = _layers.Service(self.url, self._gis)
+        return sl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -361,13 +360,13 @@ class EnterpriseSceneLayerManager(_GISResource):
         :return: Boolean
 
         """
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.delete()
 
     # ----------------------------------------------------------------------
@@ -634,7 +633,7 @@ class Object3DLayer(Layer):
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -649,11 +648,11 @@ class Object3DLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -699,8 +698,8 @@ class Object3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -745,7 +744,7 @@ class IntegratedMeshLayer(Layer):
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -760,11 +759,11 @@ class IntegratedMeshLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -810,8 +809,8 @@ class IntegratedMeshLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -875,7 +874,7 @@ class Tiles3DLayer(Layer):
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -927,7 +926,7 @@ class Tiles3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.Tiles3DLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.Tiles3DLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -974,7 +973,7 @@ class VoxelLayer(Layer):
     .. note::
         Web scene layers are cached web layers that are optimized for displaying
         a large amount of 2D and 3D features. See the
-        :class:`~arcgis.mapping.SceneLayer` class for more information.
+        :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     =============================================================
     **Parameter**           **Description**
@@ -989,11 +988,11 @@ class VoxelLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.VoxelLayer
+        >> arcgis.layers._types.VoxelLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1040,8 +1039,8 @@ class VoxelLayer(Layer):
     def manager(self):
         """
         The ``manager`` property returns an instance of
-        :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1086,7 +1085,7 @@ class Point3DLayer(Layer):
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1101,11 +1100,11 @@ class Point3DLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1152,8 +1151,8 @@ class Point3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1198,7 +1197,7 @@ class PointCloudLayer(Layer):
 
     .. note::
         Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1213,11 +1212,11 @@ class PointCloudLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1263,8 +1262,8 @@ class PointCloudLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1309,7 +1308,7 @@ class BuildingLayer(Layer):
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1324,11 +1323,11 @@ class BuildingLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.BuildingLayer
+        >> arcgis.layers._types.BuildingLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1374,8 +1373,8 @@ class BuildingLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1431,11 +1430,11 @@ class _SceneLayerFactory(type):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1490,11 +1489,11 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
