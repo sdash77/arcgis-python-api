@@ -14,3 +14,6 @@ from ._workflow_manager import Group
 from ._workflow_manager import SavedSearchesManager
 from ._workflow_manager import WMRole
 from ._workflow_manager import LookUpTable
+from ._workflow_manager import NotificationManager
+from ._workflow_manager import Notification
+from ._workflow_manager import MessageType

@@ -1,8 +1,13 @@
 import datetime
 import json
 import sys
-from typing import Optional
+from typing import Optional, Callable
 import urllib.parse
+from enum import Enum
+
+import threading
+import websocket
+from __future__ import annotations
 
 from arcgis.geometry import Geometry
 import arcgis.gis
@@ -1006,6 +1011,8 @@ class WorkflowManager:
         >> [{}...{}]  # returns a list of dictionaries representing each user
     """
 
+    _nm: NotificationManager = None
+
     def __init__(self, item):
         if item is None:
             raise ValueError("Item cannot be None")
@@ -1986,6 +1993,14 @@ class WorkflowManager:
             return post_lookup.put(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
+
+    @property
+    def notification_manager(self):
+        if not self._nm:
+            self._nm = NotificationManager(self._item)
+            self._nm.connect()
+
+        return self._nm
 
 
 class LookUpTable(object):
@@ -2999,6 +3014,94 @@ class Job(object):
             if v is not None and not k.startswith("_")
         }
         return return_obj
+    # For now, requiring passing the WorkflowManager as we don't flow it down,
+    # but we need a singleton NotificationManager / connection
+
+    def run(self, wm: WorkflowManager):
+        # Create a JobExecution object
+        je = JobExecution(self)
+        # Subscribe to this job
+        wm.notification_manager.subscribe([self.job_id], je._callback)
+
+        # Call the action endpoint
+        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
+        post_obj = {"type": "Run"}
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                post_obj,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+
+        # If it fails, unsubscribe then throw
+        if "error" in return_obj:
+            wm.notification_manager.unsubscribe([self.job_id])
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+
+        # If it succeeds, return the JobExecution
+        je._started()
+        return je
+
+
+class JobExecution:
+    _start_time = None
+    _end_time = None
+
+    def __init__(self, job: Job):
+        self._job = job
+        self._messages = []
+        self._event = threading.Event()
+
+    def _callback(self, msg: Notification):
+        if msg.message['jobId'] == self._job.job_id and msg.msg_type != MessageType.JOBSTATE:
+            self._messages.append(repr(msg))
+            # TODO Need to consider cancelling GP case (https://devtopia.esri.com/WebGIS/workflow-manager/issues/7844)
+            if msg.msg_type in [MessageType.STEPFINISHED, MessageType.STEPSTOPPED, MessageType.STEPERROR, MessageType.STEPINFOREQUIRED]:
+                self._end_time = datetime.datetime.now()
+                self._event.set()
+
+    @property
+    def messages(self):
+        return self._messages
+
+    @property
+    def status(self):
+        # TODO
+        return "Complete" if self._event.is_set() else "Running"
+
+    def result(self):
+        # TODO Make configurable
+        if self._event.wait(300):
+            return self._messages[-1]
+        else:
+            raise TimeoutError('Timeout waiting for result')
+
+    @property
+    def elapse_time(self):
+        """
+        Get the amount of time that passed while the
+        :class:`~arcgis.geoprocessing.GPJob` ran.
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+        else:
+            return datetime.datetime.now() - self._start_time
+
+    def _started(self):
+        self._start_time = datetime.datetime.now()
+
+    def running(self):
+        return self._start_time and not self._event.is_set()
+
+    def done(self):
+        return not self.running()
+
+    def __repr__(self):
+        return f"Job execution for job {self._job.job_id}"
 
 
 class WMRole(object):
@@ -3501,3 +3604,236 @@ class JobLocation(object):
     def get(self, gis, url, params):
         job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)
+
+
+class WebsocketConnection:
+    ws: websocket.WebSocketApp = None
+    thread: threading.Thread = None
+    msgEvent: (str, threading.Event) = None
+    msgs = []
+
+    def __init__(self, subscribe_callback: Callable):
+        # TODO Make configurable
+        self.timeout = 300
+        self.subscribe_callback = subscribe_callback
+
+    def __on_message__(self, app, msg):
+        if self.msgEvent:
+            self.msgEvent[1].set()
+            self.msgs.append(msg)
+        else:
+            self.msgs.append(msg)
+        try:
+            self.subscribe_callback(msg)
+        except Exception as e:
+            print('-------------------------------')
+            print('Error when receiving')
+            print(e)
+            print('-------------------------------')
+
+    def connect(self, url):
+        _open_event = threading.Event()
+
+        def on_open(ws: websocket.WebSocket):
+            print(f"Opened ws")
+            _open_event.set()
+
+        # TODO Set all headers / ssl options
+        self.ws = websocket.WebSocketApp(url,
+                                         on_open=on_open,
+                                         on_message=self.__on_message__)
+        self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
+        self.thread.start()
+        print('Waiting for connection')
+        if _open_event.wait(self.timeout):
+            print('Connected')
+        else:
+            raise TimeoutError('Error waiting for connection open event')
+
+    def send(self, msg):
+        print(f'Sending {msg}')
+        self.ws.send(msg)
+
+    # TODO Should be specifying what we are waiting for, not just any message (i.e. JobState after a subscribe)
+    def send_and_wait(self, msg):
+        # Check if connected, if not, connect now
+        # If it was already connected, see if this job is already subscribed
+        self.msgs = []
+        self.msgEvent = (msg, threading.Event())
+        self.send(msg)
+        self.msgEvent[1].wait(self.timeout)
+        # if we did the connection here, disconnect
+        # if not disconnecting, see if we need to unsubscribe
+        return self.msgs
+
+    def disconnect(self):
+        if not self.ws:
+            print('Not connected')
+            return
+
+        print('Disconnecting')
+        self.ws.close()
+        self.thread.join(self.timeout)
+        print('Goodbye')
+
+
+class NotificationManager:
+    """
+    Represents a helper class for workflow manager websocket notifications. Accessible as the
+    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.notifications` property of the
+    :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                The Workflow Manager Item
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item: arcgis.gis.Item):
+        _initialize(self, item._gis)
+        _check_license(item._gis)
+        self.workflow_item_id = item.id
+        self.websocket_connection = None
+        self.subscribed_jobs = {}
+
+        # need baseAddress/ server address, orgid, and workflow item id
+        base = self.server_url.replace('http://', 'ws://').replace('https://', 'wss://')
+        ws_address = f"{base}/{self.org_id}/{self.workflow_item_id}/notificationWs"
+        self.websocket_url = self._generate_url(ws_address)
+
+        # print(f'For help with websocket messages, you can reference '
+              # f'https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/')
+    @property
+    def _wmx_server_url(self):
+        """locates the WMX server"""
+        baseurl = self._gis._portal.resturl
+
+        # Set org_id
+        info_result = self._gis.properties
+        self.is_enterprise = info_result["isPortal"]
+
+        if self.is_enterprise:
+            self.org_id = "workflow"
+            res = self._gis.servers
+            for s in res["servers"]:
+                server_functions = [
+                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
+                ]
+                if "workflowmanager" in server_functions:
+                    self.server_url = self._url = s.get("url", None)
+                    self._private_url = s.get("adminUrl", None)
+                    if self._url is None:
+                        raise RuntimeError("Cannot find a WorkflowManager Server")
+                    self._url += f"/{self.org_id}"
+                    self._private_url += f"/{self.org_id}"
+                    return self._url, self._private_url
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+        # is Arcgis Online
+        else:
+            self.org_id = info_result["id"]
+
+            helper_services = info_result["helperServices"]
+            if helper_services is None:
+                raise RuntimeError("Cannot find helper functions")
+
+            self.server_url = self._url = helper_services["workflowManager"]["url"]
+            if self._url is None:
+                raise RuntimeError("Cannot get Workflow Manager url")
+
+            self._url += f"/{self.org_id}"
+            self._private_url = f"/{self.org_id}"
+            return self._url, self._private_url
+
+    def _token_generator(self):
+        return self._gis._con.token
+
+    def _generate_url(self, url):
+        token = self._token_generator()
+        return f"{url}?token={token}"
+
+    def subscriber(self, message):
+        message_dict = json.loads(message)
+        if 'msgType' in message_dict.keys():
+            msg = Notification(message_dict)
+            job_id = msg.message['jobId']
+
+            try:
+                if job_id in self.subscribed_jobs.keys():
+                    callback = self.subscribed_jobs[job_id]
+                    callback(msg)
+            except Exception as e:
+                print(e)
+
+    def connect(self):
+        if self.websocket_connection is None:
+            self.websocket_connection = WebsocketConnection(self.subscriber)
+            self.websocket_connection.connect(self.websocket_url)
+
+    def disconnect(self):
+        if self.websocket_connection is not None:
+            self.websocket_connection.disconnect()
+
+    def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
+        try:
+            ids = job_ids
+            if self.websocket_connection is None:
+                subscribe_obj = {'msgType': 'subscribe', 'jobIds': ids, 'token': self._token_generator()}
+
+                ws = WebsocketConnection(self.subscriber)
+                ws.connect(self.websocket_url)
+                ws.send_and_wait(json.dumps(subscribe_obj))
+                # TODO Shouldn't disconnect here, need to wait for the step to finish.
+                #  This whole if/else logic should probably move to run
+                ws.disconnect()
+            else:
+                # a connection exists, exclude jobs we are already subscribed to
+                ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
+                subscribe_obj = {'msgType': 'subscribe', 'jobIds': ids, 'token': self._token_generator()}
+
+                self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+
+            for jid in ids:
+                self.subscribed_jobs[jid] = callback
+        except Exception as e:
+            print(e)
+
+    def unsubscribe(self, job_ids: list):
+        try:
+            if self.websocket_connection is not None:
+                unsubscribe_obj = {'msgType': 'unsubscribe', 'jobIds': job_ids, 'token': self._token_generator()}
+                self.websocket_connection.send_and_wait(json.dumps(unsubscribe_obj))
+
+                for jid in job_ids:
+                    self.subscribed_jobs.pop(jid)
+        except Exception as e:
+            print('Error when trying to unsubscribe.')
+
+
+class Notification:
+    def __init__(self, init_data):
+        self.message = init_data['message']
+        self.timestamp = init_data['timestamp']
+        self.msg_type = MessageType(init_data['msgType'].upper())
+
+    def __repr__(self):
+        return f"{self.timestamp}: {self.msg_type} - {self.message}"
+
+
+class MessageType(str, Enum):
+    CREATED = 'CREATED'
+    ERROR = 'ERROR'
+    JOBSTATE = 'JOBSTATE'
+    STEPSTARTED = 'STEPSTARTED'
+    STEPINFOREQUIRED = 'STEPINFOREQUIRED'
+    STEPSTOPPED = 'STEPSTOPPED'
+    STEPPAUSED = 'STEPPAUSED'
+    STEPCANCELLED = 'STEPCANCELLED'
+    STEPFINISHED = 'STEPFINISHED'
+    STEPERROR = 'STEPERROR'
+    STEPPROGRESS = 'STEPPROGRESS'
+    STEPSTOPPING = 'STEPSTOPPING'
