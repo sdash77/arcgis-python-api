@@ -878,6 +878,33 @@ def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
         return pix2pix_predictions
 
 
+def pixel_classify_climax_image(model, tiles, device, leadtimes, model_info):
+    normfunc = lambda btch_arr, mean, std: (btch_arr - mean) / std
+    denormfunc = lambda btch_arr, mean, std: (btch_arr * std) + mean
+
+    mean_stat = torch.tensor(model_info.get("mean_norm_stats")).to(device)[
+        None, :, None, None
+    ]
+    std_stat = torch.tensor(model_info.get("std_norm_stats")).to(device)[
+        None, :, None, None
+    ]
+
+    model = model.to(device)
+    batch_tensor = tensor(tiles).to(device).float()
+
+    leadtimes = torch.tensor([float(leadtimes)] * batch_tensor.shape[0]).to(device)
+
+    normed_batch_tensor = normfunc(batch_tensor, mean_stat, std_stat)
+
+    model.eval()
+    with torch.no_grad():
+        predictions = model(normed_batch_tensor, leadtimes, 0, 0, 0)
+
+    denormed_batch_tensor = denormfunc(predictions[0], mean_stat, std_stat)
+
+    return denormed_batch_tensor
+
+
 # functions for test time augmentation and smooth blending for pixel classification
 
 
