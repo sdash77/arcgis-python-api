@@ -87,7 +87,8 @@ class _ApplicationProperties(object):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the PackagingJob class found in arcgis.map instead.",
+    removed_in="2.4.2",
+    details="Use the PackagingJob class found in `arcgis.map.offline_mapping.PackagingJob` instead.",
 )
 class PackagingJob(object):
     """
@@ -247,7 +248,8 @@ class PackagingJob(object):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the OfflineMapAreaManager class found in arcgis.map instead.",
+    removed_in="2.4.2",
+    details="Use the OfflineMapAreaManager class found in `arcgis.map.OfflineMapAreaManager` instead.",
 )
 class OfflineMapAreaManager(object):
     """
@@ -1653,7 +1655,8 @@ class OfflineMapAreaManager(object):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the EnterpriseVectorTileLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the EnterpriseVectorTileLayerManager class found in `arcgis.layers.EnterpriseVectorTileLayerManager` instead.",
 )
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
@@ -1818,7 +1821,8 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the VectorTileLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayerManager class found in `arcgis.layers.VectorTileLayerManager` instead.",
 )
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
@@ -2172,7 +2176,8 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the SymbolService class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the SymbolService class found in `arcgis.layers.SymbolService` instead.",
 )
 class SymbolService:
     """
@@ -2309,7 +2314,8 @@ class SymbolService:
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the VectorTileLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayer class found in `arcgis.layers.VectorTileLayer` instead.",
 )
 class VectorTileLayer(arcgis.gis.Layer):
     """
@@ -2658,7 +2664,8 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the EnterpriseMapImageLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the EnterpriseMapImageLayerManager class found in `arcgis.layers.EnterpriseMapImageLayerManager` instead.",
 )
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
@@ -2733,7 +2740,8 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapImageLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapImageLayerManager class found in `arcgis.layers.MapImageLayerManager` instead.",
 )
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
@@ -3139,7 +3147,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapImageLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapImageLayer class found in `arcgis.layers.MapImageLayer` instead.",
 )
 class MapImageLayer(arcgis.gis.Layer):
     """
@@ -4532,6 +4541,7 @@ class MapImageLayer(arcgis.gis.Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
+    removed_in="2.4.2",
     details="This class will be removed in a later version.",
 )
 class Events(object):

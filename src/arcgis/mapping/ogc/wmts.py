@@ -15,7 +15,8 @@ from arcgis._impl.common._deprecate import deprecated
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the WMTSLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the WMTSLayer class found in `arcgis.layers.WMTSLayer` instead.",
 )
 class WMTSLayer(BaseOGC):
     """

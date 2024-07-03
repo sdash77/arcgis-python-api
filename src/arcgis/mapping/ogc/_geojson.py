@@ -16,7 +16,8 @@ def _is_file(path):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the GeoJSONLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the GeoJSONLayer class found in `arcgis.layers.GeoJSONLayer` instead.",
 )
 class GeoJSONLayer(BaseOGC):
     """

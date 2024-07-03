@@ -8,7 +8,8 @@ from arcgis._impl.common._deprecate import deprecated
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the GeoRSSLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the GeoRSSLayer class found in `arcgis.layers.GeoRSSLayer` instead.",
 )
 class GeoRSSLayer(BaseOGC):
     """

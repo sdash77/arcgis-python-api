@@ -10,7 +10,8 @@ _layers = LazyLoader("arcgis.layers")
 
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the SceneLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the SceneLayerManager class found in `arcgis.layers.SceneLayerManager` instead.",
 )
 class SceneLayerManager(_GISResource):
     """
@@ -305,7 +306,8 @@ class SceneLayerManager(_GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the EnterpriseSceneLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the EnterpriseSceneLayerManager class found in `arcgis.layers.EnterpriseSceneLayerManager` instead.",
 )
 class EnterpriseSceneLayerManager(_GISResource):
     """
@@ -638,7 +640,8 @@ class EnterpriseSceneLayerManager(_GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the Object3dLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the Object3dLayer class found in `arcgis.layers.Object3DLayer` instead.",
 )
 class Object3DLayer(Layer):
     """
@@ -753,7 +756,8 @@ class Object3DLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the IntegratedMeshLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the IntegratedMeshLayer class found in `arcgis.layers.IntegratedMeshLayer` instead.",
 )
 class IntegratedMeshLayer(Layer):
     """
@@ -868,7 +872,8 @@ class IntegratedMeshLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the Tiles3DLayerManager class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayerManager class found in `arcgis.layers.Tiles3DLayerManager` instead.",
 )
 class Tiles3DLayerManager(_GISResource):
     def __init__(self, url, gis=None, tiles3d_service=None):
@@ -891,7 +896,8 @@ class Tiles3DLayerManager(_GISResource):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the Tiles3DLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayer class found in `arcgis.layers.Tiles3DLayer` instead.",
 )
 class Tiles3DLayer(Layer):
     """
@@ -991,7 +997,8 @@ class Tiles3DLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the VoxelLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the VoxelLayer class found in `arcgis.layers.VoxelLayer` instead.",
 )
 class VoxelLayer(Layer):
     """
@@ -1108,7 +1115,8 @@ class VoxelLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the Point3DLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the Point3DLayer class found in `arcgis.layers.Point3DLayer` instead.",
 )
 class Point3DLayer(Layer):
     """
@@ -1224,7 +1232,8 @@ class Point3DLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the PointCloudLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the PointCloudLayer class found in `arcgis.layers.PointCloudLayer` instead.",
 )
 class PointCloudLayer(Layer):
     """
@@ -1339,7 +1348,8 @@ class PointCloudLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the BuildingLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the BuildingLayer class found in `arcgis.layers.BuildingLayer` instead.",
 )
 class BuildingLayer(Layer):
     """
@@ -1454,7 +1464,8 @@ class BuildingLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the _SceneLayerFactory class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the _SceneLayerFactory class found in `arcgis.layers._SceneLayerFactory` instead.",
 )
 class _SceneLayerFactory(type):
     """
@@ -1510,7 +1521,8 @@ class _SceneLayerFactory(type):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the SceneLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the SceneLayer class found in `arcgis.layers.SceneLayer` instead.",
 )
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """

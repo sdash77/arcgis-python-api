@@ -25,7 +25,8 @@ from arcgis._impl.common._deprecate import deprecated
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapFeatureLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapFeatureLayer class found in `arcgis.layers.MapFeatureLayer` instead.",
 )
 class MapFeatureLayer(Layer):
     """
@@ -1262,7 +1263,8 @@ class MapFeatureLayer(Layer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapRasterLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapRasterLayer class found in `arcgis.layers.MapRasterLayer` instead.",
 )
 class MapRasterLayer(MapFeatureLayer):
     """
@@ -1316,7 +1318,8 @@ class MapRasterLayer(MapFeatureLayer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapTable class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapTable class found in `arcgis.layers.MapTable` instead.",
 )
 class MapTable(MapFeatureLayer):
     """
@@ -1703,7 +1706,8 @@ class MapTable(MapFeatureLayer):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the _MSILayerFactory class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the _MSILayerFactory class found in `arcgis.layers._MSILayerFactory` instead.",
 )
 class _MSILayerFactory(type):
     """
@@ -1762,7 +1766,8 @@ class _MSILayerFactory(type):
 ###########################################################################
 @deprecated(
     deprecated_in="2.4.0",
-    details="Use the MapServiceLayer class found in arcgis.layers instead.",
+    removed_in="2.4.2",
+    details="Use the MapServiceLayer class found in `arcgis.layers.MapServiceLayer` instead.",
 )
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
