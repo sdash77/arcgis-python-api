@@ -10,11 +10,9 @@ import arcgis
 import glob
 import types
 from osgeo import gdal
-import cv2
 from math import ceil
 
 import numpy as np
-import xarray as xr
 from .._utils.climax import (
     Forecast,
     IndividualForecastDataIter,
