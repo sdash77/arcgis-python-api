@@ -73,7 +73,6 @@ else:
         "keyring >=23.3.0",
         "pylerc",
         "ujson >=3",
-        "python-certifi-win32;python_version<'3.10'",
         "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
@@ -212,9 +211,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -226,7 +225,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.9, <3.12",
+    "python_requires": ">=3.10, <3.13",
     "include_package_data": True,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
