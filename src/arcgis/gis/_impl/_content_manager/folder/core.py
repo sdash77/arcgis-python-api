@@ -113,7 +113,7 @@ class Folder:
         self._session = gis._con._session
         self._properties = properties
         if self._properties:
-            self._name = self._properties.get("name", None)
+            self._name = self._properties.get("title", None)
             self._fid = self._properties.get("id", None)
 
     # ---------------------------------------------------------------------
