@@ -2,10 +2,11 @@ import unittest
 from arcgis.map import Scene
 from arcgis.layers import VectorTileLayer, MapServiceLayer, MapFeatureLayer
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestAddLayersToMap(unittest.TestCase):
     def test_vector_layer(self):
         """Test adding a vector tile layer as a basemap"""

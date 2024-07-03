@@ -13,10 +13,11 @@ from arcgis.map.renderers import (
 )
 import unittest
 import os
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestRenderers(unittest.TestCase):
     """Test the renderers module"""
 

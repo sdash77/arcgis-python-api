@@ -1,10 +1,11 @@
 from arcgis.gis import GIS
 from arcgis.map import Map
 import unittest
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestBookmarksMap(unittest.TestCase):
     def test_bookmarks(self):
         """Test getting, adding, and deleting bookmarks"""

@@ -14,10 +14,11 @@ from arcgis.map.symbols import (
 )
 from arcgis.map.renderers import SimpleRenderer
 import unittest
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestSymbols(unittest.TestCase):
     """Test the symbols module"""
 

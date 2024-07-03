@@ -9,10 +9,11 @@ from arcgis.layers import (
     Object3DLayer,
 )
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestAddLayersToMap(unittest.TestCase):
     def test_integrated_mesh_layer(self):
         """Test adding an integrated mesh layer"""

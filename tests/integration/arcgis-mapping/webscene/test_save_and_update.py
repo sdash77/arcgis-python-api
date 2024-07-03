@@ -6,10 +6,11 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.map import Scene
 import unittest
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestSaveAndUpdateMap(unittest.TestCase):
     def test_save_and_update(self):
         """Test saving a webmap, adding a layer, and then updating."""

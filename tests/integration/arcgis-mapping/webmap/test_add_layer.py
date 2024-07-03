@@ -22,10 +22,11 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
 )
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestAddLayersToMap(unittest.TestCase):
     def test_feature_layer(self):
         """Test adding a feature layer"""

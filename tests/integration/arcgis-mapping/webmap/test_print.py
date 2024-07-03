@@ -1,10 +1,11 @@
 import unittest
 from arcgis.map import Map
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestPrintMap(unittest.TestCase):
     def test_print_png8(self):
         """Test print to PNG8"""

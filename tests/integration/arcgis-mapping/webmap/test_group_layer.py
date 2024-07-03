@@ -6,10 +6,12 @@ from arcgis.layers import (
     CSVLayer,
 )
 from arcgis.gis import GIS
+from utils.decorators import integration_test
+
 
 PROFILES = ["your_online_profile"]
 
-
+@integration_test
 class TestAddLayersToMap(unittest.TestCase):
     def test_add_as_group(self):
         """Test adding a feature layer"""
