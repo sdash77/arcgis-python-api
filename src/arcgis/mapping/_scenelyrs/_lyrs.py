@@ -3,10 +3,15 @@ import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
 _layers = LazyLoader("arcgis.layers")
 
 
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the SceneLayerManager class found in arcgis.layers instead.",
+)
 class SceneLayerManager(_GISResource):
     """
     The ``SceneLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted scene layers.
@@ -298,6 +303,10 @@ class SceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the EnterpriseSceneLayerManager class found in arcgis.layers instead.",
+)
 class EnterpriseSceneLayerManager(_GISResource):
     """
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
@@ -627,6 +636,10 @@ class EnterpriseSceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the Object3dLayer class found in arcgis.layers instead.",
+)
 class Object3DLayer(Layer):
     """
     The ``Object3DLayer`` represents a Web scene 3D Object layer.
@@ -738,6 +751,10 @@ class Object3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the IntegratedMeshLayer class found in arcgis.layers instead.",
+)
 class IntegratedMeshLayer(Layer):
     """
     The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
@@ -849,6 +866,10 @@ class IntegratedMeshLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the Tiles3DLayerManager class found in arcgis.layers instead.",
+)
 class Tiles3DLayerManager(_GISResource):
     def __init__(self, url, gis=None, tiles3d_service=None):
         if url.split("/")[-1].isdigit():
@@ -868,6 +889,10 @@ class Tiles3DLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the Tiles3DLayer class found in arcgis.layers instead.",
+)
 class Tiles3DLayer(Layer):
     """
     The ``Tiles3DLayer`` class represents a Web scene 3D Tile Service Layer.
@@ -964,8 +989,10 @@ class Tiles3DLayer(Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the VoxelLayer class found in arcgis.layers instead.",
+)
 class VoxelLayer(Layer):
     """
     The ``VoxelLayer`` class represents a Web Scene Voxel layer.
@@ -1079,6 +1106,10 @@ class VoxelLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the Point3DLayer class found in arcgis.layers instead.",
+)
 class Point3DLayer(Layer):
     """
     The ``Point3DLayer`` class represents a Web scene 3D Point layer.
@@ -1191,6 +1222,10 @@ class Point3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the PointCloudLayer class found in arcgis.layers instead.",
+)
 class PointCloudLayer(Layer):
     """
     The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
@@ -1302,6 +1337,10 @@ class PointCloudLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the BuildingLayer class found in arcgis.layers instead.",
+)
 class BuildingLayer(Layer):
     """
     The ``BuildingLayer`` class represents a Web building layer.
@@ -1413,6 +1452,10 @@ class BuildingLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the _SceneLayerFactory class found in arcgis.layers instead.",
+)
 class _SceneLayerFactory(type):
     """
     Factory that generates the Scene Layers
@@ -1465,6 +1508,10 @@ class _SceneLayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the SceneLayer class found in arcgis.layers instead.",
+)
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
     The ``SceneLayer`` class represents a Web scene layer.

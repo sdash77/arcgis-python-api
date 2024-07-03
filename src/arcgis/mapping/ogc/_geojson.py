@@ -5,6 +5,7 @@ from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis._impl._con._url_validator import validate_url
 from pathlib import Path
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 def _is_file(path):
@@ -13,6 +14,10 @@ def _is_file(path):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the GeoJSONLayer class found in arcgis.layers instead.",
+)
 class GeoJSONLayer(BaseOGC):
     """
     The GeoJSONLayer class is used to create a layer based on GeoJSON.

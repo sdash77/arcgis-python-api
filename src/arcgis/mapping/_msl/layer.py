@@ -5,7 +5,6 @@ import os
 from string import digits
 from functools import lru_cache
 
-from re import search
 from typing import Any, Optional, Union
 
 from arcgis._impl.common import _query
@@ -15,15 +14,19 @@ from arcgis._impl.common._filters import (
     GeometryFilter,
 )
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _date_handler, chunks
 
 from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
 from arcgis.layers import MapImageLayer
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapFeatureLayer class found in arcgis.layers instead.",
+)
 class MapFeatureLayer(Layer):
     """
     The ``MapFeatureLayer`` class represents Map Feature Layers.
@@ -1257,6 +1260,10 @@ class MapFeatureLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapRasterLayer class found in arcgis.layers instead.",
+)
 class MapRasterLayer(MapFeatureLayer):
     """
     The ``MapRasterLayer`` class represents a geo-referenced image hosted in a ``Map Service``.
@@ -1307,6 +1314,10 @@ class MapRasterLayer(MapFeatureLayer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapTable class found in arcgis.layers instead.",
+)
 class MapTable(MapFeatureLayer):
     """
     The ``MapTable`` class represents entity classes with uniform properties.
@@ -1690,6 +1701,10 @@ class MapTable(MapFeatureLayer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the _MSILayerFactory class found in arcgis.layers instead.",
+)
 class _MSILayerFactory(type):
     """
     Factory that generates the Map Service Layers
@@ -1745,6 +1760,10 @@ class _MSILayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapServiceLayer class found in arcgis.layers instead.",
+)
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
     The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.

@@ -1,14 +1,13 @@
-import os
-import sys
-import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
-from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the KMLLayer class found in arcgis.layers instead.",
+)
 class KMLLayer(BaseOGC):
     """
     The KMLLayer class is used to create a layer based on a KML file (.kml, .kmz).

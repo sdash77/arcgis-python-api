@@ -9,6 +9,7 @@ from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
+from arcgis._impl.common._deprecate import deprecated
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -84,6 +85,10 @@ class _ApplicationProperties(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the PackagingJob class found in arcgis.map instead.",
+)
 class PackagingJob(object):
     """
     The ``PackagingJob`` class represents a Single Packaging Job.
@@ -240,6 +245,10 @@ class PackagingJob(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the OfflineMapAreaManager class found in arcgis.map instead.",
+)
 class OfflineMapAreaManager(object):
     """
     The ``OfflineMapAreaManager`` is a helper class to manage offline map areas
@@ -1642,6 +1651,10 @@ class OfflineMapAreaManager(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the EnterpriseVectorTileLayerManager class found in arcgis.layers instead.",
+)
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
@@ -1803,6 +1816,10 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the VectorTileLayerManager class found in arcgis.layers instead.",
+)
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
@@ -2153,6 +2170,10 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the SymbolService class found in arcgis.layers instead.",
+)
 class SymbolService:
     """
     Symbol service is an ArcGIS Server utility service that provides access
@@ -2286,6 +2307,10 @@ class SymbolService:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the VectorTileLayer class found in arcgis.layers instead.",
+)
 class VectorTileLayer(arcgis.gis.Layer):
     """
     A Vector Tile Layer is a type of data layer used to access and display
@@ -2631,6 +2656,10 @@ class VectorTileLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the EnterpriseMapImageLayerManager class found in arcgis.layers instead.",
+)
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
@@ -2702,6 +2731,10 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapImageLayerManager class found in arcgis.layers instead.",
+)
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
@@ -3104,6 +3137,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use the MapImageLayer class found in arcgis.layers instead.",
+)
 class MapImageLayer(arcgis.gis.Layer):
     """
     The ``MapImageLayer`` allows you to display and analyze data from sublayers defined in a map service,
@@ -4493,8 +4530,10 @@ class MapImageLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    details="This class will be removed in a later version.",
+)
 class Events(object):
     @classmethod
     def _create_events(cls, enable=False):
