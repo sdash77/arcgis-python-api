@@ -415,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
