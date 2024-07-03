@@ -6,9 +6,15 @@ from arcgis.geometry import Geometry
 from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCCollection class found in `arcgis.layers.OGCCollection` instead.",
+)
 class OGCCollection:
     """
     Represents a single OGC dataset
@@ -176,6 +182,11 @@ class OGCCollection:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCFeatureService class found in `arcgis.layers.OGCFeatureService` instead.",
+)
 class OGCFeatureService:
     """
     Represents the Hosted OGC Feature Server
