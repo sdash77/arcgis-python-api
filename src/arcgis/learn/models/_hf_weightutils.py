@@ -191,12 +191,6 @@ hf_resnet_cfgs = {
         filename="resnet50_sentinel2_all_dino-d6c330e9.pth",
         input_size=(13, 224, 224),
     ),
-    "resnet50_sentinel1_all_moco": _res_cfg(
-        # url="https://hf.co/torchgeo/resnet50_sentinel1_all_moco/resolve/e79862c667853c10a709bdd77ea8ffbad0e0f1cf/resnet50_sentinel1_all_moco-906e4356.pth",
-        hf_hub="torchgeo/resnet50_sentinel1_all_moco",
-        filename="resnet50_sentinel1_all_moco-906e4356.pth",
-        input_size=(2, 224, 224),
-    ),
     "resnet50_fmow_rgb_gassl": _res_cfg(
         # url="https://hf.co/torchgeo/resnet50_fmow_rgb_gassl/resolve/fe8a91026cf9104f1e884316b8e8772d7af9052c/resnet50_fmow_rgb_gassl-da43d987.pth",
         hf_hub="torchgeo/resnet50_fmow_rgb_gassl",
@@ -400,12 +394,6 @@ def resnet50_sentinel2_rgb_seco(pretrained=False, **kwargs):
 def resnet50_sentinel2_all_dino(pretrained=False, **kwargs):
     model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], **kwargs)
     return _create_resnet("resnet50_sentinel2_all_dino", pretrained, **model_args)
-
-
-@register_model
-def resnet50_sentinel1_all_moco(pretrained=False, **kwargs):
-    model_args = dict(block=Bottleneck, layers=[3, 4, 6, 3], **kwargs)
-    return _create_resnet("resnet50_sentinel1_all_moco", pretrained, **model_args)
 
 
 @register_model

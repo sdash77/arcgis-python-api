@@ -596,7 +596,7 @@ class ArcGISModel(object):
             self._is_multispectral = getattr(data, "_is_multispectral")
         else:
             self._is_multispectral = False
-        if self._is_multispectral:
+        if self._is_multispectral or "hf:" in backbone:
             self._imagery_type = data._imagery_type
             self._bands = data._bands
             self._orig_backbone = self._backbone
