@@ -1630,9 +1630,8 @@ def prepare_data(
             dataset_type = "WNet_cGAN"
         elif not has_esri_files:
             try:
-                emd_file = os.path.join(
-                    path, os.listdir(path)[0], "esri_model_definition.emd"
-                )
+                varlst = [i for i in os.listdir(path) if i not in ["DATA", "models"]]
+                emd_file = os.path.join(path, varlst[0], "esri_model_definition.emd")
                 with open(emd_file) as f:
                     emd = json.load(f)
                 if emd.get("IsMultidimensional"):
