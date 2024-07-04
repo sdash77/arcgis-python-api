@@ -584,13 +584,13 @@ def show_results(self, rows, variable, **kwargs):
     )[:, variable_no, None, :, :]
     x_B = denormfunc(
         x_B.cpu(),
-        self._data._norm_mean[None, :2, None, None],
-        self._data._norm_std[None, :2, None, None],
+        self._data._norm_mean[None, :, None, None],
+        self._data._norm_std[None, :, None, None],
     )[:, variable_no, None, :, :]
     activations = denormfunc(
         activations.cpu().detach(),
-        self._data._norm_mean[None, :2, None, None],
-        self._data._norm_std[None, :2, None, None],
+        self._data._norm_mean[None, :, None, None],
+        self._data._norm_std[None, :, None, None],
     )[:, variable_no, None, :, :]
 
     rows = min(rows, x_A.shape[0])
