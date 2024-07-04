@@ -10,6 +10,7 @@ import arcgis
 import glob
 import types
 from osgeo import gdal
+import cv2
 from math import ceil
 
 import numpy as np
@@ -547,8 +548,11 @@ def prepare_climax_data(
     return data
 
 
-def show_results(self, rows, **kwargs):
-    variable_no = kwargs.get("variable_no", 0)
+def show_results(self, rows, variable, **kwargs):
+    variable = self._data._out_variables[0] if variable == "" else variable
+    variable_no = {i: n for n, i in enumerate(self._data._out_variables)}[
+        variable.lower()
+    ]
     from .._data_utils.pix2pix_data import display_row
     from fastai.vision import image2np
 
@@ -620,7 +624,7 @@ def show_results(self, rows, **kwargs):
         )
 
 
-def show_batch(self, rows=4, variable=0, **kwargs):
+def show_batch(self, rows=4, variable="", **kwargs):
     """
     This function randomly picks a few training chips and visualizes them.
 
@@ -635,10 +639,12 @@ def show_batch(self, rows=4, variable=0, **kwargs):
     =====================   ===========================================
     """
     xs, ys, years = [], [], []
+    variable = self._out_variables[0] if variable == "" else variable
+    variable_no = {i: n for n, i in enumerate(self._out_variables)}[variable.lower()]
     for n, imgs in enumerate(self.train_dl):
         if n != rows:
-            xs.append(imgs[0][0][:, None, variable, :, :])
-            ys.append(imgs[1][:, None, variable, :, :])
+            xs.append(imgs[0][0][:, None, variable_no, :, :])
+            ys.append(imgs[1][:, None, variable_no, :, :])
             years.extend(imgs[0][3])
         else:
             break

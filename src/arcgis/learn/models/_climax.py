@@ -246,7 +246,7 @@ class ClimaX(ArcGISModel):
         **kwargs**
 
         """
-        show_results(self, rows, **kwargs)
+        show_results(self, rows, variable="", **kwargs)
 
     def compute_metrics(self):
         """
