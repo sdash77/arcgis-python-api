@@ -878,7 +878,7 @@ def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
         return pix2pix_predictions
 
 
-def pixel_classify_climax_image(model, tiles, device, leadtimes, model_info):
+def pixel_classify_climax_image(self, model, tiles, device, leadtimes, model_info):
     normfunc = lambda btch_arr, mean, std: (btch_arr - mean) / std
     denormfunc = lambda btch_arr, mean, std: (btch_arr * std) + mean
 
@@ -1113,6 +1113,15 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
     elif model_name == "WNetcGAN":
         prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info
+        )
+    elif model_name == "ClimaX":
+        prediction = pixel_classify_climax_image(
+            self,
+            self.model,
+            patches,
+            self.device,
+            getattr(self, "leadtimes", None),
+            model_info=self.json_info,
         )
 
     interpolation_mask = create_interpolation_mask(kernel_size, 0, self.device, "hann")

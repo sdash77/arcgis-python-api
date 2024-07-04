@@ -56,13 +56,12 @@ class ChildImageClassifier:
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
-        leadtime = round(self.json_info["lead_times"][0], 9)
         required_parameters.extend(
             [
                 {
                     "name": "padding",
                     "dataType": "numeric",
-                    "value": int(0),  # int(self.json_info["ImageHeight"]) // 4,
+                    "value": int(self.json_info["ImageHeight"]) // 4,
                     "required": False,
                     "displayName": "Padding",
                     "description": "Padding",
@@ -76,12 +75,12 @@ class ChildImageClassifier:
                     "description": "Batch Size",
                 },
                 {
-                    "name": "lead_times",
-                    "dataType": "numeric",
+                    "name": "output_variables",
+                    "dataType": "string",
                     "required": False,
-                    "value": leadtime,
-                    "displayName": "Lead Time",
-                    "description": "Lead Time",
+                    "value": self.json_info["variables"][0],
+                    "displayName": "output_variables",
+                    "description": "output_variables",
                 },
             ]
         )
@@ -107,7 +106,7 @@ class ChildImageClassifier:
             self.rectangle_height,
             self.rectangle_width,
         )
-        self.leadtimes = scalars.get("lead_times", None)
+        self.leadtimes = round(self.json_info["lead_times"][0], 9)
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 
@@ -125,6 +124,7 @@ class ChildImageClassifier:
         )
 
         superres_prediction = util.pixel_classify_climax_image(
+            self,
             self.model,
             batch,
             self.device,
@@ -132,13 +132,13 @@ class ChildImageClassifier:
             model_info=self.json_info,
         )
 
-        superres_prediction = batch_to_tile(
+        superres_prediction2 = batch_to_tile(
             superres_prediction.unsqueeze(dim=1).detach().cpu().numpy(),
             batch_height,
             batch_width,
         )
 
-        return superres_prediction
+        return superres_prediction2
 
-    # def updatePixelsSmooth(self, tlc, shape, props, **pixelBlocks):
-    #     return util.update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks)
+    def updatePixelsSmooth(self, tlc, shape, props, **pixelBlocks):
+        return util.update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks)
