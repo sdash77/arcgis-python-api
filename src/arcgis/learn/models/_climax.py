@@ -228,7 +228,7 @@ class ClimaX(ArcGISModel):
     def _supported_datasets():
         return ["Export Tiles"]
 
-    def show_results(self, rows=20, **kwargs):
+    def show_results(self, rows=20, variable="", **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -246,7 +246,7 @@ class ClimaX(ArcGISModel):
         **kwargs**
 
         """
-        show_results(self, rows, variable="", **kwargs)
+        show_results(self, rows, variable, **kwargs)
 
     def compute_metrics(self):
         """
