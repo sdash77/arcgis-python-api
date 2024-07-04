@@ -567,14 +567,8 @@ def show_results(self, rows, **kwargs):
     x_A = torch.cat([x_batch[i][0] for i in range(len(x_batch))])
     x_B = torch.cat([y_batch[0] for i in range(len(y_batch))])
 
-    if x_A.shape[0] < self._data.batch_size:
-        leadtime = self._data._leadtimes[x_A.shape[0] :]
-    elif x_B.shape[0] < self._data.batch_size:
-        leadtime = self._data._leadtimes[x_B.shape[0] :]
-    else:
-        leadtime = self._data._leadtimes
-
     for i in range(0, x_A.shape[0], self._data.batch_size):
+        leadtime = self._data._leadtimes[: x_A[i : i + self._data.batch_size].shape[0]]
         preds = self.learn.model(x_A[i : i + self._data.batch_size], leadtime, 0, 0, 0)
         activ.append(preds[0])
     activations = torch.cat(activ)
