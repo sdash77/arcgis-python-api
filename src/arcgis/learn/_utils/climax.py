@@ -201,7 +201,7 @@ class Forecast(IterableDataset):
 
             inputs = x[: -self.max_predict_range]  # N, C, H, W
 
-            if self.max_predict_range != 1:
+            if self.random_lead_time:
                 predict_ranges = torch.randint(
                     low=1, high=self.max_predict_range, size=(inputs.shape[0],)
                 )

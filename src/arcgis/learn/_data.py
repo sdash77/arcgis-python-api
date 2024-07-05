@@ -1491,9 +1491,11 @@ def prepare_data(
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
     ---------------------   -------------------------------------------
-    max_predict_range       Required int. default set to 1 (month/hrs). how far the
-                            model should forecast into the future. Applicable only
-                            for dataset_type='climaX'.
+    forecast_timesteps      Required int. default set to 1 (month/hrs). how far the
+                            model should forecast into the future. A forecast timestep
+                            is the interval at which predictions are made, and its value
+                            should be a multiple of the spacing between each data point.
+                            Applicable only for climaX model architecuture.
     ---------------------   -------------------------------------------
     time_each_step          Optional int. Default set to 1 (). time difference between
                             two consecutive recorded data points in the dataset. For example,
