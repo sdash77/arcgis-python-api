@@ -10,9 +10,9 @@ import arcgis
 import glob
 import types
 from osgeo import gdal
-import cv2
 from math import ceil
 
+gdal.UseExceptions()
 import numpy as np
 from .._utils.climax import (
     Forecast,
@@ -22,7 +22,6 @@ from .._utils.climax import (
     NoShuffleIterableDataset,
     ClimaxDataBunch,
 )
-from fastai.data_block import DataBunch
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from fastai.vision import subplots, plt
@@ -610,9 +609,6 @@ def show_results(self, rows, variable, **kwargs):
             axs[0, 1].set_title(f"Target State", fontsize=15)
             axs[0, 2].set_title(f"Forecasted State", fontsize=15)
 
-    # axs[0, 0].title.set_text("Input State")
-    # axs[0, 1].title.set_text("Target State")
-    # axs[0, 2].title.set_text("forecasted State")
     for r in range(rows):
         display_row(
             axs[r],

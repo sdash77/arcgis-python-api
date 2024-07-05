@@ -146,29 +146,8 @@ class NpyReader(IterableDataset):
 
         if self.shuffle:
             random.shuffle(fle_list)
-        worker_info = torch.utils.data.get_worker_info()
-        if worker_info is None:
-            iter_start = 0
-            iter_end = len(fle_list)
-        else:
-            if not torch.distributed.is_initialized():
-                rank = 0
-                world_size = 1
-            else:
-                rank = torch.distributed.get_rank()
-                world_size = torch.distributed.get_world_size()
-            num_workers_per_ddp = worker_info.num_workers
-            if self.multi_dataset_training:
-                num_nodes = int(os.environ.get("NODES", None))
-                num_gpus_per_node = int(world_size / num_nodes)
-                num_shards = num_workers_per_ddp * num_gpus_per_node
-                rank = rank % num_gpus_per_node
-            else:
-                num_shards = num_workers_per_ddp * world_size
-            per_worker = int(math.floor(len(fle_list) / float(num_shards)))
-            worker_id = rank * num_workers_per_ddp + worker_info.id
-            iter_start = worker_id * per_worker
-            iter_end = iter_start + per_worker
+        iter_start = 0
+        iter_end = len(fle_list)
 
         for idx in range(iter_start, iter_end):
             path = fle_list[idx]
