@@ -199,34 +199,6 @@ def GlobalForecastData(
     ]
 
 
-NAME_TO_VAR = {
-    "2m_temperature": "t2m",
-    "10m_u_component_of_wind": "u10",
-    "10m_v_component_of_wind": "v10",
-    "mean_sea_level_pressure": "msl",
-    "surface_pressure": "sp",
-    "toa_incident_solar_radiation": "tisr",
-    "total_precipitation": "tp",
-    "land_sea_mask": "lsm",
-    "orography": "orography",
-    "lattitude": "lat2d",
-    "geopotential": "z",
-    "u_component_of_wind": "u",
-    "v_component_of_wind": "v",
-    "temperature": "t",
-    "relative_humidity": "r",
-    "specific_humidity": "q",
-}
-
-PRESSURE_LEVEL_VARS = [
-    "geopotential",
-    "u_component_of_wind",
-    "v_component_of_wind",
-    "temperature",
-    "relative_humidity",
-    "specific_humidity",
-]
-
 # HOURS_PER_YEAR = 12  # 8760  # 365-day year
 
 
@@ -441,7 +413,6 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
     isExist_valid_data = os.path.exists(os.path.join(save_path, "DATA", "val"))
 
     folds = os.listdir(path)
-    # assert "constants.nc" in folds
 
     varfolds = [i for i in folds if i not in ["DATA", "models"]]
 
@@ -480,9 +451,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
             img_shp=(ImageHeight, ImageWidth),
         )
 
-    # varfolds.append("lattitude")
     out_variables = kwargs.get("out_variables", varfolds)
-    # out_variables.append("lattitude")
 
     out_variables = sorted(out_variables, key=lambda x: varfolds.index(x))
 
@@ -490,7 +459,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
         root_dir=os.path.join(save_path, "DATA"),
         variables=varfolds,
         buffer_size=10000,
-        out_variables=out_variables,  # kwargs.get("out_variables", varfolds[-1]),
+        out_variables=out_variables,
         imagespace=imagespace,
         predict_range=kwargs.get("max_predict_range", 1),
         time_each_step=kwargs.get("time_each_step", 1),
@@ -519,7 +488,6 @@ def prepare_climax_data(
     train_dl, valid_dl = train_val_dls[0]
 
     device = get_device()
-    # data = DataBunch(train_dl, valid_dl, device=device)
     data = ClimaxDataBunch(train_dl, valid_dl, device=device)
 
     if working_dir is not None:
@@ -528,11 +496,8 @@ def prepare_climax_data(
     data._temp_folder = _prepare_working_dir(path)
 
     shape, leadtimes = [(i[0].shape, i[1]) for i, j in data.train_dl][0]
-    # data._lat, data._lon = train_val_dls[1]
-    # data._val_clim = train_val_dls[2]
     data._leadtimes = leadtimes
 
-    # data.show_batch = types.MethodType(show_batch, data)
     data._dataset_type = "ClimaX"
     data._variables = train_val_dls[1]  # train_val_dls[3]
     data._out_variables = train_val_dls[2]  # train_val_dls[4]
@@ -587,7 +552,7 @@ def show_results(self, rows, variable, **kwargs):
         self._data._norm_std[None, :, None, None],
     )[:, variable_no, None, :, :]
     activations = denormfunc(
-        activations.cpu().detach(),
+        activations.detach().cpu(),
         self._data._norm_mean[None, :, None, None],
         self._data._norm_std[None, :, None, None],
     )[:, variable_no, None, :, :]
@@ -791,7 +756,6 @@ def lat_weighted_acc(self):
         .to(dtype=pred.dtype, device=pred.device)
     )  # [1, H, 1]
 
-    # clim = torch.mean(y, dim=(0, 1), keepdim=True)
     clim = clim.to(device=y.device)
     pred = pred - clim
     y = y - clim
