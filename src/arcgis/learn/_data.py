@@ -1491,9 +1491,6 @@ def prepare_data(
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
     ---------------------   -------------------------------------------
-    input_variables         Required list. input variables.
-                            Applicable only for dataset_type='ClimaX'.
-    ---------------------   -------------------------------------------
     max_predict_range       Required int. default set to 1 (month/hrs). how far the
                             model should forecast into the future. Applicable only
                             for dataset_type='climaX'.

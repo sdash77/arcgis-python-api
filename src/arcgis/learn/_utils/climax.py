@@ -281,23 +281,13 @@ class IndividualForecastDataIter(IterableDataset):
         ) in self.dataset:
             assert inp.shape[0] == out.shape[0]
             for i in range(inp.shape[0]):
-                if self.region_info is not None:
-                    yield [
-                        self.transforms(inp[i]),
-                        [
-                            self.output_transforms(out[i]),
-                            lead_times[i],
-                            lat,
-                        ],
-                    ]  # variables, out_variables, self.region_info
-                else:
-                    yield (
-                        self.transforms(inp[i]),
-                        lead_times[i],
-                        lat,
-                        year,
-                        clim,
-                    ), self.output_transforms(out[i])
+                yield (
+                    self.transforms(inp[i]),
+                    lead_times[i],
+                    lat,
+                    year,
+                    clim,
+                ), self.output_transforms(out[i])
 
 
 class NoShuffleIterableDataset(IterableDataset):
