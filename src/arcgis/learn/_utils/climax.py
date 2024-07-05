@@ -209,12 +209,9 @@ class Forecast(IterableDataset):
                 predict_ranges = (
                     torch.ones(inputs.shape[0]).to(torch.long) * self.max_predict_range
                 )
-            if self.ts_type == "monthly":
-                lead_times = self.hrs_each_step * predict_ranges / 12
-            else:
-                lead_times = self.hrs_each_step * predict_ranges / 100
+            lead_times = self.hrs_each_step * predict_ranges / 100
 
-            lead_times = torch.round(lead_times.to(inputs.dtype), decimals=4)
+            lead_times = lead_times.to(inputs.dtype)
             output_ids = torch.arange(inputs.shape[0]) + predict_ranges
             outputs = y[output_ids]
 

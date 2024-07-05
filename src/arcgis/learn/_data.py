@@ -1491,16 +1491,20 @@ def prepare_data(
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
     ---------------------   -------------------------------------------
-    forecast_timesteps      Required int. default set to 1 (month/hrs). how far the
+    forecast_timesteps      Required int. default set to 1. how far the
                             model should forecast into the future. A forecast timestep
-                            is the interval at which predictions are made, and its value
-                            should be a multiple of the spacing between each data point.
+                            is the interval at which predictions are made, For example,
+                            If we have 8-hourly data point and we want to make a 8 hr,
+                            16 hr, 32 hr forecast, forecast timesteps is set to 1, 2, 3
+                            respectivly and so on. In case of hourly and monthly data point, for
+                            forecasts of 1, 2, 3 hr/month, forecast timestpe is set to 1, 2, 3
+                            respectivly and so on.
                             Applicable only for climaX model architecuture.
     ---------------------   -------------------------------------------
-    time_each_step          Optional int. Default set to 1 (). time difference between
-                            two consecutive recorded data points in the dataset. For example,
-                            if you want to make a 24-hr forecast, then you should set
-                            max_predict_range=24 and hrs_each_step=1
+    hrs_each_step           Optional int. Default set to 1 (hrs). Number of hours in
+                            which data is collected. For example, if you have 8-hourly,
+                            hourly, montly, daily then, hrs_each_step is to be set to
+                            8, 1, 720 (30 days * 24), 24 hrs respectively.
     =====================   ===========================================
 
     :return:
