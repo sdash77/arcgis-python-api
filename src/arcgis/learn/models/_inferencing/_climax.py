@@ -106,7 +106,7 @@ class ChildImageClassifier:
             self.rectangle_height,
             self.rectangle_width,
         )
-        self.leadtimes = round(self.json_info["lead_times"][0], 9)
+        self.leadtimes = self.json_info["lead_times"][0]
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 
