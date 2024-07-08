@@ -1,76 +1,69 @@
-import sys
-
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
-sys.path.insert(1, r"C:\workspace\Geosaurus_MapWidget")
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.map import Scene
 import unittest
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-PROFILES = ["your_online_profile"]
 
+@profiles.agol
 @integration_test
 class TestSaveAndUpdateMap(unittest.TestCase):
     def test_save_and_update(self):
         """Test saving a webmap, adding a layer, and then updating."""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # create web scene
+        wm = Scene(gis=self.gis)
+        assert wm
+        assert len(wm.content.layers) == 0
 
-            # create webmap
-            wm = Scene(gis=gis)
-            assert wm
-            assert len(wm.content.layers) == 0
+        # save, this creates a new item
+        new_item = wm.save(
+            {
+                "title": "Scene Unit Test Save Scene",
+                "snippet": "Test saving the webmap, adding a layer, and then updating it.",
+                "tags": ["python", "webmap"],
+            }
+        )
+        assert new_item
+        assert isinstance(new_item, Item)
 
-            # save, this creates a new item
-            new_item = wm.save(
-                {
-                    "title": "Scene Unit Test Save Scene",
-                    "snippet": "Test saving the webmap, adding a layer, and then updating it.",
-                    "tags": ["python", "webmap"],
+        # load new item into webmap class again
+        new_wm = Scene(item=new_item, gis=self.gis)
+        assert new_wm
+        assert new_wm.item == new_item
+
+        # add a layer
+        layer = FeatureLayer(
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
+        )
+        new_wm.content.add(
+            layer,
+            drawing_info={
+                "renderer": {
+                    "type": "simple",
+                    "symbol": {
+                        "type": "PolygonSymbol3D",
+                        "symbolLayers": [
+                            {
+                                "type": "ExtrudeSymbol3DLayer",
+                                "material": {"color": [255, 0, 0, 0.5]},
+                                "size": 100,
+                                "edges": {
+                                    "type": "Solid",
+                                    "color": [50, 50, 50, 0.5],
+                                },
+                            }
+                        ],
+                    },
                 }
-            )
-            assert new_item
-            assert isinstance(new_item, Item)
+            },
+        )
+        assert len(new_wm.content.layers) == 1
 
-            # load new item into webmap class again
-            new_wm = Scene(item=new_item, gis=gis)
-            assert new_wm
-            assert new_wm.item == new_item
+        # update the map
+        assert new_wm.update()
 
-            # add a layer
-            layer = FeatureLayer(
-                "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
-            )
-            new_wm.content.add(
-                layer,
-                drawing_info={
-                    "renderer": {
-                        "type": "simple",
-                        "symbol": {
-                            "type": "PolygonSymbol3D",
-                            "symbolLayers": [
-                                {
-                                    "type": "ExtrudeSymbol3DLayer",
-                                    "material": {"color": [255, 0, 0, 0.5]},
-                                    "size": 100,
-                                    "edges": {
-                                        "type": "Solid",
-                                        "color": [50, 50, 50, 0.5],
-                                    },
-                                }
-                            ],
-                        },
-                    }
-                },
-            )
-            assert len(new_wm.content.layers) == 1
-
-            # update the map
-            assert new_wm.update()
-
-            # delete the item
-            new_item.delete()
+        # delete the item
+        new_item.delete()
 
 
 if __name__ == "__main__":

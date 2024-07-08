@@ -1,82 +1,65 @@
+import time
 import unittest
 from arcgis.map import Scene
 from arcgis.layers import VectorTileLayer, MapServiceLayer, MapFeatureLayer
 from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-PROFILES = ["your_online_profile"]
 
+@profiles.agol
 @integration_test
 class TestAddLayersToMap(unittest.TestCase):
+
+    def setUp(self):
+        # create web scene
+        self.wm = Scene(gis=self.gis)
+        assert self.wm
+
     def test_vector_layer(self):
         """Test adding a vector tile layer as a basemap"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer
+        layer = VectorTileLayer(
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
+        )
+        assert layer
 
-            # create webmap
-            wm = Scene(gis=gis)
-            assert wm
-
-            # add layer
-            layer = VectorTileLayer(
-                "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
-            )
-            assert layer
-
-            wm.basemap.basemap = layer
-            assert (
-                wm.basemap.basemap["baseMapLayers"][0]["layerType"] == "VectorTileLayer"
-            )
-            wm.basemap.basemap_title(wm.basemap.basemap["baseMapLayers"][0]["title"])
-            assert wm.basemap.basemap["title"] == layer.properties.name.replace(
-                "_", " "
-            )
+        self.wm.basemap.basemap = layer
+        assert (
+            self.wm.basemap.basemap["baseMapLayers"][0]["layerType"]
+            == "VectorTileLayer"
+        )
+        self.wm.basemap.basemap_title(
+            self.wm.basemap.basemap["baseMapLayers"][0]["title"]
+        )
+        assert self.wm.basemap.basemap["title"] == layer.properties.name.replace(
+            "_", " "
+        )
 
     def test_basemaps_list(self):
         """Test adding each basemap in basemaps property as a basemap."""
-        import time
+        basemaps = self.wm.basemap.basemaps
 
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-
-            # create webmap
-            wm = Scene(gis=gis)
-            assert wm
-
-            basemaps = wm.basemap.basemaps
-
-            for basemap in basemaps:
-                wm.basemap.basemap = basemap
-                time.sleep(2)
+        for basemap in basemaps:
+            self.wm.basemap.basemap = basemap
+            time.sleep(2)
 
     def test_invalid_basemap(self):
         """Test adding each basemap that isn't valid type."""
-
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-
-            # create webmap
-            wm = Scene(gis=gis)
-            assert wm
-
-            try:
-                wm.basemap.basemap = gis.content.get("de5b947226ae4a67a94aa65cac9e20ff")
-                assert 1 == 2
-            except:
-                # This should fail so it should end here
-                assert 1 == 1
+        try:
+            self.wm.basemap.basemap = self.gis.content.get(
+                "de5b947226ae4a67a94aa65cac9e20ff"
+            )
+            assert 1 == 2
+        except:
+            # This should fail so it should end here
+            assert 1 == 1
 
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-
-            # create webmap
-            wm = Scene(gis=gis)
-            assert wm
-
-            wm.basemap.basemap = gis.content.get("e67de4be72b349fd8f8ca114bac82a8c")
-            assert wm
+        self.wm.basemap.basemap = self.gis.content.get(
+            "e67de4be72b349fd8f8ca114bac82a8c"
+        )
+        assert self.wm
 
 
 if __name__ == "__main__":

@@ -9,116 +9,87 @@ from arcgis.layers import (
     Object3DLayer,
 )
 from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-PROFILES = ["your_online_profile"]
 
+@profiles.agol
 @integration_test
 class TestAddLayersToMap(unittest.TestCase):
+
+    def setUp(self):
+        # create webmap
+        self.wm = Scene()
+        assert self.wm
+
     def test_integrated_mesh_layer(self):
         """Test adding an integrated mesh layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer
+        layer = IntegratedMeshLayer(
+            "https://tiles.arcgis.com/tiles/cFEFS0EWrhfDeVw9/arcgis/rest/services/Buildings_Frankfurt_2021/SceneServer",
+            self.gis,
+        )
 
-            # create webmap
-            wm = Scene()
-            assert wm
-
-            # add layer
-            layer = IntegratedMeshLayer(
-                "https://tiles.arcgis.com/tiles/cFEFS0EWrhfDeVw9/arcgis/rest/services/Buildings_Frankfurt_2021/SceneServer",
-                gis,
-            )
-
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], IntegratedMeshLayer)
+        assert layer
+        self.wm.content.add(layer)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], IntegratedMeshLayer)
 
     def test_building_layer(self):
         """Test adding a building layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer
+        layer = BuildingLayer(
+            "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Esri_Admin_Building/SceneServer",
+            self.gis,
+        )
 
-            # create webmap
-            wm = Scene()
-            assert wm
-
-            # add layer
-            layer = BuildingLayer(
-                "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Esri_Admin_Building/SceneServer",
-                gis,
-            )
-
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], BuildingLayer)
+        assert layer
+        self.wm.content.add(layer)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], BuildingLayer)
 
     def test_point_cloud_layer(self):
         """Test adding a point cloud layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer
+        layer = PointCloudLayer(
+            "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/BARNEGAT_BAY_LiDAR_UTM/SceneServer",
+            self.gis,
+        )
 
-            # create webmap
-            wm = Scene()
-            assert wm
-
-            # add layer
-            layer = PointCloudLayer(
-                "https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/BARNEGAT_BAY_LiDAR_UTM/SceneServer",
-                gis,
-            )
-
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], PointCloudLayer)
+        assert layer
+        self.wm.content.add(layer)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], PointCloudLayer)
 
     def test_scene_layer(self):
         """Test adding a scene layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer (object 3D layer in the Python API)
+        layer = SceneLayer(
+            "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Paris_3D_Local_WSL2/SceneServer/layers/0",
+            self.gis,
+        )
 
-            # create webmap
-            wm = Scene()
-            assert wm
-
-            # add layer (object 3D layer in the Python API)
-            layer = SceneLayer(
-                "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Paris_3D_Local_WSL2/SceneServer/layers/0",
-                gis,
-            )
-
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], Object3DLayer)
+        assert layer
+        self.wm.content.add(layer)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], Object3DLayer)
 
     def test_voxel_layer(self):
         """Test adding a voxel layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        # add layer
+        layer = VoxelLayer(
+            "https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/EMU_Caribbean_Voxel/SceneServer",
+            self.gis,
+        )
 
-            # create webmap
-            wm = Scene()
-            assert wm
-
-            # add layer
-            layer = VoxelLayer(
-                "https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/EMU_Caribbean_Voxel/SceneServer",
-                gis,
-            )
-
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], VoxelLayer)
+        assert layer
+        self.wm.content.add(layer)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], VoxelLayer)
 
 
 if __name__ == "__main__":

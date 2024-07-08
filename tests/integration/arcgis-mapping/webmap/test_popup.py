@@ -15,43 +15,41 @@ from arcgis.map.popups import (
     Value,
     FieldInfo,
 )
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-PROFILES = ["your_online_profile"]
 
+@profiles.agol
 @integration_test
 class TestAddLayersToMap(unittest.TestCase):
     def test_feature_layer(self):
         """Test adding a feature layer"""
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
-            # create webmap
-            wm = Map(gis=gis)
-            assert wm
+        # create webmap
+        wm = Map(gis=self.gis)
+        assert wm
 
-            # add layer
-            layer = FeatureLayer(
-                "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
-            )
-            assert layer
-            wm.content.add(layer)
-            assert wm.content.layers
-            assert len(wm.content.layers) == 1
-            assert isinstance(wm.content.layers[0], FeatureLayer)
+        # add layer
+        layer = FeatureLayer(
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
+        )
+        assert layer
+        wm.content.add(layer)
+        assert wm.content.layers
+        assert len(wm.content.layers) == 1
+        assert isinstance(wm.content.layers[0], FeatureLayer)
 
-            # popup class
-            popup = wm.content.popup(0)
-            assert popup
+        # popup class
+        popup = wm.content.popup(0)
+        assert popup
 
-            # edit the popup
-            popup.edit(
-                title="TestPopup",
-                description="TestingEditingAPopup",
-                popup_elements=[PopupElementText(text="TestText")],
-            )
+        # edit the popup
+        popup.edit(
+            title="TestPopup",
+            description="TestingEditingAPopup",
+            popup_elements=[PopupElementText(text="TestText")],
+        )
 
-            assert popup.info
+        assert popup.info
 
     def test_popup_element_attachments(self):
         """Test create_popup_element_attachments"""

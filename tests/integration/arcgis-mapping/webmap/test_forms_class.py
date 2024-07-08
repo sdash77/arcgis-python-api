@@ -19,48 +19,46 @@ from arcgis.map.forms import (
     FormGroupElement,
 )
 import unittest
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-PROFILES = ["your_online_profile"]
 
+@profiles.agol
 @integration_test
 class TestFormInfo(unittest.TestCase):
     """Test the renderers module"""
 
+    def setUpClass(cls):
+        cls.wm = Map(gis=cls.gis)
+        assert cls.wm
+
     def test_update_form(self):
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+        fl = FeatureLayer(
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
+            gis=self.gis,
+        )
+        assert fl
 
-            fl = FeatureLayer(
-                "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3",
-                gis=gis,
-            )
-            assert fl
+        self.wm.content.add(fl)
+        assert self.wm.content.layers[0]
 
-            wm = Map(gis=gis)
-            assert wm
-
-            wm.content.add(fl)
-            assert wm.content.layers[0]
-
-            field_element = FormFieldElement(
-                field_name="TESTING FIELD",
-                input_type=FormTextBoxInput(min_length=5, max_length=10),
-            )
-            field_element2 = FormFieldElement(
-                field_name="TESTING FIELD2",
-                input_type=FormTextBoxInput(min_length=5, max_length=10),
-            )
-            form_info = FormInfo(
-                description="This is a test form",
-                form_elements=[
-                    field_element,
-                    field_element2,
-                ],
-            )
-            wm.content.update_layer(0, form=form_info)
-            form = wm.content.form(0)
-            assert isinstance(form, FormInfo)
+        field_element = FormFieldElement(
+            field_name="TESTING FIELD",
+            input_type=FormTextBoxInput(min_length=5, max_length=10),
+        )
+        field_element2 = FormFieldElement(
+            field_name="TESTING FIELD2",
+            input_type=FormTextBoxInput(min_length=5, max_length=10),
+        )
+        form_info = FormInfo(
+            description="This is a test form",
+            form_elements=[
+                field_element,
+                field_element2,
+            ],
+        )
+        self.wm.content.update_layer(0, form=form_info)
+        form = self.wm.content.form(0)
+        assert isinstance(form, FormInfo)
 
     def test_form_barcodes_scanner_input(self):
         """"""
