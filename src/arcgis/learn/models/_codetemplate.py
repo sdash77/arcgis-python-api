@@ -1413,7 +1413,10 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
+        numforecasts = getattr(self.child_image_classifier, "numforecasts", None)
+        kwargs["output_info"]["bandCount"] = (
+            numforecasts if numforecasts else self.json_info.get("n_channel", 3)
+        )
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 

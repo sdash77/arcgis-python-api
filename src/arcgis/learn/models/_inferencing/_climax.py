@@ -82,6 +82,14 @@ class ChildImageClassifier:
                     "displayName": "output_variables",
                     "description": "output_variables",
                 },
+                {
+                    "name": "number_of_time_steps_to_forecast",
+                    "dataType": "numeric",
+                    "required": False,
+                    "value": 1,
+                    "displayName": "number_of_time_steps_to_forecast",
+                    "description": "number_of_time_steps_to_forecast",
+                },
             ]
         )
 
@@ -107,6 +115,7 @@ class ChildImageClassifier:
             self.rectangle_width,
         )
         self.leadtimes = self.json_info["lead_times"][0]
+        self.numforecasts = int(scalars.get("number_of_time_steps_to_forecast", 1))
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 

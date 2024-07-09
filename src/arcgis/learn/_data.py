@@ -1491,20 +1491,21 @@ def prepare_data(
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
     ---------------------   -------------------------------------------
-    forecast_timesteps      Required int. default set to 1. how far the
+    forecast_timesteps      Required int. Default set to 1. How far the
                             model should forecast into the future. A forecast timestep
                             is the interval at which predictions are made, For example,
                             If we have 8-hourly data point and we want to make a 8 hr,
-                            16 hr, 32 hr forecast, forecast timesteps is set to 1, 2, 3
-                            respectivly and so on. In case of hourly and monthly data point, for
-                            forecasts of 1, 2, 3 hr/month, forecast timestpe is set to 1, 2, 3
-                            respectivly and so on.
-                            Applicable only for climaX model architecuture.
+                            16 hr, 24 hr forecast, forecast timesteps is set to 1, 2, 3
+                            respectively and so on. In case of hourly and monthly data
+                            point, for forecasts of 1, 2, 3 hr/month, forecast timestep
+                            is set to 1, 2, 3 respectively and so on. Applicable only
+                            for climaX model architecuture.
     ---------------------   -------------------------------------------
     hrs_each_step           Optional int. Default set to 1 (hrs). Number of hours in
-                            which data is collected. For example, if you have 8-hourly,
+                            which data is collected, for example, if you have 8-hourly,
                             hourly, montly, daily then, hrs_each_step is to be set to
-                            8, 1, 720 (30 days * 24), 24 hrs respectively.
+                            8, 1, 720 (30 days * 24), 24 hrs respectively. Applicable
+                            only for climaX model architecuture.
     =====================   ===========================================
 
     :return:

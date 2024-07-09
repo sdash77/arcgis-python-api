@@ -10,9 +10,10 @@ import arcgis
 import glob
 import types
 from osgeo import gdal
-from math import ceil
 
 gdal.UseExceptions()
+from math import ceil
+
 import numpy as np
 from .._utils.climax import (
     Forecast,
@@ -499,8 +500,8 @@ def prepare_climax_data(
     data._leadtimes = leadtimes
 
     data._dataset_type = "ClimaX"
-    data._variables = train_val_dls[1]  # train_val_dls[3]
-    data._out_variables = train_val_dls[2]  # train_val_dls[4]
+    data._variables = train_val_dls[1]
+    data._out_variables = train_val_dls[2]
     data._n_channels = len(data._variables)
     data._imagespace = train_val_dls[3]
     data.chp_size = [shape[2], shape[3]]

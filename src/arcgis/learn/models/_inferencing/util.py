@@ -896,11 +896,17 @@ def pixel_classify_climax_image(self, model, tiles, device, leadtimes, model_inf
 
     normed_batch_tensor = normfunc(batch_tensor, mean_stat, std_stat)
 
-    model.eval()
-    with torch.no_grad():
-        predictions = model(normed_batch_tensor, leadtimes, 0, 0, 0)
+    forecasts = []
+    for i in range(self.numforecasts):
+        model.eval()
+        with torch.no_grad():
+            predictions = model(normed_batch_tensor, leadtimes, 0, 0, 0)
+            forecasts.append(predictions[0])
+            normed_batch_tensor = predictions[0]
 
-    denormed_batch_tensor = denormfunc(predictions[0], mean_stat, std_stat)
+    denormed_batch_tensor = torch.cat(
+        [denormfunc(i, mean_stat, std_stat) for i in forecasts], axis=1
+    )
 
     return denormed_batch_tensor
 
