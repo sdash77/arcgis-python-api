@@ -10,6 +10,7 @@ from arcgis._impl.common._clone import (
     _share_item_with_groups,
 )
 import tempfile
+from arcgis._impl.common._utils import _text_replace
 
 try:
     import ujson as json
@@ -115,13 +116,13 @@ class _WebExperience(_ItemDefinition):
 
     def clone(self):
         def _clone_dict(data_dict, source, target, search_ex):
-            new_dict = data_dict
+            new_dict = _deep_get(data_dict)
             new_dict["attributes"]["portalUrl"] = target.url
-            for k, v in new_dict["dataSources"].items():
+            for k, v in data_dict["dataSources"].items():
                 if "itemId" not in v:
                     continue
                 if "portalUrl" in v:
-                    v["portalUrl"] = target.url
+                    new_dict["dataSources"][k]["portalUrl"] = target.url
                 orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
                 if item is None:
@@ -133,9 +134,11 @@ class _WebExperience(_ItemDefinition):
                     targ_item = target.content.get(new_id)
                     if targ_item:
                         if targ_item.type == item.type:
-                            v["itemId"] = new_id
                             if "url" in v:
-                                v["url"] = targ_item.url
+                                new_dict["dataSources"][k]["url"] = targ_item.url
+                            sdict = json.dumps(new_dict)
+                            sdict = _text_replace(sdict, {orig_id: new_id})
+                            new_dict = json.loads(sdict)
                             continue
 
                 # if not, try cloning item
@@ -148,14 +151,19 @@ class _WebExperience(_ItemDefinition):
                     preserve_item_id=self._preserve_item_id,
                 )
                 if clone_result:
-                    v["itemId"] = clone_result[0].itemid
                     for cloned in clone_result:
                         self.created_items.append(cloned)
+                        if f"source-{item.itemid}" in cloned.typeKeywords:
+                            sdict = json.dumps(new_dict)
+                            sdict = _text_replace(sdict, {orig_id: cloned.itemid})
+                            new_dict = json.loads(sdict)
 
                 # if it wasn't cloned, search for the existing item
                 else:
                     targ_item = _search_org_for_existing_item(self.target, item)
-                    v["itemId"] = targ_item.itemid
+                    sdict = json.dumps(new_dict)
+                    sdict = _text_replace(sdict, {orig_id: targ_item.itemid})
+                    new_dict = json.loads(sdict)
 
             return new_dict
 
