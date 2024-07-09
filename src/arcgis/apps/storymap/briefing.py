@@ -276,7 +276,8 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Cover class that can be accessed through the cover property in the cover slide.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that can be accessed through the cover property in the cover slide.",
     )
     def cover(
         self,

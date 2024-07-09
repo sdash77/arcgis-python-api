@@ -33,6 +33,7 @@ from fastai.vision import flatten_model
 from collections import Counter
 from ._timm_utils import get_backbone
 from ._hed_utils import modify_layers, get_hooks
+from ._transformer_backbone import swin_config
 
 
 class _MSBlock(nn.Module):
@@ -85,6 +86,11 @@ class _IDblock(nn.Module):
 def get_bdcn_hooks(backbone_fn, backbone, chip_size):
     if "timm" in backbone_fn.__module__:
         hooks = get_hooks(backbone, chip_size)
+    elif backbone_fn.__name__ in swin_config.keys():
+        hooks = []
+        for layer in backbone[2]:
+            for block in layer.blocks:
+                hooks.append(block)
     else:
         hookable_modules = flatten_model(backbone)
         hooks = [
@@ -100,14 +106,26 @@ class _BDCNModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
         self.backbone = get_backbone(backbone_fn, pretrained)
-        if len(self.backbone) < 2:
-            self.backbone = self.backbone[0]
-        modify_layers(self.backbone, backbone_fn)
+        backbone_name = backbone_fn.__name__
+        if not backbone_name in swin_config.keys():
+            if len(self.backbone) < 2:
+                self.backbone = self.backbone[0]
+            modify_layers(self.backbone, backbone_fn)
         hooks = get_bdcn_hooks(backbone_fn, self.backbone, chip_size)
         self.hook = hook_outputs(hooks)
         model_sizes(self.backbone, size=(chip_size, chip_size))
-        layer_shape = [(k.stored.shape[1], k.stored.shape[2]) for k in self.hook]
-        self.block_shape = []
+        if backbone_name in swin_config.keys():
+            layer_shape = [
+                (k.stored.shape[2], int(np.sqrt(k.stored.shape[1]))) for k in self.hook
+            ]
+            stride = 2
+            self.block_shape = [(self.backbone[0].proj.in_channels, chip_size, 1)]
+            self._transformer = True
+        else:
+            layer_shape = [(k.stored.shape[1], k.stored.shape[2]) for k in self.hook]
+            stride = 1
+            self.block_shape = []
+            self._transformer = False
         for k, v in Counter(layer_shape).items():
             self.block_shape.append((k[0], k[1], v))
         self.block_shape.sort(key=lambda size: size[1], reverse=True)
@@ -117,16 +135,31 @@ class _BDCNModel(nn.Module):
         self.idb3 = _IDblock(self.block_shape[2])
         self.idb4 = _IDblock(self.block_shape[3])
         self.idb5 = _IDblock(self.block_shape[4])
-
-        self.upsample_2 = nn.ConvTranspose2d(1, 1, 4, stride=2, bias=False)
-        self.upsample_4 = nn.ConvTranspose2d(1, 1, 8, stride=4, bias=False)
-        self.upsample_8 = nn.ConvTranspose2d(1, 1, 16, stride=8, bias=False)
-        self.upsample_8_5 = nn.ConvTranspose2d(1, 1, 32, stride=16, bias=False)
+        self.upsample_2 = nn.ConvTranspose2d(
+            1, 1, 4 * stride, stride=2 * stride, bias=False
+        )
+        self.upsample_4 = nn.ConvTranspose2d(
+            1, 1, 8 * stride, stride=4 * stride, bias=False
+        )
+        self.upsample_8 = nn.ConvTranspose2d(
+            1, 1, 16 * stride, stride=8 * stride, bias=False
+        )
+        self.upsample_8_5 = nn.ConvTranspose2d(
+            1, 1, 32 * stride, stride=16 * stride, bias=False
+        )
         self.fuse = nn.Conv2d(10, 1, 1, stride=1)
 
     def forward(self, x):
         self.backbone(x)
         features = self.hook.stored
+        if self._transformer:
+            features = [
+                f.transpose(1, 2).reshape(
+                    -1, f.shape[2], int(np.sqrt(f.shape[1])), int(np.sqrt(f.shape[1]))
+                )
+                for f in features
+            ]
+            features.insert(0, x)
         num_to = self.block_shape[0][-1]
         s1, s11 = self.idb1(features[:num_to])
 

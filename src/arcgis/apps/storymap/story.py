@@ -285,7 +285,8 @@ class StoryMap(object):
     @property
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Cover class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
     )
     def cover_date(self):
         """
@@ -447,7 +448,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Cover class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
     )
     def cover(
         self,
@@ -548,7 +550,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Navigation class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Navigation` class instead found when calling `content_list` property.",
     )
     def navigation(
         self,
