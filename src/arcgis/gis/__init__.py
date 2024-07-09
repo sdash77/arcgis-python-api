@@ -3031,6 +3031,7 @@ class UserManager(object):
         user_li_lu = {
             "creatorUT": "creatorUT",
             "creator": "creatorUT",
+            "contributor": "editorUT",
             "editor": "editorUT",
             "editorUT": "editorUT",
             "GISProfessionalAdvUT": "GISProfessionalAdvUT",
@@ -3043,6 +3044,8 @@ class UserManager(object):
             "viewerUT": "viewerUT",
             "fieldworker": "fieldWorkerUT",
             "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
         }
         role_lu = {
             "administrator": "org_admin",
@@ -3307,7 +3310,7 @@ class UserManager(object):
         firstname: str,
         lastname: str,
         email: str,
-        role: str,
+        role: str | None = None,
         description: Optional[str] = None,
         provider: str = "arcgis",
         idp_username: Optional[str] = None,
@@ -3388,7 +3391,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        role              Required string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
                           enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
@@ -3435,7 +3438,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string, unless specified in the `New Member Defaults`. The user type
                           license for an organization member. See
-                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          `user types <https://doc.arcgis.com/en/arcgis-online/administer/user-types-orgs.htm>`_
                           for detailed descriptions of each `user type`. Each `user_type` is
                           compatible with specific `roles` in the organization. Compatibility is
                           determined by the `privileges` assigned to each `role`. Only certain `role`
@@ -3447,7 +3450,7 @@ class UserManager(object):
                           .. code-block:: python
 
                               >>> for utype in gis.users.license_types:
-                                      print(f"{utype['id]}")
+                                      print(f"{utype['id']}")
 
                           .. note::
                               See the :attr:`~arcgis.gis.UserManager.license_types` property on the
@@ -3910,7 +3913,19 @@ class UserManager(object):
         elif level == 2 and role is None:
             role = "publisher"
 
-        levels = {"creator": "creatorUT", "viewer": "viewerUT"}
+        user_li_lu = {
+            "creatorUT": "creatorUT",
+            "creator": "creatorUT",
+            "contributor": "editorUT",
+            "editor": "editorUT",
+            "editorUT": "editorUT",
+            "GISProfessionalAdvUT": "GISProfessionalAdvUT",
+            "viewerUT": "viewerUT",
+            "fieldworker": "fieldWorkerUT",
+            "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
+        }
         role_lookup = {
             "admin": "org_admin",
             "org_admin": "org_admin",
@@ -3928,8 +3943,8 @@ class UserManager(object):
         if groups is None:
             groups = []
 
-        if user_type.lower() in levels:
-            user_type = levels[user_type.lower()]
+        if user_type.lower() in user_li_lu:
+            user_type = user_li_lu[user_type.lower()]
 
         if isinstance(role, Role):
             role = role.role_id
@@ -3938,6 +3953,7 @@ class UserManager(object):
         elif isinstance(role, str):
             # lookup the role id to see if it exists, else set to ""
             try:
+                # uses role id to get the role
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except Exception:

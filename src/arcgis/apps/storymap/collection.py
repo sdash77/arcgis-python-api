@@ -257,9 +257,8 @@ class Collection(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
-        details="Use the Cover class that is accessed in the cover property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that is accessed in the cover property.",
     )
     def cover(
         self,
