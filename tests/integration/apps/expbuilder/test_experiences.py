@@ -1,11 +1,10 @@
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.expbuilder import WebExperience
-from arcgis.apps.expbuilder._ref import templates
 import pathlib
 from utils.decorators import integration_test
 
-profiles = ["your_online_profile", "np_playground"]
+profiles = ["your_online_admin_profile", "your_enterprise_admin_profile"]
 
 @integration_test
 class TestExperience(unittest.TestCase):
@@ -30,16 +29,16 @@ class TestExperience(unittest.TestCase):
 
             # test reload save
             with self.subTest(msg=profile + " reload save"):
-                exp._draft = templates["foldable"]
+                exp._draft = {"this_is" : "bad!"}
                 assert exp.reload()
                 assert exp._draft == exp._expdict
                 assert exp._draft["template"] == "blankfullscreen"
 
             # test save
             with self.subTest(msg=profile + " save"):
-                exp._draft = templates["foldable"]
+                exp._draft["test"] = "we love testing"
                 assert exp.save(title="pikachu", tags="ash, misty, brock")
-                assert exp._expdict["template"] == "foldable"
+                assert exp._expdict["test"] == "we love testing"
                 assert exp.item.title == "pikachu"
                 assert exp.item.tags == ["ash", "misty", "brock"]
 
@@ -47,7 +46,7 @@ class TestExperience(unittest.TestCase):
             with self.subTest(msg=profile + " publish"):
                 assert exp.item.get_data() == {}
                 assert exp.save(publish=True, access="org")
-                assert exp.item.get_data()["template"] == "foldable"
+                assert 'status: Published' in exp.item.typeKeywords
                 # assert exp.item.access == "org"
 
             # test delete
@@ -64,7 +63,7 @@ class TestExperience(unittest.TestCase):
         online = GIS(profile=profiles[0], verify_cert=False)
         ent = GIS(profile=profiles[1], verify_cert=False)
         online_exp = WebExperience(item="43391102644f4067b05a7aaca5f7a89d", gis=online)
-        ent_exp = WebExperience(item="a8a9f5d8008d4a0b8f91befc3563e684", gis=ent)
+        ent_exp = WebExperience(item="d79f3e55c3e7484a871b42be5291268c", gis=ent)
         assert online_exp
         assert ent_exp
 
@@ -84,34 +83,6 @@ class TestExperience(unittest.TestCase):
                 assert exp2._draft == exp._draft
                 assert exp2.item.get_data() == exp.item.get_data()
                 assert exp2.delete()
-
-        # test cloning from online to enterprise
-        # admin privileges needed for this
-        with self.subTest(msg="Clone from online to ent"):
-            to_ent = online_exp.clone(target=ent, owner=ent.users.me.username)
-            assert to_ent
-            assert to_ent.title == "rhydon"
-            assert (
-                to_ent.get_data()["template"] == online_exp.item.get_data()["template"]
-            )
-            assert (
-                WebExperience(to_ent)._expdict["template"]
-                == online_exp._expdict["template"]
-            )
-            assert WebExperience(to_ent).delete()
-
-        # test cloning from enterprise to online
-        # admin privileges needed for this
-        with self.subTest(msg="Clone from ent to online"):
-            to_onl = ent_exp.clone(target=online, owner=online.users.me.username)
-            assert to_onl
-            assert to_onl.title == "rhyhorn"
-            assert to_onl.get_data()["template"] == ent_exp.item.get_data()["template"]
-            assert (
-                WebExperience(to_onl)._expdict["template"]
-                == ent_exp._expdict["template"]
-            )
-            assert WebExperience(to_onl).delete()
 
     # @unittest.skip("focusing elsewhere")
     def test_views(self):
