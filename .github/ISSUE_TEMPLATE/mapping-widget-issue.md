@@ -15,7 +15,14 @@ assignees: ''
 Enter the stack trace here
 ```
 
+**Provide a Code List Output** 
 
+1. If in Notebook service provide the output like this: ```!conda list``` and paste that below
+2. If outside of notebooks, please drop to commandline and in the proper environment type `conda list`.
+
+```
+Paste conda list output here. 
+```
 
 **Describe the solution you'd like**
 A clear and concise description of what you want to happen.
@@ -27,3 +34,5 @@ A clear and concise description of what you want to happen.
 
 **Any Additional context**
 Add any other context or screenshots about the feature request here.
+
+
