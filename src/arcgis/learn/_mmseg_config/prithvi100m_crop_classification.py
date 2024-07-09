@@ -78,35 +78,29 @@ CLASSES = (
     "nodata",
 )
 
+
+nframes = 3
 norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type="TemporalEncoderDecoder",
-    pretrained=None,
-    frozen_backbone=True,
+    type="EncoderDecoder",
     backbone=dict(
-        type="TemporalViTEncoder",
-        pretrained=None,
+        type="PrithviBackbone",
         img_size=224,
-        patch_size=16,
-        num_frames=3,
-        tubelet_size=1,
         in_chans=len(bands),
-        embed_dim=768,
+        num_frames=nframes,
+        tubelet_size=1,
         depth=6,
         num_heads=8,
-        mlp_ratio=4.0,
-        norm_pix_loss=False,
+        pretrained=False,
     ),
     neck=dict(
-        type="ConvTransformerTokensToEmbeddingNeck",
-        embed_dim=768 * 3,
-        output_embed_dim=768 * 3,
-        drop_cls_token=True,
-        Hp=14,
-        Wp=14,
+        type="PrithviNeck",
+        embed_dim=768 * nframes,
+        output_embed_dim=768 * nframes,
+        input_hw=(14, 14),
     ),
     decode_head=dict(
-        in_channels=768 * 3,
+        in_channels=768 * nframes,
         type="FCNHead",
         in_index=-1,
         channels=256,
@@ -123,7 +117,7 @@ model = dict(
         ),
     ),
     auxiliary_head=dict(
-        in_channels=768 * 3,
+        in_channels=768 * nframes,
         type="FCNHead",
         in_index=-1,
         channels=256,

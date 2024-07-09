@@ -1843,7 +1843,7 @@ class GeoAccessor(object):
         def _plot_map_widget(mp_wdgt):
             plot(
                 df=self._data,
-                map_widget=mp_wdgt,
+                map=mp_wdgt,
                 name=kwargs.pop("name", "Feature Collection Layer"),
                 renderer=kwargs.pop("renderer", None),
                 **kwargs,

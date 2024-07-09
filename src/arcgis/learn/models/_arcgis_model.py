@@ -57,6 +57,7 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
+    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -379,6 +380,8 @@ def _get_tail(model):
 
 def _get_ms_tail(tail, data, type_init="random"):
     in_chanls = len(data._extract_bands)
+    if tail.in_channels == in_chanls:
+        return tail
     new_tail = nn.Conv2d(
         in_channels=in_chanls,
         out_channels=tail.out_channels,
@@ -551,6 +554,38 @@ def _device_check():
     return move_to_cpu
 
 
+def get_backbone_func(backbone, data, **kwargs):
+    if backbone is None:
+        backbone = models.resnet34
+    elif backbone == "llm":
+        backbone = "llm"
+    elif type(backbone) is str:
+        if hasattr(models, backbone):
+            backbone = getattr(models, backbone)
+        elif hasattr(models.detection, backbone):
+            backbone = getattr(models.detection, backbone)
+        elif "timm:" in backbone:
+            bckbn = backbone.split(":")[1]
+            if hasattr(timm.models, bckbn):
+                backbone = getattr(timm.models, bckbn)
+        elif backbone in transformer_backbone_downstream:
+            backbone_name = backbone
+            in_channels = (
+                len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
+            )
+            backbone = partial(
+                custom_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                in_chans=in_channels,
+                is_fpn=kwargs.get("is_fpn", False),
+            )
+            backbone.__name__ = backbone_name
+    else:
+        backbone = backbone
+    return backbone
+
+
 class ArcGISModel(object):
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
@@ -565,24 +600,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        if backbone is None:
-            self._backbone = models.resnet34
-        elif backbone == "llm":
-            self._backbone = "llm"
-        elif type(backbone) is str:
-            if hasattr(models, backbone):
-                self._backbone = getattr(models, backbone)
-            elif hasattr(models.detection, backbone):
-                self._backbone = getattr(models.detection, backbone)
-            elif "timm:" in backbone:
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
-        else:
-            self._backbone = backbone
-
-        if not hasattr(self, "_backbone"):
-            self._backbone = models.resnet34
+        self._backbone = get_backbone_func(backbone, data)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
