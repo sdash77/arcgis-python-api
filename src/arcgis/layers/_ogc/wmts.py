@@ -63,6 +63,7 @@ class WMTSLayer(BaseOGC):
         if url[-1] == "/":
             url = url[:-1]
         self._url = url
+        self._con = gis._con
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._opacity = kwargs.pop("opacity", 1)
@@ -77,7 +78,6 @@ class WMTSLayer(BaseOGC):
         :return: dict
         """
         if self._properties is None:
-            from arcgis._impl.common._mixins import PropertyMap
 
             if self._add_token:
                 url = self._capabilities_url(
@@ -107,7 +107,7 @@ class WMTSLayer(BaseOGC):
             sss.seek(0)
             tree = ET.XML(text=sss.read())
             d = self._xml_to_dictionary(tree)
-            self._properties = PropertyMap(d)
+            self._properties = d
         return self._properties
 
     # ----------------------------------------------------------------------
@@ -208,37 +208,55 @@ class WMTSLayer(BaseOGC):
         layer = None
         tile_matrix = None
 
-        if isinstance(self.properties.Capabilities.Contents.Layer, (list, tuple)):
-            layer = self.properties.Capabilities.Contents.Layer[0]
-            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet[0]
-        elif isinstance(self.properties.Capabilities.Contents.Layer, (dict)):
-            layer = self.properties.Capabilities.Contents.Layer
-            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet
+        if isinstance(
+            self.properties["Capabilities"]["Contents"]["Layer"], (list, tuple)
+        ):
+            layer = self.properties["Capabilities"]["Contents"]["Layer"][0]
+            tile_matrix = self.properties["Capabilities"]["Contents"]["TileMatrixSet"][
+                0
+            ]
+        elif isinstance(self.properties["Capabilities"]["Contents"]["Layer"], (dict)):
+            layer = self.properties["Capabilities"]["Contents"]["Layer"]
+            tile_matrix = self.properties["Capabilities"]["Contents"]["TileMatrixSet"]
         else:
             raise ValueError("Could not parse the results properly.")
 
         url_template = (
-            layer.ResourceURL["@template"]
+            layer["ResourceURL"]["@template"]
             .replace("{TileMatrix}", "{level}")
-            .replace("{Style}", layer.Style.Identifier)
+            .replace("{Style}", layer["Style"]["Identifier"])
             .replace("{TileRow}", "{row}")
             .replace("{TileCol}", "{col}")
-            .replace("{TileMatrixSet}", tile_matrix.Identifier)
+            .replace("{TileMatrixSet}", tile_matrix["Identifier"])
+        )
+        bounding_box_name = (
+            "BoundingBox" if "BoundingBox" in layer else "WGS84BoundingBox"
         )
         fullExtent = [
-            float(coord) for coord in layer.BoundingBox.LowerCorner.strip().split(" ")
-        ] + [float(coord) for coord in layer.BoundingBox.UpperCorner.strip().split(" ")]
+            float(coord)
+            for coord in layer[bounding_box_name]["LowerCorner"].strip().split(" ")
+        ] + [
+            float(coord)
+            for coord in layer[bounding_box_name]["UpperCorner"].strip().split(" ")
+        ]
         lods = []
         WMTS_DPI = 90.71428571428571
-        for l in tile_matrix.TileMatrix:
+        for l in tile_matrix["TileMatrix"]:
             lods.append(
                 {
-                    "level": int(l.Identifier),
-                    "levelValue": l.Identifier,
-                    "resolution": float(l.ScaleDenominator) * 0.00028,
-                    "scale": float(l.ScaleDenominator) * WMTS_DPI / 96,
+                    "level": int(l["Identifier"]),
+                    "levelValue": l["Identifier"],
+                    "resolution": float(l["ScaleDenominator"]) * 0.00028,
+                    "scale": float(l["ScaleDenominator"]) * WMTS_DPI / 96,
                 }
             )
+        if bounding_box_name == "WGS84BoundingBox":
+            spatial_reference = {"wkid": 4326}
+        else:
+            spatial_reference = {
+                "wkid": int(layer[bounding_box_name]["@crs"].split(":")[-1])
+            }
+
         return {
             "templateUrl": url_template,
             "copyright": "",
@@ -247,9 +265,7 @@ class WMTSLayer(BaseOGC):
                 "ymin": fullExtent[1],
                 "xmax": fullExtent[2],
                 "ymax": fullExtent[3],
-                "spatialReference": {
-                    "wkid": int(layer.BoundingBox["@crs"].split(":")[-1])
-                },
+                "spatialReference": spatial_reference,
             },
             "tileInfo": {
                 "rows": 256,
@@ -258,19 +274,15 @@ class WMTSLayer(BaseOGC):
                 "origin": {
                     "x": (fullExtent[2] + fullExtent[0]) / 2,
                     "y": (fullExtent[3] + fullExtent[1]) / 2,
-                    "spatialReference": {
-                        "wkid": int(layer.BoundingBox["@crs"].split(":")[-1])
-                    },
+                    "spatialReference": spatial_reference,
                 },
-                "spatialReference": {
-                    "wkid": int(layer.BoundingBox["@crs"].split(":")[-1])
-                },
+                "spatialReference": spatial_reference,
                 "lods": lods,
             },
             "wmtsInfo": {
                 "url": self._url,
-                "layerIdentifier": layer.Title,
-                "tileMatrixSet": [tile_matrix.Identifier],
+                "layerIdentifier": layer["Title"],
+                "tileMatrixSet": [tile_matrix["Identifier"]],
             },
         }
 
