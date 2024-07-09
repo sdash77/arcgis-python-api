@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 import json
 import sys
@@ -7,7 +8,6 @@ from enum import Enum
 
 import threading
 import websocket
-from __future__ import annotations
 
 from arcgis.geometry import Geometry
 import arcgis.gis
