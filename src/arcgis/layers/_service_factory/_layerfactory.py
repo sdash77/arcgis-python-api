@@ -5,6 +5,8 @@ Generates Layer Types from the given inputs.
 
 from __future__ import absolute_import
 import os
+from arcgis.auth.tools import LazyLoader
+
 from urllib.parse import urlparse
 from arcgis.gis import GIS
 from arcgis.features.layer import (
@@ -26,6 +28,8 @@ from arcgis.schematics import SchematicLayers
 from arcgis.layers._scenelyrs import SceneLayer
 from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
+
+_arcgis = LazyLoader("arcgis")
 
 
 ###########################################################################
@@ -117,20 +121,36 @@ class ServiceFactory(type):
     JSON (dictionary or iterable)
     """
 
-    def __call__(cls, url=None, item=None, server=None, initialize=False):
+    def __call__(
+        cls,
+        url_or_item: _arcgis.gis.Item | str = None,
+        server=None,
+        initialize=False,
+    ):
         """generates the proper type of layer from a given url"""
         from ...gis.server import ServicesDirectory
 
+        url: str
+
+        if server is None:
+
+            server = _arcgis.env.active_gis
         hasLayer = False
-        if url is None and item is None:
+        if isinstance(url_or_item, _arcgis.gis.Item):
+            url = url_or_item.url
+        elif isinstance(url_or_item, str):
+            url = url_or_item
+        else:
+
             raise ValueError("A URL to the service or an arcgis.Item is required.")
-        elif url is None and item is not None:
-            url = item.url
 
         if isinstance(server, Connection) or hasattr(server, "token"):
             connection = server
-        elif isinstance(server, (GIS, ServicesDirectory)):
+
+        elif isinstance(server, (ServicesDirectory)):
             connection = server._con
+        elif isinstance(server, GIS):
+            ...
         else:
             try:
                 parsed = urlparse(url)
@@ -196,22 +216,22 @@ class ServiceFactory(type):
         elif base_name.find(".geojson") > -1:
             from .._ogc import GeoJSONLayer
 
-            return GeoJSONLayer(url=url, gis=connection)
+            return GeoJSONLayer(url=url, gis=server)
         elif base_name.find(".csv") > -1:
             from .._ogc import CSVLayer
 
-            return CSVLayer(url_or_item=url, gis=connection)
+            return CSVLayer(url_or_item=url, gis=server)
         elif base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
             from .._ogc import KMLLayer
 
-            return KMLLayer(url=url, gis=connection)
+            return KMLLayer(url=url, gis=server)
         elif base_name.lower() == "ogcfeatureserver":
             from .._ogc._service import OGCFeatureService
 
-            return OGCFeatureService(url, gis=connection)
+            return OGCFeatureService(url, gis=server)
         else:
             return Layer(url=url, gis=server)
-        return type.__call__(cls, url, connection, item, initialize)
+        return type.__call__(cls, url, server, initialize)
 
 
 ###########################################################################

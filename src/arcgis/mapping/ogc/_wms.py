@@ -9,9 +9,17 @@ from arcgis.gis import GIS
 from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+
+
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the WMSLayer class found in `arcgis.layers.WMSLayer` instead.",
+)
 class WMSLayer(BaseOGC):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
