@@ -56,7 +56,7 @@ class Mission:
         if isinstance(project, Project):
             self._project = project
         elif isinstance(project, Item):
-            if project.type == "Reality Mapping Project":
+            if project.type == "Ortho Mapping Project": # "Reality Mapping Project"
                 self._project = Project(project, gis=project._gis)
 
         self._project_item = project._project_item

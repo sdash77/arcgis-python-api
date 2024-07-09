@@ -1443,6 +1443,8 @@ class RMJob(GPJob):
     def _parse_item(self, mission, item):
         url = ""
         itemid = ""
+        slpk_itemid = ""
+        slpk_item = None
         parsed_item = {}
         
         try:
@@ -1464,10 +1466,18 @@ class RMJob(GPJob):
         elif "id" in item_props.keys():
             itemid = item_props["id"]
             url = item_props.url
+            from arcgis.gis import Item
+            if isinstance(item_props, Item) and item_props.type == "Scene Service":
+                slpk_item = item_props.related_items("Service2Data")
+                if slpk_item is not None or len(slpk_item) > 0:
+                    slpk_itemid = slpk_item[0].id
         elif "url" in item_props.keys():
             url = item_props["url"]
 
         parsed_item = {"itemId": itemid, "url": url}
+        if slpk_itemid :
+            parsed_item["slpkItemId"] = slpk_itemid
+            slpk_itemid = ""        
 
         if not parsed_item["itemId"]:
             parsed_item.pop("itemId")

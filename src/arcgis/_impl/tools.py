@@ -8942,12 +8942,18 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
