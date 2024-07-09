@@ -248,9 +248,9 @@ class WebExperience(object):
             # construct web experience from path's config file
             # note that this will not have an associated portal item/itemid/resources
             if os.path.isdir(path):
-                if 'cdn' in os.listdir(path):
-                    path = os.path.join(path, 'cdn')
-                    cdn_list = [f for f in os.listdir(path) if not f.startswith('.')]
+                if "cdn" in os.listdir(path):
+                    path = os.path.join(path, "cdn")
+                    cdn_list = [f for f in os.listdir(path) if not f.startswith(".")]
                     path = os.path.join(path, cdn_list[0])
                 config_path = os.path.join(path, "config.json")
             elif path.endswith(".json"):
@@ -845,25 +845,27 @@ class WebExperience(object):
             image_list = os.path.join(images_path, "image-resources-list.json")
             icon_list = os.path.join(images_path, "icon-resources-list.json")
             self._item.resources.add(
-                file = image_list,
-                folder_name = "images",
-                file_name = "image-resources-list.json"
+                file=image_list,
+                folder_name="images",
+                file_name="image-resources-list.json",
             )
             self._item.resources.add(
-                file = icon_list,
-                folder_name = "images",
-                file_name = "icon-resources-list.json",
+                file=icon_list,
+                folder_name="images",
+                file_name="icon-resources-list.json",
             )
 
             widgets = [f for f in os.listdir(images_path) if "widget" in f]
             for widget in widgets:
                 widget_path = os.path.join(images_path, widget)
-                widget_content = [f for f in os.listdir(widget_path) if not f.startswith('.')]
+                widget_content = [
+                    f for f in os.listdir(widget_path) if not f.startswith(".")
+                ]
                 for img in widget_content:
                     self._item.resources.add(
-                        file = os.path.join(widget_path, img),
-                        folder_name = "images/" + widget,
-                        file_name = img,
+                        file=os.path.join(widget_path, img),
+                        folder_name="images/" + widget,
+                        file_name=img,
                     )
 
         # if wish for item to be published, save/publish
