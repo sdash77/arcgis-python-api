@@ -1,6 +1,6 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: arcgis-mapping Issue
+about: Mapping Widget Issue
 title: "[arcgis-mapping]"
 labels: 't-Mapping'
 assignees: ''
