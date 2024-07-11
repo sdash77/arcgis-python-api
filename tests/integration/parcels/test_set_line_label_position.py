@@ -25,7 +25,7 @@ class TestSetLineLabelPosition(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/Redlands/"
         )
-        cls.gis = GIS("https://dev0016752.esri.com/portal/", "admin", "esri.agp")
+        cls.gis = GIS("https://dev0016752.esri.com/portal/", "admin", "esri.agp", verify_cert=False)
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(

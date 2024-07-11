@@ -8,6 +8,7 @@ import logging
 logger = logging.getLogger()
 
 try:
+    import fastai
     from fastai.basic_train import Learner
     from ._arcgis_model import (
         _resnet_family,
@@ -50,6 +51,7 @@ try:
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
+    from ._transformer_backbone import vit_config
 
     HAS_FASTAI = True
 except Exception as e:
@@ -438,6 +440,11 @@ class DeepLab(ArcGISModel):
         return DeepLab._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -452,7 +459,16 @@ class DeepLab(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
+        transformer_backbone = DeepLab.transformer_backbones()
+        return (
+            [
+                *_resnet_family,
+                *_densenet_family,
+                *_vgg_family,
+            ]
+            + transformer_backbone
+            + timm_backbones
+        )
 
     @property
     def supported_datasets(self):
@@ -631,8 +647,21 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (nn.BatchNorm2d)):
+        if self._backbone.__name__ in DeepLab.transformer_backbones():
+            backbone = self.learn.model.backbone[0].backbone
+        else:
+            backbone = self.learn.model.backbone
+        layers = flatten_model(backbone)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for idx, i in enumerate(layers[start_idx:]):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
             if hasattr(i, "dilation"):
                 dilation = i.dilation
