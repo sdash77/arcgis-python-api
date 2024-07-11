@@ -79,7 +79,7 @@ class TestSideCar(unittest.TestCase):
         assert isinstance(story.content_list[2], Sidecar)
 
         # Construct items that will go into new slide
-        mmap = Map(gis.content.get("f47a5a35be8c41f7890c1763f65a6d9f"))
+        mmap = Map(item=gis.content.get("f47a5a35be8c41f7890c1763f65a6d9f"))
         txt = Text("This is a grizzly bear.")
         txt2 = Text("They can be found in some of our national parks.")
         link = Embed(
@@ -120,7 +120,7 @@ class TestSideCar(unittest.TestCase):
         assert isinstance(story.content_list[2], Sidecar)
 
         # Construct items that will go into new slide
-        mmap = Map(gis.content.get("f47a5a35be8c41f7890c1763f65a6d9f"))
+        mmap = Map(item=gis.content.get("f47a5a35be8c41f7890c1763f65a6d9f"))
         txt = Text("This is a grizzly bear.")
         txt2 = Text("They can be found in some of our national parks.")
         link = Embed(
