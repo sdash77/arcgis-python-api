@@ -23,8 +23,6 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
-import datetime as _dt
-from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
@@ -69,6 +67,7 @@ from arcgis.auth import EsriSession
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
+_geo = LazyLoader("arcgis.features.geo")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
@@ -111,14 +110,6 @@ def _lazy_property(fn):
         return getattr(self, attr_name)
 
     return _lazy_property
-
-
-try:
-    from arcgis.features.geo import _is_geoenabled
-except ImportError:
-
-    def _is_geoenabled(o):
-        return False
 
 
 class GIS(object):
@@ -531,7 +522,9 @@ class GIS(object):
                     from getpass import getpass
 
                     password = getpass("Enter PFX password: ")
-                key_file, cert_file = self._pfx_to_pem(cert_file, password)
+                from arcgis.auth.tools.certificate import pfx_to_pem
+
+                cert_file, key_file = pfx_to_pem(cert_file, password)
             else:
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
@@ -1004,51 +997,6 @@ class GIS(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def _pfx_to_pem(self, pfx_path, pfx_password):
-        """Decrypts the .pfx file to be used with requests.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        pfx_path            Required string.  File pathname to .pfx file to parse.
-        ---------------     --------------------------------------------------------------------
-        pfx_password        Required string.  Password to open .pfx file to extract key/cert.
-        ===============     ====================================================================
-
-        :return:
-           File path to key_file located in a tempfile location
-           File path to cert_file located in a tempfile location
-        """
-        try:
-            import OpenSSL.crypto
-        except ImportError:
-            raise RuntimeError(
-                "OpenSSL.crypto library is not installed.  You must install this in order "
-                + "to use a PFX for connecting to a PKI protected portal."
-            )
-        key_file = tempfile.NamedTemporaryFile(suffix=".pem", delete=False)
-        cert_file = tempfile.NamedTemporaryFile(suffix=".pem", delete=False)
-        k = open(key_file.name, "wb")
-        c = open(cert_file.name, "wb")
-        try:
-            pfx = open(pfx_path, "rb").read()
-            p12 = OpenSSL.crypto.load_pkcs12(pfx, pfx_password)
-        except OpenSSL.crypto.Error:
-            raise RuntimeError("Invalid PFX password.  Unable to parse file.")
-        k.write(
-            OpenSSL.crypto.dump_privatekey(
-                OpenSSL.crypto.FILETYPE_PEM, p12.get_privatekey()
-            )
-        )
-        c.write(
-            OpenSSL.crypto.dump_certificate(
-                OpenSSL.crypto.FILETYPE_PEM, p12.get_certificate()
-            )
-        )
-        k.close()
-        c.close()
-        return key_file.name, cert_file.name
-
     def _config_is_in_new_format(self, config):
         """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
@@ -1258,13 +1206,13 @@ class GIS(object):
         return []
 
     @property
-    def symbol_service(self) -> arcgis.mapping._types.SymbolService | None:
+    def symbol_service(self) -> arcgis.layers._types.SymbolService | None:
         """
         Symbol service is an ArcGIS Server utility service that provides access
         to operations to build and generate images for Esri symbols to be
         consumed by internal and external web applications.
 
-        :return: A :class:`~arcgis.mapping._types.SymbolService` object or None
+        :return: A :class:`~arcgis.layers._types.SymbolService` object or None
 
         """
         try:
@@ -3083,6 +3031,7 @@ class UserManager(object):
         user_li_lu = {
             "creatorUT": "creatorUT",
             "creator": "creatorUT",
+            "contributor": "editorUT",
             "editor": "editorUT",
             "editorUT": "editorUT",
             "GISProfessionalAdvUT": "GISProfessionalAdvUT",
@@ -3095,6 +3044,8 @@ class UserManager(object):
             "viewerUT": "viewerUT",
             "fieldworker": "fieldWorkerUT",
             "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
         }
         role_lu = {
             "administrator": "org_admin",
@@ -3359,7 +3310,7 @@ class UserManager(object):
         firstname: str,
         lastname: str,
         email: str,
-        role: str,
+        role: str | None = None,
         description: Optional[str] = None,
         provider: str = "arcgis",
         idp_username: Optional[str] = None,
@@ -3440,7 +3391,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        role              Required string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
                           enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
@@ -3487,7 +3438,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string, unless specified in the `New Member Defaults`. The user type
                           license for an organization member. See
-                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          `user types <https://doc.arcgis.com/en/arcgis-online/administer/user-types-orgs.htm>`_
                           for detailed descriptions of each `user type`. Each `user_type` is
                           compatible with specific `roles` in the organization. Compatibility is
                           determined by the `privileges` assigned to each `role`. Only certain `role`
@@ -3499,7 +3450,7 @@ class UserManager(object):
                           .. code-block:: python
 
                               >>> for utype in gis.users.license_types:
-                                      print(f"{utype['id]}")
+                                      print(f"{utype['id']}")
 
                           .. note::
                               See the :attr:`~arcgis.gis.UserManager.license_types` property on the
@@ -3922,9 +3873,19 @@ class UserManager(object):
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if self.user_settings and "userLicenseType" in self.user_settings:
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and user_type is None
+                    ):
                         user_type = self.user_settings["userLicenseType"]
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                        and role is None
+                    ):
                         role = self.user_settings["role"]
+
         else:
             if self._gis.version >= [7, 1]:
                 if user_type is None and role is None:
@@ -3933,6 +3894,10 @@ class UserManager(object):
                             "defaultUserTypeIdForUser"
                         ]
                         role = self._gis.admin.security.config["defaultRoleForUser"]
+        if role is None and user_type is None:
+            raise ValueError(
+                "The user must supply a role and user_type when defaults are not present."
+            )
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = "publisher"
@@ -3948,7 +3913,19 @@ class UserManager(object):
         elif level == 2 and role is None:
             role = "publisher"
 
-        levels = {"creator": "creatorUT", "viewer": "viewerUT"}
+        user_li_lu = {
+            "creatorUT": "creatorUT",
+            "creator": "creatorUT",
+            "contributor": "editorUT",
+            "editor": "editorUT",
+            "editorUT": "editorUT",
+            "GISProfessionalAdvUT": "GISProfessionalAdvUT",
+            "viewerUT": "viewerUT",
+            "fieldworker": "fieldWorkerUT",
+            "fieldWorkerUT": "fieldWorkerUT",
+            "professional": "GISProfessionalStdUT",
+            "professional plus": "GISProfessionalAdvUT",
+        }
         role_lookup = {
             "admin": "org_admin",
             "org_admin": "org_admin",
@@ -3966,8 +3943,8 @@ class UserManager(object):
         if groups is None:
             groups = []
 
-        if user_type.lower() in levels:
-            user_type = levels[user_type.lower()]
+        if user_type.lower() in user_li_lu:
+            user_type = user_li_lu[user_type.lower()]
 
         if isinstance(role, Role):
             role = role.role_id
@@ -3976,6 +3953,7 @@ class UserManager(object):
         elif isinstance(role, str):
             # lookup the role id to see if it exists, else set to ""
             try:
+                # uses role id to get the role
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except Exception:
@@ -6732,7 +6710,7 @@ class ContentManager(object):
             filetype = "Feature Collection"
             item_properties["text"] = {"layers": [data._lyr_dict]}
             data = None
-        elif _is_geoenabled(data) and hasattr(data, "spatial"):
+        elif _geo._is_geoenabled(data) and hasattr(data, "spatial"):
             filetype = "Feature Collection"
             item_properties["text"] = {
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
@@ -6809,7 +6787,7 @@ class ContentManager(object):
             and item_properties["type"] == "WMTS"
             and "text" not in item_properties
         ):
-            from arcgis.mapping.ogc import WMTSLayer
+            from arcgis.layers._ogc import WMTSLayer
 
             item_properties["text"] = json.dumps(
                 WMTSLayer(item_properties["url"], gis=self._gis).__text__
@@ -8362,7 +8340,7 @@ class ContentManager(object):
 
         df.to_csv(fname)
         if title is None:
-            now: datetime = datetime.now()
+            now: _dt.datetime = _dt.datetime.now()
             title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
         if service_name is None:
             service_name = f"import_table_{uuid.uuid4().hex[:3]}"
@@ -8550,7 +8528,7 @@ class ContentManager(object):
         # Check which workflow to do
         overwrite = kwargs.get("overwrite", False)
         insert = kwargs.get("append", False)
-        if _is_geoenabled(df) or (overwrite or insert):
+        if _geo._is_geoenabled(df) or (overwrite or insert):
             # Item Workflow
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
@@ -10050,7 +10028,7 @@ class Group(dict):
             + str(owner)
             + """
                         <br/><b>Created</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
@@ -11010,12 +10988,14 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
     ---------------------    ---------------------------------------------------------
-    storageUsage             | The amount of storage used for the entire organization.
+    storageUsage             | The amount of storage used for the entire organization in bytes.
 
                              **NOTE:** This value is an estimate for the organization, not the specific user.
                              For storage estimate of a user's items, see code example in the :attr:`items` method.
     ---------------------    ---------------------------------------------------------
-    storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
+    storageQuota             The total storage amount available for a deployment or
+                             subscription. The maximum amount for ArcGIS Online
+                             organizations is 2TB.
     ---------------------    ---------------------------------------------------------
     orgId                    The ID of the organization the user belongs to.
     ---------------------    ---------------------------------------------------------
@@ -11303,8 +11283,6 @@ class User(dict):
             :class: A *CSV* `~arcgis.gis.Item` that can be downloaded.
 
         """
-
-        import datetime as _dt
 
         assert report_type in [
             "users",
@@ -11936,7 +11914,7 @@ class User(dict):
             + str(self.username)
             + """
                         <br/><b>Joined</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
@@ -12783,7 +12761,7 @@ class User(dict):
 
         return passed
 
-    def delete(self, reassign_to: Optional[str] = None):
+    def delete(self, reassign_to: str | User = None):
         """
         The ``delete`` method deletes this user from the portal, optionally deleting or reassigning groups and items.
 
@@ -12812,6 +12790,21 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
+        url: str = f"{self._gis.resturl}content/users/{self.username}"
+        params: dict = {
+            "f": "json",
+            "types": "",
+            "sortField": "",
+            "sortOrder": "",
+            "folders": "true",
+            "foldersContent": "true",
+            "num": 50,
+        }
+        data: dict = self._gis.session.get(url=url, params=params).json()
+        if len(data["items"]) > 0 and reassign_to is None:
+            raise Exception(
+                f"User: {self._gis.users.me.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
+            )
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
 
@@ -13263,19 +13256,10 @@ class Item(dict):
         )
 
     def _populate_layers(self):
-        from arcgis.features import (
-            FeatureLayer,
-            FeatureCollection,
-            FeatureLayerCollection,
-            Table,
-        )
-        from arcgis.mapping import (
-            VectorTileLayer,
-            MapImageLayer,
-            SceneLayer,
-        )
-        from arcgis.network import NetworkDataset
+        from ..layers import Service
         from arcgis.raster import ImageryLayer
+        from arcgis.features import FeatureCollection
+        from arcgis.network import NetworkDataset
 
         if self._has_layers():
             layers = []
@@ -13307,10 +13291,10 @@ class Item(dict):
                 serviceinfo = self._portal.con.post(self.url, params)
                 for lyr in serviceinfo["children"]:
                     lyrurl = self.url + "/" + lyr["name"]
-                    layers.append(Layer(lyrurl, self._gis))
+                    layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(VectorTileLayer(self.url, self._gis))
+                layers.append(Service(self.url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13327,9 +13311,9 @@ class Item(dict):
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
-                    svc = FeatureLayerCollection.fromitem(self)
+                    svc = Service(self, self._gis)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
                         if (
@@ -13348,26 +13332,27 @@ class Item(dict):
                         tables.append(tbl)
 
             elif self.type == "Map Service":
-                svc = MapImageLayer.fromitem(self)
+                svc = Service(self, self._gis)
                 for lyr in svc.layers:
                     layers.append(lyr)
+                tables.extend(svc.tables)
             else:
                 m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + "/layers/" + str(lyr.id)
-                            lyr = SceneLayer(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis)
                         else:
                             lyr_url = svc.url + "/" + str(lyr.id)
                             lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:
-                            lyr = Table(svc.url + "/" + str(lyr.id), self._gis)
+                            lyr = Service(svc.url + "/" + str(lyr.id), self._gis)
                             tables.append(lyr)
                     except Exception:
                         pass
@@ -14130,7 +14115,7 @@ class Item(dict):
         """
         from arcgis.geoprocessing._tool import Toolbox
         from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
+        from arcgis.layers import Service
 
         gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
 
@@ -14591,7 +14576,7 @@ class Item(dict):
                         </a>
                         <br/>"""
             + snippet
-            + """<img src='"""
+            + """<br/><img src='"""
             + self._get_icon()
             + """' style="vertical-align:middle;" width=16 height=16>"""
             + self._ux_item_type()
@@ -14599,7 +14584,7 @@ class Item(dict):
             + self.owner
             + """
                         <br/>Last Modified: """
-            + datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
+            + _dt.datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
             + """
                         <br/>"""
             + str(self.numComments)
@@ -15473,29 +15458,56 @@ class Item(dict):
         """
         if dr_type == "6m":
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
                 "4": [
-                    sd + timedelta(days=181),
-                    ed + timedelta(days=1),
+                    sd + _dt.timedelta(days=181),
+                    ed + _dt.timedelta(days=1),
                 ],
             }
         elif dr_type == "12m":
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
-                "4": [sd + timedelta(days=181), sd + timedelta(days=240)],
-                "5": [sd + timedelta(days=241), sd + timedelta(days=320)],
-                "6": [sd + timedelta(days=321), sd + timedelta(days=366)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
+                "4": [
+                    sd + _dt.timedelta(days=181),
+                    sd + _dt.timedelta(days=240),
+                ],
+                "5": [
+                    sd + _dt.timedelta(days=241),
+                    sd + _dt.timedelta(days=320),
+                ],
+                "6": [
+                    sd + _dt.timedelta(days=321),
+                    sd + _dt.timedelta(days=366),
+                ],
             }
         else:
             # custom date range
             ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "1": [sd, sd + _dt.timedelta(days=60)],
+                "2": [
+                    sd + _dt.timedelta(days=61),
+                    sd + _dt.timedelta(days=120),
+                ],
+                "3": [
+                    sd + _dt.timedelta(days=121),
+                    sd + _dt.timedelta(days=180),
+                ],
             }
             # since over 5 months we know that there are at least 4 ranges and up to 6 for 1 year.
             stop = False
@@ -15503,19 +15515,19 @@ class Item(dict):
             days = 181
             # need to check if time delta will surpass our end_date or not
             while stop is False:
-                next_time = sd + timedelta(days=days + 59)
+                next_time = sd + _dt.timedelta(days=days + 59)
                 if next_time >= ed:
                     # we reached the end time specified by user
                     ranges[str(range_add)] = [
-                        sd + timedelta(days=days),
-                        ed + timedelta(days=1),
+                        sd + _dt.timedelta(days=days),
+                        ed + _dt.timedelta(days=1),
                     ]
                     stop = True
                 else:
                     # add a range
                     ranges[str(range_add)] = [
-                        sd + timedelta(days=days),
-                        sd + timedelta(days=days + 59),
+                        sd + _dt.timedelta(days=days),
+                        sd + _dt.timedelta(days=days + 59),
                     ]
                 range_add = range_add + 1
                 days = days + 60
@@ -15671,7 +15683,7 @@ class Item(dict):
             raise ValueError("Usage() only supported for ArcGIS Online items.")
 
         # Set end date and params dict
-        end_date = datetime.now()
+        end_date = _dt.datetime.now()
         params = {
             "f": "json",
             "startTime": None,
@@ -15714,32 +15726,36 @@ class Item(dict):
                 return results
         elif date_range.lower() in ["24h", "1d"]:
             params["period"] = "1h"
-            params["startTime"] = int((end_date - timedelta(days=1)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - _dt.timedelta(days=1)).timestamp() * 1000
+            )
         elif date_range.lower() == "7d":
             params["period"] = "1d"
-            params["startTime"] = int((end_date - timedelta(days=7)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - _dt.timedelta(days=7)).timestamp() * 1000
+            )
         elif date_range.lower() == "14d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=14)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=14)).timestamp() * 1000
             )
         elif date_range.lower() == "30d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=30)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=30)).timestamp() * 1000
             )
         elif date_range.lower() == "60d":
             params["period"] = "1d"
             params["startTime"] = int(
-                (end_date - timedelta(days=60)).timestamp() * 1000
+                (end_date - _dt.timedelta(days=60)).timestamp() * 1000
             )
         elif date_range.lower() == "6m":
             params["period"] = "1d"
-            sd = end_date - timedelta(days=int(365 / 2))
+            sd = end_date - _dt.timedelta(days=int(365 / 2))
             results = self._interval_times(sd, end_date, params, as_df, "6m")
             return results
         elif date_range.lower() in ["12m", "1y"]:
-            sd = end_date - timedelta(days=int(365))
+            sd = end_date - _dt.timedelta(days=int(365))
             params["period"] = "1d"
             results = self._interval_times(sd, end_date, params, as_df, "12m")
             return results
@@ -17402,7 +17418,7 @@ class Item(dict):
         from datetime import timezone
         from uuid import uuid4
 
-        now = datetime.now(timezone.utc)
+        now = _dt.datetime.now(timezone.utc)
         if title is None:
             title = item.title + " - Copy %s" % uuid4().hex[:6]
         if tags is None:

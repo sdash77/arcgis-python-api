@@ -9,6 +9,7 @@ from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
+from arcgis._impl.common._deprecate import deprecated
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -22,7 +23,7 @@ _arcgis_features = LazyLoader("arcgis.features")
 _gis = LazyLoader("arcgis.gis")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _geometry = LazyLoader("arcgis.geometry")
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 _log = logging.getLogger(__name__)
 _imports = LazyLoader("arcgis._impl.imports")
 
@@ -84,6 +85,11 @@ class _ApplicationProperties(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the PackagingJob class found in `arcgis.map.offline_mapping.PackagingJob` instead.",
+)
 class PackagingJob(object):
     """
     The ``PackagingJob`` class represents a Single Packaging Job.
@@ -123,7 +129,7 @@ class PackagingJob(object):
     def elapse_time(self):
         """
         Reports the total amout of time that passed while the
-        :class:`~arcgis.mapping.PackagingJob` ran.
+        :class:`~arcgis.layers.PackagingJob` ran.
 
         :return:
             The elapsed time
@@ -240,6 +246,11 @@ class PackagingJob(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OfflineMapAreaManager class found in `arcgis.map.OfflineMapAreaManager` instead.",
+)
 class OfflineMapAreaManager(object):
     """
     The ``OfflineMapAreaManager`` is a helper class to manage offline map areas
@@ -259,7 +270,7 @@ class OfflineMapAreaManager(object):
         >>> wm_obj = Map(wm_item)
 
         >>> oma_mgr = wm_obj.offline_areas
-        <arcgis.mapping._types.OfflineMapAreaManager at <memory_addr>>
+        <arcgis.layers._types.OfflineMapAreaManager at <memory_addr>>
 
     .. note::
         There are important concepts to understand about offline mapping before
@@ -773,7 +784,7 @@ class OfflineMapAreaManager(object):
 
         :return:
             Map Area :class:`~arcgis.gis.Item`, or if *future=True*, a
-            :class:`~arcgis.mapping.PackagingJob` object to further query for
+            :class:`~arcgis.layers.PackagingJob` object to further query for
             results.
 
         .. code-block:: python
@@ -1568,8 +1579,8 @@ class OfflineMapAreaManager(object):
                                          .. note::
                                              To get the list of ``Map Area`` items related to the *Map*
                                              object, call the
-                                             :meth:`~arcgis.mapping.OfflineMapAreaManager.list` method on
-                                             the :class:`~arcgis.mapping.OfflineMapAreaManager` for the
+                                             :meth:`~arcgis.layers.OfflineMapAreaManager.list` method on
+                                             the :class:`~arcgis.layers.OfflineMapAreaManager` for the
                                              *Map*.
         ----------------------------     --------------------------------------------------------------------
         future                           Optional Boolean.
@@ -1642,12 +1653,17 @@ class OfflineMapAreaManager(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseVectorTileLayerManager class found in `arcgis.layers.EnterpriseVectorTileLayerManager` instead.",
+)
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
     """
@@ -1705,13 +1721,13 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.edit(service_dictionairy)
 
     # ----------------------------------------------------------------------
     def start(self):
         """This operation starts a service and loads the service's configuration."""
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
@@ -1722,7 +1738,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         operation will stop the respective servers, terminating all pods
         that run this service.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -1750,7 +1766,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _services.Service(self.url, self._gis)
+            vtl_service = _layers.Service(self.url, self._gis)
             return vtl_service.change_provider(provider)
         return False
 
@@ -1760,7 +1776,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         This operation deletes an individual service, stopping the service
         and removing all associated resources and configurations.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------
@@ -1803,12 +1819,17 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayerManager class found in `arcgis.layers.VectorTileLayerManager` instead.",
+)
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note::
         Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
@@ -1888,7 +1909,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the tile layer item
@@ -1963,7 +1984,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -2131,7 +2152,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS
@@ -2153,6 +2174,11 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SymbolService class found in `arcgis.layers.SymbolService` instead.",
+)
 class SymbolService:
     """
     Symbol service is an ArcGIS Server utility service that provides access
@@ -2286,6 +2312,11 @@ class SymbolService:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayer class found in `arcgis.layers.VectorTileLayer` instead.",
+)
 class VectorTileLayer(arcgis.gis.Layer):
     """
     A Vector Tile Layer is a type of data layer used to access and display
@@ -2345,8 +2376,8 @@ class VectorTileLayer(arcgis.gis.Layer):
     @property
     def manager(self) -> VectorTileLayerManager:
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class or
-        :class:`~arcgis.mapping.EnterpriseVectorTileLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.VectorTileLayerManager` class or
+        :class:`~arcgis.layers.EnterpriseVectorTileLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._gis._portal.is_arcgisonline:
@@ -2631,10 +2662,15 @@ class VectorTileLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseMapImageLayerManager class found in `arcgis.layers.EnterpriseMapImageLayerManager` instead.",
+)
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
+    A :class:`~arcgis.layers.MapImageLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/``
     """
@@ -2662,19 +2698,19 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.stop()
 
     # ----------------------------------------------------------------------
@@ -2691,22 +2727,27 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         :return: Boolean
 
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.delete()
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapImageLayerManager class found in `arcgis.layers.MapImageLayerManager` instead.",
+)
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
     or Cached Map Services.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    A :class:`~arcgis.layers.MapImageLayer` offers access to the Map Server endpoints
     that allow you to edit the tile service, update tiles, refresh, and more.
 
     To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
@@ -2819,7 +2860,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         .. code-block:: python
 
             # USAGE EXAMPLE
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
@@ -2906,7 +2947,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -3019,7 +3060,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -3075,7 +3116,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -3104,6 +3145,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapImageLayer class found in `arcgis.layers.MapImageLayer` instead.",
+)
 class MapImageLayer(arcgis.gis.Layer):
     """
     The ``MapImageLayer`` allows you to display and analyze data from sublayers defined in a map service,
@@ -3188,13 +3234,13 @@ class MapImageLayer(arcgis.gis.Layer):
                 if "subLayerIds" in lyr and lyr.subLayerIds is not None:  # Group Layer
                     lyr = arcgis.gis.Layer(self.url + "/" + str(lyr.id), self._gis)
                 else:
-                    lyr = arcgis.mapping._msl.MapServiceLayer(
+                    lyr = arcgis.layers._msl.MapServiceLayer(
                         self.url + "/" + str(lyr.id), self._gis
                     )
                 layers.append(lyr)
         if "tables" in self.properties and self.properties.tables:
             for lyr in self.properties.tables:
-                lyr = arcgis.mapping._msl.MapServiceLayer(
+                lyr = arcgis.layers._msl.MapServiceLayer(
                     self.url + "/" + str(lyr.id), self._gis, self
                 )
                 tables.append(lyr)
@@ -3223,8 +3269,8 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
-        for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.MapImageLayerManager` class
+        for ArcGIS Online and :class:`~arcgis.layers.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -3292,7 +3338,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -3590,7 +3636,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -3806,7 +3852,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -4065,7 +4111,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -4161,7 +4207,7 @@ class MapImageLayer(arcgis.gis.Layer):
         """
         The ``estimate_export_tiles_size`` method is an asynchronous task that
         allows estimation of the size of the tile package or the cache data
-        set that you download using the :attr:`~arcgis.mapping.MapImageLayer.export_tiles` operation. This
+        set that you download using the :attr:`~arcgis.layers.MapImageLayer.export_tiles` operation. This
         operation can also be used to estimate the tile count in a tile
         package and determine if it will exceed the ``maxExportTileCount``
         limit set by the administrator of the service. The result of this
@@ -4493,8 +4539,11 @@ class MapImageLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="This class will be removed in a later version.",
+)
 class Events(object):
     @classmethod
     def _create_events(cls, enable=False):

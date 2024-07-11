@@ -792,10 +792,16 @@ def analyze_geocode_input(
     from arcgis.gis import Item
     from arcgis.features.layer import Layer
     from arcgis.geoprocessing._tool import Toolbox
+    from arcgis.geoprocessing._service import GPService
 
     gis = arcgis.env.active_gis if gis is None else gis
     analyze_geocode_url = gis.properties.helperServices.asyncGeocode.url
-    tbx = Toolbox(url=analyze_geocode_url, gis=gis)
+    service = GPService(url=analyze_geocode_url, gis=gis)
+    task = [
+        task
+        for task in service.tasks
+        if task.properties["name"] == "AnalyzeGeocodeInput"
+    ][0]
 
     if geocode_service_url is None:
         gcs = gis.properties.helperServices.geocode
@@ -817,11 +823,11 @@ def analyze_geocode_input(
     kwargs = {
         "geocode_service_url": geocode_service_url,
         "input_table": "",
-        "input_file_item": None,
-        "column_names": column_names,
+        "input_file_item": None or "",
+        "column_names": column_names or "",
         "input_file_parameters": input_file_parameters,
         "locale": locale,
-        "context": context,
+        "context": context or "",
     }
 
     if isinstance(input_table_or_item, Item):
@@ -870,7 +876,8 @@ def analyze_geocode_input(
     for k, v in list(kwargs.items()):
         if v is None:
             kwargs.pop(k)
-    return tbx.analyze_geocode_input(**kwargs)
+    v = [task.properties["name"] for task in service.tasks]
+    return task.analyze_geocode_input(**kwargs).result()
 
 
 # ----------------------------------------------------------------------

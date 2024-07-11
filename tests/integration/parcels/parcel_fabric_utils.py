@@ -1,6 +1,8 @@
 import time
+from collections import namedtuple
+from typing import List
 import arcgis.features
-from arcgis.features import FeatureLayer
+from arcgis.features import FeatureLayer, FeatureLayerCollection
 
 
 def clean_up_versions(vms):
@@ -203,3 +205,33 @@ def get_record_guid_by_name(gis, records_url, record_name, gdb_version):
         out_fields=["NAME", "GLOBALID"],
     ).to_dict()
     return record_attributes["features"]
+  
+def basic_lyr_info(feature_layer_collection: FeatureLayerCollection, layer_name: str = None) -> List[namedtuple]:
+  """Get a list of namedtuples containing
+      - layer name
+      - layer collection order number as they appear in the collection
+      - the layer's layer ID
+      - the url to the feature layer
+
+      Or:
+      A single named tuple described above for a specific layer
+
+      Args:
+        feature_layer_collection (arcgis.features.FeatureLayerCollection): The FeatureLayerCollection
+        containing the desired FeatureLayer
+
+        layer_name (str): (optional) The name of a layer in the collection
+
+      Returns:
+        List[namedtuple]
+  """
+  layers = feature_layer_collection.layers
+  LayerProps = namedtuple("LayerProp", ["lyr_name", "lyr_list_order", "lyr_id", "lyr_url"])
+  layer_props = []
+  for i, lyr in enumerate(layers):
+      lp = LayerProps(lyr.properties.name, i, lyr.properties.id, lyr.url)
+      layer_props.append(lp)
+
+  if layer_name:
+      return [lyr for lyr in layer_props if lyr.lyr_name == layer_name]
+  return layer_props
