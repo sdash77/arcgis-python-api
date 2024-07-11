@@ -13256,19 +13256,10 @@ class Item(dict):
         )
 
     def _populate_layers(self):
-        from arcgis.features import (
-            FeatureLayer,
-            FeatureCollection,
-            FeatureLayerCollection,
-            Table,
-        )
-        from arcgis.layers import (
-            VectorTileLayer,
-            MapImageLayer,
-            SceneLayer,
-        )
-        from arcgis.network import NetworkDataset
+        from ..layers import Service
         from arcgis.raster import ImageryLayer
+        from arcgis.features import FeatureCollection
+        from arcgis.network import NetworkDataset
 
         if self._has_layers():
             layers = []
@@ -13300,10 +13291,10 @@ class Item(dict):
                 serviceinfo = self._portal.con.post(self.url, params)
                 for lyr in serviceinfo["children"]:
                     lyrurl = self.url + "/" + lyr["name"]
-                    layers.append(Layer(lyrurl, self._gis))
+                    layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(VectorTileLayer(self.url, self._gis))
+                layers.append(Service(self.url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13320,9 +13311,9 @@ class Item(dict):
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
-                    svc = FeatureLayerCollection.fromitem(self)
+                    svc = Service(self, self._gis)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
                         if (
@@ -13341,26 +13332,27 @@ class Item(dict):
                         tables.append(tbl)
 
             elif self.type == "Map Service":
-                svc = MapImageLayer.fromitem(self)
+                svc = Service(self, self._gis)
                 for lyr in svc.layers:
                     layers.append(lyr)
+                tables.extend(svc.tables)
             else:
                 m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + "/layers/" + str(lyr.id)
-                            lyr = SceneLayer(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis)
                         else:
                             lyr_url = svc.url + "/" + str(lyr.id)
                             lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:
-                            lyr = Table(svc.url + "/" + str(lyr.id), self._gis)
+                            lyr = Service(svc.url + "/" + str(lyr.id), self._gis)
                             tables.append(lyr)
                     except Exception:
                         pass
