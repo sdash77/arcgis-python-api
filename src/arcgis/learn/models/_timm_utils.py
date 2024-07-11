@@ -711,6 +711,7 @@ def checkpoint_filter_fn_swin(state_dict, model):
                 # last temp_module will be tensor
                 temp_module = temp_module.__getattr__(attr)
             if v.shape == temp_module.shape:
+                out_dict[k] = v
                 continue
             if "index" in model_attr[-1]:
                 v = temp_module

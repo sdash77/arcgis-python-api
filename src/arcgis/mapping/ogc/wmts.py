@@ -9,9 +9,15 @@ from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the WMTSLayer class found in `arcgis.layers.WMTSLayer` instead.",
+)
 class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.

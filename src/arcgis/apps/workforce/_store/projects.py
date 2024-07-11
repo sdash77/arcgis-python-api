@@ -457,14 +457,14 @@ def _v2_create_worker_webmap(
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=0))
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=1))
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=2))
-    item_properties["text"] = json.dumps(webmap_data)
+    text = json.dumps(webmap_data)
     if thumbnail:
         item_properties["thumbnail"] = thumbnail
     if folder_name:
         folder = gis.content.folders.get(folder_name)
     else:
         folder = gis.content.folders.get()
-    item = folder.add(item_properties).result()
+    item = folder.add(item_properties, text=text).result()
     return item
 
 
@@ -526,14 +526,14 @@ def _v2_create_dispatcher_webmap(
             capabilities="Query,Sync",
         )
     )
-    item_properties["text"] = json.dumps(webmap_data)
+    text = json.dumps(webmap_data)
     if thumbnail:
         item_properties["thumbnail"] = thumbnail
     if folder_name:
         folder = gis.content.folders.get(folder_name)
     else:
         folder = gis.content.folders.get()
-    item = folder.add(item_properties).result()
+    item = folder.add(item_properties, text=text).result()
     return item
 
 
