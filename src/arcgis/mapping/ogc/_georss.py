@@ -1,14 +1,16 @@
-import os
-import sys
-import json
 import uuid
-from arcgis.gis import GIS
 from arcgis.layers._symbol import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the GeoRSSLayer class found in `arcgis.layers.GeoRSSLayer` instead.",
+)
 class GeoRSSLayer(BaseOGC):
     """
     The GeoRSSLayer class is used to create a layer based on GeoRSS. GeoRSS is a

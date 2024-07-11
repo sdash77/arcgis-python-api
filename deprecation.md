@@ -54,7 +54,34 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `forms` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.forms` module instead.
 - `renderer` - removed in **2.4.0**. Use dataclasses found in `arcgis.map.renderers` and methods in `arcgis.map.SmartMappingManager`.
 - `OfflineMapAreaManager` - removed in **2.4.0**. Use the `arcgis.map.OfflineMapArea`.
-- `arcgis.mapping` -  `arcgis.mapping` has been renamed to `arcgis.layers` to simplify finding the layers you want to work with.
+- `MapImageLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapImageLayer` class instead.
+- `MapImageLayerManager` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapImageLayerManager` class instead.
+- `EnterpriseMapImageLayerManager` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.EnterpriseMapImageLayerManager` class instead.
+- `VectorTileLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VectorTileLayer` class instead.
+- `VectorTileLayerManager` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VectorTileLayerManager` class instead.
+- `Object3DLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Object3DLayer` class instead.
+- `IntegratedMeshLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.IntegratedMeshLayer` class instead.
+- `Tiles3DLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Tiles3DLayer` class instead.
+- `Point3DLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.Point3DLayer` class instead.
+- `VoxelLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.VoxelLayer` class instead.
+- `PointCloudLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.PointCloudLayer` class instead.
+- `BuildingLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.BuildingLayer` class instead.
+- `SceneLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.SceneLayer` class instead.
+- `SceneLayerManager` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.SceneLayerManager` class instead.
+- `EnterpriseSceneLayerManager` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.EnterpriseSceneLayerManager` class instead.
+- `MapServiceLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapServiceLayer` class instead.
+- `MapFeatureLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapFeatureLayer` class instead.
+- `MapTable` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapTable` class instead.
+- `MapRasterLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.MapRasterLayer` class instead.
+- `WMTSLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.WMTSLayer` class instead.
+- `CSVLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.CSVLayer` class instead.
+- `GeoRssLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.GeoRssLayer` class instead.
+- `KMLLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.KMLLayer` class instead.
+- `WMSLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.WMSLayer` class instead.
+- `GeoJSONLayer` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.GeoJSONLayer` class instead.
+- `OGCCollection` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCCollection` class instead.
+- `OGCFeatureService` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCFeatureService` class instead.
+
 
 ### `arcgis.widgets` Module
 - `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.
