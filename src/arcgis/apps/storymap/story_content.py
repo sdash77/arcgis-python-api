@@ -1538,9 +1538,9 @@ class Map:
             # Create map object to extract properties
             if isinstance(item, arcgis.gis.Item):
                 if item.type == "Web Map":
-                    map_item = arcgismapping.Map(item)
+                    map_item = arcgismapping.Map(item=item)
                 elif item.type == "Web Scene":
-                    map_item = arcgismapping.Scene(item)
+                    map_item = arcgismapping.Scene(item=item)
                 else:
                     raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
