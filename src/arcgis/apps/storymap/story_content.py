@@ -1550,7 +1550,11 @@ class Map:
             self._type = item.type
             self._offline_dependent = None
             if item.type == "Web Map":
-                self._extent = map_item.extent.dict()
+                self._extent = (
+                    map_item.extent.dict()
+                    if not isinstance(map_item.extent, dict)
+                    else map_item.extent
+                )
                 if map_item.center.dict() is None or map_item.center.dict() == {}:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
