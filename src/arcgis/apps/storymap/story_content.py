@@ -1752,8 +1752,6 @@ class Map:
             self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                 "targetGeometry"
             ] = new_center
-        else:
-            raise ValueError("Extent must be a dictionary")
 
     # ----------------------------------------------------------------------
     def _update_scale(self, scale: Scales | str):
@@ -3867,6 +3865,9 @@ class Sidecar:
             "type": "action-button",
             "data": {"text": text},
             "config": {"size": "wide"},
+            "dependents": {
+                "actionMedia": media.node if media else "",
+            },
         }
 
         # add to the narrative panel
@@ -4527,6 +4528,7 @@ class MediaAction:
                 if action["origin"] == node:
                     self.target = action["target"]
                     self.properties = action
+
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._story = story
@@ -4579,8 +4581,6 @@ class MediaAction:
         """"""
         if isinstance(text, str):
             self._story._properties["nodes"][self.node]["data"]["text"] = text
-        else:
-            raise TypeError("Text must be of type string.")
 
     # ----------------------------------------------------------------------
     def set_media(self, media: Image | Video | Embed):
