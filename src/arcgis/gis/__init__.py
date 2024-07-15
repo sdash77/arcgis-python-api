@@ -14158,7 +14158,7 @@ class Item(dict):
                 del lyr["layerType"]
                 layers.append(lyr)
             for lyr in mapjson["operationalLayers"]:
-                flyr = Service(url=lyr["url"], server=self._gis._con)
+                flyr = Service(url_or_item=lyr["url"], server=self._gis._con)
                 if container is None and isinstance(flyr, FeatureLayer):
                     container = FeatureLayerCollection(
                         url=os.path.dirname(flyr._url), gis=self._gis

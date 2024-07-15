@@ -44,7 +44,7 @@ def _create_service(url: str, layer_type: str, gis: GIS, name: str = None):
     elif layer_type.lower() == "gpserver":
         return gptool.Toolbox(url=url, gis=gis)
     elif layer_type.lower() == "geometryserver":
-        return geommodule.GeometryService(url=url, gis=gis)
+        return geommodule.GeometryService(url_or_item=url, gis=gis)
     elif layer_type.lower() == "geocodeserver":
         return geocoding.Geocoder(location=url, gis=gis)
     elif layer_type.lower() == "naserver":
