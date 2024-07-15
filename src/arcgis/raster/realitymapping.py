@@ -2047,6 +2047,16 @@ def reconstruct_surface(
             else:
                 context = {"workspace": mission.workspace}
 
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+            else:
+                for f in gis.users.me.folders:
+                    if f["id"] == image_collection.ownerFolder:
+                        folder = f
+                        break
+            kwargs.update({"folder": folder})
+
     return gis._tools.realitymapping.reconstruct_surface(
         image_collection=image_collection,
         scenario=scenario,

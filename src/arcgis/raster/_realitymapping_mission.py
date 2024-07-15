@@ -257,7 +257,7 @@ class Mission:
             mission_json = self._mission_json
             oid = mission_json["oid"]
 
-            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
+            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]
             items_list = []
             image_collection_item = None
             
