@@ -1423,6 +1423,7 @@ class Embed:
                 "providerUrl": sections.netloc,
                 "alt": alt_text or "",
                 "display": display or "inline",
+                "embedSrc": self._path,
             },
         }
 
@@ -1434,6 +1435,7 @@ class Embed:
         self._path = new_link
         # update dictionary properties
         self._story._properties["nodes"][self.node]["data"]["url"] = self._path
+        self._story._properties["nodes"][self.node]["data"]["embedSrc"] = self._path
         self._story._properties["nodes"][self.node]["data"]["title"] = sections.netloc
         self._story._properties["nodes"][self.node]["data"][
             "providerUrl"
@@ -4598,9 +4600,14 @@ class MediaAction:
         """
         if media.node not in self._story._properties["nodes"]:
             media._add_to_story(story=self._story)
+
+        # Assign new media to action and update story properties
         for idx, action in enumerate(self._story._properties["actions"]):
             if action["origin"] == self.node:
                 self._story._properties["actions"][idx]["data"] = {"media": media.node}
+        self._story._properties["nodes"][self.node]["dependents"] = {
+            "actionMedia": media.node
+        }
         return self.media
 
     # ----------------------------------------------------------------------
