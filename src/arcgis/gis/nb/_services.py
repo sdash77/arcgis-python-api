@@ -90,7 +90,7 @@ class NBServicesManager:
         service_list = []
         for service in self.properties["services"]:
             url = f"{self._url}/{service['id']}.{service['type']}"
-            service_list.append(NBService(url_or_item=url, gis=self._gis))
+            service_list.append(NBService(url=url, gis=self._gis))
         return tuple(service_list)
 
     def create(self, item: Item, title: str, description: str = None) -> Item:

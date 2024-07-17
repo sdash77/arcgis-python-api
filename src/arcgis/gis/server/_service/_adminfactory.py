@@ -88,7 +88,7 @@ class AdminServiceFactory(type):
                 _str_replace(os.path.dirname(url), rd),
                 os.path.basename(url),
             )
-            return AdminService(url_or_item=admin_url, gis=gis)
+            return AdminService(url=admin_url, gis=gis)
 
 
 ###########################################################################

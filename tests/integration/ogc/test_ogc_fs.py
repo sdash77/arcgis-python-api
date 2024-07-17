@@ -15,7 +15,7 @@ class TestOGCFS(unittest.TestCase):
 
     def test_ogc_fs(self):
         """tests the ogc fs methods and properties"""
-        ogc = OGCFeatureService(url_or_item=ogc_url)
+        ogc = OGCFeatureService(url=ogc_url)
         assert isinstance(ogc, OGCFeatureService)
         assert ogc.properties
         assert ogc.conformance
@@ -23,7 +23,7 @@ class TestOGCFS(unittest.TestCase):
 
     def test_ogc_layer(self):
         """test the ogc layer methods/functions/proeprties"""
-        ogc = OGCFeatureService(url_or_item=ogc_url)
+        ogc = OGCFeatureService(url=ogc_url)
         for ogclyr in ogc.collections:
             assert isinstance(ogclyr, OGCCollection)
             assert ogclyr.properties
