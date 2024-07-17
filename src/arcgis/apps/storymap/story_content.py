@@ -1578,8 +1578,8 @@ class Map:
                     }
                 self._zoom = map_item.zoom if map_item.zoom is not False else 2
                 self._viewpoint = {
-                    "rotation": map_item.rotation.dict(),
-                    "scale": map_item.scale.dict(),
+                    "rotation": map_item.rotation,
+                    "scale": map_item.scale,
                     "targetGeometry": self._center,
                 }
 
