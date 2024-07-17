@@ -1527,10 +1527,6 @@ class Map:
 
             # only in rdata
             self._type = rdata["itemType"]
-            if self._type == "Web Scene":
-                self._lighting_date = self._story._properties["resources"][
-                    self.resource_node
-                ]["data"]["lightingDate"]
 
             # check if offline dependents exist
             if "dependents" in self._story._properties["nodes"][self.node]:
@@ -1584,27 +1580,27 @@ class Map:
                 }
 
                 layers = []
-                # Create layer dictionary:
-                for layer in map_item.layers:
+                # Create layer dictionary from pydantic dataclasses:
+                for layer in map_item._webmap.operational_layers:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if "visibility" in layer:
-                        layer_props["visible"] = layer["visibility"]
-                    elif "layer_visibility" in map_item:
-                        layer_props["visible"] = map_item["layer_visibility"]
+                    if hasattr(layer, "visibility"):
+                        layer_props["visible"] = layer.visibility
+                    else:
+                        layer_props["visible"] = False  # Default
                     layers.append(layer_props)
                 self._map_layers = layers
             # Add properties for Web Scene
             elif item.type == "Web Scene":
                 layers = []
                 # Create layer dictionary:
-                for layer in map_item.layers:
+                for layer in map_item._webscene.operational_layers:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if "visibility" in layer:
-                        layer_props["visible"] = layer["visibility"]
+                    if hasattr(layer, "visibility"):
+                        layer_props["visible"] = layer.visibility
                     else:
                         layer_props["visible"] = False
                     layers.append(layer_props)
@@ -1615,13 +1611,8 @@ class Map:
                     "position"
                 ]
                 self._zoom = 2
-                self._viewpoint = map_item["initialState"]["viewpoint"]
-                self._camera = map_item["initialState"]["viewpoint"]["camera"]
-                self._lighting_date = (
-                    map_item["initialState"]["environment"]["lighting"]["datetime"]
-                    if "datetime" in map_item["initialState"]["environment"]["lighting"]
-                    else None
-                )
+                self._viewpoint = scene_dict["initialState"]["viewpoint"]
+                self._camera = scene_dict["initialState"]["viewpoint"]["camera"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -2192,14 +2183,8 @@ class Map:
         # Add for Web Scene
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
-                "lightingDate"
-            ] = self._lighting_date
-            self._story._properties["resources"][self.resource_node]["data"][
                 "camera"
             ] = self._camera
-            self._story._properties["nodes"][self.node]["data"][
-                "lightingDate"
-            ] = self._lighting_date
             self._story._properties["nodes"][self.node]["data"]["camera"] = self._camera
 
     # ----------------------------------------------------------------------
@@ -2218,10 +2203,7 @@ class Map:
             raise ValueError("New Map must be of same type as the existing map.")
 
         # create new map
-        if map.type == "Web Map":
-            new_map = arcgismapping.Map(map)
-        elif map.type == "Web Scene":
-            new_map = arcgismapping.Scene(map)
+        new_map = Map(item=map)
 
         # Get all the old properties but update with new map where needed
 
@@ -2247,14 +2229,8 @@ class Map:
         # Extra necessary updates when it is a Web Scene (3D Map)
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
-                "lightingDate"
-            ] = new_map._lighting_date
-            self._story._properties["resources"][self.resource_node]["data"][
                 "camera"
             ] = new_map._camera
-            self._story._properties["nodes"][self.node]["data"][
-                "lightingDate"
-            ] = new_map._lighting_date
             self._story._properties["nodes"][self.node]["data"][
                 "camera"
             ] = new_map._camera
