@@ -68,7 +68,7 @@ class TestGPTask(unittest.TestCase):
     """
 
     def test_async_operation(self):
-        gp = GPService(url_or_item=ASYNC_URL, gis=GIS())
+        gp = GPService(url=ASYNC_URL, gis=GIS())
         task = gp.tasks[0]
         fn = getattr(task, task.name)
         # Not Default Query

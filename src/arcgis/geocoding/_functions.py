@@ -796,7 +796,7 @@ def analyze_geocode_input(
 
     gis = arcgis.env.active_gis if gis is None else gis
     analyze_geocode_url = gis.properties.helperServices.asyncGeocode.url
-    service = GPService(url_or_item=analyze_geocode_url, gis=gis)
+    service = GPService(url=analyze_geocode_url, gis=gis)
     task = [
         task
         for task in service.tasks
