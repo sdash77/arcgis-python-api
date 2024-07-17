@@ -710,7 +710,6 @@ class Folder:
                 if not value is None
             }
             if "overwrite" in item_properties and item_properties["overwrite"] == True:
-
                 logger.warning(
                     "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
                 )
@@ -721,6 +720,15 @@ class Folder:
             stream = False
         elif file and item_id:
             stream = True
+        if (
+            file
+            and isinstance(file, (io.StringIO, io.BytesIO))
+            and not "fileName" in item_properties
+        ):
+            raise ValueError(
+                "When provide a `StringIO` or `BytesIO` object a file name must be given in the `ItemProperties` class"
+            )
+
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
