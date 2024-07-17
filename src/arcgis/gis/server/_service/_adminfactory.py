@@ -74,12 +74,12 @@ class AdminServiceFactory(type):
 
         url = service._url
         if isinstance(service, FeatureLayer) or os.path.basename(url).isdigit():
-            parent = Service(url=os.path.dirname(url), server=gis)
+            parent = Service(url_or_item=os.path.dirname(url), server=gis)
             return AdminServiceGen(parent, gis)
         elif isinstance(service, (NetworkDataset)):
             rd = {"naserver", "MapServer"}
             url = _str_replace(url, rd)
-            parent = Service(url=url, server=gis)
+            parent = Service(url_or_item=url, server=gis)
             return AdminServiceGen(parent, gis)
         else:
             rd = {"/rest/": "/admin/"}
