@@ -109,7 +109,7 @@ class TestGeometryService(unittest.TestCase):
             url = gis.properties.helperServices.geometry.url
 
             if gis._portal.is_kubernetes == False:
-                gs = _GeometryService(url_or_item=url)
+                gs = _GeometryService(url=url)
 
                 assert isinstance(gs, _GeometryService)
 
@@ -122,7 +122,7 @@ class TestGeometryService(unittest.TestCase):
         Tests Direct Accessing Geometry Service
         """
         url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer"
-        gs = _GeometryService(url_or_item=url)
+        gs = _GeometryService(url=url)
         assert isinstance(gs, _GeometryService)
 
     # ----------------------------------------------------------------------
@@ -132,7 +132,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             polygons = [
                 {
@@ -187,7 +187,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             polygons = [
                 {
@@ -220,7 +220,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -268,7 +268,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -298,7 +298,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -336,7 +336,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -380,7 +380,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -433,7 +433,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -472,7 +472,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -538,7 +538,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -593,7 +593,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -631,7 +631,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -670,7 +670,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -709,7 +709,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -758,7 +758,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -799,7 +799,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -848,7 +848,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -885,7 +885,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -906,7 +906,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
 
@@ -959,7 +959,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:
@@ -1004,7 +1004,7 @@ class TestGeometryService(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             url = gis.properties.helperServices.geometry.url
-            gs = _GeometryService(url_or_item=url, gis=gis)
+            gs = _GeometryService(url=url, gis=gis)
             assert isinstance(gs, _GeometryService)
 
             for fut in [True, False]:

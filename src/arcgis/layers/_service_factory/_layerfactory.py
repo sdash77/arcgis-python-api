@@ -307,7 +307,7 @@ class ServiceFactory(type):
             res = _import_toolbox(url, server)
             return res
         elif base_name.lower() == "geometryserver":
-            return GeometryService(url_or_item=url, gis=server)
+            return GeometryService(url=url, gis=server)
         elif base_name.lower() == "mobileserver":
             return Layer(url=url, gis=server)
         elif base_name.lower() == "geocodeserver":
