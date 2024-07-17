@@ -1189,7 +1189,7 @@ class Embed:
     **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The url that will be added as a webpage, video, or
-                            audio embed into the story.
+                            audio embed into the story. Make sure your url includes "https://" or "http://".
     ==================      ====================================================================
     """
 
@@ -1212,6 +1212,8 @@ class Embed:
                 ]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
+            if path and _parse.urlparse(path).scheme not in ["https", "http"]:
+                path = "https://" + path
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._offline_dependent = None
@@ -1429,6 +1431,9 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def _update_link(self, new_link):
+        # check new link has http or https
+        if _parse.urlparse(new_link).scheme not in ["https", "http"]:
+            new_link = "https://" + new_link
         # parse new url
         sections = _parse.urlparse(new_link)
         # set new path
@@ -1557,7 +1562,7 @@ class Map:
                     if not isinstance(map_item.extent, dict)
                     else map_item.extent
                 )
-                if map_item.center.dict() is None or map_item.center.dict() == {}:
+                if map_item.center is None or map_item.center == []:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
                     self._center = {
@@ -1566,7 +1571,11 @@ class Map:
                         "y": y_center,
                     }
                 else:
-                    self._center = map_item.center.dict()
+                    self._center = {
+                        "x": map_item.center[0],
+                        "y": map_item.center[1],
+                        "spatialReference": self._extent["spatialReference"],
+                    }
                 self._zoom = map_item.zoom if map_item.zoom is not False else 2
                 self._viewpoint = {
                     "rotation": map_item.rotation.dict(),
