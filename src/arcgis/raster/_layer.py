@@ -9039,7 +9039,7 @@ class Raster:
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         band_ids_or_names     Required list. The index number or names of the bands to return as
-                              Raster objects. If not specified, all bands will be extracted.
+                              Raster objects (uses one-based indexing). If not specified, all bands will be extracted.
         =================     ====================================================================
 
         :return:
@@ -9050,7 +9050,7 @@ class Raster:
             # Usage Example: Generates the raster pertaining to the first band
 
             raster1 = Raster(r"./data/Amberg.tif")
-            raster1.get_raster_bands(band_ids_or_names=[0])
+            raster1.get_raster_bands(band_ids_or_names=[1])
 
         """
         return self._engine_obj.get_raster_bands(band_ids_or_names)
