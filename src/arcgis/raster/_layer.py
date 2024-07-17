@@ -9038,8 +9038,8 @@ class Raster:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        band_ids_or_names     Required list. The index number or names of the bands to return as
-                              Raster objects (uses one-based indexing). If not specified, all bands will be extracted.
+        band_ids_or_names     Required list. The index number (uses one-based indexing) or names of the bands to return as
+                              Raster objects. If not specified, all bands will be extracted.
         =================     ====================================================================
 
         :return:
