@@ -1954,7 +1954,7 @@ def reverse_geocode(
     for_storage: bool = False,
     geocoder: Optional[Geocoder] = None,
     feature_types: Optional[str] = None,
-    roof_top: str = "street",
+    location_top: str = "street",
 ):
     """
     The ``reverse_geocode`` operation determines the address at a particular
@@ -2058,7 +2058,7 @@ def reverse_geocode(
         return_intersection=return_intersection,
         for_storage=for_storage,
         feature_types=feature_types,
-        location_type=roof_top,
+        location_type=location_top,
     )
 
 
