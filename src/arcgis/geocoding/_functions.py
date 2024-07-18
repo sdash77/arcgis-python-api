@@ -85,6 +85,157 @@ class Geocoder(_GISResource):
         url = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
+    def geocode(
+        self,
+        address,
+        search_extent=None,
+        location=None,
+        distance=None,
+        out_sr=None,
+        category=None,
+        out_fields="*",
+        max_locations=20,
+        magic_key=None,
+        for_storage=False,
+        as_featureset=False,
+        match_out_of_range=True,
+        location_type="street",
+        lang_code=None,
+        source_country=None,
+    ):
+        """
+        The geocode method geocodes one location per request.
+
+        ====================     ====================================================
+        **Parameter**             **Description**
+        --------------------     ----------------------------------------------------
+        address                  Required list of strings or dictionaries.
+                                 Specifies the location to be geocoded. This can be
+                                 a string containing the street address, place name,
+                                 postal code, or POI.
+
+                                 Alternatively, this can be a dictionary containing
+                                 the various address fields accepted by the
+                                 corresponding geocoder. These fields are listed in
+                                 the addressFields property of the associated
+                                 geocoder. For example, if the address_fields of a
+                                 geocoder includes fields with the following names:
+                                 Street, City, State and Zone, then the address
+                                 argument is of the form:
+                                 {
+                                    Street: "1234 W Main St",
+                                    City: "Small Town",
+                                    State: "WA",
+                                    Zone: "99027"
+                                 }
+        --------------------     ----------------------------------------------------
+        search_extent            Optional string. A set of bounding box coordinates
+                                 that limit the search area to a specific region.
+                                 This is especially useful for applications in which
+                                 a user will search for places and addresses only
+                                 within the current map extent.
+        --------------------     ----------------------------------------------------
+        location                 Optional [x,y]. Defines an origin point location that
+                                 is used with the distance parameter to sort
+                                 geocoding candidates based upon their proximity to
+                                 the location.
+        --------------------     ----------------------------------------------------
+        distance                 Optional float. Specifies the radius of an area
+                                 around a point location which is used to boost the
+                                 rank of geocoding candidates so that candidates
+                                 closest to the location are returned first. The
+                                 distance value is in meters.
+        --------------------     ----------------------------------------------------
+        out_sr                   Optional dictionary. The spatial reference of the
+                                 x/y coordinates returned by a geocode request. This
+                                 is useful for applications using a map with a spatial
+                                 reference different than that of the geocode service.
+        --------------------     ----------------------------------------------------
+        category                 Optional string. A place or address type which can
+                                 be used to filter find results. The parameter
+                                 supports input of single category values or multiple
+                                 comma-separated values. The category parameter can be
+                                 passed in a request with or without the text
+                                 parameter.
+        --------------------     ----------------------------------------------------
+        out_fields               Optional string. Name of all the fields to inlcude.
+                                 The default is "*" which means all fields.
+        --------------------     ----------------------------------------------------
+        max_locations            Optional integer. The number of locations to be
+                                 returned from the service. The default is 20.
+        --------------------     ----------------------------------------------------
+        magic_key                The find operation retrieves results quicker when
+                                 you pass a valid text and magickey value.
+        --------------------     ----------------------------------------------------
+        for_storage              Specifies whether the results of the operation will
+                                 be persisted. The default value is false, which
+                                 indicates the results of the operation can't be
+                                 stored, but they can be temporarily displayed on a
+                                 map for instance. If you store the results, in a
+                                 database for example, you need to set this parameter
+                                 to true.
+
+        --------------------     ----------------------------------------------------
+        as_featureset            Optional boolean. If True, the result set will be a
+                                 FeatureSet instead of a dictionary. False is default
+        --------------------     ----------------------------------------------------
+        match_out_of_range       Optional Boolean. Provides better spatial accuracy
+                                 for inexact street addresses by specifying whether
+                                 matches will be returned when the input number is
+                                 outside of the house range defined for the input
+                                 street. Out of range matches will be defined as
+                                 Addr_type=StreetAddressExt. Input house numbers
+                                 that exceed the range on a street segment by more
+                                 than 100 will not result in `StreetAddressExt`
+                                 matches. The default value of this parameter is
+                                 True.
+        --------------------     ----------------------------------------------------
+        location_type            Optional Str. Specifies whether the rooftop point or
+                                 street entrance is used as the output geometry of
+                                 PointAddress matches. By default, street is used,
+                                 which is useful in routing scenarios, as the rooftop
+                                 location of some addresses may be offset from a
+                                 street by a large distance. However, for map display
+                                 purposes, you may want to use rooftop instead,
+                                 especially when large buildings or landmarks are
+                                 geocoded. The `location_type` parameter only affects
+                                 the location object in the JSON response and does
+                                 not change the x,y or DisplayX/DisplayY attribute
+                                 values.
+
+                                 Values: `street` or `rooftop`
+        --------------------     ----------------------------------------------------
+        lang_code                Optional str. Sets the language in which geocode
+                                 results are returned.
+        --------------------     ----------------------------------------------------
+        source_country           Optional str. Limits the returned candidates to the
+                                 specified country or countries for either single-field
+                                 or multifield requests. Acceptable values include
+                                 the 3-character country code.
+        ====================     ====================================================
+
+        :return:
+           dictionary or FeatureSet
+
+        """
+        return self._geocode(
+            address=address,
+            search_extent=search_extent,
+            location=location,
+            distance=distance,
+            out_sr=out_sr,
+            category=category,
+            out_fields=out_fields,
+            max_locations=max_locations,
+            magic_key=magic_key,
+            for_storage=for_storage,
+            as_featureset=as_featureset,
+            match_out_of_range=match_out_of_range,
+            location_type=location_type,
+            lang_code=lang_code,
+            source_country=source_country,
+        )
+
     def _geocode(
         self,
         address,
@@ -290,6 +441,113 @@ class Geocoder(_GISResource):
         else:
             return []
 
+    def reverse_geocode(
+        self,
+        location,
+        distance=None,
+        out_sr=None,
+        lang_code=None,
+        return_intersection=False,
+        for_storage=False,
+        as_featureset=False,
+        feature_types=None,
+        location_type="street",
+    ):
+        """
+        The ``reverse_geocode`` operation determines the address at a particular
+        x/y location. You pass the coordinates of a point location to the
+        geocoding service, and the service returns the address that is
+        closest to the location.
+
+        =================== ====================================================
+        **Parameter**        **Description**
+        ------------------- ----------------------------------------------------
+        location            Required location input as list, dict (with or without SpatialReference),
+                            or :class:`~arcgis.geometry.Point` object.
+        ------------------- ----------------------------------------------------
+        distance            optional float, radial distance in meters to
+                            search for an address.
+
+                            .. note::
+                                The default for ``distance`` is 100 meters.
+        ------------------- ----------------------------------------------------
+        out_sr              optional integer or
+                            :class:`~arcgis.geometry.SpatialReference` of the
+                            x/y coordinate returned.
+        ------------------- ----------------------------------------------------
+        lang_code           optional string. Sets the language in which geocode
+                            results are returned. This is useful for ensuring
+                            that results are returned in the expected language.
+                            If the lang_code parameter isn't included in a
+                            request, or if it is included but there are no
+                            matching features with the input language code, the
+                            resultant match is returned in the language code of
+                            the primary matched components from the input search
+                            string.
+        ------------------- ----------------------------------------------------
+        return_intersection optional Boolean, which specifies whether the
+                            service should return the nearest street
+                            intersection or the nearest address to the input
+                            location
+        ------------------- ----------------------------------------------------
+        for_storage         optional boolean, specifies whether the results of
+                            the operation will be persisted
+        ------------------- ----------------------------------------------------
+        feature_types       Optional String. Limits the possible match types
+                            performed by the `reverse_geocode` method. If a
+                            single value is included, the search tolerance for
+                            the input feature type is 500 meters. If multiple
+                            values (separated by a comma, with no spaces) are
+                            included, the default search distances specified in
+                            the feature type hierarchy table are applied.
+
+                            Values: `StreetInt, DistanceMarker, StreetAddress,
+                                    StreetName, POI, PointAddress, Postal, and
+                                    Locality`
+        ------------------- ----------------------------------------------------
+        location_type       Optional string. Specifies whether the rooftop point
+                            or street entrance is used as the output geometry of
+                            point address matches. By default,
+                            ``street`` is used,
+                            which is useful in routing scenarios, as the rooftop
+                            location of some addresses may be offset from a
+                            street by a large distance. However, for map display
+                            purposes, you may want to use ``rooftop`` instead,
+                            especially when large buildings or landmarks are
+                            geocoded. The ``location_type`` parameter only
+                            affects the location object in the JSON response
+                            and does not change the x,y or
+                            ``DisplayX/DisplayY`` attribute values.
+
+                            Values: ``street``, ``rooftop``
+        =================== ====================================================
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> reversed = Geocoder.reverse_geocode(location = point1,
+                                                    distance = 50,
+                                                    for_storage = True,
+                                                    feature_types = "StreetName",
+                                                    location_type = "street")
+            >>> type(reversed)
+            <Dictionary>
+
+        :return:
+           A dictionary
+        """
+        return self._reverse_geocode(
+            location=location,
+            distance=distance,
+            out_sr=out_sr,
+            lang_code=lang_code,
+            return_intersection=return_intersection,
+            for_storage=for_storage,
+            as_featureset=as_featureset,
+            feature_types=feature_types,
+            location_type=location_type,
+        )
+
     def _reverse_geocode(
         self,
         location,
@@ -353,6 +611,147 @@ class Geocoder(_GISResource):
             return fs
         return resp
 
+    # ---------------------------------------------------------------------
+    def batch_geocode(
+        self,
+        addresses: list,
+        source_country: Optional[str] = None,
+        category: Optional[str] = None,
+        out_sr: Optional[str] = None,
+        as_featureset: Optional[bool] = False,
+        match_out_of_range: Optional[bool] = True,
+        location_type: Optional[str] = "street",
+        search_extent: Optional[str] = None,
+        lang_code: Optional[str] = "EN",
+        preferred_label_values: Optional[str] = None,
+        out_fields: Optional[str] = None,
+    ):
+        """
+        The ``batch_geocode`` function geocodes an entire list of addresses.
+
+        .. note::
+            Geocoding many addresses at once is also known as bulk geocoding.
+
+        =========================     ================================================================
+        **Parameter**                  **Description**
+        -------------------------     ----------------------------------------------------------------
+        addresses                     Required list of strings or dictionaries.
+                                      A list of addresses to be geocoded.
+                                      For passing in the location name as a single line of text -
+                                      single field batch geocoding - use a string.
+                                      For passing in the location name as multiple lines of text
+                                      multifield batch geocoding - use the address fields described
+                                      in the Geocoder documentation.
+
+                                      .. note::
+                                        The maximum number of addresses that can be geocoded in a
+                                        single request is limited to the SuggestedBatchSize property of
+                                        the locator.
+
+                                      Syntax:
+                                      addresses = ["380 New York St, Redlands, CA",
+                                        "1 World Way, Los Angeles, CA",
+                                        "1200 Getty Center Drive, Los Angeles, CA",
+                                        "5905 Wilshire Boulevard, Los Angeles, CA",
+                                        "100 Universal City Plaza, Universal City, CA 91608",
+                                        "4800 Oak Grove Dr, Pasadena, CA 91109"]
+
+                                      OR
+
+                                      addresses= [{
+                                           "Address": "380 New York St.",
+                                           "City": "Redlands",
+                                           "Region": "CA",
+                                           "Postal": "92373"
+                                       },{
+                                           "OBJECTID": 2,
+                                           "Address": "1 World Way",
+                                           "City": "Los Angeles",
+                                           "Region": "CA",
+                                           "Postal": "90045"
+                                       }]
+        -------------------------     ----------------------------------------------------------------
+        source_country                Optional string, The ``source_country`` parameter is
+                                      only supported by geocoders published using StreetMap
+                                      Premium locators.
+
+                                      .. note::
+                                        Added at 10.3 and only supported by geocoders published
+                                        with ArcGIS 10.3 for Server and later versions.
+
+        -------------------------     ----------------------------------------------------------------
+        category                      Optional String. The ``category`` parameter is only supported by geocode
+                                      services published using StreetMap Premium locators.
+        -------------------------     ----------------------------------------------------------------
+        out_sr                        Optional dictionary, The spatial reference of the
+                                      x/y coordinates returned by a geocode request. This
+                                      is useful for applications using a map with a spatial
+                                      reference different than that of the geocode service.
+        -------------------------     ----------------------------------------------------------------
+        as_featureset                 Optional boolean, if True, the result set is
+                                      returned as a FeatureSet object, else it is a
+                                      dictionary.
+        -------------------------     ----------------------------------------------------------------
+        match_out_of_range            Optional, A Boolean which specifies if StreetAddress matches should
+                                      be returned even when the input house number is outside of the house
+                                      number range defined for the input street.
+        -------------------------     ----------------------------------------------------------------
+        location_type                 Optional, Specifies if the output geometry of PointAddress matches
+                                      should be the rooftop point or street entrance location. Valid values
+                                      are rooftop and street.
+        -------------------------     ----------------------------------------------------------------
+        search_extent                 Optional, a set of bounding box coordinates that limit the search
+                                      area to a specific region. The input can either be a comma-separated
+                                      list of coordinates defining the bounding box or a JSON envelope
+                                      object.
+        -------------------------     ----------------------------------------------------------------
+        lang_code                     Optional, sets the language in which geocode results are returned.
+                                      See the table of supported countries for valid language code values
+                                      in each country.
+        -------------------------     ----------------------------------------------------------------
+        preferred_label_values        Optional, allows simple configuration of output fields returned
+                                      in a response from the World Geocoding Service by specifying which
+                                      address component values should be included in output fields. Supports
+                                      a single value or a comma-delimited collection of values as input.
+                                      e.g. ='matchedCity,primaryStreet'
+        -------------------------     ----------------------------------------------------------------
+        out_fields                    Optional String. A string of comma seperated fields names used to
+                                      limit the return attributes of a geocoded location.
+        =========================     ================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> batched = batch_geocode(addresses = ["380 New York St, Redlands, CA",
+                                                                "1 World Way, Los Angeles, CA",
+                                                                "1200 Getty Center Drive, Los Angeles, CA",
+                                                                "5905 Wilshire Boulevard, Los Angeles, CA",
+                                                                "100 Universal City Plaza, Universal City, CA 91608",
+                                                                "4800 Oak Grove Dr, Pasadena, CA 91109"]
+                                                as_featureset = True,
+                                                match_out_of_range = True,
+                                                )
+            >>> type(batched)
+            <:class:`~arcgis.features.FeatureSet>
+
+        :return:
+          A dictionary or :class:`~arcgis.features.FeatureSet`
+        """
+        return self._batch_geocode(
+            addresses=addresses,
+            source_country=source_country,
+            category=category,
+            out_sr=out_sr,
+            as_featureset=as_featureset,
+            match_out_of_range=match_out_of_range,
+            location_type=location_type,
+            search_extent=search_extent,
+            lang_code=lang_code,
+            preferred_label_values=preferred_label_values,
+            out_fields=out_fields,
+        )
+
+    # ---------------------------------------------------------------------
     def _batch_geocode(
         self,
         addresses: list,
@@ -551,15 +950,161 @@ class Geocoder(_GISResource):
             location = candidates[0]["location"]
             return location["y"], location["x"]
 
+    def suggest(
+        self,
+        text: str,
+        location: tuple | arcgis.geometry.Point | None = None,
+        category: str = None,
+        search_extent: tuple | arcgis.geometry.Envelope | None = None,
+        max_suggestions: int = 5,
+        country_code: str = None,
+        preferred_label_values: str | None = None,
+        return_collections: bool = True,
+        distance: float | None = None,
+    ):
+        """
+        The ``suggest`` method retrieves a resource representing a list of
+        suggested matches for the input text. This resource provides the
+        matching text as well as a unique ID value, which links a
+        suggestion to a specific place or address.
+        A geocoder must meet the following requirements to support
+        the suggest operation:
+
+        1. The address locator from which the geocoder was published
+          must support suggestions.
+
+        .. note::
+            Only address locators created using
+            ArcGIS 10.3 for Desktop and later can support suggestions. See
+            the Create Address Locator geoprocessing tool help topic for more
+            information.
+
+        2. The geocoder must have the Suggest capability enabled.
+
+        .. note::
+                Only ``geocoders`` published using ArcGIS 10.3 for Server or
+            later support the Suggest capability.
+
+        The ``suggest`` operation allows character-by-character auto-complete
+        suggestions to be generated for user input in a client application.
+        This capability facilitates the interactive search user experience
+        by reducing the number of characters that need to be typed before
+        a suggested match is obtained. A client application can provide a
+        list of suggestions that is updated with each character typed by a
+        user until the address they are looking for appears in the list.
+
+        ===============================     =================================================================
+        **Parameter**                      **Description**
+        -------------------------------     -----------------------------------------------------------------
+        text                                The input text provided by a user that is used by the
+                                            suggest operation to generate a list of possible
+                                            matches. This is a required parameter.
+        -------------------------------     -----------------------------------------------------------------
+        location                            Optional tuple[float, float] | Point. Defines an origin point location that is used
+                                            with the distance parameter to sort suggested candidates
+                                            based on their proximity to the location. The
+                                            distance parameter specifies the radial distance from
+                                            the location in meters. The priority of candidates
+                                            within this radius is boosted relative to those
+                                            outside the radius.
+                                            This is useful in mobile applications where a user
+                                            wants to search for places in the vicinity of their
+                                            current GPS location. It is also useful for web
+                                            mapping applications where a user wants to find
+                                            places within or near the map extent.
+
+                                            .. note::
+                                                The ``location`` parameter can be specified without
+                                                specifying a ``distance``. If distance is not specified,
+                                                it defaults to 2000 meters.
+
+        -------------------------------     -----------------------------------------------------------------
+        category                            The category parameter is only supported by geocode
+                                            services published using StreetMap Premium locators.
+        -------------------------------     -----------------------------------------------------------------
+        search_extent                       Optional String/Dict. A set of bounding box coordinates that
+                                            limit the search area to a specific region. You can specify the
+                                            spatial reference of the `search_extent` coordinates, which is
+                                            necessary if the map spatial reference is different than that of
+                                            the geocoding service; otherwise, the spatial reference of the
+                                            map coordinates is assumed to be the same as that of the
+                                            geocoding service. The input can either be a comma-separated list
+                                            of coordinates defining the bounding box or a JSON envelope
+                                            object.
+
+                                            .. note::
+                                                The ``search_extent`` coordinates should always use a
+                                                period as the decimal separator, even in countries where
+                                                traditionally a comma is used.
+        -------------------------------     -----------------------------------------------------------------
+        max_suggestions                     Optional Int.  The maximum number of suggestions returned by the
+                                            suggest operation, up to the maximum number allowed by the
+                                            service.
+
+                                            .. note::
+                                                If ``maxSuggestions`` is not included in the suggest
+                                                request, the default value is 5. The maximum suggestions value
+                                                can be modified in the source address locator.
+        -------------------------------     -----------------------------------------------------------------
+        country_code                        Optional Str. Limits the returned suggestions to values in a
+                                            particular country. Valid two- and three-character country code
+                                            values for each country are available in geocode coverage.
+
+                                            .. note::
+                                                When the ``country_code`` parameter is specified in a
+                                                suggest request, the corresponding ``geocode`` call must
+                                                also include the ``country_code`` parameter with the
+                                                same value.
+        ------------------------------     -----------------------------------------------------------------
+        preferred_label_values             Optional str. Allows simple configuration of suggestion labels
+                                           returned in a response from the geocode service by specifying
+                                           which address component values should be included in the label. A
+                                           single value is supported as input. If the parameter is blank or
+                                           excluded from a request, the default address formats are used.
+        ------------------------------     -----------------------------------------------------------------
+        return_collections                 Optional Boolean. The parameter is used to prevent collections
+                                           from being returned in suggest responses. The default value is
+                                           `True`, which means that collections are included in suggest
+                                           responses by default.
+        ==============================     =================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> suggested = suggest(text = "geocoding_text"
+                                            location = point1,
+                                            distance = 5000,
+                                            max_suggestions = 10
+                                            )
+            >>> type(suggested)
+            <Dictionary>
+
+        :return:
+            A dictionary
+        """
+        return self._suggest(
+            text=text,
+            location=location,
+            category=category,
+            search_extent=search_extent,
+            max_suggestions=max_suggestions,
+            country_code=country_code,
+            preferred_label_values=preferred_label_values,
+            return_collections=return_collections,
+            distance=None,
+        )
+
     def _suggest(
         self,
-        text,
-        location=None,
-        distance=None,
-        category=None,
-        search_extent=None,
-        max_suggestions=5,
-        country_code=None,
+        text: str,
+        location: tuple | arcgis.geometry.Point | None = None,
+        category: str = None,
+        search_extent: tuple | arcgis.geometry.Envelope | None = None,
+        max_suggestions: int = 5,
+        country_code: str = None,
+        preferred_label_values: str | None = None,
+        return_collections: bool = True,
+        distance: float | None = None,
     ):
         """
         The suggest operation is performed on a geocoder.
@@ -627,13 +1172,21 @@ class Geocoder(_GISResource):
         if not category is None:
             params["category"] = category
         if not distance is None and isinstance(distance, (int, float)):
-            params["distance"] = distance
+            _LOGGER.warning(
+                "The 'distance value is deprecated.  Please use the `search_extent object instead.`"
+            )
+
         if search_extent:
             params["searchExtent"] = search_extent
         if max_suggestions is not None and isinstance(max_suggestions, int):
             params["maxSuggestions"] = max_suggestions
         if country_code and isinstance(country_code, str):
             params["countryCode"] = country_code
+        if not preferred_label_values is None:
+            params["preferredLabelValues"] = preferred_label_values
+        if return_collections in [True, False]:
+            params["returnCollections"] = return_collections
+
         resp = self._con.post(url, params, token=self._token)
         return resp
 
@@ -1661,13 +2214,14 @@ def batch_geocode(
 def suggest(
     text: str,
     location: Optional[dict[str, Any]] = None,
-    distance: Optional[float] = None,
     category: Optional[str] = None,
     geocoder: Optional[Geocoder] = None,
     search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     max_suggestions: int = 5,
     country_code: Optional[str] = None,
-):
+    preferred_label_values: str | None = None,
+    return_collections: bool = True,
+) -> dict:
     """
     The ``suggest`` method retrieves a resource representing a list of
     suggested matches for the input text. This resource provides the
@@ -1699,88 +2253,84 @@ def suggest(
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
 
-    ===============     =================================================================
-    **Parameter**        **Description**
-    ---------------     -----------------------------------------------------------------
-    text                The input text provided by a user that is used by the
-                        suggest operation to generate a list of possible
-                        matches. This is a required parameter.
-    ---------------     -----------------------------------------------------------------
-    location            Optional x/y dictionary. Defines an origin point location that is used
-                        with the distance parameter to sort suggested candidates
-                        based on their proximity to the location. The
-                        distance parameter specifies the radial distance from
-                        the location in meters. The priority of candidates
-                        within this radius is boosted relative to those
-                        outside the radius.
-                        This is useful in mobile applications where a user
-                        wants to search for places in the vicinity of their
-                        current GPS location. It is also useful for web
-                        mapping applications where a user wants to find
-                        places within or near the map extent.
+    ===============================     =================================================================
+    **Parameter**                      **Description**
+    -------------------------------     -----------------------------------------------------------------
+    text                                The input text provided by a user that is used by the
+                                        suggest operation to generate a list of possible
+                                        matches. This is a required parameter.
+    -------------------------------     -----------------------------------------------------------------
+    location                            Optional tuple[float, float] | Point. Defines an origin point location that is used
+                                        with the distance parameter to sort suggested candidates
+                                        based on their proximity to the location. The
+                                        distance parameter specifies the radial distance from
+                                        the location in meters. The priority of candidates
+                                        within this radius is boosted relative to those
+                                        outside the radius.
+                                        This is useful in mobile applications where a user
+                                        wants to search for places in the vicinity of their
+                                        current GPS location. It is also useful for web
+                                        mapping applications where a user wants to find
+                                        places within or near the map extent.
 
-                        .. note::
-                            The ``location`` parameter can be specified without
-                            specifying a ``distance``. If distance is not specified,
-                            it defaults to 2000 meters.
+                                        .. note::
+                                            The ``location`` parameter can be specified without
+                                            specifying a ``distance``. If distance is not specified,
+                                            it defaults to 2000 meters.
 
-    ---------------     -----------------------------------------------------------------
-    distance            Optional float. Specifies the radius around the point defined in the
-                        location parameter to create an area, which is used to boost
-                        the rank of suggested candidates so that candidates closest to
-                        the location are returned first. The distance value is in
-                        meters.
+    -------------------------------     -----------------------------------------------------------------
+    category                            The category parameter is only supported by geocode
+                                        services published using StreetMap Premium locators.
+    -------------------------------     -----------------------------------------------------------------
+    geocoder                            Optional :class:`~arcgis.geocoding.Geocoder` - the geocoder to
+                                        be used. If not specified, the active
+                                        :class:`~arcgis.gis.GIS` object's first geocoder is used.
+    -------------------------------     -----------------------------------------------------------------
+    search_extent                       Optional String/Dict. A set of bounding box coordinates that
+                                        limit the search area to a specific region. You can specify the
+                                        spatial reference of the `search_extent` coordinates, which is
+                                        necessary if the map spatial reference is different than that of
+                                        the geocoding service; otherwise, the spatial reference of the
+                                        map coordinates is assumed to be the same as that of the
+                                        geocoding service. The input can either be a comma-separated list
+                                        of coordinates defining the bounding box or a JSON envelope
+                                        object.
 
-                        .. note::
-                            If the ``distance`` parameter is specified, the ``location``
-                            parameter must be specified as well.
+                                        .. note::
+                                            The ``search_extent`` coordinates should always use a
+                                            period as the decimal separator, even in countries where
+                                            traditionally a comma is used.
+    -------------------------------     -----------------------------------------------------------------
+    max_suggestions                     Optional Int.  The maximum number of suggestions returned by the
+                                        suggest operation, up to the maximum number allowed by the
+                                        service.
 
-                        It is important to note that the ``location`` and ``distance``
-                        parameters allow searches to extend beyond the specified search
-                        radius. They are not used to filter results, but rather to rank
-                        resulting candidates based on their distance from a location.
-    ---------------     -----------------------------------------------------------------
-    category            The category parameter is only supported by geocode
-                        services published using StreetMap Premium locators.
-    ---------------     -----------------------------------------------------------------
-    geocoder            Optional :class:`~arcgis.geocoding.Geocoder` - the geocoder to
-                        be used. If not specified, the active
-                        :class:`~arcgis.gis.GIS` object's first geocoder is used.
-    ---------------     -----------------------------------------------------------------
-    search_extent       Optional String/Dict. A set of bounding box coordinates that
-                        limit the search area to a specific region. You can specify the
-                        spatial reference of the `search_extent` coordinates, which is
-                        necessary if the map spatial reference is different than that of
-                        the geocoding service; otherwise, the spatial reference of the
-                        map coordinates is assumed to be the same as that of the
-                        geocoding service. The input can either be a comma-separated list
-                        of coordinates defining the bounding box or a JSON envelope
-                        object.
+                                        .. note::
+                                            If ``maxSuggestions`` is not included in the suggest
+                                            request, the default value is 5. The maximum suggestions value
+                                            can be modified in the source address locator.
+    -------------------------------     -----------------------------------------------------------------
+    country_code                        Optional Str. Limits the returned suggestions to values in a
+                                        particular country. Valid two- and three-character country code
+                                        values for each country are available in geocode coverage.
 
-                        .. note::
-                            The ``search_extent`` coordinates should always use a
-                            period as the decimal separator, even in countries where
-                            traditionally a comma is used.
-    ---------------     -----------------------------------------------------------------
-    max_suggestions     Optional Int.  The maximum number of suggestions returned by the
-                        suggest operation, up to the maximum number allowed by the
-                        service.
-
-                        .. note::
-                            If ``maxSuggestions`` is not included in the suggest
-                            request, the default value is 5. The maximum suggestions value
-                            can be modified in the source address locator.
-    ---------------     -----------------------------------------------------------------
-    country_code        Optional Str. Limits the returned suggestions to values in a
-                        particular country. Valid two- and three-character country code
-                        values for each country are available in geocode coverage.
-
-                        .. note::
-                            When the ``country_code`` parameter is specified in a
-                            suggest request, the corresponding ``geocode`` call must
-                            also include the ``country_code`` parameter with the
-                            same value.
-    ===============     =================================================================
+                                        .. note::
+                                            When the ``country_code`` parameter is specified in a
+                                            suggest request, the corresponding ``geocode`` call must
+                                            also include the ``country_code`` parameter with the
+                                            same value.
+    ------------------------------     -----------------------------------------------------------------
+    preferred_label_values             Optional str. Allows simple configuration of suggestion labels
+                                       returned in a response from the geocode service by specifying
+                                       which address component values should be included in the label. A
+                                       single value is supported as input. If the parameter is blank or
+                                       excluded from a request, the default address formats are used.
+    ------------------------------     -----------------------------------------------------------------
+    return_collections                 Optional Boolean. The parameter is used to prevent collections
+                                       from being returned in suggest responses. The default value is
+                                       `True`, which means that collections are included in suggest
+                                       responses by default.
+    ==============================     =================================================================
 
     .. code-block:: python
 
@@ -1799,11 +2349,12 @@ def suggest(
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._suggest(
-        text,
-        location,
-        distance,
-        category,
+        text=text,
+        location=location,
+        category=category,
         search_extent=search_extent,
         max_suggestions=max_suggestions,
         country_code=country_code,
+        preferred_label_values=preferred_label_values,
+        return_collections=return_collections,
     )

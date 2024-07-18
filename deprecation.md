@@ -72,6 +72,8 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `OGCCollection` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCCollection` class instead.
 - `OGCFeatureService` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCFeatureService` class instead.
 
+### `arcgis.geocoding` Module
+- `suggest` - The **distance** parameter is deprecated and removed at **2.4.0**.  The parameter is no longer supported. Please use the `search_extent` parameter instead to control the search area.
 
 ### `arcgis.widgets` Module
 - `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.
