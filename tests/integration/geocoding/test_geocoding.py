@@ -205,7 +205,7 @@ class TestGeocoder(unittest.TestCase):
                 distance=1000,
                 return_intersection=True,
                 feature_types=["PointAddress", "Postal"],
-                roof_top="rooftop",
+                location_top="rooftop",
                 geocoder=l[0],
             )
             assert data
