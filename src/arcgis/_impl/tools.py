@@ -9423,6 +9423,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -12040,7 +12047,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -15213,7 +15223,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -15617,7 +15630,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
