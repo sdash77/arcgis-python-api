@@ -38,6 +38,23 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 ## Deprecation Removals
 
 Several classes, functions, and methods have been completely removed from the ArcGIS API for Python. This means your code relying on them will no longer function properly. For a smooth transition, consult the API documentation to find alternative approaches and update your code accordingly.
+
+### `arcgis.geoanalytics` Module 
+
+**The entire geoanalytics module has been deprecated on enterprise and removed at ArcGIS Enterprise 11.4.  If you need the geoanalytics modules, please use version 2.3.x or prior.**
+
+- `analyze_patterns` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `data_enrichment` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `find_locations` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `manage_data` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `summarize_data` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `use_proximity` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.get_datastores` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.define_output_datastore` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.is_supported` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+
+
+
 ### `arcgis.mapping` Module
 - `WebMap` - removed in **2.4.0**. Use `arcgis.map.Map` instead.
 - `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
@@ -127,6 +144,6 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
 - `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
 
-#### `arcgis.gis` Module
+### `arcgis.gis` Module
 
 - `Group.invite_by_email` - deprecated in **1.5.1** removed in **2.4.0**.  Use `Group.invite` instead.

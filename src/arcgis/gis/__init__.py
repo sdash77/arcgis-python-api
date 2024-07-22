@@ -2259,7 +2259,7 @@ class DatastoreManager(object):
         :class:`datastores <arcgis.gis.Datastore>`, and an instance of the
         :class:`~arcgis.gis.DatastoreManager` for each server is returned by
         the respective `get_datastores()` function:
-          * GeoAnalytics Server: :meth:`~arcgis.geoanalytics.get_datastores`
+
           * Raster Analytics Server: :meth:`~arcgis.raster.analytics.get_datastores`
     """
 
@@ -2341,7 +2341,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
+            >>> arcgis.raster.analytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
         """
         conn_type = "shared"
         if client_path is not None:
@@ -2400,7 +2400,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_bigdata("name")
+            >>> arcgis.raster.analytics.get_datastores.add_bigdata("name")
         """
         output = None
         path = self._admin_url + "/data/registerItem"
@@ -2482,7 +2482,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
+            >>> arcgis.raster.analytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
 
         """
         if folder is not None:
@@ -2554,7 +2554,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
+            >>> arcgis.raster.analytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2650,7 +2650,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
+            >>> arcgis.raster.analytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2715,7 +2715,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_databse("name", "connection_info")
+            >>> arcgis.raster.analytics.get_datastores.add_databse("name", "connection_info")
         """
 
         item = {
@@ -2769,7 +2769,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add("name", {})
+            >>> arcgis.raster.analytics.get_datastores.add("name", {})
 
         """
         params = {"f": "json"}
@@ -2843,7 +2843,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.search(parentPath= "parent_path",
+            >>> arcgis.raster.analytics.get_datastores.search(parentPath= "parent_path",
             ancestorPath= "ancestor_path", id="id")
         """
         params = {
@@ -18679,7 +18679,7 @@ class Layer(_GISResource):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": type(self).__name__, "url": url}

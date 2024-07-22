@@ -26,12 +26,6 @@ def import_all_arcgis_submodules(import_learn=True):
     import arcgis.raster.orthomapping
     import arcgis.network
     import arcgis.network.analysis
-    import arcgis.geoanalytics.analyze_patterns
-    import arcgis.geoanalytics.data_enrichment
-    import arcgis.geoanalytics.find_locations
-    import arcgis.geoanalytics.manage_data
-    import arcgis.geoanalytics.summarize_data
-    import arcgis.geoanalytics.use_proximity
     import arcgis.geocoding
     import arcgis.geoenrichment
     import arcgis.geometry
@@ -42,6 +36,7 @@ def import_all_arcgis_submodules(import_learn=True):
     import arcgis.schematics
     import arcgis.apps
     import arcgis.apps.hub
+
     if import_learn:
         import arcgis.learn
 
