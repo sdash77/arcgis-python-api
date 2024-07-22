@@ -17,12 +17,6 @@ _arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 pd = LazyLoader("pandas")
-try:
-    from arcgis.features.geo import _is_geoenabled
-except:
-
-    def _is_geoenabled(o):
-        return False
 
 
 try:
@@ -231,7 +225,7 @@ def import_as_item(gis, df, **kwargs):
         df = df.sdf
 
     # Check whether it will be a layer or a table
-    if _is_geoenabled(df):
+    if features.geo._is_geoenabled(df):
         # layer
         if has_arcpy == False and has_pyshp == False:
             raise Exception(

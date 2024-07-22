@@ -81,11 +81,10 @@ def plot(
     col_new = [col.translate(trantab) for col in df.columns]
     col_old = df.columns.tolist()
     df.columns = col_new
-    fc = df.spatial.to_feature_collection(name=name)
-    df.columns = col_old
     drawing_info = {}
     if renderer is not None:
         drawing_info["renderer"] = renderer
-    map.content.add(fc, drawing_info=drawing_info)
+    map.content.add(df, drawing_info=drawing_info)
+    df.columns = col_old
 
     return True

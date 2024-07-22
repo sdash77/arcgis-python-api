@@ -2,6 +2,8 @@ import unittest
 import datetime
 import re
 from pprint import pprint
+
+import arcgis.gis.workflowmanager._workflow_manager
 from arcgis.geometry import Geometry
 from . import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
@@ -14,6 +16,7 @@ from utils.decorators import integration_test
 ###########################################################################
 # @unittest.SkipTest
 @integration_test
+
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -534,6 +537,32 @@ class TestWorkflowManager(unittest.TestCase):
                 description="Test Description",
                 privileges=["fakePrivilege123", "jobCreate", "jobDelete"],
             )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    def test_delete_wm_role_successfully_returns(self):
+        # Arrange
+
+        created = self.connection.workflow_manager.create_wm_role(
+            name="Test New Role",
+            description="Test Description",
+            privileges=["adminAdvanced", "jobCreate", "jobDelete"],
+        )
+        self.assertTrue(created, "Incorrect return type")
+
+        # Act
+        deleted = self.connection.workflow_manager.delete_wm_role("Test New Role")
+
+        self.assertTrue(deleted, "Incorrect return type")
+
+    def test_delete_wm_role_returns_error(self):
+        # Act
+        deleted = self.connection.workflow_manager.delete_wm_role("Incorrect")
+
+        try:
+            self.assertTrue(deleted, "Incorrect return type")
         except Exception as testException:
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
@@ -3371,6 +3400,214 @@ class TestWorkflowManager(unittest.TestCase):
             actual["automationType"], "Scheduled", "Incorrect automated creation found"
         )
         self.assertEqual(len(creations), 2, "Incorrect size")
+
+    # endregion
+
+    # region Templates
+
+    def test_create_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        actual = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertIsInstance(actual, dict, "Incorrect return type")
+        self.assertEqual(
+            actual, {"templateId": "Ef42tu_QQMS-IgZc7pOPnQ"}, "Incorrect size"
+        )
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_update_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        template_two = {
+            "template_name": "Email Template 2",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "NEW BODY",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+
+        actual = self.connection.workflow_manager.update_template(
+            "email",
+            "Ef42tu_QQMS-IgZc7pOPnQ",
+            "NEW NAME",
+            {"body": "NEW EMAIL BODY"},
+        )
+        testing = self.connection.workflow_manager.get_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(testing.template_name, "NEW NAME", "Incorrect size")
+        self.assertEqual(
+            "NEW EMAIL BODY" in testing.template_details["body"], True, "Incorrect size"
+        )
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_delete_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        # Act
+        actual = self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(0, len(testing), "Incorrect size")
+
+    def test_get_templates_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        testing = self.connection.workflow_manager.templates("email")
+        self.assertEqual(0, len(testing), "Incorrect size")
+
+        actual = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertIsInstance(actual, dict, "Incorrect return type")
+        self.assertEqual(
+            actual, {"templateId": "Ef42tu_QQMS-IgZc7pOPnQ"}, "Incorrect size"
+        )
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_get_specific_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        template_id = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+        actual = self.connection.workflow_manager.get_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        # Assert
+        self.assertIsInstance(
+            actual,
+            arcgis.gis.workflowmanager._workflow_manager.Template,
+            "Incorrect return type",
+        )
+        self.assertEqual(actual.template_id, "Ef42tu_QQMS-IgZc7pOPnQ", "Incorrect size")
+        self.assertEqual(actual.template_name, "Test Email Template", "Incorrect size")
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
 
     # endregion
 

@@ -2146,17 +2146,25 @@ class _ItemDefinition(CloneNode):
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
 
-        job = folder.add(
-            **{
-                "item_properties": item_properties,
-                "item_id": item_id,
-                self._data_type_lu[data]: data,
-            }
-        )
+        if data:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                    self._data_type_lu(data): data,
+                }
+            )
+        else:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                }
+            )
         new_item = job.result()
 
         if self.metadata_xml:
-            new_item.metadata = self.metadata_xml
+            new_item["metadata"] = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item

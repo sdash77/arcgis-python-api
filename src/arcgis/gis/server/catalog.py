@@ -259,6 +259,11 @@ class ServicesDirectory(BaseServer):
                 f"Profile {profile} was not saved, using user provided credentials for the `GIS` object."
             )
 
+    @property
+    def session(self) -> "EsriSession":
+        """returns the session for the ServiceDirectory"""
+        return self._con._session
+
     # ----------------------------------------------------------------------
     @property
     def _pm(self) -> ServerProfileManager:
