@@ -11089,11 +11089,11 @@ class User(dict):
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
 
-    def __getattr__(
-        self, name
-    ):  # support user attributes as user.access, user.email, user.role etc
+    def __getattr__(self, name):
         if not self._hydrated and not name.startswith("_"):
             self._hydrate()
+        if name.startswith("_ipython_"):
+            return None  # Skip IPython-specific attributes
         try:
             return dict.__getitem__(self, name)
         except AttributeError:
@@ -11881,6 +11881,8 @@ class User(dict):
             description = "This user has not provided any personal information."
 
         url = self.homepage
+
+        from IPython.display import HTML, display
 
         return (
             """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
