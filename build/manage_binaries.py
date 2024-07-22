@@ -29,6 +29,7 @@ SRC_PATH = os.path.abspath(
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 ARCGIS_VERSION = get_version(os.path.join(SRC_PATH, "__init__.py"))
 PIP_PYTHON_VERSIONS = ["3.10", "3.11"]
+LEARN_PYTHON_VERSIONS = ["3.10", "3.11"]
 
 
 def copy_binaries(bin_root_path, arcgis_src_path):
@@ -89,7 +90,9 @@ def download_binaries(
         for url in urls:
             download_file(url, dest)
 
-    if mode == "conda":
+    if mode == "conda" and all(
+        python_version in LEARN_PYTHON_VERSIONS for python_version in python_versions
+    ):
         knn_dest = os.path.join(arcgis_src_path, "learn/_utils")
         os.makedirs(knn_dest, exist_ok=True)
         knn_files = expand_urls(
@@ -123,6 +126,10 @@ def download_binaries(
             },
         )
         download_files(tracking_engine_files[conda_platform], tracking_engine_dest)
+    elif mode == "conda":
+        print(
+            "Skipping arcgis_learn binaries, python version not supported.  If Local, automated tests may fail."
+        )
 
     graph_dest = os.path.join(arcgis_src_path, "graph")
     os.makedirs(graph_dest, exist_ok=True)
@@ -193,7 +200,7 @@ def _glob(path, extension):
 
 def _get_argument_parser():
     parser = argparse.ArgumentParser(
-        description="Manage arcgis dependent binaries (such as knn and [knowledge]graph) in your environment.",
+        description="Manage arcgis dependent binaries (such as knn and knowledge]graph) in your environment.",
         epilog="Sample usage for local development: %(prog)s copy --local",
     )
     subparsers = parser.add_subparsers(dest="action", required=True)
@@ -210,7 +217,7 @@ def _get_argument_parser():
         "--arcgis",
         action="store",
         help=(
-            "arcgis version to download binaries for [default: {ARCGIS_VERSION}]"
+            f"arcgis version to download binaries for [default: {ARCGIS_VERSION}]"
             "\nNOTE: Default value only uses MAJOR.MINOR.PATCH version. If you need to "
             "patch binaries for a subpatch version (e.g. MAJOR.MINOR.PATCH.SUBPATCH), "
             "you must provide the full version with this argument."
