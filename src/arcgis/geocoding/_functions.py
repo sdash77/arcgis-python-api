@@ -1565,7 +1565,6 @@ def geocode_from_items(
     from arcgis.geocoding import Geocoder
     from arcgis.features.layer import Layer
     from arcgis.geoprocessing._tool import Toolbox
-    from arcgis.geoanalytics._util import _create_output_service
 
     uid = uuid.uuid4().hex[:5]
     locator_parameters = None

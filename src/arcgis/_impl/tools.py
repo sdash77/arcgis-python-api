@@ -22696,14 +22696,14 @@ class _Tools(object):
     the gis.tools object
     """
 
-    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
+    # spatial analysis tools,  rasteranalysis tools, etc through the gis.tools object
     def __init__(self, gis):
         self._gis = gis
         self._geocoders = None
         self._geometry = None
         self._analysis = None
         self._raster_analysis = None
-        self._geoanalytics = None
+
         self._orthomapping = None
         self._packaging = None
         self._symbolservice = None
@@ -22813,26 +22813,6 @@ class _Tools(object):
 
             self._raster_analysis = _RasterAnalysisTools(svcurl, self._gis)
             return self._raster_analysis
-        except KeyError:
-            return None
-
-    @property
-    @lru_cache(maxsize=255)
-    def geoanalytics(self):
-        """the portal's bigdata analytics tools, if available and configured"""
-        if self._geoanalytics is not None:
-            return self._geoanalytics
-        try:
-            try:
-                svcurl = self._gis.properties["helperServices"]["geoanalytics"]["url"]
-                if self._gis._is_hosted_nb_home:
-                    svcurl = self._validate_url(svcurl)
-            except Exception:
-                print("This GIS does not support geoanalytics.")
-                return None
-
-            self._geoanalytics = _GeoanalyticsTools(svcurl, self._gis)
-            return self._geoanalytics
         except KeyError:
             return None
 

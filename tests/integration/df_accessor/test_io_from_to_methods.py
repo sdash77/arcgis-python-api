@@ -40,9 +40,8 @@ _conf_reader2 = ConfigParser()
 _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
 qalab_base_path = QALAB_ROOT_PATH
-qalab_data_path = qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
-qalab_gax_datasets = (
-    qalab_base_path + _conf_reader2["test_data"]["qalab_geoanalytics_datasets"]
+qalab_data_path = (
+    qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
 )
 
 local_data_path = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +49,6 @@ local_data_path = os.path.dirname(os.path.abspath(__file__))
 
 @integration_test
 class TestIOFromToMethods(unittest.TestCase):
-
     def test_chunks(self):
         """Tests the chunking method"""
         sizes = []
@@ -104,7 +102,9 @@ class TestIOFromToMethods(unittest.TestCase):
             """
             import geopandas as gpd
 
-            geo_df = gpd.read_file(os.path.join(local_data_path + "./world30.shp"))
+            geo_df = gpd.read_file(
+                os.path.join(local_data_path + "./world30.shp")
+            )
 
             assert isinstance(geo_df, gpd.GeoDataFrame)
 
@@ -179,7 +179,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
             assert isinstance(sedf, pd.DataFrame)
-            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {"wkid": 4326}
+            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {
+                "wkid": 4326
+            }
             assert sedf.iloc[0]["SHAPE"].type == "Polyline"
             assert "SHAPE" in sedf.columns
             print("GPD->SeDF Lines GCS success")
@@ -193,7 +195,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             # data_path = os.path.join(qalab_data_path, "spatial_ref_tests", "lines_pcs_wgs84_webmerc.shp")
             data_path = os.path.join(
-                qalab_data_path, "spatial_ref_tests", "lines_pcs_wgs84_utm_z15n.shp"
+                qalab_data_path,
+                "spatial_ref_tests",
+                "lines_pcs_wgs84_utm_z15n.shp",
             )
             geo_df = gpd.read_file(data_path)
 
@@ -202,7 +206,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
             assert isinstance(sedf, pd.DataFrame)
-            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {"wkid": 32615}
+            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {
+                "wkid": 32615
+            }
             assert sedf.iloc[0]["SHAPE"].type == "Polyline"
             assert "SHAPE" in sedf.columns
             print("GPD->SeDF Lines PCS success")
@@ -215,7 +221,9 @@ class TestIOFromToMethods(unittest.TestCase):
             import geopandas as gpd
 
             data_path = os.path.join(
-                qalab_data_path, "spatial_ref_tests", "polygons_gcs_wgs84.shp"
+                qalab_data_path,
+                "spatial_ref_tests",
+                "polygons_gcs_wgs84.shp",
             )
             geo_df = gpd.read_file(data_path)
 
@@ -224,7 +232,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
             assert isinstance(sedf, pd.DataFrame)
-            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {"wkid": 4326}
+            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {
+                "wkid": 4326
+            }
             assert sedf.iloc[0]["SHAPE"].type == "Polygon"
             assert "SHAPE" in sedf.columns
             print("GPD->SeDF Polygons GCS success")
@@ -246,7 +256,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
             assert isinstance(sedf, pd.DataFrame)
-            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {"wkid": 4326}
+            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {
+                "wkid": 4326
+            }
             assert sedf.iloc[0]["SHAPE"].type == "Polygon"
             assert "SHAPE" in sedf.columns
             print("GPD->SeDF Polygons GCS success")
@@ -259,7 +271,9 @@ class TestIOFromToMethods(unittest.TestCase):
             import geopandas as gpd
 
             data_path = os.path.join(
-                qalab_data_path, "large_files", "points_270krows_800mb_gcs.shp"
+                qalab_data_path,
+                "large_files",
+                "points_270krows_800mb_gcs.shp",
             )
             geo_df = gpd.read_file(data_path)
 
@@ -270,7 +284,9 @@ class TestIOFromToMethods(unittest.TestCase):
 
             sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
             assert isinstance(sedf, pd.DataFrame)
-            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {"wkid": 4326}
+            assert sedf.iloc[0]["SHAPE"]["spatialReference"] == {
+                "wkid": 4326
+            }
             assert sedf.iloc[0]["SHAPE"].type == "Point"
             assert sedf.shape == (271868, 23)
             assert "SHAPE" in sedf.columns
@@ -283,7 +299,9 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few.csv"))
+        df = pd.read_csv(
+            os.path.join(local_data_path + "/usa_cities_few.csv")
+        )
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
 
         # add column name that is numeric
@@ -293,7 +311,9 @@ class TestIOFromToMethods(unittest.TestCase):
         original_col_list = list(sedf.columns)
 
         # sanitize column names
-        df2 = sedf.spatial.sanitize_column_names(inplace=False, use_snake_case=False)
+        df2 = sedf.spatial.sanitize_column_names(
+            inplace=False, use_snake_case=False
+        )
         new_col_list = list(df2.columns)
         # print(new_col_list)
 
@@ -314,7 +334,9 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few.csv"))
+        df = pd.read_csv(
+            os.path.join(local_data_path + "/usa_cities_few.csv")
+        )
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
 
         # add column name that is numeric
@@ -327,7 +349,9 @@ class TestIOFromToMethods(unittest.TestCase):
         original_geom_type = sedf.spatial.geometry_type
 
         # sanitize column names
-        sedf.spatial.sanitize_column_names(inplace=True, use_snake_case=False)
+        sedf.spatial.sanitize_column_names(
+            inplace=True, use_snake_case=False
+        )
         new_col_list = list(sedf.columns)
         print(new_col_list)
 
@@ -345,7 +369,9 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv"))
+        df = pd.read_csv(
+            os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv")
+        )
         print(df.columns)
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
         sedf.spatial.set_geometry("SHAPE")
@@ -372,7 +398,9 @@ class TestIOFromToMethods(unittest.TestCase):
         Cases where column names have varying casing styles, leading numbers
         :return:
         """
-        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv"))
+        df = pd.read_csv(
+            os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv")
+        )
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
         original_col_list = list(sedf.columns)
 
@@ -407,7 +435,6 @@ class TestIOFromToMethods(unittest.TestCase):
         assert sedf.spatial.geometry_type == df2.spatial.geometry_type
         assert sedf.spatial.bbox == df2.spatial.bbox
 
-
     # def test_from_gpd_df_massive_3m_points():
     #     """
     #     Sanity test case, verifies can read GeoDataFrame to a SeDF
@@ -432,7 +459,6 @@ class TestIOFromToMethods(unittest.TestCase):
     #
     #     print('GPD->SeDF Points GCS success')
 
-
     # def test_to_gpd_df_sanity():  # export to GeoDataFrame is disabled.
     #     """
     #     Sanity test case, verifies can export SeDF to GeoDataFrame
@@ -448,6 +474,7 @@ class TestIOFromToMethods(unittest.TestCase):
     #     assert isinstance(geo_df, gpd.GeoDataFrame)
     #
     #     print('Can successfully export SeDF to GPD')
+
 
 if __name__ == "__main__":
     unittest.main()

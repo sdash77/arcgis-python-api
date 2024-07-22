@@ -85,7 +85,7 @@ class MapFeatureLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -1293,7 +1293,7 @@ class MapRasterLayer(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
@@ -1390,7 +1390,7 @@ class MapTable(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
