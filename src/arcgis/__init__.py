@@ -6,7 +6,6 @@ from arcgis import env
 
 os = LazyLoader("os")
 features = LazyLoader("arcgis.features")
-geoanalytics = LazyLoader("arcgis.geoanalytics")
 geocoding = LazyLoader("arcgis.geocoding")
 geometry = LazyLoader("arcgis.geometry")
 geoprocessing = LazyLoader("arcgis.geoprocessing")
@@ -101,7 +100,6 @@ __all__ = [
     "find_point_clusters",
     "find_similar_locations",
     "generate_tessellation",
-    "geoanalytics",
     "geocode",
     "geocoding",
     "geometry",

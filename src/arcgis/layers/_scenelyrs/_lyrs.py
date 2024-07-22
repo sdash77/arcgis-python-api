@@ -707,7 +707,7 @@ class Object3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -818,7 +818,7 @@ class IntegratedMeshLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
@@ -935,7 +935,7 @@ class Tiles3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "3DTiles Service", "url": url}
@@ -960,7 +960,10 @@ class Tiles3DLayer(Layer):
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             else:
-                rd = {"/rest/": "/admin/", "/3DTilesServer": ".3DTilesServer"}
+                rd = {
+                    "/rest/": "/admin/",
+                    "/3DTilesServer": ".3DTilesServer",
+                }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
@@ -1047,7 +1050,7 @@ class VoxelLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "VoxelLayer", "url": url}
@@ -1160,7 +1163,7 @@ class Point3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -1271,7 +1274,7 @@ class PointCloudLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "PointCloudLayer", "url": url}
@@ -1382,7 +1385,7 @@ class BuildingLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "BuildingSceneLayer", "url": url}
