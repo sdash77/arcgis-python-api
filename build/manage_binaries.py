@@ -37,11 +37,6 @@ def copy_binaries(bin_root_path, arcgis_src_path):
     Copy binaries for all platforms and python versions
     """
     BINARY_DESTINATIONS = {
-        # In order to inject tracking-engine and knn, we need to resolve name collisions
-        # i.e. update the filenames to include the python version
-        # 'tracking-engine': 'learn/_tracking',
-        # 'knn': 'learn/_utils'
-        "nbauth": "gis/_impl",
         "graph": "graph",
     }
     binaries = _glob(bin_root_path, [".so", ".dll", ".pyd"])
@@ -151,28 +146,6 @@ def download_binaries(
             else graph_files["windows"] + graph_files["linux"]
         ),
         graph_dest,
-    )
-
-    nbauth_dest = os.path.join(arcgis_src_path, "gis/_impl")
-    os.makedirs(nbauth_dest, exist_ok=True)
-    nbauth_files = expand_urls(
-        "nbauth",
-        {
-            "linux": [
-                lambda python_version_stripped: f"_decrypt_nbauth.cpython-{python_version_stripped}-x86_64-linux-gnu.so"
-            ],
-            "windows": [
-                lambda python_version_stripped: f"_decrypt_nbauth.cp{python_version_stripped}-win_amd64.pyd"
-            ],
-        },
-    )
-    download_files(
-        (
-            nbauth_files[conda_platform]
-            if mode == "conda"
-            else nbauth_files["windows"] + nbauth_files["linux"]
-        ),
-        nbauth_dest,
     )
 
 
