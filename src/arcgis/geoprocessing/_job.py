@@ -1506,7 +1506,7 @@ class RMJob(GPJob):
         return items
 
     # ----------------------------------------------------------------------
-    def _try_delete_item(self, item_name, itemid, mission_json, mission):
+    def _try_delete_item(self, item_name, itemid, slpk_itemid, mission_json, mission):
         if "items" in mission_json:
             for key in mission_json["items"]:
                 if key == item_name:
@@ -1519,6 +1519,16 @@ class RMJob(GPJob):
                             try:
                                 if item_object:
                                     deleted = item_object.delete()
+                            except:
+                                pass
+                    if slpk_itemid is not None:
+                        if "slpkItemId" in item_info and item_info["slpkItemId"] != slpk_itemid:
+                            slpk_item = mission._gis.content.get(
+                                item_info["slpkItemId"]
+                            )
+                            try:
+                                if slpk_item:
+                                    deleted = slpk_item.delete()
                             except:
                                 pass
                     mission_json["items"].update({key: {}})
@@ -1593,8 +1603,16 @@ class RMJob(GPJob):
                 for key in item_keys:
                     if key in mission_json["items"]:
                         item_info = mission_json["items"][key]
-                        if isinstance(item_info, dict) and "itemId" in item_info:
-                            item_object = mission._gis.content.get(item_info["itemId"])
+                        if isinstance(item_info, dict):
+                            if "itemId" in item_info:
+                                item_object = mission._gis.content.get(item_info["itemId"])
+                            try:
+                                if item_object:
+                                    deleted = item_object.delete()
+                            except:
+                                pass
+                            if "slpkItemId" in item_info:
+                                item_object = mission._gis.content.get(item_info["slpkItemId"])
                             try:
                                 if item_object:
                                     deleted = item_object.delete()
@@ -1610,10 +1628,12 @@ class RMJob(GPJob):
                 items = {**imagery_items, **scene_layer_items}
                 for item, item_info in items.items():
                     itemid = item_info.get("itemId", None)
-                    self._try_delete_item(item, itemid, mission_json, mission)
+                    slpk_itemid = item_info.get("slpkItemId", None)
+                    self._try_delete_item(item, itemid, slpk_itemid, mission_json, mission)
+                    
             elif item_name == "ortho":
                 itemid = imagery_items[item_name]["itemId"]
-                self._try_delete_item(item_name, itemid, mission_json, mission)
+                self._try_delete_item(item_name, itemid, None, mission_json, mission)
 
             if processing_states is not None:
                 mission_json["processingSettings"].update(

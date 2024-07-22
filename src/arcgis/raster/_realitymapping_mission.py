@@ -204,35 +204,54 @@ class Mission:
             raise RuntimeError("Invalid product type")
         
         product = product.lower()
+        deleted = False
+        slpk_deleted = False
 
         mission_json = self._mission_json
         if "items" in mission_json:
             for key in mission_json["items"]:
                 if key == product:
                     item_info = mission_json["items"][key]
-                    if isinstance(item_info, dict) and "itemId" in item_info:
-                        item_object = self._gis.content.get(item_info["itemId"])
-                        if item_object is None:
-                            return False
-                        deleted = item_object.delete()
+                    if isinstance(item_info, dict):
+                        if "itemId" in item_info:
+                            item_object = self._gis.content.get(item_info["itemId"])
+                            if item_object is None:
+                                return False
+                            deleted = item_object.delete()
+                        if "slpkItemId" in item_info:
+                            item_object = self._gis.content.get(item_info["slpkItemId"])
+                            if item_object is None:
+                                return False
+                            slpk_deleted = item_object.delete()
+                    elif item_info is None:
+                        return False
+                    if "slpkItemId" in item_info:
+                        if deleted and slpk_deleted:
+                            mission_json["items"].update({key: {}})
+                            if key in mission_json["jobs"]:
+                                mission_json["jobs"].update({key: {"checked": False}})
+                            self._update_mission_json(mission_json)
+                            return True
+                    else:
                         if deleted:
                             mission_json["items"].update({key: {}})
                             if key in mission_json["jobs"]:
                                 mission_json["jobs"].update({key: {"checked": False}})
                             self._update_mission_json(mission_json)
                             return True
-                    elif item_info is None:
-                        return False
         return False
 
-    def _get_product_item(self, product):
+    def _get_product_item(self, product, is_slpk=False):
         item_id = None
         item = None
         item_dict = self._mission_json.get("items", {})
 
         product_info = item_dict.get(product, {})
         if isinstance(product_info, dict):
-            item_id = product_info.get("itemId", None)
+            if is_slpk:
+                item_id = product_info.get("slpkItemId", None)
+            else:
+                item_id = product_info.get("itemId", None)
 
         if item_id is not None:
             item = self._gis.content.get(item_id)
@@ -259,10 +278,14 @@ class Mission:
 
             products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]
             items_list = []
+            slpk_items_list = []
             image_collection_item = None
             
             for product in products_list:
                 item = self._get_product_item(product)
+                if product in ["dsm_mesh", "mesh", "point_cloud"]:
+                    slpk_item = self._get_product_item(product, is_slpk=True)
+                    slpk_items_list.append(slpk_item)
                 items_list.append(item)
                 # Store the image collection item separately as well since we need it below
                 if product == "imageCollection":
@@ -301,6 +324,7 @@ class Mission:
             raise RuntimeError("Error deleting the mission")
 
         items_to_be_deleted = [item for item in items_list if item is not None]
+        items_to_be_deleted += [item for item in slpk_items_list if item is not None]
         try:
             deleted = gis.content.delete_items(items_to_be_deleted)
         except:
