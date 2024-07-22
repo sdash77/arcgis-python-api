@@ -11882,8 +11882,6 @@ class User(dict):
 
         url = self.homepage
 
-        from IPython.display import HTML, display
-
         return (
             """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
