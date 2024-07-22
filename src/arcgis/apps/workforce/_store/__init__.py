@@ -1,5 +1,6 @@
 """ The store module defines functions for interacting with the Workforce backend.
 """
+
 from . import assignments
 from . import assignment_types
 from . import assignment_types_v2

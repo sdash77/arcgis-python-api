@@ -1,12 +1,10 @@
 import sys
 
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import logging
 import shutil
 import unittest
 from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
+from arcgis.gis import GIS, Group
 from arcgis.gis.admin import (
     UX,
     HomePageSettings,
@@ -17,6 +15,8 @@ from arcgis.gis.admin import (
 )
 import tempfile
 import requests
+from utils.decorators import integration_test
+from random import randrange
 
 # Download Image to Temp File to be used for logo, background, etc.
 image_url = "https://previews.123rf.com/images/stephane106/stephane1060705/stephane106070500053/927250-isolated-earth-globe-on-white-background-the-map-is-public-domain-from-nasa-visibleearth-nasa-gov-.jpg"
@@ -37,11 +37,12 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROFILES = ["your_online_profile", "your_enterprise_profile", "your_dev_profile"]
+PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class Test_UXClass(unittest.TestCase):
     """Tests UX Class"""
 
@@ -179,23 +180,25 @@ class Test_UXClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ux = gis.admin.ux
 
-                # get gallery group
-                gall_grp = ux.gallery_group
-                if gall_grp:
-                    assert gall_grp
-                else:
-                    assert gall_grp == ""
+                # store original setting
+                original_gallery_group = ux.gallery_group
                 # set new group
-                group_id = gis.groups.search()[10].id
-                ux.gallery_group = group_id
-                assert ux.gallery_group == gis.groups.search()[10]
-                # reset
-                if gall_grp:
-                    ux.gallery_group = gall_grp.id
-                else:
-                    ux.gallery_group = gall_grp
+                groups = gis.groups.search()
+                if not groups:
+                    self.skipTest("No groups configured, cannot test")
+                # get a random group
+                group = groups[randrange(len(groups))]
+                # set group by id
+                ux.gallery_group = group.id
+                # gallery_group should return the group object
+                assert isinstance(ux.gallery_group, Group)
+                # verify gallery_group now has the same id that was set
+                assert ux.gallery_group.id == group.id
+                # reset to original setting
+                ux.gallery_group = original_gallery_group.id if original_gallery_group else original_gallery_group
 
 
+@integration_test
 class Test_HomePageSettingsClass(unittest.TestCase):
     """Tests Home Page Editor Class"""
 
@@ -260,22 +263,27 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 hps = gis.admin.ux.homepage_settings
 
-                # get contact email, if none then None is returned
+                # get contact email, if using legacy homepage then None is returned
                 contact_email = hps.get_contact_email()
-                if contact_email:
-                    assert contact_email["email"]
-                else:
-                    continue
+                if contact_email is None:
+                    self.skipTest("Portal is configured with legacy homepage, contact email not implemented")
+                assert 'email' in contact_email
+                assert 'show_email' in contact_email
+
                 # set contact email
                 assert hps.set_contact_email("test@esri.com", show_email=True)
                 assert hps.get_contact_email()["email"] == "test@esri.com"
-                # reset email
-                if contact_email:
-                    assert hps.set_contact_email(contact_email["email"])
-                else:
-                    assert hps.set_contact_email(contact_email)
+                assert hps.get_contact_email()["show_email"] == True
+
+                # reset email to original value
+                reset_contact_email = hps.set_contact_email(email=contact_email["email"], show_email=contact_email["show_email"])
+                assert reset_contact_email
+                reset_contact_email = hps.get_contact_email()
+                assert reset_contact_email["email"] == contact_email["email"]
+                assert reset_contact_email["show_email"] == contact_email["show_email"]
 
 
+@integration_test
 class Test_MapSettingsClass(unittest.TestCase):
     """Tests Org Map Settings Class"""
 
@@ -286,11 +294,16 @@ class Test_MapSettingsClass(unittest.TestCase):
                 ms = gis.admin.ux.map_settings
                 assert isinstance(ms, MapSettings)
 
-    def test_propeties(self):
+    def test_properties(self):
+        # TODO: split test for each property
         for profile in PROFILES:
             with self.subTest(msg=profile):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ms = gis.admin.ux.map_settings
+                groups = gis.groups.search()
+                if not groups:
+                    self.skipTest("No groups configured, cannot test")
+                group = groups[randrange(len(groups))]
 
                 # default extent
                 extent = ms.default_extent
@@ -325,13 +338,10 @@ class Test_MapSettingsClass(unittest.TestCase):
                 # basemap gallery group
                 bsmap_gall_group = ms.basemap_gallery_group
                 assert bsmap_gall_group
-                group_id = gis.groups.search()[10].id
-                ms.basemap_gallery_group = group_id
-                assert ms.basemap_gallery_group == gis.groups.search()[10]
-                if bsmap_gall_group:
-                    ms.basemap_gallery_group = bsmap_gall_group.id
-                else:
-                    ms.basemap_gallery_group = bsmap_gall_group
+                ms.basemap_gallery_group = group.id
+                assert isinstance(ms.basemap_gallery_group, Group)
+                assert ms.basemap_gallery_group.id == group.id
+                ms.basemap_gallery_group = bsmap_gall_group.id if bsmap_gall_group else bsmap_gall_group
 
                 # map viewer
                 mv = ms.default_mapviewer
@@ -344,23 +354,16 @@ class Test_MapSettingsClass(unittest.TestCase):
                 # config apps group
                 config_apps_group = ms.config_apps_group
                 assert config_apps_group
-                group_id = gis.groups.search()[10].id
-                ms.config_apps_group = group_id
-                assert ms.config_apps_group == gis.groups.search()[10]
-                if config_apps_group:
-                    ms.config_apps_group = config_apps_group.id
-                else:
-                    ms.config_apps_group = config_apps_group
+                ms.config_apps_group = group.id
+                assert isinstance(ms.config_apps_group, Group)
+                assert ms.config_apps_group.id == group.id
+                ms.config_apps_group = config_apps_group.id if config_apps_group else config_apps_group
 
                 # analysis group layer
                 analysis_layer_group = ms.analysis_layer_group
-                if analysis_layer_group:
-                    assert analysis_layer_group
-                else:
-                    assert analysis_layer_group == ""
-                group_id = gis.groups.search()[10].id
-                ms.analysis_layer_group = group_id
-                assert ms.analysis_layer_group == gis.groups.search()[10]
+                ms.analysis_layer_group = group.id
+                assert isinstance(ms.analysis_layer_group, Group)
+                assert ms.analysis_layer_group.id == group.id
                 if len(analysis_layer_group) > 0:
                     ms.analysis_layer_group = gis.groups.search(
                         analysis_layer_group.id
@@ -374,13 +377,17 @@ class Test_MapSettingsClass(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
                 ms = gis.admin.ux.map_settings
 
-                key = ms.bing_map()
-                assert key
+                bing_config = ms.bing_map()
+                assert bing_config
+                assert 'key' in bing_config
+                assert 'public' in bing_config
                 assert ms.bing_map(bing_key="abcde")
                 assert ms.bing_map()["key"] == "abcde"
-                ms.bing_map(bing_key="REMOVE")
+                # revert to original config
+                ms.bing_map(bing_key=bing_config["key"], share_public=bing_config["public"])
 
 
+@integration_test
 class Test_ItemSettingsClass(unittest.TestCase):
     """Tests Org Item Settings Class"""
 
@@ -418,6 +425,7 @@ class Test_ItemSettingsClass(unittest.TestCase):
                 it_set.metadata_format = frmt
 
 
+@integration_test
 class Test_SecuritySettingsClass(unittest.TestCase):
     """Tests Org Security Settings Class"""
 

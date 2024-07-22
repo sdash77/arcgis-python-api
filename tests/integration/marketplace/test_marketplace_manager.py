@@ -1,15 +1,15 @@
 import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestMarketPlaceManager(unittest.TestCase):
     """Tests the <username>/report API"""
 
     def test_get_listings(self):
-        gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_ent_admin_profile", verify_cert=False, trust_env=True)
         cnt = gis.content
         mrkt = cnt.marketplace
         listings = mrkt.listings(query="*", my_listings=True)
@@ -21,7 +21,7 @@ class TestMarketPlaceManager(unittest.TestCase):
         assert listing["itemId"] == listings["listings"][0]["itemId"]
 
     def test_get_purchases(self):
-        gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_ent_admin_profile", verify_cert=False, trust_env=True)
         cnt = gis.content
         mrkt = cnt.marketplace
         purchases = mrkt.purchases()
@@ -31,7 +31,7 @@ class TestMarketPlaceManager(unittest.TestCase):
         assert isinstance(purchases["interests"], list)
 
     def test_get_customer_list(self):
-        gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_ent_admin_profile", verify_cert=False, trust_env=True)
         cnt = gis.content
         mrkt = cnt.marketplace
         listings = mrkt.listings(query="*", my_listings=True)
@@ -43,7 +43,7 @@ class TestMarketPlaceManager(unittest.TestCase):
         assert isinstance(customer_list["interests"], list)
 
     def test_user_entitlements(self):
-        gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_ent_admin_profile", verify_cert=False, trust_env=True)
         cnt = gis.content
         mrkt = cnt.marketplace
         listings = mrkt.listings(query="*", my_listings=True)

@@ -177,13 +177,14 @@ class TopographicProductionManager(object):
     def generate_product(
         self,
         name: str,
-        version: str,
+        version: str | list[dict],
         area_interest_layer: str,
         area_interest_feature_id: str,
-        output_type: str,
+        output_type: dict,
         custom_area_interest: Optional[list[dict]] = None,
         layer_exclusion: Optional[list[str]] = None,
         ancillary_layers: Optional[list[dict]] = None,
+        output_settings: Optional[dict] = None,
     ):
         """
         The generate_product operation automates the process of producing
@@ -194,8 +195,51 @@ class TopographicProductionManager(object):
         **Parameter**                    **Description**
         ------------------------        -----------------------------------------------------
         name                            Required string. The name of the product.
+                                        This parameter's value must match one of the product names from "https://<topographicProductionServer-url>/products".
         ------------------------        -----------------------------------------------------
-        version                         Required string. The version of the product to generate.
+        version                         Required list of dictionaries or string. The version of the product to generate.
+                                        The product version name must match a `name` value listed in the
+                                        `products` endpoint.
+
+                                        Starting at Enterprise 11.2, the following properties can be included:
+                                        * `extractionDatabase` - Overwrite the `extractionDatabase` value at the map product level.
+                                        * `operationOverrides` - Overwrite the values in teh `parameters` key-value pairs with the specified IDS.
+                                        * `excludeOperations` - Exclude the specified IDs.
+
+                                        The following example includes three product versions: TRD_4_5, TRD_4_5_1, and TRD_4_6. The TRD_4_5 product
+                                        version shows `operationOverrides` and `excludedOperations` available at Enterprise11.2:
+
+                                        .. code-block:: python
+
+                                            [
+                                                {
+                                                    "name": "TRD_4_5",
+                                                    "template": "MTM50_Layout.pagx"
+                                                    "extractionDatabase": "",
+                                                    "operationOverrides": [
+                                                    {
+                                                        "id": "26C62049-A11F-4D5B-BC80-00CF3597555C",
+                                                        "parameters": [
+                                                        {
+                                                            "name": "input_map",
+                                                            "value": "Map"
+                                                        },
+                                                        ]
+                                                    },
+                                                    "excludedOperations": [
+                                                    "45B62049-A11F-4D5B-BC80-00CF3597555C",
+                                                    ...
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "TRD_4_5_1",
+                                                    "template": "MTM50_Layout.pagx"
+                                                },
+                                                {
+                                                    "name": "TRD_4_6",
+                                                    "template": "MTM50_Layout.pagx"
+                                                }
+                                            ]
         ------------------------        -----------------------------------------------------
         area_interest_layer             Required string. The url of the layer defining the
                                         product's area of interest.
@@ -207,15 +251,35 @@ class TopographicProductionManager(object):
                                             If you use the optional custom_area_interest
                                             parameter, then this parameter is ignored.
         ------------------------        -----------------------------------------------------
-        output_type                     Required string. The type of output.
+        output_type                     Required string value that specifies the output type.
+                                        Supported values include "aprx" , "ppkx" , "pagx" , "pdf" , and "tiff" .
 
-                                        `Values: "aprx" | "pagx" | "pdf"`
+                                        Additional files can be formatted using the `outputFiles` parameter.
+                                        Use JSON to customize the output type of a file.
+                                        Supported `outputFiles` values include Geodatabase , Raster , ProductTemplate , and Project .
+
+                                        .. code-block:: python
+
+                                            Syntax:
+
+                                                {
+                                                "outputType": "pdf",
+                                                "outputFiles": [
+                                                    "Geodatabase",
+                                                    "Raster",
+                                                    "ProductTemplate",
+                                                    "Project"
+                                                ]
+                                                }
+
+                                        .. note::
+                                            By default, the APRX and PAGX output types are exported as ZIP files that include a file geodatabase.
         ------------------------        -----------------------------------------------------
         custom_area_interest            Optional list dictionary. The features defining the
                                         product's area of interest. One feature is allowed at
                                         the current release.
         ------------------------        -----------------------------------------------------
-        layer_exclusion                 Optional list of strings. The list of layer names to
+        layer_exclusion                 Optional list of strings. The list of layer urls to
                                         exclude from the product.
         ------------------------        -----------------------------------------------------
         ancillary_layers                Optional list of dictionaries. Additional layers to
@@ -247,6 +311,15 @@ class TopographicProductionManager(object):
                                             necessary to provide the featureClass property.
                                             The default values are 0 for layerIndex and BaseMap
                                             for map.
+        ------------------------        -----------------------------------------------------
+        output_settings                 Optional dictionary. The predefined settings for a PDF
+                                        or TIFF output type. Allowed inputs can either be the name
+                                        of a preset file included with the ArcGIS Production Mapping,
+                                        the ArcGIS Defense Mapping Enterprise product files, or a
+                                        JSON data structure that identifies the output settings in
+                                        one of the formats detailed here: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/tps-generate-product.htm#:~:text=Enterprise%2011.0.-,outputSettings%20JSON%20properties,-The%20following%20tables>`_
+
+                                        This parameter was added at Enterprise11.0.
         ========================        =====================================================
 
 
@@ -263,6 +336,7 @@ class TopographicProductionManager(object):
             "customAoi": custom_area_interest,
             "layerExclusion": layer_exclusion,
             "ancillaryLayers": ancillary_layers,
+            "outputSettings": output_settings,
         }
         return self._con.post(url, params)
 
@@ -295,7 +369,7 @@ class TopographicProductionManager(object):
         enabled: Optional[bool] = None,
         sheet_id_field: Optional[str] = None,
         raster: Optional[str] = None,
-        versions: Optional[dict] = None,
+        versions: Optional[dict | list[dict]] = None,
         ancillary_layers: Optional[dict] = None,
     ):
         """
@@ -343,36 +417,73 @@ class TopographicProductionManager(object):
                                                     ...
                                             ]
                                         }
-        ------------------------        -----------------------------------------------------
-        ancillary_layers                Optional list of dictionaries. Additional layers to
-                                        include in the final product.
 
-                                        Syntax:
-                                        ```
-                                        [{
-                                        "layer": "url of the layer",
-                                            "featureClass": "name of the feature class to extract to",
-                                            "map": "name of the map the layer will be inserted into",
-                                            "layerIndex": "insertion index of the layer"
+                                        Starting at ArcGIS Enterprise11.2, additional properties can be applied:
+
+                                        * `extractionDatabase` - Overwrites the extractionDatabase value at the map product level.
+                                        * `operationOverrides` - Overwrites the parameters key-value pairs on an existing operation with the provided ID. The ID must match an existing operation.
+                                        * `excludedOperations` - The operations pertaining to the IDs provided are excluded.
+
+                                        The following example uses `operationOverrides` to identify an operation and
+                                        override its parameter key-value pairs with the ones provided and
+                                        `excludedOperations` to identify operations that will be excluded:
+
+                                        .. code-block:: python
+
+                                            [
+                                            {
+                                                "name": "TRD_4_5",
+                                                "template": "MTM50_Layout.pagx"
+                                                "extractionDatabase": "",
+                                                "operationOverrides": [
+                                                {
+                                                    "id": "26C62049-A11F-4D5B-BC80-00CF3597555C",
+                                                    "parameters": [
+                                                    {
+                                                        "name": "input_map",
+                                                        "value": "Map"
+                                                    },
+                                                    ]
+                                                },
+                                                "excludedOperations": [
+                                                "45B62049-A11F-4D5B-BC80-00CF3597555C",
+                                                ...
+                                                ]
+                                            }
+                                            ]
+        ------------------------        -----------------------------------------------------
+        ancillary_layers                Optional dictionary.
+                                        Indicates the product layers.
+
+                                        Use the following format to add or update layers:
+
+                                        .. code-block:: python
+
+                                            {
+                                            "operation" : "<add | update>",
+                                            "layers": [
+                                                {
+                                                "layer": "<url of layer>",
+                                                "featureClass": "<name of feature class to extract to>",
+                                                "map": "<name of map layer will be inserted into>",
+                                                "layerIndex": "<insertion index of layer>"
                                             },
                                             ...
-                                        ]
-                                        ```
+                                            ]
+                                            }
 
-                                        Ancillary layers are added as feature service layers
-                                        of the final product and don't extract data to the
-                                        local geodatabase.
+                                        Use the following format to remove the layer:
 
-                                        .. note::
-                                            This parameter supports services located in the
-                                            same portal site as the server object extension (SOE)
-                                            or services that are publicly available.
-                                            The featureClass, map, and layerIndex properties
-                                            in the array are optional. If the dataset is
-                                            identifiable from the feature service, it is not
-                                            necessary to provide the featureClass property.
-                                            The default values are 0 for layerIndex and BaseMap
-                                            for map.
+                                        .. code-block:: python
+                                            {
+                                            "operation" : "remove",
+                                            "layers": [
+                                                {
+                                                "layer": "<url of layer>"
+                                                },
+                                            ...
+                                            ]
+                                            }
         ========================        =====================================================
 
         :return: The product name and whether the operation was a success(True) or a failure (false)

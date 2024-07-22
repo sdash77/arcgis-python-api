@@ -7,6 +7,7 @@
 .. moduleauthor:: Esri
 
 """
+
 from __future__ import absolute_import
 import tempfile
 from typing import Optional

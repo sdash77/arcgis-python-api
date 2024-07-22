@@ -1,7 +1,9 @@
+from __future__ import annotations
 import concurrent.futures
 import uuid
 import datetime
 import logging
+import requests
 
 _log = logging.getLogger()
 
@@ -23,6 +25,8 @@ class Job(object):
     _start_time = None
     _end_time = None
     _verbose = None
+    _has_id = None
+    _jobid = None
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -45,16 +49,21 @@ class Job(object):
         self._url = task_url
         if jobid is None:
             self._jobid = uuid.uuid4().hex
+            self._has_id = False
         else:
             self._jobid = jobid
+            self._has_id = True
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self._task_name} job {self._jobid}>"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self._task_name} job {self._jobid}>"
+        if self._jobid is None or self._has_id == False:
+            return f"<{self._task_name}>"
+        else:
+            return f"<{self._task_name} job {self._jobid}>"
 
     # ----------------------------------------------------------------------
     def cancelled(self):
@@ -85,9 +94,10 @@ class Job(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that has passed while the
+        :class:`~arcgis.gis.server.AsyncJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -118,6 +128,65 @@ class Job(object):
     def result(self):
         """returns the job result"""
         return self._future.result()
+
+
+class NotebookJob(Job):
+    """represents an asynchronous job"""
+
+    _future = None
+    _gis = None
+    _task_name = None
+    _start_time = None
+    _end_time = None
+    _verbose = None
+
+    # ----------------------------------------------------------------------
+    def __init__(
+        self,
+        future,
+        task_name,
+        jobid=None,
+        task_url=None,
+        notify=False,
+        gis=None,
+    ):
+        self._gis = gis
+        self._start_time = datetime.datetime.now()
+        self._task_name = task_name
+        self._future = future
+        if notify:
+            self._future.add_done_callback(self._notify)
+        self._future.add_done_callback(self._set_end_time)
+
+        self._end_time = None
+        self._url = task_url
+        if jobid is None:
+            self._jobid = uuid.uuid4().hex
+            self._has_id = False
+        else:
+            self._jobid = jobid
+            self._has_id = True
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        if self._jobid is None or self._has_id == False:
+            return f"<{self._task_name}>"
+        else:
+            return f"<{self._task_name} job {self._jobid}>"
+
+    def cancel(self) -> bool:
+        """cancels the current job"""
+        url: str = f"{self._url}/cancel"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = self._gis.session.post(url, data=params)
+        data: dict = resp.json()
+        return data.get("status", "failed") == "success"
 
 
 class GeometryJob(Job):

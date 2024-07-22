@@ -8,6 +8,8 @@ from utils.imports import *
 class TestArcgisBeingImportedCorrectly(unittest.TestCase):
 
     def test_arcgis_being_imported_is_dev(self):
+        if should_allow_testing_against_packaged():
+            self.skipTest("Skipping test_arcgis_being_imported_is_dev because ALLOW_INSTALLED_ARCGIS is set to true")
         clear_arcgis_import_cache()
         import arcgis
 
@@ -26,7 +28,7 @@ class TestArcgisBeingImportedCorrectly(unittest.TestCase):
 
     def test_all_arcgis_submodule_imports(self):
         """Test individual imports inside of test itself"""
-        import_all_arcgis_submodules()
+        import_all_arcgis_submodules(import_learn=should_smoketest_arcgis_learn())
 
 
 if __name__ == "__main__":

@@ -1,15 +1,14 @@
-import sys
 import concurrent.futures
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS
-from arcgis.features.layer import FeatureLayerCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
+from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestDivideParcels(unittest.TestCase):
     """Tests the Divide function from the parcel fabric SOE"""
 
@@ -38,6 +37,16 @@ class TestDivideParcels(unittest.TestCase):
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
+        
+        cls.tax_lyr_info = pfutils.basic_lyr_info(
+            cls.parcel_fabric_flc, "Tax_Div"
+        )[0]
+        cls.tax_lyr_id = cls.tax_lyr_info.lyr_id
+
+        cls.tax_line_info = pfutils.basic_lyr_info(
+            cls.parcel_fabric_flc, "Tax_Div_Lines"
+        )[0]
+        cls.tax_line_id = cls.tax_line_info.lyr_id
 
     def test_divide_proportional_area_no_dist_remainder(self):
         fq_version_name = pfutils.create_version(self.vms, "api-divide_prop_area")
@@ -825,6 +834,102 @@ class TestDivideParcels(unittest.TestCase):
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
 
+    def test_equal_width_merge_remainder_include_lines(self):
+        fq_version_name = pfutils.create_version(self.vms)
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
+        divide_parcel_type = self.tax_lyr_id
+        existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
+        divide_option = "EqualWidth"
+        number_of_parts = 10
+        divide_part_area_or_width = 10
+        divide_line_bearing = 359.9
+        divide_left_side = True
+        divide_distribute_remainder = True
+        default_area_unit = 109405
+        divide_cogo_line_bearing = None
+        divide_associated_lines = True
+
+        with self.vms.get(fq_version_name, "read") as version:
+            parcel_fabric = ParcelFabricManager(
+                self.service_urls["ParcelFabricServer"],
+                self.gis,
+                version,
+                self.parcel_fabric_flc,
+            )
+            # Divide the parcels
+            try:
+                divide = parcel_fabric.divide(
+                    divide_parcel_guid=divide_parcel_guid,
+                    divide_parcel_type=divide_parcel_type,
+                    divide_record=existing_record_guid,
+                    divide_option=divide_option,
+                    divide_number_of_parts=number_of_parts,
+                    divide_part_area=divide_part_area_or_width,
+                    divide_line_bearing=divide_line_bearing,
+                    divide_left_side=divide_left_side,
+                    divide_distribute_remainder=divide_distribute_remainder,
+                    divide_cogo_line_bearing=divide_cogo_line_bearing,
+                    divide_associated_lines=divide_associated_lines,
+                    default_area_unit=default_area_unit,
+                )
+                self.assertTrue(divide, "Divide failed.")
+                # Check for correct qty of inserts and updates to polygons
+                divide_result = next(
+                    x for x in divide["serviceEdits"] if x["id"] == self.tax_lyr_id
+                )
+                divide_line_result = next(
+                    x for x in divide["serviceEdits"] if x["id"] == self.tax_line_id
+                )
+                adds = divide_result["editedFeatures"]["adds"]
+                updates = divide_result["editedFeatures"]["updates"]
+                line_adds = divide_line_result["editedFeatures"]["adds"]
+                line_updates = divide_line_result["editedFeatures"]["updates"]
+                self.assertEqual(
+                    10,
+                    len(adds),
+                    f"Incorrect number of polygon adds. Expected 10, got {len(adds)}",
+                )
+                self.assertEqual(
+                    29,
+                    len(line_adds),
+                    f"Incorrect number of line edits, got {len(line_adds)}",
+                )
+                self.assertEqual(1, len(updates), "Incorrect number of polygon updates")
+                self.assertEqual(
+                    2, len(line_updates), "Incorrect number of line updates"
+                )
+                # Check that one feature is now retired
+                tax_fl = FeatureLayer(
+                    f"{self.service_urls['FeatureServer']}/{self.tax_lyr_id}"
+                )
+                tax_line_fl = FeatureLayer(
+                    f"{self.service_urls['FeatureServer']}/{self.tax_line_id}"
+                )
+                retired_features = tax_fl.query(
+                    where="RetiredByRecord IS NOT NULL",
+                    gdb_version=fq_version_name,
+                    out_fields=["OBJECTID"],
+                ).to_dict()
+                self.assertEqual(
+                    1,
+                    len(retired_features["features"]),
+                    "Did not find a retired parcel.",
+                )
+                retired_line_features = tax_line_fl.query(
+                    url=self.service_urls["FeatureServer"],
+                    where="RetiredByRecord IS NOT NULL",
+                    gdb_version=fq_version_name,
+                    out_fields=["OBJECTID"],
+                ).to_dict()
+                self.assertEqual(
+                    2,
+                    len(retired_line_features["features"]),
+                    "Did not find large remainder parcel.",
+                )
+            except Exception as ex:
+                print(ex)
+                self.fail(f"Divide failed: {ex}")
+                
     def test_equal_width_merge_remainder_junk_values(self):
         fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"

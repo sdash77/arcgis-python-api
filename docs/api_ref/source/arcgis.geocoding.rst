@@ -10,6 +10,20 @@ Geocoder
     :members:
     :undoc-members:
 
+PlacesAPI
+---------
+.. autoclass:: arcgis.geocoding.PlacesAPI
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+PlaceIdEnums
+------------
+.. autoclass:: arcgis.geocoding.PlaceIdEnums
+    :inherited-members:
+    :members:
+    :undoc-members:  
+    
 get_geocoders
 --------------
 .. autofunction:: arcgis.geocoding.get_geocoders
@@ -37,3 +51,7 @@ batch_geocode
 suggest
 --------------
 .. autofunction:: arcgis.geocoding.suggest
+
+get_places_api
+--------------
+.. autofunction:: arcgis.geocoding.get_places_api

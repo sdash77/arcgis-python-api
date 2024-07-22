@@ -7,6 +7,7 @@ merge_layers copies all the features from two or more existing layers into a new
 overlay_layers combines two or more layers into one single layer. You can think of overlay as peering through a stack of
 maps and creating a single map containing all the information found in the stack.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 import arcgis as _arcgis
@@ -66,7 +67,7 @@ def generate_tessellation(
                                              If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dict. Additional settings such as processing extent and output spatial reference.
-                                             For calculate_density, there are three settings.
+                                             For *generate_tesselation*, there are three settings.
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
@@ -178,7 +179,7 @@ def dissolve_boundaries(
                                              A list of field names and statistical summary types that you
                                              wish to calculate from the polygons that are dissolved together:
 
-                                             *["fieldName summary type", "fieldName2 summaryType"]*
+                                             *["fieldName summaryType", "fieldName2 summaryType"]*
 
                                              `fieldName` is the name of one of the numeric fields found in the
                                              input_layer.
@@ -305,6 +306,7 @@ def extract_data(
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    context: dict = None,
 ):
     """
     .. image:: _static/images/extract_data/extract_data.png
@@ -313,58 +315,75 @@ def extract_data(
     The extracted data format can be a file geodatabase, shapefiles, csv, or kml.
     File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
-    ===================================    =========================================================
+    ===================================     =========================================================
     **Parameter**                           **Description**
-    -----------------------------------    ---------------------------------------------------------
-    input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
-    -----------------------------------    ---------------------------------------------------------
-    clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
-                                           within the extent. By default, features are not clipped and all features intersecting the extent are returned.
+    -----------------------------------     ---------------------------------------------------------
+    input_layers                            Required list of feature layers and tables. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    extent                                  Optional feature layer. The extent is the area of interest used to extract the input features.
+                                            If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------     ---------------------------------------------------------
+    clip                                    Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
+                                            within the extent. By default, features are not clipped and all features intersecting the extent are returned.
 
-                                           The default is false.
-    -----------------------------------    ---------------------------------------------------------
-    data_format                            Optional string. A keyword defining the output data format for your extracted data.
+                                            The default is false.
+    -----------------------------------     ---------------------------------------------------------
+    data_format                             Optional string. A keyword defining the output data format for your extracted data.
 
-                                           Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
+                                            Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
 
-                                           The default is 'CSV'.
+                                            The default is 'CSV'.
 
-                                           If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
+                                            If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
 
-                                            * if *clip=False*, the attachments will be extracted to the output file
-                                            * if *clip=True*, the attachments will not be extracted
-    -----------------------------------    ---------------------------------------------------------
-    output_name                            Optional string or dict.
+                                                * if *clip=False*, the attachments will be extracted to the output file
+                                                * if *clip=True*, the attachments will not be extracted
+    -----------------------------------     ---------------------------------------------------------
+    output_name                             Optional string or dict.
 
-                                           When ``output_name`` is a string, the output item in your My contents page
-                                           will be named by the value. Other item properties will receive default values.
+                                            When ``output_name`` is a string, the output item in your My contents page
+                                            will be named by the value. Other item properties will receive default values.
 
-                                           .. code-block:: python
+                                            .. code-block:: python
 
-                                               output_name = "my_extracted_item"
+                                                output_name = "my_extracted_item"
 
-                                           To explicitly provide other item properties, use a dict with the following Syntax.
+                                            To explicitly provide other item properties, use a dict with the following Syntax.
 
-                                           .. code-block:: python
+                                            .. code-block:: python
 
-                                               output_name = {"title": "<title>",
+                                                output_name = {"title": "<title>",
                                                               "tag": "<tags>",
                                                               "snippet": "<snippet>",
                                                               "description": "<description>"}
 
-                                           For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
-    -----------------------------------    ---------------------------------------------------------
-    gis                                    Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
-    -----------------------------------    ---------------------------------------------------------
-    estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
-    -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, a future object will be returned and the process
-                                           will not wait for the task to complete. The default is False, which means wait for results.
-    ===================================    =========================================================
+                                            For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
+    -----------------------------------     ---------------------------------------------------------
+    gis                                     Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
+    -----------------------------------     ---------------------------------------------------------
+    estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+    -----------------------------------     ---------------------------------------------------------
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
+    -----------------------------------     ---------------------------------------------------------
+    context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
+                                            For extract_data, there are two settings.
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+
+                                                .. code-block:: python
+
+                                                    # Example Usage
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857}}
+    ===================================     =========================================================
+
+    :return: resulting item : :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
     If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
@@ -374,7 +393,7 @@ def extract_data(
         ext_state_highway = extract_data(input_layers=[highways.layers[0]],
                                  extent=state_area_boundary.layers[0],
                                  clip=True,
-                                 data_format='ShapeFile',
+                                 data_format='shapefile',
                                  output_name='state highway extracted')
     """
     if data_format is None:
@@ -389,6 +408,7 @@ def extract_data(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "context": context,
     }
 
     params = inspect_function_inputs(
@@ -435,7 +455,7 @@ def merge_layers(
     ================    ===============================================================
     **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
-    input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
+    input_layer         Required feature layer. The point, line, or polygon features to merge with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
     merge_layer         Required feature layer. The point, line, or polygon features to merge with the ``input_layer``.
                         The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -466,7 +486,7 @@ def merge_layers(
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
     context             Optional dict. Additional settings such as processing extent and output spatial reference.
-                        For calculate_density, there are three settings.
+                        For *merge_layers*, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
@@ -622,7 +642,7 @@ def overlay_layers(
                         If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ----------------    ---------------------------------------------------------------
     context             Optional dict. Additional settings such as processing extent and output spatial reference.
-                        For calculate_density, there are three settings.
+                        For *overlay_layers*, there are three settings.
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.

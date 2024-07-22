@@ -1,62 +1,76 @@
 name: geosaurus_dev_env
 channels:
 - defaults
-- fastai
-- pytorch
 - esri
+- esri/label/jupyterlab
 - esri-build
-- conda-forge
 dependencies:
-- ipywidgets >=7,<8
-- pandas >=2
-- ujson >=3
-- numpy>=1.21.6
+- python 3.11
 - pip
-- python>=3.9, <3.10
 - setuptools
-- widgetsnbextension >=3
-- jupyter_client <=6.1.12
-- keyring>19, <21.8.0
-- keyrings.alt
-- nbconvert
-- beautifulsoup4
-- requests
-- requests-kerberos>=0.12.0
-- requests-oauthlib>=1.2.0
-- requests-gssapi
-- pyspnego >=0.8.0
-- jupyterlab
-- pytest
-- matplotlib
-- tornado
-- scikit-learn
-- scikit-image
-- keras
-- selenium
-- scipy
-- pillow
-- fastai=1.0.63
-- torchvision >=0.15.0
-- pytorch >=2
-- cudatoolkit
-- rtree>=0.8.3
-- lxml
-- dask >=2023.3.2
-- matplotlib-inline
+# ---- arcgis ----
 - azure-storage-blob <=12.9
+- cachetools
+- certifi
+- cryptography
+- dask >=2023.3.2
+- geomet
+- keyring>=23.3.0
+- lxml
+- matplotlib
+- matplotlib-inline
+- nbconvert
+- numpy>=1.21.6,<2
+- pandas >=2.0.0,<2.2.0
+- pillow
+- puremagic >=1.15,<2
+- pyarrow >=11.0.0
+- pylerc
+- pyshp >=2,<3
+- pyspnego >=0.8.0
+# - pywin32-security
+- requests >=2.30.0,<2.32.0
+- requests-gssapi
+- requests-kerberos
+- requests-oauthlib
+- requests-toolbelt
+- truststore
+- ujson >=3
+- urllib3 >=1.26.1,<3
+# ---- arcgis-mapping ----
+- anywidget 0.9.10
+- ipywidgets >=8.0.0
+- jupyterlab >=4.0.7,<5
+- pydantic >=2.4.0
+# ---- arcgis-learn ----
+# ONLY DEPS REQUIRED FOR BUILDING DOCS
+# arcgis_learn officially requires fastchan=1.0.63, 
+# using unconstrained for greater compatibility
+# as this is only to build the docs locally
+# docs should NOT be published from this environment
+# for testing only
+- fastchan::fastai 
+- pytorch >=2
+- timm 0.4.12.*
+- torchvision >=0.15.0
+# ---- sphinx/docs build ----
+- alabaster <0.7.14
+- jinja2 3.0.3
+- sphinx 3.2.1
+- sphinxcontrib-applehelp <1.0.8
+- sphinxcontrib-devhelp <1.0.6
+- sphinxcontrib-htmlhelp <2.0.5
+- sphinxcontrib-qthelp <1.0.7
+- sphinxcontrib-serializinghtml <1.1.10
+# ---- etc ----
+- black
+- keyrings.alt
+- selenium
 - pip:
-  - unittest-xml-reporting
-  - setuptools >=38.6
-  - sphinx==3.2.1
-  - jinja2<3.1
+  # ---- sphinx/docs build ----
   - sphinx-rtd-theme==0.5.2
-  - pytest-blockage
-  - junit2html
+  # ---- automated testing ----
   - coverage
-  - geomet
-  - pytest-cov
-  - requests_toolbelt>=0.9.1
-  - python-certifi-win32
-  - cachetools
-  - black
   - nose2
+  - parameterized
+  - unittest-xml-reporting

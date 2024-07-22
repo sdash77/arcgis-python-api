@@ -25,9 +25,10 @@ class DataStore(_BaseKube):
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
-        gis                    Required GIS. The GIS object.
+        gis                    Required GIS. The :class:`~arcgis.gis.GIS` object.
         ------------------     --------------------------------------------------------------------
-        parent                 Required DataStores.  The datastore manager class.
+        parent                 Required :class:`~arcgis.gis.admin.kubernetes.DataStores`.
+                               The Kubernetes datastore manager class.
         ==================     ====================================================================
 
         """

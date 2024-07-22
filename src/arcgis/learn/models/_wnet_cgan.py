@@ -29,7 +29,6 @@ except Exception as e:
 
 
 class WNet_cGAN(ArcGISModel):
-
     """
     Creates a model object which generates images of type C from type A and type B.
 
@@ -195,6 +194,7 @@ class WNet_cGAN(ArcGISModel):
     def predict(self, img_path1, img_path2):
         """
         Predicts and display the image.
+        This method is only supported for RGB images.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -204,6 +204,8 @@ class WNet_cGAN(ArcGISModel):
         =====================   ===========================================
 
         """
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         self.learn.model.arcgis_results = True
         img_path1, img_path2 = Path(img_path1), Path(img_path2)

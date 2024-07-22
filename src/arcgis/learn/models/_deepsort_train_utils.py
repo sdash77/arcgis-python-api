@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 # based on https://github.com/ZQPei/deep_sort_pytorch
 import os
 import warnings
@@ -362,6 +363,9 @@ def _check_data_shape(data, img_shape):
         warnings.simplefilter("ignore", UserWarning)
         if data is not None and isinstance(data, ImageDataBunch):
             is_valid = True
+            if hasattr(data, "_is_empty"):
+                if data._is_empty:
+                    return is_valid
             if data.train_dl is not None:
                 is_valid = is_valid and _check_shape(data.train_dl, img_shape)
 

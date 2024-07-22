@@ -18,12 +18,12 @@ try:
     import torch
     from torch import Tensor
     import numpy as np
-    import pandas as pd
     import PIL
+    import fastai
     from fastai.vision.learner import create_body
-    from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    from fastai.vision import ImageList, flatten_model
+    from fastai.vision import imagenet_stats
+    from fastai.vision.image import bb2hw
     from fastai.core import ifnone
     from torchvision import models
     from .._utils.pascal_voc_rectangles import (
@@ -38,7 +38,6 @@ try:
         AveragePrecision,
         _process_bboxes_jit,
     )
-    from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import _resnet_family
     from .._image_utils import (
@@ -49,11 +48,11 @@ try:
     )
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from fastprogress.fastprogress import progress_bar
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from ._transformer_backbone import vit_config
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -199,6 +198,28 @@ class RetinaNet(ArcGISModel):
         if pretrained_path is not None:
             self.load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
+        if backbone in RetinaNet.transformer_backbones():
+            self.unfreeze()
+            self._freeze()
+
+    def _freeze(self):
+        layers = flatten_model(self.learn.model.encoder[0].backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
 
     def __str__(self):
         return self.__repr__()
@@ -339,10 +360,16 @@ class RetinaNet(ArcGISModel):
         return RetinaNet._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        transformer_backbone = RetinaNet.transformer_backbones()
+        return [*_resnet_family] + transformer_backbone + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -359,9 +386,9 @@ class RetinaNet(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -754,6 +781,9 @@ class RetinaNet(ArcGISModel):
             raise Exception(
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

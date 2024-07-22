@@ -2,24 +2,21 @@ import random
 from uuid import uuid4
 import string
 import os
-import pandas as pd
 import tempfile
 import shutil
-
-from arcgis.gis import Item, ItemDependency
+from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._utils import _date_handler
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth.tools import LazyLoader
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
-
-try:
-    from arcgis.features.geo import _is_geoenabled
-except:
-
-    def _is_geoenabled(o):
-        return False
+pd = LazyLoader("pandas")
 
 
 try:
@@ -38,10 +35,26 @@ except ImportError:
     has_pyshp = False
 
 
+def _json_encode_params(postdata):
+    for k, v in postdata.items():
+        if isinstance(v, (dict, list, tuple, bool)):
+            postdata[k] = json.dumps(v, default=_date_handler)
+        elif isinstance(v, PropertyMap):
+            postdata[k] = json.dumps(dict(v), default=_date_handler)
+        elif isinstance(v, InsensitiveDict):
+            postdata[k] = v.json
+
+    return postdata
+
+
 def _create_file_item(gis, df, file_type, **kwargs):
     try:
         # File Type Dictionary
-        ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
+        ftypes = {
+            "File Geodatabase": "gdb",
+            "Shapefile": "shp",
+            "CSV": "csv",
+        }
 
         # Pop out kwargs, establish params to be used throughout
         service_name = kwargs.pop("service_name", None)
@@ -100,15 +113,18 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 my_csv.close()
 
         # add item to portal
-        file_item = gis.content.add(
+        if folder:
+            folder = gis.content.folders.get(folder)
+        else:
+            folder = gis.content.folders.get()
+        file_item = folder.add(
             item_properties={
                 "title": title,
                 "type": file_type,
                 "tags": tags,
             },
-            data=file,
-            folder=folder,
-        )
+            file=file,
+        ).result()
 
         if file_type == "CSV":
             # analyze the csv for publish params
@@ -176,7 +192,7 @@ def _add_item_dependency(
 ):
     if file_type.lower() == "csv":
         source_info = gis.content.analyze(item=file_item)["publishParameters"]
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.tables[fl_index].append(
             item_id=file_item.id,
             upload_format=file_type.lower(),
@@ -191,7 +207,7 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
@@ -209,7 +225,7 @@ def import_as_item(gis, df, **kwargs):
         df = df.sdf
 
     # Check whether it will be a layer or a table
-    if _is_geoenabled(df):
+    if features.geo._is_geoenabled(df):
         # layer
         if has_arcpy == False and has_pyshp == False:
             raise Exception(
@@ -244,7 +260,7 @@ def import_as_item(gis, df, **kwargs):
             raise ValueError(
                 "The provided feature service id cannot be found. Please check it is correct and try again."
             )
-        elif isinstance(fs_id, Item):
+        elif isinstance(fs_id, _arcgis_gis.Item):
             fs_id = fs_id.itemid
 
         # Index passed in for overwrite, None for insert
@@ -270,6 +286,9 @@ def import_as_item(gis, df, **kwargs):
     # This pushes the features and adds new dependencies
     _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
 
+    # clean up
+    new_item.delete()
+
     return fs_item
 
 
@@ -291,11 +310,11 @@ def import_as_fc(gis, df, **kwargs):
             raise Exception("No batch geocoding service found.")
         geocode_url = locators[0]
 
-    path = "content/features/analyze"
+    path = gis._public_rest_url + "content/features/analyze"
 
     postdata = {
-        "f": "pjson",
-        "text": df.to_csv(),
+        "f": "json",
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "analyzeParameters": {
             "enableGlobalGeocoding": "true",
@@ -308,15 +327,17 @@ def import_as_fc(gis, df, **kwargs):
     if address_fields is not None:
         postdata["analyzeParameters"]["locationType"] = "address"
 
-    res = gis._con._session.post(path, postdata)
+    postdata = _json_encode_params(postdata)
+    resp = gis._con._session.post(url=path, data=postdata, timeout=600)
+    res = resp.json()
 
     # Step 2: Prep parameters to generate features
     if address_fields is not None:
         res["publishParameters"].update({"addressFields": address_fields})
-    path = "content/features/generate"
+    path = gis._public_rest_url + "content/features/generate"
     postdata = {
-        "f": "pjson",
-        "text": df.to_csv(),
+        "f": "json",
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "publishParameters": json.dumps(res["publishParameters"]),
     }
@@ -325,7 +346,9 @@ def import_as_fc(gis, df, **kwargs):
 
     if isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
         # Step 2: Generate features
-        res_generate = gis._con._session.post(path, postdata)
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(path, postdata)
+        res_generate = resp.json()
     elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
         isinstance(df, pd.DataFrame) and address_fields
     ):
@@ -347,9 +370,12 @@ def import_as_fc(gis, df, **kwargs):
             del update_dict[k]
         res["publishParameters"].update(update_dict)
 
-        res_generate = gis._con._session.post(
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(
             path, postdata
         )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+
+        res_generate = resp.json()
 
     # Step 3: Return
     if res_generate:

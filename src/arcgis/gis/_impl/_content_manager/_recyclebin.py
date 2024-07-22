@@ -15,7 +15,21 @@ _log = logging.getLogger(__name__)
 ###########################################################################
 class RecycleItem:
     """
-    This is a recycled item within the recycling bin.
+    This represents a recycled item from the recycling bin.
+
+    .. code-block:: python
+
+        # Usage Example:
+
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> org_user = gis.users.search("gis_user1")[0]
+        >>> for r_item in org_user.recyclebin.content:
+                print(f"{r_item.properties['title']:15}{r_item.properties['type']:22}{type(r_item)}")
+
+        trees_item1    Service Definition   <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
+        trees_item1    Feature Service      <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
+        AR_Counties    Feature Service      <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
     """
 
     _item: _arcgis_gis.Item = None
@@ -48,9 +62,21 @@ class RecycleItem:
         """
         Restores the Item from the recycling bin.
 
-        :return: Item | None
+        :return: :class:`~arcgis.gis.Item` | None
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> gis_user = gis.users.me
+            >>> deleted_item = list(gis_user.recyclebin.content)[0]
+            >>> restored_item = deleted_item.restore()
         """
-        url: str = f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/restore"
+        url: str = (
+            f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/restore"
+        )
         params = {
             "f": "json",
         }
@@ -69,7 +95,9 @@ class RecycleItem:
 
         :return: boolean
         """
-        url: str = f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/delete"
+        url: str = (
+            f"{self._gis._public_rest_url}content/users/{self.properties['owner']}/items/{self.properties['id']}/delete"
+        )
         params = {"f": "json", "permanentDelete": json.dumps(True)}
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
@@ -81,12 +109,125 @@ class RecycleItem:
             return False
 
 
+class OrgRecycleBin:
+    """
+    Manages the Organization's Recyclebin Content.
+    """
+
+    _gis: "GIS" | None = None
+    url: str
+    session: EsriSession
+
+    def __init__(self, url: str, gis: "GIS") -> None:
+        self.url = url
+        self.session = gis.session
+        self._gis = gis
+
+    def content(
+        self,
+        item_types: list["ItemTypeEnums"] | None = None,
+        sort_order: str = "desc",
+        sort_field: str | None = "size",
+    ) -> Iterator[RecycleItem]:
+        """
+        Content provides a way to examine all the organization's content in the organization.
+
+        =================================================     ========================================================================
+        **Parameter**                                         **Description**
+        -------------------------------------------------     ------------------------------------------------------------------------
+        item_types                                            list["ItemTypeEnums"]. A list of item types to filter on.
+        -------------------------------------------------     ------------------------------------------------------------------------
+        sort_order                                            Optional String. The way to return the results.  The default is `desc`.
+        -------------------------------------------------     ------------------------------------------------------------------------
+        sort_field                                            Optional String. The field to sort on.  The allowed fields are: `owner`,
+                                                              `type` and `size` (default).
+        =================================================     ========================================================================
+
+
+        :return: Iterator[RecycleItem]
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> my_user = gis.users.me
+            >>> r_bin_content = my_user.recyclebin.content(sord_field='owner')
+            >>> type(r_bin_content)
+
+            <class 'generator'>
+
+            >>> for r_item in r_bin_content:
+                    print(f"{r_item.properties['title']":15}{r_item.properties['type']}")
+
+            trees_sd        Service Definition
+            trees_flc       Feature Service
+
+
+        """
+        start: int = 1
+        if isinstance(item_types, list):
+            item_types: str = ",".join([t.value for t in item_types])
+        elif item_types is None:
+            item_types: str = ""
+        params: dict = {
+            "f": "json",
+            "ignoreTypes": "",
+            "types": item_types or "",
+            "sortField": sort_field or "",
+            "sortOrder": sort_order or "desc",
+            "reservedTypeKeyword": "",
+            "num": 100,
+            "start": start,
+            "inRecycleBin": "true",
+        }
+
+        url: str = self.url
+        resp: requests.Response = self.session.get(url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while True:
+            for item in data.get("items", []):
+                itemid = item.get("id", None)
+                if itemid:
+                    yield RecycleItem(itemid=itemid, properties=item, gis=self._gis)
+                else:
+                    yield item
+
+            if data.get("nextStart", -1) > -1:
+                params["start"] = data.get("nextStart", -1)
+                resp: requests.Response = self.session.get(url, params=params)
+                resp.raise_for_status()
+                data: dict = resp.json()
+            else:
+                break
+
+
 ###########################################################################
 class RecycleBin:
     """
-    The `RecycleBin` class allows users to managing items that were
-    deleted.  Users can `restore` or permanently `delete` items from
-    the recycle bin.
+    The `RecycleBin` class allows users to manage items they own that were
+    deleted.  Users can :meth:`~arcgis.gis._impl._content_manager.RecycleItem.restore`
+    or permanently :meth:`~arcgis.gis._impl._content_manager.RecycleItem.delete`
+    items from the recycle bin.
+
+    This class is not meant to be initialized directly, but an instance
+    is returned by the :attr:`~arcgis.gis.User.recyclebin` property of the
+    :class:`~arcgis.gis.User` class. Users can iterate over the
+    :attr:`~arcgis.gis._impl._content_manager.RecycleBin.content`.
+
+    .. note::
+        This functionality is only available for ArcGIS Online.
+
+    .. code-block:: python
+
+        # Usage Example:
+
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> my_recycle_bin = gis.users.me.recyclebin
     """
 
     _user: _arcgis_gis.User
@@ -137,6 +278,25 @@ class RecycleBin:
         Lists the content inside the recycling bin.
 
         :return: Iterator[RecycleItem]
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> my_user = gis.users.me
+            >>> r_bin_content = my_user.recyclebin.content
+            >>> type(r_bin_content)
+
+            <class 'generator'>
+
+            >>> for r_item in r_bin_content:
+                    print(f"{r_item.properties['title']":15}{r_item.properties['type']}")
+
+            trees_sd        Service Definition
+            trees_flc       Feature Service
+
         """
         if self._supported() == False:
             _log.info("The recyclebin is not supported on this organization.")

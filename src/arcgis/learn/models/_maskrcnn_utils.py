@@ -14,6 +14,7 @@ from torchvision.models.detection.transform import (
     paste_masks_in_image,
 )
 import torch
+from torch.nn.parallel import DistributedDataParallel
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -485,18 +486,22 @@ class train_callback(LearnerCallback):
     def on_batch_begin(self, last_input, last_target, **kwargs):
         "Handle new batch `xb`,`yb` in `train` or validation."
         train = kwargs.get("train")
+        if isinstance(self.model, DistributedDataParallel):
+            model = self.model.module
+        else:
+            model = self.model
         self.model.train()
         if train:
-            self.model.roi_heads.train_val = False
-            self.model.rpn.train_val = False
-            self.model.train_val = False
-            self.model.transform.train_val = False
+            model.roi_heads.train_val = False
+            model.rpn.train_val = False
+            model.train_val = False
+            model.transform.train_val = False
         else:
-            self.model.backbone.eval()  # to get feature in eval mode for evaluation
-            self.model.roi_heads.train_val = True
-            self.model.rpn.train_val = True
-            self.model.train_val = True
-            self.model.transform.train_val = True
+            model.backbone.eval()  # to get feature in eval mode for evaluation
+            model.roi_heads.train_val = True
+            model.rpn.train_val = True
+            model.train_val = True
+            model.transform.train_val = True
         target_list = mask_to_dict(last_target, self.c_device)
         if last_input.shape[0] < 2:
             last_input = torch.cat((last_input, last_input))
@@ -532,10 +537,14 @@ class AveragePrecision(LearnerCallback):
             self.aps.append(ap)
 
     def on_epoch_end(self, last_metrics, **kwargs):
-        self.model.roi_heads.train_val = False
-        self.model.rpn.train_val = False
-        self.model.train_val = False
-        self.model.transform.train_val = False
+        if isinstance(self.model, DistributedDataParallel):
+            model = self.model.module
+        else:
+            model = self.model
+        model.roi_heads.train_val = False
+        model.rpn.train_val = False
+        model.train_val = False
+        model.transform.train_val = False
         if self.aps == []:
             self.aps.append(0.0)
         self.aps = torch.mean(torch.tensor(self.aps))

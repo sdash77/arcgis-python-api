@@ -1,13 +1,11 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import dissolve_boundaries
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["a6cb2a0688d841fd803cd82b4d8282b4"]  # Boundary Polygon
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -20,6 +18,7 @@ stage_data(test_items)
 # was the previously intended functionality.
 
 
+@integration_test
 class TestDissolveBoundaries(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection

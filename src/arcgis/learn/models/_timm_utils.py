@@ -237,6 +237,9 @@ def load_timm_bckbn_pretrained(
     model.load_state_dict(state_dict, strict=strict)
 
 
+timm.models.helpers.load_pretrained = load_timm_bckbn_pretrained
+
+
 def _default_split(m):
     return (m[1],)
 
@@ -289,6 +292,14 @@ def _gernet_split(m):
     return m[0][1][-2]
 
 
+def _regnet_split(m):
+    return m[0][3]
+
+
+def _resnetv2_split(m):
+    return m[0][1][3]
+
+
 def _modified_cut(m):
     def forward_modified(self, img):
         return self.forward_features(img)
@@ -323,6 +334,11 @@ timm_model_meta = {
     "dpn": {"cut": None, "split": _dpn_split},
     "ese_vovnet": {"cut": None, "split": _esevovnet_split},
     "gernet": {"cut": None, "split": _gernet_split},
+    "nf_regnet": {"cut": None, "split": _nfnet_split},
+    "nf_resnet": {"cut": None, "split": _nfnet_split},
+    "regnet": {"cut": None, "split": _regnet_split},
+    "resnet51q": {"cut": None, "split": _resnetv2_split},
+    "resnetv2": {"cut": None, "split": _resnetv2_split},
 }
 
 
@@ -695,6 +711,7 @@ def checkpoint_filter_fn_swin(state_dict, model):
                 # last temp_module will be tensor
                 temp_module = temp_module.__getattr__(attr)
             if v.shape == temp_module.shape:
+                out_dict[k] = v
                 continue
             if "index" in model_attr[-1]:
                 v = temp_module

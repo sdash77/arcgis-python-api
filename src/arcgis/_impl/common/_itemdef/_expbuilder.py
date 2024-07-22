@@ -91,13 +91,24 @@ class _WebExperience(_ItemDefinition):
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
         item_properties["text"] = data
-        new_item = self.target.content.add(
-            item_properties=item_properties,
-            thumbnail=thumbnail,
-            folder=self.folder,
-            owner=self.owner,
-            item_id=item_id,
+
+        if self.folder:
+            folder = self.target.content.folders.get(
+                folder=self.folder, owner=self.owner
+            )
+        else:
+            folder = self.target.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        job = folder.add(
+            **{
+                "item_properties": item_properties,
+                "item_id": item_id,
+            }
         )
+        new_item = job.result()
+
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -107,9 +118,14 @@ class _WebExperience(_ItemDefinition):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
-                v["portalUrl"] = target.url
+                if "itemId" not in v:
+                    continue
+                if "portalUrl" in v:
+                    v["portalUrl"] = target.url
                 orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
+                if item is None:
+                    continue
 
                 # if predefined in clone mapping
                 if orig_id in self._clone_mapping["Item IDs"]:
@@ -118,6 +134,8 @@ class _WebExperience(_ItemDefinition):
                     if targ_item:
                         if targ_item.type == item.type:
                             v["itemId"] = new_id
+                            if "url" in v:
+                                v["url"] = targ_item.url
                             continue
 
                 # if not, try cloning item
@@ -153,10 +171,16 @@ class _WebExperience(_ItemDefinition):
                 new_item.resources.add(self.resources, archive=True)
             config_dict = self.portal_item.resources.get("config/config.json")
             new_dict = _clone_dict(
-                config_dict, self.portal_item._gis, self.target, self._search_existing
+                config_dict,
+                self.portal_item._gis,
+                self.target,
+                self._search_existing,
             )
-            tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-            json.dump(new_dict, tfile)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                json.dump(new_dict, tfile)
+                tfile.close()
             new_item.resources.update(
                 folder_name="config",
                 file_name="config.json",

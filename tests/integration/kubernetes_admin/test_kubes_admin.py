@@ -1,46 +1,19 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
-
-from arcgis.gis import GIS
 from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+from arcgis.gis.kubernetes._admin._system import SystemManager
+from arcgis.gis.kubernetes._admin._adaptors import WebAdaptorManager
+from utils.decorators import integration_test, profiles
 
 
-profiles = [
-    "your_kubernetes_profile"
-]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
-VERIFY_CERT = False  # Boolean T/F
-
-(
-    GIS(
-        url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
-        username="ACadmin",
-        password="ACadmin82",
-        verify_cert=VERIFY_CERT,
-        trust_env=True,
-        use_gen_token=True,
-    ).users.me.update(security_question=1, security_answer="TheAnswerIs5")
-)
-
-
+@profiles.admin_k8s
+@integration_test
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
-
-    def setUp(self):
-
-        self._gis = GIS(
-            url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
-            username="ACadmin",
-            password="ACadmin82",
-            verify_cert=VERIFY_CERT,
-            trust_env=True,
-        )
 
     def test_properties(self):
         """tests the properties off of the GIS Kubernetes Admin Class"""
 
-        admin = self._gis.admin
+        admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert admin.logs
         assert admin.datastores
@@ -62,27 +35,20 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert admin.jobs
 
     def test_scheduled_task(self):
-        admin = self._gis.admin
+        admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
-        assert isinstance(admin.scheduled_tasks(), list)
+        assert isinstance(list(admin.scheduled_tasks()), list)
 
     def test_jobs(self):
         from arcgis.gis.kubernetes._admin._jobs import JobManager
 
-        admin = self._gis.admin
+        admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(admin.jobs, JobManager)
 
     def test_system(self):
-        from arcgis.gis.kubernetes._admin._system import (
-            Server,
-            ServerDefaults,
-            ServerManager,
-            SystemManager,
-        )
-        from arcgis.gis.kubernetes._admin._adaptors import WebAdaptorManager
 
-        admin = self._gis.admin
+        admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(admin.system, SystemManager)
         sm = admin.system
@@ -112,26 +78,26 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert sm.licenses
 
     def test_overview(self):
-        admin = self._gis.admin
+        admin = self.gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert admin.overview
         assert admin.overview.properties
         assert admin.overview.config
 
     def test_orgs(self):
-        assert self._gis.admin.organizations.properties
-        assert self._gis.admin.organizations.orgs[0].properties
+        assert self.gis.admin.organizations.properties
+        assert self.gis.admin.organizations.orgs[0].properties
 
     def test_mode(self):
-        assert self._gis.admin.mode.properties
+        assert self.gis.admin.mode.properties
 
     def test_license(self):
-        assert self._gis.admin.license.properties
+        assert self.gis.admin.license.properties
 
     def test_datastores(self):
-        assert self._gis.admin.datastores
-        assert self._gis.admin.datastores.properties
-        assert isinstance(self._gis.admin.datastores.stores, list)
+        assert self.gis.admin.datastores
+        assert self.gis.admin.datastores.properties
+        assert isinstance(self.gis.admin.datastores.stores, list)
 
 
 if __name__ == "__main__":

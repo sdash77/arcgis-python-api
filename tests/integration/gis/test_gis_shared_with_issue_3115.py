@@ -1,11 +1,11 @@
-import sys
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import datetime
 from arcgis.gis import GIS
 from arcgis.gis import Item, UserManager, User
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestIssue3115(unittest.TestCase):
     """ """
 
@@ -30,7 +30,7 @@ class TestIssue3115(unittest.TestCase):
                                 grp.delete()
                                 break
                     grp = gis.groups.create("sample_share123", "tags")
-                    item.share(groups=[grp])
+                    item.sharing.groups.add(grp)
                     assert len(item.shared_with["groups"]) > 0
                     um = gis.users
                     isinstance(um, UserManager)

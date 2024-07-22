@@ -2,17 +2,13 @@
 # Name:        network analysis module tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master_kubernetes\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 import os
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -52,6 +48,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_NetworkAnalysisModule(unittest.TestCase):
     """
     Test to check if a UserManager object works with builtin portal
@@ -72,18 +69,6 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
         cls.portal_url = _conf_reader["teamportal"]["url"]
         cls.portal_username = _conf_reader["teamportal"]["admin_user"]
         cls.portal_password = _conf_reader["teamportal"]["admin_password"]
-
-        # _conf_reader2 = ConfigParser()
-        # _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
-        #
-        # cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
-        # cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_UserManager_cls']
-        # #endregion
-
-        # region precondition checks and sign in
-        # r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        # if not r1:
-        # cls.class_skip = True
 
         cls.gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
         if cls.gis is None:
@@ -118,7 +103,6 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
         try:
 
             import arcgis.network as network
-            import arcgis.features as features
 
             facil = {
                 "features": [

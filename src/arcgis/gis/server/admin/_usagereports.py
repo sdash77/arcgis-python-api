@@ -3,6 +3,7 @@ This resource is a collection of all the usage reports created within
 your site. The Create Usage Report operation lets you define a new
 usage report.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 import json

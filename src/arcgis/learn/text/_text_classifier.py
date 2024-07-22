@@ -1,4 +1,5 @@
 import copy
+import re
 from functools import partial
 from pathlib import Path
 import sys
@@ -35,6 +36,8 @@ try:
         copy_metrics,
     )
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
+    from ._llm import LLM
+
     from ._transformer_text_classifier import (
         TransformerForTextClassification,
         backbone_models_reverse_map,
@@ -42,6 +45,7 @@ try:
         transformer_seq_length,
     )
     from transformers import logging
+    from .._utils.llm_utils import data_sanity_llm
 
     logging.get_logger("filelock").setLevel(logging.ERROR)
 except Exception as e:
@@ -67,7 +71,6 @@ try:
 except:
     HAS_NUMPY = False
 
-
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 
@@ -84,7 +87,7 @@ class TextClassifier(ArcGISModel):
                             Hugging Face Transformer model fine-tuned on classification task.
                             In this case the model should be used directly for inference.
     ---------------------   -------------------------------------------
-    backbone                Optional string. Specifying the HuggingFace
+    backbone                Optional string. Specify `gpt` or the HuggingFace
                             transformer model name to be used to train the
                             classifier. Default set to `bert-base-cased`.
 
@@ -95,6 +98,9 @@ class TextClassifier(ArcGISModel):
                             To learn more about the available transformer models fine-tuned
                             on Text Classification Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=text-classification
+
+                            To learn more about mistral
+                            https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
     =====================   ===========================================
 
     **kwargs**
@@ -126,6 +132,31 @@ class TextClassifier(ArcGISModel):
     pretrained_path         Optional String. Path where pre-trained model
                             is saved. Accepts a Deep Learning Package
                             (DLPK) or Esri Model Definition(EMD) file.
+    ---------------------   -------------------------------------------
+    prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
+                            LLM family.
+
+                            This parameter use to describe the task and guardrails for the task.
+    ---------------------   -------------------------------------------
+    examples                Optional dictionary. The dictionary's keys represent labels or classes, with the
+                            corresponding values being lists of sentences belonging to each class.
+
+
+                            This parameter is applicable if the selected model backbone is from the LLM family.
+
+                            Pydantic notation
+
+                            Optional[Dict[str, List]]
+
+                            Example:
+
+                            |   {
+                            |    "Label_1" :[example 1, example 2],
+                            |    "Label_2" : [example 1, example 2]
+                            |   }
+
+
+                            If examples are not supplied, a data object must be provided.
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.text.TextClassifier` Object
@@ -140,14 +171,63 @@ class TextClassifier(ArcGISModel):
 
             _raise_fastai_import_error(import_exception=import_exception)
 
+        if backbone.lower() == "llm":
+            raise Exception(
+                f"{backbone} is not a valid backbone. Please select one of the following models"
+                f" {TransformerForTextClassification._available_backbone_models(backbone)}"
+            )
+
+        self._submodel = None
+        # check if the llm map exist in reverse map
+        if backbone in backbone_models_reverse_map:
+            # ToDo Change the value
+            if backbone_models_reverse_map[backbone] == "llm":
+                self._submodel = backbone
+                kwargs["submodel"] = backbone
+                # check and add the "llm_params" dict to the kwargs
+                llm_params = kwargs.get("llm_params", {})
+                kwargs.update(llm_params)
+                backbone = "llm"
+
         self.logger = logging.get_logger()
         if kwargs.get("verbose", None):
             self.logger.setLevel(kwargs.get("verbose").upper())
         else:
             self.logger.setLevel(logging.ERROR)
-
+        if backbone == "llm":
+            kwargs["task"] = "text-classifier"
+            kwargs = data_sanity_llm(data, **kwargs)
+            self._llm = LLM(**kwargs)
+            if data is None:  # create a dummy data object
+                data = TextDataObject(task="classification")
+                data._backbone = backbone
+                data.create_empty_object_for_classification(
+                    "text_col_dummy",
+                    "label_col_dummy",
+                    classes=self._llm.additional_info,
+                    is_multilabel=False,
+                )
+                data.classes = self._llm.additional_info
+                data._is_empty = True
+            else:
+                data._is_empty = False
+            kwargs["data"] = data
+            self._l2id = self._llm.additional_info
+            if not self._l2id:
+                if not self._data._is_empty:
+                    self._l2id = list(
+                        np.unique(
+                            self._data._train_df[self._data._label_cols]
+                            .to_numpy()
+                            .ravel()
+                        )
+                    )
+                # else:
+                #     # since data hadnle is marked as empty. Try to sample it from the examples
+                #     self._l2id = list(self._llm.examples.keys())
         model_backbone = ModelBackbone(backbone)
-        super().__init__(data, model_backbone)
+        super().__init__(data, model_backbone if backbone != "llm" else backbone)
+
         self._emodel = None
         self._emask = None
         self.shap_values = None
@@ -156,24 +236,24 @@ class TextClassifier(ArcGISModel):
         self._mixed_precision = kwargs.get("mixed_precision", False)
         self._seq_len = kwargs.get("seq_len", transformer_seq_length)
         model_config = kwargs.get("model_config", None)
-        if data is None:
-            model = TextClassifier.from_pretrained(backbone, **kwargs)
-            self.learn = model.learn
-            self._data = model._data
-        else:
-            self._create_text_learner_object(
-                data,
-                backbone,
-                kwargs.get("pretrained_path", None),
-                config=model_config,
-                mixed_precision=self._mixed_precision,
-                seq_len=self._seq_len,
-            )
+        if self._backbone != "llm":
+            if data is None:
+                model = TextClassifier.from_pretrained(backbone, **kwargs)
+                self.learn = model.learn
+                self._data = model._data
+            else:
+                self._create_text_learner_object(
+                    data,
+                    backbone,
+                    kwargs.get("pretrained_path", None),
+                    config=model_config,
+                    mixed_precision=self._mixed_precision,
+                    seq_len=self._seq_len,
+                )
 
-            self.learn.model = self.learn.model.to(self._device)
-            layer_groups = self.learn.model.get_layer_groups()
-            self.learn.split(layer_groups)
-            # self._freeze()
+                self.learn.model = self.learn.model.to(self._device)
+                layer_groups = self.learn.model.get_layer_groups()
+                self.learn.split(layer_groups)
 
     def _create_text_learner_object(
         self,
@@ -274,8 +354,13 @@ class TextClassifier(ArcGISModel):
         return "<%s>" % (type(self).__name__)
 
     @staticmethod
-    def _available_metrics():
-        return ["valid_loss", "accuracy", "error_rate"]
+    def _available_metrics(backbone=None):
+        if not backbone:
+            return ["valid_loss", "accuracy", "error_rate"]
+        elif backbone == "llm":
+            return ["accuracy"]
+        else:
+            return ["valid_loss", "accuracy", "error_rate"]
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -285,11 +370,16 @@ class TextClassifier(ArcGISModel):
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        architecture            Required string. name of the transformer
-                                backbone one wish to use. To learn more about
+        architecture            Required string. name of the transformer or `llm`
+                                backbone one wish to use.
+
+                                To learn more about
                                 the available models or choose models that are
                                 suitable for your dataset, kindly visit:-
                                 https://huggingface.co/transformers/pretrained_models.html
+
+                                To learn more about mistral
+                                https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
         =====================   ===========================================
 
         :return: a tuple containing the available models for the given transformer backbone
@@ -300,17 +390,134 @@ class TextClassifier(ArcGISModel):
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        **kwargs,
+    ):
+        """
+        Train the model for the specified number of epochs and using the
+        specified learning rates.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``,
+                                an optimal learning rate is automatically deduced
+                                for training the model.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no
+                                learning rate schedule is used.
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
+                                A minimum difference of 0.001 is required for
+                                it to be considered an improvement.
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean. Parameter to write the training log.
+                                If set to 'True' the log will be saved at
+                                `<dataset-path>/training_log` which can be visualized in
+                                tensorboard. Required tensorboardx version=2.1
+
+                                The default value is 'False'.
+
+                                .. note::
+                                    Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
+        =====================   ===========================================
+        """
+
+        if self._backbone != "llm":
+            super().fit(
+                epochs=epochs,
+                lr=lr,
+                one_cycle=one_cycle,
+                early_stopping=early_stopping,
+                checkpoint=checkpoint,  # "all", "best", True, False ("best" and True are same.)
+                tensorboard=tensorboard,
+                monitor=monitor,  # whatever is passed here, earlystopping and checkpointing will use that.
+                **kwargs,
+            )
+        else:
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
+
     def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
         """
+        if self._backbone == "llm":
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
         self.learn.freeze()
+
+    def lr_find(self, allow_plot=True):
+        """
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
+        """
+        if self._backbone != "llm":
+            return super().lr_find(allow_plot=allow_plot)
+        else:
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
 
     @classmethod
     def from_pretrained(cls, backbone, **kwargs):
         """
         Creates an TextClassifier model object from an already fine-tuned
         Hugging Face Transformer backbone.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -326,6 +533,15 @@ class TextClassifier(ArcGISModel):
 
         :return: :class:`~arcgis.learn.text.TextClassifier` Object
         """
+        backup_backbone = backbone
+        if backbone in backbone_models_reverse_map:
+            if backbone_models_reverse_map[backbone] == "llm":
+                backbone = "llm"
+
+        if backbone == "llm":
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {backup_backbone}."
+            )
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
 
@@ -343,7 +559,7 @@ class TextClassifier(ArcGISModel):
         return cls_object
 
     @classmethod
-    def from_model(cls, emd_path, data=None):
+    def from_model(cls, emd_path, data=None, **kwargs):
         """
         Creates an TextClassifier model object from a Deep Learning
         Package(DLPK) or Esri Model Definition (EMD) file.
@@ -358,7 +574,6 @@ class TextClassifier(ArcGISModel):
                                 object from :class:`~arcgis.learn.prepare_textdata` function or None for
                                 inferencing.
         =====================   ===========================================
-
         :return: :class:`~arcgis.learn.text.TextClassifier` model Object
         """
         if not HAS_FASTAI:
@@ -369,9 +584,44 @@ class TextClassifier(ArcGISModel):
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
+        # check if it is normal processing or it will need automated processing
+        backbone = emd["ModelParameters"].get("backbone", None)
+        backup_backbone = backbone
+        if backbone in backbone_models_reverse_map:
+            if backbone_models_reverse_map[backbone] == "llm":
+                backbone = "llm"
+        if backbone == "llm":
+            pretrained_model = emd["PretrainedModel"]
+            text_cols = emd["TextColumns"]
+            label_cols = emd["LabelColumns"]
+            class_labels = emd["Label"]
+            is_multilabel_problem = emd["IsMultilabelClassificationProblem"]
+            data_is_none = False
+            if data is None:
+                data_is_none = True
+                data = TextDataObject(task="classification")
+                data._backbone = pretrained_model
+                data.create_empty_object_for_classification(
+                    text_cols, label_cols, class_labels, is_multilabel_problem
+                )
+                data.emd, data.emd_path = emd, emd_path.parent
+                data.classes = class_labels
+                data._is_empty = True
+
+            cls_object = cls(
+                backbone=backup_backbone,
+                data=data,
+                prompt=emd["prompt"],
+                examples=emd["examples"],
+                labels=emd["Label"],
+                llm_params=kwargs.get("llm_params", {}),
+            )
+            if data_is_none:
+                cls_object._data._is_empty = True
+            return cls_object
 
         pretrained_model = emd["PretrainedModel"]
-        mixed_precision = emd["MixedPrecisionTraining"]
+        mixed_precision = emd.get("MixedPrecisionTraining", None)
         text_cols = emd["TextColumns"]
         label_cols = emd["LabelColumns"]
         class_labels = list(emd["Label2Id"].keys())
@@ -404,6 +654,9 @@ class TextClassifier(ArcGISModel):
         """
         Loads a saved TextClassifier model from disk.
 
+        This method is not supported when the backbone is configured as llm/mistral.
+
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -411,12 +664,24 @@ class TextClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-        if "\\" in str(name_or_path) or "/" in str(name_or_path):
-            name_or_path = str(_get_emd_path(name_or_path))
+        if self._backbone != "llm":
+            if "\\" in str(name_or_path) or "/" in str(name_or_path):
+                name_or_path = str(_get_emd_path(name_or_path))
+            else:
+                name_or_path = Path("models") / name_or_path
+                name_or_path = str(_get_emd_path(name_or_path))
+
+            try:
+                return super().load(name_or_path, strict=True)
+            except RuntimeError as re:
+                if "Error(s) in loading state_dict" in str(re):
+                    return super().load(name_or_path, strict=False)
+                else:
+                    raise re
         else:
-            name_or_path = Path("models") / name_or_path
-            name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path)
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
 
     def save(
         self,
@@ -495,6 +760,8 @@ class TextClassifier(ArcGISModel):
     def _model_metrics(self):
         from IPython.utils import io
 
+        if self._data._is_empty:  # Don't calculate model if the data loader is blank
+            return {}
         with io.capture_output() as captured:
             metrics = {"Accuracy": self.accuracy()}
             per_class_metric_df = self.metrics_per_label()
@@ -505,20 +772,37 @@ class TextClassifier(ArcGISModel):
 
     def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
-        is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
-        _emd_template["Architecture"] = self.learn.model._transformer_architecture
-        _emd_template[
-            "PretrainedModel"
-        ] = self.learn.model._transformer_pretrained_model_name
-        _emd_template["ModelType"] = "Transformer"
-        _emd_template["MixedPrecisionTraining"] = self._mixed_precision
-        _emd_template["TextColumns"] = self._data._text_cols
-        _emd_template["LabelColumns"] = self._data._label_cols
-        _emd_template["Label2Id"] = self.learn.model._config.label2id
-        _emd_template["SequenceLength"] = self._seq_len
-        if is_multilabel_problem:
-            _emd_template["Threshold"] = self.thresh
-        _emd_template["IsMultilabelClassificationProblem"] = is_multilabel_problem
+        if self._backbone != "llm":
+            is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
+            _emd_template["Architecture"] = self.learn.model._transformer_architecture
+            _emd_template["PretrainedModel"] = (
+                self.learn.model._transformer_pretrained_model_name
+            )
+            _emd_template["ModelType"] = "Transformer"
+            _emd_template["MixedPrecisionTraining"] = self._mixed_precision
+            _emd_template["TextColumns"] = self._data._text_cols
+            _emd_template["LabelColumns"] = self._data._label_cols
+            _emd_template["Label2Id"] = self.learn.model._config.label2id
+            _emd_template["SequenceLength"] = self._seq_len
+            if is_multilabel_problem:
+                _emd_template["Threshold"] = self.thresh
+            _emd_template["IsMultilabelClassificationProblem"] = is_multilabel_problem
+        else:
+            is_multilabel_problem = False
+            if self._data is not None:
+                is_multilabel_problem = (
+                    True if len(self._data._label_cols) > 1 else False
+                )
+                _emd_template["TextColumns"] = self._data._text_cols
+                _emd_template["LabelColumns"] = self._data._label_cols
+            # populate this. First rely on user input followed by the information in the data handle
+            _emd_template["Label"] = self._l2id
+            if is_multilabel_problem:
+                _emd_template["Threshold"] = self.thresh
+            _emd_template["IsMultilabelClassificationProblem"] = is_multilabel_problem
+            _emd_template["prompt"] = self._llm.backup_prompt
+            _emd_template["examples"] = self._llm.examples
+
         return _emd_template
 
     def show_results(self, rows=5, **kwargs):
@@ -534,6 +818,34 @@ class TextClassifier(ArcGISModel):
 
         :return: dataframe
         """
+        if self._backbone == "llm":
+            if not self._data._is_empty:
+                if not len(self._data._valid_df):
+                    raise Exception(
+                        "Validation set is empty. Data object must not be empty or None."
+                    )
+
+                validation_dataframe = self._data._valid_df
+                predictions = [
+                    x[1]
+                    for x in self.predict(
+                        validation_dataframe[self._data._text_cols].tolist()
+                    )
+                ]
+                labels = [
+                    x[0] for x in validation_dataframe[self._data._label_cols].values
+                ]
+                df = pd.DataFrame(
+                    {
+                        "Text": validation_dataframe[self._data._text_cols].tolist(),
+                        "target": labels,
+                        "prediction": predictions,
+                    }
+                )
+                return df.style.hide(axis="index")
+            else:
+                raise Exception("Data object supplied should not be None.")
+
         self._check_requisites()
         if kwargs.get("thresh") is None and self.is_multilabel_problem:
             kwargs.update({"thresh": self.thresh})
@@ -547,6 +859,7 @@ class TextClassifier(ArcGISModel):
 
         :return: a floating point number depicting the accuracy of the classification model.
         """
+        self._check_requisites()
         try:
             self._check_requisites()
         except Exception as e:
@@ -554,7 +867,11 @@ class TextClassifier(ArcGISModel):
             if acc:
                 return acc
             else:
-                self.logger.error("Metric not found in the loaded model")
+                if self._backbone == "llm":
+                    self.logger.error(f"{e}")
+                else:
+                    self.logger.error(f"Metric not found in the loaded model")
+
         else:
             if not HAS_NUMPY:
                 self.logger.error("This function requires numpy.")
@@ -642,6 +959,12 @@ class TextClassifier(ArcGISModel):
         text_or_list            Required String or List. text or a list of
                                 texts for which we wish to find the class label(s).
         ---------------------   -------------------------------------------
+        prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
+                                LLM family.
+
+                                This parameter use to describe the task and guardrails for the task.
+
+        ---------------------   -------------------------------------------
         show_progress           optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
@@ -671,6 +994,57 @@ class TextClassifier(ArcGISModel):
 
                  * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
+
+        if self._backbone == "llm":
+            if self.is_multilabel_problem:
+                raise Exception(
+                    "Multi-label classification is not supported when the selected backbone is of llm "
+                    "family."
+                )
+            if batch_size == 64:
+                batch_size = 16
+            preds = self._llm.process(
+                text_or_list,
+                show_progress=show_progress,
+                task="learn_text",
+                batch_size=batch_size,
+            )
+            results = []
+            # Since LLM does not confine itself to the given labels
+            if self._data._is_empty:
+                classes = []
+                # check for the cases when from_model loads and empty data with classes
+                if getattr(self._data, "classes", None):
+                    classes = self._data.classes
+
+            else:
+                classes = self._data.classes
+
+            for i in preds.values():
+                if isinstance(i, dict):
+                    results += [i.values()]
+                elif isinstance(i, (str, list)):
+                    temp_val = []
+
+                    if isinstance(i, str):
+                        i = [i]
+
+                    # There are some instances where extra information are not generated with \n as separator.
+                    for value in i:
+                        for j in re.split("[- ]", value):
+                            if j in classes:
+                                temp_val.append(j)
+
+                    # check if any value is there. if there is no match put empty string
+                    if not len(temp_val):
+                        temp_val = [""]
+                    results += temp_val
+
+            if isinstance(text_or_list, str):
+                text_or_list = [text_or_list]
+            results = [(text, pred) for text, pred in zip(text_or_list, results)]
+            return results
+
         if explain:
             try:
                 import shap
@@ -754,6 +1128,8 @@ class TextClassifier(ArcGISModel):
         if getattr(self._data, "_is_empty", False):
             if self._data.emd_path:
                 copy_metrics(self._data.emd_path, path, model_characteristics_folder)
+            return
+        if not len(self._data._valid_df):
             return
         validation_dataframe = self._data._valid_df.sample(n=5)
         if self.is_multilabel_problem:
@@ -843,7 +1219,11 @@ class TextClassifier(ArcGISModel):
                 labels = [
                     x[0] for x in validation_dataframe[self._data._label_cols].values
                 ]
-                target_names = self.learn.model._config.label2id.keys()
+                if self._backbone == "llm":
+                    target_names = self._l2id
+                else:
+                    target_names = self.learn.model._config.label2id.keys()
+
                 if len(target_names) != len(set(labels)):
                     warnings.warn(
                         f'Validation dataset classes {list(set(labels))} does not match the training dataset \
@@ -851,13 +1231,27 @@ classes {list(target_names)}, you could use "stratify=True" with prepare_textdat
 samples. Metrics are only being calculated for classes present in the validation dataset.'
                     )
                     target_names = set(labels)
-                output_dict = classification_report(
-                    labels,
-                    predictions,
-                    target_names=target_names,
-                    zero_division=1,
-                    output_dict=True,
-                )
+
+                if isinstance(target_names, set):
+                    target_names = list(target_names)
+
+                if self._backbone == "llm":
+                    output_dict = classification_report(
+                        labels,
+                        predictions,
+                        labels=target_names,
+                        target_names=target_names,
+                        zero_division=1,
+                        output_dict=True,
+                    )
+                else:
+                    output_dict = classification_report(
+                        labels,
+                        predictions,
+                        target_names=target_names,
+                        zero_division=1,
+                        output_dict=True,
+                    )
 
             return self._create_dataframe_from_dict(output_dict)
 
@@ -882,6 +1276,9 @@ samples. Metrics are only being calculated for classes present in the validation
 
     def get_misclassified_records(self):
         """
+        This method is not supported when the backbone is configured as llm/mistral.
+
+
         :return: get misclassified records for this classification model.
         """
         self._check_requisites()
@@ -976,6 +1373,10 @@ samples. Metrics are only being calculated for classes present in the validation
                 key=self.learn.model._config.label2id.get,
             )
             explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
+            text_or_list = [
+                text if len(text.split(" ")) > 1 else text + "  "
+                for text in text_or_list
+            ]
             self.shap_values = explainer(text_or_list)
             shap.plots.text(self.shap_values)
 
@@ -1001,3 +1402,32 @@ samples. Metrics are only being calculated for classes present in the validation
         )[0]
         results = torch.softmax(logits, dim=1).detach().cpu().numpy()
         return results
+
+    def plot_losses(self):
+        """
+        Plot validation and training losses after fitting the model.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
+
+        """
+        if self._backbone != "llm":
+            super().plot_losses()
+        else:
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
+
+    def unfreeze(self):
+        """
+        Unfreezes the earlier layers of the model for fine-tuning.
+
+        This method is not supported when the backbone is configured as llm/mistral.
+
+        """
+        if self._backbone != "llm":
+            super().unfreeze()
+        else:
+            raise Exception(
+                f"This method is not supported when the backbone is configured as {self._submodel}."
+            )

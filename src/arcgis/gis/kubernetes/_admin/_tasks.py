@@ -324,7 +324,7 @@ class TaskManager(_BaseKube):
                                specified item.  For notebook server tasks use: `ExecuteNotebook`,
                                for Insights notebook use: `UpdateInsightsWorkbook`. Use
                                `ExecuteSceneCook` to cook scene tiles. Use `ExecuteWorkflowManager`
-                               to run workflow manager tasks.
+                               to run workflow manager tasks. For data pipelines, use `RunDataPipeline`.
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------

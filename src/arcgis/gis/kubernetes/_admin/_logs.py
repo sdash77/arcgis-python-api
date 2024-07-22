@@ -14,7 +14,7 @@ _log = logging.getLogger()
 ########################################################################
 class LogManager(_BaseKube):
     """
-    Helper class for the management of logs by administrators.
+    Helper class for the management of Kubernetes logs by administrators.
 
     Logs are the transaction records written by the various components
     of ArcGIS Server.  You can query the logs, change various log settings,

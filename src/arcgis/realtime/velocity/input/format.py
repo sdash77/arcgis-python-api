@@ -94,9 +94,9 @@ class RssFormat(_FormatBase):
         properties_dict = {}
 
         if self.build_geometry_from_fields is not None:
-            properties_dict[
-                RssFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY
-            ] = self.build_geometry_from_fields
+            properties_dict[RssFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY] = (
+                self.build_geometry_from_fields
+            )
         if self.x_field is not None:
             properties_dict[RssFormat._X_FIELD_KEY] = self.x_field
         if self.y_field is not None:
@@ -110,9 +110,9 @@ class RssFormat(_FormatBase):
         if self.geometry_field is not None:
             properties_dict[RssFormat._GEOMETRY_FIELD_KEY] = self.geometry_field
         if self.geometry_field_format is not None:
-            properties_dict[
-                RssFormat._GEOMETRY_FIELD_FORMAT_KEY
-            ] = self.geometry_field_format
+            properties_dict[RssFormat._GEOMETRY_FIELD_FORMAT_KEY] = (
+                self.geometry_field_format
+            )
         if self.date_format is not None:
             properties_dict[RssFormat._DATE_FORMAT_KEY] = self.date_format
 
@@ -187,9 +187,9 @@ class DelimitedFormat(_FormatBase):
         properties_dict = {}
 
         if self.build_geometry_from_fields is not None:
-            properties_dict[
-                DelimitedFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY
-            ] = self.build_geometry_from_fields
+            properties_dict[DelimitedFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY] = (
+                self.build_geometry_from_fields
+            )
         if self.x_field is not None:
             properties_dict[DelimitedFormat._X_FIELD_KEY] = self.x_field
         if self.y_field is not None:
@@ -203,16 +203,16 @@ class DelimitedFormat(_FormatBase):
         if self.geometry_field is not None:
             properties_dict[DelimitedFormat._GEOMETRY_FIELD_KEY] = self.geometry_field
         if self.geometry_field_format is not None:
-            properties_dict[
-                DelimitedFormat._GEOMETRY_FIELD_FORMAT_KEY
-            ] = self.geometry_field_format
+            properties_dict[DelimitedFormat._GEOMETRY_FIELD_FORMAT_KEY] = (
+                self.geometry_field_format
+            )
         if self.date_format is not None:
             properties_dict[DelimitedFormat._DATE_FORMAT_KEY] = self.date_format
 
         if self.record_terminator is not None:
-            properties_dict[
-                DelimitedFormat._RECORD_TERMINATOR_KEY
-            ] = self.record_terminator
+            properties_dict[DelimitedFormat._RECORD_TERMINATOR_KEY] = (
+                self.record_terminator
+            )
         if self.field_delimiter is not None:
             properties_dict[DelimitedFormat._FIELD_DELIMITER_KEY] = self.field_delimiter
         if self.has_header_row is not None:
@@ -358,9 +358,9 @@ class JsonFormat(_FormatBase):
         properties_dict = {}
 
         if self.build_geometry_from_fields is not None:
-            properties_dict[
-                JsonFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY
-            ] = self.build_geometry_from_fields
+            properties_dict[JsonFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY] = (
+                self.build_geometry_from_fields
+            )
         if self.x_field is not None:
             properties_dict[JsonFormat._X_FIELD_KEY] = self.x_field
         if self.y_field is not None:
@@ -374,9 +374,9 @@ class JsonFormat(_FormatBase):
         if self.geometry_field is not None:
             properties_dict[JsonFormat._GEOMETRY_FIELD_KEY] = self.geometry_field
         if self.geometry_field_format is not None:
-            properties_dict[
-                JsonFormat._GEOMETRY_FIELD_FORMAT_KEY
-            ] = self.geometry_field_format
+            properties_dict[JsonFormat._GEOMETRY_FIELD_FORMAT_KEY] = (
+                self.geometry_field_format
+            )
         if self.date_format is not None:
             properties_dict[JsonFormat._DATE_FORMAT_KEY] = self.date_format
         if self.root_node is not None:
@@ -384,9 +384,9 @@ class JsonFormat(_FormatBase):
         if self.flatten is not None:
             properties_dict[JsonFormat._FLATTEN_KEY] = self.flatten
         if self.field_flattening_exemptions is not None:
-            properties_dict[
-                JsonFormat._FIELD_FLATTENING_EXEMPTIONS_KEY
-            ] = self.field_flattening_exemptions
+            properties_dict[JsonFormat._FIELD_FLATTENING_EXEMPTIONS_KEY] = (
+                self.field_flattening_exemptions
+            )
 
         if bool(properties_dict):
             result_dict["properties"] = properties_dict
@@ -466,9 +466,9 @@ class XMLFormat(_FormatBase):
         properties_dict = {}
 
         if self.build_geometry_from_fields is not None:
-            properties_dict[
-                XMLFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY
-            ] = self.build_geometry_from_fields
+            properties_dict[XMLFormat._BUILD_GEOMETRY_FROM_FIELDS_KEY] = (
+                self.build_geometry_from_fields
+            )
         if self.x_field is not None:
             properties_dict[XMLFormat._X_FIELD_KEY] = self.x_field
         if self.y_field is not None:
@@ -482,9 +482,9 @@ class XMLFormat(_FormatBase):
         if self.geometry_field is not None:
             properties_dict[XMLFormat._GEOMETRY_FIELD_KEY] = self.geometry_field
         if self.geometry_field_format is not None:
-            properties_dict[
-                XMLFormat._GEOMETRY_FIELD_FORMAT_KEY
-            ] = self.geometry_field_format
+            properties_dict[XMLFormat._GEOMETRY_FIELD_FORMAT_KEY] = (
+                self.geometry_field_format
+            )
         if self.date_format is not None:
             properties_dict[XMLFormat._DATE_FORMAT_KEY] = self.date_format
         if self.root_node is not None:
@@ -492,9 +492,9 @@ class XMLFormat(_FormatBase):
         if self.flatten is not None:
             properties_dict[XMLFormat._FLATTEN_KEY] = self.flatten
         if self.field_flattening_exemptions is not None:
-            properties_dict[
-                XMLFormat._FIELD_FLATTENING_EXEMPTIONS_KEY
-            ] = self.field_flattening_exemptions
+            properties_dict[XMLFormat._FIELD_FLATTENING_EXEMPTIONS_KEY] = (
+                self.field_flattening_exemptions
+            )
 
         if bool(properties_dict):
             result_dict["properties"] = properties_dict

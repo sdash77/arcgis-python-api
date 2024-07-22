@@ -145,9 +145,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -223,7 +223,7 @@ class ChildPanopticSegmenter:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -303,9 +303,11 @@ class ChildPanopticSegmenter:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "False"
-                    if "test_time_augmentation" not in self.json_info
-                    else str(self.json_info["test_time_augmentation"]),
+                    "value": (
+                        "False"
+                        if "test_time_augmentation" not in self.json_info
+                        else str(self.json_info["test_time_augmentation"])
+                    ),
                     "displayName": "Perform test time augmentation while predicting",
                     "description": "If True, will merge predictions from flipped and rotated images.",
                 },
@@ -600,7 +602,7 @@ def detect_object_mask(
                 pred_class.append(pred_classes[batch_idx][n].tolist())
                 pred_score.append(pred_scores[batch_idx][n].tolist() * 100)
 
-    return np.array(all_contour_list), pred_score, pred_class
+    return np.array(all_contour_list, dtype=object), pred_score, pred_class
 
 
 def classify_image(

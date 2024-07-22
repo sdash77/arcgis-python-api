@@ -528,6 +528,8 @@ class CorpusBLEU(Callback):
 def predict_image(
     self, image, visualize, beam_width=5, max_len=20, visualize_attention=False
 ):
+    if self._is_multispectral:
+        raise Exception("This method is not supported for multispectral images.")
     import skimage
     import math
 

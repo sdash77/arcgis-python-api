@@ -6,9 +6,15 @@ from arcgis.geometry import Geometry
 from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCCollection class found in `arcgis.layers.OGCCollection` instead.",
+)
 class OGCCollection:
     """
     Represents a single OGC dataset
@@ -70,7 +76,7 @@ class OGCCollection:
         **kwargs,
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """
-        Queries the :class:`~arcgis.mapping.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
+        Queries the :class:`~arcgis.layers.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -115,7 +121,7 @@ class OGCCollection:
             params["offset"] += limit
             while True:
                 res = self._gis._con.get(url, params)
-                if res["numberReturned"] == 0:
+                if res == {} or res["numberReturned"] == 0:
                     break
                 elif return_all == False and len(results) >= limit:
                     results = results[:limit]
@@ -147,10 +153,12 @@ class OGCCollection:
             params["offset"] += limit
             while res["numberReturned"] > 0:
                 res = self._gis._con.get(url, params)
-                results["features"].extend(res["features"])
-                if results["numberReturned"] == 0:
+
+                if res == {} or res["numberReturned"] == 0:
                     break
-                elif return_all == False and len(results["features"]) >= limit:
+
+                results["features"].extend(res["features"])
+                if return_all == False and len(results["features"]) >= limit:
                     results["features"] = results["features"][:limit]
                     break
                 elif res["numberReturned"] < limit:
@@ -162,7 +170,8 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def get(self, feature_id: int) -> Dict[str, Any]:
         """
-        Gets an individual feature on the service
+        Gets an individual feature on the service. Needs to correspond
+        to an id of the feature.
 
         :return: Dict[str, Any]
         """
@@ -173,6 +182,11 @@ class OGCCollection:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCFeatureService class found in `arcgis.layers.OGCFeatureService` instead.",
+)
 class OGCFeatureService:
     """
     Represents the Hosted OGC Feature Server
@@ -233,7 +247,7 @@ class OGCFeatureService:
         """
         Yields all the OGC Feature Service Layers within the service.
 
-        :return: Iterator[:class:`~arcgis.mapping.ogc.OGCCollection`]
+        :return: Iterator[:class:`~arcgis.layers.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
         params = {"f": "json"}

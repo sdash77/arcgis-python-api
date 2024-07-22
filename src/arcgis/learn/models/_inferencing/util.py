@@ -59,7 +59,9 @@ def scale_batch(
     return img_scaled
 
 
-def normalize_batch(image_batch, model_info=None, normalization_stats=None):
+def normalize_batch(
+    image_batch, model_info=None, normalization_stats=None, prithvi=False
+):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
     scaled_mean_values = np.array(normalization_stats["scaled_mean_values"])[
@@ -68,9 +70,13 @@ def normalize_batch(image_batch, model_info=None, normalization_stats=None):
     scaled_std_values = np.array(normalization_stats["scaled_std_values"])[
         model_info["ExtractBands"]
     ].reshape(1, -1, 1, 1)
-    img_scaled = scale_batch(image_batch, model_info)
-    img_normed = (img_scaled - scaled_mean_values) / scaled_std_values
-    return img_normed
+    if prithvi:
+        img_normed = (image_batch - scaled_mean_values) / scaled_std_values
+        return img_normed
+    else:
+        img_scaled = scale_batch(image_batch, model_info)
+        img_normed = (img_scaled - scaled_mean_values) / scaled_std_values
+        return img_normed
 
 
 def ts_normalization(x, m, s):
@@ -465,7 +471,7 @@ def pixel_classify_superres_image(
 
     tiles, is_multispec = tensor(tiles), model_info.get("is_multispec")
     modarch = model_info.get("ModelArch", "UNet")
-    if modarch == "SR3":
+    if modarch.startswith("SR3"):
         norm_stats_a = model_info.get("image_stats", None)
         norm_stats_b = model_info.get("image_stats2", None)
         model_info["ExtractBands"] = list(range(tiles.shape[1]))

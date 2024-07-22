@@ -1,18 +1,18 @@
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Embed, Image, Sidecar, Text
+from utils.decorators import integration_test, profiles
 
 
+@integration_test
+@profiles.enterprise_and_agol
 class TestSideCar(unittest.TestCase):
     """Test Story Map Sidecar content"""
 
     def test_create_sidecar(self):
         print("Testing create")
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         sidecar = Sidecar("floating-panel")
 
@@ -28,7 +28,7 @@ class TestSideCar(unittest.TestCase):
 
     def add_content_to_sidecar(self):
         print("Testing adding")
-        gis = GIS(profile="your_online_profile")
+        gis = self.gis
 
         sidecar = Sidecar("floating-panel")
 

@@ -3,11 +3,13 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import KMLLayer
+from arcgis.layers._ogc import KMLLayer
+from utils.decorators import integration_test
 
 kml_url = "http://quickmap.dot.ca.gov/data/lcs.kml"
 
 
+@integration_test
 class TestKMLLayer(unittest.TestCase):
     """Tests working with a KML Layer"""
 

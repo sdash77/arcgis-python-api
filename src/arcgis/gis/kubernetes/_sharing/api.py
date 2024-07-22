@@ -1,18 +1,18 @@
 """
 This contains an API to work with and manage the Kubernetes Sharing API
 """
+
 from __future__ import annotations
 import io
 import os
 import copy
 import json
-import imghdr
 import logging
 import tempfile
 from typing import Any, Optional, Union
 import requests
-from urllib.parse import urlparse, urlunparse
-from urllib.request import urlretrieve
+from arcgis.gis._impl._con._puremagic_ext import find_puremagic_ext
+from urllib.parse import urlparse
 
 from arcgis.gis._impl._con import Connection
 from arcgis.gis._impl._con import (
@@ -23,9 +23,8 @@ from arcgis.gis._impl._con import (
 )
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
-from urllib.parse import urlparse
 
-__version__ = "2.2.0"
+__version__ = "2.3.1"
 
 _log = logging.getLogger(__name__)
 
@@ -155,6 +154,7 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
                 )
             else:
                 if token == api_key:
@@ -183,6 +183,7 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -558,14 +559,15 @@ class KbertnetesPy(object):
 
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
+                thumbnail = request.urlretrieve(thumbnail)[0]
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # Send the POST request, and return the id from the response
@@ -1159,14 +1161,15 @@ class KbertnetesPy(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         if hidden_members in [True, False]:
@@ -1511,14 +1514,15 @@ class KbertnetesPy(object):
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # If owner isn't specified, use the logged in user
@@ -1752,6 +1756,7 @@ class KbertnetesPy(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -1766,6 +1771,8 @@ class KbertnetesPy(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             Optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         Optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -1781,6 +1788,8 @@ class KbertnetesPy(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:
@@ -2013,25 +2022,27 @@ class KbertnetesPy(object):
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(large_thumbnail)
+                # download file
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
-                file_ext = os.path.splitext(large_thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(large_thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_large_thumbnail = large_thumbnail + "." + file_ext
-                        os.rename(large_thumbnail, new_thumbnail)
-                        large_thumbnail = new_large_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_large_thumbnail = large_thumbnail + "." + file_ext
+                    os.rename(large_thumbnail, new_large_thumbnail)
+                    large_thumbnail = new_large_thumbnail
             files.append(
                 (
                     "largeThumbnail",
@@ -2665,14 +2676,15 @@ class KbertnetesPy(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
+                # find file ext from url
+                file_ext = find_puremagic_ext(thumbnail)
+                # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
-                if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
-                    if file_ext in ("gif", "png", "jpeg"):
-                        new_thumbnail = thumbnail + "." + file_ext
-                        os.rename(thumbnail, new_thumbnail)
-                        thumbnail = new_thumbnail
+                # assign the file extension to the thumbnail
+                if file_ext in ("gif", "png", "jpeg"):
+                    new_thumbnail = thumbnail + "." + file_ext
+                    os.rename(thumbnail, new_thumbnail)
+                    thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         postdata.update(properties)
 

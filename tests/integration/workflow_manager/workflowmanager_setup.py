@@ -1,13 +1,14 @@
 import datetime
-
-from integration.dino_utils.dino_configs import DinoConfigs
+from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
 class WorkflowManagerSetup:
     """Tests the workflow manager Functionality"""
 
@@ -18,14 +19,18 @@ class WorkflowManagerSetup:
         Check if ArcGIS.com can be reached
         :return:
         """
-        custom_testing = True
+        custom_testing = False
+
+        _conf_reader = ConfigParser()
+        credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
+        _conf_reader.read(credential_path, "UTF-8")
 
         if custom_testing:
-            self.portal_url = "https://ps0015914.esri.com/portal"
-            self.portal_username = "admin"
-            self.portal_password = "..."
+            self.portal_url = _conf_reader["credentials"]["custom"]
+            self.portal_username = _conf_reader["credentials"]["username"]
+            self.portal_password = _conf_reader["credentials"]["password"]
             self.item_name = "Testing Item"
-            self.workflow_item_id = "9d559ce2e246482ba8726413c25550b1"
+            self.workflow_item_id = "77f3d5c6ab9d46d3ba17967c32b9b00e"
 
             self._gis = GIS(
                 url=self.portal_url,
@@ -39,12 +44,9 @@ class WorkflowManagerSetup:
             self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
         else:
-            _conf_reader = ConfigParser()
-            _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-            self.portal_url = _conf_reader["portalhostds"]["url"]
-            self.portal_username = _conf_reader["portalhostds"]["creator_user"]
-            self.portal_password = _conf_reader["portalhostds"]["creator_password"]
+            self.portal_url = _conf_reader["credentials"]["url"]
+            self.portal_username = _conf_reader["credentials"]["username"]
+            self.portal_password = _conf_reader["credentials"]["password"]
 
             self._gis = GIS(
                 url=self.portal_url,
@@ -55,7 +57,7 @@ class WorkflowManagerSetup:
             self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
             # Create Testing Workflow Item
-            self.item_name = "Testing_Item_" + str(datetime.datetime.now())
+            self.item_name = "PythonAPI_Tests_" + str(datetime.datetime.now())
 
             try:
                 self.workflow_item_id = self.workflow_manager_admin.create_item(
@@ -65,8 +67,18 @@ class WorkflowManagerSetup:
                 self.workflow_item = self._gis.content.get(self.workflow_item_id)
                 self.workflow_manager = WorkflowManager(self.workflow_item)
             except Exception as testException:
-                # TODO fix to account for bad setup
                 print(
                     "Error returned while creating Workflow Manager Item: "
                     + testException.__str__()
                 )
+
+    def remove_item(self):
+        try:
+            item = self._gis.content.get(self.workflow_item_id)
+            self.workflow_manager_admin.delete_item(item)
+
+        except Exception as testException:
+            print(
+                "Error returned while removing Workflow Manager Item at the end of testing: "
+                + testException.__str__()
+            )

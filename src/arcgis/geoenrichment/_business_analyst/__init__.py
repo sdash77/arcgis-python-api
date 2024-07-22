@@ -12,6 +12,7 @@ Business Analyst or ArcGIS Online.
     Accessing enrich using ArcGIS Online *does* consume credits.
 
 """
+
 from ._main import BusinessAnalyst, Country
 
 __all__ = ["BusinessAnalyst", "Country"]

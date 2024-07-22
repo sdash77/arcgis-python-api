@@ -26,7 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
 # necessary imports
 import math
 import traceback
@@ -602,7 +601,7 @@ class AxialBottleneck(nn.Module):
         if self.downsample is not None:
             identity = self.downsample(x)
 
-        out += identity
+        out = out + identity
         out = self.relu(out)
 
         return out
@@ -723,15 +722,15 @@ class DualPathXF(nn.Module):
         )  # (N, B, n_heads, head_nin)
 
         P_out = self.p2m_conv2(rearrange(ypa, "b i j h w -> b (i j) h w"))
-        P_out += P_identity
+        P_out = P_out + P_identity
         P_out = self.relu(P_out)
 
         M_out = self.mem_fc2(rearrange(ymb, "n b i j -> n b (i j)"))
-        M_out += M_identity
+        M_out = M_out + M_identity
         M_out = self.relu(M_out)
 
         M_ffn = self.mem_ffn(M_out)
-        M_out += M_ffn
+        M_out = M_out + M_ffn
         M_out = self.relu(M_out)
 
         return {"pixel": P_out, "memory": M_out}
@@ -1031,7 +1030,7 @@ class InstanceDiscLoss(nn.Module):
         # create logits and apply temperature
         logits = torch.einsum("bdhw,bkd->bkhw", mask_features, t)
         logits = logits[batch_indices, mask_indices]  # (torch.prod(target_sizes), H, W)
-        logits /= self.temp
+        logits = logits / self.temp
 
         # select target_masks
         m = target_mask[batch_indices, mask_indices]  # (torch.prod(target_sizes), H, W)

@@ -183,11 +183,6 @@ class FeatureClassifier(ArcGISModel):
 
         self._free_memory()
         backbone = complete_transformer_backbone_name(backbone, data.chip_size)
-        if not self._check_backbone_support(backbone):
-            raise Exception(
-                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
-            )
-
         self._check_dataset_support(data)
 
         self._backend = backend
@@ -195,6 +190,14 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
+            if not (
+                self._check_backbone_support(backbone)
+                or backbone in self._transformer_backbone_original_names()
+            ):
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
+
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
 
@@ -470,6 +473,9 @@ class FeatureClassifier(ArcGISModel):
 
         :return: prediction label and confidence
         """
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
+
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
@@ -574,9 +580,9 @@ class FeatureClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+            )
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(

@@ -10,7 +10,7 @@ class Mode(_BaseKube):
     @property
     def read_only(self) -> bool:
         """
-        Returns if the site is in read only mode.
+        Returns if the Kubernetes site is in read only mode.
 
         :return: bool
 

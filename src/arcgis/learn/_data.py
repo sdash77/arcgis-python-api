@@ -151,7 +151,7 @@ def _raise_conda_import_error(import_exception=import_exception):
         "-deep-learning-dependencies\n"
     )
     raise Exception(
-        f"{import_exception} \n\nThis module requires conda, python 3.7 "
+        f"{import_exception} \n\nThis module requires conda, python >=3.9 "
         f"and is currently supported on Windows.\n{installation_steps}\n"
     )
 
@@ -775,6 +775,8 @@ def prepare_textdata(
     ---------------------   -------------------------------------------
     text_columns            Optional string.
                             This parameter is mandatory when task is "classification" or "sequence_translation".
+                            This parameter is mandatory when task is `entity_recognition` task with input dataset_type
+                            as `csv`.
                             The column that will contain the input text.
     ---------------------   -------------------------------------------
     label_columns           Optional list.
@@ -835,7 +837,9 @@ def prepare_textdata(
     dataset_type            Optional list.
                             This parameter is mandatory when task is "entity_recognition"
                             Accepted data format
-                            for this model are - 'ner_json','BIO' or 'LBIOU'
+                            for this model are - 'ner_json','BIO' or 'LBIOU', 'csv'
+                            For `csv` dataset type. If an entity has multiple values. It should be
+                            separated by `,`.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
@@ -940,9 +944,14 @@ def prepare_textdata(
                 remove_urls=remove_urls,
             )
     elif task.lower() == "entity_recognition":
-        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
             from ._utils._ner_utils import _NERData
 
+            if dataset_type == "csv" and text_columns is None:
+                raise Exception(
+                    f"For entity_recognition task `text_columns` parameter  is required when the dataset_type parameter"
+                    f" is `csv`."
+                )
             if batch_size == 64:
                 batch_size = 8
             encoding = kwargs.get("encoding", "UTF-8")
@@ -955,6 +964,7 @@ def prepare_textdata(
                 val_split_pct=val_split_pct,
                 batch_size=batch_size,
                 encoding=encoding,
+                text_columns=text_columns,
             )
             if working_dir is not None:
                 data.working_dir = path = Path(os.path.abspath(working_dir))
@@ -963,16 +973,19 @@ def prepare_textdata(
                 data.working_dir = None
             if os.path.isfile(path):
                 path = os.path.dirname(path)
+
             _prepare_working_dir(path)
 
             return data
         else:
             logger = logging.getLogger()
             logger.error(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
             raise Exception(
-                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values "
+                f"are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`, `csv`"
             )
 
     else:
@@ -1180,9 +1193,7 @@ def prepare_tabulardata(
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
-    stratify = False
-    if kwargs.get("stratify") == True:
-        stratify = True
+    stratify = kwargs.pop("stratify", False)
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1305,7 +1316,7 @@ def prepare_data(
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use
+                            If the dataset_type is 'PointCloud' and 'PointCloudOD', use
                             :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
@@ -1319,13 +1330,11 @@ def prepare_data(
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'Imagenet'.
-                            This parameter is mandatory for data which are not
-                            exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            This parameter is mandatory for dataset
+                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
+                            'ChangeDetection', 'WNet_cGAN' and 'ObjectTracking'.
                             Note:
-                            For details on dataset_type please refer to this link
-                            https://pro.arcgis.com/en/pro-app/3.0/tool-reference/image-analyst/export-training-data-for-deep-learning.htm
+                            For details on dataset_type please refer to this `link <https://pro.arcgis.com/en/pro-app/latest/tool-reference/image-analyst/export-training-data-for-deep-learning.htm>`_.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1448,15 +1457,6 @@ def prepare_data(
                             Applies to single label feature classification,
                             object detection and pixel classification.
     ---------------------   -------------------------------------------
-    bands_of_interest       Optional list. List of spectral bands of interest.
-                            This will filter bands based on `bands_of_interest`.
-                            If we have bands [1, 2, 3, 4] in our dataset,
-                            but we are mainly interested in 2 and 3,
-                            Set `bands_of_interest=[2,3]`. Only those spectral bands
-                            will be considered for training, rest of the bands will
-                            be filtered out. Applicable only for
-                            dataset_type='PSETAE'.
-    ---------------------   -------------------------------------------
     timesteps_of_interest   Optional list. List of time steps of interest.
                             This will filter multi-temporal timesereis based
                             on `timesteps_of_interest`. If the dataset have
@@ -1466,9 +1466,9 @@ def prepare_data(
                             rest of the time-steps will be filtered out.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
-    channels_of_interest    Optional list. List of bands/channels of interest.
+    channels_of_interest    Optional list. List of spectral bands/channels of interest.
                             This will filter out bands from rasters of
-                            multi-temporal timesereis based on
+                            multi-temporal timeseries based on
                             `channels_of_interest` list. If we have bands
                             [0,1,2,3,4] in our dataset, but we are mainly
                             interested in 0, 1 and 2, Set
@@ -1862,7 +1862,9 @@ def prepare_data(
             from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
-            ds = gdal.Open(_im_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(_im_path)
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2515,6 +2517,9 @@ def prepare_data(
         databunch_kwargs["collate_fn"] = collate_fn
 
     elif dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]:
+        assert (
+            batch_size >= 2
+        ), f"dataset_type({dataset_type}) does not support a batch_size of less than 2."
         if dataset_type == "Labeled_Tiles":
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
         elif dataset_type == "MultiLabeled_Tiles":
@@ -2665,9 +2670,11 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
-            samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
-                il2.items[0].__str__()
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                    il2.items[0].__str__()
+                )
             if (
                 il[0].shape[0] != 3
                 or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
@@ -2787,7 +2794,7 @@ def prepare_data(
             kwargs_transforms["size"] = img_size
         kwargs_transforms["tfm_y"] = True
 
-    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+    elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO", "csv"]:
         from ._utils._ner_utils import _NERData
 
         if batch_size == 64:
@@ -2993,7 +3000,9 @@ def prepare_data(
         )
         img_type = "RGB"
         _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
-        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
         if (
             msimage_list_a[0].shape[0] > 3
             or msimage_list_b[0].shape[0] > 3
@@ -3039,11 +3048,13 @@ def prepare_data(
                     emd = json.load(f)
             data = None
             if emd is not None and emd["MetaDataMode"] == "RCNN_Masks":
-                data = prepare_pro_data(path, batch_size, val_split_pct)
+                data = prepare_pro_data(path, batch_size, val_split_pct, **kwargs)
             else:
                 raise Exception(f"Check MetaDataMode for the exported training data.")
         else:
-            data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+            data = prepare_object_tracking_data(
+                path, batch_size, val_split_pct, **kwargs
+            )
 
         data._is_multispectral = False
         data._extract_bands = None

@@ -68,7 +68,6 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 
 """
 
-
 from .env import HAS_TENSORFLOW, ARCGIS_ENABLE_TF_BACKEND
 
 if HAS_TENSORFLOW:
@@ -113,10 +112,8 @@ if HAS_FASTAI and HAS_TENSORFLOW:
     except:
         pass
 
-    tf_flatten_model = (
-        lambda m: sum(map(tf_flatten_model, m.layers), [])
-        if hasattr(m, "layers")
-        else [m]
+    tf_flatten_model = lambda m: (
+        sum(map(tf_flatten_model, m.layers), []) if hasattr(m, "layers") else [m]
     )
 
     tf_bn_types = (tf.keras.layers.BatchNormalization,)

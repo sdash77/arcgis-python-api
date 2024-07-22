@@ -13,11 +13,29 @@ from ._jobs import JobManager
 from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
+from arcgis.gis.tasks._schedule import Task
+from arcgis.gis.admin._livingatlas import (
+    LivingAtlas,
+    LivingAtlasJob,
+    LivingAtlasManager,
+)
 
 
 class KubernetesAdmin(_BaseKube):
     """
-    Kubernetes Administration Class
+    Kubernetes Administration Class. This class is not meant to be initialized
+    directly, but instead is returned by the _admin_ property on the
+    :class:`gis <arcgis.gis.GIS>` object when logged in as an administrator.
+
+    .. code-block:: python
+
+        #Usage Example:
+
+        >>> gis = GIS(profile="your_kubernetes_admin_profile")
+        >>> kube_admin = gis.admin
+        >>> kube_admin
+
+        <KubernetesAdmin at https://kubenetes.example.com/arcgis/admin>
     """
 
     _url = None
@@ -75,10 +93,10 @@ class KubernetesAdmin(_BaseKube):
     @property
     def overview(self) -> Overview:
         """
-        Provides access to the overview resource to access persisted cache
-        or real-time information.
+        Provides access to the :class:`~arcgis.gis.kubernetes.overview`
+        resource to access persisted cache or real-time information.
 
-        :return: Overview
+        :return: :class:`~arcgis.gis.kubernetes.Overview` object
 
         """
         url = f"{self._url}/overview"
@@ -90,7 +108,8 @@ class KubernetesAdmin(_BaseKube):
         """
         Provides access to the metrics viewer and metrics API tools.
 
-        :return: UsageStatistics
+        :return:
+            An :class:`~arcgis.gis.kubernetes.UsageStatistics` object.
 
         """
         url = f"{self._url}/usagestatistics"
@@ -99,7 +118,8 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def logs(self) -> LogManager:
-        """provides access to the Kubernetes Logs"""
+        """Accesses a :class:`~arcgis.gis.kubernetes.LogManager` object to
+        manage and query the Kubernetes logs."""
         if self._log is None:
             url = f"{self._url}/logs"
             self._log = LogManager(url, gis=self._gis)
@@ -108,6 +128,9 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def mode(self) -> Mode:
+        """Provides access to a :class:`~arcgis.gis.kubernetes.Mode` object
+        to help manage `service deployment modes <https://enterprise-k8s.arcgis.com/en/latest/administer/service-modes.htm>`_.
+        """
         if self._mode is None:
             self._mode = Mode(url=f"{self._url}/mode", gis=self._gis)
         return self._mode
@@ -116,14 +139,65 @@ class KubernetesAdmin(_BaseKube):
     @property
     def datastores(self) -> DataStores:
         """
-        The Datastore Manager allows the administrator to manage the registered datastores
+        Provides access to the _Datastore Manager_, allowing the administrator
+        to manage registered datastores.
 
-        :return: `DataStores`
+        :return: A Kubernetes :class:`~arcgis.gis.kubernetes.DataStores` object.
         """
         if self._ds is None:
             url = self._url + "/data"
             self._ds = DataStores(url=url, gis=self._gis)
         return self._ds
+
+    # ----------------------------------------------------------------------
+    def content(
+        self,
+        item_type: "ItemTypeEnum" | None = None,
+        sort_field: str = "created",
+        order: str = "asc",
+    ):
+        """
+        The portal content operation allows an administrator to return a
+        list of all items in the organization. Only available to
+        administrators with a privilege to view all items in the
+        organization.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        item_type                       Optional ItemTypeEnum. The item type to filter by.
+        ---------------------------     --------------------------------------------------------------------
+        sort_field                      Optional String. Field to sort by.
+        ---------------------------     --------------------------------------------------------------------
+        order                           Optional String. The sort order of the return data.
+        ===========================     ====================================================================
+
+        """
+        params: dict = {
+            "sortField": sort_field,
+            "sortOrder": order,
+            "f": "json",
+            "start": 1,
+            "num": 100,
+        }
+        if item_type:
+            params["types"] = item_type.value
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
+        session = self._gis._con._session
+        resp = session.get(url=url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while data["items"]:
+            for i in data["items"]:
+                yield Item(gis=self._gis, itemid=i["id"], itemdict=i)
+            if data.get("nextStart") == -1:
+                break
+            params["start"] = data["nextStart"]
+            resp = session.get(url=url, params=params)
+            data: dict = resp.json()
 
     # ----------------------------------------------------------------------
     @property
@@ -133,7 +207,8 @@ class KubernetesAdmin(_BaseKube):
         such as the configuration store, licenses, and deployment-wide
         security.
 
-        :return: SystemManager
+        :return:
+            :class:`~arcgis.gis.kubernetes.SystemManager` object.
 
         """
         if self._sm is None:
@@ -145,11 +220,11 @@ class KubernetesAdmin(_BaseKube):
     @property
     def jobs(self) -> JobManager:
         """
-        This resource is a collection of the jobs (asynchronous operations)
-        created in your deployment. When operations that support asynchronous
-        executions are run with the async option enabled, a new job entry is
-        created that can be queried for its current status and messages.
-
+        This resource is a collection of the asynchronous
+        :class:`jobs <arcgis.gis.kubernetes.Job>` created in your
+        deployment. When operations that support asynchronous executions are
+        run with the async option enabled, a new job entry is created that
+        can be queried for its current status and messages.
         """
         if self._jobs is None:
             url = self._url + "/jobs"
@@ -160,7 +235,8 @@ class KubernetesAdmin(_BaseKube):
     @property
     def license(self) -> LicenseManager:
         """
-        provides a set of tools to access and manage user licenses and
+        Provides access to the :class:`~arcgis.gis.kubernetes.LicenseManager`,
+        and its set of tools to access and manage user licenses and
         entitlements.
         """
         if self._license is None:
@@ -171,7 +247,11 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def category_schema(self):
-        """This resource allows for the setting and manipulating of catagory schemas."""
+        """This resource allows for the setting and manipulating of catagory schemas.
+
+        :returns:
+            :class:`~arcgis.gis.admin.CategoryManager` object
+        """
         if self._category_schema is None:
             from arcgis.gis.admin._catagoryschema import CategoryManager
 
@@ -199,10 +279,11 @@ class KubernetesAdmin(_BaseKube):
         types: Optional[str] = None,
     ):
         """
-        This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
+        This method allows organization admins to see all scheduled tasks
+        on the organization.
 
         ================  ===============================================================================
-        **Parameter**      **Description**
+        **Parameter**     **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -210,18 +291,19 @@ class KubernetesAdmin(_BaseKube):
         ----------------  -------------------------------------------------------------------------------
         user              Optional User. Search for tasks for a single user.
         ----------------  -------------------------------------------------------------------------------
-        types             Optional String. The type of notebook execution for the item.  This can be
-                          `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
+        types             Optional String. The type of notebook execution for the item:
+
+                          * `ExecuteNotebook`
+                          * `UpdateInsightsWorkbook`
         ================  ===============================================================================
 
 
-        :return: List of Tasks
+        :return: List of :class:`Tasks <arcgis.gis.tasks.Task>`.
 
         """
-        _tasks = []
-        num = 100
-        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {"f": "json", "start": 1, "num": num}
+        num: int = 100
+        url: str = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params: dict = {"f": "json", "start": 1, "num": num}
         if item:
             params["itemId"] = item.itemid
         if not active is None:
@@ -230,18 +312,23 @@ class KubernetesAdmin(_BaseKube):
             params["userFilter"] = user.username
         if types:
             params["types"] = types
-        res = self._con.get(url, params)
-        start = res["nextStart"]
-        _tasks.extend(res["tasks"])
+        start: int = 1
         while start != -1:
             params["start"] = start
             params["num"] = num
             res = self._con.get(url, params)
-            if len(res["tasks"]) == 0:
+            if len(res.get("tasks", [])) == 0:
                 break
-            _tasks.extend(res["tasks"])
+            else:
+                for task in res.get("tasks", []):
+                    owner: str = task["userId"]
+                    task_id: str = task["id"]
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
+                    yield Task(url=task_url, gis=self._gis)
+
             start = res["nextStart"]
-        return _tasks
 
     # ----------------------------------------------------------------------
     @property
@@ -255,8 +342,9 @@ class KubernetesAdmin(_BaseKube):
     @property
     def social_providers(self):
         """
-        This resource allows for the setting and configuration of the social providers
-        for a GIS.
+        Accesses the :class:`~arcgis.gis.admin.SocialProviders` resource to
+        allow for the setting and configuration of the social providers
+        for the organization.
         """
         if self._sp is None:
             from arcgis.gis.admin._socialproviders import SocialProviders
@@ -268,7 +356,8 @@ class KubernetesAdmin(_BaseKube):
     @property
     def metadata(self):
         """
-        returns a set of tools to work with ArcGIS Enterprise metadata
+        Accesses the :class:`~arcgis.gis.admin.MetadataManager` which
+        provides a set of tools to work with the organization's metadata
         settings.
         """
         if self._metadata is None:
@@ -280,7 +369,8 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def organizations(self):
-        """Provides access to the Organizations settings"""
+        """Provides access to the :class:`~arcgis.gis.kubernetes.KubeOrganizations`
+        object to work with the organization's settings."""
         if self._organizations is None:
             from ._organizations import KubeOrganizations
 
@@ -291,7 +381,9 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def services(self):
-        """Provides access to managing the services on the site"""
+        """Provides access to the Kubernetes
+        :class:`~arcgis.gis.kubernetes.ServicesManager` object for the site
+        """
         if self._services is None:
             from ._services import ServicesManager
 
@@ -302,7 +394,10 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def services_catalog(self):
-        """Provides access to work with the services on the site"""
+        """Provides access to the kubernetes
+        :class:`~arcgis.gis.kubernetes._server.KubeServiceDirectory` work with the
+        services on the site.
+        """
         if self._catalog is None:
             from arcgis.gis.kubernetes._server import KubeServiceDirectory
 
@@ -313,7 +408,8 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def uploads(self):
-        """Gets an object to work with the site uploads."""
+        """Gets the :class:`~arcgis.gis.kubernetes.Uploads` object to work
+        with the site uploads."""
         if self._uploads is None:
             from ._uploads import Uploads
 
@@ -325,9 +421,11 @@ class KubernetesAdmin(_BaseKube):
     @property
     def security(self) -> "KubeSecurity":
         """
-        Gets an object to work with the site's security settings
+        Gets a :class:`~arcgis.gis.kubernetes.KubeSecurity` object to work
+        with the site's security settings
 
-        :return: KubeSecurity
+        :return:
+            :class:`~arcgis.gis.kubernetes.KubeSecurity` object.
         """
         if self._security is None:
             from arcgis.gis.kubernetes._admin._security import KubeSecurity
@@ -352,7 +450,8 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def webhooks(self):
-        """Provides access to Portal's WebHook Manager"""
+        """Provides access to the organiztion's
+        :class:`Webhook Manager <arcgis.gis.admin.WebHookManager>`."""
         if self._whm is None and self._gis.version >= [6, 4]:
             from arcgis.gis.admin._wh import WebhookManager
 

@@ -1,8 +1,6 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8050\src")
 import unittest
 from arcgis.features import FeatureSet
+from utils.decorators import integration_test
 
 try:
     import arcpy
@@ -33,6 +31,7 @@ fs = FeatureSet.from_geojson(
 
 
 @unittest.skipIf(SKIPNOARCPY, "ArcPY cannot be imported!")
+@integration_test
 class TestArcPyFeatureSet(unittest.TestCase):
     def test_from_arcpy(self):
         """tests the featureset from arcpy"""

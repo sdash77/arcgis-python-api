@@ -125,9 +125,9 @@ def tile_to_batch(
             x * inner_width : x * inner_width + model_width,
         ]
         sub_pixel_block_shape = sub_pixel_block.shape
-        batch[
-            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
-        ] = sub_pixel_block
+        batch[b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]] = (
+            sub_pixel_block
+        )
 
     return batch, batch_height, batch_width
 
@@ -156,7 +156,7 @@ class ChildInstanceDetector:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -383,6 +383,8 @@ def pixel_mask_image(
                         cv2.RETR_TREE,
                         cv2.CHAIN_APPROX_NONE,
                     )
+                    contours = list(contours)
+
                     if len(contours) > 0:
                         hierarchy = hierarchy[0]
                         for c_idx, contour in enumerate(contours):

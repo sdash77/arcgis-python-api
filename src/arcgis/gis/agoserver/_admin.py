@@ -8,9 +8,9 @@ from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis import GIS
 
-_scenemgr = LazyLoader("arcgis.mapping._scenelyrs._lyrs")
+_scenemgr = LazyLoader("arcgis.layers._scenelyrs._lyrs")
 _featuremgr = LazyLoader("arcgis.features.managers")
-_mapservermgr = LazyLoader("arcgis.mapping._types")
+_mapservermgr = LazyLoader("arcgis.layers._types")
 _imagemgr = LazyLoader("arcgis.raster._layer")
 
 _log = logging.getLogger()
@@ -70,9 +70,7 @@ class AGOLServerManager:
         return InsensitiveDict(resp)
 
     @lru_cache(maxsize=50)
-    def get(
-        self, name: str
-    ) -> Union[
+    def get(self, name: str) -> Union[
         _mapservermgr.VectorTileLayerManager,
         _imagemgr.ImageryLayerCacheManager,
         _scenemgr.SceneLayerManager,
@@ -88,11 +86,11 @@ class AGOLServerManager:
         name                   Required String. The name of the service.
         ==================     ====================================================================
 
-        :returns: Union[:class:`~arcgis.mapping.VectorTileLayer`,
+        :returns: Union[:class:`~arcgis.layers.VectorTileLayer`,
                         :class:`~arcgis.raster.ImageryLayerCacheManager`,
-                        :class:`~arcgis.mapping.SceneLayerManager`,
+                        :class:`~arcgis.layers.SceneLayerManager`,
                         :class:`~arcgis.features.managers.FeatureLayerCollectionManager`,
-                        :class:`~arcgis.mapping.MapImageLayerManager`]
+                        :class:`~arcgis.layers.MapImageLayerManager`]
         """
 
         if self.is_tile_server == False:

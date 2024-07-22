@@ -30,7 +30,6 @@ except Exception as e:
 
 
 class Pix2Pix(ArcGISModel):
-
     """
     Creates a model object which generates fake images of type B from type A.
 
@@ -203,9 +202,9 @@ class Pix2Pix(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
+            )
         _emd_template["ModelType"] = "Pix2Pix"
         _emd_template["n_intput_channel"] = self._data.n_channel
         _emd_template["NormalizationStats_b"] = {

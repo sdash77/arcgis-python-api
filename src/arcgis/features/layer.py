@@ -5,7 +5,10 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
+
 from __future__ import annotations
+from arcgis.auth.tools import LazyLoader
+from arcgis.auth import EsriSession
 from datetime import datetime
 import json
 import os
@@ -13,7 +16,7 @@ from re import S, search
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
-from arcgis._impl.common import _utils
+from arcgis._impl.common import _query
 from arcgis._impl.common._filters import (
     StatisticFilter,
     GeometryFilter,
@@ -22,6 +25,7 @@ from arcgis._impl.common._filters import (
 )
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from functools import lru_cache
 from arcgis.features._async import EditFeatureJob
 
 from .managers import (
@@ -34,7 +38,23 @@ from .feature import Feature, FeatureSet
 from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
 
+_arcgis = LazyLoader("arcgis")
 
+
+@lru_cache(maxsize=255)
+def _is_OIL(url: str, gis: _arcgis.gis.GIS) -> bool:
+    """checks if the layer is an OrientedImageryLayer"""
+    resp = gis.session.get(
+        url=url,
+        params={
+            "f": "json",
+        },
+    )
+    resp.raise_for_status()
+    return resp.json().get("type", None) == "Oriented Imagery Layer"
+
+
+###########################################################################
 class FeatureLayer(Layer):
     """
     The ``FeatureLayer`` class is the primary concept for working with :class:`~arcgis.features.Feature` objects
@@ -53,6 +73,7 @@ class FeatureLayer(Layer):
 
     _metadatamanager = None
     _renderer = None
+    _umgr = None
 
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
@@ -73,6 +94,30 @@ class FeatureLayer(Layer):
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
         self._time_filter = None
+
+    @property
+    @lru_cache(maxsize=255)
+    def _is_3d(self):
+        if "infoFor3D" in self.properties and self.properties.infoFor3D is not None:
+            return True
+        else:
+            return False
+
+    @property
+    def _upload_manager(self) -> "UploadManager":
+        """Provides the upload endpoint for a feature layer"""
+
+        if self._umgr is None:
+            if self._gis._is_arcgisonline or (
+                "capabilities" in self.container.properties
+                and self.container.properties["capabilities"].find("Uploads") > -1
+            ):
+                from ._uploads.upload import UploadManager
+
+                self._umgr = UploadManager(layer=self)
+            else:
+                return None
+        return self._umgr
 
     @property
     def field_groups(self) -> dict[str, Any]:
@@ -370,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
@@ -643,7 +692,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
-        return self._con.post(url, params)
+        return self._con.post_multipart(url, params)
 
     # ----------------------------------------------------------------------
     def _update_attachment(
@@ -686,7 +735,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url, postdata=params, files=files)
+        res = self._con.post_multipart(path=url, postdata=params, files=files)
         return res
 
     # ----------------------------------------------------------------------
@@ -1831,6 +1880,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features: Optional[bool] = None,
         as_df: bool = False,
         datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
+        time_reference_unknown_client: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -1839,11 +1889,23 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
         **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
-        where                               Optional string. The default is 1=1. The selection sql statement.
+        where                               Optional string. SQL-92 WHERE clause syntax on the fields in the layer
+                                            is supported for most data sources. Some data sources have restrictions
+                                            on what is supported. Hosted feature services in ArcGIS Enterprise running
+                                            on a spatiotemporal data source only support a subset of SQL-92.
+                                            Below is a list of supported SQL-92 with spatiotemporal-based feature services:
+
+
+                                            ( '<=' | '>=' | '<' | '>' | '=' | '!=' | '<>' | LIKE )
+                                            (AND | OR)
+                                            (IS | IS_NOT)
+                                            (IN | NOT_IN) ( '(' ( expr ( ',' expr )* )? ')' )
+                                            COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
         -------------------------------     --------------------------------------------------------------------
-        out_fields                          Optional List of field names to return. Field names can be specified
-                                            either as a List of field names or as a comma separated string.
-                                            The default is "*", which returns all the fields.
+        out_fields                          Optional list of fields to be included in the returned result set.
+                                            This list is a comma-delimited list of field names. You can also specify
+                                            the wildcard "*" as the value of this parameter. In this case, the query
+                                            results include all the field values.
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -1851,6 +1913,11 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
+
+                                            .. note::
+                                                There might be a drop in performance if the layer/table data
+                                                source resides in an enterprise geodatabase and more than
+                                                1,000 object_ids are specified.
         -------------------------------     --------------------------------------------------------------------
         distance                            Optional integer. The buffer distance for the input geometries.
                                             The distance unit is specified by units. For example, if the
@@ -1861,7 +1928,8 @@ class FeatureLayer(Layer):
                                             unit is not specified, the unit is derived from the geometry spatial
                                             reference. If the geometry spatial reference is not specified, the
                                             unit is derived from the feature service data spatial reference.
-                                            This parameter only applies if supportsQueryWithDistance is true.
+                                            This parameter only applies if `supportsQueryWithDistance` is true.
+
                                             Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
                                                     esriSRUnit_Foot | esriSRUnit_Kilometer |
                                                     esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
@@ -1900,11 +1968,18 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
                                             fields specified in out_fields. This parameter applies only if the
-                                            supportsAdvancedQueries property of the layer is true.
+                                            `supportsAdvancedQueries` property of the layer is true. This parameter
+                                            can be used with return_count_only to return the count of distinct
+                                            values of subfields.
+
+                                            .. note::
+                                                Make sure to set return_geometry to False if this is set to True.
+                                                Otherwise, reliable results will not be returned.
         -------------------------------     --------------------------------------------------------------------
         return_ids_only                     Optional boolean. Default is False.  If true, the response only
                                             includes an array of object IDs. Otherwise, the response is a
-                                            feature set.
+                                            feature set. When object_ids are specified, setting this parameter to
+                                            true is invalid.
         -------------------------------     --------------------------------------------------------------------
         return_count_only                   Optional boolean. If true, the response only includes the count
                                             (number of features/records) that would be returned by a query.
@@ -1918,7 +1993,7 @@ class FeatureLayer(Layer):
                                             returnCountOnly=true, the response will return both the count and
                                             the extent.
                                             The default is false. This parameter applies only if the
-                                            supportsReturningQueryExtent property of the layer is true.
+                                            `supportsReturningQueryExtent` property of the layer is true.
         -------------------------------     --------------------------------------------------------------------
         order_by_fields                     Optional string. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
@@ -1990,7 +2065,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         return_centroid                     Optional boolean. Used to return the geometry centroid associated
                                             with each feature returned. If true, the result includes the geometry
-                                            centroid. The default is false.
+                                            centroid. The default is false. Only supported on layer with
+                                            polygon geometry type.
         -------------------------------     --------------------------------------------------------------------
         return_all_records                  Optional boolean. When True, the query operation will call the
                                             service until all records that satisfy the where_clause are
@@ -2131,337 +2207,48 @@ class FeatureLayer(Layer):
 
 
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
 
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if result_type is not None:
-            params["resultType"] = result_type
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_true_curves is not None:
-            params["returnTrueCurves"] = return_true_curves
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnGeometry"] = return_geometry
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCentroid"] = return_centroid
-        params["returnCountOnly"] = return_count_only
-        params["returnExtentOnly"] = return_extent_only
-        params["returnIdsOnly"] = return_ids_only
-        params["returnZ"] = return_z
-        params["returnM"] = return_m
-        if not datum_transformation is None:
-            params["datumTransformation"] = datum_transformation
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_extent_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if quantization_parameters:
-            params["quantizationParameters"] = quantization_parameters
-        if multipatch_option:
-            params["multipatchOption"] = multipatch_option
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if out_sr:
-            params["outSR"] = out_sr
-        if max_allowable_offset:
-            params["maxAllowableOffset"] = max_allowable_offset
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if geometry_precision:
-            params["geometryPrecision"] = geometry_precision
-        if object_ids:
-            params["objectIds"] = object_ids
-        if distance:
-            params["distance"] = distance
-        if units:
-            params["units"] = units
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
-            for key, val in geometry_filter.filter:
-                params[key] = val
-        elif geometry_filter and isinstance(geometry_filter, dict):
-            for key, val in geometry_filter.items():
-                params[key] = val
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if (
-                    key
-                    in (
-                        "returnCountOnly",
-                        "returnExtentOnly",
-                        "returnIdsOnly",
-                    )
-                    and val
-                ):
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            # we cannot assume that because return_all_records is False it means we specified something else
-            if return_count_only or return_extent_only or return_ids_only:
-                # Remove to avoid missing when wanting counts only
-                if "orderByFields" in params:
-                    del params["orderByFields"]
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        # need to make edits to out fields if more than one to avoid server error. Split and use only first
-        out_fields = params["outFields"]
-        params["outFields"] = params["outFields"].split(",")[0]
-        if where == "1=1":
-            if "objectIdField" in self.properties:
-                params["where"] = f"{self.properties.objectIdField} > 0"
-            record_count = self._query(url, params, raw=as_raw)
-            params["where"] = "1=1"
-        else:
-            record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-        # reassign to original
-        params["outFields"] = out_fields
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": "datetime64[ns]",  # np.datetime64,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": object,
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            if return_geometry == False:
-                columns.pop("SHAPE", None)
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if out_fields != "*":
-                df = df[out_fields.split(",")].copy()
-
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if (
-                supports_pagination
-                and record_count > 0
-                and return_distinct_values == False
-            ):
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"]
-                    in [
-                        "esriFieldTypeDate",
-                        "esriFieldTypeDateOnly",
-                        "esriFieldTypeTimestampOffset",
-                    ]
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld],
-                            )
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"]
-                in [
-                    "esriFieldTypeDate",
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                if fld in df.columns:
-                    try:
-                        df[fld] = pd.to_datetime(
-                            df[fld] / 1000,
-                            unit="s",
-                        )
-                    except:
-                        df[fld] = pd.to_datetime(
-                            df[fld],
-                            errors="coerce",
-                        )
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            is_layer=True,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_geometry=return_geometry,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            return_extent_only=return_extent_only,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            max_allowable_offset=max_allowable_offset,
+            out_sr=out_sr,
+            geometry_precision=geometry_precision,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_z=return_z,
+            return_m=return_m,
+            multipatch_option=multipatch_option,
+            quantization_parameters=quantization_parameters,
+            return_centroid=return_centroid,
+            return_all_records=return_all_records,
+            result_type=result_type,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_true_curves=return_true_curves,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            datum_transformation=datum_transformation,
+            time_reference_unknown_client=time_reference_unknown_client,
+            **kwargs,
+        )
 
     # ----------------------------------------------------------------------
     def validate_sql(self, sql: str, sql_type: str = "where"):
@@ -2742,6 +2529,10 @@ class FeatureLayer(Layer):
                                    featureCollection.
                                    Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
                                    'geojson' | 'csv' | 'excel'
+
+                                   .. note::
+                                        You can find the Feature Layer's supported formats by checking
+                                        the `featureLayer.properties.supportedAppendFormats` property.
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2849,6 +2640,13 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+        upload_formats = self.properties.supportedAppendFormats
+        if upload_format not in upload_formats:
+            raise ValueError(
+                "Invalid append format: {}. This layer supports these append formats: {}".format(
+                    upload_format, upload_formats
+                )
+            )
 
         params = {
             "f": "json",
@@ -2878,13 +2676,7 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
-        )
-        if upload_format not in upload_formats:
-            raise ValueError("Invalid upload format: %s." % upload_format)
+
         cparams = copy.copy(params)
         for k, v in cparams.items():
             if v is None:
@@ -2953,7 +2745,8 @@ class FeatureLayer(Layer):
                                    arcgis.geometry.filters module to filter results by a spatial
                                    relationship with another geometry.
         ----------------------     --------------------------------------------------------------------
-        gdb_version                Optional string. A ``Geodatabase`` version to apply the edits.
+        gdb_version                Optional string. The geodatabase version. This parameter applies only
+                                   if the `isDataVersioned` property of the layer is true.
         ----------------------     --------------------------------------------------------------------
         rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
                                    be applied only if all submitted edits succeed. If false, the server
@@ -3165,7 +2958,8 @@ class FeatureLayer(Layer):
                                 will look at a GUID field to track changes. This means the GUIDs will be passed
                                 instead of OIDs for delete, update or add features.
         ---------------------   --------------------------------------------------------------------------------------
-        gdb_version             Optional boolean. `Geodatabase` version to apply the edits.
+        gdb_version             Optional string. The geodatabase version to apply edits. This parameter
+                                applies only if the `isDataVersioned` property of the layer is true.
         ---------------------   --------------------------------------------------------------------------------------
         rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
                                 if all submitted edits succeed. If false, the server will apply the edits that succeed
@@ -3284,6 +3078,7 @@ class FeatureLayer(Layer):
             lyr.edit_features(deletes=[2542])
 
         """
+
         try:
             import pandas as pd
             from arcgis.features.geo import _is_geoenabled
@@ -3318,8 +3113,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = adds[cols].spatial.__feature_set__["features"]
             params["adds"] = json.dumps(
-                adds[cols].spatial.__feature_set__["features"],
+                adds,
                 default=_date_handler,
             )
         elif (
@@ -3331,22 +3127,21 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = [{"attributes": row} for row in adds[cols].to_dict("records")]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict("records")],
+                adds,
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
-            params["adds"] = json.dumps(
-                [f.as_dict for f in adds.features], default=_date_handler
-            )
-
+            adds = adds.to_dict()["features"]
+            params["adds"] = json.dumps(adds, default=_date_handler)
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
-                params["adds"] = json.dumps([f for f in adds], default=_date_handler)
+                adds = [f for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], PropertyMap):
-                params["adds"] = json.dumps(
-                    [dict(f) for f in adds], default=_date_handler
-                )
+                adds = [dict(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], Feature):
 
                 def _handle_feature(f):
@@ -3355,20 +3150,19 @@ class FeatureLayer(Layer):
                         d["attributes"] = {}
                     return d
 
-                params["adds"] = json.dumps(
-                    [_handle_feature(f) for f in adds], default=_date_handler
-                )
+                adds = [_handle_feature(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if isinstance(updates, FeatureSet):
-            params["updates"] = json.dumps(
-                [f.as_dict for f in updates.features], default=_date_handler
-            )
+            updates = [f.as_dict for f in updates.features]
+            params["updates"] = json.dumps(updates, default=_date_handler)
         elif (
             HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
         ):
+            updates = updates.spatial.__feature_set__["features"]
             params["updates"] = json.dumps(
-                updates.spatial.__feature_set__["features"],
+                updates,
                 default=_date_handler,
             )
         elif (
@@ -3376,29 +3170,27 @@ class FeatureLayer(Layer):
             and isinstance(updates, pd.DataFrame)
             and _is_geoenabled(updates) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c
                 for c in updates.columns.tolist()
                 if c.lower() not in ["objectid", "fid"]
             ]
+            updates = [{"attributes": row} for row in updates[cols].to_dict("records")]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict("records")],
+                updates,
                 default=_date_handler,
             )
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
-                params["updates"] = json.dumps(
-                    [f for f in updates], default=_date_handler
-                )
+                updates = [f for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], PropertyMap):
-                params["updates"] = json.dumps(
-                    [dict(f) for f in updates], default=_date_handler
-                )
+                updates = [dict(f) for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], Feature):
-                params["updates"] = json.dumps(
-                    [f.as_dict for f in updates], default=_date_handler
-                )
+                updates = [f.as_dict for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if deletes is not None and isinstance(deletes, str):
@@ -3411,8 +3203,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in deletes.columns.tolist() if c.lower() in ["objectid", "fid"]
             ]
+            deletes = ",".join([str(d) for d in deletes[cols[0]]])
             if len(cols) > 0:
-                params["deletes"] = ",".join([str(d) for d in deletes[cols[0]]])
+                params["deletes"] = deletes
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
@@ -3425,19 +3218,21 @@ class FeatureLayer(Layer):
                 print("deletes FeatureSet must have object_id_field_name parameter set")
 
             if field_name:
-                params["deletes"] = ",".join(
+                deletes = ",".join(
                     [
                         str(feat.get_value(field_name=field_name))
                         for feat in deletes.features
                     ]
                 )
+                params["deletes"] = deletes
         elif isinstance(deletes, (list, tuple)):
-            params["deletes"] = ",".join([str(d) for d in deletes])
-        if not return_edit_moment is None:
+            deletes = ",".join([str(d) for d in deletes])
+            params["deletes"] = deletes
+        if return_edit_moment is not None:
             params["returnEditMoment"] = return_edit_moment
-        if not attachments is None and isinstance(attachments, dict):
+        if attachments and isinstance(attachments, dict):
             params["attachments"] = attachments
-        if not true_curve_client is None:
+        if true_curve_client is not None:
             params["trueCurveClient"] = true_curve_client
         if not use_previous_moment is None:
             params["usePreviousEditMoment"] = use_previous_moment
@@ -3454,7 +3249,54 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
-            if future:
+            if (
+                self._gis.version
+                >= [10, 3]  #  Checks if the server is the correct version
+                and future  #  checks if future==True
+                and session_id is None
+                and attachments is None
+                and (
+                    self._gis._is_arcgisonline
+                    or self._gis._is_arcgisonline == False
+                    and dict(self.container.properties)
+                    .get("capabilities", "")
+                    .find("Uploads")
+                    > -1
+                )
+                and (
+                    "advancedEditingCapabilities" in self.properties
+                    and self.properties["advancedEditingCapabilities"]
+                    and "supportsApplyEditsbyUploadID"
+                    in self.properties["advancedEditingCapabilities"]
+                    and self.properties["advancedEditingCapabilities"][
+                        "supportsApplyEditsbyUploadID"
+                    ]
+                )
+            ):  #  checks if the service supports the advanced capabilities
+                from ._edit import apply_edits, VersionInfo
+
+                if gdb_version:
+                    vi = VersionInfo(
+                        version=gdb_version,
+                        session_id=session_id,
+                        use_previous_edit_moment=use_previous_moment,
+                    )
+                else:
+                    vi = None
+                return apply_edits(
+                    fl=self,
+                    adds=adds,
+                    updates=updates,
+                    deletes=deletes,
+                    attachments=None,
+                    version_info=vi,
+                    use_global_ids=use_global_ids,
+                    return_edit_moment=return_edit_moment,
+                    rollback=rollback_on_failure,
+                    true_curve_client=true_curve_client,
+                    datum_transformation=datum_transformation,
+                )
+            elif self._gis.version < [11, 1] and future:
                 params["async"] = True
                 executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post_multipart(path=edit_url, postdata=params)
@@ -3863,7 +3705,316 @@ class FeatureLayer(Layer):
                     )
         return df
 
+    # ----------------------------------------------------------------------
+    def query_3d(
+        self,
+        where: str | None = None,
+        out_fields: str | None = None,
+        object_ids: str | None = None,
+        distance: int | None = None,
+        units: str | None = None,
+        time_filter: str | int | None = None,
+        geometry_filter: Geometry | dict | None = None,
+        gdb_version: str | None = None,
+        return_distinct_values: bool | None = None,
+        order_by_fields: str | None = None,
+        group_by_fields_for_statistics: str | None = None,
+        out_statistics: list[dict] | None = None,
+        result_offset: int | None = None,
+        result_record_count: int | None = None,
+        historic_moment: int | None = None,
+        sql_format: str | None = None,
+        format_3d_objects: str | None = None,
+        time_reference_unknown_client: bool | None = None,
+    ):
+        """
+        The query3D operation allows clients to query 3D object features and is
+        based on the feature service layer query operation. The 3D object feature
+        layer still supports layer and service level feature service query operations.
 
+
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. SQL-92 WHERE clause syntax on the fields in the layer
+                                            is supported for most data sources. Some data sources have restrictions
+                                            on what is supported. Hosted feature services in ArcGIS Enterprise running
+                                            on a spatiotemporal data source only support a subset of SQL-92.
+                                            Below is a list of supported SQL-92 with spatiotemporal-based feature services:
+
+
+                                            ( '<=' | '>=' | '<' | '>' | '=' | '!=' | '<>' | LIKE )
+                                            (AND | OR)
+                                            (IS | IS_NOT)
+                                            (IN | NOT_IN) ( '(' ( expr ( ',' expr )* )? ')' )
+                                            COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional list of fields to be included in the returned result set.
+                                            This list is a comma-delimited list of field names. You can also specify
+                                            the wildcard "*" as the value of this parameter to return all
+                                            fields in the result.
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values should be a comma-separated string.
+
+                                            .. note::
+                                                There might be a drop in performance if the layer/table data
+                                                source resides in an enterprise geodatabase and more than
+                                                1,000 object_ids are specified.
+        -------------------------------     --------------------------------------------------------------------
+        distance                            Optional integer. The buffer distance for the input geometries.
+                                            The distance unit is specified by units. For example, if the
+                                            distance is 100, the query geometry is a point, units is set to
+                                            meters, and all points within 100 meters of the point are returned.
+        -------------------------------     --------------------------------------------------------------------
+        units                               Optional string. The unit for calculating the buffer distance. If
+                                            unit is not specified, the unit is derived from the geometry spatial
+                                            reference. If the geometry spatial reference is not specified, the
+                                            unit is derived from the feature service data spatial reference.
+                                            This parameter only applies if `supportsQueryWithDistance` is true.
+
+                                            Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
+                                                    esriSRUnit_Foot | esriSRUnit_Kilometer |
+                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
+                                            datetime.date, datetime.datetime or timestamp in milliseconds.
+                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                                    datetime.date, datetime.datetime or timestamp in
+                                                    milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the isDataVersioned property of the layer is true.
+                                            If this is not specified, the query will apply to the published
+                                            map's version.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
+                                            fields specified in out_fields. This parameter applies only if the
+                                            `supportsAdvancedQueries` property of the layer is true. This parameter
+                                            can be used with return_count_only to return the count of distinct
+                                            values of subfields.
+
+                                            .. note::
+                                                Make sure to set return_geometry to False if this is set to True.
+                                                Otherwise, reliable results will not be returned.
+        -------------------------------     --------------------------------------------------------------------
+        order_by_fields                     Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
+                                            be grouped for calculating the statistics.
+                                            example: STATE_NAME, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional list of dictionaries. The definitions for one or more field-based
+                                            statistics to be calculated.
+
+                                            Syntax:
+
+                                            [
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field1",
+                                                  "outStatisticFieldName": "Out_Field_Name1"
+                                                },
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field2",
+                                                  "outStatisticFieldName": "Out_Field_Name2"
+                                                }
+                                            ]
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th). This option is ignored
+                                            if return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property. This option is ignored if
+                                            return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            supportsQueryWithHistoricMoment property is set to true. This
+                                            property is provided in the layer resource.
+
+                                            If historic_moment is not specified, the query will apply to the
+                                            current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        format_3d_objects                   Optional string. Specifies the 3D format that will be used to request
+                                            a feature. If set to a valid format ID (see layer resource), the geometry
+                                            of the feature response will be a 3D envelope of the 3D object and will
+                                            include asset maps for the 3D object. Since formats are created asynchronously,
+                                            review the flags field in the asset map to determine if the format is available
+                                            (conversionStatus is COMPLETED). If conversionStatus is INPROGRESS, the format
+                                            is not ready. Request the feature again later.
+
+                                            If a feature does not have the specified format, the feature will still be returned
+                                            according to the query parameters (such as the where clause), but the
+                                            asset mapping will be missing.
+
+                                            Values: "3D_dae" | "3D_dwg" | "3D_fbx" | "3D_glb" | "3D_gltf" | "3D_ifc"
+                                            | "3D_obj" | "3D_shapebuffer" | "3D_shapebufferg" | "3D_usdc" | "3D_usdz"
+        -------------------------------     --------------------------------------------------------------------
+        time_reference_unknown_client       Optional boolean. Setting `time_reference_unknown_client` as True
+                                            indicates that the client is capable of working with data values that
+                                            are not in UTC. If its not set to true, and the service layer's
+                                            datesInUnknownTimeZone property is true, then an error is returned.
+                                            The default is False
+
+                                            Its possible to define a service's time zone of date fields as unknown.
+                                            Setting the time zone as unknown means that date values will be returned
+                                            as-is from the database, rather than as date values in UTC. Non-hosted
+                                            feature services can be set to use an unknown time zone using
+                                            ArcGIS Server Manager. Setting the time zones to unknown also
+                                            sets the datesInUnknownTimeZone layer property as true. Currently,
+                                            hosted feature services do not support this setting. This setting does
+                                            not apply to editor tracking date fields which are stored and returned
+                                            in UTC even when the time zone is set to unknown.
+
+                                            Most clients released prior to ArcGIS Enterprise 10.9 will not be able
+                                            to work with feature services that have an unknown time setting.
+        ===============================     ====================================================================
+
+        :returns: A dictionary containing the feature, asset map, and asset information for the layer.
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Query 3D objects
+
+            # Import the required modules
+            from arcgis.gis import GIS
+            from arcgis.features import FeatureLayer
+
+            # Connect to your GIS
+            gis = GIS(profile="your_enterprise_profile")
+
+            # Search for the feature layer
+            search_result = gis.content.search("3D Object Feature Layer", "Feature Layer")
+            feature_layer = search_result[0]
+
+            # Create a FeatureLayer object
+            layer = FeatureLayer(feature_layer.url, gis)
+
+            # Query the 3D objects
+            result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
+            print(result)
+        """
+        if not where:
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
+        return _query._common_query(
+            layer=self,
+            is_layer=True,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            format_3d_objects=format_3d_objects,
+            time_reference_unknown_client=time_reference_unknown_client,
+            query_3d=True,
+        )
+
+
+###########################################################################
+class OrientedImageryLayer(FeatureLayer):
+    _gis: _arcgis.gis.GIS
+    _url: str
+    _session: EsriSession
+    _properties: dict[str, Any] = None
+
+    def __init__(self, url, gis=None, container=None, dynamic_layer=None):
+        """
+        Constructs a feature layer given a feature layer URL
+        :param url: feature layer url
+        :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
+        :param container: optional, the feature layer collection to which this layer belongs
+        :param dynamic_layer: optional dictionary. If the layer is given a dynamic layer definition, this will be added to functions.
+        """
+        if gis is None:
+            import arcgis
+
+            gis = arcgis.env.active_gis
+        if str(url).lower().endswith("/"):
+            url = url[:-1]
+        super(OrientedImageryLayer, self).__init__(url, gis)
+        assert (
+            _is_OIL(url=url, gis=gis) == True
+        ), "The URL is not an OrientedImageryLayer."
+        self._storage = container
+        self._dynamic_layer = dynamic_layer
+        self.attachments = AttachmentManager(self)
+        self._time_filter = None
+
+    @classmethod
+    def fromitem(cls, item: Item, index: int = 0) -> OrientedImageryLayer:
+        """
+        The ``fromitem`` method returns the layer at the specified index from a layer :class:`~arcgis.gis.Item` object.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. An item containing layers.
+        ------------------     --------------------------------------------------------------------
+        index                  Optional int. The index of the layer amongst the item's layers
+        ==================     ====================================================================
+
+        :return:
+           The layer at the specified index.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> layer.fromitem(item="9311d21a9a2047d19c0faaebd6f2cca6", index=3)
+        """
+        flc = FeatureLayerCollection(url=item.url, gis=item._gis)
+        layers = flc.properties["layers"]
+        if index in [
+            lyr["id"] for lyr in layers if lyr["type"] == "Oriented Imagery Layer"
+        ]:
+            return cls(url=f"{item.url}/{index}", gis=item._gis)
+        else:
+            raise Exception(
+                "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
+            )
+
+
+###########################################################################
 class Table(FeatureLayer):
     """
     ``Table`` objects represent entity classes with uniform properties. In addition to working with
@@ -3920,6 +4071,7 @@ class Table(FeatureLayer):
         return_exceeded_limit_features: Optional[bool] = None,
         as_df: bool = False,
         having: Optional[str] = None,
+        time_reference_unknown_client: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -4091,303 +4243,87 @@ class Table(FeatureLayer):
             <149>
 
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
-
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCountOnly"] = return_count_only
-        params["returnIdsOnly"] = return_ids_only
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if object_ids:
-            params["objectIds"] = object_ids
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if key in ("returnCountOnly", "returnIdsOnly") and val:
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        if where == "1=1":
-            if "objectIdField" in self.properties:
-                params["where"] = f"{self.properties.objectIdField} > 0"
-            else:
-                fields = [
-                    field["name"]
-                    for field in self.properties.fields
-                    if field["type"] == "esriFieldTypeOID"
-                ]
-                params["where"] = f"{fields[0]} > 0"
-            record_count = self._query(url, params, raw=as_raw)
-            params["where"] = "1=1"
-        else:
-            record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": object,
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if (
-                supports_pagination
-                and record_count > 0
-                and return_distinct_values == False
-            ):
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"]
-                    in [
-                        "esriFieldTypeDate",
-                        "esriFieldTypeDateOnly",
-                        "esriFieldTypeTimestampOffset",
-                    ]
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld],
-                            )
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"]
-                in [
-                    "esriFieldTypeDate",
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
-                except:
-                    df[fld] = pd.to_datetime(
-                        df[fld],
-                    )
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_all_records=return_all_records,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            time_reference_unknown_client=time_reference_unknown_client,
+            **kwargs,
+        )
 
 
 class FeatureLayerCollection(_GISResource):
     """
-    A ``FeatureLayerCollection`` is a collection of :class:`~arcgis.features.FeatureLayer` and
-    :class:`~arcgis.features.Table`, with the associated relationships among the entities.
+    A ``FeatureLayerCollection`` is the Python API representation of a
+    `Feature Service <https://enterprise.arcgis.com/en/server/latest/publish-services/linux/what-is-a-feature-service-.htm>`_.
+    Namely it is a collection of :class:`feature layers <arcgis.features.FeatureLayer>` and
+    :class:`tables <arcgis.features.Table>` with the associated relationships among the records.
 
-    In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
+    Instances of a ``FeatureLayerCollection`` can be obtained
 
-    Instances of ``FeatureLayerCollection`` can be obtained from feature service Items in the GIS using
-    :attr:`~arcgis.features.FeatureLayerCollection.fromitem`, from feature service endpoints using the constructor,
-    or by accessing the ``dataset`` attribute of :class:`~arcgis.features.FeatureLayer` objects.
+    * from *Feature Layer*
+      :class:`items <arcgis.gis.Item>` using the :attr:`~arcgis.features.FeatureLayer.container`
+      property
+    * using the :meth:`~arcgis.features.FeatureLayerCollection.fromitem` method
+    * by initializing an object using the feature service url
 
-    ``FeatureLayerCollection``s can be configured and managed using their `manager` helper object.
+    .. code-block:: python
 
-    If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
-    replicas for disconnected editing of the feature layer collection.
+        # Using the container property
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
+        >>> flc = flyr_item.layers[0].container
+        >>> flc
+
+        <FeatureLayerCollection url:"https://services8.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer">
+
+        # Using the fromitem method
+        >>> from arcgis.features import FeatureLayerCollection
+
+         >>> flyr_item = gis.content.search("storm damage", "Feature Layer)[0]
+         >>> flc = FeatureLayerCollection.fromitem(flyr_item)
+
+         <FeatureLayerCollection url:"https://services8.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer">
+
+        # Initializing from a service url
+        >>> from arcgis.gis import GIS
+        >>> from arcgis.features import FeatureLayerCollection
+
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> fs_url = "https://services7.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer"
+        >>> flc = FeatureLayerCollection(fs_url, gis)
+
+        <FeatureLayerCollection https://services7.arcgis.com/<org_id>/arcgis/rest/services/<service_name>/FeatureServer>
+
+    The :attr:`~arcgis.features.FeatureLayerCollection.manager` property accesses the
+    :class:`~arcgis.features.managers.FeatureLayerCollectionManager` object which
+    can be used to configure and manage the service.
+
+    If the feature service is `configured for synchronization <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_,
+    the *replicas* property will be available to return a
+    :class:`~arcgis.features.managers.SyncManager` object to manage that
+    functionality.
 
     .. note::
         You can use the ``layers`` and ``tables`` property to get to the individual layers and tables in this
@@ -4518,6 +4454,12 @@ class FeatureLayerCollection(_GISResource):
         .. note::
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
+        .. note::
+            Only arcobject Feature Services support this operation. If the service supports this operation, then
+            the `supportsQueryDomains` property in the service properties is True. If this value is False or not
+            present, then the service cannot use this operation. In addition, this is only availabel for arcobject and
+            hosted Feature Services in Enterprise, not for ArcGIS Online.
+
         ================================     ====================================================================
         **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
@@ -4569,8 +4511,29 @@ class FeatureLayerCollection(_GISResource):
         out_sr: int | None = None,
     ):
         """
-        A change tracking mechanism for applications. Applications can use ``extract_changes`` to
-        query changes that have been made to the layers and tables in the service.
+        A method to query for changes that have been made to the layers and
+        tables in a feature service.
+
+        To verify whether a feature service is configured to send responses about
+        the features that have changed within its layers, query the service for
+        the *ChangeTracking* capability:
+
+        .. code-block:: python
+
+            # Get the capabilities a feature service is configured with
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> flyr_item = gis.content.search("my_feature_layer", "Feature Layer")[0]
+            # Initialize a FeatureLayerCollection object from a layer
+            >>> flc = flyr_item.layers[0].container
+
+            >>> flc.properties.capabilities
+
+            'Create,Delete,Query,Update,Editing,Extract,ChangeTracking'
+
+        Change tracking can be enabled for ArcGIS Online hosted feature services
+        as well as enterprise-geodatabase based ArcGIS Enterprise services.
 
         .. note::
             For Enterprise geodatabase based feature services published
@@ -4578,159 +4541,280 @@ class FeatureLayerCollection(_GISResource):
             requires all layers and tables to be either archive enabled or
             branch versioned and have globalid columns.
 
-        Change tracking can also be enabled for ArcGIS Online hosted feature services. If all layers
-        and tables in the service have the ChangeTracking capability, the
-        ``extract_changes`` operation can be used to get changes.
-
         ================================     ====================================================================
-        **Parameter**                         **Description**
+        **Parameter**                        **Description**
         --------------------------------     --------------------------------------------------------------------
-        layers                               Required List.  The list of layers (by index value) and tables to include in the
-                                             output.
-        --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List (when layer_servergen not present). Introduced at 11.0.
-                                             This parameter sets the servergens to apply to all layers included in
-                                             the layers parameter. Either a single generation, or a pair of
-                                             generations, can be used as values for this parameter. If a single
-                                             servergen value is provided, all changes that have happened since
-                                             that generation are returned. If a pair of serverGen values are
-                                             provided, changes that have happened between the first generation
-                                             (the minimum value) and the second generation (the maximum value)
-                                             are returned. If providing two generations, the first value in the
-                                             pair is expected to be the smaller of the two values.
-                                             Support for this parameter is indicated when the service-level
-                                             'supportServerGens' property, under 'extractChangesCapabilities', is
-                                             set as 'True'. This operation requires either 'serverGens' or
-                                             'layerServerGens' be submitted with the request.
+        layers                               Required List.  The list of layers (by index value) and tables to
+                                             include in the output.
 
                                              .. code-block:: python
 
-                                                # Usage Example:
+                                                 # Get layer index values
+                                                 >>> from arcgis.gis import FeatureLayerCollection
 
-                                                servergen= [10500,11000]
+                                                 >>> flyr_item = gis.content.get("<>flyr_item_id>")
+                                                 >>> flc = FeatureLayerCollection(flyr_item, gis)
+
+                                                 >>> for flyr_obj in flc.layers:
+                                                 >>>     print(f"{flyr_obj.properties.id<3}{lfyr_obj.properties.name}")
+
+                                                 0  Airports
+                                                 1  Roads
+                                                 2  Railroads
         --------------------------------     --------------------------------------------------------------------
-        layer_servergen                      Required List (when servergen not present). The servergen numbers allow a client to specify the last
-                                             layer generation numbers (a Unix epoch time value in milliseconds) for the
-                                             changes received from the server. All changes made after this value will be
-                                             returned.
+        servergen                            Required integer (when *layer_servergen* argument not present).
+                                             Introduced at 11.0, this argument provides the server generation
+                                             numbers to apply to all layers included in the layers parameter from
+                                             which to return changes.
 
-                                                + ``minServerGen``: It is the min generation of the server data changes.
-                                                  Clients with layerServerGens that is less than minServerGen cannot
-                                                  extract changes and would need to make a full server/layers query
-                                                  instead of extracting changes.
-                                                + ``serverGen``: It is the current server generation number of the
-                                                  changes. Every changed feature has a version or a generation number
-                                                  that is changed every time the feature is updated.
+                                             Either a single generation value, or a pair of generation values can
+                                             be provided.
 
-                                             Syntax:
-                                                 servergen= [{"id": <layerId1>, "serverGen": <genNum1>}, {"id": <layerId2>, "serverGen": <genNum2>}]
+                                             * If a single value is provided, all changes that have happened
+                                               since that generation are returned.
+                                             * If a pair of values are provided, the changes that have
+                                               happened between the first generation (the minimum value) and up to
+                                               and including the second generation (the maximum value) value are
+                                               returned. The first value in the pair is expected to be the smaller
+                                               value.
 
-                                             The ``id`` value for the layer is the index of the layer from the :attr:`layers`
-                                             attribute on the :class:`~arcgis.features.FeatureLayerCollection`. The ``serverGen`` value is a Unix epoch timestamp value in milliseconds.
+                                             Query the :class:`~arcgis.features.FeatureLayerCollection`
+                                             *properties* to verify whether the feature service supports
+                                             this capability. If the *supportServerGens* property in the
+                                             *extractChangesCapabilities* property group is set to *true*, the
+                                             capability is present.
 
                                              .. code-block:: python
 
-                                                # Usage Example:
+                                                 # Determine whether parameter is supported
+                                                 >>> from arcgis.gis import GIS
+                                                 >>> gis = GIS(profile="your_organizaation_profile")
 
-                                                layer_servergen= [{"id": 0, "serverGen": 10500},
-                                                                  {"id": 1, "serverGen": 1100},
-                                                                  {"id": 2, "serverGen": 1200}]
+                                                 >>> flyr_item = gis.content.get("<item_id>")
+                                                 >>> flc_object = flyr_item.layers[0].container
+
+                                                 >>> flc_object.properties.get("extractChangesCapabilities","no support")
+
+                                                 {...
+                                                 'supportsServerGens': True,
+                                                 ...}
+
+                                             .. note::
+                                                 Either the *servergen* or *layer_servergen* argument must be
+                                                 provided with this method.
+
+                                             You can get the latest generation numbers from the *changeTrackingInfo*
+                                             property of the feature service:
+
+                                             .. code-block:: python
+
+                                                 >>> flc_obj.properties.changeTrackingInfo
+
+                                                 {
+                                                    "lastSyncDate": 1706901271525,
+                                                    "layerServerGens": [
+                                                      {
+                                                        "id": 0,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      },
+                                                      {
+                                                        "id": 1,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      }
+                                                    ]
+                                                 }
         --------------------------------     --------------------------------------------------------------------
-        queries                              Optional Dictionary. In addition to the layers and geometry
-                                             parameters, the `queries` parameter can be used to further define
+        layer_servergen                      Required list (if *servergen* argument not provided) of generation
+                                             numbers for each layer to return changes. Use the *changeTrackingInfo*
+                                             information to get values:
+
+                                             .. code-block:: python
+
+                                                 # Get change tracking info
+                                                 >>> flc_obj.properties.changeTrackingInfo
+
+                                                 {
+                                                    "lastSyncDate": 1706901271525,
+                                                    "layerServerGens": [
+                                                      {
+                                                        "id": 0,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      },
+                                                      {
+                                                        "id": 1,
+                                                        "minServerGen": 594109,
+                                                        "serverGen": 594109
+                                                      }
+                                                    ]
+                                                 }
+
+                                             * *minServerGen* - It is the minimum generation number of the server
+                                               data changes.
+                                             * *serverGen* - It is the current server generation number of the
+                                               changes. Every changed feature has a version or a generation number
+                                               that is changed every time the feature is updated.
+
+                                             .. note::
+                                                 These values may be identical.
+
+                                             The argument format should be a list of dictionaries whose keys are:
+
+                                             * *id* - values is the index position of the layer within the feature
+                                             * *serverGen* - value is the generation number after which to get the changes
+
+                                             .. code-block:: python
+
+                                                 # Usage Example:
+
+                                                 >>> flc.extract_changes(...
+                                                                         layer_servergen= [
+                                                                                          {"id": 0, "serverGen": 594109},
+                                                                                          {"id": 1, "serverGen": 594109}
+                                                                                         ],
+                                                                         ...)
+        --------------------------------     --------------------------------------------------------------------
+        queries                              Optional Dictionary. In addition to the *layers* and *geometry*
+                                             parameters, the *queries* parameter can be used to further define
                                              what changes to return. This parameter allows you to set query
                                              properties on a per-layer or per-table basis. If a layer's ID is
-                                             present in the layers parameter and missing from layer `queries`,
-                                             it's changed features that intersect with the filter geometry are
-                                             returned.
+                                             present in the *layers* argument and missing from *queries*,
+                                             the layer's changed features that intersect with the *geometry*
+                                             argument are returned.
 
-                                             The properties include the following:
+                                             The key-value options for the dictinary are:
 
                                                 + ``where`` - Defines an attribute query for a layer or table. The
                                                   default is no where clause.
-                                                + ``useGeometry`` - Determines whether or not to apply the geometry
-                                                  for the layer. The default is true. If set to false, features
+                                                + ``useGeometry`` - Determines whether or not to apply the *geometry*
+                                                  for the layer. The default is *True*. If set to *False*, features
                                                   from the layer that intersect the geometry are not added.
                                                 + ``includeRelated`` - Determines whether or not to add related
-                                                  rows. The default is true. The value true is honored only
-                                                  for queryOption=none. This is only applicable if your data
-                                                  has relationship classes. Relationships are only processed
-                                                  in a forward direction from origin to destination.
+                                                  rows. The default is *True* and honored only when *queryOption=None*.
+                                                  This is only applicable if your data has relationship classes.
+                                                  Relationships are only processed in a forward direction from origin
+                                                  to destination.
                                                 + ``queryOption`` - Defines whether or how filters will be applied
                                                   to a layer. The queryOption was added in 10.2. See the
-                                                  `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic for more information.
-                                                  Valid values are ``None``, ``useFilter``, or ``all``. See also the
-                                                  ``layerQueries`` column in the Request Parameters table in the `Extract Changes (Feature Service) help <https://developers.arcgis.com/rest/services-reference/extract-changes-feature-service-.htm>`_
-                                                  for details and code samples.
+                                                  `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic
+                                                  for more information.
 
-                                                * When the value is none, no feature are returned based on where and filter geometry.
-                                                * If ``includeRelated`` is false, no features are returned.
-                                                * If ``includeRelated`` is true, features in this layer (that are related to the features in other layers in the replica) are returned.
-                                                * When the value is ``useFilter``, features that satisfy filtering based on geometry and ``where`` are returned. The value of ``includeRelated`` is ignored.
+                                                  Valid values are:
+
+                                                  * ``None``
+                                                  * ``useFilter``
+                                                  * ``all``. See also the *layerQueries* column in the Request Parameters
+                                                    in the `Extract Changes (Feature Service) help <https://developers.arcgis.com/rest/services-reference/extract-changes-feature-service-.htm>`_
+                                                    for details and code samples.
+
+                                             .. note::
+                                                Info on ``queryOption`` key values:
+
+                                                * If the value is *None* and the layer participates in a relationship:
+
+                                                  * If ``includeRelated`` is *False*, no related features are returned.
+                                                  * If ``includeRelated`` is *True*, features in this layer (that are related to
+                                                    the features in other layers) are returned.
+
+                                                * If value is ``useFilter``, features that satisfy filtering based on
+                                                  geometry and ``where`` are returned. ``includeRelated`` is ignored.
 
                                              .. code-block:: python
 
-                                                # Usage Example:
+                                                 # Usage Example:
 
-                                                queries={Layer_or_tableID1:{"where":"attribute query",
-                                                                            "useGeometry": true | false,
-                                                                            "includeRelated": true | false},
-                                                         Layer_or_tableID2: {.}}
+                                                 >>> flc_obj.extract_changes(...
+                                                                             queries={"0":{"where":"FID_1 > 300",
+                                                                                          "useGeometry": "true",
+                                                                                          "includeRelated": "false",
+                                                                                          "queryOption":"useFilter"},
+                                                                                      "1": {"where":"SURFACE='mixed concrete'",
+                                                                                           "useGeometry":"true"}},
+                                                                             ...)
         --------------------------------     --------------------------------------------------------------------
-        geometry                             Optional :class:`~arcgis.geometry.Geometry`/:class:`~arcgis.geometry.Extent`.
-                                             The geometry to apply as the spatial filter for the changes. All the changed
-                                             features in layers intersecting this geometry will be returned. The structure
-                                             of the geometry is the same as the structure of the `JSON geometry objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_
-                                             returned by the ArcGIS REST API. In addition to the JSON structures,
-                                             for envelopes and points you can specify the geometry with a simpler
-                                             comma-separated syntax.
+        geometry                             Optional :class:`~arcgis.geometry.Geometry` or :class:`~arcgis.geometry.Envelope`
+                                             object to apply as the spatial filter for the changes. All the changed
+                                             features intersecting this geometry will be returned.
+
+                                             .. note::
+                                                 For *envelope* and *point* geometries, you can specify the geometry
+                                                 with a simple comma-separated syntax instead of a json object.
         --------------------------------     --------------------------------------------------------------------
         geometry_type                        Optional String. The type of geometry specified by the geometry
                                              parameter. The geometry type can be an envelope, point, line or
                                              polygon. The default geometry type is an envelope.
 
-                                             Values: ``esriGeometryPoint``, ``esriGeometryMultipoint``, ``esriGeometryPolyline``, ``esriGeometryPolygon``, ``esriGeometryEnvelope``
+                                             Values:
+
+                                             * ``esriGeometryPoint``
+                                             * ``esriGeometryMultipoint``
+                                             * ``esriGeometryPolyline``
+                                             * ``esriGeometryPolygon``
+                                             * ``esriGeometryEnvelope``
         --------------------------------     --------------------------------------------------------------------
-        in_sr                                Optional Integer. The spatial reference of the input geometry.
+        in_sr                                Optional Integer. The *wkid* value of the input geometry spatial
+                                             reference. See `Coordinate systems PDFs <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm#ESRI_SECTION2_2861129E93634E5394F9F256F7617EB1>`_
+                                             for complete list of available values.
         --------------------------------     --------------------------------------------------------------------
-        out_sr                               Optional Integer/String. The output spatial reference of the
-                                             returned changes.
+        out_sr                               Optional Integer. The *wkid* for the the spatial reference of the
+                                             geometries in the returned changes. See `Coordinate systems PDFs <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm#ESRI_SECTION2_2861129E93634E5394F9F256F7617EB1>`_
+                                             for complete list of available values.
         --------------------------------     --------------------------------------------------------------------
-        version                              Optional String. If branch versioning is enabled, a user can specify
-                                             the branch version name to extract changes from.
+        version                              Optional String. If `branch versioning <https://pro.arcgis.com/en/pro-app/latest/help/data/geodatabases/overview/versioning-types.htm#ESRI_SECTION1_6FA2CFB5F9484FF096740D653C674B5D>`_ is enabled,
+                                             and utilized with the service, a user can specify the verion name
+                                             to extract changes from.
         --------------------------------     --------------------------------------------------------------------
-        return_inserts                       Optional Boolean.  If true, newly inserted features will be
-                                             returned. The default is false.
+        return_inserts                       Optional Boolean, *Required* if neither *return_updates* nor
+                                             *return_deletes* provided. If *True*, newly inserted features will
+                                             be returned. The default is *False*.
         --------------------------------     --------------------------------------------------------------------
-        return_updates                       Optional Boolean. If true, updated features will be returned. The
-                                             default is false.
+        return_updates                       Optional Boolean. *Required* if neither *return_inserts* nor
+                                             *return_deletes* provided.If *True*, updated features will be returned.
+                                             The default is *False*.
         --------------------------------     --------------------------------------------------------------------
-        return_deletes                       Optional Boolean. If true, deleted features will be returned. The
-                                             default is false.
+        return_deletes                       Optional Boolean. *Required* if neither *return_inserts* nor
+                                             *return_updates* provided. If *True*, deleted features will be
+                                             returned. The default is *False*.
         --------------------------------     --------------------------------------------------------------------
-        return_ids_only                      Optional Boolean. If true, the response includes an array of object
-                                             IDs only. The default is false.
+        return_ids_only                      Optional Boolean. If *True*, the response includes a list of object
+                                             IDs only. The default is *False*.
         --------------------------------     --------------------------------------------------------------------
-        return_attachments                   Optional Boolean.  If true, attachments changes are returned in the
+        return_extent_only                   Option Boolean. If *True*, only the extent of the changes is
+                                             returned. The default is *False*.
+        --------------------------------     --------------------------------------------------------------------
+        return_attachments                   Optional Boolean.  If *True*, attachment changes are returned in the
                                              response. Otherwise, attachments are not included. The default is
-                                             false. This parameter is only applicable if the feature service has
+                                             *False*. This parameter is only applicable if the feature service has
                                              attachments.
         --------------------------------     --------------------------------------------------------------------
-        attachments_by_url                   Optional Boolean.  If true, a reference to a URL will be provided
+        attachments_by_url                   Optional Boolean.  If *True*, a reference to a URL will be provided
                                              for each attachment returned. Otherwise, attachments are embedded in
-                                             the response. The default is true.
+                                             the response. The default is *True*.
         --------------------------------     --------------------------------------------------------------------
         data_format                          Optional String. The format of the changes returned in the response.
-                                             The default is json. Values: sqllite or json
+                                             The default is *json*. Values:
+
+                                             * *sqllite*
+                                             * *json*
         --------------------------------     --------------------------------------------------------------------
         change_extent_grid_cell              Optional String. To optimize localizing changes extent, the value
-                                             medium is an 8x8 grid that bound the changes extent. Used only when
-                                             `return_extent_only` is true. The default is none.
-                                             Values: None, large, medium, or small
+                                             of *medium* is an 8x8 grid that bound the changes extent.
+
+                                             .. note::
+                                                 Used only when *return_extent_only* is *True*. Default is *None*.
+
+                                             Values:
+
+                                             * *None*
+                                             * *large*
+                                             * *medium*
+                                             * *small*
         --------------------------------     --------------------------------------------------------------------
-        return_geometry_updates              Optional Boolean. If true, the response includes a
+        return_geometry_updates              Optional Boolean. If *True*, the response includes a
                                              'hasGeometryUpdates' property set as true for each layer with
-                                             updates that have geometry changes. The default is false.
+                                             updates that have geometry changes. The default is *False*.
 
                                              If a layer's edits include only inserts, deletes, or updates to
                                              fields other than geometry, hasGeometryUpdates is not set or is
@@ -4739,52 +4823,94 @@ class FeatureLayerCollection(_GISResource):
                                              `hasGeometryUpdates` to be set as true.
         --------------------------------     --------------------------------------------------------------------
         fields_to_compare                    Optional List. Introduced at 11.0. This parameter allows you to
-                                             determine if any array of fields has been updated. The accepted
-                                             values for this parameter is a fields array that include the fields
-                                             you want to evaluate. The response includes a fieldUpdates array,
-                                             which includes rows that contain any updates made to the specified
-                                             fields. If no updates were made to any fields, the fieldUpdates
-                                             array is empty.
+                                             determine if any list of fields has been updated. The accepted
+                                             values for this parameter is a list of fields you want to evaluate.
+                                             The response returns a json array called *fieldUpdates* (accessed
+                                             as a Python list) which includes rows that contain any updates made
+                                             to the specified fields. An empty list is returned if no updates
+                                             occurred in the specified fields.
         ================================     ====================================================================
 
         :return:
-            A dictionary containing the layerServerGens and an array of edits
+            A dictionary whose keys vary depending upon input arguments of method.
 
 
         .. code-block:: python
 
-           #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
+           #Usage Example for extracting changes to specific feature layers in a hosted Feature Layer item
 
-           from arcgis.gis import GIS
-           from arcgis.features import FeatureLayerCollection
+           >>> from arcgis.gis import GIS
+           >>> from arcgis.features import FeatureLayerCollection
 
-           >>> gis = GIS(<url>, <username>, <password>)
+           >>> gis = GIS(profile="your_online_profile")
 
-           # Search for the Feature Service item
+           # Search for the Feature Layer item
            >>> fl_item = gis.content.search('title:"my_feature_layer" type:"Feature Layer"')[0]
-           >>> created_time = fl_item.created
 
-           # Get the Feature Service url
-           >>> fs=gis.content.search('title:"my_feature_layer" type:"Feature"')[0].url
+           # Initialize a FeatureLayerCollection object from the item
+           >>> flc = FeatureLayerCollection.fromitem(fl_item, gis)
 
-           # Instantiate the a FeatureLayerCollection from the url
-           >>> flc=FeatureLayerCollection(fs, gis)
+           # Extract the changes from the specific layers
+           >>> deltas = flc.extract_changes(layers=[0, 1, 2],
+                                            layer_servergen=[{"id": 0, "serverGen": 594109},
+                                                             {"id": 1, "serverGen": 594109},
+                                                             {"id": 2, "serverGen": 594109}],
+                                            return_inserts=True,
+                                            return_updates=True,
+                                            return_deletes=True)
 
-           # Extract the changes for the version
-           >>> extracted_changes=flc.extract_changes(layers=[0],
-                                      servergen=[{"id": 0, "serverGen": created_time}],
-                                      version="<version_owner>.<version_name>",
-                                      return_ids_only=True,
-                                      return_inserts=True,
-                                      return_updates=True,
-                                      return_deletes=True,
-                                      data_format="json")
+           >>> deltas
 
-           >>> extracted_changes
-
-           {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
+           {'layerServerGens': [{'id': 0, 'serverGen': 594249},
+                                {'id': 1, 'serverGen': 594249},
+                                {'id': 2, 'serverGen': 594249}],
+            'transportType': 'esriTransportTypeUrl',
+            'responseType': 'esriDataChangesResponseTypeEdits',
             'edits': [{'id': 0,
-              'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
+                       'features': {'adds': [{'geometry': {'x': 49949.824500000104,
+                                                           'y': 90360.44769999944},
+                                              'attributes': {'OBJECTID': 401,
+                                                             'GlobalID': '8E4CD21D-C48C-4183-9AEC-3F2A2D0912CE',
+                                                             'FID_1': 401,
+                                                             'NAME': 'Airport XTL'}},
+                                             {'geometry': {'x': 56948.30519999936,
+                                                            'y': -74861.21529999934},
+                                              'attributes': {'OBJECTID': 402,
+                                                             'GlobalID': '8C692383-3D99-4F42-9C56-10C499277E1A',
+                                                             'FID_1': 402,
+                                                             'NAME': 'Airport SNL'}}],
+                                    'updates': [],
+                                    'deletes': []}},
+                      {'id': 1,
+                       'features': {'adds': [{'geometry': {'paths': [[[134899.6895,
+                                                            19645.5379000008],
+                                                          ...
+                                                           [127425.5678,
+                                                            29965.8258999996],
+                                                           [126931.386600001,
+                                                            30593.6698000003]]]},
+                                              'attributes': {'OBJECTID': 4518,
+                                                             'GlobalID': 'AE01C888-305C-44D9-A954-8A25D2829408',
+                                                             'FID_1': 874569,
+                                                             'NAME': 'GTM 9 Connector ',
+                                                             'SURFACE': 'concrete mixed'}}],
+                                    'updates': [],
+                                    'deletes': []}},
+                      {'id': 2,
+                       'features': {'adds': [],
+                                    'updates': [{'geometry': {'paths': [[[167873.3979,
+                                                               48154.2501999997],
+                                                             ...
+                                                              [173714.5682,
+                                                               45801.2599999998],
+                                                              [173828.3726,
+                                                               44921.8964000009]]]},
+                                                 'attributes': {'OBJECTID': 2,
+                                                                'GlobalID': '260182EA-FE8C-4D7E-8371-0BF488CDF2C2',
+                                                                'FID_1': 2,
+                                                                'TYPE': 1,
+                                                                'STATUS': 1}}],
+                                    'deletes': []}}]}
         """
         if servergen is None and layer_servergen is None:
             raise ValueError("Please provide a servergen or layer_servergen")
@@ -5482,154 +5608,7 @@ class FeatureLayerCollection(_GISResource):
         out_path=None,
     ):
         """
-        The synchronizeReplica operation is performed on a feature service resource. This operation
-        synchronizes changes between the feature service and a client based on the replicaID
-        provided by the client. Requires the sync capability. See Sync overview for more information
-        on sync.
-        The client obtains the replicaID by first calling the _create_replica operation.
-        Synchronize applies the client's data changes by importing them into the server's
-        geodatabase. It then exports the changes from the server geodatabase that have taken place
-        since the last time the client got the data from the server. Edits can be supplied in the
-        edits parameter, or, alternatively, by using the editsUploadId and editUploadFormat to
-        identify a file containing the edits that were previously uploaded using the upload_item
-        operation.
-        The response for this operation includes the replicaID, new replica generation number, or
-        the layer's generation numbers. The response has edits or layers according to the
-        syncDirection/syncLayers. Presence of layers and edits in the response is indicated by the
-        responseType.
-        If the responseType is esriReplicaResponseTypeEdits or esriReplicaResponseTypeEditsAndData,
-        the result of this operation can include arrays of edit results for each layer/table edited
-        as specified in edits. Each edit result identifies a single feature on a layer or table and
-        indicates if the edits were successful or not. If an edit is not successful, the edit result
-        also includes an error code and an error description.
-        If syncModel is perReplica and syncDirection is download or bidirectional, the
-        _synchronize_replica operation's response will have edits. If syncDirection is snapshot, the
-        response will have replacement data.
-        If syncModel is perLayer, and syncLayers have syncDirection as download or bidirectional,
-        the response will have edits. If syncLayers have syncDirection as download or bidirectional
-        for some layers and snapshot for some other layers, the response will have edits and data.
-        If syncDirection for all the layers is snapshot, the response will have replacement data.
-        When syncModel is perReplica, the createReplica and synchronizeReplica operations' responses
-        contain replicaServerGen. When syncModel is perLayer, the createReplica and
-        synchronizeReplica operations' responses contain layerServerGens.
-        You can provide arguments to the synchronizeReplica operation as defined in the parameters
-        table below.
-
-        ===============                 ====================================================================
-        **Parameter**                    **Description**
-        ---------------                 --------------------------------------------------------------------
-        replica_id                      The ID of the replica you want to synchronize.
-        ---------------                 --------------------------------------------------------------------
-        transport_type
-        ---------------                 --------------------------------------------------------------------
-        replica_server_gen              Is a generation number that allows the server to keep track of what
-                                        changes have already been synchronized. A new replicaServerGen is sent with the response
-                                        to the synchronizeReplica operation. Clients should persist this value and use it with the
-                                        next synchronizeReplica call.
-                                        It applies to replicas with syncModel = perReplica.
-                                        For replicas with syncModel = perLayer, layer generation numbers are specified using
-                                        parameter: syncLayers; and replicaServerSibGen is not needed.
-        ---------------                 --------------------------------------------------------------------
-        return_ids_for_adds             If true, the objectIDs and globalIDs of features added during the
-                                        synchronize will be returned to the client in the addResults sections of the response.
-                                        Otherwise, the IDs are not returned. The default is false.
-
-                                        Values: true | false
-        ---------------                 --------------------------------------------------------------------
-        edits                           The edits the client wants to apply to the service. Alternatively, the
-                                        edits_upload_ID and editsUploadFormat can be used to specify the edits in a delta file.
-                                        The edits are described using an array where an element in the array includes:
-                                        - The layer or table ID
-                                        - The feature or row edits to apply listed as inserts, updates, and deletes
-                                        - The attachments to apply listed as inserts, updates, and deletes
-                                        For features, adds and updates are specified as feature objects that include geometry and
-                                        attributes.
-                                        Deletes can be specified using globalIDs for features and attachments.
-                                        For attachments, updates and adds are specified using the following set of properties for
-                                        each attachment. If embedding the attachment, set the data property; otherwise, set the url
-                                        property. All other properties are required:
-                                        - globalid - The globalID of the attachment that is to be added or updated.
-                                        - parentGlobalid - The globalID of the feature associated with the attachment.
-                                        - contentType - Describes the file type of the attachment (for example, image/jpeg).
-                                        - name - The file name (for example, hydrant.jpg).
-                                        - data - The base 64 encoded data if embedding the data. Only required if the attachment
-                                            is embedded.
-                                        - url - The location where the service will upload the attachment file (for example,
-                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
-                                            embedded.
-        ---------------                 --------------------------------------------------------------------
-        return_attachment_databy_url    If true, a reference to a URL will be provided for each
-                                        attachment returned from synchronizeReplica. Otherwise, attachments are embedded in the
-                                        response. The default is true. Applies only if attachments are included in the replica.
-        ---------------                 --------------------------------------------------------------------
-        asynchronous                    If true, the request is processed as an asynchronous job and a URL is
-                                        returned that a client can visit to check the status of the job. See the topic on
-                                        asynchronous usage for more information. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        sync_direction                  Determines whether to upload, download, or upload and download on sync. By
-                                        default, a replica is synchronized bi-directionally. Only applicable when
-                                        syncModel = perReplica. If syncModel = perLayer, sync direction is specified using
-                                        syncLayers.
-
-                                        Values: download | upload | bidirectional | snapshot
-
-                                        - download-The changes that have taken place on the server since last download are
-                                            returned. Client does not need to send any changes. If the changes are sent, service
-                                            will ignore them.
-                                        - upload-The changes submitted in the edits or editsUploadID/editsUploadFormatt
-                                            parameters are applied, and no changes are downloaded from the server.
-                                        - bidirectional-The changes submitted in the edits or editsUploadID/editsUploadFormat
-                                            parameters are applied, and changes on the server are downloaded. This is the default
-                                            value.
-                                        - snapshot-The current state of the features is downloaded from the server. If any edits
-                                            are specified, they will be ignored.
-        ---------------                 --------------------------------------------------------------------
-        sync_layers                     Allows a client to specify layer-level generation numbers for a sync
-                                        operation. It can also be used to specify sync directions at layer-level. This parameter
-                                        is needed for replicas with syncModel = perLayer. It is ignored for replicas with
-                                        syncModel = perReplica.
-                                        serverGen is required for layers with syncDirection = bidirectional or download.
-                                        serverSibGen is needed only for replicas where the targetType = server. For replicas with
-                                        syncModel = perLayer, the serverSibGen serves the same purpose at the layer level as the
-                                        replicaServerSibGen does in the case of syncModel = perReplica. See the
-                                        replicaServerSibGen parameter for more information.
-                                        If a sync operation has both the syncDirection and syncLayersparameters, and the replica's
-                                        syncModel is perLayer, the layers that do not have syncDirection values will use the value
-                                        of the syncDirection parameter. If the syncDirection parameter is not specified, the
-                                        default value of bidirectional is used.
-
-                                        Values: download | upload | bidirectional | snapshot
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_id                 The ID for the uploaded item that contains the edits the client wants to
-                                        apply to the service. Used in conjunction with editsUploadFormat.
-        ---------------                 --------------------------------------------------------------------
-        edits_upload_format             The data format of the uploaded data reference in edit_upload_id.
-                                        data_format="json"
-        ---------------                 --------------------------------------------------------------------
-        data_format                     The format of the replica geodatabase returned in the response. The
-                                        default is json.
-
-                                        Values: filegdb, json, sqlite, shapefile
-        ---------------                 --------------------------------------------------------------------
-        rollback_on_failure             Determines the behavior when there are errors while importing edits
-                                        on the server during synchronization. This only applies in cases where edits are being
-                                        uploaded to the server (syncDirection = upload or bidirectional). See the
-                                        RollbackOnFailure and Sync Models topic for more details.
-                                        When true, if an error occurs while importing edits on the server, all edits are rolled
-                                        back (not applied), and the operation returns an error in the response. Use this setting
-                                        when the edits are such that you will either want all or none applied.
-                                        When false, if an error occurs while importing an edit on the server, the import process
-                                        skips the edit and continues. All edits that were skipped are returned in the edits
-                                        results with information describing why the edits were skipped.
-        ---------------                 --------------------------------------------------------------------
-        close_replica                   If true, the replica will be unregistered when the synchronize completes.
-                                        This is the same as calling synchronize and then calling unregisterReplica. Otherwise, the
-                                        replica can continue to be synchronized. The default is false.
-        ---------------                 --------------------------------------------------------------------
-        out_path                        Folder path to save the file
-        ===============                 ====================================================================
-
-        :returns:
+        Docstring in SyncManager.synchronize.
         """
 
         url = "{url}/synchronizeReplica".format(url=self._url)

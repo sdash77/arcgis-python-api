@@ -1,10 +1,9 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import no_ssl_verification
-from urllib3.exceptions import InsecureRequestWarning
+
 
 from contextlib import contextmanager
 import warnings

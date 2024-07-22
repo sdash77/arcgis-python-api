@@ -2,9 +2,6 @@
 # Name:        Workforce Dispatchers tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import (
     PreconditionChecks,
@@ -37,7 +34,7 @@ else:
 try:
     from arcgis.gis import GIS, Group, User
     from arcgis.features import Feature, FeatureLayer
-    from arcgis.mapping import WebMap
+    from arcgis.layers import WebMap
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce._schemas import *
     from arcgis.apps.workforce.managers import *
@@ -60,7 +57,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class Test_Workforce_Dispatchers(unittest.TestCase):
     """
     Test to check that dispatchers can be queried, added, updated, and deleted

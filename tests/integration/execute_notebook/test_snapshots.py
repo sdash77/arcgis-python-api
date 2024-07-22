@@ -1,35 +1,18 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8882\src")
 import json
 import os, uuid
 import tempfile
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
 from arcgis.gis.agonb import snapshot as _agosnapshot
 from arcgis.gis.nb import _snapshot as _entsnapshot
 from arcgis.notebook import list_snapshots, create_snapshot
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_profile']  # , 'your_enterprise_profile'
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 notebook_json = {
     "cells": [
@@ -85,7 +68,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "5.0",
+            "notebookRuntimeVersion": "8.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -107,6 +90,8 @@ notebook_json = {
 }
 
 
+@integration_test
+@profiles.admin_enterprise_and_agol
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -114,13 +99,17 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._gis = GIS(profile='your_online_profile', verify_cert=False, proxy=PROXIES)
-
+        cls._gis = cls.gis
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
+        if cls._gis._is_agol:
+            notebookRuntimeVersion = "8.0"
+        else:
+            notebookRuntimeVersion = "9.0"
+
         cls._item = cls._gis.content.add(
             {
                 "type": "Notebook",
@@ -128,7 +117,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "5.0",
+                    "notebookRuntimeVersion": notebookRuntimeVersion,
                 },
             },
             data=fp,
@@ -136,77 +125,17 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
     def test_snapshots_agol(self):
         """tests the AGO snapshot function"""
-        res = create_snapshot(self._item, name='abcd2')
+        res = create_snapshot(self._item, name="abcd2")
         assert res
-        assert isinstance(res, _agosnapshot.SnapShot)
+        if self.gis._is_agol:
+            assert isinstance(res, _agosnapshot.SnapShot)
+        else:
+            assert isinstance(res, _entsnapshot.SnapShot)
 
     def test_list_snapshots(self):
         """tests the list_snapshots method"""
-        res = create_snapshot(self._item, name='abcd2')
+        res = create_snapshot(self._item, name="abcd2")
         assert len(self._item.snapshots) == len(list_snapshots(self._item))
-
-
-class TestEntNotebookManager(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        assert cls._item.delete()
-
-    @classmethod
-    def setUpClass(cls):
-        cls._gis = GIS(
-            url="https://rqawinbi01pt.ags.esri.com/gis",
-            username="NBAdvanced",
-            password="NBAdvanced.1",
-            verify_cert=False,
-            proxy=PROXIES,
-        )
-
-        d = tempfile.gettempdir()
-        fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
-        writer = open(fp, "w")
-        writer.write(json.dumps(notebook_json))
-        writer.close()
-        cls._item = cls._gis.content.add(
-            {
-                "type": "Notebook",
-                "tags": "delete me",
-                "title": f"item_{uuid.uuid4().hex[:6]}",
-                "properties": {
-                    "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "5.0",
-                },
-            },
-            data=fp,
-        )
-
-    def test_snapshots_ent(self):
-        """tests the Enterprise snapshot function"""
-        res = create_snapshot(self._item, name='abcd2')
-        assert res
-        assert isinstance(res, _entsnapshot.SnapShot)
-
-    def test_list_snapshots(self):
-        """tests the list_snapshots method"""
-        res = create_snapshot(self._item, name='abcd2')
-        assert len(self._item.snapshots) == len(list_snapshots(self._item))
-
-
-"""
-if __name__ == "__main__":
-    url = "https://rqawinbi01pt.ags.esri.com/gis"
-    username = "PAPIadmin"
-    password = "PAPIletmein01"
-    gis = GIS(url=url, username=username, password=password, verify_cert=False)
-    item = gis.content.get("7a289cd368af41a89edeca783dc0072f")
-    res1 = create_snapshot(item, name='abcd2')
-    [s.delete() for s in item.snapshots]
-    print(res1)
-    gis = GIS(profile='your_online_profile', verify_cert=False)
-    item = gis.content.get("11662e6097c34ec2be7043cdc17cfce2")
-    res2 = create_snapshot(item, name='abcd2')
-    print(res2)
-    [s.delete() for s in item.snapshots]
-"""
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 Allows for dataset to dataset comparisons by passing in DataFrames or
 Geometries.
 """
+
 import math
 from functools import reduce
 

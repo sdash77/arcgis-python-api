@@ -1,6 +1,7 @@
 """
 IO operations for Feature Classes
 """
+
 from arcgis.auth.tools import LazyLoader
 import io
 import os
@@ -521,7 +522,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     elif HASARCPY:
         import arcpy
 
-        columns = df.columns.tolist()
+        columns = df.convert_dtypes().columns.tolist()
         join_dummy = "AEIOUYAJC81Z"
         try:
             columns.pop(columns.index(df.spatial.name))
@@ -569,7 +570,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     dtypes.append((col, "<U%s" % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][0])))
+                        dtypes.append((col, u))
                     except:
                         dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "string":
@@ -1136,7 +1137,16 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name in ["int64", "Int64"]:
-                    dtypes.append((col, "<i8"))
+                    # Enterprise 11.1 and less do not accept Int64. Need to make float
+                    gis = arcgis.env.active_gis
+                    if (
+                        gis is not None
+                        and gis._is_agol == False
+                        and gis.version <= [10, 3]
+                    ):
+                        dtypes.append((col, np.float64))
+                    else:
+                        dtypes.append((col, "<i8"))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 elif df[col].dtype.name == "boolean":
@@ -1469,7 +1479,7 @@ def _pyshp2(df, out_path, out_name):
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)
-                    elif isinstance(df[c].loc[idx], (bool)):
+                    elif isinstance(df[c].loc[idx], (bool, np.bool_)):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx
@@ -1493,7 +1503,7 @@ def _pyshp2(df, out_path, out_name):
                     else:
                         row[idx] = row[idx].to_pydatetime()
             for idx, value in enumerate(row):
-                if value is np.nan:
+                if value is np.nan or value is pd.NA:
                     row[idx] = None
             shpfile.record(*row)
             del idx

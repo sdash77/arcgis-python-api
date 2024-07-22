@@ -6,7 +6,8 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import WMTSLayer
+from arcgis.layers._ogc import WMTSLayer
+from utils.decorators import integration_test
 
 wm_urls = [
     "https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/wmts",
@@ -14,6 +15,7 @@ wm_urls = [
 ]
 
 
+@integration_test
 class TestwmtsLayer(unittest.TestCase):
     """Tests working with a wmts Layer"""
 

@@ -1,10 +1,8 @@
-import sys
-
-sys.path.insert(0, "C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
+from utils.decorators import integration_test
 
 gis = GIS(
     "https://utilitynetwork.esri.com/portal",
@@ -28,6 +26,7 @@ except:
 
 
 @unittest.skipIf(module_skip, "No Utility Network Service Found. Skipping Test.")
+@integration_test
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 

@@ -15,7 +15,7 @@ class RuntimeManager:
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The base url for the RuntimeManager endpoints.
     ----------------  -------------------------------------------------------------------------------
-    gis               Required GIS. The ArcGIS Online connection object.
+    gis               Required :class:`~arcgis.gis.GIS`. The ArcGIS Online connection object.
     ================  ===============================================================================
 
     """

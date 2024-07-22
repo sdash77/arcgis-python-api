@@ -4,7 +4,7 @@ import time
 import base64
 import struct
 import typing
-
+from urllib.parse import ParseResult
 import urllib.parse as urllib_parse
 import urllib.request
 from functools import lru_cache
@@ -37,6 +37,24 @@ def check_module_exists(name: str) -> bool:
         return True
     except:
         return False
+
+
+# --------------------------------------------------------------------------
+@lru_cache(maxsize=254)
+def create_base_url(url: str) -> str:
+    parsed: ParseResult = parse_url(url=url)
+    if parsed.path == "" and parsed.netloc.lower().find("arcgis.com") > -1:
+        return f"https://{parsed.netloc}/sharing/rest/"
+    elif parsed.path.lower() in ["/sharing/rest", "/sharing/rest/"]:
+        return f"https://{parsed.netloc}/sharing/rest/"
+    elif parsed.netloc.lower().find("arcgis.com") > -1:
+        return f"https://{parsed.netloc}/sharing/rest/"
+
+    else:  #  we have a web adaptor
+        wa = parsed.path[1:].split("/")[0]
+        return f"https://{parsed.netloc}/{wa}/sharing/rest/"
+
+    return parsed
 
 
 @lru_cache(maxsize=255)

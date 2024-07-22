@@ -1,15 +1,14 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import time
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
-import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
+from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestSetLineLabelPosition(unittest.TestCase):
     """Tests the Transfer Parcel function from the parcel fabric SOE"""
 
@@ -26,7 +25,7 @@ class TestSetLineLabelPosition(unittest.TestCase):
         cls.base_server_url = (
             "https://dev0016752.esri.com/server/rest/services/Redlands/"
         )
-        cls.gis = GIS("https://dev0016752.esri.com/portal/", "admin", "esri.agp")
+        cls.gis = GIS("https://dev0016752.esri.com/portal/", "admin", "esri.agp", verify_cert=False)
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
         cls.parcel_fabric_flc = FeatureLayerCollection(

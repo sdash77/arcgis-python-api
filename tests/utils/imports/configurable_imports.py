@@ -19,7 +19,7 @@ def configure_imports(
 
     ___import__real = __import__real
     _modules_to_raise_importerrors = modules_to_raise_importerrors
-    _modules_to_returns_magicmocks = modules_to_return_magicmocks
+    _modules_to_return_magicmocks = modules_to_return_magicmocks
 
 
 def __import__custom(*args, **kwargs):

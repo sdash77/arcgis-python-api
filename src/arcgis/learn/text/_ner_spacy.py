@@ -1,13 +1,17 @@
 try:
+    # nlp.analyze_pipes(pretty=True)
     import spacy
+    import warnings
     import numpy as np
     import pandas as pd
     from spacy.util import minibatch, compounding
+    from spacy.training import Example
     from fastprogress.fastprogress import master_bar, progress_bar
     from .._utils.common import _get_emd_path
     from .._utils.text_data import copy_metrics
     from ..models._codetemplate import entity_recognizer_placeholder
 
+    warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
 except:
     HAS_SPACY = False
@@ -49,8 +53,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         self.model_dir = None
         self.saved_model_dir = None
         self.model = spacy.blank(lang)
-        self.ner = self.model.create_pipe("ner")
-        self.model.add_pipe(self.ner, last=True)
+        self.ner = self.model.add_pipe("ner", last=True)
         self._address_tag = "Address"  # Defines the default addres field
         self.entities = (
             None  # Stores all the entity names from the training data into a list
@@ -60,7 +63,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         )
         self._trained = False  # Flag to check if model has been trained
         self.lang = lang
-        self.optimizer = self.model.begin_training()
+        self.optimizer = self.model.initialize()
         if data:
             self._is_empty = False
             self._address_tag = data._address_tag
@@ -70,8 +73,8 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self.train_ds = data.train_ds
             self.val_ds = data.val_ds
             for ent in data.entities:
-                if ent not in self.ner.labels:
-                    self.model.entity.add_label(ent)
+                if ent not in self.model.get_pipe("ner").labels:
+                    self.ner.add_label(ent)
         else:
             self._is_empty = True
             self.train_ds = None
@@ -219,16 +222,18 @@ class _SpacyEntityRecognizer(ArcGISModel):
         if (
             "ner" not in nlp.pipe_names
         ):  # create the built-in pipeline components and add them to the pipeline
-            # spacy.require_gpu()
-            self.ner = nlp.create_pipe(
-                "ner"
-            )  # nlp.create_pipe works for built-ins that are registered with spaCy
-            nlp.add_pipe(self.ner, last=True)
+            nlp.add_pipe("ner", last=True)
 
-        for _, annotations in TRAIN_DATA:  # adding labels
+        train_examples = []
+        val_examples = []
+        for text, annotations in TRAIN_DATA:  # adding labels and creating examples
+            train_examples.append(Example.from_dict(nlp.make_doc(text), annotations))
             for ent in annotations.get("entities"):
-                if ent[2] not in self.ner.labels:
+                if ent[2] not in self.model.get_pipe("ner").labels:
                     self.ner.add_label(ent[2])
+
+        for text, annotations in VAL_DATA:
+            val_examples.append(Example.from_dict(nlp.make_doc(text), annotations))
 
         other_pipes = [
             pipe for pipe in nlp.pipe_names if pipe != "ner"
@@ -246,7 +251,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 n_iter = min(kwargs.get("num_it"), n_iter)
                 lr_find = True
             else:
-                self.optimizer.alpha = lr
+                self.optimizer.learn_rate = lr
                 lr_find = False
             mb = master_bar(range(epochs))
             mb.write(
@@ -266,20 +271,17 @@ class _SpacyEntityRecognizer(ArcGISModel):
             for itn in mb:
                 t_start = datetime.datetime.now()
                 if lr_find:
-                    self.optimizer.alpha = lr.pop(0)
+                    self.optimizer.learn_rate = lr.pop(0)
                     losses_list = []
                     update_recorder = True
-                random.shuffle(TRAIN_DATA)
-                batches = minibatch(TRAIN_DATA, size=batch_size)
+                random.shuffle(train_examples)
+                batches = minibatch(train_examples, size=batch_size)
                 losses = {}
                 epoch_loss = []
                 for batch_index in progress_bar(range(n_iter), parent=mb):
                     batch_index += 1
                     batch = next(batches)
-                    texts, annotations = zip(*batch)
-                    nlp.update(
-                        texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses
-                    )
+                    nlp.update(batch, sgd=self.optimizer, drop=0.35, losses=losses)
                     processed_len = len(batch) * batch_index
                     train_loss = (
                         losses["ner"] / processed_len
@@ -296,20 +298,17 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
                 if VAL_DATA:
                     if lr_find:
-                        VAL_DATA = VAL_DATA[
+                        val_examples = val_examples[
                             :batch_size
                         ]  # running on a subset of val data incase of lr_find
-                    val_batches = minibatch(VAL_DATA, size=batch_size)
+                    val_batches = minibatch(val_examples, size=batch_size)
                     val_losses = {}
                     val_loss_list = []
                     epoch_loss = []
                     for batch_index, val_batch in enumerate(val_batches):
                         batch_index += 1
                         processed_len_val = batch_size * (batch_index)
-                        val_text, val_annotations = zip(*val_batch)
-                        nlp.update(
-                            val_text, val_annotations, sgd=None, losses=val_losses
-                        )
+                        nlp.update(val_batch, sgd=None, losses=val_losses)
                         val_loss = (
                             val_losses["ner"] / processed_len_val
                         )  # normalized with processed_len_val
@@ -324,7 +323,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
                 if lr_find:
                     self.recorder.losses.append(np.mean(losses_list))
-                    self.recorder.lrs.append(self.optimizer.alpha)
+                    self.recorder.lrs.append(self.optimizer.learn_rate)
                     self.recorder.val_loss.append(np.min(val_loss_list))
                     update_recorder = False
                     # break the epoch if loss overshoots or all the lrs are tested
@@ -333,14 +332,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
                         or len(lr) == 0
                     ):
                         return
-                    score = nlp.evaluate(self.val_ds[:batch_size])
+                    score = nlp.evaluate(val_examples[:batch_size])
                 else:
-                    score = nlp.evaluate(self.val_ds)
+                    score = nlp.evaluate(val_examples)
+
                 precision_score, recall_score, f1_score, metrics_per_label = (
-                    score.ents_p,
-                    score.ents_r,
-                    score.ents_f,
-                    score.ents_per_type,
+                    score["ents_p"],
+                    score["ents_r"],
+                    score["ents_f"],
+                    score["ents_per_type"],
                 )
                 self.recorder.metrics["precision_score"].append(precision_score)
                 self.recorder.metrics["recall_score"].append(recall_score)
@@ -350,9 +350,9 @@ class _SpacyEntityRecognizer(ArcGISModel):
                     itn,
                     round(train_loss, 2),
                     round(val_loss, 2),
-                    round(precision_score / 100, 2),
-                    round(recall_score / 100, 2),
-                    round(f1_score / 100, 2),
+                    round(precision_score, 2),
+                    round(recall_score, 2),
+                    round(f1_score, 2),
                     _timelapsed(t_start),
                 ]
                 line = [str(val) for val in line]
@@ -361,7 +361,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         if not lr_find:
             self._trained = True
             self.model = nlp
-            self.entities = list(self.model.entity.labels)
+            self.entities = list(self.model.get_pipe("ner").labels)
             self.lr = lr
 
     def _create_emd(self, path, compute_metrics=True):
@@ -371,7 +371,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template["ModelFile"] = str(Path(path).name)
         self._emd_template["ModelName"] = type(self).__name__
-        self._emd_template["Labels"] = self.model.entity.labels
+        self._emd_template["Labels"] = self.model.get_pipe("ner").labels
         self._emd_template["Lang"] = self.lang
         self._emd_template["saved_path"] = str(Path(path))
         if hasattr(self, "lr"):
@@ -531,7 +531,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         self.model = spacy.load(model_path)
         self.ner = self.model.get_pipe("ner")
         self._trained = True
-        self.entities = list(self.model.entity.labels)
+        self.entities = list(self.model.get_pipe("ner").labels)
         self.model_dir = Path(name_or_path).parent.resolve()
         self.recorder = Recorder()
         if emd.get("metrics"):
@@ -561,7 +561,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         ner = cls(data=data)
         ner.load(emd_path)
         ner._trained = True
-        ner.entities = list(ner.model.entity.labels)
+        ner.entities = list(ner.ner.labels)
         return ner
 
     def _post_process_non_address_df(self, unprocessed_df):
@@ -786,7 +786,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     def precision_score(self):
         if self._trained:
             precision_pct = self.recorder.metrics["precision_score"][-1]
-            precision = round(precision_pct / 100, 2)
+            precision = round(precision_pct, 2)
             return precision
         else:
             return logging.warning("This model has not been trained")
@@ -794,7 +794,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     def recall_score(self):
         if self._trained:
             recall_pct = self.recorder.metrics["recall_score"][-1]
-            recall = round(recall_pct / 100, 2)
+            recall = round(recall_pct, 2)
             return recall
         else:
             return logging.warning("This model has not been trained")
@@ -802,7 +802,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     def f1_score(self):
         if self._trained:
             f1_pct = self.recorder.metrics["f1_score"][-1]
-            f1 = round(f1_pct / 100, 2)
+            f1 = round(f1_pct, 2)
             return f1
         else:
             return logging.warning("This model has not been trained")
@@ -816,7 +816,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 self.recorder.metrics["metrics_per_label"][-1]
             ).transpose()
             metrics_df.columns = ["Precision_score", "Recall_score", "F1_score"]
-            metrics_df = metrics_df.apply(lambda x: round(x / 100, 2))
+            metrics_df = metrics_df.apply(lambda x: round(x, 2))
             return metrics_df
         else:
             return logging.warning("This model has not been trained")

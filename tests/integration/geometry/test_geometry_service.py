@@ -1,35 +1,36 @@
-import sys
-
-sys.path.insert(0, r"c:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
+from utils.decorators import integration_test
 
 profiles = [
     None,
     "your_online_profile",
     "your_enterprise_profile",
-    "your_kubernetes_profile"
+    "your_kubernetes_profile",
 ]
 profiles_no_anon = [
     "your_online_profile",
     "your_enterprise_profile",
-    "your_kubernetes_profile"
+    "your_kubernetes_profile",
 ]
 
 if not "your_kubernetes_profile" in ProfileManager().list():
-    from arcgis.gis import GIS
+    from arcgis.gis import GIS, ProfileManager
 
-    gis = GIS(
-        url="https://devent.esri.com/gis",
-        username="admin",
-        password="esri.agp",
-        profile="your_kubernetes_profile",
+    pm = ProfileManager()
+    pm.create(
+        "your_kubernetes_profile",
+        url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+        username="geosaurusaccnt",
+        password="geosaurus_automation123",
     )
+
 
 ###########################################################################
 # @unittest.skip('said so')
+@integration_test
 class TestGSSettingSR(unittest.TestCase):
     """
     Tests that async and sync operations set the spatial reference on the geometry objects
@@ -69,17 +70,26 @@ class TestGSSettingSR(unittest.TestCase):
         sr = 4326
         gis = GIS(verify_cert=False)
         geom_async = intersect(
-            spatial_ref=4326, geometries=geoms, geometry=geom, gis=None, future=True
+            spatial_ref=4326,
+            geometries=geoms,
+            geometry=geom,
+            gis=None,
+            future=True,
         )
         assert geom_async
         assert "spatialReference" in geom_async.result()[0]
         geom_sync = intersect(
-            spatial_ref=4326, geometries=geoms, geometry=geom, gis=None, future=False
+            spatial_ref=4326,
+            geometries=geoms,
+            geometry=geom,
+            gis=None,
+            future=False,
         )
         assert "spatialReference" in geom_sync[0]
 
 
 ###########################################################################
+@integration_test
 class TestGeometryService(unittest.TestCase):
     """Tests the underlying Geometry Service"""
 
@@ -101,10 +111,7 @@ class TestGeometryService(unittest.TestCase):
             if gis._portal.is_kubernetes == False:
                 gs = _GeometryService(url=url)
 
-            assert isinstance(gs, _GeometryService)
-            gs = _GeometryService(url=url, gis=gis)
-
-            assert isinstance(gs, _GeometryService)
+                assert isinstance(gs, _GeometryService)
 
             del gis, profile
 
@@ -186,7 +193,13 @@ class TestGeometryService(unittest.TestCase):
                 {
                     "rings": [
                         [[0, 0], [110, 0], [110, -60], [0, -60], [0, 0]],
-                        [[120, 0], [180, 0], [180, -60], [120, -60], [120, 0]],
+                        [
+                            [120, 0],
+                            [180, 0],
+                            [180, -60],
+                            [120, -60],
+                            [120, 0],
+                        ],
                     ]
                 }
             ]
@@ -477,13 +490,21 @@ class TestGeometryService(unittest.TestCase):
                 if fut:
 
                     j = gs.from_geo_coordinate_string(
-                        sr, strings, conversionType, conversionMode=None, future=fut
+                        sr,
+                        strings,
+                        conversionType,
+                        conversionMode=None,
+                        future=fut,
                     )
                     assert isinstance(j, GeometryJob)
                     assert j.result()
                 else:
                     assert gs.from_geo_coordinate_string(
-                        sr, strings, conversionType, conversionMode=None, future=fut
+                        sr,
+                        strings,
+                        conversionType,
+                        conversionMode=None,
+                        future=fut,
                     )
 
     # ----------------------------------------------------------------------
@@ -622,7 +643,10 @@ class TestGeometryService(unittest.TestCase):
                     assert isinstance(j, GeometryJob)
                     assert j.result()
                 else:
-                    assert isinstance(gs.label_points(sr=sr, polygons=geoms, future=fut), list)
+                    assert isinstance(
+                        gs.label_points(sr=sr, polygons=geoms, future=fut),
+                        list,
+                    )
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')

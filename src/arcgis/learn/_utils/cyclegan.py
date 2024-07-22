@@ -294,7 +294,7 @@ class InceptionV3(nn.Module):  # Code from https://github.com/mseitzer/pytorch-f
 
         self.blocks = nn.ModuleList()
 
-        inception = models.inception_v3(pretrained=True)
+        inception = models.inception_v3(weights=models.Inception_V3_Weights.DEFAULT)
 
         # Block 0: input to maxpool1
         block0 = [

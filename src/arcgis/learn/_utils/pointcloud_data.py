@@ -42,6 +42,7 @@ import warnings
 logger = logging.getLogger()
 
 try:
+    import h5py
     from torch.utils.data import (
         DataLoader,
         Dataset,
@@ -56,6 +57,7 @@ try:
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
     from ..models._rand_lanet_utils import batch_preprocess_dict
+    from IPython.display import display
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -505,8 +507,9 @@ class PointCloudDataset(Dataset):
                 self.centers = self.centers[indexes]
 
         self.relative_files = files
-        self.filenames = [self.path / self.folder / file.decode() for file in files]
-        self.h5files = [(h5py.File(filename, "r")) for filename in self.filenames]
+        self.filenames = np.array([file.decode() for file in self.relative_files])
+        # self.filenames = [self.path / self.folder / file.decode() for file in files]
+        # self.h5files = [(h5py.File(filename, "r")) for filename in self.filenames]
         self.classes_of_interest = classes_of_interest
 
     def __len__(self):
@@ -519,75 +522,80 @@ class PointCloudDataset(Dataset):
         Args:
             i: index of file
         """
-        assert i < len(self.h5files)
+        assert i < len(self.filenames)
         indexes = np.where(self.tiles[:, 0] == i)
-        read_file = self.h5files[i]
         labels = []
         xyzs = []
         xyzs_scaled = []
-        centers = []
         scale = self.block_size / 2
         block_centers = []
-        for idx in indexes[0]:
-            tile = self.tiles[idx]
-            center = self.centers[idx]
-            xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
-            xyz_scaled = xyz * scale + center
-            xyzs.append(xyz)
-            labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
-            xyzs_scaled.append(xyz_scaled)
-            block_centers.append(xyz_scaled.mean(axis=0))
+        filename = self.path / self.folder / self.filenames[i]
+        with h5py.File(filename, "r") as read_file:
+            for idx in indexes[0]:
+                tile = self.tiles[idx]
+                center = self.centers[idx]
+                xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]]
+                xyz_scaled = xyz * scale + center
+                xyzs.append(xyz)
+                labels.append(read_file["classification"][tile[1] : tile[1] + tile[2]])
+                xyzs_scaled.append(xyz_scaled)
+                block_centers.append(xyz_scaled.mean(axis=0))
 
         index_mask = get_random_cluster_indexes(block_centers, self.block_size)
-        xyzs = np.concatenate(np.array(xyzs)[index_mask], axis=0)
-        labels = np.concatenate(np.array(labels)[index_mask], axis=0)
-        xyzs_scaled = np.concatenate(np.array(xyzs_scaled)[index_mask], axis=0)
+        xyzs = np.concatenate(np.array(xyzs, dtype="object")[index_mask], axis=0)
+        labels = np.concatenate(np.array(labels, dtype="object")[index_mask], axis=0)
+        xyzs_scaled = np.concatenate(
+            np.array(xyzs_scaled, dtype="object")[index_mask], axis=0
+        )
 
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
         tile_index = i
         tile = self.tiles[i]
-        read_file = self.h5files[tile[0]]
-
-        # we need this in show_results of tool.
-        rescaled_xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]].astype(
-            np.float32
-        ) * (self.block_size / 2)
-        if add_centers:
-            rescaled_xyz += self.centers[i]
-        if self.classification_key in read_file.keys():
-            classification, _ = pad_tensor(
-                torch.tensor(
-                    read_file[self.classification_key][
-                        tile[1] : tile[1] + tile[2]
-                    ].astype(int)
-                ),
-                self.max_point,
-                to_float=False,
-            )
-            if not self.remap:
-                retval = [
-                    concatenate_tensors(
-                        read_file, self.input_keys, tile, self.max_point
+        # read_file = self.h5files[tile[0]]
+        filename = self.path / self.folder / self.filenames[tile[0]]
+        with h5py.File(filename, "r") as read_file:
+            # we need this in show_results of tool.
+            rescaled_xyz = read_file["xyz"][tile[1] : tile[1] + tile[2]].astype(
+                np.float32
+            ) * (self.block_size / 2)
+            if add_centers:
+                rescaled_xyz += self.centers[i]
+            if self.classification_key in read_file.keys():
+                classification, _ = pad_tensor(
+                    torch.tensor(
+                        read_file[self.classification_key][
+                            tile[1] : tile[1] + tile[2]
+                        ].astype(int)
                     ),
-                    classification.long(),
-                ]
+                    self.max_point,
+                    to_float=False,
+                )
+                if not self.remap:
+                    retval = [
+                        concatenate_tensors(
+                            read_file, self.input_keys, tile, self.max_point
+                        ),
+                        classification.long(),
+                    ]
+                else:
+                    retval = [
+                        concatenate_tensors(
+                            read_file, self.input_keys, tile, self.max_point
+                        ),
+                        remap_labels(classification, self.class2idx).long(),
+                    ]
+
             else:
+                # removing warning as it is showing up in the tool.
+                # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
                 retval = [
                     concatenate_tensors(
                         read_file, self.input_keys, tile, self.max_point
                     ),
-                    remap_labels(classification, self.class2idx).long(),
+                    None,
                 ]
-
-        else:
-            # removing warning as it is showing up in the tool.
-            # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
-            retval = [
-                concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
-                None,
-            ]
 
         if return_scaled:
             # indexed zero because pad tensor returns two things and we only want the first one.
@@ -737,15 +745,11 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     color_mapping = recompute_color_mapping(color_mapping, self.classes)
     color_mapping = np.array(list(color_mapping.values())) / 255
 
-    h5_files = self.h5files.copy()
-    random.shuffle(h5_files)
-
     idx = 0
     file_idx = self._file_indexes[0]
     f_idx = 1
     while idx < rows:
-        # file = h5_files[file_idx]
-        _pc, labels, pc = self._get_file_blocks(file_idx)
+        _, labels, pc = self._get_file_blocks(file_idx)
         if self.remap:
             labels = remap_labels(labels, self.class2idx)
             unmapped_labels = remap_labels(labels.copy(), self.idx2class)
@@ -818,7 +822,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
             ],
             layout=layout,
         )
-        fig.show()
+
+        fig2 = go.FigureWidget(fig)
+        display(fig2)
 
         if idx == rows - 1:
             break
@@ -1142,7 +1148,7 @@ def prepare_las_data(
                     block_size_,
                     2 * (xyz_max[0, -1] - xyz_min[0, -1]),
                 )
-                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(np.int)
+                xyz_blocks = np.floor((xyz - xyz_min) / block_size).astype(int)
 
                 blocks, point_block_indices, block_point_counts = np.unique(
                     xyz_blocks, return_inverse=True, return_counts=True, axis=0
@@ -1193,7 +1199,7 @@ def prepare_las_data(
                             ],
                             axis=-1,
                         )
-                        block_point_indices[block_idx] = np.array([], dtype=np.int)
+                        block_point_indices[block_idx] = np.array([], dtype=int)
                         block_merge_count = block_merge_count + 1
                         break
 
@@ -1211,7 +1217,7 @@ def prepare_las_data(
                     block_points = xyz[point_indices]
                     block_min = np.amin(block_points, axis=0, keepdims=True)
                     xyz_grids = np.floor((block_points - block_min) / grid_size).astype(
-                        np.int
+                        int
                     )
                     grids, point_grid_indices, grid_point_counts = np.unique(
                         xyz_grids, return_inverse=True, return_counts=True, axis=0
@@ -1299,15 +1305,15 @@ def prepare_las_data(
                         data[idx_in_batch, 0:point_num, ...] = block_xzyrgbi[
                             start:end, :
                         ]
-                        unnormalized_data[
-                            idx_in_batch, 0:point_num, ...
-                        ] = unnormalized_block_xzyrgbi[start:end, :]
+                        unnormalized_data[idx_in_batch, 0:point_num, ...] = (
+                            unnormalized_block_xzyrgbi[start:end, :]
+                        )
                         data_num[idx_in_batch] = point_num
                         label[idx_in_batch] = dataset_idx  # won't be used...
                         label_seg[idx_in_batch, 0:point_num] = block_labels[start:end]
-                        indices_split_to_full[
-                            idx_in_batch, 0:point_num
-                        ] = point_indices[start:end]
+                        indices_split_to_full[idx_in_batch, 0:point_num] = (
+                            point_indices[start:end]
+                        )
 
                         if ((idx + 1) % batch_size == 0) or (
                             block_idx == idx_last_non_empty_block
@@ -2809,6 +2815,10 @@ def rotation_angle(rotation_param, method):
             return uniform(rotation_param)
 
 
+def get_uniform_distribution(range):
+    return np.random.uniform(-range, range)
+
+
 def get_xforms(
     xform_num,
     rotation_range=(0, 0, 0, "u"),
@@ -2818,17 +2828,17 @@ def get_xforms(
     xforms = np.empty(shape=(xform_num, 3, 3))
     rotations = np.empty(shape=(xform_num, 3, 3))
     for i in range(xform_num):
-        rx = rotation_angle(rotation_range[0], rotation_range[3])
-        ry = rotation_angle(rotation_range[1], rotation_range[3])
-        rz = rotation_angle(rotation_range[2], rotation_range[3])
+        rx = get_uniform_distribution(rotation_range[0])
+        ry = get_uniform_distribution(rotation_range[1])
+        rz = get_uniform_distribution(rotation_range[2])
         rotation = R.from_euler(order, [rx, ry, rz]).as_matrix()
 
-        sx = scaling_factor(scaling_range[0], scaling_range[3])
-        sy = scaling_factor(scaling_range[1], scaling_range[3])
-        sz = scaling_factor(scaling_range[2], scaling_range[3])
-        scaling = np.diag([sx, sy, sz])
+        sx = 1.0 + get_uniform_distribution(scaling_range[0])
+        sy = 1.0 + get_uniform_distribution(scaling_range[1])
+        sz = 1.0 + get_uniform_distribution(scaling_range[2])
 
-        xforms[i, :] = scaling * rotation
+        scaling = np.diag([sx, sy, sz])
+        xforms[i, :] = np.dot(scaling, rotation)
         rotations[i, :] = rotation
     return xforms, rotations
 
@@ -2840,58 +2850,109 @@ def augment(points, xforms, range=None):
 
     if isinstance(points, torch.Tensor):
         jitter_data = range * points.new(np.random.randn(*points_xformed.shape))
-        jitter_clipped = torch.clamp(jitter_data, -5 * range, 5 * range)
+        jitter_clipped = torch.clamp(jitter_data, -range, range)
     else:
         jitter_data = range * np.random.randn(*points_xformed.shape)
-        jitter_clipped = np.clip(jitter_data, -5 * range, 5 * range)
+        jitter_clipped = np.clip(jitter_data, -range, range)
     return points_xformed + jitter_clipped
 
 
 class Transform3d(object):
-
     """
-    Creates a 3D transformation that can be used in :meth:`~arcgis.learn.prepare_data`
-    to apply data augmentation to blocks, with a 50 % probability.
-    Applicable only for dataset_type=’PointCloud’.
+    Create transformations for 3D datasets, that can be used in
+    :meth:`~arcgis.learn.prepare_data` to apply data augmentation
+    with a 50% probability. Applicable for dataset_type='PointCloud'
+    and dataset_type='PointCloudOD'.
 
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    rotation_range          Optional tuple of length 4. It contains a list
-                            of angles(in radians) for X, Z and Y coordinates
-                            respectively. These angles will rotate the point
-                            cloud block according to the randomly selected angle.
-                            The fourth value in the tuple is the sampling method
-                            where 'u' means uniform and 'g' means gaussian.
-                            Intrinsic rotation will take place.
-                            Default: [math.pi / 72, math.pi, math.pi / 72, 'u'].
+    rotation                An optional list of float. It defines a value in
+                            degrees for each X, Y, and Z, dimensions which will
+                            be used to rotate a block around the X, Y, and Z, axes.
+
+                            Example:
+                            A value of [2, 3, 180] means a random value for each
+                            X, Y, and Z will be selected between, [-2, 2], [-3, 3],
+                            and [-180, 180], respectively. The block will rotate
+                            around the respective axis as per the selected random
+                            value.
+
+                            Note: For dataset_type=’PointCloudOD’, rotation around
+                            the X and Y axes will not be considered.
+                            Default: [2.5, 2.5, 45]
     ---------------------   -------------------------------------------
-    scaling_range           Optional tuple of length 4. It contains a list
-                            of scaling ranges[0-1] which will scale the points.
-                            Please keep it a very small number otherwise,
-                            point cloud block may get distorted. The fourth
-                            value in the tuple is the sampling method
-                            where 'u' means uniform and 'g' means gaussian.
-                            Default: [0.05, 0.05, 0.05, 'g'].
+    scaling                 An optional float. It defines a percentage value, that
+                            will be used to apply scaling transformation to a block.
+
+                            Example:
+                            A value of 5 means, for each X, Y, and Z, dimensions a
+                            random value will be selected within the range of [0, 5],
+                            where the block might be scaled up or scaled down randomly,
+                            in the respective dimension.
+
+                            Note: For dataset_type=’PointCloudOD’, the same scale
+                            percentage in all three directions is considered.
+                            Default: 5
     ---------------------   -------------------------------------------
-    jitter                  Optional float. The scale to which randomly
-                            jitter the points in the point cloud block.
+    jitter                  Optional float within [0, 1]. It defines a value in
+                            meters, which is used to add random variations in
+                            X, Y, and Z of all points.
+
+                            Example:
+                            if the value provided is 0.1 then within the range
+                            of [-0.1, 0.1] a random value is selected, The
+                            selected value is then added to the point's X coordinate.
+                            Similarly, it is applied for Y and Z coordinates.
+
+                            Note: Only applicable for dataset_type=’PointCloud’.
                             Default: 0.0.
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.Transform3d` object
     """
 
-    def __init__(
-        self,
-        rotation_range=[math.pi / 72, math.pi, math.pi / 72, "u"],
-        scaling_range=[0.05, 0.05, 0.05, "g"],
-        jitter=0.0,
-    ):
-        self.rotation_range = rotation_range
-        self.scaling_range = scaling_range
+    def __init__(self, rotation=[2.5, 2.5, 45], scaling=5, jitter=0.0, **kwargs):
+        rotation = kwargs.get("rotation_range", rotation)
+        scaling = kwargs.get("scaling_range", scaling)
+        if len(rotation) not in [3, 4]:
+            raise Exception("The syntax of Rotation is not correct.")
+        if min(rotation[:3]) < 0 or max(rotation[:3]) > 180:
+            raise Exception("Rotation values should be in the range of [0, 180].")
+        if (
+            isinstance(scaling, (list, tuple))
+            and len(scaling) != 4
+            or isinstance(scaling, (int, float))
+            and scaling < 0
+        ):
+            raise Exception(
+                "Scaling parameter's syntax is not correct or it is not a positive number."
+            )
+        if jitter < 0 or jitter > 1:
+            raise Exception("Jitter value should be in the range of [0,1].")
+
+        if len(rotation) == 3:
+            degree_to_redian = np.pi / 180
+            rotation = (np.array(rotation) * degree_to_redian).tolist()
+            rotation[1], rotation[2] = rotation[2], rotation[1]
+        if not isinstance(scaling, (list, tuple)):
+            scaling = [scaling / 100] * 3
+        self.rotation_range = rotation
+        self.scaling_range = scaling
         self.order = "XYZ"
-        self.jitter = jitter
+        self.jitter = float(jitter)
+
+    def _detection_transforms(self):
+        from .pointcloud_od import ODTransform3D
+
+        rotation_range = [-self.rotation_range[1], self.rotation_range[1]]
+        scaling_range = [1 - self.scaling_range[1], 1 + self.scaling_range[1]]
+
+        return ODTransform3D(rotation_range, scaling_range)
+
+    @property
+    def _is_Transform3d(self):
+        return True
 
     def __call__(self, x_in):
         xforms, _ = get_xforms(
@@ -3068,10 +3129,12 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
+            ufname = dl.dataset.path / dl.dataset.folder / ufname
             if ufname != current_file_name:
                 current_file_name = ufname
-                h5_file = dl.dataset.h5files[tile[unique_index[i]][0]]
+                h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
+                h5_file.close()
                 labels_pred = np.full(batch_num, -1, dtype=np.int8)
                 confidences_pred = np.zeros(batch_num, dtype=np.float32)
                 class_confidence = np.zeros(
@@ -3234,7 +3297,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     ## dataset tiles Get all files from the tiles
     tile_file_indices = data.valid_ds.tiles[:, 0]
     ## iterate: on files
-    for idx, _ in enumerate(data.h5files):
+    for idx, _ in enumerate(data.filenames):
         ## Create subplot
         fig = make_subplots(
             rows=1, cols=2, specs=[[{"type": "scene"}, {"type": "scene"}]]
@@ -3270,8 +3333,13 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         clustered_index_bool_mask = get_random_cluster_indexes(
             block_centers, self._data.block_size
         )
-        labels = np.concatenate(np.array(labels)[clustered_index_bool_mask])
-        pc = np.concatenate(np.array(pc)[clustered_index_bool_mask], axis=0)
+
+        labels = np.concatenate(
+            np.array(labels, dtype="object")[clustered_index_bool_mask]
+        )
+        pc = np.concatenate(
+            np.array(pc, dtype="object")[clustered_index_bool_mask], axis=0
+        )
         blocks = [blocks[i] for i, mask in enumerate(clustered_index_bool_mask) if mask]
 
         # prediction step
@@ -3287,7 +3355,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                     self.sample_point_num,
                     pred_batch_size,
                     point_num.cpu().item(),
-                )
+                ),
+                dtype="object",
             )
             pred_class.append(predictions[:point_num, 0])
 

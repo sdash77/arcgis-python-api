@@ -1,8 +1,6 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 from arcgis.gis import GIS
 import unittest
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile"]
 ALLOWED_LANDING_PAGES = [
@@ -25,6 +23,7 @@ landing_pages_lu = {
 }
 
 
+@integration_test
 class TestUserSettings(unittest.TestCase):
     def test_landing_page_get(self):
         for profile in PROFILES:

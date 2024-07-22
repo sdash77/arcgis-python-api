@@ -15,7 +15,7 @@ class InstancePreference:
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The base url for the InstancePreference endpoints.
     ----------------  -------------------------------------------------------------------------------
-    gis               Required GIS. The ArcGIS Online connection object.
+    gis               Required :class:`~arcgis.gis.GIS`. The ArcGIS Online connection object.
     ================  ===============================================================================
 
     """

@@ -3,8 +3,7 @@ import json
 from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel, _get_device
 from ._codetemplate import code, image_classifier_prf, panoptic_segmenter_prf
 import warnings
-import arcgis
-import sys, os, importlib
+import sys, importlib
 from functools import partial
 import logging
 
@@ -15,18 +14,14 @@ HAS_FASTAI = True
 
 try:
     import torch
-    from torch import nn
     import numpy as np
     from fastai.basic_train import Learner, LearnerCallback
-    from fastai.torch_core import split_model_idx
     from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats
     from fastai.core import has_arg, split_kwargs_by_func
     from fastai.basic_data import DatasetType
-    from fastai.callback import Callback
     from fastai.torch_core import to_cpu, grab_idx
-    from fastai.basic_train import loss_batch
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    from fastai.vision.image import bb2hw
     from .._utils.classified_tiles import per_class_metrics
     from ._deeplab_utils import compute_miou
     import PIL
@@ -48,13 +43,12 @@ try:
         _exclude_detection,
     )
     from .._video_utils import VideoUtils
-    import inspect
     from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
-    from .._utils.pascal_voc_rectangles import _reconstruct
     from .._utils.utils import chips_to_batch
+    from ._model_extension_config import MMDetectionConfig, MMSegmentationConfig
 
     HAS_FASTAI = True
 
@@ -106,6 +100,11 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
         self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
+        mmlab_config = {
+            "MMDetectionConfig": MMDetectionConfig,
+            "MMSegmentationConfig": MMSegmentationConfig,
+        }
+        model_conf = mmlab_config.get(model_conf.__name__, model_conf)
 
         if self._learn_version >= "1.9.0":
             if pretrained_path is not None:
@@ -209,9 +208,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                )
             _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
@@ -222,9 +221,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISPanopticSegmenter.py"
+                )
             _emd_template["ModelConfiguration"] = "_panoptic_inferencing"
 
         else:
@@ -232,9 +231,9 @@ class ModelExtension(ArcGISModel):
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
-                _emd_template[
-                    "InferenceFunction"
-                ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                _emd_template["InferenceFunction"] = (
+                    "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+                )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["Classes"] = []
@@ -899,6 +898,7 @@ class ModelExtension(ArcGISModel):
     ):
         """
         Runs prediction on an Image.
+        This method is only supported for RGB images.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -945,6 +945,9 @@ class ModelExtension(ArcGISModel):
             raise Exception(
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

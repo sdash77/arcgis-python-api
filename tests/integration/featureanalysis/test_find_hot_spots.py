@@ -1,13 +1,11 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.analyze_patterns import find_hot_spots
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["5183636f099c48789628226e5730fb13"]  # Traffic Collisions
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -21,6 +19,7 @@ stage_data(test_items)
 # throw an exception until overwriting has been implemented.
 
 
+@integration_test
 class TestFindHotSpots(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection

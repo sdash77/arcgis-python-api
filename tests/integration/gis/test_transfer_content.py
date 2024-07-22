@@ -5,6 +5,7 @@ import concurrent.futures
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, UserManager, ContentManager, Item
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -24,6 +25,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestTransferContentAGOL(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -99,6 +101,7 @@ class TestTransferContentAGOL(unittest.TestCase):
 
 
 @unittest.skip("testing agol")
+@integration_test
 class TestTransferContentENT(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

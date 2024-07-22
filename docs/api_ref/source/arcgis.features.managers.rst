@@ -71,6 +71,13 @@ TraceConfiguration
     :members:
     :undoc-members:
     
+TraceConfigurationsManager
+--------------------------
+.. autoclass:: arcgis.features._utility.TraceConfigurationsManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
 TraceNetworkManager
 -------------------
 .. autoclass:: arcgis.features._trace.TraceNetworkManager

@@ -111,7 +111,7 @@ def from_featureset(fset, sr=None):
             sr = {"wkid": 4326}
         for feat in fset.features:
             a = feat.attributes
-            if not feat.geometry is None:
+            if feat.geometry is not None:
                 g = feat.geometry
                 g["spatialReference"] = sr
                 a["SHAPE"] = Geometry(g)
@@ -119,8 +119,13 @@ def from_featureset(fset, sr=None):
             del a, feat
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
 
-        if len(rows) > 0 and len(set(rows[0].keys()) - set(cols)) > 0:
-            cols = list(rows[0].keys())
+        if len(rows) > 0:
+            for row in rows:
+                if len(set(row.keys()) - set(cols)) > 0:
+                    # break at first occurrence
+                    cols = list(row.keys())
+                    break
+
         df = pd.DataFrame(data=rows, columns=cols)
 
         for fld in dt_fields:
@@ -130,9 +135,10 @@ def from_featureset(fset, sr=None):
                 df[fld] = pd.to_datetime(
                     df[fld],
                 )
-        if gt and not "SHAPE" in df.columns:
-            df["SHAPE"] = None
+
         if "SHAPE" in df.columns:
+            # replace the float NaN with None, otherwise error occurs
+            df["SHAPE"].replace({np.nan: None}, inplace=True)
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
             for i in range(len(df)):
@@ -181,7 +187,7 @@ def from_layer(layer, query="1=1"):
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
-    sdf.spatial._meta.source = layer
+    sdf.spatial._meta.source = layer.url
     if "drawingInfo" in layer.properties:
         sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
     else:

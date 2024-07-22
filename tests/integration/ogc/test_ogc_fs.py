@@ -1,14 +1,15 @@
 import os
-import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import OGCCollection, OGCFeatureService
+from arcgis.layers._ogc import OGCCollection, OGCFeatureService
 from collections.abc import Iterable as _Iterable
+from utils.decorators import integration_test
 
-ogc_url = "https://servicesdev.arcgis.com/01ClFLufh9nZafWR/ArcGIS/rest/services/TRAN_Alaska_State_Shape/OGCFeatureServer"
+ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
 
 
+@integration_test
 class TestOGCFS(unittest.TestCase):
     """Tests working with a OGC FS and Layer"""
 
@@ -35,7 +36,7 @@ class TestOGCFS(unittest.TestCase):
             assert len(ogclyr.query(return_all=True, as_dict=True)["features"]) == len(
                 sedf
             )
-            assert isinstance(ogclyr.get(10), dict)
+            assert isinstance(ogclyr.get(2180), dict)
             break
 
 

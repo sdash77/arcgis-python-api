@@ -12,6 +12,7 @@ from arcgis.gis import (
     ItemProperties,
 )
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -31,6 +32,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestContentManagerReassignTo(unittest.TestCase):
     """tests the reassigning of items to a new user"""
 
@@ -46,6 +48,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             firstname=f"a{uuid.uuid4().hex[:3]}z",
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
+            role="org_user"
         )
         fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
@@ -82,6 +85,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             firstname=f"a{uuid.uuid4().hex[:3]}z",
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
+            role="org_user"
         )
         fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:

@@ -33,6 +33,9 @@ from fastai.vision.models.unet import _get_sfs_idxs
 from fastprogress.fastprogress import progress_bar
 from fastai.vision import flatten_model
 from ._timm_utils import get_backbone
+from fastai.basic_train import LearnerCallback
+from torch.nn.parallel import DistributedDataParallel
+from ._transformer_backbone import swin_config
 
 
 def modify_layers(backbone, backbone_fn):
@@ -110,14 +113,33 @@ def get_hooks(backbone, chip_size):
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
-        self.backbone = get_backbone(backbone_fn, pretrained)
-        modify_layers(self.backbone, backbone_fn)
-        if len(self.backbone) < 2:
-            self.backbone = self.backbone[0]
-        hooks = get_hooks(self.backbone, chip_size)
-        self.hook = hook_outputs(hooks)
-        model_sizes(self.backbone, size=(chip_size, chip_size))
-        layer_num_channels = [k.stored.shape[1] for k in self.hook]
+        if backbone_fn.__name__ in swin_config.keys():
+            self.backbone = backbone_fn(pretrained=pretrained)
+            backbone_out = self.backbone(
+                torch.randn(
+                    (
+                        1,
+                        self.backbone.patch_embed.proj.in_channels,
+                        chip_size,
+                        chip_size,
+                    )
+                )
+            )
+            layer_num_channels = [layer_shape.shape[1] for layer_shape in backbone_out]
+            layer_num_channels.insert(0, self.backbone.patch_embed.proj.in_channels)
+            self._transformer = True
+            self._stride = 2
+        else:
+            self.backbone = get_backbone(backbone_fn, pretrained)
+            modify_layers(self.backbone, backbone_fn)
+            if len(self.backbone) < 2:
+                self.backbone = self.backbone[0]
+            hooks = get_hooks(self.backbone, chip_size)
+            self.hook = hook_outputs(hooks)
+            model_sizes(self.backbone, size=(chip_size, chip_size))
+            layer_num_channels = [k.stored.shape[1] for k in self.hook]
+            self._transformer = False
+            self._stride = 1
 
         self.score_dsn1 = nn.Conv2d(layer_num_channels[0], 1, 1)
         self.score_dsn2 = nn.Conv2d(layer_num_channels[1], 1, 1)
@@ -128,8 +150,12 @@ class _HEDModel(nn.Module):
 
     def forward(self, x):
         img_H, img_W = x.shape[2], x.shape[3]
-        x = self.backbone(x)
-        features = self.hook.stored
+        device = x.device
+        features = self.backbone(x)
+        if self._transformer:
+            features.insert(0, x)
+        else:
+            features = self.hook.stored
 
         so1 = self.score_dsn1(features[0])
         so2 = self.score_dsn2(features[1])
@@ -137,15 +163,23 @@ class _HEDModel(nn.Module):
         so4 = self.score_dsn4(features[3])
         so5 = self.score_dsn5(features[4])
 
-        weight_deconv2 = make_bilinear_weights(4, 1).to(x.device)
-        weight_deconv3 = make_bilinear_weights(8, 1).to(x.device)
-        weight_deconv4 = make_bilinear_weights(16, 1).to(x.device)
-        weight_deconv5 = make_bilinear_weights(32, 1).to(x.device)
+        weight_deconv2 = make_bilinear_weights(4 * self._stride, 1).to(device)
+        weight_deconv3 = make_bilinear_weights(8 * self._stride, 1).to(device)
+        weight_deconv4 = make_bilinear_weights(16 * self._stride, 1).to(device)
+        weight_deconv5 = make_bilinear_weights(32 * self._stride, 1).to(device)
 
-        upsample2 = torch.nn.functional.conv_transpose2d(so2, weight_deconv2, stride=2)
-        upsample3 = torch.nn.functional.conv_transpose2d(so3, weight_deconv3, stride=4)
-        upsample4 = torch.nn.functional.conv_transpose2d(so4, weight_deconv4, stride=8)
-        upsample5 = torch.nn.functional.conv_transpose2d(so5, weight_deconv5, stride=16)
+        upsample2 = torch.nn.functional.conv_transpose2d(
+            so2, weight_deconv2, stride=2 * self._stride
+        )
+        upsample3 = torch.nn.functional.conv_transpose2d(
+            so3, weight_deconv3, stride=4 * self._stride
+        )
+        upsample4 = torch.nn.functional.conv_transpose2d(
+            so4, weight_deconv4, stride=8 * self._stride
+        )
+        upsample5 = torch.nn.functional.conv_transpose2d(
+            so5, weight_deconv5, stride=16 * self._stride
+        )
 
         so2 = crop(upsample2, img_H, img_W)
         so3 = crop(upsample3, img_H, img_W)
@@ -229,7 +263,7 @@ def get_true_positive(mask1, mask2, buffer):
                 max(indices[0][ind] - buffer, 0) : indices[0][ind] + buffer + 1,
                 max(indices[1][ind] - buffer, 0) : indices[1][ind] + buffer + 1,
             ]
-        ).astype(np.int)
+        ).astype(int)
     return tp
 
 
@@ -248,13 +282,14 @@ def get_confusion_metric(gt, pred, buffer):
 
 
 def f1_score(pred, gt):
+    device = gt.device
     gt = gt.byte().squeeze(1).cpu().numpy()
     pred = (pred[-1] >= 0.5).byte().squeeze(1).cpu().numpy()
     tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, 3)
     precision = tp / (predicted_tp + 1e-12)
     recall = tp / (actual_tp + 1e-12)
     f1score = 2 * precision * recall / (precision + recall + 1e-12)
-    return torch.tensor(f1score)
+    return torch.tensor(f1score).to(device)
 
 
 def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
@@ -277,3 +312,17 @@ def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
     acc["F1 Score"] = np.mean(f1score)
 
     return acc
+
+
+class DDPCallback(LearnerCallback):
+    def __init__(self, learn, cuda_id):
+        super().__init__(learn)
+        self.cuda_id = cuda_id
+
+    def on_train_begin(self, **kwargs):
+        self.learn.model = DistributedDataParallel(
+            self.learn.model.module,
+            device_ids=[self.cuda_id],
+            output_device=self.cuda_id,
+            find_unused_parameters=True,
+        )

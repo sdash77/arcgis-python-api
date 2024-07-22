@@ -16,7 +16,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis.features import FeatureSet, FeatureCollection, Table
 from arcgis.auth.tools import LazyLoader
 
-mapping = LazyLoader("arcgis.mapping")
+mapping = LazyLoader("arcgis.layers")
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
@@ -374,6 +374,7 @@ def _execute_gp_tool(
     add_token=True,
     return_messages=False,
     future=False,
+    estimate=False,
 ):
     if gis is None:
         gis = arcgis.env.active_gis
@@ -464,6 +465,19 @@ def _execute_gp_tool(
     #     print(param_name + " = " + str(param_value))
 
     gptool = arcgis.gis._GISResource(url, gis)
+
+    if estimate and "RasterAnalysisTools" in url:
+        if gis._con._product != "AGOL":
+            raise RuntimeError("Estimate credits is only supported on ArcGIS Online")
+        gp_params = _prepare_params_for_estimate_credits_task(gp_params, task_name)
+        return_values = [{"name": "out_cost", "display_name": "outCost", "type": str}]
+        param_db = {
+            "input_analysis_task": (str, "inputAnalysisTask"),
+            "context": (str, "context"),
+            "out_cost": (str, "outCost"),
+        }
+        del gp_params["f"]
+        task_name = "EstimateRasterAnalysisCost"
 
     if use_async:
         task_url = "{}/{}".format(url, task_name)
@@ -624,3 +638,17 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
         else:
             ret_val = output_val
     return ret_param_name, ret_val
+
+
+def _prepare_params_for_estimate_credits_task(gp_params, task_name):
+    if "f" in gp_params:
+        del gp_params["f"]
+
+    for param, value in gp_params.copy().items():
+        if value == "" or value == {}:
+            del gp_params[param]
+    gp_new_params = {"f": "json", "context": gp_params.get("context", {})}
+    gp_new_params.update(
+        {"inputAnalysisTask": {"name": task_name, "parameters": gp_params}}
+    )
+    return gp_new_params

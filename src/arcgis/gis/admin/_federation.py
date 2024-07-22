@@ -1,6 +1,7 @@
 """
 Updates the Federation Settings to Portal
 """
+
 from typing import Optional
 from .. import GIS
 from ._base import BasePortalAdmin

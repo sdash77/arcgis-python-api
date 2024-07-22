@@ -1,9 +1,6 @@
 """
 Test class for parcel fabric's Reconstruct From Seeds
 """
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import json
 import unittest
 import time
@@ -12,9 +9,11 @@ from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection, FeatureSet
 from arcgis.features._parcel import ParcelFabricManager
 
-import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
+from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestShrinkReconstructSeeds(unittest.TestCase):
     gis = None
     vms = None

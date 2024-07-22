@@ -1,19 +1,88 @@
 """
 Tools to assist users to work with PKI Certificates
 """
+
+from __future__ import annotations
 import os
 import tempfile
 import cryptography
-from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography import x509
 from cryptography.hazmat.primitives.serialization import (
+    load_pem_private_key,
+    pkcs12,
     Encoding,
     PrivateFormat,
     NoEncryption,
 )
 
+import os
+import ssl
+
+import tempfile
+import cryptography
+import truststore
+
+try:
+    from ssl import PROTOCOL_TLS_CLIENT as default_ssl_protocol
+except ImportError:
+    from ssl import PROTOCOL_SSLv23 as default_ssl_protocol
+
 _crypto_version = [
     int(i) if i.isdigit() else i for i in cryptography.__version__.split(".")
 ]
+
+
+def _handle_cert_context(
+    cert: tuple | str, password: str, ssl_protocol=default_ssl_protocol
+) -> None | str:
+    """handles the certificate logic"""
+    if cert is None:
+        return None
+    elif (
+        cert
+        and isinstance(cert, str)
+        and (cert.lower().endswith(".p12") or cert.lower().endswith(".pfx"))
+        and password
+    ):
+        #  case 2 - p12/pfx with password
+        return _handle_cert_context(cert=pfx_to_pem(cert, password), password=password)
+    elif (
+        cert
+        and isinstance(cert, str)
+        and (cert.lower().endswith(".p12") or cert.lower().endswith(".pfx"))
+        and password is None
+    ):
+        # case 2 p12/pfx with no password - not allowed, raise error
+        raise ValueError("`password` is required.")
+    elif isinstance(cert, (tuple, list)):
+        # case 3 tuple[str]
+        ssl_protocol = ssl_protocol
+        ssl_context = truststore.SSLContext(ssl_protocol)
+        with tempfile.NamedTemporaryFile(delete=False) as c:
+            with open(cert[0], "rb") as reader:
+                public_cert = x509.load_pem_x509_certificate(reader.read())
+            with open(cert[1], "rb") as reader:
+                private_bytes = reader.read()
+            cert_bytes = public_cert.public_bytes(Encoding.PEM)
+
+            private_key = load_pem_private_key(
+                data=private_bytes, password=None, backend=None
+            )
+            pk_buf = private_key.private_bytes(
+                Encoding.PEM,
+                PrivateFormat.TraditionalOpenSSL,
+                NoEncryption(),
+            )
+            c.write(pk_buf)
+
+            c.write(cert_bytes)
+            c.flush()
+            c.close()
+
+            ssl_context.load_cert_chain(c.name)
+        return ssl_context
+    else:
+        raise ValueError("Invalid `cert` parameter")
 
 
 # ----------------------------------------------------------------------
@@ -37,6 +106,11 @@ def pfx_to_pem(pfx_path, pfx_password, folder=None, use_openssl=False):
        File path to key_file located in a tempfile location
        File path to cert_file located in a tempfile location
     """
+    if (
+        pfx_path.lower().endswith(".pfx") == False
+        and pfx_path.lower().endswith(".p12") == False
+    ):
+        raise ValueError("`pfx_to_pem` only supports `pfx` and `p12` certificates.")
     if folder is None:
         folder = tempfile.gettempdir()
     elif folder and not os.path.isdir(folder):
@@ -76,14 +150,15 @@ def pfx_to_pem(pfx_path, pfx_password, folder=None, use_openssl=False):
             from cryptography.hazmat.backends import default_backend
 
             _default_backend = default_backend()
-
+        if isinstance(pfx_password, str):
+            pfx_password = str.encode(pfx_password)
         with open(pfx_path, "rb") as f:
             (
                 private_key,
                 certificate,
                 additional_certificates,
             ) = pkcs12.load_key_and_certificates(
-                f.read(), str.encode(pfx_password), backend=_default_backend
+                f.read(), pfx_password, backend=_default_backend
             )
         cert_bytes = certificate.public_bytes(Encoding.PEM)
         pk_bytes = private_key.private_bytes(

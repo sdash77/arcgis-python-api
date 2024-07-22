@@ -7,6 +7,7 @@ Since the content sent to and from this resource (and operations
 within it) could contain confidential data like passwords, it is
 recommended that this resource be accessed over HTTPS protocol.
 """
+
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer

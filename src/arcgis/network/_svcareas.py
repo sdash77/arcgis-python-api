@@ -4,9 +4,7 @@ import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.gis import GIS
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import LinearUnit
 from arcgis._impl.common._utils import _validate_url
 from ._routing_utils import _create_toolbox
 
@@ -519,6 +517,11 @@ def generate_service_areas(
     output_format: Optional[str] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
+    accumulate_attributes: Optional[list] = None,
+    ignore_network_location_fields: bool = False,
+    ignore_invalid_locations: bool = True,
+    locate_settings: Optional[dict] = None,
+    exclude_sources_from_polygon_generation: Optional[list[str]] = None,
 ):
     """
     .. image:: _static/images/generate_service_areas/generate_service_areas.png
@@ -1212,6 +1215,66 @@ def generate_service_areas(
     -------------------------------------------------     ------------------------------------------------------------------------
     future                                                Optional boolean. If True, a future object will be returned and the process
                                                           will not wait for the task to complete. The default is False, which means wait for results.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    accumulate_attributes                                 Optional list of cost attributes to be accumulated during analysis.
+                                                          These accumulated attributes are for reference only; the solver only uses the
+                                                          cost attribute used by the designated travel mode when solving the analysis.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    ignore_network_location_fields                        Optional boolean. Specifies whether the network location fields will be
+                                                          considered when locating inputs such as stops or facilities on the network.
+                                                          The default is False, which means the network location fields will be considered.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    ignore_invalid_locations                              Optional boolean. Specifies whether the tool will ignore invalid locations.
+                                                          The default is True.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    locate_settings                                       Optional dictionary containing additional input location settings.
+                                                          Use this parameter to specify settings that affect how inputs are located,
+                                                          such as the maximum search distance to use when locating the inputs on the
+                                                          network or the network sources being used for locating. To restrict locating
+                                                          on a portion of the source, you can specify a where clause for a source.
+
+                                                          The dictionary of parameters can be assigned to the 'default', or to the
+                                                          'overrides' key which holds the dictionary of parameters for each override, types of override are
+                                                          'facilities', 'point_barriers', 'line_barriers', 'polygon_barriers'.
+                                                          Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
+                                                          for the default.
+
+                                                          .. note::
+                                                              'default' has to be present if you want to pass in any locate_settings to the
+                                                              service. In addition, locate setttings for default have to be complete, meaning
+                                                              all properties need to be present.
+                                                              For each override, the keys do not have to be complete.
+
+                                                          .. note::
+                                                              for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                              not supported.
+
+                                                          .. code-block:: python
+
+                                                              from arcgis.network import LocateSettings
+                                                              locate_settings = LocateSettings(tolerance=5000, tolerance_units=ToleranceUnits.meters, allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                              result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
+    -------------------------------------------------     ------------------------------------------------------------------------
+    exclude_sources_from_polygon_generation               Optional list of strings. You can exclude certain network dataset edge sources when
+                                                          generating service area polygons. Polygons will not be generated around
+                                                          the excluded sources, even though they are traversed in the analysis.
+                                                          Excluding a network source from service area polygons does not prevent
+                                                          those sources from being traversed. Excluding sources from service area
+                                                          polygons only influences the shape of the service area polygons.
+                                                          To prevent traversal of a given network source, you must create an appropriate
+                                                          restriction when defining your network dataset.This is useful if you have some
+                                                          network sources that you don't want included in the polygon generation because
+                                                          they create less accurate polygons or are inconsequential for the service area
+                                                          analysis. For example, when creating a walk-time service area in a multimodal
+                                                          network that includes streets and metro lines, you should choose to exclude
+                                                          the metro lines from polygon generation. Although travelers can use the metro
+                                                          lines, they cannot stop partway along a metro line and enter a nearby building.
+                                                          Instead, they must travel the full length of the metro line, exit the metro system at
+                                                          a station, and use the streets to walk to the building. Generating a polygon
+                                                          feature around a metro line will be inaccurate.
+
+                                                          .. note::
+                                                                This parameter is only supported for ArcGIS Enterprise.
     =================================================     ========================================================================
 
     :return: the following as a named tuple:
@@ -1230,8 +1293,6 @@ def generate_service_areas(
                                                 break_units="Minutes",
                                                 time_of_day=current_time)
     """
-
-    from arcgis.geoprocessing import import_toolbox
 
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1311,7 +1372,15 @@ def generate_service_areas(
         "output_format": output_format,
         "gis": gis,
         "future": True,
+        "accumulate_attributes": accumulate_attributes,
+        "ignore_network_location_fields": ignore_network_location_fields,
+        "ignore_invalid_locations": ignore_invalid_locations,
+        "locate_settings": locate_settings,
     }
+    if gis._is_agol == False:
+        params["exclude_sources_from_polygon_generation"] = (
+            exclude_sources_from_polygon_generation
+        )
     params = inspect_function_inputs(tbx.generate_service_areas, **params)
     params["future"] = True
     job = tbx.generate_service_areas(**params)

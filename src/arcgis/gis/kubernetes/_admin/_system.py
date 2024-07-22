@@ -4,12 +4,13 @@ from arcgis.gis.kubernetes._admin._base import _BaseKube
 from ._deployment import DeploymentManager
 from ._upgrades import UpgradeManager
 from ._recovery import RecoveryManager
-from ._content import LanguageManager, ExtenernalContentManager
+from ._content import LanguageManager, ExternalContentManager
 from ._architecture import ArchitectureManager
 from ._tasks import TaskManager
 from ._adaptors import WebAdaptorManager
 from ._license import LicenseManager
 from typing import List, Dict, Any, Tuple, Optional
+from arcgis.gis.admin import LivingAtlas
 
 
 class Server(_BaseKube):
@@ -221,7 +222,7 @@ class Container:
 
 
 ###########################################################################
-class SystemManager(_BaseKube):
+class SystemManager:
     """
     The system resource is a collection of system-wide resources for a
     deployment, such as the configuration store and deployment-wide
@@ -249,12 +250,78 @@ class SystemManager(_BaseKube):
         ==================     ====================================================================
 
         """
-        super(SystemManager, self).__init__(gis=gis, url=url)
+
         self._url = url
         self._gis = gis
         self._con = gis._con
         if initialize:
             self._init(gis._con)
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def _init(self, connection=None) -> None:
+        """loads the properties into the class"""
+        if connection is None:
+            connection = self._con
+        params = {"f": "json"}
+        try:
+            result = connection.get(path=self._url, params=params)
+            if isinstance(result, dict):
+                self._json_dict = result
+                self._properties = result
+            else:
+                self._json_dict = {}
+                self._properties = {}
+        except:
+            self._json_dict = {}
+            self._properties = {}
+
+    # ----------------------------------------------------------------------
+    @property
+    def url(self) -> str:
+        """gets/sets the service url"""
+        return self._url
+
+    # ----------------------------------------------------------------------
+    @url.setter
+    def url(self, value) -> None:
+        """gets/sets the service url"""
+        self._url = value
+        self._refresh()
+
+    # ----------------------------------------------------------------------
+    def __iter__(self):
+        """creates iterable for classes properties"""
+        for k, v in self._json_dict.items():
+            yield k, v
+
+    # ----------------------------------------------------------------------
+    def _refresh(self) -> None:
+        """reloads all the properties of a given service"""
+        self._init()
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self) -> Dict[str, Any]:
+        """
+        returns the object properties
+        """
+        if self._properties is None:
+            self._init()
+        return self._properties
+
+    # ----------------------------------------------------------------------
+    @property
+    def living_atlas(self) -> LivingAtlas:
+        """provides functionality to manage living atlas content"""
+        return LivingAtlas(url=f"{self._url}/content/livingatlas", gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -336,9 +403,9 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def exteneral_content(self) -> ExtenernalContentManager:
+    def external_content(self) -> ExternalContentManager:
         """ """
-        return ExtenernalContentManager(url=f"{self._url}/content", gis=self._gis)
+        return ExternalContentManager(url=f"{self._url}/content", gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -374,10 +441,29 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
         Gets/Sets the system properties resource list system properties
         that have been modified to control the portal's environment.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+
+                            Allowed Key/Value:
+
+                            ==========================================     ====================================================================
+                            **Parameter**                                   **Description**
+                            ------------------------------------------     --------------------------------------------------------------------
+                            versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            allowGPAndExtensionPublishingToPublishers      Introduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            ==========================================     ====================================================================
+
+        ===============     ====================================================================
 
         :return: dict
         """
@@ -387,10 +473,31 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, value):
+    def properties(self, value: dict) -> None:
         """
         Gets/Sets the system properties resource list system properties
         that have been modified to control the portal's environment.
+
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+
+                            Allowed Key/Value:
+
+                            ==========================================     ====================================================================
+                            **Parameter**                                   **Description**
+                            ------------------------------------------     --------------------------------------------------------------------
+                            versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            allowGPAndExtensionPublishingToPublishers      Introduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            ==========================================     ====================================================================
+
+        ===============     ====================================================================
+
 
         :return: dict
         """

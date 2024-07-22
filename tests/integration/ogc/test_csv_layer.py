@@ -3,17 +3,20 @@ import sys
 import unittest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.mapping.ogc import CSVLayer
+from arcgis.layers._ogc import CSVLayer
+from utils.decorators import integration_test
 
 csv_url = (
     "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.csv"
 )
 
 
+@integration_test
 class TestCSVLayer(unittest.TestCase):
     """Runs the tests for the CSV Layer"""
 
     def test_csv_layer_url(self):
+        gis = GIS()
         csv = CSVLayer(csv_url)
         assert isinstance(csv, CSVLayer)
         assert csv.fields

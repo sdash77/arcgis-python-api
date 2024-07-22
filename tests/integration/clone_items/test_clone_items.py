@@ -2,10 +2,7 @@
 # Name:        clone items tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_5652\src")
-import unittest, pytest
+import unittest
 import os
 from pathlib import Path
 from random import uniform
@@ -14,7 +11,9 @@ import datetime, time
 from arcgis.gis import GIS
 from arcgis.gis import ContentManager
 from arcgis.features import Feature
-from arcgis.mapping import WebMap
+from arcgis.auth.tools import LazyLoader
+from utils.decorators import integration_test
+arcgismapping=LazyLoader("arcgis.map")
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_ent_admin_profile"]
 
@@ -22,6 +21,7 @@ flc = """{"layers":[{"layerDefinition":{"currentVersion":10.8,"id":0,"name":"gce
 
 
 ########################################################################
+@integration_test
 class TestCloneItems(unittest.TestCase):
     """tests simple clone items workflow for sanity reasons"""
 
@@ -47,8 +47,8 @@ class TestCloneItems(unittest.TestCase):
         )
         source_item_id = item.itemid
         pitem = item.publish()
-        wm = WebMap()
-        wm.add_layer(pitem.layers[0])
+        wm = arcgismapping.Map()
+        wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
                 "title": "test_point_cloning",
@@ -93,8 +93,8 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = WebMap()
-        wm.add_layer(pitem.layers[0])
+        wm = arcgismapping.Map()
+        wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
                 "title": "test_point_cloning",
@@ -137,8 +137,8 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = WebMap()
-        wm.add_layer(pitem.layers[0])
+        wm = arcgismapping.Map()
+        wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
                 "title": "test_point_cloning",
@@ -180,8 +180,8 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = WebMap()
-        wm.add_layer(pitem.layers[0])
+        wm = arcgismapping.Map()
+        wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
                 "title": "test_point_cloning",
@@ -223,8 +223,8 @@ class TestCloneItems(unittest.TestCase):
             }
         )
         pitem = item.publish()
-        wm = WebMap()
-        wm.add_layer(pitem.layers[0])
+        wm = arcgismapping.Map()
+        wm.content.add(pitem.layers[0])
         saved_map = wm.save(
             item_properties={
                 "title": "test_point_cloning",

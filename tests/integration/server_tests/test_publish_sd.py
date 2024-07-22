@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import os
 import logging
 import unittest
@@ -10,6 +6,7 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.geoprocessing._job import GPJob
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -29,6 +26,7 @@ enable_verbose_logging(__logger__)
 data_location = QALAB_ROOT_PATH + r"\data_prep\SDs"
 
 
+@integration_test
 class TestServerPublishSDFile(unittest.TestCase):
     """
     Tests the synchronous and asynchronous workflows for publish SD files to ArcGIS Server

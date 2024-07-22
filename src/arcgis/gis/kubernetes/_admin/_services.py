@@ -175,7 +175,7 @@ class KubeService(object):
         return job
 
     # ----------------------------------------------------------------------
-    def change_provier(self, provider: str) -> bool:
+    def change_provider(self, provider: str) -> bool:
         """
         This operation is used to update an individual service to use either
         a dedicated or shared instance type. When a qualified service is

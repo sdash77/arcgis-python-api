@@ -7,7 +7,7 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 """
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import arcgis
 import json
 from arcgis.gis import GIS, Item
@@ -87,7 +87,9 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(
-        output_name, create_params=create_parameters, service_type="imageService"
+        output_name,
+        create_params=create_parameters,
+        service_type="imageService",
     )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
@@ -208,24 +210,19 @@ def _create_project(
     gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
-    if kwargs is not None:
-        if "folder" in kwargs:
-            folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_" + name
-    if folder is not None:
-        if isinstance(folder, dict):
-            if "id" in folder:
-                folderId = folder["id"]
-                folder = folder["title"]
-        else:
-            owner = gis.properties.user.username
-            folderId = gis._portal.get_folder_id(owner, folder)
-        if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+        folder = "_orthomapping " + name
+    owner = gis.properties.user.username
+    try:
+        folder_item = gis.content.folders.create(folder, owner)
+        folder_dict = folder_item.properties
+    except:
+        raise RuntimeError(
+            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+        )
+    folder = folder_dict["title"]
+    folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
@@ -236,7 +233,8 @@ def _create_project(
         definition = {}
 
     item_properties["text"] = json.dumps(definition)
-    item = gis.content.add(item_properties, folder=folder)
+    folder = gis.content.folders.get(folder)
+    item = folder.add(item_properties).result()
     return item
 
 
@@ -433,7 +431,11 @@ def _add_mission(
         mission_json = {
             "items": {"imageCollection": {}},
             "jobs": {
-                "imageCollection": {"checked": True, "progress": 100, "success": True},
+                "imageCollection": {
+                    "checked": True,
+                    "progress": 100,
+                    "success": True,
+                },
                 "adjustment": {"checked": False, "mode": "Quick"},
                 "ortho": {"checked": False},
                 "matchControlPoint": {"checked": False},
@@ -517,7 +519,11 @@ def _add_mission(
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-        if "gps" in raster_type_params:
+        if (
+            raster_type_params is not None
+            and isinstance(raster_type_params, dict)
+            and "gps" in raster_type_params
+        ):
             for ele in raster_type_params["gps"]:
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
@@ -923,7 +929,11 @@ def alter_processing_states(
 ## Get processing states
 ###################################################################################################
 def get_processing_states(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    image_collection,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Retrieve the processing states of the image collection
@@ -2224,6 +2234,8 @@ def generate_orthomosaic(
     update_flight_json = False
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2503,7 +2515,7 @@ def generate_report(
 ## query camera info
 ###################################################################################################
 def query_camera_info(
-    camera_query: Optional[str] = None,
+    camera_query: Optional[Union[dict[str, Any], str]] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -2517,22 +2529,31 @@ def query_camera_info(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    camera_query           Required String. This is a SQL query statement that can
-                           be used to filter a portion of the digital camera
-                           database.
-                           Digital camera database can be queried using the fields Make, Model,
+    camera_query           Optional Dictionary or String. A dictionary or a string representing
+                           the SQL query statement to query the specifications of digital
+                           camera sensors that are used to capture drone images.
+                           The digital camera database can be queried using the fields Make, Model,
                            Focallength, Columns, Rows, PixelSize.
 
-                           Example:
-
-                            "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
 
     :return:
-        Data Frame representing the camera database
+        Dictionary/Data Frame representing the camera database
+
+    .. code-block:: python
+
+        # Example 1: Query camera properties for camera Rollei RCP-8325 in dictionary format.
+
+        camera_info = query_camera_info(camera_query={"Make":"Rollei", "Model":"RCP-8325"})
+
+
+        # Example 2: Query camera properties for camera Rollei RCP-8325 in string format.
+
+        camera_info = query_camera_info(camera_query="Make='Rollei' and Model='RCP-8325'")
+
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -2657,7 +2678,11 @@ def query_control_points(
 ## Reset image collection
 ###################################################################################################
 def reset_image_collection(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    image_collection,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Reset the image collection. It is used to reset the image collection to its
@@ -2685,6 +2710,8 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
 
+    flight_json_details = {}
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2697,7 +2724,10 @@ def reset_image_collection(
         }
 
     return gis._tools.orthomapping.reset_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=image_collection,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -2800,15 +2830,25 @@ class Project:
     """
 
     def __init__(
-        self, project=None, definition=None, *, gis: Optional[GIS] = None, **kwargs
+        self,
+        project=None,
+        definition=None,
+        *,
+        gis: Optional[GIS] = None,
+        **kwargs,
     ):
         if not isinstance(project, Item):
             try:
                 project = _create_project(name=project, definition=definition)
             except:
-                raise RuntimeError("Creation of orthompping project failed.")
+                raise RuntimeError("Creation of orthomapping project failed.")
 
-        self._project_item = project
+        if project.type == "Ortho Mapping Project":
+            self._project_item = project
+        else:
+            raise RuntimeError(
+                "Invalid project. Project is not of type Ortho Mapping Project"
+            )
         try:
             self._project_name = self._project_item.title
         except:
@@ -2817,6 +2857,13 @@ class Project:
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
+                break
 
     @property
     def missions(self):
@@ -2847,6 +2894,24 @@ class Project:
         """
         res_list = self._project_item.resources.list()
         return len(res_list)
+
+    @property
+    def item(self):
+        """
+        The ``item`` property returns the portal item associated with the Project.
+
+        :return: A portal item
+        """
+        return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted = self._folder.delete()
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

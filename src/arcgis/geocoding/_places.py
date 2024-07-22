@@ -219,7 +219,7 @@ class PlacesAPI:
         if search_text is None:
             search_text = ""
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['near-point']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
@@ -288,7 +288,7 @@ class PlacesAPI:
             "pageSize": page_size,
         }
         if not categories is None:
-            params["categoriesIds"] = ",".join(categories)
+            params["categoryIds"] = ",".join(categories)
         url: str = f"{self._urls['base_url']}{self._urls['within-extent']}"
         resp: requests.Response = self.session.get(url=url, params=params)
         resp.raise_for_status()
@@ -348,8 +348,10 @@ class PlacesAPI:
 @lru_cache(maxsize=50)
 def get_places_api(gis: GIS) -> PlacesAPI:
     """
-    Returns the PlaceAPI class for a given GIS object
+    Returns the PlacesAPI class for a given GIS object
 
-    :return: PlaceAPI
+    :return:
+        An instance of the :class:`~arcgis.geocoding.PlacesAPI` for the
+        :class:`~arcgis.gis.GIS`
     """
     return PlacesAPI(gis=gis)

@@ -88,9 +88,11 @@ def convlayer(
     if ks % 2 == 1 and padding == "same":
         padding = ks // 2
     layers = [
-        ConvSP1d(c_in, c_out, ks, bias=bias, stride=stride)
-        if padding == "same"
-        else nn.Conv1d(c_in, c_out, ks, stride=stride, padding=padding, bias=bias)
+        (
+            ConvSP1d(c_in, c_out, ks, bias=bias, stride=stride)
+            if padding == "same"
+            else nn.Conv1d(c_in, c_out, ks, stride=stride, padding=padding, bias=bias)
+        )
     ]
     bn = nn.BatchNorm1d(c_out)
     if bn_init:

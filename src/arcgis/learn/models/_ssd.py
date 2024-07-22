@@ -17,10 +17,11 @@ try:
     import torch
     from torch import tensor, Tensor
     import numpy as np
+    import fastai
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
-    from fastai.vision import ImageList
+    from fastai.vision import ImageList, flatten_model
     from fastai.vision import imagenet_stats
     from fastai.vision.image import bb2hw, Image, pil2tensor
     from torchvision import models
@@ -68,6 +69,7 @@ try:
     import matplotlib.pyplot as plt
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from ._transformer_backbone import vit_config
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -244,7 +246,6 @@ class SSDTracer(torch.nn.Module):
 
 
 class SingleShotDetector(ArcGISModel):
-
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
@@ -437,9 +438,11 @@ class SingleShotDetector(ArcGISModel):
                 self._create_anchors(grids, zooms, ratios)
 
                 feature_sizes = _get_feature_size(
-                    self._orig_backbone
-                    if hasattr(self, "_orig_backbone")
-                    else self._backbone,
+                    (
+                        self._orig_backbone
+                        if hasattr(self, "_orig_backbone")
+                        else self._backbone
+                    ),
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
                 )
@@ -501,6 +504,29 @@ class SingleShotDetector(ArcGISModel):
             if pretrained_path is not None:
                 self.load(pretrained_path)
 
+            if backbone in SingleShotDetector.transformer_backbones():
+                self.unfreeze()
+                self._freeze()
+
+    def _freeze(self):
+        layers = flatten_model(self.learn.model[0][0].backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
+
     def __str__(self):
         return self.__repr__()
 
@@ -513,6 +539,11 @@ class SingleShotDetector(ArcGISModel):
         return SingleShotDetector._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
@@ -521,13 +552,18 @@ class SingleShotDetector(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        transformer_backbone = SingleShotDetector.transformer_backbones()
 
-        return [
-            *_resnet_family,
-            *_densenet_family,
-            *_vgg_family,
-            models.mobilenet_v2.__name__,
-        ] + timm_backbones
+        return (
+            [
+                *_resnet_family,
+                *_densenet_family,
+                *_vgg_family,
+                models.mobilenet_v2.__name__,
+            ]
+            + transformer_backbone
+            + timm_backbones
+        )
 
     @property
     def supported_datasets(self):
@@ -943,9 +979,9 @@ class SingleShotDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         else:
-            _emd_template[
-                "InferenceFunction"
-            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            _emd_template["InferenceFunction"] = (
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
+            )
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -1212,6 +1248,7 @@ class SingleShotDetector(ArcGISModel):
     ):
         """
         Runs prediction on an Image.
+        This method is only supported for RGB images.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -1256,6 +1293,9 @@ class SingleShotDetector(ArcGISModel):
             raise Exception(
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             if self._data._is_multispectral:

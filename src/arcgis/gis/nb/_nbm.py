@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os
+import time
 from typing import Optional
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
@@ -126,13 +128,13 @@ class NotebookManager(object):
         notify=False,
         gis=None,
         **kwargs,
-    ):
+    ) -> "Job" | "NotebookJob":
         """
         runs the job asynchronously
 
         :return: Job object
         """
-        from arcgis._impl._async.jobs import Job
+        from arcgis._impl._async.jobs import Job, NotebookJob
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
         try:
@@ -140,7 +142,17 @@ class NotebookManager(object):
         except:
             future = tp.submit(fn, **kwargs)
         tp.shutdown(False)
-        return Job(future, task_name, jobid, task_url, notify, gis=gis)
+        if gis._is_arcgisonline:
+            return Job(future, task_name, jobid, task_url, notify, gis=gis)
+        else:
+            return NotebookJob(
+                future=future,
+                task_name=task_name,
+                jobid=jobid,
+                task_url=task_url,
+                notify=notify,
+                gis=gis,
+            )
 
     # ----------------------------------------------------------------------
     def execute_notebook(
@@ -241,20 +253,22 @@ class NotebookManager(object):
             params["notebookParameters"] = parameters
         if future:
 
-            def _fn(url, params, nbs):
-                import time
-
-                start_job = self._gis._con.post(url, params)
-                if "jobUrl" in start_job:
-                    resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
-                else:
-                    return start_job
+            def _fn(start_job, nbs):
+                resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                 if "status" in resp and resp["status"].lower() != "success":
                     status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                     i = 0
                     while status["status"].lower() != "completed":
                         time.sleep(0.3 * i)
-                        if status["status"].lower() == "failed":
+                        if status["status"].lower() in [
+                            "failed",
+                            "failing",
+                            "cancelled",
+                            "cancelling",
+                            "cancel",
+                        ]:
+                            return status
+                        elif status["status"].lower().find("cancel") > -1:
                             return status
                         elif (
                             status["status"].lower().find("fail") > -1
@@ -268,12 +282,19 @@ class NotebookManager(object):
                     return status
                 return resp
 
-            return NotebookManager._future_job(
-                fn=_fn,
-                task_name="Execute Notebook",
-                gis=self._gis,
-                **{"url": url, "params": params, "nbs": self._nbs},
-            )
+            start_job = self._gis._con.post(url, params)
+            if "jobUrl" in start_job:
+                return NotebookManager._future_job(
+                    fn=_fn,
+                    task_name="Execute Notebook",
+                    task_url=start_job["jobUrl"],
+                    jobid=start_job.get("jobId", None),
+                    gis=self._gis,
+                    **{"start_job": start_job, "nbs": self._nbs},
+                )
+            else:
+                return start_job
+
         res = self._gis._con.post(url, params)
         return res
 

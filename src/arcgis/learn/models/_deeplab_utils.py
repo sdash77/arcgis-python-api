@@ -36,6 +36,7 @@ from ._timm_utils import get_backbone
 from fastprogress.fastprogress import progress_bar
 from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
+from ._transformer_backbone import vit_config
 
 
 def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
@@ -134,33 +135,44 @@ class Deeplab(nn.Module):
         self.pointrend = pointrend
         self.backbone = get_backbone(backbone_fn, pretrained)
         backbone_name = backbone_fn.__name__
-        modify_dilation_index, self.vgg = get_dilation_index(
-            backbone_name, pointrend, keep_dilation
-        )
-        hookable_modules = get_last_module(self.backbone)
-        add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
-        hooks = get_hooks(backbone_name, hookable_modules)
+        self._is_transformer = False
+        self.vgg = False
+        if not backbone_name in vit_config.keys():
+            modify_dilation_index, self.vgg = get_dilation_index(
+                backbone_name, pointrend, keep_dilation
+            )
+            hookable_modules = get_last_module(self.backbone)
+            add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
+            hooks = get_hooks(backbone_name, hookable_modules)
 
-        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
-        self.hook = hook_outputs(hooks)
+            ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
+            self.hook = hook_outputs(hooks)
 
-        ## returns the size of various activations
-        feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
+            ## returns the size of various activations
+            feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
 
-        if not self.vgg:
-            ## Geting the number of channel persent in stored activation inside of the hook
-            num_channels_aux_classifier = self.hook[0].stored.shape[1]
-            ## Get number of channels in the last layer
-            num_channels_classifier = feature_sizes[-1][1]
+            if not self.vgg:
+                ## Geting the number of channel persent in stored activation inside of the hook
+                num_channels_aux_classifier = self.hook[0].stored.shape[1]
+                ## Get number of channels in the last layer
+                num_channels_classifier = feature_sizes[-1][1]
+            else:
+                num_channels_aux_classifier = self.hook[-2].stored.shape[1]
+                num_channels_classifier = self.hook[-1].stored.shape[1]
         else:
-            num_channels_aux_classifier = self.hook[-2].stored.shape[1]
-            num_channels_classifier = self.hook[-1].stored.shape[1]
+            num_channels_classifier = self.backbone[0].output_shape["channels"]
+            num_channels_aux_classifier = self.backbone[0].output_shape["channels"]
+            self._is_transformer = True
 
         self.classifier = DeepLabHead(num_channels_classifier, num_classes)
         self.aux_classifier = FCNHead(num_channels_aux_classifier, num_classes)
 
         if self.pointrend:
-            if self.vgg:
+            if self._is_transformer:
+                num_channels = self.backbone[0].output_shape["channels"]
+                stride = self.backbone[0].output_shape["stride"]
+
+            elif self.vgg:
                 num_channels = (
                     self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
                 )
@@ -181,7 +193,10 @@ class Deeplab(nn.Module):
     def forward(self, x):
         x_size = x.size()
         x = self.backbone(x)
-        features = self.hook.stored
+        if self._is_transformer:
+            features = [x, x]
+        else:
+            features = self.hook.stored
 
         if self.vgg:
             x = self.classifier(features[-1])
@@ -219,6 +234,20 @@ class Deeplab(nn.Module):
                 return result
 
 
+def model_pred(model, input):
+    model.learn.model.eval()
+    if getattr(model, "_is_model_extension", False):
+        if model._is_multispectral:
+            pred = model.learn.model(
+                model._model_conf.transform_input_multispectral(input)
+            )
+        else:
+            pred = model.learn.model(model._model_conf.transform_input(input))
+    else:
+        pred = pred = model.learn.model(input)
+    return pred
+
+
 def mask_iou(mask1, mask2):
     mask1 = mask1.permute(0, 2, 3, 1)
     mask2 = mask2.permute(0, 2, 3, 1)
@@ -232,41 +261,66 @@ def mask_iou(mask1, mask2):
     return iou
 
 
-def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
-    ious = []
-    model.learn.model.eval()
+def intersect_and_union(pred_label, label, num_classes):
+    intersect = pred_label[pred_label == label]
+    area_intersect = torch.histc(
+        intersect.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_pred_label = torch.histc(
+        pred_label.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_label = torch.histc(
+        label.float(), bins=(num_classes), min=0, max=num_classes - 1
+    )
+    area_union = area_pred_label + area_label - area_intersect
+    return area_intersect, area_union, area_pred_label, area_label
+
+
+def total_intersect_and_union(
+    model, dl, num_classes, show_progress=True, ignore_mapped_class=[]
+):
+    total_area_intersect = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_union = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_pred_label = torch.zeros((num_classes,), dtype=torch.float64)
+    total_area_label = torch.zeros((num_classes,), dtype=torch.float64)
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            if getattr(model, "_is_model_extension", False):
-                if model._is_multispectral:
-                    pred = model.learn.model(
-                        model._model_conf.transform_input_multispectral(input)
-                    )
-                else:
-                    pred = model.learn.model(model._model_conf.transform_input(input))
-            else:
-                pred = model.learn.model(input)
-            target = target.squeeze(1)
+            pred = model_pred(model, input)
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:
                     pred[:, k] = pred.min() - 1
                 pred = pred.argmax(dim=1)
             else:
                 pred = pred.argmax(dim=1)
-            mask1 = []
-            mask2 = []
-            for i in range(pred.shape[0]):
-                mask1.append(
-                    pred[i].to(model._device)
-                    == num_classes[:, None, None].to(model._device)
-                )
-                mask2.append(
-                    target[i].to(model._device)
-                    == num_classes[:, None, None].to(model._device)
-                )
-            mask1 = torch.stack(mask1)
-            mask2 = torch.stack(mask2)
-            iou = mask_iou(mask1, mask2)
-            ious.append(iou.tolist())
+            pred = pred.squeeze().detach().cpu()
+            target = target.squeeze().detach().cpu()
+            (
+                area_intersect,
+                area_union,
+                area_pred_label,
+                area_label,
+            ) = intersect_and_union(pred, target, num_classes)
+            total_area_intersect += area_intersect
+            total_area_union += area_union
+            total_area_pred_label += area_pred_label
+            total_area_label += area_label
+        return (
+            total_area_intersect,
+            total_area_union,
+            total_area_pred_label,
+            total_area_label,
+        )
 
-    return np.mean(ious, 0)
+
+def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
+    (
+        total_area_intersect,
+        total_area_union,
+        _,
+        _,
+    ) = total_intersect_and_union(
+        model, dl, len(num_classes), show_progress, ignore_mapped_class
+    )
+
+    iou = total_area_intersect.numpy() / (total_area_union.numpy() + 1e-7)
+    return iou

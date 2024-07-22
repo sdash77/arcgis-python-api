@@ -1,6 +1,7 @@
 """
 Connection Object that uses Python Requests
 """
+
 from arcgis.auth.tools import LazyLoader
 from typing import Union
 from arcgis.auth.tools._util import check_module_exists
@@ -21,28 +22,6 @@ except:
     HAS_GSSAPI = False
 
 import sys
-
-if sys.platform == "win32" and check_module_exists("certifi_win32"):
-    try:
-        import certifi_win32
-
-        certifi_win32.wincerts.where()
-
-        if certifi_win32.wincerts.verify_combined_pem() == False:
-            certifi_win32.generate_pem()
-
-    except ImportError:
-        pass
-elif check_module_exists("truststore"):  # pragma: no cover
-    try:
-        import truststore
-
-        truststore.inject_into_ssl()
-    except ImportError as ie:
-        pass
-    except Exception as e:
-        pass
-
 import os
 import copy
 import json
@@ -92,7 +71,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.2.0"
+__version__ = "2.3.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -1132,7 +1111,7 @@ class Connection(object):
                         fields[k] = (
                             os.path.basename(v),
                             open(v, "rb"),
-                            mimetypes.guess_type(v)[0],
+                            mimetypes.guess_type(v)[0] or "application/octet-stream",
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
@@ -1143,7 +1122,8 @@ class Connection(object):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
-                            mimetypes.guess_type(filePath)[0],
+                            mimetypes.guess_type(filePath)[0]
+                            or "application/octet-stream",
                         )
                     elif isinstance(fileName, str) and isinstance(
                         filePath, (io.StringIO, io.BytesIO)
@@ -1703,7 +1683,7 @@ class Connection(object):
     # ----------------------------------------------------------------------
     def delete(self, url, params=None, **kwargs):
         """
-        sends a PUT request
+        sends a DELETE request
 
         ===========================   =====================================================
         **Parameter**                **Description**

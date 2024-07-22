@@ -39,7 +39,7 @@ class Container:
             self._properties = self._gis._con.get(url, params)
         return self._properties
 
-    def terminate(self) -> bool:
+    def shutdown(self) -> bool:
         """stops the current container"""
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}
@@ -66,7 +66,7 @@ class ContainerManager:
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The base url for the ContainerManager endpoints.
     ----------------  -------------------------------------------------------------------------------
-    gis               Required GIS. The ArcGIS Online connection object.
+    gis               Required :class:`~arcgis.gis.GIS`. The ArcGIS Online connection object.
     ================  ===============================================================================
 
     """

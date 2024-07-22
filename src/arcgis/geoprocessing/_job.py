@@ -70,9 +70,10 @@ class GPJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Get the Ellapse Time for the Job
+        Get the amount of time that passed while the
+        :class:`~arcgis.geoprocessing.GPJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -295,7 +296,7 @@ class GPJob(object):
                     processing_states = json.loads(processing_states.replace('u"', '"'))
                     return processing_states
 
-            if isinstance(value, DataFile):
+            if isinstance(value, DataFile) and self.task != "GenerateReport":
                 return self._gis._con.post(value.to_dict()["url"], {})
             if isinstance(value, (RasterData, LinearUnit)):
                 return value
@@ -332,11 +333,18 @@ class GPJob(object):
                     item.update(item_properties=_item_properties)
                 return item
             elif self.task == "QueryCameraInfo":
-                import pandas as pd
+                if "camera_info" in value.keys():
+                    return value["camera_info"]
+                else:
+                    import pandas as pd
 
-                columns = value["schema"]
-                data = value["content"]
-                return pd.DataFrame(data, columns=columns)
+                    columns = value["schema"]
+                    data = value["content"]
+
+                    if isinstance(data, list) and not isinstance(data[0], list):
+                        data = [data]
+
+                    return pd.DataFrame(data, columns=columns)
             elif (
                 isinstance(value, dict)
                 and "url" in value
@@ -488,6 +496,11 @@ class GPJob(object):
                 try:
                     dict_output = json.loads(value["modelInfo"])
                     return dict_output
+                except:
+                    return value
+            elif isinstance(value, dict) and "credits" in value:
+                try:
+                    return float(value["credits"])
                 except:
                     return value
             elif isinstance(value, dict) and "result" in value:
@@ -686,9 +699,10 @@ class RAJob(GPJob):
     @property
     def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that passed while the
+        raster analytics job ran.
         """
-        return self._gpjob.ellapse_time
+        return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
     def result(self):
@@ -827,9 +841,11 @@ class OMJob(GPJob):
     @property
     def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that passed while the ortho mapping job
+        ran.
         """
-        return self._gpjob.ellapse_time
+
+        return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
     def result(self):
@@ -936,6 +952,71 @@ class OMJob(GPJob):
                     }
                 }
             )
+            if item_name == "reset":
+                keys = [
+                    "adjustment",
+                    "matchControlPoint",
+                    "colorCorrection",
+                    "computeControlPoints",
+                    "seamline",
+                    "appendControlPoints",
+                    "report",
+                    "queryControlPoints",
+                    "ortho",
+                    "dsm",
+                    "dtm",
+                ]
+                for key in keys:
+                    if key in mission_json["jobs"].keys():
+                        if key != "adjustment":
+                            mission_json["jobs"].update({key: {"checked": False}})
+                        else:
+                            mission_json["jobs"].update(
+                                {key: {"checked": False, "mode": "Quick"}}
+                            )
+
+                item_keys = ["ortho", "dsm", "dtm"]
+                for key in item_keys:
+                    if key in mission_json["items"]:
+                        item_info = mission_json["items"][key]
+                        if isinstance(item_info, dict) and "itemId" in item_info:
+                            item_object = mission._gis.content.get(item_info["itemId"])
+                            try:
+                                if item_object:
+                                    deleted = item_object.delete()
+                            except:
+                                pass
+                        mission_json["items"].update({key: {}})
+
+            itemid = None
+            if self._item:
+                item_props = json.loads(self._item)
+                if "serviceProperties" in item_props:
+                    if "itemProperties" in item_props:
+                        if "itemId" in item_props["itemProperties"]:
+                            itemid = item_props["itemProperties"]["itemId"]
+                elif "itemId" in item_props:
+                    itemid = item_props["itemId"]
+
+            if item_name == "dsm" or item_name == "dtm" or item_name == "ortho":
+                if "items" in mission_json:
+                    for key in mission_json["items"]:
+                        if key == item_name:
+                            item_info = mission_json["items"][key]
+                            if isinstance(item_info, dict) and "itemId" in item_info:
+                                if item_info["itemId"] != itemid:
+                                    item_object = mission._gis.content.get(
+                                        item_info["itemId"]
+                                    )
+                                    try:
+                                        if item_object:
+                                            deleted = item_object.delete()
+                                    except:
+                                        pass
+                            mission_json["items"].update({key: {}})
+                            if key in mission_json["jobs"]:
+                                mission_json["jobs"].update({key: {"checked": False}})
+
             if processing_states is not None:
                 mission_json["processingSettings"].update(
                     {item_name: processing_states}
@@ -948,8 +1029,22 @@ class OMJob(GPJob):
             properties = json.loads(resource["properties"])
 
             if self._item:
-                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
-                itemid = json.loads(self._item)["itemProperties"]["itemId"]
+                item = ""
+                url = ""
+                item_props = json.loads(self._item)
+                if "serviceProperties" in item_props.keys():
+                    if "serviceUrl" in item_props["serviceProperties"].keys():
+                        url = item_props["serviceProperties"]["serviceUrl"]
+                    if "itemProperties" in item_props.keys():
+                        if "itemId" in item_props["itemProperties"].keys():
+                            itemid = item_props["itemProperties"]["itemId"]
+                elif "itemId" in item_props.keys():
+                    itemid = item_props["itemId"]
+                    portal_item = mission._gis.content.get(itemid)
+                    url = portal_item.url
+                elif "url" in item_props.keys():
+                    url = item_props["url"]
+
                 mission_json["items"].update(
                     {item_name: {"itemId": itemid, "url": url}}
                 )

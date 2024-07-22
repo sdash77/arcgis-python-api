@@ -1,14 +1,17 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_watersheds
+from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
+test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # esri office
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
+@integration_test
 class TestCreateWatersheds(unittest.TestCase):
     def test_overwrite(self):
         """tests overwriting an Item layer using the context param"""
@@ -17,10 +20,7 @@ class TestCreateWatersheds(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
             # gather layer
-            if gis._is_agol:
-                office_item = gis.content.get("c687b8a5b56349818c333c7d46e906bd")
-            else:
-                office_item = gis.content.get("0d82289805f04b74916e44dfb1f27f03")
+            office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
             assert isinstance(office_item, Item)
             office_lyr = office_item.layers[0]
             assert isinstance(office_lyr, FeatureLayer)

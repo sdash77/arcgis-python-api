@@ -9,6 +9,7 @@ import json
 import os
 import re
 from arcgis.gis import Item
+from arcgis.gis import SharingLevel
 from functools import wraps
 
 
@@ -189,17 +190,13 @@ class Site(OrderedDict):
             items = [self._gis.content.get(item_id) for item_id in items_list]
         else:
             items = items_list
-        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        # Share each item with content group
         for item in items:
-            sharing = item.shared_with
-            everyone = sharing["everyone"]
-            org = sharing["org"]
-            groups = sharing["groups"]
-            # add current site's content group to list of groups to share to
-            groups.append(self.content_group_id)
-            # share item to this group
-            status = item.share(everyone=everyone, org=org, groups=groups)
-            if status["results"][0]["success"] == False:
+            # Fetch the content group
+            group = self._gis.groups.get(self.content_group_id)
+            # Share item with group
+            status = item.sharing.groups.add(group)
+            if status == False:
                 return status
         return status
 
@@ -359,7 +356,9 @@ class Site(OrderedDict):
                     new_content_list.append(item_temp)
                 # share item back to the content group
                 self._gis.content.share_items(
-                    new_content_list, groups=[core_team], allow_members_to_edit=True
+                    new_content_list,
+                    groups=[core_team],
+                    allow_members_to_edit=True,
                 )
                 # reassign core team to target owner
                 core_team.reassign_to(target_owner)
@@ -537,7 +536,9 @@ class Site(OrderedDict):
                             self.initiative.item.update(item_properties={"url": domain})
                         # update site item and data
                         data = self.definition
-                        data["values"]["defaultHostname"] = hostname
+                        data["values"]["defaultHostname"] = hostname.replace(
+                            "http://", ""
+                        ).replace("https://", "")
                         data["values"]["subdomain"] = subdomain
                         data["values"]["internalUrl"] = hostname
                         data["values"]["clientId"] = _client_key
@@ -567,7 +568,9 @@ class Site(OrderedDict):
                 hostname = self._gis.url[7:-5] + "/apps/sites/#/" + subdomain
                 domain = "https://" + hostname
                 data = self.definition
-                data["values"]["defaultHostname"] = hostname
+                data["values"]["defaultHostname"] = hostname.replace(
+                    "http://", ""
+                ).replace("https://", "")
                 data["values"]["subdomain"] = subdomain
                 data["values"]["internalUrl"] = hostname
                 if self.item.update(
@@ -761,7 +764,9 @@ class SiteManager(object):
         ] = site.title
         site_data["values"]["collaborationGroupId"] = collab_group_id
         site_data["values"]["subdomain"] = subdomain
-        site_data["values"]["defaultHostname"] = site.url
+        site_data["values"]["defaultHostname"] = site.url.replace(
+            "http://", ""
+        ).replace("https://", "")
         site_data["values"]["updatedBy"] = self._gis.users.me.username
         if self._gis._portal.is_arcgisonline:
             site_data["values"]["siteId"] = _siteId
@@ -783,7 +788,9 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
+        site_data["values"]["map"] = {
+            "basemaps": {"primary": self._gis.properties["defaultBasemap"]}
+        }
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
         return site_data
@@ -955,7 +962,11 @@ class SiteManager(object):
                 _content_group_title = title + " Content"
                 _content_group_dict = {
                     "title": _content_group_title,
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "tags": [
+                        "Hub Group",
+                        "Hub Content Group",
+                        "Hub Site Group",
+                    ],
                     "access": "public",
                 }
                 _collab_group_title = title + " Core Team"
@@ -1029,11 +1040,13 @@ class SiteManager(object):
             _datafile = "sites-data.json"
 
         # Create site item, share with group
-        site = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+
+        folder = self._gis.content.folders.get()
+        site = folder.add(_item_dict).result()
 
         # Share with necessary group if group exists
         try:
-            site.share(groups=[collab_group])
+            site.sharing.groups.add(collab_group)
         except:
             pass
 
@@ -1147,7 +1160,11 @@ class SiteManager(object):
             if self._gis._portal.is_arcgisonline:
                 _content_group_dict = {
                     "title": subdomain + " Content",
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "tags": [
+                        "Hub Group",
+                        "Hub Content Group",
+                        "Hub Site Group",
+                    ],
                     "access": "public",
                 }
                 _collab_group_dict = {
@@ -1206,19 +1223,22 @@ class SiteManager(object):
                 _site_properties["properties"]["collaborationGroupId"] = collab_group_id
 
         # Create site item, share with group
-        new_item = self._gis.content.add(
-            _site_properties, owner=self._gis.users.me.username
-        )
+        folder = self._gis.content.folders.get()
+        new_item = folder.add(_site_properties).result()
 
         # Share with necessary group
         try:
-            new_item.share(groups=[collab_group])
+            new_item.sharing.groups.add(collab_group)
         except:
             pass
 
         # Register new site and update its data
         _data = self._create_and_register_site(
-            new_item, subdomain, site.definition, content_group_id, collab_group_id
+            new_item,
+            subdomain,
+            site.definition,
+            content_group_id,
+            collab_group_id,
         )
 
         new_item.update(item_properties={"text": _data, "url": domain})

@@ -5,6 +5,7 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
+
 from __future__ import annotations
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
@@ -311,6 +312,11 @@ def find_point_clusters(
     gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    method: Optional[str] = None,
+    sensitivity: Optional[float] = None,
+    time_field: Optional[str] = None,
+    search_time_interval: Optional[int] = None,
+    search_time_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
@@ -326,72 +332,113 @@ def find_point_clusters(
     noise. Multiple clusters will be assigned each color. Colors will be assigned
     and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-    This method utilizes two related algorithms. By default the HDBSCAN algorithm is
-    used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
-    is used. DBSCAN is only appropriate if there is a very clear search distance to use
-    for your analysis and will return clusters with similar densities. When
-    no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
-    of varying densities from sparser noise resulting in more data-driven clusters.
+    This method uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters.
+    If the method is not specified and the `search_distance` value is not provided,
+    the HDBSCAN method will be used. If the method is not specified and `search_distance` value is provided,
+    the DBSCAN algorithm will be used. DBSCAN will use distance, and optionally time, to return
+    clusters with similar densities. It is only appropriate if there is a clear search
+    distance to use for the analysis. HDBSCAN will use a range of distances to separate
+    clusters of varying densities from sparser noise resulting in more data-driven clusters.
+    OPTICS will use the distances, and optionally time, between neighboring features to
+    create a reachability plot, and use it to separate clusters of varying densities from noise.
 
-    ====================    =========================================================
-    **Parameter**            **Description**
-    --------------------    ---------------------------------------------------------
-    analysis_layer          Required layer. The point feature layer for which
-                            density-based clustering will be calculated.
-                            See :ref:`Feature Input<FeatureInput>`.
-    --------------------    ---------------------------------------------------------
-    min_features_cluster    Required integer. The minimum number of features to be
-                            considered a cluster. Any cluster with fewer features
-                            than the number provided will be considered noise.
-    --------------------    ---------------------------------------------------------
-    search_distance         Optional float. The maximum distance to consider. The
-                            Minimum Features per Cluster specified must be found
-                            within this distance for cluster membership. Individual
-                            clusters will be separated by at least this distance. If
-                            a feature is located further than this distance from the
-                            next closest feature in the cluster, it will not be
-                            included in the cluster.
-    --------------------    ---------------------------------------------------------
-    search_distance_unit    Optional string. The linear unit to be used with the distance
-                            value specified for ``search_distance``. You must provide a
-                            value if ``search_distance`` has been set.
+    ============================    =========================================================
+    **Parameter**                   **Description**
+    ----------------------------    ---------------------------------------------------------
+    analysis_layer                  Required layer. The point feature layer for which
+                                    density-based clustering will be calculated.
+                                    See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    ---------------------------------------------------------
+    min_features_cluster            Required integer. The minimum number of features to be
+                                    considered a cluster. Any cluster with fewer features
+                                    than the number provided will be considered noise.
+    ----------------------------    ---------------------------------------------------------
+    search_distance                 Optional float. The maximum distance to consider. The
+                                    Minimum Features per Cluster specified must be found
+                                    within this distance for cluster membership. Individual
+                                    clusters will be separated by at least this distance. If
+                                    a feature is located further than this distance from the
+                                    next closest feature in the cluster, it will not be
+                                    included in the cluster.
+    ----------------------------    ---------------------------------------------------------
+    search_distance_unit            Optional string. The linear unit to be used with the distance
+                                    value specified for ``search_distance``. You must provide a
+                                    value if ``search_distance`` has been set.
 
-                            Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
+                                    Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
 
-                            The default is 'Miles'.
-    --------------------    ---------------------------------------------------------
-    output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                            feature layer will cause the new layer to be appended to the Feature Service.
-                            If overwrite is True in context, new layer will overwrite existing layer.
-                            If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    --------------------    ---------------------------------------------------------
-    context                 Optional dict. Additional settings such as processing extent and output spatial reference.
-                            For find_point_clusters, there are three settings.
+                                    The default is 'Miles'.
+    ----------------------------    ---------------------------------------------------------
+    output_name                     Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                    feature layer will cause the new layer to be appended to the Feature Service.
+                                    If overwrite is True in context, new layer will overwrite existing layer.
+                                    If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    ----------------------------    ---------------------------------------------------------
+    context                         Optional dict. Additional settings such as processing extent and output spatial reference.
+                                    For find_point_clusters, there are three settings.
 
-                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
-                                .. code-block:: python
+                                        .. code-block:: python
 
-                                    # Example Usage
-                                    context = {"extent": {"xmin": 3164569.408035,
-                                                        "ymin": -9187921.892449,
-                                                        "xmax": 3174104.927313,
-                                                        "ymax": -9175500.875353,
-                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                "outSR": {"wkid": 3857},
-                                                "overwrite": True}
-    --------------------    ---------------------------------------------------------
-    gis                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
-                            specified, the active GIS is used.
-    --------------------    ---------------------------------------------------------
-    estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
-    --------------------    ---------------------------------------------------------
-    future                  Optional, If True, a future object will be returned and the process
-                            will not wait for the task to complete.
-                            The default is False, which means wait for results.
-    ====================    =========================================================
+                                            # Example Usage
+                                            context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353,
+                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
+                                                        "outSR": {"wkid": 3857},
+                                                        "overwrite": True}
+    ----------------------------    ---------------------------------------------------------
+    gis                             Optional, the GIS on which this tool runs. If not
+                                    specified, the active GIS is used.
+    ----------------------------    ---------------------------------------------------------
+    estimate                        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ----------------------------    ---------------------------------------------------------
+    future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ----------------------------    ---------------------------------------------------------
+    method                          Optional string. Specifies the method that will be used to
+                                    find clusters. If the method is not specified and the
+                                    search_distance value is not provided, the HDBSCAN algorithm
+                                    will be used. If the method is not specified and the search_distance
+                                    value is provided, the DBSCAN algorithm will be used.
+
+                                    This parameter is available in ArcGIS Enterprise 11.2 or higher.
+
+                                    Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
+    ----------------------------    ---------------------------------------------------------
+    sensitivity                     Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
+
+                                    This parameter is available in ArcGIS Enterprise 11.2 or higher.
+    ----------------------------    ---------------------------------------------------------
+    time_field                      Optional string. Specifies the field in the `analysis_layer`
+                                    value that contains a timestamp for each feature. This parameter
+                                    is only available in ArcGIS Online.
+
+                                    Example: `time_field = "start_time"`
+
+                                    .. note::
+                                        Time related parameters can only be used when the `method` is
+                                        DBSCAN or OPTICS.
+    ----------------------------    ---------------------------------------------------------
+    search_time_interval            Optional float. A value that will be used to determine
+                                    whether features form a space-time cluster. The search
+                                    time interval spans before and after the time of each feature.
+                                    This parameter is only available in ArcGIS Online.
+
+                                    Example: `search_time_interval = 4`
+    ----------------------------    ---------------------------------------------------------
+    search_time_unit                Optional string. The unit that will be used with the time value
+                                    specified for `search_time_interval`. You must provide a value
+                                    if `search_time_interval` has been set. This parameter is
+                                    only available in ArcGIS Online.
+
+                                    Values: "Seconds" | "Minutes" | "Hours" | "Days" | "Weeks" | "Months" | "Years"
+
+                                    Example: `search_time_unit = "Minutes"`
+    ============================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
     If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
@@ -418,11 +465,294 @@ def find_point_clusters(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "method": method,
+        "sensitivity": sensitivity,
+        "time_field": time_field,
+        "search_time_interval": search_time_interval,
+        "search_time_unit": search_time_unit,
     }
     params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_point_clusters, **kwargs
     )
     return gis._tools.featureanalysis.find_point_clusters(**params)
+
+
+# --------------------------------------------------------------------------
+def calculate_composite_index(
+    input_layer,
+    input_variables,
+    index_method=None,
+    output_index_reverse=False,
+    output_index_min_max=None,
+    output_name=None,
+    context=None,
+    gis=None,
+    future=False,
+):
+    """
+    The Calculate Composite Index task combines multiple numeric variables to create a single index. This task is only available in ArcGIS Online and Enterprise 11.3+.
+
+    =====================================       =========================================================
+    **Parameter**                               **Description**
+    -------------------------------------       ---------------------------------------------------------
+    input_layer                                 Required layer. The input table or features containing the
+                                                variables that will be combined into the index.
+
+                                                Syntax: As described in detail in the Feature input topic,
+                                                this parameter can be one of the following:
+
+                                                * A URL to a :class:`feature service layer <arcgis.features.FeatureLayer>`
+                                                  with an optional filter to select specific features
+                                                * A :class:`~arcgis.features.FeatureCollection`
+
+                                                .. code-block:: python
+
+                                                    #Example #1: Feature Layer with selection
+                                                    >>> output = calculate_composite_index(
+                                                                    input_layer= {
+                                                                        "url": <feature service layer url>,
+                                                                        "filter": <where clause>},
+                                                                    ...
+                                                                )
+
+                                                    #Example #2: Feature Collection
+                                                    >>> output = calculate_composite_index(
+                                                                    input_layer= {"
+                                                                        "layerDefinition": {},
+                                                                        "featureSet": {},
+                                                                        "filter": <where clause>},
+                                                                    ...,
+                                                                )
+    -------------------------------------       ---------------------------------------------------------
+    input_variables                             Required list of dictionaries. The variables that will be combined
+                                                to create the index. Provide at least two variables. For each variable,
+                                                specify the following:
+
+                                                * `field` is the numeric field from the inputLayer containing the variable.
+                                                  Any records in the field with missing values will not be included in the
+                                                  analysis.
+                                                * `reverseVariable` specifies whether the values of the variable will be
+                                                  reversed. If no value is specified, the value will be set to *False*.
+                                                  When *True* the feature or record that originally had the highest value
+                                                  will have the lowest value, and vice versa. Values will be reversed after
+                                                  scaling. To create an index, variables must be on a compatible scale;
+                                                  reversing some variables may be required to ensure the meaning of low and
+                                                  high values in each variable is consistent.
+                                                * `weight` is the relative influence of the variable on the index. If each
+                                                  variable should have equal contribution, set the value to 1. Increase or
+                                                  decrease the weight to reflect the relative importance of the variable.
+                                                  For example, if a variable is twice as important as the others, use a
+                                                  weight of 2.
+
+                                                .. code-block:: python
+
+                                                        #Example:
+                                                        >>> output = calculate_composite_index(
+                                                                                ...,
+                                                                                input_variables = [
+                                                                                    {"field":"median_income",
+                                                                                     "reverseVariable": True,
+                                                                                     "weight": 2},
+                                                                                    {"field": "pct_uninsured",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1},
+                                                                                    {"field": "pct_unemployed",
+                                                                                     "reverseVariable": False,
+                                                                                     "weight": 1}
+                                                                                    ],
+                                                                                ...,
+                                                                            )
+    -------------------------------------       ---------------------------------------------------------
+    index_method                                Optional string. The methods that will be used to scale the
+                                                inputVariables and combine the scaled variables to create
+                                                the index.
+
+                                                Scaling is a type of preprocessing that ensures the variables
+                                                are on a compatible scale before they are combined. These scaled
+                                                variables are then combined to create a single index value. The
+                                                following options are available:
+
+                                                * `meanScaled` the index by scaling the input variables between 0
+                                                  and 1 (minimum-maximum scaling) and calculating the mean of the
+                                                  scaled values. This method is useful for creating an index that is
+                                                  easy to interpret. The shape of the distribution and outliers in the
+                                                  input variables will impact the index.
+                                                * `meanPercentile` creates the index by scaling the ranks of the input
+                                                  variables between 0 and 1 (scaling by percentile) and calculating the
+                                                  mean of the scaled ranks. This option is useful when the rankings of the
+                                                  variable values are more important than the differences between values.
+                                                  The shape of the distribution and outliers in the input variables will not
+                                                  impact the index.
+                                                * `meanRaw` creates the index by calculating the mean of the raw input
+                                                  variables. This option is useful when variables are already on a compatible
+                                                  scale.
+                                                * `geomeanScaled` creates the index by scaling the input variables between
+                                                  0 and 1 (minimum-maximum scaling) and calculating the geometric mean of
+                                                  the scaled values. High values will not cancel low values, so this option
+                                                  is useful for creating an index in which higher index values will occur only
+                                                  when there are high values in multiple variables.
+                                                * `geomeanPercentile` creates the index by scaling the ranks of the input
+                                                  variables between 0 and 1 (scaling by percentile) and calculating the geometric
+                                                  mean of the scaled ranks. This option is useful when the rankings of the variable
+                                                  values are more important than the differences between values and when high
+                                                  variable values should not cancel out low variable values.
+                                                * `geomeanRaw` creates the index by calculating the geometric mean of the raw
+                                                  input variables. This option is useful when variables are already on a compatible
+                                                  scale and when high variable values should not cancel out low variable values.
+                                                * `sumFlagsPercentile` creates the index by counting the number of input variables
+                                                  with values greater than or equal to the 90th percentile. This method is useful
+                                                  for identifying locations that may be considered the most extreme or the most
+                                                  in need.
+
+                                                Values:
+
+                                                * *meanScaled*
+                                                * *meanPercentile*
+                                                * *meanRaw*
+                                                * *geomeanScaled*
+                                                * *geomeanPercentile*
+                                                * *geomeanRaw*
+                                                * *sumFlagsPercentile*
+
+                                                Default: *meanScaled*
+    -------------------------------------       ---------------------------------------------------------
+    output_index_reverse                        Optional boolean. Specifies whether the output index values will
+                                                be reversed in direction. When checked, high index values will be treated
+                                                as low index values and vice versa. Reversing is applied after combining
+                                                the scaled variables. The default is False.
+    -------------------------------------       ---------------------------------------------------------
+    output_index_min_max                        Optional list of one dictionary. The minimum and maximum of the output index values.
+                                                Specifying a minimum and maximum value will apply minimum-maximum scaling to the combined variables.
+
+                                                .. code-block:: python
+
+                                                    # Example:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_index_min_max= [
+                                                                            {'min': 0, 'max': 100}
+                                                                        ],
+                                                                    ...,
+                                                                )
+    -------------------------------------       ---------------------------------------------------------
+    output_name                                 Optional dictionary. If provided, the task will create a
+                                                feature service of the results. You define the name of the service.
+                                                If no argument is provided, the task will return a feature collection.
+
+                                                .. code-block:: python
+
+                                                    # Example #1:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    output_name={
+                                                                        "serviceProperties": {
+                                                                                "name": "<service name>"
+                                                                            }
+                                                                        },
+                                                                    ...
+
+                                                You can overwrite an existing feature service by providing the
+                                                itemId value of the existing feature service and setting the
+                                                *overwrite* property to *True*. Including the *serviceProperties*
+                                                parameter is optional. As described in the Feature output topic,
+                                                you must either be the owner of the feature service or have administrative
+                                                privileges to perform the overwrite.
+
+                                                .. code-block:: python
+
+                                                    # Example #2:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_name= {
+                                                                        "itemProperties": {
+                                                                            "itemId": "<itemID of existing service>",
+                                                                            "overwrite": True
+                                                                            }
+                                                                    },
+                                                                )
+
+                                                    # Example #3:
+                                                    >>> output = calculate_composite_index(
+                                                                    ...,
+                                                                    ouput_name= {
+                                                                        "serviceProperties": {
+                                                                                "name": "<existing service name>"
+                                                                                },
+                                                                        "itemProperties": {
+                                                                                "itemId": "<itemID of the existing feature service>",
+                                                                                "overwrite": True
+                                                                                }
+                                                                        },
+                                                                    ...
+                                                                )
+    -------------------------------------       ---------------------------------------------------------
+    context                                     Optional dict. The Context parameter contains the following
+                                                additional settings that affect task operation:
+
+                                                * Extent (extent)—A bounding box that defines the analysis area.
+                                                  Only input features that intersect the bounding box will be analyzed.
+                                                * Output spatial reference (outSR)—The output features will be
+                                                  projected into the output spatial reference.
+
+                                                .. code-block:: python
+
+                                                    # Example:
+                                                    >>> output = calculate_composite_index(
+                                                                        ...,
+                                                                        context= {
+                                                                            "extent" : {extent},
+                                                                            "outSR" : {spatial reference}
+                                                                        },
+                                                                        ...,
+                                                                )
+    -------------------------------------       ---------------------------------------------------------
+    gis                                         Optional, the :class:`~arcgis.gis.GIS` on which this tool runs.
+                                                If not specified, the active GIS is used.
+    -------------------------------------       ---------------------------------------------------------
+    future                                      Optional boolean. If True, the task will be performed asynchronously.
+    =====================================       =========================================================
+
+    :return:
+        :class:`~arcgis.features.FeatureLayer` if *output_name* is specified, else
+        a :class:`~arcgis.features.FeatureCollection` object.
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To create a social vulnerability index.
+
+        index = calculate_composite_index(
+                        input_layer=demographicsLayer,
+                        input_variables=[
+                                {'field':'pct_uninsured',
+                                 'reverseVariable': True,
+                                 'weight': 2},
+                                {'field': 'pct_unemployed',
+                                 'reverseVariable': False,
+                                 'weight': 1}
+                            ],
+                        index_method='meanPercentile',
+                        output_index_reverse=True,
+                        output_index_min_max=[
+                                    {'min': 0, 'max': 100}
+                                ],
+                        output_name="Social vulnerability index")
+    """
+    gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "input_layer": input_layer,
+        "input_variables": input_variables,
+        "index_method": index_method,
+        "output_index_reverse": output_index_reverse,
+        "output_index_min_max": output_index_min_max,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
+    }
+    params = _util.inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.calculate_composite_index, **kwargs
+    )
+    return gis._tools.featureanalysis.calculate_composite_index(**params)
 
 
 # --------------------------------------------------------------------------
@@ -486,9 +816,9 @@ def find_hot_spots(
     ===================================================================     =========================================================
     **Parameter**                                                            **Description**
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
+    analysis_layer                                                          Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
+    analysis_field                                                          Optional string. **Required** if the *analysis_layer* contains polygons. The numeric field that will be analyzed. The field you select might represent:
 
                                                                             + counts (such as the number of traffic accidents)
                                                                             + rates (such as the number of crimes per square mile)
@@ -722,6 +1052,7 @@ def find_outliers(
                                                                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
+                                                                        - ``randomGenerator`` - A string representing the integer and seed type that will initiate a random number generator. The seed type is always MERSENNE_TWISTER, for example, 13 MERSENNE_TWISTER. This parameter is available in ArcGIS Enterprise 11.2 or later.
 
                                                                             .. code-block:: python
 
@@ -732,7 +1063,8 @@ def find_outliers(
                                                                                                     "ymax": -9175500.875353,
                                                                                                     "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                                             "outSR": {"wkid": 3857},
-                                                                                            "overwrite": True}
+                                                                                            "overwrite": True,
+                                                                                            "randomGenerator": "13 MERSENNE_TWISTER"}
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -758,7 +1090,6 @@ def find_outliers(
                                 output_name='find outliers')
 
     """
-    distance_band_units = band_units
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "analysis_layer": analysis_layer,

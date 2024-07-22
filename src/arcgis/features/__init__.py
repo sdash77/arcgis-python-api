@@ -24,7 +24,12 @@ are one of the dataset types contained in a :class:`~arcgis.gis.Datastore`.
 """
 
 from .feature import Feature, FeatureSet, FeatureCollection
-from .layer import FeatureLayer, Table, FeatureLayerCollection
+from .layer import (
+    FeatureLayer,
+    Table,
+    FeatureLayerCollection,
+    OrientedImageryLayer,
+)
 from ._parcel import ParcelFabricManager
 from ._utility import UtilityNetworkManager
 from ._validation import ValidationManager
@@ -51,6 +56,7 @@ __all__ = [
     "ValidationManager",
     "ParcelFabricManager",
     "TraceConfiguration",
+    "OrientedImageryLayer",
 ]
 try:
     from .geo import GeoAccessor, GeoSeriesAccessor

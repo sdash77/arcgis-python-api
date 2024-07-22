@@ -149,6 +149,26 @@ class TabularDataObject(object):
             "raster_field_variables"
         ]
         if tabular_data._dependent_variable:
+            if isinstance(tabular_data._dependent_variable, list):
+                for var in tabular_data._dependent_variable:
+                    if (
+                        var
+                        in tabular_data._categorical_variables
+                        + tabular_data._continuous_variables
+                    ):
+                        raise Exception(
+                            "Variable to predict cannot be an explanatory variable"
+                        )
+            else:
+                if (
+                    tabular_data._dependent_variable
+                    in tabular_data._categorical_variables
+                    + tabular_data._continuous_variables
+                ):
+                    raise Exception(
+                        "Variable to predict cannot be an explanatory variable"
+                    )
+
             if (
                 tabular_data._dataframe[tabular_data._dependent_variable]
                 .isnull()
@@ -199,6 +219,7 @@ class TabularDataObject(object):
                                 f"We see a class imbalance in the dataset. "
                                 f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
                                 f"not have enough data points in your dataset."
+                                f"The imbalance class(es) should have at least 1% of total number of data points to stratify."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -206,7 +227,7 @@ class TabularDataObject(object):
                         from sklearn.model_selection import train_test_split
 
                         if (
-                            len(set(dependent_variable_column.values))
+                            dependent_variable_column.nunique().values[0]
                             > len(dependent_variable_column.values) * val_split_pct
                         ):
                             classes = len(set(dependent_variable_column.values))
@@ -622,6 +643,14 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
+            if self._procs:
+                list_of_transformed_cols = []
+                for cnt, transform in enumerate(self._procs.transformers):
+                    for col in self._procs.transformers[cnt][-1]:
+                        list_of_transformed_cols.append(col)
+                processed_orig_data = dataframe.copy()
+                processed_orig_data[list_of_transformed_cols] = processed_data
+                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
@@ -1259,9 +1288,7 @@ class TabularDataObject(object):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
+                index_data_copy = pd.to_datetime(index_data_copy)
             except:
                 sample_ticks = True
 
@@ -1522,7 +1549,7 @@ class TabularDataObject(object):
             elif (
                 unique_values[col] / total_rows > 0.5
                 and col_length[col] > 5
-                and len(dataframe[col][0].split("\\")[0]) < 3
+                and len(dataframe[col].iloc[0].split("\\")[0]) < 3
             ):
                 categorical_variables.remove(col)
                 image_variables.append(col)
@@ -1614,22 +1641,22 @@ class TabularDataObject(object):
             dataframe,
             {
                 "dependent_variable": dependent_variable,
-                "categorical_variables": categorical_variables
-                if categorical_variables
-                else [],
-                "continuous_variables": continuous_variables
-                if continuous_variables
-                else [],
+                "categorical_variables": (
+                    categorical_variables if categorical_variables else []
+                ),
+                "continuous_variables": (
+                    continuous_variables if continuous_variables else []
+                ),
                 "text_variables": text_variables if text_variables else [],
                 "image_variables": image_variables if image_variables else [],
                 "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
-                "feature_field_variables": feature_field_variables
-                if feature_field_variables
-                else [],
-                "raster_field_variables": raster_field_variables
-                if raster_field_variables
-                else [],
+                "feature_field_variables": (
+                    feature_field_variables if feature_field_variables else []
+                ),
+                "raster_field_variables": (
+                    raster_field_variables if raster_field_variables else []
+                ),
             },
         )
 
@@ -2179,7 +2206,10 @@ class TabularDataObject(object):
                 "sorted_index_col"
             ].to_list()
         del sorted_dataframe
-
+        # CHanges to handle the pandas datatype issue
+        dataframe[fields_mapping["categorical_variables"]] = dataframe[
+            fields_mapping["categorical_variables"]
+        ].astype("category")
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,

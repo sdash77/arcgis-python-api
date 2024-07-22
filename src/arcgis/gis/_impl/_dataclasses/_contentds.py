@@ -27,6 +27,7 @@ def _parse_enum(value: Enum | Any | None) -> Any | None:
 
 ###########################################################################
 class ItemTypeEnum(Enum):
+    DATA_STORE = "Data Store"
     VR_EXPERIENCE = "360 VR Experience"
     CITYENGINE_WEB_SCENE = "CityEngine Web Scene"
     MAP_AREA = "Map Area"
@@ -163,6 +164,8 @@ class ItemTypeEnum(Enum):
     EXPLORER_ADD_IN = "Explorer Add In"
     SURVEY123_ADD_IN = "Survey123 Add In"
     WORKFLOW_MANAGER_PACKAGE = "Workflow Manager Package"
+    TILES_SERVICE_3D = "3DTiles Service"
+    TILES_PACKAGE_3D = "3DTiles Package"
 
 
 ###########################################################################
@@ -216,6 +219,8 @@ class ItemProperties:
     categories: list[str] | None = None
     text: dict | str | None = None
     extension: str | None = None
+    overwrite: bool | None = None
+    file_name: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -252,6 +257,7 @@ class ItemProperties:
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
             "extension": self.extension or None,
+            "fileName": self.file_name or None,
         }
 
     def to_dict(self):
@@ -282,6 +288,8 @@ class ItemProperties:
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
             "extension": self.extension or None,
+            "overwrite": self.overwrite or None,
+            "fileName": self.file_name or None,
         }
 
     @classmethod

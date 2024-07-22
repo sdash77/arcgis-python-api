@@ -6,7 +6,7 @@ from fastprogress.fastprogress import progress_bar
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
 from .._utils.pointcloud_od import confusion_matrix3d
-
+import warnings
 import numpy as np
 import random
 import math
@@ -340,9 +340,11 @@ def postprocess(
         l_mask = l_mask.expand_as(a_ic)
         boxes = a_ic[l_mask].view(-1, 4)  # boxes are now in range[ 0, 1]
         boxes = (boxes - 0.5) * 2.0  # putting boxes in range[-1, 1]
-        ids, count = nms(
-            boxes.data, scores, nms_overlap, 50
-        )  # FIX- NMS overlap hardcoded
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ids, count = nms(
+                boxes.data, scores, nms_overlap, 50
+            )  # FIX- NMS overlap hardcoded
         ids = ids[:count]
         out1.append(scores[ids])
         bbox_list.append(boxes.data[ids])

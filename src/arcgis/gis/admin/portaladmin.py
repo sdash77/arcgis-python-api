@@ -1,6 +1,8 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+
+from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 from ...gis._impl._con import Connection
@@ -8,6 +10,7 @@ from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
+from arcgis.gis.tasks._schedule import Task
 
 
 ########################################################################
@@ -208,6 +211,56 @@ class PortalAdminManager(BasePortalAdmin):
         return self._metadata
 
     # ----------------------------------------------------------------------
+    def content(
+        self,
+        item_type: "ItemTypeEnum" | None = None,
+        sort_field: str = "created",
+        order: str = "asc",
+    ):
+        """
+        The portal content operation allows an administrator to return a
+        list of all items in the organization. Only available to
+        administrators with a privilege to view all items in the
+        organization.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        item_type                       Optional ItemTypeEnum. The item type to filter by.
+        ---------------------------     --------------------------------------------------------------------
+        sort_field                      Optional String. Field to sort by.
+        ---------------------------     --------------------------------------------------------------------
+        order                           Optional String. The sort order of the return data.
+        ===========================     ====================================================================
+
+        """
+        params: dict = {
+            "sortField": sort_field,
+            "sortOrder": order,
+            "f": "json",
+            "start": 1,
+            "num": 100,
+        }
+        if item_type:
+            params["types"] = item_type.value
+        url: str = (
+            f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        )
+        session = self._gis._con._session
+        resp = session.get(url=url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while data["items"]:
+            for i in data["items"]:
+                yield Item(gis=self._gis, itemid=i["id"], itemdict=i)
+            if data.get("nextStart") == -1:
+                break
+            params["start"] = data["nextStart"]
+            resp = session.get(url=url, params=params)
+            data: dict = resp.json()
+
+    # ----------------------------------------------------------------------
     @property
     def servers(self):
         """returns a server manager object
@@ -247,13 +300,13 @@ class PortalAdminManager(BasePortalAdmin):
         ================  ===============================================================================
 
 
-        :return: List of Tasks
+        :yields: Task
 
         """
-        _tasks = []
-        num = 100
-        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {"f": "json", "start": 1, "num": num}
+
+        num: int = 100
+        url: str = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params: dict = {"f": "json", "start": 1, "num": num}
         if item:
             params["itemId"] = item.itemid
         if not active is None:
@@ -262,18 +315,23 @@ class PortalAdminManager(BasePortalAdmin):
             params["userFilter"] = user.username
         if types:
             params["types"] = types
-        res = self._con.get(url, params)
-        start = res["nextStart"]
-        _tasks.extend(res["tasks"])
+        start: int = 1
         while start != -1:
             params["start"] = start
             params["num"] = num
             res = self._con.get(url, params)
-            if len(res["tasks"]) == 0:
+            if len(res.get("tasks", [])) == 0:
                 break
-            _tasks.extend(res["tasks"])
+            else:
+                for task in res.get("tasks", []):
+                    owner: str = task["userId"]
+                    task_id: str = task["id"]
+                    task_url: str = (
+                        f"{self._gis._portal.resturl}community/users/{owner}/tasks/{task_id}"
+                    )
+                    yield Task(url=task_url, gis=self._gis)
+
             start = res["nextStart"]
-        return _tasks
 
     # ----------------------------------------------------------------------
     @property
@@ -501,7 +559,10 @@ class PortalAdminManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def history(
-        self, start_date: datetime, num: int = 100, save_folder: Optional[str] = None
+        self,
+        start_date: datetime,
+        num: int = 100,
+        save_folder: Optional[str] = None,
     ):
         """
         Returns a CSV file containing the login history from a start_date to the present.
@@ -536,5 +597,8 @@ class PortalAdminManager(BasePortalAdmin):
                     "fromDate": json.dumps(start_date, default=_date_handler),
                 }
                 return self._gis._con.post(
-                    url, params, file_name="history.csv", out_folder=save_folder
+                    url,
+                    params,
+                    file_name="history.csv",
+                    out_folder=save_folder,
                 )

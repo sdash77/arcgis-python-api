@@ -1,6 +1,5 @@
 import os, uuid
 import unittest
-
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayerCollection
 from arcgis.features.managers import (
@@ -9,57 +8,56 @@ from arcgis.features.managers import (
     WebHookEvents,
     WebHookScheduleInfo,
 )
+from arcgis.gis.server.admin._services import (
+    ServiceWebHookManager,
+    ServiceWebHook,
+)
+from utils.decorators import integration_test, profiles
+from integration.config import QALAB_ROOT_PATH
+
 
 hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
-SKIPIF = False
-msg = ""
-try:
-    PROFILE = "your_online_profile"
-    gis = GIS(profile=PROFILE, verify_cert=False)
-    SKIPIF = gis.version < [8, 2]
-    if SKIPIF:
-        msg = f"Incorrect Version {gis.version}"
-except Exception as e:
-    SKIPIF = True
-    msg = f"An Error Occured {str(e)}"
-
-try:
-    from utils import INTEGRATION_TESTS_DIR
-
-    fp = os.path.join(INTEGRATION_TESTS_DIR, "features", "webhook_data.zip")
-    if os.path.isfile(fp) == False:
-        SKIPIF = True
-        msg = "Missing file"
-except:
-    fp = r"./webhook_data.zip"
-    if os.path.isfile(fp) == False:
-        SKIPIF = True
-        msg = "Missing file"
+fp = os.path.join(
+    QALAB_ROOT_PATH, "features_mod_WebhookService_cls", "webhook_data.zip"
+)
 
 
-@unittest.skipIf(SKIPIF, msg)
+@profiles.admin_enterprise_and_agol
+@integration_test
 class TestFeatureServiceWebHook(unittest.TestCase):
     """
-    Tests the AGOL Webhook Service Framework
+    Tests the Webhook Service Framework
     """
 
-    def test_web_hook(self):
+    @classmethod
+    def setUpClass(cls) -> None:
         """
-        Tests the Web Hook Class' Methods and properties
+        Set up feature service for test
         """
-        gis = GIS(profile=PROFILE, verify_cert=False)
-        for item in gis.content.search("ABCD1234EFGH"):
-            item.delete()
-        item = gis.content.add(
-            {"type": "File Geodatabase", "tags": "erase me", "title": "ABCD1234EFGH"},
+        print(cls.gis)
+
+        # delete previous test outputs if exists
+        outputs = cls.gis.content.search("ABCD1234EFGH")
+        if outputs:
+            for item in outputs:
+                print(item)
+                item.delete()
+
+        # add test item
+        item = cls.gis.content.add(
+            {
+                "type": "File Geodatabase",
+                "tags": "erase me",
+                "title": "ABCD1234EFGH",
+            },
             data=fp,
         )
-        pitem = item.publish()
-        flc = pitem.layers[0].container
-        isinstance(flc, FeatureLayerCollection)
-        import json
+        cls.pitem = item.publish()
+        cls.flc = cls.pitem.layers[0].container
+        isinstance(cls.flc, FeatureLayerCollection)
 
-        update_dict2 = {
+        # update item definition to enable ChangeTracking
+        update_dict = {
             "hasStaticData": False,
             "capabilities": "Query,Editing,Create,Update,Delete,ChangeTracking",
             "editorTrackingInfo": {
@@ -72,11 +70,23 @@ class TestFeatureServiceWebHook(unittest.TestCase):
                 "enableOwnershipAccessControl": False,
             },
         }
-        flc.manager.update_definition(update_dict2)
-        whm = flc.manager.webhook_manager
-        dah = whm.delete_all_hooks()
+        cls.flc.manager.update_definition(update_dict)
 
-        assert isinstance(whm, WebHookServiceManager)
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.pitem.delete()
+
+    def test_webhook(self):
+        """
+        Tests the WebHook Class' Methods and properties
+        """
+        whm = self.flc.manager.webhook_manager
+        dah = whm.delete_all_hooks()
+        if self.gis._is_agol:
+            assert isinstance(whm, WebHookServiceManager)
+        else:
+            assert isinstance(whm, ServiceWebHookManager)
+
         wh = whm.create(
             f"hook{uuid.uuid4().hex[:5]}test",
             "https://en1dx5cd33emv.x.pipedream.net",
@@ -95,7 +105,10 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert res
         res2 = wh.edit(
             name=None,
-            change_types=[WebHookEvents.FEATURESEDITED, WebHookEvents.FEATURESUPDATED],
+            change_types=[
+                WebHookEvents.FEATURESEDITED,
+                WebHookEvents.FEATURESUPDATED,
+            ],
             hook_url=None,
             signature_key=None,
             active=None,
@@ -114,41 +127,16 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert wh.properties
         assert wh.delete()
         assert len(whm.list) == 0
-        pitem.delete()
-        item.delete()
 
     def test_web_hook_manager(self):
         """
-        Tests the Web Hook Manager Class' Methods and properties
+        Tests the WebHook Manager Class' Methods and properties
         """
-        gis = GIS(profile=PROFILE, verify_cert=False)
-        for item in gis.content.search("ABCD1234EFGH"):
-            item.delete()
-        item = gis.content.add(
-            {"type": "File Geodatabase", "tags": "erase me", "title": "ABCD1234EFGH"},
-            data=fp,
-        )
-        pitem = item.publish()
-        flc = pitem.layers[0].container
-        isinstance(flc, FeatureLayerCollection)
-        import json
-
-        update_dict2 = {
-            "hasStaticData": False,
-            "capabilities": "Query,Editing,Create,Update,Delete,ChangeTracking",
-            "editorTrackingInfo": {
-                "allowAnonymousToDelete": True,
-                "allowAnonymousToUpdate": True,
-                "allowOthersToDelete": True,
-                "allowOthersToQuery": True,
-                "allowOthersToUpdate": True,
-                "enableEditorTracking": False,
-                "enableOwnershipAccessControl": False,
-            },
-        }
-        flc.manager.update_definition(update_dict2)
-        whm = flc.manager.webhook_manager
-        assert isinstance(whm, WebHookServiceManager)
+        whm = self.flc.manager.webhook_manager
+        if self.gis._is_agol:
+            assert isinstance(whm, WebHookServiceManager)
+        else:
+            assert isinstance(whm, ServiceWebHookManager)
 
         wh = whm.create(
             f"hook{uuid.uuid4().hex[:5]}test",
@@ -158,7 +146,10 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert wh.properties
         hooks = whm.list
         for hook in hooks:
-            assert isinstance(hook, WebHook)
+            if self.gis._is_agol:
+                assert isinstance(hook, WebHook)
+            else:
+                assert isinstance(hook, ServiceWebHook)
             del hook
         eh = whm.enable_hooks()
 
@@ -168,9 +159,6 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert dh
         dah = whm.delete_all_hooks()
         assert dah
-
-        pitem.delete()
-        item.delete()
 
 
 if __name__ == "__main__":

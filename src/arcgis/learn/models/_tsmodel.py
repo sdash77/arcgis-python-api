@@ -344,7 +344,12 @@ class TimeSeriesModel(ArcGISModel):
 
         with io.capture_output() as captured:
             saved_path = super().save(
-                path, framework, False, gis, save_optimizer=save_optimizer, **kwargs
+                path,
+                framework,
+                False,
+                gis,
+                save_optimizer=save_optimizer,
+                **kwargs,
             )
         if publish:
             file_name = os.path.basename(saved_path) + ".dlpk"
@@ -637,7 +642,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -660,7 +668,10 @@ class TimeSeriesModel(ArcGISModel):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -744,7 +755,10 @@ class TimeSeriesModel(ArcGISModel):
             single_swap_pred,
             number_of_predictions,
         ) = self._infer_number_of_pred(
-            orig_dataframe, number_of_predictions, match_field_names, fields_needed
+            orig_dataframe,
+            number_of_predictions,
+            match_field_names,
+            fields_needed,
         )
 
         dataframe = orig_dataframe.copy()
@@ -864,15 +878,17 @@ class TimeSeriesModel(ArcGISModel):
         while index < len(prediction_sequence_list):
             if pd.isna(prediction_sequence_list[index]).any() or any(
                 [
-                    True
-                    if i
-                    in [
-                        "",
-                        None,
-                        "null",
-                        "None",
-                    ]
-                    else False
+                    (
+                        True
+                        if i
+                        in [
+                            "",
+                            None,
+                            "null",
+                            "None",
+                        ]
+                        else False
+                    )
                     for i in prediction_sequence_list[index]
                 ]
             ):
@@ -931,9 +947,11 @@ class TimeSeriesModel(ArcGISModel):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_layer_name + ".xlsx")
                 orig_dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
+                folder = gis.content.folders.get()
+                online_table = folder.add(
+                    {"type": "Microsoft Excel", "overwrite": True},
+                    file=table_file,
+                ).result()
                 return online_table.publish(overwrite=True)
 
     def _apply_inverse_transform(self, transformed_results):
@@ -950,7 +968,11 @@ class TimeSeriesModel(ArcGISModel):
         return np.stack(transformed_results_ret, axis=1)
 
     def _add_predict_rows(
-        self, number_of_predictions, orig_dataframe, match_field_names, fields_needed
+        self,
+        number_of_predictions,
+        orig_dataframe,
+        match_field_names,
+        fields_needed,
     ):
         # Changed to make code future ready as the previous method of adding
         # pandas series will be deprecated.
@@ -1030,13 +1052,16 @@ class TimeSeriesModel(ArcGISModel):
                 end_value, freq=delta, periods=number_of_predictions + 1
             )
             orig_dataframe.loc[
-                orig_dataframe.tail(number_of_predictions).index, index_field_name
+                orig_dataframe.tail(number_of_predictions).index,
+                index_field_name,
             ] = tindex[1:]
         if len(datetime_dict):
             for key, value in datetime_dict.items():
                 new_delta, end_value_temp = value
                 tindex = pd.period_range(
-                    end_value_temp, freq=new_delta, periods=number_of_predictions + 1
+                    end_value_temp,
+                    freq=new_delta,
+                    periods=number_of_predictions + 1,
                 )
                 orig_dataframe.loc[
                     orig_dataframe.tail(number_of_predictions).index, key
@@ -1045,7 +1070,11 @@ class TimeSeriesModel(ArcGISModel):
         return orig_dataframe
 
     def _infer_number_of_pred(
-        self, orig_dataframe, number_of_predictions, match_field_names, fields_needed
+        self,
+        orig_dataframe,
+        number_of_predictions,
+        match_field_names,
+        fields_needed,
     ):
         # Type of inference
         #     ├── Multivariate
@@ -1120,7 +1149,7 @@ class TimeSeriesModel(ArcGISModel):
                 if isinstance(transform, LabelEncoder):
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         )
                     )
@@ -1128,15 +1157,15 @@ class TimeSeriesModel(ArcGISModel):
                 else:
                     transformed_data = transform.transform(
                         np.array(
-                            transformed_data,
+                            transformed_data.to_numpy(na_value=np.nan),
                             dtype=type(processed_dataframe[col][0]),
                         ).reshape(-1, 1)
                     )
 
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col].head(len(transformed_data)).loc[
-                :
-            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[:] = (
+                np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+            )
         return processed_dataframe_transform
 
     def score(self):
@@ -1196,18 +1225,22 @@ class TimeSeriesModel(ArcGISModel):
 
     def _convert_datetime(self, index_data_copy):
         sample_ticks = False
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
-            try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
-            except:
-                sample_ticks = True
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
+                index_data_copy
+            ):
+                try:
+                    index_data_copy = pd.to_datetime(index_data_copy)
+                except:
+                    sample_ticks = True
         return index_data_copy, sample_ticks
 
     def show_results(self, rows=5):
         """
         Prints the graph with predictions.
+
+        Experimental support for multivariate timeseries.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -1270,16 +1303,17 @@ class TimeSeriesModel(ArcGISModel):
                             transformed_data = transform.inverse_transform(
                                 np.array(transformed_data, dtype=int)
                             )
-                        else:
-                            transformed_data = transform.inverse_transform(
-                                np.array(transformed_data).reshape(-1, 1)
-                            )
-                            transformed_data = transformed_data.squeeze(1)
+                        # else: # Commenting it out. Because inverse transform tends to change the scale
+                        #     transformed_data = transform.inverse_transform(
+                        #         np.array(transformed_data).reshape(-1, 1)
+                        #     )
+                        #     transformed_data = transformed_data.squeeze(1)
 
                 seq_inverse.append(transformed_data)
                 index = index + 1
 
             sequence_inversed.append(seq_inverse)
+
         if self._data._index_seq is not None:
             validation_index_seq = self._data._index_seq.take(
                 self._data._validation_indexes_ts, axis=0

@@ -244,9 +244,7 @@ class Anchors:
 
         self.__dict__.update(cfg)
 
-        self.anchor_num = (
-            len(self.scales) * len(self.ratios) * (self.anchor_density**2)
-        )
+        self.anchor_num = len(self.scales) * len(self.ratios) * (self.anchor_density**2)
         self.anchors = None
         self.all_anchors = None
         self.generate_anchors()
@@ -1520,23 +1518,28 @@ def prepare_pro_data(path, batch_size, val_split_pct, **kwargs):
 
     train_set.shuffle()
     val_set.shuffle()
-    init_kwargs = {}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
+    )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
+
     train_dl = DataLoader(
         train_set,
         batch_size=batch_size,
-        num_workers=0,
         pin_memory=True,
         sampler=None,
-        **init_kwargs,
+        **databunch_kwargs,
     )
 
     valid_dl = DataLoader(
         val_set,
         batch_size=batch_size,
-        num_workers=0,
         pin_memory=True,
         sampler=None,
-        **init_kwargs,
+        **databunch_kwargs,
     )
 
     device = get_device()
@@ -1692,23 +1695,27 @@ def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
 
     train_set.shuffle()
     val_set.shuffle()
-    init_kwargs = {}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
+    )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
     train_dl = DataLoader(
         train_set,
         batch_size=batch_size,
-        num_workers=0,
         pin_memory=True,
         sampler=None,
-        **init_kwargs,
+        **databunch_kwargs,
     )
 
     valid_dl = DataLoader(
         val_set,
         batch_size=batch_size,
-        num_workers=0,
         pin_memory=True,
         sampler=None,
-        **init_kwargs,
+        **databunch_kwargs,
     )
 
     device = get_device()

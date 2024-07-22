@@ -11,7 +11,11 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
+from .._utils.tabular_data import (
+    TabularDataObject,
+    explain_prediction,
+    add_h3,
+)
 
 try:
     import sklearn
@@ -53,6 +57,8 @@ except:
 _PROTOCOL_LEVEL = 2
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
+_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
+_SENSITIVE_FEATURE_ERROR = "Senstive feature should be a categorical feature"
 
 
 def _get_model_type(model_type):
@@ -153,11 +159,10 @@ class MLModel(object):
 
                                                 A dictionary to provide fairness args. Following are allowed keys and values
                                                 Keyword Args:                   Value Args:
-                                                <sensitive_feature> str:        Protected class column or feature name
+                                                <sensitive_feature> str:        Protected class column or feature name. Ony categorical variable is allowed.
                                                 <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
                                                                                 `grid_search` or `exponentiated_gradient` (For Regression)
-                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' or 'selection_rate_parity'
-                                                                                or `false_positive_rate_parity` or `true_negative_rate_parity` or `equalized_odds` (For Classification)
+                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' (For Classification)
                                                                                 and `ZeroOneLoss` or `SquareLoss` (For Regression)
 
 
@@ -280,6 +285,9 @@ class MLModel(object):
 
         self.protected_class = fairness_args["sensitive_feature"]
 
+        if self.protected_class not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
+
         if "mitigation_type" not in fairness_args:
             raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
@@ -293,7 +301,10 @@ class MLModel(object):
             else:
                 self.constraint = fairness_args["mitigation_constraint"]
 
-            if self.constraint not in ["demographic_parity", "equalized_odds"]:
+            if self.constraint not in [
+                "demographic_parity",
+                "equalized_odds",
+            ]:
                 raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
             self.fairness_label_encoder = LabelEncoder()
@@ -403,14 +414,24 @@ class MLModel(object):
                             sample_weight=self.instance_weights_train,
                         )
                     else:
-                        print(f"Fitting with {self.mitigation_method}")
-                        self._model.fit(
-                            self._training_df,
-                            self._training_labels,
-                            sensitive_features=self._training_df.loc[
-                                :, self.protected_class
-                            ],
-                        )
+                        try:
+                            print(f"Fitting with {self.mitigation_method}")
+                            self._model.fit(
+                                self._training_df,
+                                self._training_labels,
+                                sensitive_features=self._training_df.loc[
+                                    :, self.protected_class
+                                ],
+                            )
+                        except ValueError as val:
+                            val_error_message = val.args[0]
+                            if (
+                                "Degenerate labels for sensitive feature"
+                                in val_error_message
+                            ):
+                                raise Exception(_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE)
+                            else:
+                                raise Exception(val)
 
                 else:
                     self._model.fit(self._training_data, self._training_labels)
@@ -441,26 +462,36 @@ class MLModel(object):
                                     ]
                                  2. for Regression
                                     [
-                                    "mean_absolute_error",
-                                    "mean_squared_error",
+                                    "MAE",
+                                    "MSE",
+                                    "RMSE",
+                                    "MAPE"
                                     ]
+                                 Metric should be one of the values mentioned in
+                                 the list.
 
         visualize                A boolean value to visualize plot of metrics
         =====================   ===========================================
         :return: dataframe
         """
 
+        if sensitive_feature not in self._data._categorical_variables:
+            raise ValueError(_SENSITIVE_FEATURE_ERROR)
+
         self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,
@@ -749,16 +780,16 @@ class MLModel(object):
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
             )
-
-        item = gis_user.content.add(
+        folder = gis_user.content.folders.get()
+        item = folder.add(
             {
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
                 "overwrite": True if overwrite else False,
             },
-            data=str(dlpk_path.absolute()),
-        )
+            file=str(dlpk_path.absolute()),
+        ).result()
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
@@ -914,7 +945,12 @@ class MLModel(object):
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(data, emd["ModelName"], pretrained_model=model, **model_parameters)
+        return cls(
+            data,
+            emd["ModelName"],
+            pretrained_model=model,
+            **model_parameters,
+        )
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":
@@ -1233,7 +1269,7 @@ class MLModel(object):
         rasters=None,
         datefield=None,
         distance_feature_layers=None,
-        output_name="Prediction Layer",
+        output_name=None,
         gis=None,
         match_field_names=None,
         prediction_type="features",
@@ -1244,6 +1280,9 @@ class MLModel(object):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
+
+        if output_name is None:
+            output_name = "Prediction Layer"
 
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
@@ -1316,11 +1355,8 @@ class MLModel(object):
             processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
             fit=False,
         )
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
-            processed_df = processed_numpy[self._validation_df.columns]
-            group_data = processed_df.loc[:, self.protected_class]
-            predictions = self._predict(processed_df, group_data)
-        elif self._fairness:
+
+        if self._fairness:
             processed_df = processed_numpy[self._validation_df.columns]
             group_data = processed_df.loc[:, self.protected_class]
             predictions = self._predict(processed_df, group_data)
@@ -1359,10 +1395,17 @@ class MLModel(object):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
-                return online_table.publish(overwrite=True)
+                try:
+                    folder = gis.content.folders.get()
+                    online_table = folder.add(
+                        {"type": "Microsoft Excel", "overwrite": True},
+                        file=table_file,
+                    ).result()
+                    return online_table.publish(overwrite=True)
+                except Exception as ex:
+                    raise Exception(
+                        f"Filename {output_name} already exists. Please provide different output filename."
+                    )
 
     def _predict_rasters(
         self,
@@ -1499,7 +1542,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1526,7 +1572,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1585,7 +1634,8 @@ class MLModel(object):
         predictions = self._predict(processed_numpy)
 
         predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
+            predictions.reshape([max_raster_rows, max_raster_columns]),
+            dtype="float64",
         )
 
         processed_raster = arcpy.NumPyArrayToRaster(

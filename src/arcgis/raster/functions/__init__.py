@@ -10,6 +10,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
+
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
@@ -1977,7 +1978,7 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClipType": 1 if clip_outside else 2,
+            "ClippingType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
@@ -7077,6 +7078,7 @@ def remap(
     no_data_ranges: Optional[list[float]] = None,
     allow_unmatched: Optional[bool] = None,
     astype: Optional[str] = None,
+    replacement_value: Optional[float] = None,
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
@@ -7102,6 +7104,8 @@ def remap(
     allow_unmatched                         Boolean, specify whether to keep the unmatched values or turn into nodata.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    replacement_value                       Optional float. The value that will replace missing or unmatched values in the output when `allow_unmatched` is set to False.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7130,6 +7134,8 @@ def remap(
         template_dict["rasterFunctionArguments"]["NoDataRanges"] = no_data_ranges
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
+    if replacement_value is not None:
+        template_dict["rasterFunctionArguments"]["ReplacementValue"] = replacement_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -8174,7 +8180,7 @@ def vector_field(
 
 def complex(
     raster: Union[Raster, ImageryLayer],
-    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    imaginary_raster: Optional[Union[Raster, ImageryLayer]] = None,
     value_type: str = "AMPLITUDE",
 ):
     """
@@ -8765,9 +8771,9 @@ def pansharpen(
     }
 
     if type is not None:
-        template_dict["rasterFunctionArguments"][
-            "PansharpeningType"
-        ] = pansharpening_types[type]
+        template_dict["rasterFunctionArguments"]["PansharpeningType"] = (
+            pansharpening_types[type]
+        )
 
     if ir_raster is not None:
         template_dict["rasterFunctionArguments"]["InfraredImage"] = ir_raster_1
@@ -10786,12 +10792,12 @@ def aggregate(
                 percentile_interpolation_type = 2
             elif percentile_interpolation_type.upper() == "LINEAR":
                 percentile_interpolation_type = 3
-            template_dict["rasterFunctionArguments"][
-                "AggregationFunction"
-            ] = _local_function_template(
-                operation_number=opnum,
-                percentile_value=percentile_value,
-                percentile_interpolation_type=percentile_interpolation_type,
+            template_dict["rasterFunctionArguments"]["AggregationFunction"] = (
+                _local_function_template(
+                    operation_number=opnum,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                )
             )
         if (
             "type"
@@ -12772,9 +12778,9 @@ def dimensional_moving_statistics(
                 "nodata_handling parameter value should be one of the following "
                 + str(nodata_handling_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "NoDataHandling"
-        ] = nodata_handling_types[nodata_handling.upper()]
+        template_dict["rasterFunctionArguments"]["NoDataHandling"] = (
+            nodata_handling_types[nodata_handling.upper()]
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13067,6 +13073,7 @@ def surface_parameters(
     slope_type: Optional[str] = "DEGREE",
     project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
     use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
+    analysis_mask: Optional[Union[Raster, ImageryLayer]] = None,
 ):
     """
     Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
@@ -13076,7 +13083,8 @@ def surface_parameters(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         The input surface raster. This can be an integer or a floating-point raster.
     --------------------------------     --------------------------------------------------------------------
     parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
 
@@ -13188,6 +13196,13 @@ def surface_parameters(
                                             - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
                                             
                                             - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
+    --------------------------------     --------------------------------------------------------------------
+    analysis_mask                        Optional :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         A raster that specifies the locations where the analysis will occur.
+                                         The raster can be integer or floating point type.
+                                         
+                                         All cells with a valid value, including zero, will compose the mask.
+                                         Cells that are NoData in the mask input will be NoData in the output.
     ================================     ====================================================================     
 
     :return: The output raster with the function applied.
@@ -13200,6 +13215,9 @@ def surface_parameters(
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    if analysis_mask is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, analysis_mask)
 
     template_dict = {
         "rasterFunction": "SurfaceParam",
@@ -13224,9 +13242,9 @@ def surface_parameters(
                 "parameter_type should be one of the following "
                 + str(parameter_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "SurfaceCalculation"
-        ] = parameter_types[parameter_type.upper()]
+        template_dict["rasterFunctionArguments"]["SurfaceCalculation"] = (
+            parameter_types[parameter_type.upper()]
+        )
 
     surface_types = {
         "QUADRATIC": 1,
@@ -13316,9 +13334,12 @@ def surface_parameters(
                 "use_equatorial_aspect should be one of the following "
                 + str(eq_aspect_types.keys())
             )
-        template_dict["rasterFunctionArguments"][
-            "UseEquatorialAspect"
-        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+        template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = (
+            eq_aspect_types[use_equatorial_aspect.upper()]
+        )
+
+    if analysis_mask is not None:
+        template_dict["rasterFunctionArguments"]["AnalysisMask"] = raster_ra2
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -13643,6 +13664,89 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
         template_dict["rasterFunctionArguments"][
             "DenominatorUnit"
         ] = denominator_unit.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def create_color_composite(
+    input_raster: Union[Raster, ImageryLayer],
+    method: str = "BAND_IDS",
+    red_expression: str = None,
+    green_expression: str = None,
+    blue_expression: str = None,
+):
+    """
+    Creates a three-band raster dataset from a multiband raster dataset.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         The input multiband :class:`Raster <arcgis.raster.Raster>` data.
+    --------------------------------     --------------------------------------------------------------------
+    method                               Optional string. Specifies the method that will be used to extract bands
+    
+                                            - BAND_NAMES - The band name representing the wavelength interval on the \
+                                            electromagnetic spectrum (such as Red, Near Infrared, or Thermal Infrared)\
+                                            or the polarization (such as VH, VV, HH, or HV) will be used.
+                                            
+                                            - BAND_IDS - The band number (such as B1, B2, or B3) will be used. This is the default.
+    --------------------------------     --------------------------------------------------------------------
+    red_expression                       Optional string. The calculation assigned to the first band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    --------------------------------     --------------------------------------------------------------------
+    green_expression                     Optional string. The calculation assigned to the second band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    --------------------------------     --------------------------------------------------------------------
+    blue_expression                      Optional string. The calculation assigned to the third band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    ================================     ====================================================================
+
+    :return: The output three-band raster.
+
+    .. code-block:: python
+
+        # Usage Example 1: Create a color composite using the band names VV, VH, and VV/VH.
+
+        raster = gis.content.search("my_sar_raster")[0].layers[0]
+
+        out_raster = create_color_composite(raster, method="BAND_NAMES", red_expression="VV", green_expression="VH", blue_expression="VV/VH")
+    """
+
+    layer, raster, raster_ra = _raster_input(input_raster)
+
+    template_dict = {
+        "rasterFunction": "CreateColorComposite",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    method_types = {"BAND_NAMES": 0, "BAND_IDS": 2}
+    if method is not None:
+        if method.upper() not in method_types.keys():
+            raise RuntimeError(
+                "method sould be one of the following " + str(method_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["Method"] = method_types[
+            method.upper()
+        ]
+
+    if red_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesR"] = red_expression
+    if green_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesG"] = green_expression
+    if blue_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesB"] = blue_expression
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -14491,16 +14595,20 @@ class RFT:
                             else:  # when gdict["arguments"]["value"]["elements"]=[]
                                 _raster_function_traversal(
                                     gdict["arguments"],
-                                    function_arg_type=gdict["arguments"]["type"]
-                                    if "type" in gdict["arguments"]
-                                    else None,
+                                    function_arg_type=(
+                                        gdict["arguments"]["type"]
+                                        if "type" in gdict["arguments"]
+                                        else None
+                                    ),
                                 )
                     else:
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
 
                 else:
@@ -14511,9 +14619,11 @@ class RFT:
                     ):  # Aspect function with only raster parameter
                         _raster_function_traversal(
                             gdict["arguments"],
-                            function_arg_type=gdict["arguments"]["type"]
-                            if "type" in gdict["arguments"]
-                            else None,
+                            function_arg_type=(
+                                gdict["arguments"]["type"]
+                                if "type" in gdict["arguments"]
+                                else None
+                            ),
                         )
             _function_traversal(gdict["arguments"])
         return key_value_dict, raster_dictionary

@@ -41,6 +41,8 @@ from matplotlib.colors import Normalize
 import matplotlib.patches as mpatches
 import warnings
 
+_SENSITIVE_FEATURE_ERROR = "Senstive feature should be a categorical feature"
+
 
 def score(
     _is_classification,
@@ -64,22 +66,21 @@ def calculate_metrics(
     visualize,
 ):
     if not is_classification:
-        if not is_classification:
-            if fairness_metrics is None:
-                fairness_metrics = "RMSE"
-                fairness_ratio_threshold = 0.7
-                fairness_diff_threshold = 0.01
+        fairness_ratio_threshold = 0.7
+        fairness_diff_threshold = 0.01
+        if fairness_metrics is None:
+            fairness_metrics = "RMSE"
 
-            return get_regression_metrics(
-                data,
-                y_true,
-                y_pred,
-                group_test,
-                fairness_metrics,
-                visualize,
-                fairness_ratio_threshold,
-                fairness_diff_threshold,
-            )
+        return get_regression_metrics(
+            data,
+            y_true,
+            y_pred,
+            group_test,
+            fairness_metrics,
+            visualize,
+            fairness_ratio_threshold,
+            fairness_diff_threshold,
+        )
     else:
         return show_classification_score(
             data,
@@ -177,6 +178,9 @@ def get_mdf(_data, sensitive_features, col, y_test, y_pred):
         "MAPE": mean_absolute_percentage_error,
     }
 
+    if col not in _data._categorical_variables:
+        raise Exception(_SENSITIVE_FEATURE_ERROR)
+
     overall = {}
 
     for k, v in regression_metrics.items():
@@ -192,10 +196,17 @@ def get_mdf(_data, sensitive_features, col, y_test, y_pred):
     for value in values:
         metrics = {}
         for k, v in regression_metrics.items():
-            metrics[k] = v(
-                y_test[sensitive_features[col] == value],
-                y_pred[sensitive_features[col] == value],
-            )
+            filtered_rows = sensitive_features[col] == value
+            if isinstance(y_test, pd.core.series.Series):
+                metrics[k] = v(
+                    y_test.where(filtered_rows.values).dropna(),
+                    y_pred.where(filtered_rows.values).dropna(),
+                )
+            else:
+                metrics[k] = v(
+                    y_test[sensitive_features[col] == value],
+                    y_pred[sensitive_features[col] == value],
+                )
         all_metrics += [metrics]
 
     mdf = pd.DataFrame(all_metrics, index=["Overall"] + labels)
@@ -222,6 +233,8 @@ def show_classification_score(
 
     if fairness_metrics is None:
         fairness_metrics = fairness_dict.keys()
+    else:
+        fairness_metrics = [fairness_metrics]
 
     mf = MetricFrame(
         metrics=metrics, y_true=y_true, y_pred=y_pred, sensitive_features=group_test
@@ -242,17 +255,23 @@ def show_classification_score(
         fig = plt.figure(figsize=(12, 9))
 
     res_summary = {}
+
     for num, fm in enumerate(fairness_metrics):
         is_diff = False
-        _metrics = fairness_dict[fm]
+        try:
+            _metrics = fairness_dict[fm]
 
-        if "diff" in fm:
-            is_diff = True
-            thre = 0.25
-        else:
-            thre = 0.8
+            if "diff" in fm:
+                is_diff = True
+                thre = 0.25
+            else:
+                thre = 0.8
 
-        val = _metrics(y_true, y_pred, sensitive_features=group_test)
+            val = _metrics(y_true, y_pred, sensitive_features=group_test)
+        except ZeroDivisionError as zerror:
+            raise Exception(
+                "One or more metrics count is zero. Please check the classification data."
+            )
         val = round(val, 2)
         sum_text = get_text(fm, val, thre, is_diff)
 

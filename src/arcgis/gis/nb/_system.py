@@ -1,7 +1,10 @@
 import os
 from arcgis.gis import GIS
+from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._mixins import PropertyMap
 from typing import List, Dict, Any, Optional
+
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
 
 ########################################################################
@@ -129,7 +132,12 @@ class DirectoryManager(object):
         :return: Boolean
 
         """
-        params = {"f": "json", "name": name, "path": path, "type": directory_type}
+        params = {
+            "f": "json",
+            "name": name,
+            "path": path,
+            "type": directory_type,
+        }
         url = self._url + "/register"
         res = self._con.post(url, params)
         if "status" in res:
@@ -495,7 +503,7 @@ class Container(object):
         url = f"{self._url}/logs"
         return self._con.post(url, params).get("containerLogs", [])
 
-    def terminate(self) -> bool:
+    def shutdown(self) -> bool:
         """
         Stops the container
 

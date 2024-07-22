@@ -5,6 +5,7 @@ import uuid
 import arcgis
 from arcgis.gis import GIS
 from arcgis.gis.admin._wh import WebhookManager
+from utils.decorators import integration_test
 
 
 PROFILES = ["your_ent_admin_profile"]
@@ -12,6 +13,7 @@ proxies = urllib.request.getproxies()
 key = uuid.uuid4().hex[:5]
 
 
+@integration_test
 class TestWebhooks(unittest.TestCase):
     """Tests the webhook manager and associates functionality"""
 

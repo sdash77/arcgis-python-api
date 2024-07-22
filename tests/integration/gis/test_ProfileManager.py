@@ -6,11 +6,13 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ProfileManager
 from arcgis.gis import login_profiles
 import pandas as pd
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
 DUMMY_PROFILE = "FAKE" + uuid.uuid4().hex[:5]
 
 
+@integration_test
 class TestProfileManager(unittest.TestCase):
     """tests the profile manager"""
 

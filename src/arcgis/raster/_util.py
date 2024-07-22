@@ -1593,7 +1593,7 @@ def _get_stac_api_search_items(
     return all_items
 
 
-def _get_stac_metadata_file(item):
+def _get_stac_metadata_file(item, context=None):
     """
     This method is used to retrieve the metadata file of a valid STAC item.
     :param item: input STAC Item (JSON dictionary)
@@ -1644,6 +1644,26 @@ def _get_stac_metadata_file(item):
                 "noaa-cdr-sea-surface-temperature-whoi",
                 "noaa-cdr-ocean-heat-content",
                 "esa-worldcover",
+                "modis-64A1-061",
+                "modis-17A2H-061",
+                "modis-11A2-061",
+                "modis-17A2HGF-061",
+                "modis-17A3HGF-061",
+                "modis-09A1-061",
+                "modis-16A3GF-061",
+                "modis-21A2-061",
+                "modis-43A4-061",
+                "modis-09Q1-061",
+                "modis-14A1-061",
+                "modis-13Q1-061",
+                "modis-14A2-061",
+                "modis-15A2H-061",
+                "modis-11A1-061",
+                "modis-15A3H-061",
+                "modis-13A1-061",
+                "modis-10A2-061",
+                "modis-10A1-061",
+                "aster-l1t",
             ],
             "All COGs",
         ),
@@ -1719,12 +1739,35 @@ def _get_stac_metadata_file(item):
         **dict.fromkeys(["sentinel-2"], ("data", "productInfo.json")),
         **dict.fromkeys(["sentinel-1"], ("s3", "manifest.safe")),
     }
+    geoportal_azure_map = {
+        "sentinel": ("S2_Level-2A_Product_Metadata", "MTD_MSIL2A.xml")
+    }
 
     product_file_map = {
         "planetarycomputer.microsoft.com/api/stac": planetary_computer_map,
         "earth-search.aws.element84.com": earth_search_map,
         "services.sentinel-hub.com/api": sentinel_hub_map,
+        "landsatlook.usgs.gov/stac-server": "self_href",
+        "gpt.geocloud.com/sentinel/stac": "self_href",
+        "geoportalstac.azurewebsites.net/stac": geoportal_azure_map,
     }
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(item["assets"], context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return href_list
 
     stacs = list(product_file_map.keys())
 
@@ -1748,24 +1791,32 @@ def _get_stac_metadata_file(item):
         )
     )
 
-    target = product_file_map[item_stac].get(collection_id)
+    target = (
+        product_file_map[item_stac].get(collection_id)
+        if isinstance(product_file_map[item_stac], dict)
+        else product_file_map[item_stac]
+    )
 
     href = None
     if isinstance(target, str):
         href = (
-            [
-                cog["href"]
-                for cog in item["assets"].values()
-                if cog["href"].endswith((".tif", ".tiff"))
-            ]
-            if target == "All COGs"
-            else item["assets"][target]["href"]
+            f"StacItemHref/{self_link}"
+            if target == "self_href"
+            else (
+                [
+                    cog["href"]
+                    for cog in item["assets"].values()
+                    if cog["href"].endswith((".tif", ".tiff"))
+                ]
+                if target == "All COGs"
+                else item["assets"][target]["href"]
+            )
         )
     elif isinstance(target, int):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
-        if collection_id == "sentinel-s2-l2a":
+        if collection_id in ("sentinel", "sentinel-s2-l2a"):
             directory = os.path.dirname(directory)
         href = f"{directory}/{target[1]}"
 
@@ -1774,14 +1825,21 @@ def _get_stac_metadata_file(item):
         if href is not None and isinstance(href, str) and href.startswith("s3")
         else href
     )
+    if processing_template is None and (
+        collection_id.startswith(
+            ("sentinel-2", "sentinel-s2", "landsat-c2l2", "landsat-c2-", "sentinel_v1")
+        )
+        or collection_id == "sentinel"
+    ):
+        processing_template = "Multiband"
 
-    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
-        href = rf"{href}\Multiband"
+    if isinstance(href, str) and isinstance(processing_template, str):
+        href += rf"\{processing_template}"
 
     return href
 
 
-def _get_stac_links(stac_json, rel):
+def _get_stac_links(stac_json, cat_filename, rel):
     """
     This method is used to retrieve all the links matching the specified relation type from a STAC Item or Catalog.
     :param stac_json: input STAC Item or Catalog (JSON dictionary).
@@ -1799,39 +1857,426 @@ def _get_stac_links(stac_json, rel):
         if l.startswith("http"):
             link = l
         else:
-            link = urljoin(os.path.dirname(stac_json["links"][0]["href"]) + "/", l)
+            source_href = os.path.dirname(cat_filename) + "/"
+            link = (source_href, l)
         all_links.append(link)
     return all_links
 
 
-def _get_all_stac_catalog_items(stac_json, request_params={}):
+def _get_all_stac_catalog_items(stac_json, filename, request_params={}, context=None):
     """
     This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
     :param stac_json: input Static STAC (Catalog - JSON dictionary)
     :param request_params: requests.get() method parameters used for the STAC Item and Catalog requests (passed through the RasterCollection.from_stac_catalog() method call).
     :return generator (of all items retrived in the Catalog)
     """
-    for item_link in _get_stac_links(stac_json, "item"):
-        item_res = _requests.get(item_link, **request_params)
-        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-        ]:
-            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
-        item_json = item_res.json()
-        yield item_json
+    for item_link in _get_stac_links(stac_json, filename, "item"):
+        request_link = (
+            urljoin(*item_link) if not isinstance(item_link, str) else item_link
+        )
+        item_resources = _get_static_catalog_item_resources(
+            request_link, request_params, context
+        )
+        yield item_resources
 
-    children = _get_stac_links(stac_json, "child")
+    children = _get_stac_links(stac_json, filename, "child")
     for child in children:
-        child_res = _requests.get(child, **request_params)
+        request_link = urljoin(*child) if not isinstance(child, str) else child
+        child_res = _requests.get(request_link, **request_params)
         if child_res.status_code != 200 or child_res.headers.get(
             "content-type"
         ) not in [
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
+            "binary/octet-stream",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
-        yield from _get_all_stac_catalog_items(child_json, request_params)
+        yield from _get_all_stac_catalog_items(
+            child_json, request_link, request_params, context
+        )
+
+
+def _get_static_catalog_item_resources(request_link, request_params={}, context=None):
+    if isinstance(request_link, str):
+        item_res = _requests.get(request_link, **request_params)
+        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+            "application/json; charset=utf-8",
+            "application/octet-stream",
+            "text/plain; charset=utf-8",
+            "text/plain",
+            "binary/octet-stream",
+        ]:
+            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+        item = item_res.json()
+    else:
+        request_link, item = request_link
+
+    assets = item["assets"]
+
+    processing_template = None
+    if isinstance(context, dict) and context:
+        context_lower = {k.lower(): v for k, v in context.items()}
+        processing_template = context_lower.get("processingtemplate")
+        asset_management = context_lower.get("assetmanagement")
+        if asset_management:
+            hrefs = _find_stac_asset_hrefs(assets, context_lower)
+            href_list = [href for href in hrefs.values() if href is not None]
+            if not href_list:
+                raise RuntimeError(
+                    "No valid asset hrefs found. Please review the assetManagement parameter."
+                )
+            else:
+                href_list = href_list if len(href_list) != 1 else href_list[0]
+                if isinstance(href_list, str) and isinstance(processing_template, str):
+                    href_list += rf"\{processing_template}"
+                return item, href_list
+
+    product_file = None
+    self_link_products = [
+        "https://maxar-opendata.s3.amazonaws.com/events",
+        "https://capella-open-data.s3.us-west-2.amazonaws.com/stac",
+        "https://bdc-sentinel-2.s3.us-west-2.amazonaws.com",
+    ]
+    cog_composite_products = [
+        "https://pta.data.lit.fmi.fi/stac",
+        "https://storage.googleapis.com/cfo-public",
+    ]
+
+    if any(link in request_link for link in self_link_products):
+        product_file = f"StacItemHref/{request_link}"
+    elif "https://datacloud.icgc.cat/stac-catalog" in request_link:
+        product_file = f"/vsicurl/{assets['visual']['href']}"
+    elif "https://dop-stac.opengeodata.lgln.niedersachsen.de" in request_link:
+        product_file = f"/vsicurl/{assets['rgbi']['href']}"
+    elif "https://nz-imagery.s3-ap-southeast-2.amazonaws.com" in request_link:
+        product_file = urljoin(request_link, assets["visual"]["href"])
+    elif "https://raw.githubusercontent.com/m-mohr/oam-example/main" in request_link:
+        product_file = assets["data"]["href"]
+    elif any(link in request_link for link in cog_composite_products):
+        product_file = [
+            f"/vsicurl/{cog['href']}"
+            for cog in item["assets"].values()
+            if cog["href"].endswith((".tif", ".tiff"))
+        ]
+
+    if isinstance(product_file, str) and isinstance(processing_template, str):
+        product_file += rf"\{processing_template}"
+    return item, product_file
+
+
+def _find_stac_asset_hrefs(assets, context):
+    hrefs = {}
+    asset_management = context.get("assetmanagement", {})
+    if not isinstance(asset_management, list):
+        asset_management = [asset_management]
+    for asset_info in asset_management:
+        if isinstance(asset_info, str):
+            asset_key = asset_info
+            asset_info = {"key": asset_key}
+        else:
+            asset_key = asset_info["key"]
+        hrefs[asset_key] = _find_stac_asset_href(assets, asset_info)
+    return hrefs
+
+
+def _find_stac_asset_href(assets, asset_info):
+    asset_key = asset_info["key"]
+    href_key = asset_info.get("hrefKey", "href")
+    asset_path = asset_info.get("path")
+
+    if asset_key in assets:
+        value = assets[asset_key]
+        if asset_path:
+            for key in asset_path:
+                if key in value:
+                    value = value[key]
+                else:
+                    return None
+        if href_key in value:
+            href = value[href_key]
+            if href is not None and isinstance(href, str):
+                if href.startswith("s3"):
+                    href = rf"/vsis3{href[4:]}"
+                elif ".blob.core.windows.net" in href or ".amazonaws.com" in href:
+                    pass
+                elif href.lower().startswith(
+                    ("https://", "http://")
+                ) and href.lower().endswith((".tiff", ".tif")):
+                    href = f"/vsicurl/{href}"
+            return href
+    else:
+        for value in assets.values():
+            if isinstance(value, dict):
+                href = _find_stac_asset_href(value, asset_info)
+                if href:
+                    return href
+    return None
+
+
+def _lookup_datastore(datastore_type, gis=None):
+    """
+
+    This method returns the list of datastores that are registered with the Raster Analytics Server.
+
+    :param datastore_type: Required string. The type of the datastore to be retrieved (e.g. "rasterStores", "folder", "cloudStores", "egdb", etc.).
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+    """
+
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    hosting_server = gis.admin.servers.get(function="RasterAnalytics")
+    ds = hosting_server[0].datastores.search(types=datastore_type, decrypt=True)
+    dataitems = []
+    if "items" in ds:
+        fsds = ds["items"]
+        if fsds:
+            for ds in fsds:
+                if "info" in ds and "path" in ds:
+                    dataitems.append(ds)
+    return dataitems
+
+
+def _get_datastore_paths(dataitems, type=None, gis=None):
+    """
+
+    This method returns the list of datastores of the specified type (e.g. "folder", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+
+    :param dataitems: Required list. List of datastore items. output from _lookup_datastore
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return list of datastores of the specified type (e.g. "fileShares", "cloudStores", etc.) that are registered with the Raster Analytics Server.
+    """
+
+    dslist = []
+    import json
+
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    if type == "cloud":
+        for item in dataitems:
+            if "info" in item and "path" in item:
+                if (
+                    "connectionType" in item["info"]
+                    and "connectionString" in item["info"]
+                ):
+                    if item["info"]["connectionType"] == "dataStore":
+                        # Parse connection string
+                        # Note: this is assuming "connectionSting" is always JSON
+                        connectjson = json.loads(item["info"]["connectionString"])
+                        if "path" in connectjson:
+                            if connectjson["path"].find("/cloudStores/") > -1:
+                                # Note: return the raster store path instead
+                                # of the cloud store path for hosted data
+                                dslist.append(connectjson["path"])
+
+    elif type == "fileshare":
+        # File share raster store stores path
+        for item in dataitems:
+            if "info" in item and "path" in item:
+                if (
+                    "connectionType" in item["info"]
+                    and "connectionString" in item["info"]
+                ):
+                    if item["info"]["connectionType"] == "fileShare":
+                        # Parse connection string
+                        # Note: this is assuming "connectionSting" is always JSON
+                        connectjson = json.loads(item["info"]["connectionString"])
+                        if "path" in connectjson:
+                            dslist.append(connectjson["path"])
+
+    return dslist
+
+
+def _generate_data_path(datastore_path, gis=None):
+    """
+
+    This method returns the actual path for a given datastore path.
+
+    :param datastore_path: Required string. datastore path. Example: "/rasterStores/MyRasterStore"
+    :param gis: Optional GIS. The GIS on which the Raster Analytics Server is registered. If not specified, the active GIS is used.
+    :return: String. The actual path for the given datastore path. Example: "/cloudStores/cs", "r"\\sha-arcgis-ra\C$\rasterstore"
+    """
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    import pathlib
+    import json
+
+    datastore_path_parts = list(pathlib.PurePath(datastore_path).parts)
+    if datastore_path.startswith("/rasterStores"):
+        dslist = _lookup_datastore("rasterStore", gis)
+        print(dslist)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            print(dspathparts)
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                dsinfo = ds["info"]
+                print(1)
+                if "connectionType" in dsinfo:
+                    # file share raster store takes priority
+                    if dsinfo["connectionType"] == "fileShare":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                datapath = datastore_path.replace(
+                                    ds["path"], connectjson["path"]
+                                )
+                    elif dsinfo["connectionType"] == "dataStore":
+                        if "connectionString" in dsinfo:
+                            connectstr = dsinfo["connectionString"]
+                            connectjson = json.loads(connectstr)
+                            if connectjson and "path" in connectjson:
+                                if connectjson["path"].startswith("/cloudStores"):
+                                    datapath = datastore_path.replace(
+                                        ds["path"], connectjson["path"]
+                                    )
+
+    elif datastore_path.startswith("/fileShares"):
+        dslist = _lookup_datastore("folder", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                dsinfo = ds["info"]
+                if "path" in dsinfo:
+                    datapath = datastore_path.replace(ds["path"], dsinfo["path"])
+
+    elif datastore_path.startswith("/cloudStores"):
+        dslist = _lookup_datastore("cloudStore", gis)
+        for ds in dslist:
+            dspathparts = ds["path"].split("/")
+            if (
+                len(dspathparts) > 2
+                and len(datastore_path_parts) > 2
+                and dspathparts[1:3] == datastore_path_parts[1:3]
+            ):
+                cprovider = ds["provider"]
+                dsinfo = ds["info"]
+                if cprovider and "objectStore" in dsinfo:
+                    # TODO: look up Alibaba and GCloud
+                    if cprovider == "azure":
+                        datapath = datastore_path.replace(
+                            ds["path"], "/vsiaz/" + dsinfo["objectStore"]
+                        )
+                    elif cprovider == "amazon":
+                        datapath = datastore_path.replace(
+                            ds["path"], "/vsis3/" + dsinfo["objectStore"]
+                        )
+
+    return datapath
+
+
+def _transfer_data(src, dst, gis=None):
+    """
+    This method is used to transfer data from one location to another.
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location Example - \\sha-arcgis-ra\C$\rasterstore\qyfqffwer5ty/imagery/data
+    """
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    final_path = None
+    import shutil
+    import os
+
+    def is_unc_path(path):
+        import re
+
+        pattern = r"^\\\\[^\\]+\\[^\\]+.*$"
+
+        if re.match(pattern, path):
+            return True
+        else:
+            return False
+
+    if not dst.startswith("/cloudStores"):
+        if not is_unc_path(dst):
+            raise RuntimeError("Rasterstore is not a UNC path")
+
+        try:
+            if os.path.isdir(src):
+                dst = os.path.join(dst, os.path.basename(src))
+            final_path = shutil.copytree(src, dst, dirs_exist_ok=True)
+            exists = os.path.exists(final_path)
+            if exists:
+                return final_path
+        except:
+            raise RuntimeError("copy of files to rasterstore failed")
+
+    else:
+        try:
+            from arcpy import AIO
+        except:
+            raise RuntimeError("arcpy not available for cloudstore transfer")
+        try:
+            cds = _lookup_datastore(r"cloudStore", gis)
+        except:
+            raise RuntimeError("Unable to get the cloudStore info")
+
+        cs_info = None
+        for info in cds:
+            if info["path"] in dst:
+                cs_info = info
+                break
+
+        cs_aio = None
+        if cs_info is not None and isinstance(cs_info, dict):
+            cs_aio = AIO(cs_info)
+
+        if cs_aio:
+            try:
+                dst = _generate_data_path(dst)
+                dst = cs_aio.copytree(src, dst)
+                final_path = dst + "/" + os.path.basename(src)
+                exists = cs_aio.exists(final_path)
+                if exists:
+                    return final_path
+            except:
+                raise RuntimeError("Upload to cloudstore failed")
+
+
+def _try_data_transfer(src, dst, gis=None):
+    """
+    This method tries data transfer from local location to rasterstore. With first preference for cloudstore rasterstore.
+    :param src: source location. Example - C:\temp\newop.crf
+    :param dst: destination location. Example -  r"workspace/imagery/data")
+    :return: String. The path to the transferred data. Example '\\\\sha-arcgis-ra\\C$\\rasterstore\\workspace/imagery/data\\newop.crf'
+    """
+    ds_list = _lookup_datastore("rasterStore", gis)
+    dslist_cloud = _get_datastore_paths(ds_list, "cloud", gis)
+    ds_list_file = _get_datastore_paths(ds_list, "fileshare", gis)
+    dslist = dslist_cloud + ds_list_file
+    if gis is None:
+        gis = _arcgis.env.active_gis
+
+    for ds in dslist:
+        rasterstore_path = ds
+        if rasterstore_path.startswith("/cloudStores/"):
+            dst_new = rasterstore_path + "/" + dst
+        else:
+            dst_new = os.path.join(rasterstore_path, dst)
+        try:
+            final_dst = _transfer_data(src, dst_new)
+            if final_dst is not None:
+                return final_dst
+        except:
+            continue

@@ -4,19 +4,88 @@ import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
-from ._ref import templates
-from arcgis.gis import GIS
+import os
+import importlib
+import warnings
+
+# from ._ref import template_list
+
+# from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
+import tempfile
+from arcgis._impl.common._deprecate import deprecated
 
+try:
+    import ujson as json
+except ImportError:
+    import json
+
+_arcgis_gis = LazyLoader("arcgis.gis")
 arcgis = LazyLoader("arcgis")
-json = LazyLoader("json")
+# json = LazyLoader("json")
 time = LazyLoader("time")
+
+template_list = [
+    "blank_fullscreen",
+    "blank_scrolling",
+    "blank_scrollable",
+    "foldable",
+    "launchpad",
+    "jewelrybox",
+    "billboard",
+    "journey",
+    "ribbon",
+    "general",
+    "introduction",
+    "gallery",
+    "epic",
+    "snapshot",
+    "summary",
+    "timeline",
+    "scenic",
+    "exhibition",
+    "dart",
+    "pocket",
+    "quick_navigation",
+    "parallax",
+    "dash",
+    "indicator",
+    "monitor",
+    "reveal",
+    "kit",
+    "chronology",
+    "checkerboard",
+    "illustrator",
+    "voyage",
+    "data_collector",
+    "gear",
+    "showroom",
+    "route",
+    "vacation",
+    "dashboard",
+    "seeker",
+    "events",
+    "sketchbook",
+    "booking",
+    "multiverse",
+    "collage",
+    "avatarboard",
+    "mapflyer",
+    "leaflet",
+    "panorama",
+    "frame",
+    "comparatist",
+    "elevate",
+    "lens",
+    "pamphlet",
+]
 
 
 class Templates(Enum):
-    BLANKFULLSCREEN = "blank fullscreen"
-    BLANKSCROLLING = "blank scrolling"
+    BLANKFULLSCREEN = "blank_fullscreen"
+    BLANKSCROLLING = "blank_scrolling"
+    BLANKSCROLLABLE = "blank_scrollable"
     FOLDABLE = "foldable"
     LAUNCHPAD = "launchpad"
     JEWELERYBOX = "jewelrybox"
@@ -34,12 +103,38 @@ class Templates(Enum):
     EXHIBITION = "exhibition"
     DART = "dart"
     POCKET = "pocket"
-    QUICKNAVIGATION = "quick navigation"
+    QUICKNAVIGATION = "quick_navigation"
     PARALLAX = "parallax"
     DASH = "dash"
     INDICATOR = "indicator"
     MONITOR = "monitor"
     REVEAL = "reveal"
+    KIT = "kit"
+    CHRONOLOGY = "chronology"
+    CHECKERBOARD = "checkerboard"
+    ILLUSTRATOR = "illustrator"
+    VOYAGE = "voyage"
+    DATACOLLECTOR = "data_collector"
+    GEAR = "gear"
+    SHOWROOM = "showroom"
+    ROUTE = "route"
+    VACATION = "vacation"
+    DASHBOARD = "dashboard"
+    SEEKER = "seeker"
+    EVENTS = "events"
+    SKETCHBOOK = "sketchbook"
+    BOOKING = "booking"
+    MULTIVERSE = "multiverse"
+    COLLAGE = "collage"
+    AVATARBOARD = "avatarboard"
+    MAPFLYER = "mapflyer"
+    LEAFLET = "leaflet"
+    PANORAMA = "panorama"
+    FRAME = "frame"
+    COMPARATIST = "comparatist"
+    ELEVATE = "elevate"
+    LENS = "lens"
+    PAMPHLET = "pamphlet"
 
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         import threading
@@ -51,7 +146,7 @@ class Templates(Enum):
 
         try:
             temp = WebExperience(template=self.value)
-            temp._item.share(everyone=True)
+            temp._item.sharing.sharing_level = "EVERYONE"
             temp.save(publish=True)
             from IPython.display import IFrame
 
@@ -69,7 +164,6 @@ class Templates(Enum):
 
 
 class WebExperience(object):
-
     """
     A Web Experience is web-based application that provides viewers with an interactive
     interface to maps, data, feature layers, and other components of the creator's design.
@@ -111,19 +205,19 @@ class WebExperience(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
+        item: Optional[Union[_arcgis_gis.Item, str]] = None,
         path: Optional[str] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
+        gis: Optional[_arcgis_gis.GIS] = None,
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
     ):
         if gis is None:
-            if item and isinstance(item, arcgis.gis.Item):
+            if item and isinstance(item, _arcgis_gis.Item):
                 self._gis = item._gis
             else:
                 self._gis = arcgis.env.active_gis
         else:
-            if item and isinstance(item, arcgis.gis.Item):
+            if item and isinstance(item, _arcgis_gis.Item):
                 if item._gis != gis:
                     raise ValueError("Provided GIS must match item GIS")
             self._gis = gis
@@ -138,7 +232,11 @@ class WebExperience(object):
             item = self._gis.content.get(item)
             if item is None:
                 raise ValueError("Item is not accessible with provided GIS")
-        if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
+        if (
+            item
+            and isinstance(item, _arcgis_gis.Item)
+            and item.type == "Web Experience"
+        ):
             # set item properties
             self._item = item
             self._itemid = self._item.itemid
@@ -155,7 +253,9 @@ class WebExperience(object):
                 self._draft = config
                 self._expdict = config
         elif (
-            item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
+            item
+            and isinstance(item, _arcgis_gis.Item)
+            and item.type != "Web Experience"
         ):
             # Throw error if item is not of type Experience
             raise ValueError("Item is not a Web Experience or is inaccesible")
@@ -197,7 +297,7 @@ class WebExperience(object):
     def _create_new_experience(
         self,
         config=None,
-        template="blank fullscreen",
+        template="blank_fullscreen",
         name=None,
         gis=None,
         item_properties={},
@@ -215,19 +315,56 @@ class WebExperience(object):
 
             # retrieve template for experience
             if template is None:
-                template = "blank fullscreen"
+                template = "blank_fullscreen"
 
-            temp_low = template.lower()
-            if temp_low in arcgis.apps.expbuilder._ref.templates:
-                temp_dict = copy.deepcopy(
-                    arcgis.apps.expbuilder._ref.templates[temp_low]
+            temp_low = template.lower().replace(" ", "_")
+            if temp_low not in template_list:
+                temp_low = "blank_fullscreen"
+            if temp_low == "blank_scrolling":
+                temp_low = "blank_scrollable"
+            no_space = temp_low.replace("_", "")
+            if no_space != "dash":
+                temp_url = (
+                    "https://experiencedev.arcgis.com/cdn/2400/templates/app/"
+                    + no_space
+                    + "/config.json"
                 )
+                temp_dict = self._gis._con.get(temp_url, {"f": "json"})
             else:
-                temp_dict = copy.deepcopy(
-                    arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
+                json_path = os.path.join(
+                    os.path.dirname(__file__),
+                    "_ref",
+                    "templates",
+                    "dash.json",
                 )
+                with open(json_path, "r") as f:
+                    temp_dict = json.load(f)
 
-            temp_dict["attributes"]["portalUrl"] = self._gis.url
+            if "attributes" in temp_dict:
+                temp_dict["attributes"]["portalUrl"] = self._gis.url
+            else:
+                temp_dict["attributes"] = {"portalUrl": self._gis.url}
+            if self._gis._is_agol:
+                exb_version = self._gis._con.get(
+                    "https://experience.arcgis.com/version.json",
+                    {"f": "json"},
+                )["exbVersion"]
+            else:
+                url = self._gis.url + "/apps/experiencebuilder/version.json"
+                exb_version = self._gis._con.get(url, {"f": "json"})["exbVersion"]
+
+            temp_dict["exbVersion"] = exb_version
+            temp_dict["originExbVersion"] = exb_version
+            if "widgets" in temp_dict:
+                for widget in temp_dict["widgets"].values():
+                    if "version" in widget:
+                        widget["version"] = exb_version
+
+            # if "originExbVersion" in temp_dict:
+            #     if temp_dict["originExbVersion"] > exb_version:
+            #         warnings.warn(
+            #             "This template comes from a newer version of Experience Builder than the current portal has. Some widgets may not work as expected."
+            #         )
             # temp_dict["timestamp"]
             # create item and generate basic properties
             if name is None:
@@ -274,9 +411,11 @@ class WebExperience(object):
 
         # add to active gis and set properties
         if gis is None:
-            item = self._gis.content.add(item_properties=props)
+            folder = self._gis.content.folders.get()
+            item = folder.add(item_properties=props).result()
         else:
-            item = gis.content.add(item_properties=props)
+            folder = gis.content.folders.get()
+            item = folder.add(item_properties=props).result()
 
         # assign to experience properties
         self._item = item
@@ -380,8 +519,17 @@ class WebExperience(object):
             props["tags"] = tags
 
         self._expdict = self._draft
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config",
+            file_name="config.json",
+            file=tfile.name,
         )
         self._resources = self._item.resources.list()
         if publish:
@@ -416,8 +564,15 @@ class WebExperience(object):
         """
 
         self._draft = self._expdict
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         return self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config", file_name="config.json", file=tfile.name
         )
 
     # ----------------------------------------------------------------------
@@ -477,7 +632,7 @@ class WebExperience(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+        resource_manager = _arcgis_gis.ResourceManager(self._item, self._gis)
         is_present = False
         if file:
             for resource in self._resources:
@@ -550,7 +705,7 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def upload(
         self,
-        gis: Optional[GIS] = None,
+        gis: Optional[_arcgis_gis.GIS] = None,
         publish=False,
         title=None,
         item_mapping: Optional[dict] = None,
@@ -665,7 +820,10 @@ class WebExperience(object):
 
         # create a new portal experience using the config
         self._create_new_experience(
-            config=new_config, name=title, gis=gis, item_properties=item_properties
+            config=new_config,
+            name=title,
+            gis=gis,
+            item_properties=item_properties,
         )
         self._local = False
 
@@ -712,7 +870,7 @@ class WebExperience(object):
 
         try:
             dummy_exp = self._duplicate()
-            dummy_exp._item.share(everyone=True)
+            dummy_exp._item.sharing.sharing_level = "EVERYONE"
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 
@@ -729,6 +887,12 @@ class WebExperience(object):
             return self._item.url
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.3.0",
+        removed_in="2.4.2",
+        current_version="2.4.0",
+        details="Pass in the Web Experience item to `gis.content.clone_items()` instead.",
+    )
     def clone(self, target, owner, **kwargs):
         """
         Clones the experience and all of it's data sources to a target GIS. User must
@@ -753,45 +917,11 @@ class WebExperience(object):
             The item corresponding to the cloned experience in the target GIS.
         """
 
-        def _clone_dict(data_dict, source, target, owner, **kwargs):
-            """
-            Helper function to clone items and update appropriate dict
-            """
-            new_dict = data_dict
-            new_dict["attributes"]["portalUrl"] = target.url
-            for k, v in new_dict["dataSources"].items():
-                v["portalUrl"] = target.url
-                item = source.content.get(v["itemId"])
-                clone_result = target.content.clone_items([item], owner=owner, **kwargs)
-                if clone_result:
-                    v["itemId"] = clone_result[0].itemid
-                else:
-                    targ_item = target.content.search(item.title)[0]
-                    v["itemId"] = targ_item.itemid
-
-            return new_dict
-
         exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
         if exp_clone:
-            new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
-            target_exp = WebExperience(exp_clone[0], gis=target)
-            target_exp._expdict = new_dict
-            target_exp._item.resources.update(
-                folder_name="config", file_name="config.json", text=target_exp._expdict
-            )
-            keywords = target_exp._item.typeKeywords
-            for word in keywords:
-                if "status" in word:
-                    if "Published" in word or "Changed" in word:
-                        new_data = _clone_dict(
-                            self._item.get_data(), self._gis, target, owner, **kwargs
-                        )
-                        target_exp._item.update(item_properties={}, data=new_data)
-                    else:
-                        target_exp._item.update(
-                            item_properties={}, data={"__not_publish": True}
-                        )
-                    break
-            return target_exp._item
+            for cloned_item in exp_clone:
+                if cloned_item.type == "Web Experience":
+                    return cloned_item
+            return False
         else:
             return False

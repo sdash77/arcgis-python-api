@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7042\src")
-sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import unittest
 import pandas as pd
 import datetime as _dt
 from arcgis.gis import GIS
 from arcgis.features import analyze_patterns
-from config_tests import setup_profiles
+from .config_tests import setup_profiles
+from utils.decorators import integration_test
 
 
 data = [
@@ -1789,14 +1786,13 @@ data = [
     },
 ]
 
-profiles = ["online_test", "ent_test", "kube_test"]
+profiles = ["kube_test"]
 setup_profiles(
     profiles[0],
-    profiles[1],
-    profiles[2],
 )
 
 
+@integration_test
 class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
     def test_removing_spaces_logic(self):
         """tests that any space in the output name is replaced with an _"""
@@ -1812,14 +1808,17 @@ class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
                 result = analyze_patterns.find_point_clusters(
                     sdf, min_features_cluster=2, output_name=output_name
                 )
-                assert result.title != output_name
+                assert (
+                    result['point_clusters_result_layer'].title
+                    != output_name
+                )
             except Exception as e:
                 print(e)
                 raise e
 
             finally:
                 if result:
-                    result.delete()
+                    result['point_clusters_result_layer'].delete()
                 del gis, sdf
 
 

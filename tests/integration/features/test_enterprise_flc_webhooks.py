@@ -1,52 +1,20 @@
-import sys
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item, User
 from arcgis.features import FeatureLayerCollection
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
+enable_verbose_logging()
 
 
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-profiles = ["your_online_profile", "your_enterprise_profile"]
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
+@profiles.admin_enterprise
+@integration_test
 class Test_EnterpriseWebhooks(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        url = "https://pythonapi.playground.esri.com/portal/home"
-        username = "arcgispyapibot"
-        password = "geosaurus_automation123"
-        
-        gis: GIS = GIS(
-            url=url,
-            username=username,
-            password=password,
-            proxy=PROXIES,
-            verify_cert=False,
-            use_gen_token=True,
-        )
-        user: User = gis.users.me
-        user.update(security_question=2, security_answer="Redlands")
-        gis: GIS = GIS(
-            url=url,
-            username=username,
-            password=password,
-            proxy=PROXIES,
-            verify_cert=False,
-        )
-        cls.item = gis.content.get("e893e87eae6f40739527575c62527cc6")
-        cls.gis = gis
+
+    def setUp(self):
+        user: User = self.gis.users.me
+        self.item = self.gis.content.get("fe51286deb144446a7dba666ebe1521d")
+        self.gis = self.gis
 
     def test_webhook_mgr(self):
         flc = FeatureLayerCollection.fromitem(self.item)
@@ -61,7 +29,7 @@ class Test_EnterpriseWebhooks(unittest.TestCase):
         services = [
             service
             for service in servers.get("HOSTING_SERVER")[0].services.list("Hosted")
-            if service._url.find("Power_Plants_USA.FeatureServer") > -1
+            if service._url.find("a4f2ee.FeatureServer") > -1
         ]
         service = services[0]
         whm = service.webhook_manager
@@ -94,6 +62,7 @@ class Test_EnterpriseWebhooks(unittest.TestCase):
         hook.edit(name="new_name")
         assert hook.properties["name"] == "new_name"
         assert hook.delete()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-﻿from __future__ import print_function
+from __future__ import annotations
 import collections
 import datetime
 import inspect
@@ -8,7 +8,7 @@ import sys
 import time
 import types
 from types import MethodType
-
+from arcgis.auth.tools import LazyLoader
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
@@ -22,8 +22,9 @@ from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 from arcgis.gis import Item, _GISResource, Layer
 from arcgis.auth.tools import LazyLoader
 
-mapping = LazyLoader("arcgis.mapping")
-
+mapping = LazyLoader("arcgis.layers")
+_features = LazyLoader("arcgis.features")
+from ._uploads import Uploads
 from ._types import LinearUnit, DataFile, RasterData
 
 from ..features import FeatureSet
@@ -37,7 +38,12 @@ except:
 
 
 def _import_code(
-    code, name, verbose=False, add_to_sys_modules=False, choice_list=None, url=None
+    code,
+    name,
+    verbose=False,
+    add_to_sys_modules=False,
+    choice_list=None,
+    url=None,
 ):
     """
     Import dynamically generated code as a module. code is the
@@ -116,31 +122,54 @@ def _call_generator(fnname, spec):
         return self._execute(inputs)
 
     code = call.__code__
-
+    PY38 = sys.version_info[:2] == (3, 8) and sys.version_info[:2] < (3, 11)
+    PY311 = sys.version_info[:2] >= (3, 11)
     if hasattr(types.CodeType, "co_posonlyargcount"):  # pragma: no branch
         """
                rgcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
         |        flags, codestring, constants, names, varnames, filename, name,
         |        firstlineno, lnotab[, freevars[, cellvars]]
         """
-        new_code = types.CodeType(
-            len(spec) + 1,
-            0,
-            0,
-            len(spec) + 2,
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts,
-            code.co_names,
-            varnames,
-            code.co_filename,
-            _camelCase_to_underscore(fnname),
-            code.co_firstlineno,
-            code.co_lnotab,
-            code.co_freevars,
-            cellvars=code.co_cellvars,
-        )
+        if PY38:
+            new_code = types.CodeType(
+                len(spec) + 1,
+                0,
+                0,
+                len(spec) + 2,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                varnames,
+                code.co_filename,
+                _camelCase_to_underscore(fnname),
+                code.co_firstlineno,
+                code.co_lnotab,
+                code.co_freevars,
+                cellvars=code.co_cellvars,
+            )
+        elif PY311:
+            new_code = types.CodeType(
+                len(spec) + 1,
+                code.co_posonlyargcount,
+                code.co_kwonlyargcount,
+                len(spec) + 1,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                varnames,
+                code.co_filename,
+                _camelCase_to_underscore(fnname),
+                code.co_qualname,
+                code.co_firstlineno,
+                code.co_linetable,
+                code.co_exceptiontable,
+                code.co_cellvars,  # this is the trickery
+                (),
+            )
     else:
         new_code = types.CodeType(
             len(spec) + 1,
@@ -233,7 +262,7 @@ def _generate_fn(task, tbx):
         src_code += ",\n"
     src_code += (
         " " * num_spaces
-        + "gis=None, future=False) -> "
+        + "gis=None, future=False, estimate=False) -> "
         + name_type["return"].__name__
         + ":\n"
     )
@@ -288,11 +317,15 @@ def _generate_fn(task, tbx):
     src_code += (
         '\treturn _execute_gp_tool(gis, "'
         + task
-        + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
+        + '", kwargs, param_db, return_values, _use_async, _url, future=future, estimate=estimate)'
     )
 
     src_code += "\n\n\n"
-    return src_code, choice_list_db_param, _camelCase_to_underscore(taskprops["name"])
+    return (
+        src_code,
+        choice_list_db_param,
+        _camelCase_to_underscore(taskprops["name"]),
+    )
 
 
 def _generate_param(name_param, param_dval, param_name, param_type):
@@ -556,7 +589,7 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 import concurrent.futures
@@ -648,7 +681,11 @@ _log = _logging.getLogger(__name__)
     else:
         name = f"GPService @ {url_or_item}"
         return _import_code(
-            r"%s" % src_code, name, verbose, choice_list=listed_params, url=url_or_item
+            r"%s" % src_code,
+            name,
+            verbose,
+            choice_list=listed_params,
+            url=url_or_item,
         )
     # print(src_code)
 
@@ -664,7 +701,8 @@ class _AsyncResource(_GISResource):
 
     def _analysis_job(self, task, params):
         """Submits an Analysis job and returns the job URL for monitoring the job
-        status in addition to the json response data for the submitted job."""
+        status in addition to the json response data for the submitted job.
+        """
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -838,7 +876,10 @@ class _AsyncResource(_GISResource):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326,
+                            },
                         },
                         "attributes": {
                             "description": "blayer desc",
@@ -961,7 +1002,9 @@ class Toolbox(_AsyncResource):
         """
         super(Toolbox, self).__init__(url, gis)
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -1190,7 +1233,12 @@ class Toolbox(_AsyncResource):
             if key in name_type:
                 py_type = name_type[key]
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                    if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                    if type(value) in [
+                        FeatureSet,
+                        LinearUnit,
+                        DataFile,
+                        RasterData,
+                    ]:
                         params[key] = value.to_dict()
                     elif _is_geoenabled(value) or hasattr(value, "spatial"):
                         params[key] = value.spatial.__feature_set__
@@ -1240,7 +1288,12 @@ class Toolbox(_AsyncResource):
                 ret_param_name = _camelCase_to_underscore(retParamName)
                 ret_type = name_type[ret_param_name]
                 ret_val = None
-                if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                if ret_type in [
+                    FeatureSet,
+                    LinearUnit,
+                    DataFile,
+                    RasterData,
+                ]:
                     jsondict = result["value"]
                     if jsondict is not None:
                         if (
@@ -1280,7 +1333,10 @@ class Toolbox(_AsyncResource):
                 isCan = False
                 job_info = super()._analysis_job_status(task_url, job_info)
             except KeyboardInterrupt:
-                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info["jobId"])
+                cancel_url = "%s/jobs/%s/cancel" % (
+                    task_url,
+                    job_info["jobId"],
+                )
                 params = {"f": "json"}
                 job_info = self._con.get(path=cancel_url, params=params)
                 isCan = True
@@ -1294,7 +1350,12 @@ class Toolbox(_AsyncResource):
                 ret_param_name = _camelCase_to_underscore(retParamName)
                 ret_type = name_type[ret_param_name]
                 ret_val = None
-                if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                if ret_type in [
+                    FeatureSet,
+                    LinearUnit,
+                    DataFile,
+                    RasterData,
+                ]:
                     jsondict = resp[retParamName]
                     if jsondict is not None:
                         if "mapImage" in jsondict:
@@ -1369,3 +1430,8 @@ class Toolbox(_AsyncResource):
     def tools(self):
         """List of tools in this toolbox"""
         return [x for x, y in self.__dict__.items() if type(y) == MethodType]
+
+    @property
+    def uploads(self) -> Uploads:
+        """returns the upload endpoint for the geoprocessing toolbox"""
+        return Uploads(url=f"{self._url}/uploads", gis=self._gis)

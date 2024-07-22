@@ -136,7 +136,7 @@ class SnapshotManager(object):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The 'Notebook' typed item to convert.
+        item                   Required :class:`~arcgis.gis.Item`. The 'Notebook' typed item to convert.
         ------------------     --------------------------------------------------------------------
         snapshot               Required String. The name of the snapshot.
         ==================     ====================================================================

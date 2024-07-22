@@ -303,11 +303,13 @@ class PageManager(object):
             "description": description,
             "culture": self._gis.properties.user.culture,
         }
-        item = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+        folder = self._gis.content.folders.get()
+        item = folder.add(_item_dict).result()
 
         # share page with content and core team groups
         if collab_group:
-            item.share(groups=[collab_group])
+            i = self._gis.content.get(item.get("id"))
+            i.sharing.groups.add(collab_group)
 
         # protect page from accidental deletion
         item.protect(enable=True)

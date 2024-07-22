@@ -1,11 +1,16 @@
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import requests
 import platform
 import lxml
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
+
+# add config path for featureanalysis tests
+import os
+import sys
+fa_path = os.getcwd()
+if fa_path not in sys.path:
+    sys.path.insert(0, fa_path)
+
 
 test_items = [
     "1ac6896bcafc4dccb29c70f45c442b00",  # Polygon Zips
@@ -22,7 +27,7 @@ test_items = [
 ]
 
 # scrape server page for a Kubernetes URL
-def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
+def get_kube_server(site="https://rpublicservers.esri.com/AEoK1120.php", row=1):
 
     # Important note: code is based off of current rpublicservers page. If
     # page format or data gets changed, row parameter may have to be altered.
@@ -38,7 +43,7 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
 
 # scrape credentials page for Kubernetes credentials
 def get_kube_credentials(
-    site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=11
+    site='https://ragsreports.ags.esri.com/information/11.2_Users_files/sheet001.htm', username_row=8, password_row=9
 ):
 
     # for non-Windows users, you will either have to set environment
@@ -75,10 +80,11 @@ def get_kube_credentials(
 
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
-    row_list = table.xpath("//tr")[row]
-    text_list = str(row_list.text_content()).split()
-    username = text_list[0]
-    password = text_list[1]
+    username_row_element = table.xpath("//tr")[username_row]
+    username = username_row_element.getchildren()[3].text_content()
+    password_row_element = table.xpath("//tr")[password_row]
+    password_string = password_row_element.getchildren()[1].text_content()
+    password = password_string.split(" ")[-1]
     return (username, password)
 
 
@@ -108,24 +114,27 @@ def setup_profiles(
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
+        print(pm.get(online_name))
 
     if not ent_name in updated_list:
         print("Creating ent profile")
         pm.create(
             ent_name,
-            url="https://pythonapi.playground.esri.com/portal/",
-            username="playground_test",
-            password="i_love_testing123",
+            url="https://pythonapitest.dev.geocloud.com/portal/",
+            username="arcgis_python",
+            password="amazing_arcgis_123",
         )
+        print(pm.get(ent_name))
 
     if not kube_name in updated_list:
         print("Creating kube profile")
         pm.create(
             kube_name,
-            url=get_kube_server(),
-            username=get_kube_credentials()[0],
-            password=get_kube_credentials()[1],
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusaccnt",
+            password="geosaurus_automation123",
         )
+        print(pm.get(kube_name))
 
 
 # stage data from list of AGOL items into ent & kube

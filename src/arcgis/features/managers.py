@@ -2,6 +2,7 @@
 Helper classes for managing feature layers and datasets.  These class are not created by users directly.
 Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
+
 from __future__ import absolute_import, annotations
 import os
 import json
@@ -9,6 +10,7 @@ import time
 import logging
 import tempfile
 import collections
+import concurrent.futures
 from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item, ItemDependency
@@ -138,7 +140,62 @@ class AttachmentManager(object):
         size: tuple[int] | list[int] | None = None,
         keywords: str | None = None,
     ) -> int:
-        """"""
+        """
+        The count operation returns the total number of attachments that satisfy
+        the specific criteria entered as arguments to the method. The default
+        count is the number of attachments for all features in the layer.
+
+        =====================   =======================================================
+        **Parameters**          **Description**
+        ---------------------   -------------------------------------------------------
+        where                   Optional String. Clause to specify the set of features
+                                for which to return the attachment count.
+        ---------------------   -------------------------------------------------------
+        attachment_where        Optional String. Clause to specify criteria to apply to
+                                the attachments table for which specific attachments to
+                                include in the count value.
+        ---------------------   -------------------------------------------------------
+        object_ids              Optional List. List of *object_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        global_ids              Optional List. List of *global_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        attachment_types        Optional String. Value specifying the specific format
+                                of attachments to count. See *attachmentTypes* at
+                                the `Query Attachments <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm>`_
+                                page for a list of options to use.
+        ---------------------   -------------------------------------------------------
+        size                    Optional Integer or integer range. Value or values to
+                                to query attachments of a specific size.
+        =====================   =======================================================
+
+        :returns:
+            Integer of total number of attachments.
+
+        .. code-block:: python
+
+            # Usage Example 1: Default
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organizational_profile")
+
+            >>> flyr_item = gis.content.get("<item id>")
+
+            >>> att_mgr = flyr_item.attachments
+            >>> att_mgr.count()
+
+            9
+
+            # Usage Example 2: List of Object Ids:
+            >>> att_mgr.count(object_ids=[1, 3])
+
+            5
+
+            # Usage Example 3: List of Global Ids:
+            >>> att_mgr.count(global_ids=['{D432BA85-8702-437D-B740-C214DDE65846}'])
+
+            2
+        """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
             object_ids = []
@@ -146,8 +203,8 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None:
-            where = ""
+        if where is None and not object_ids and not global_ids:
+            where = "1=1"
         if keywords is None:
             keywords = []
         params: dict[str, Any] = {
@@ -156,7 +213,6 @@ class AttachmentManager(object):
             "attachmentTypes": ",".join(attachment_types),
             "objectIds": ",".join([str(v) for v in object_ids]),
             "globalIds": ",".join([str(v) for v in global_ids]),
-            "definitionExpression": where,
             "attachmentsDefinitionExpression": attachment_where or "",
             "keywords": ",".join([str(v) for v in keywords]),
             "size": size,
@@ -879,17 +935,35 @@ class SyncManager(object):
         time_reference_unknown_client: bool | None = None,
     ):
         """
-        The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
-        This operation creates the replica between the feature dataset and a client based on a client-supplied
-        replica definition. It requires the Sync capability. See Sync overview for more
-        information on sync. The response for create includes replicaID, replica generation
-        number, and data similar to the response from the :meth:`~arcgis.features.FeatureLayerCollection.query`
-        operation. The create operation returns a response of type esriReplicaResponseTypeData,
-        as the response has data for the layers in the replica. If the operation is called to
-        register existing data by using replicaOptions, the response type will be
-        esriReplicaResponseTypeInfo, and the response will not contain data for the layers in
-        the replica.
+        The create operation is performed on a
+        :class:`~arcgis.features.FeatureLayerCollection` resource. This
+        operation creates a replica on the server between the feature service
+        and the client based on replica definition criteria supplied by the
+        client.
 
+        The feature service must have the *Sync* capability. See `publishing criteria
+        <https://enterprise.arcgis.com/en/server/latest/publish-services/windows/prepare-data-for-feature-services.htm>`_
+        for details on how to pulish services and set capabilities.
+        The `Sync overview
+        <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_
+        provides additional details and links for details.
+
+        The response to this method includes the *replicaID*, *replica
+        generation number*, and data similar to the response from the
+        :meth:`~arcgis.features.FeatureLayerCollection.query` operation on
+        a service. This information should be kept track of by the client because
+        it will be needed when synchronizing changes in the local data with the
+        replica created on the server.
+
+        See `Sync response types
+        <https://developers.arcgis.com/rest/services-reference/enterprise/response-type-for-sync-operations.htm>`_
+        details on the response received.
+
+        The operations allows for register exiting data for the replica by
+        using the *replica_options* argument, a dictionary whose key-value pairs are
+        detailed `here <https://developers.arcgis.com/rest/services-reference/enterprise/create-replica.htm#GUID-73F56FCD-BA1F-4C8B-AA1B-676C89A7FE64>`_.
+
+        For full details see `Create Replica <https://developers.arcgis.com/rest/services-reference/enterprise/create-replica.htm>`_.
 
         =============================       ====================================================================
         **Parameter**                        **Description**
@@ -1191,12 +1265,259 @@ class SyncManager(object):
         edits_upload_id: dict | None = None,
         edits_upload_format: str | None = None,
         data_format: str = "json",
-        rollback_on_failure: bool = True,
+        rollback_on_failure: bool = False,
     ):
         """
-        synchronizes replica with feature layer collection
+        The synchronize operation synchronizes data between a local copy of data
+        created by a client and a feature service based on a *replica_id* value
+        obtained when creating the replica. See `Sync overview
+        <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_
+        for more information on the process.
+
+        The client obtains the *replica_id* by first calling the
+        :meth:`~arcgis.features.managers.SyncManager.create` operation. Synchronize
+        applies the client's data changes by importing them onto the server. It
+        then exports the changes from the server that have taken place since the
+        last time the client retrieved the server's data. Edits can be supplied
+        in the *edits* parameter or by using the *edits_uploads_id* and
+        *edits_upload_format* arguments to identify a file item containing the
+        edits that were previously uploaded using the
+        :meth:`~arcgis.features.FeatureLayerCollection.upload` method.
+
+        The response for this operation includes a *replicaID* value, new
+        replica generation number, or layer's generation numbers. The response
+        has edits or layers according to the *sync_direction*/*sync_layers*
+        arguments. Presence of layers and edits in the response is indicated by the
+        `responseType <https://developers.arcgis.com/rest/services-reference/enterprise/response-type-for-sync-operations.htm>`_
+        key.
+
+        If the *responseType* value is *esriReplicaResponseTypeEdits* or
+        *esriReplicaResponseTypeEditsAndData*, the result of this operation can
+        include lists of edit results for each layer/table edited. Each edit
+        result identifies a single feature in a layer or row in a table and
+        indicates if the edits were successful or not. If an edit is not
+        successful, the edit result also includes an error code and an error
+        description.
+
+        * If *sync_model* is *perReplica* and *sync_direction* is download or
+          bidirectional, the :meth:`~arcgis.features.managers.SyncManager.synchronize`
+          operation's response will have edits.
+        * If *sync_direction* is *snapshot*, the response will have replacement data.
+        * If *sync_model* is *perLayer*, and *sync_layers* have *sync_direction*
+          as download or bidirectional, the response will have edits.
+        * If *sync_layers* have *sync_direction* as download or bidirectional
+          for some layers and snapshot for other layers, the response will have edits
+          and data.
+        * If *sync_direction* for all the layers is snapshot, the response will
+          have replacement data.
+        * If *sync_model* is *perReplica*, the :meth:`~arcgis.features.managers.SyncManager.create`
+          and :meth:`~arcgis.features.managers.SyncManager.synchronize` responses
+          contain *replicaServerGen* values.
+        * If *sync_model* is *perLayer*, the :meth:`~arcgis.features.managers.SyncManager.create`
+          and :meth:`~arcgis.features.managers.SyncManager.synchronize` responses contain
+          *layerServerGens* values.
+
         See `Synchronize Replica <https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm>`_
+        for full details on the operation.
+
+        =============================   ====================================================================
+        **Parameter**                   **Description**
+        -----------------------------   --------------------------------------------------------------------
+        replica_id                      Required string. The ID of the replica you want to synchronize.
+        -----------------------------   --------------------------------------------------------------------
+        transport_type                  Optional String. Represents the format of the response. The default
+                                        value is *esriTransportTypeUrl*.
+
+                                        Values:
+
+                                        * *esriTransportTypeUrl* - the response is contained in a file and a
+                                          the URL link to the file is returned
+                                        * *esriTransporTypeEmbedded* - a JSON object is returned in the
+                                          response
+
+                                        .. note::
+                                            If *asynchronous* is *True* or *data_format=sqllite*, the
+                                            response is always returned by URL.
+        -----------------------------   --------------------------------------------------------------------
+        replica_server_gen              Required Integer. A generation number that allows the server to keep
+                                        track of what changes have already been sychronized.
+                                        A new *replicaServerGen* is sent with the response. Clients should
+                                        persist this value and use it with the next call to *synchronize*.
+
+                                        ..  note::
+                                            Applies when *sync_model* is *perReplica*
+        -----------------------------   --------------------------------------------------------------------
+        return_ids_for_adds             Optional Boolean. If *True*, the *objectIDs* and *globalIDs* of
+                                        features added during the synchronize will be returned to the client
+                                        in the *addResults* sections of the response. Otherwise, the IDs are
+                                        not returned. The default is *False*.
+        -----------------------------   --------------------------------------------------------------------
+        edits                           Optional list of dictionaries. Contains The edits the client wants
+                                        to apply to the service.
+
+                                        .. note::
+                                            This argument can be omitted if the *edits_upload_id* and
+                                            *edits_upload_format* arguments are provided instead.
+
+                                        The edits are provided as a list where each element is a dictionary
+                                        whose key-value pairs provide:
+
+                                        * *id* - The layer or table ID
+                                        * *features* - a dictionary of inserts, updates, and deletes. New
+                                          features and updates are provided as lists of :class:`features <arcgis.features.Feature>`.
+                                          Deletes are provided as lists of *globalIDs*.
+                                        * *attachments* - a dictionary of inserts, updates, and deletes. Deletes
+                                          can be specified as a list of *globalIDs*. Updates and adds are
+                                          specified using the following set of properties:
+
+                                          - *globalid* - The globalID of the attachment that is to be added or updated.
+                                          - *parentGlobalid* - The globalID of the feature associated with the attachment.
+                                          - *contentType* - Describes the file type of the attachment (for example, image/jpeg).
+                                          - *name* - The file name (for example, hydrant.jpg).
+                                          - *data* - The base 64 encoded data if embedding the data. Only required if the attachment
+                                            is embedded.
+                                          - *url* - The location where the service will upload the attachment file (for example,
+                                            http://machinename/arcgisuploads/Hydrant.jpg). Only required if the attachment is not
+                                            embedded.
+
+                                          .. note::
+                                              If embedding the attachment, set the *data* property, otherwise set *url*.
+
+                                        See `edits <https://developers.arcgis.com/rest/services-reference/enterprise/synchronize-replica.htm#UL_B8C0FE10EF1D4412B8170A3E9C8AAC54>`_
+                                        for full details on formatting.
+        -----------------------------   --------------------------------------------------------------------
+        return_attachment_databy_url    If *True*, a reference to a URL will be provided for each attachment
+                                        returned. Otherwise, attachments are embedded in the respose. The
+                                        default is *True*.
+
+                                        .. note::
+                                            Only applies if attachments are included in the replica.
+        -----------------------------   --------------------------------------------------------------------
+        asynchronous                    If *True*, the request is processed as an asynchronous job and a URL
+                                        is returned that a client can visit and check the status. See the
+                                        `asynchronous operations <https://developers.arcgis.com/rest/services-reference/enterprise/asynchronous-operations.htm>`_
+                                        for more information. The default is False.
+        -----------------------------   --------------------------------------------------------------------
+        sync_direction                  Optional String. Determines whether to upload, download, or upload
+                                        and download. By default, a replica is synchronized bi-directionally.
+                                        Only applicable when *sync_model* is *perReplica*. If *sync_model*
+                                        is *perLayer*, the *sync_layers* argument contains this information.
+
+                                        Values:
+
+                                        - *download* -
+                                             The changes that have taken place on the server since last download are
+                                             returned. Client does not need to send any changes. If the changes are sent, service
+                                             will ignore them.
+                                        - *upload* -
+                                             The changes submitted in the edits or editsUploadID/editsUploadFormat
+                                             parameters are applied, and no changes are downloaded from the server.
+                                        - *bidirectional* -
+                                             The changes submitted in the edits or editsUploadID/editsUploadFormat
+                                             parameters are applied, and changes on the server are downloaded. This is the default
+                                             value.
+                                        - *snapshot* -
+                                             The current state of the features is downloaded from the server. If any edits
+                                             are specified, they will be ignored.
+        -----------------------------   --------------------------------------------------------------------
+        sync_layers                     Required List of dictionaries specifying layer level criteria for the
+                                        operation if *sync_model* is *perLayer*. The information in the
+                                        dictionary allows a client to specify layer level generation numbers,
+                                        and can also be used to specify individual directions for
+                                        synchronization per layer.
+
+
+                                        Syntax:
+
+                                        .. code-block:: python
+
+                                            >>> flc.replicas.synchronize(...
+                                                                         sync_layers = [
+                                                                                        {
+                                                                                         "id": <layer id>,
+                                                                                         "serverGen": <generation number1>,
+                                                                                         "serverSibGen": <sib generation number>,
+                                                                                         "syncDirection": "<sync_direction1>"
+                                                                                         },
+                                                                               ...
+                                                                            ]
+                                                                          ...
+                                                                          )
+
+                                        .. note::
+                                            This parameter is ignored when *sync_model* is *perReplica*
+
+                                        * If *syncDirection* value is *bidirectional* or *download*,
+                                          *serverGen* is required
+                                        * The *serverSibGen* is only needed when syncing for replicas where
+                                          the *target_type* argument was *server* when created
+                                        * For replicas where the *syncModel* value is *perLayer*, the *serverSibGen*
+                                          serves the purpose of keeping track of changes already received at the
+                                          layer level the same way *replicaServerGen* does at the  replica level.
+                                          It is updated when a synchronization completes.
+                                        * If this argument is provided and *sync_direction* is provided, layers
+                                          in this argument that do not provide a *syncDirection* value will use
+                                          the value of *sync_direction*. If *sync_direction* is not specificed,
+                                          the default *bidirectional* is used.
+        -----------------------------   --------------------------------------------------------------------
+        edits_upload_id                 Optinal String. The ID for the uploaded item that contains the edits
+                                        the client wants to apply to the service. Used in conjunction with
+                                        *edits_upload_format*.
+
+                                        .. note::
+                                            This is the *id* value returned when the edits were added
+                                            to the service resources using
+                                            :meth:`~arcgis.features.FeatureLayerCollection.upload`.
+        -----------------------------   --------------------------------------------------------------------
+        edits_upload_format             Optional String. The data format of the data referenced in
+                                        *edit_upload_id*.
+        -----------------------------   --------------------------------------------------------------------
+        data_format                     Optional String. The format for the data returned in the response.
+                                        The default value is *json*.
+
+                                        Values:
+
+                                        * *json* - data is embedded in the response
+                                        * *sqlite* - a mobile geodatabase is returned which can be used in
+                                          ArcGIS runtime applications
+        -----------------------------   --------------------------------------------------------------------
+        rollback_on_failure             Optional Boolean. Determines the behavior when there are errors
+                                        while importing edits on the server during the operation. This only
+                                        applies when *sync_direction* is *upload* or *bidirectional*, or
+                                        the *syncDirection* key of an individual *sync_layers* element is
+                                        *upload* or *bidirectional*. See the `Rollback On Failure and
+                                        Sync Model <https://developers.arcgis.com/rest/services-reference/enterprise/rollbackonfailure-and-sync-models.htm>`_
+                                        documentation for full details.
+
+                                        * When *True*, if an error occurs while importing edits on the
+                                          server, all edits are rolled back and not applied. The
+                                          operation returns an error in the response. Use this setting
+                                          when the edits are such that you will either want all or none
+                                          applied.
+                                        * When *False*, if an error occurs while importing an edit on the
+                                          server, the operation skips the edit and continues.
+                                          that were skipped are returned in the edits results with
+                                          information describing why the edits were skipped. This is the
+                                          default value.
+        -----------------------------   --------------------------------------------------------------------
+        close_replica                   Optional Boolean. Indicates whether to unregister the replica
+                                        upon completion. The default value is *False*.
+
+                                        * If *True*, the replica will be unregistered when operation
+                                          completes.
+                                        * If *False*, the replica can continue to be synchronized.
+        -----------------------------   --------------------------------------------------------------------
+        out_path                        Opitonal String. Path of a folder to save the output to a file.
+        =============================   ====================================================================
+
+        :returns:
+            A Python dictionary with various keys depending upon inputs.
         """
+
+        if rollback_on_failure:
+            if not self._fs.properties["syncCapabilities"]["supportsRollbackOnFailure"]:
+                raise Exception("Feature service does not support rollback on failure.")
+
         # TODO:
         return self._fs._synchronize_replica(
             replica_id=replica_id,
@@ -1294,14 +1615,15 @@ class SyncManager(object):
         if os.path.isfile(db) == False:
             raise Exception("Could not create the replica")
         destination_content = destination_gis.content
-        item = destination_content.add(
+        folder = destination_content.folders().get()
+        item = folder.add(
             item_properties={
                 "type": "SQLite Geodatabase",
                 "tags": "replication",
                 "title": replica_name,
             },
-            data=db,
-        )
+            file=db,
+        ).result()
         published = item.publish()
         return published
 
@@ -1746,7 +2068,13 @@ class WebHookServiceManager(object):
             params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
-            hook_url = self._url + f"/{resp['globalId']}"
+            if "globalId" in resp:
+                guid = resp.get("globalId")
+            elif "id" in resp:
+                guid = resp.get("id")
+            else:
+                raise Exception(str(resp))
+            hook_url = self._url + f"/{guid}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
             return WebHook(url=resp["url"], gis=self._gis)
@@ -1964,6 +2292,7 @@ class FeatureLayerCollectionManager(_GISResource):
         data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
+            name = re.sub(r"\.", "_", name)
 
         # Get the file type
         file_type = os.path.splitext(data_path)[1]
@@ -1998,15 +2327,19 @@ class FeatureLayerCollectionManager(_GISResource):
             folder_name = None
 
         # Add the file as an item to portal
-        file_item = self._gis.content.add(
+        if folder_name:
+            folder = self._gis.content.folders.get(
+                folder_name, self._gis.users.me.username
+            )
+        else:
+            folder = self._gis.content.folders.get()
+        file_item = folder.add(
             item_properties={
                 "type": file_type,
                 "title": name,
                 "tags": "inserted",
             },
-            data=data_path,
-            owner=self._gis.users.me.username,
-            folder=folder_name,
+            file=data_path,
         )
 
         # Analyze the file to get publish parameters
@@ -2014,6 +2347,7 @@ class FeatureLayerCollectionManager(_GISResource):
             publish_parameters = self._gis.content.analyze(item=file_item)[
                 "publishParameters"
             ]
+            source_info = publish_parameters
         else:
             # start creating publish params from new file item
             publish_parameters = {
@@ -2023,51 +2357,229 @@ class FeatureLayerCollectionManager(_GISResource):
                 "layerInfo": {"capabilities": "Query"},
                 "targetSR": {"wkid": 102100, "latestWkid": 3857},
             }
+            source_info = None
 
         # Publish the item
         new_item = file_item.publish(publish_parameters=publish_parameters)
 
-        # Insert layer or table
-        source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
-        if len(new_item.layers) > 0:
-            publish_parameters = new_item.layers[0].properties
-            index = _perform_insert(self, publish_parameters)
-            if (
-                file_type == "File Geodatabase"
-                and "filegdb"
-                in orig_item.layers[index].properties.supportedAppendFormats
-            ) or file_type != "File Geodatabase":
-                if file_type == "File Geodatabase":
-                    upload_format = "filegdb"
-                else:
-                    upload_format = file_type.lower()
-                # Workflow for all file types and file geo databases that support append
+        try:
+            # Insert layer or table
+            if len(new_item.layers) > 0:
+                publish_parameters = new_item.layers[0].properties
+                index = _perform_insert(self, publish_parameters)
+                if (
+                    file_type == "File Geodatabase"
+                    and "filegdb"
+                    in orig_item.layers[index].properties.supportedAppendFormats
+                ) or file_type != "File Geodatabase":
+                    # Workflow for all file types and file geo databases that support append
+                    ItemDependency(orig_item).add("itemid", file_item.id)
+                    orig_item.layers[index].append(
+                        item_id=file_item.id,
+                        upload_format="filegdb",
+                    )
+                elif file_type == "File Geodatabase":
+                    # When filegdb not supported through append, use edit features
+                    layer = new_item.layers[0]
+                    features = layer.query().features
+                    if self._gis._is_agol or (
+                        "advancedEditingCapabilities" in layer.properties
+                        and "supportsAsyncApplyEdits"
+                        in layer.properties["advancedEditingCapabilities"]
+                        and layer.properties["advancedEditingCapabilities"][
+                            "supportsAsyncApplyEdits"
+                        ]
+                    ):
+                        orig_item.layers[index].edit_features(
+                            adds=features, future=True
+                        )
+                    else:
+                        orig_item.layers[index].edit_features(adds=features)
+            elif len(new_item.tables) > 0:
+                publish_parameters = new_item.tables[0].properties
+                index = _perform_insert(self, publish_parameters)
                 ItemDependency(orig_item).add("itemid", file_item.id)
-                orig_item.layers[index].append(
+                orig_item.tables[index].append(
                     item_id=file_item.id,
-                    upload_format=upload_format,
+                    upload_format=file_type,
                     source_info=source_info,
                 )
-            elif file_type == "File Geodatabase":
-                # When filegdb not supported through append, use edit features
-                features = new_item.layers[0].query().features
-                orig_item.layers[index].edit_features(adds=features)
-        elif len(new_item.tables) > 0:
-            publish_parameters = new_item.tables[0].properties
-            index = _perform_insert(self, publish_parameters)
-            ItemDependency(orig_item).add("itemid", file_item.id)
-            orig_item.tables[index].append(
-                item_id=file_item.id,
-                upload_format=file_type,
-                source_info=source_info,
-            )
 
-        # Add relationship between service and data
-        orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
-
-        # Remove newly published item since inserted into service
-        new_item.delete()
+            # Add relationship between service and data
+            orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+            # Remove newly published item since inserted into service
+            new_item.delete()
+        except Exception as e:
+            # Remove newly published item since inserted into service
+            new_item.delete()
+            raise e
         return orig_item
+
+    def swap_view(
+        self,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        return self._swap_view(
+            view=self._fs, index=index, new_source=new_source, future=future
+        )
+
+    def _swap_view(
+        self,
+        view: features.FeatureLayerCollection,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        view                   Required FeatureLayerCollection. The view feature layer collection
+                               to update.
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object. This parameter is only honored for the ArcGIS Online
+                               platform.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        keys: list[str] = [
+            "currentVersion",
+            "id",
+            "name",
+            "type",
+            "displayField",
+            "description",
+            "copyrightText",
+            "defaultVisibility",
+            "editingInfo",
+            "isDataVersioned",
+            "hasContingentValuesDefinition",
+            "supportsAppend",
+            "supportsCalculate",
+            "supportsASyncCalculate",
+            "supportsTruncate",
+            "supportsAttachmentsByUploadId",
+            "supportsAttachmentsResizing",
+            "supportsRollbackOnFailureParameter",
+            "supportsStatistics",
+            "supportsExceedsLimitStatistics",
+            "supportsAdvancedQueries",
+            "supportsValidateSql",
+            "supportsCoordinatesQuantization",
+            "supportsLayerOverrides",
+            "supportsTilesAndBasicQueriesMode",
+            "supportsFieldDescriptionProperty",
+            "supportsQuantizationEditMode",
+            "supportsApplyEditsWithGlobalIds",
+            "supportsMultiScaleGeometry",
+            "supportsReturningQueryGeometry",
+            "hasGeometryProperties",
+            "geometryProperties",
+            "advancedQueryCapabilities",
+            "advancedQueryAnalyticCapabilities",
+            "advancedEditingCapabilities",
+            "infoInEstimates",
+            "useStandardizedQueries",
+            "geometryType",
+            "minScale",
+            "maxScale",
+            "extent",
+            "drawingInfo",
+            "allowGeometryUpdates",
+            "hasAttachments",
+            "htmlPopupType",
+            "hasMetadata",
+            "hasM",
+            "hasZ",
+            "objectIdField",
+            "uniqueIdField",
+            "globalIdField",
+            "typeIdField",
+            "dateFieldsTimeReference",
+            "preferredTimeReference",
+            "types",
+            "templates",
+            "supportedQueryFormats",
+            "supportedAppendFormats",
+            "supportedExportFormats",
+            "supportedSpatialRelationships",
+            "supportedContingentValuesFormats",
+            "supportedSyncDataOptions",
+            "hasStaticData",
+            "maxRecordCount",
+            "standardMaxRecordCount",
+            "standardMaxRecordCountNoGeometry",
+            "tileMaxRecordCount",
+            "maxRecordCountFactor",
+            "capabilities",
+            "url",
+            "adminLayerInfo",
+        ]
+        if isinstance(new_source, features.FeatureLayer):
+            flc_lyr_info: features.FeatureLayer = view.layers[index]
+        elif isinstance(new_source, features.Table):
+            flc_lyr_info: features.Table = view.tables[index]
+        props: dict = {
+            key: new_source.properties[key]
+            for key in keys
+            if key in new_source.properties
+        }
+        if new_source._con.token:
+            props["url"] = new_source.url + f"?token={new_source._con.token}"
+        else:
+            props["url"] = new_source.url
+        if "viewLayerDefinition" in flc_lyr_info.manager.properties["adminLayerInfo"]:
+            props["adminLayerInfo"] = {}
+            props["adminLayerInfo"]["viewLayerDefinition"] = (
+                flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
+            )
+            props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
+                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
+            )
+            props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
+        if isinstance(new_source, features.FeatureLayer):
+            delete_json: dict = {"layers": [{"id": index}], "tables": []}
+            add_json: dict = {"layers": [props]}
+        elif isinstance(new_source, features.Table):
+            delete_json: dict = {"layers": [], "tables": [{"id": index}]}
+            add_json: dict = {"tables": [props]}
+        view.manager.delete_from_definition(delete_json)
+        if future and self._gis._is_arcgisonline:
+            return view.manager.add_to_definition(add_json, future=True)
+        else:
+            if future and self._gis._is_arcgisonline == False:
+                _log.warning(
+                    "Enterprise does not support asynchronous view swap, using synchronous method."
+                )
+            return view.manager.add_to_definition(add_json, future=False)
 
     # ----------------------------------------------------------------------
     def create_view(
@@ -2087,6 +2599,8 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2133,16 +2647,29 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         snippet                  Optional String. A short description of the view item.
         --------------------     --------------------------------------------------------------------
-        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        overwrite                Not supported.
+
+                                 .. note::
+                                     To overwrite the data used in a hosted feature layer view, you
+                                     must overwrite the hosted feature layer from which it was
+                                     created. See the `ArcGIS Online Overwrite hosted feature layers <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     or the `ArcGIS Enterprise Overwrite hosted feature layers <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     documentation for requirements and considerations for
+                                     overwriting. See also `Considerations when creating hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm#GUID-E4F46139-1F6E-4036-8C4F-EF73C2C2CE72>`_
+                                     for additional criteria for overwriting.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optional list[str] or None. A list of visible fields to display.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. A SQL statement that defines the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2169,8 +2696,8 @@ class FeatureLayerCollectionManager(_GISResource):
         import os
         from . import FeatureLayerCollection
 
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
@@ -2213,11 +2740,12 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isUpdatableView": updateable,
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilties"],
+                    "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
+                    "options": {"dataSourceType": "relational"},
                 }
             ),
-            "tags": tags if tags else item.tags,
+            "tags": tags if tags else ",".join(item.tags),
             "snippet": snippet if snippet else item.snippet,
             "description": description if description else item.description,
             "outputType": "featureService",
@@ -2225,7 +2753,7 @@ class FeatureLayerCollectionManager(_GISResource):
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
         if overwrite:
-            logging.warning(
+            _log.warning(
                 "overwrite is currently not supported on this platform, and will not be honored"
             )
 
@@ -2250,14 +2778,16 @@ class FeatureLayerCollectionManager(_GISResource):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 lyr_id = lyr.manager.properties.serviceItemId
-                data_path = "content/items/" + lyr_id + "/data"
+                data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {
                         "adminLayerInfo": {
-                            "popupInfo": data["layers"][0]["popupInfo"]
-                            if "layers" in data
-                            else None,
+                            "popupInfo": (
+                                data["layers"][0]["popupInfo"]
+                                if "layers" in data
+                                else None
+                            ),
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
@@ -2296,9 +2826,11 @@ class FeatureLayerCollectionManager(_GISResource):
                         data = item._portal.con.get(path=data_path)
                         def_lyr = dict(lyr.properties)
                         def_lyr["adminLayerInfo"] = {
-                            "popupInfo": data["layers"][0]["popupInfo"]
-                            if "layers" in data
-                            else None,
+                            "popupInfo": (
+                                data["layers"][0]["popupInfo"]
+                                if "layers" in data
+                                else None
+                            ),
                             "viewLayerDefinition": {
                                 "sourceServiceName": os.path.basename(
                                     os.path.dirname(fs.url)
@@ -2417,7 +2949,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         _log.error("Unable to parse the view_tables parameter")
 
-        fs_view.manager.add_to_definition(add_def)
+        if self._gis._is_arcgisonline:
+            fs_view.manager.add_to_definition(add_def, future=True).result()
+        else:
+            fs_view.manager.add_to_definition(add_def, future=False)
+
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
                 vw_lyr.manager.update_definition(
@@ -2448,8 +2984,36 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
+        item = content.get(res["itemId"])
+        if visible_fields or query:
+            values: dict[str, Any] = {}
+            if visible_fields:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"].lower() in [f.lower() for f in visible_fields]
+                ] + [
+                    {"name": fld["name"], "visible": False}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"].lower() not in [f.lower() for f in visible_fields]
+                ]
+            else:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                ]
+            if query:
+                values["viewDefinitionQuery"] = query
+            if values:
+                flc = FeatureLayerCollection.fromitem(item)
+                lyr = flc.layers[0]
+                mgr = lyr.manager
+                if self._gis._is_arcgisonline:
+                    res = mgr.update_definition(values, future=True).result()
+                else:
+                    res = mgr.update_definition(values)
 
-        return content.get(res["itemId"])
+        return item
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
@@ -2602,9 +3166,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 if "editorTrackingInfo" in json_dict:
                     definition["editorTrackingInfo"] = collections.OrderedDict()
                     if "enableEditorTracking" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "enableEditorTracking"
-                        ] = json_dict["editorTrackingInfo"]["enableEditorTracking"]
+                        definition["editorTrackingInfo"]["enableEditorTracking"] = (
+                            json_dict["editorTrackingInfo"]["enableEditorTracking"]
+                        )
 
                     if (
                         "enableOwnershipAccessControl"
@@ -2617,19 +3181,19 @@ class FeatureLayerCollectionManager(_GISResource):
                         ]
 
                     if "allowOthersToUpdate" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToUpdate"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
+                        definition["editorTrackingInfo"]["allowOthersToUpdate"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
+                        )
 
                     if "allowOthersToDelete" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToDelete"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToDelete"]
+                        definition["editorTrackingInfo"]["allowOthersToDelete"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToDelete"]
+                        )
 
                     if "allowOthersToQuery" in json_dict["editorTrackingInfo"]:
-                        definition["editorTrackingInfo"][
-                            "allowOthersToQuery"
-                        ] = json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                        definition["editorTrackingInfo"]["allowOthersToQuery"] = (
+                            json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                        )
                     if isinstance(json_dict["editorTrackingInfo"], dict):
                         for key, val in json_dict["editorTrackingInfo"].items():
                             if key not in definition["editorTrackingInfo"]:
@@ -2717,7 +3281,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
 
-        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
+        4. In older versions of Enterprise (pre-11.2), the schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
@@ -2725,12 +3289,22 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        data                Required string. Path to the file used to overwrite the hosted
+        data_file           Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
         ===============     ====================================================================
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if data_file and (
+            not isinstance(data_file, str)
+            or not os.path.exists(data_file)
+            or not os.path.isfile(data_file)
+            or os.stat(data_file).st_size > int(2.5e7)
+        ):
+            raise ValueError(
+                "The data file provided does not exist or could not be accessed."
+            )
+
         # check for outstanding replicas
         if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
@@ -2754,6 +3328,12 @@ class FeatureLayerCollectionManager(_GISResource):
             return {
                 "Error": "Cannot find related data item used to publish this Feature Layer"
             }
+
+        # Check that file type and name are the same:
+        if os.path.basename(data_file) != related_data_item["name"]:
+            raise ValueError(
+                "The name and extension of the file must be the same as the original data."
+            )
 
         # find if we are overwritting only a hosted table
         hosted_table = False

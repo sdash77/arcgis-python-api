@@ -61,6 +61,28 @@ def is_contiguous(class_values):
 # crop_predict
 
 
+class DummyTfm:
+    order = 0
+
+
+class ScalingTfm:
+    tfm = DummyTfm()
+
+    def __init__(self, func):
+        self.func = func
+
+    def resolve(self):
+        pass
+
+    @property
+    def order(self):
+        return self.tfm.order
+
+    def __call__(self, x):
+        out = x.__class__(self.func((x.data, None))[0][0])
+        return out
+
+
 def multispectral_additions(
     data, _is_multispectral, rgb_bands, bands, extract_bands, norm_pct, **kwargs
 ):
@@ -205,17 +227,7 @@ def multispectral_additions(
     # data.add_tfm(data._min_max_scaler_tfm)
 
     # Transforms
-    def _scaling_tfm(x):
-        # Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
-        return x.__class__(data._min_max_scaler_tfm((x.data, None))[0][0])
-
-    ## Fastai need tfm, order and resolve.
-    class dummy:
-        pass
-
-    _scaling_tfm.tfm = dummy()
-    _scaling_tfm.tfm.order = 0
-    _scaling_tfm.resolve = dummy
+    _scaling_tfm = ScalingTfm(data._min_max_scaler_tfm)
 
     ## Scaling the images before applying any  other transform
     if getattr(data.train_ds, "train_tfms") is not None:
@@ -469,7 +481,7 @@ def apply_tfms(images, crop_tfm, other_tfms):
     change_label = change_label.apply_tfms(crop_tfm, do_resolve=False)
 
     # Multispectral tfm not on labels.
-    if other_tfms != [] and str(type(other_tfms[0])) == "<class 'function'>":
+    if other_tfms != [] and other_tfms[0].__class__.__name__ == "ScalingTfm":
         change_label = change_label.apply_tfms(other_tfms[1:], do_resolve=False)
     else:
         change_label = change_label.apply_tfms(other_tfms, do_resolve=False)
@@ -746,12 +758,13 @@ def prepare_change_detection_data(
         imagery_type=imagery_type,
     )
 
-    # num_workers=0 for win and maximum for linux
-    databunch_kwargs = (
-        {"num_workers": 0}
-        if sys.platform == "win32"
-        else {"num_workers": os.cpu_count() - 4}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
     )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
     # create dataloaders
     train_dl, valid_dl = create_dataloaders(datasets, batch_size, databunch_kwargs)
 

@@ -1,14 +1,13 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
-import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
+from . import parcel_fabric_utils as pfutils
 
 
+@integration_test
 class TestDuplicateParcels(unittest.TestCase):
     """Duplicate parcels"""
 
@@ -49,7 +48,7 @@ class TestDuplicateParcels(unittest.TestCase):
         )
         existing_record_guid = existing_record[0]["attributes"].get("globalid")
         parcel_feature = [
-            {"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}
+            {"id": "{6E6D131E-32F4-4BAF-94E8-0F8D0122853F}", "layerId": "15"}
         ]
 
         with self.vms.get(fq_version_name, "read") as version:
@@ -148,7 +147,7 @@ class TestDuplicateParcels(unittest.TestCase):
     @classmethod
     def load_feature_json(self):
         parcels = [
-            {"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"},
+            {"id": "{6E6D131E-32F4-4BAF-94E8-0F8D0122853F}", "layerId": "15"},
             {"id": "{13CD345B-7C4F-41C7-A22D-24E4C6670D85}", "layerId": "15"},
         ]
         return parcels

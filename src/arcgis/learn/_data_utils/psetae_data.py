@@ -632,11 +632,15 @@ def prepare_psetae_data(
     train_val_dataset = create_train_val_sets(
         path, val_split_pct, working_dir, **kwargs
     )
-    databunch_kwargs = (
-        {"num_workers": 0, "drop_last": True}
-        if sys.platform == "win32"
-        else {"num_workers": os.cpu_count() - 4, "drop_last": True}
+
+    databunch_kwargs = {"drop_last": True}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
     )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
+
     train_dl, valid_dl = create_dataloaders(
         train_val_dataset[0], batch_size, databunch_kwargs
     )

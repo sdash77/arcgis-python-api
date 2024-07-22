@@ -128,13 +128,8 @@ class ServerProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-
-            if self._keyring_version() >= [23]:
-                password = keyring.get_credential(self._profile_name, profile)
-
-                password = getattr(password, "password", None)
-            else:
-                password = keyring.get_password(self._profile_name, profile)
+            credential = keyring.get_credential(self._profile_name, profile)
+            password = getattr(credential, "password", None)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -179,7 +174,7 @@ class ServerProfileManager(object):
         import keyring
 
         supported_keyrings = [
-            keyring.backends.OS_X.Keyring,
+            keyring.backends.macOS.Keyring,
             keyring.backends.SecretService.Keyring,
             keyring.backends.Windows.WinVaultKeyring,
             keyring.backends.kwallet.DBusKeyring,
@@ -224,9 +219,9 @@ class ServerProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
@@ -662,16 +657,11 @@ class ProfileManager(object):
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
 
-            if self._keyring_version() >= [23]:
-                password = keyring.get_credential(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+            credential = keyring.get_credential(
+                "arcgis_python_api_profile_passwords", profile
+            )
 
-                password = getattr(password, "password", None)
-            else:
-                password = keyring.get_password(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+            password = getattr(credential, "password", None)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -717,24 +707,7 @@ class ProfileManager(object):
         """
         import keyring
 
-        if self._keyring_version() >= [23, 0, 0]:
-            supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
-        else:
-            try:
-                import keyring.backends.OS_X
-                import keyring.backends.kwallet
-                import keyring.backends.chainer
-                import keyring.backends.Windows
-                import keyring.backends.SecretService
-            except Exception as keyringex:
-                print(f"Error importing keyring {str(keyringex)}")
-            supported_keyrings = [
-                keyring.backends.OS_X.Keyring,
-                keyring.backends.SecretService.Keyring,
-                keyring.backends.Windows.WinVaultKeyring,
-                keyring.backends.kwallet.DBusKeyring,
-                keyring.backends.chainer.ChainerBackend,
-            ]
+        supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
 
@@ -774,9 +747,9 @@ class ProfileManager(object):
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict[
-                    "profile"
-                ] = p  # add a new column to DF that lists the profile name
+                p_dict["profile"] = (
+                    p  # add a new column to DF that lists the profile name
+                )
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)

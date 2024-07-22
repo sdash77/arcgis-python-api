@@ -1,32 +1,12 @@
-import sys
-
-#
-#  Update the Path to set the test area
 import json
 import os, uuid
 import tempfile
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-
-__logger__ = logging.getLogger()
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
 
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_admin_profile']  # , 'your_enterprise_profile'
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
+enable_verbose_logging()
 notebook_json = {
     "cells": [
         {
@@ -37,8 +17,7 @@ notebook_json = {
         {
             "cell_type": "markdown",
             "metadata": {},
-            "source": "#### Run this cell to connect to your GIS and get "
-            "started:",
+            "source": "#### Run this cell to connect to your GIS and get " "started:",
         },
         {
             "cell_type": "code",
@@ -86,7 +65,7 @@ notebook_json = {
     "metadata": {
         "esriNotebookRuntime": {
             "notebookRuntimeName": "ArcGIS Notebook " "Python 3 " "Advanced",
-            "notebookRuntimeVersion": "5.0",
+            "notebookRuntimeVersion": "8.0",
         },
         "kernelspec": {
             "display_name": "Python 3",
@@ -108,6 +87,8 @@ notebook_json = {
 }
 
 
+@integration_test
+@profiles.admin_enterprise_and_agol
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -115,15 +96,17 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._gis = GIS(
-            profile='your_online_admin_profile', verify_cert=False, proxy=PROXIES
-        )
-
+        cls._gis = cls.gis
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
         writer = open(fp, "w")
         writer.write(json.dumps(notebook_json))
         writer.close()
+        if cls.gis._is_agol:
+            notebookRuntimeVersion = "8.0"
+        else:
+            notebookRuntimeVersion = "9.0"
+
         cls._item = cls._gis.content.add(
             {
                 "type": "Notebook",
@@ -131,14 +114,13 @@ class TestAGOLNotebookManager(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "5.0",
+                    "notebookRuntimeVersion": notebookRuntimeVersion,
                 },
             },
             data=fp,
         )
 
-    # @unittest.skip("I work")
-    def test_execute_notebook_agol(self):
+    def test_execute_notebook(self):
         """tests the AGOL execute notebook method"""
         gis = self._gis
         from arcgis.notebook import execute_notebook
@@ -156,161 +138,54 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(res, dict)
         assert "jobUrl" in res
 
-    # @unittest.skip("said so")
-    def test_open_notebook_agol_future(self):
+    def test_open_notebook_future(self):
         from arcgis._impl._async.jobs import Job
 
         gis = self._gis
         mgr = gis.notebook_server[0]
-        print(mgr)
-        nbm = mgr.notebooksmanager
-        open_result = nbm.open_notebook(
-            itemid=self._item,
-            templateid=None,
-            nb_runtimeid=None,
-            template_nb=None,
-            instance_type=None,
-            future=True,
-        )
+        if gis._is_agol:
+            nbm = mgr.notebooksmanager
+            open_result = nbm.open_notebook(
+                itemid=self._item,
+                templateid=None,
+                nb_runtimeid=None,
+                template_nb=None,
+                instance_type=None,
+                future=True,
+            )
+        else:
+            nbm = mgr.notebooks
+            open_result = nbm.open_notebook(
+                itemid=self._item.id,
+                future=True,
+            )
         assert isinstance(open_result, Job)
         assert open_result.result()
 
-    # @unittest.skip("said so")
-    def test_open_notebook_agol(self):
-        from arcgis._impl._async.jobs import Job
+    def test_open_notebook(self):
 
         gis = self._gis
         mgr = gis.notebook_server[0]
-        print(mgr)
-        nbm = mgr.notebooksmanager
-        open_result = nbm.open_notebook(
-            itemid=self._item,
-            templateid=None,
-            nb_runtimeid=None,
-            template_nb=None,
-            instance_type=None,
-            future=False,
-        )
+        if gis._is_agol:
+            nbm = mgr.notebooksmanager
+            open_result = nbm.open_notebook(
+                itemid=self._item,
+                templateid=None,
+                nb_runtimeid=None,
+                template_nb=None,
+                instance_type=None,
+                future=False,
+            )
+        else:
+            nbm = mgr.notebooks
+            open_result = nbm.open_notebook(
+                itemid=self._item.id,
+                future=False,
+            )
 
         assert open_result
 
-    # @unittest.skip("said so")
-    def test_execute_notebook_agol_future(self):
-        """tests the AGOL execute notebook method"""
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=True,
-        )
-        assert isinstance(res, Job)
-        # res = res.result()
-        assert res.result()
-
-
-class Test_ExecuteNotebookMethod(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        assert cls._item.delete()
-
-    @classmethod
-    def setUpClass(cls):
-        url = "https://rqawinbi01pt.ags.esri.com/gis"
-        username = "NBAdvanced"
-        password = "NBAdvanced.1"
-        ent_json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"9.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
-
-        cls._gis = GIS(
-            url=url,
-            username=username,
-            password=password, 
-            verify_cert=False,
-            proxy=PROXIES,
-        )
-
-        d = tempfile.gettempdir()
-        fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
-        writer = open(fp, "w")
-        writer.write(json.dumps(notebook_json))
-        writer.close()
-        cls._item = cls._gis.content.add(
-            {
-                "type": "Notebook",
-                "tags": "delete me",
-                "title": f"item_{uuid.uuid4().hex[:6]}",
-                "properties": {
-                    "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "9.0",
-                },
-            },
-            data=fp,
-        )
-        cls._item.update(
-            {
-                "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                "notebookRuntimeVersion": "9.0",
-            }
-        )
-        # print('stop')
-
-    def test_open_notebook_ent_future(self):
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        mgr = gis.notebook_server[0]
-        print(mgr)
-        nbm = mgr.notebooks
-        open_result = nbm.open_notebook(
-            itemid=self._item.id,
-            future=True,
-        )
-        assert isinstance(open_result, Job)
-        assert open_result.result()
-
-    def test_open_notebook_ent(self):
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        mgr = gis.notebook_server[0]
-        nbm = mgr.notebooks
-        open_result = nbm.open_notebook(
-            itemid=self._item.id,
-            future=True,
-        )
-
-        assert open_result
-        assert open_result.result()
-        print('stop')
-
-    # @unittest.skip("i work")
-    def test_execute_notebook_ent(self):
-        """tests the AGOL execute notebook method"""
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=False,
-        )
-        assert isinstance(res, dict)
-        assert "jobUrl" in res
-
-    def test_execute_notebook_ent_future(self):
+    def test_execute_notebook_future(self):
         """tests the AGOL execute notebook method"""
         from arcgis._impl._async.jobs import Job
 

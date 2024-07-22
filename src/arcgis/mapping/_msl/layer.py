@@ -5,25 +5,29 @@ import os
 from string import digits
 from functools import lru_cache
 
-from re import search
 from typing import Any, Optional, Union
 
-from arcgis._impl.common import _utils
+from arcgis._impl.common import _query
 from arcgis._impl.common._filters import (
     StatisticFilter,
     TimeFilter,
     GeometryFilter,
 )
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _date_handler, chunks
 
 from arcgis.features.feature import FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapFeatureLayer class found in `arcgis.layers.MapFeatureLayer` instead.",
+)
 class MapFeatureLayer(Layer):
     """
     The ``MapFeatureLayer`` class represents Map Feature Layers.
@@ -81,7 +85,7 @@ class MapFeatureLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -168,11 +172,11 @@ class MapFeatureLayer(Layer):
 
         .. note::
             The ``renderer`` property overrides the default symbology when displaying it on a
-            :class:`~arcgis.mapping.WebMap`.
+            :class:`~arcgis.map.Map`.
 
         :return:
             ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -189,7 +193,7 @@ class MapFeatureLayer(Layer):
 
         :return:
             ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            A variants of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -206,27 +210,27 @@ class MapFeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapServiceLayer` object.
+                                                 a :class:`~arcgis.layers.MapServiceLayer` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapFeatureLayer` object
+            A :class:`~arcgis.layers.MapFeatureLayer` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -236,10 +240,10 @@ class MapFeatureLayer(Layer):
             >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_feature_layer.properties.name:30}{type(map_feature_layer)}")
-            <State Boundaries              <class 'arcgis.mapping._msl.layer.MapFeatureLayer'>>
+            <State Boundaries              <class 'arcgis.layers._msl.layer.MapFeatureLayer'>>
 
         """
-        from arcgis.mapping import MapImageLayer
+        from arcgis.layers import MapImageLayer
 
         return MapImageLayer.fromitem(item).layers[layer_id]
 
@@ -247,7 +251,7 @@ class MapFeatureLayer(Layer):
     @property
     def container(self):
         """
-        The ``container`` property represents the :class:`~arcgis.mapping.MapImageLayer` to which this layer belongs.
+        The ``container`` property represents the :class:`~arcgis.layers.MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
             self._storage = MapImageLayer(
@@ -518,7 +522,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -901,7 +905,7 @@ class MapFeatureLayer(Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -941,306 +945,49 @@ class MapFeatureLayer(Layer):
             >>> query_count
             <149>
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
-
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if result_type is not None:
-            params["resultType"] = result_type
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_true_curves is not None:
-            params["returnTrueCurves"] = return_true_curves
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnGeometry"] = return_geometry
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCentroid"] = return_centroid
-        params["returnCountOnly"] = return_count_only
-        params["returnExtentOnly"] = return_extent_only
-        params["returnIdsOnly"] = return_ids_only
-        params["returnZ"] = return_z
-        params["returnM"] = return_m
-        if parameter_values:
-            params["parameterValues"]
-        if range_values:
-            params["rangeValues"] = range_values
-        if not datum_transformation is None:
-            params["datumTransformation"] = datum_transformation
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_extent_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if quantization_parameters:
-            params["quantizationParameters"] = quantization_parameters
-        if multipatch_option:
-            params["multipatchOption"] = multipatch_option
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if text:
-            params["text"] = text
-        if out_sr:
-            params["outSR"] = out_sr
-        if max_allowable_offset:
-            params["maxAllowableOffset"] = max_allowable_offset
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if geometry_precision:
-            params["geometryPrecision"] = geometry_precision
-        if object_ids:
-            params["objectIds"] = object_ids
-        if distance:
-            params["distance"] = distance
-        if units:
-            params["units"] = units
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
-            for key, val in geometry_filter.filter:
-                params[key] = val
-        elif geometry_filter and isinstance(geometry_filter, dict):
-            for key, val in geometry_filter.items():
-                params[key] = val
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if (
-                    key
-                    in (
-                        "returnCountOnly",
-                        "returnExtentOnly",
-                        "returnIdsOnly",
-                    )
-                    and val
-                ):
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld],
-                            )
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                if fld in df.columns:
-                    try:
-                        df[fld] = pd.to_datetime(
-                            df[fld] / 1000,
-                            unit="s",
-                        )
-                    except:
-                        df[fld] = pd.to_datetime(
-                            df[fld],
-                            errors="coerce",
-                        )
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            as_df=as_df,
+            is_layer=True,
+            where=where,
+            text=text,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_geometry=return_geometry,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            return_extent_only=return_extent_only,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            max_allowable_offset=max_allowable_offset,
+            out_sr=out_sr,
+            geometry_precision=geometry_precision,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_z=return_z,
+            return_m=return_m,
+            multipatch_option=multipatch_option,
+            quantization_parameters=quantization_parameters,
+            return_centroid=return_centroid,
+            return_all_records=return_all_records,
+            result_type=result_type,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_true_curves=return_true_curves,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            datum_transformation=datum_transformation,
+            range_values=range_values,
+            parameter_values=parameter_values,
+            **kwargs,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -1260,7 +1007,7 @@ class MapFeatureLayer(Layer):
         return_true_curve: bool = False,
     ):
         """
-        The ``query_related_records`` operation is performed on a :class:`~arcgis.mapping.MapFeatureLayer`
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.layers.MapFeatureLayer`
         resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
         by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
         :class:`~arcgis.features.Feature` objects including the values for the fields requested by
@@ -1273,7 +1020,7 @@ class MapFeatureLayer(Layer):
             include geometries.
 
         .. note::
-            See the :attr:`~arcgis.mapping.MapFeatureLayer.query` method for more information.
+            See the :attr:`~arcgis.layers.MapFeatureLayer.query` method for more information.
 
 
         ======================     ====================================================================
@@ -1512,150 +1259,13 @@ class MapFeatureLayer(Layer):
         else:
             return FeatureSet.from_dict(result)
 
-    # ----------------------------------------------------------------------
-    def _query_df(self, url, params):
-        """returns results of a query as a pd.DataFrame"""
-        import pandas as pd
-        from arcgis.features import GeoAccessor, GeoSeriesAccessor
-        import numpy as np
-
-        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": pd.datetime,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-            }
-        else:
-            from datetime import datetime as _datetime
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-            }
-
-        def feature_to_row(feature, sr):
-            """:return: a feature from a dict"""
-            from arcgis.geometry import Geometry
-
-            geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
-            if "centroid" in feature:
-                if attribs is None:
-                    attribs = {"centroid": feature["centroid"]}
-                elif "centroid" in attribs:
-                    import uuid
-
-                    fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature["centroid"]
-                else:
-                    attribs["centroid"] = feature["centroid"]
-            if geom:
-                if "spatialReference" not in geom:
-                    geom["spatialReference"] = sr
-                attribs["SHAPE"] = Geometry(geom)
-            return attribs
-
-        # ------------------------------------------------------------------
-        try:
-            featureset_dict = self._con.post(url, params, token=self._token)
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    featureset_dict = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if featureset_dict is not None:
-                                for feature in records["features"]:
-                                    featureset_dict["features"].append(feature)
-                            else:
-                                featureset_dict = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        if len(featureset_dict["features"]) == 0:
-            return pd.DataFrame([])
-        sr = None
-        if "spatialReference" in featureset_dict:
-            sr = featureset_dict["spatialReference"]
-
-        df = None
-        dtypes = None
-        geom = None
-        names = None
-        dfields = []
-        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
-        if len(rows) == 0:
-            return None
-        df = pd.DataFrame.from_records(data=rows)
-        if "fields" in featureset_dict:
-            dtypes = {}
-            names = []
-            fields = featureset_dict["fields"]
-            for fld in fields:
-                if fld["type"] != "esriFieldTypeGeometry":
-                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
-                    names.append(fld["name"])
-                if fld["type"] == "esriFieldTypeDate":
-                    dfields.append(fld["name"])
-        if "SHAPE" in featureset_dict:
-            df.spatial.set_geometry("SHAPE")
-        if len(dfields) > 0:
-            df[dfields] = df[dfields].apply(pd.to_datetime, unit="ms")
-        return df
-
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapRasterLayer class found in `arcgis.layers.MapRasterLayer` instead.",
+)
 class MapRasterLayer(MapFeatureLayer):
     """
     The ``MapRasterLayer`` class represents a geo-referenced image hosted in a ``Map Service``.
@@ -1683,7 +1293,7 @@ class MapRasterLayer(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
@@ -1706,6 +1316,11 @@ class MapRasterLayer(MapFeatureLayer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapTable class found in `arcgis.layers.MapTable` instead.",
+)
 class MapTable(MapFeatureLayer):
     """
     The ``MapTable`` class represents entity classes with uniform properties.
@@ -1714,7 +1329,7 @@ class MapTable(MapFeatureLayer):
         In addition to working with entities with ``location`` as
         features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
 
-    Working with tables is similar to working with a :class:`~arcgis.mapping.MapFeatureLayer`, except that the rows
+    Working with tables is similar to working with a :class:`~arcgis.layers.MapFeatureLayer`, except that the rows
     (:class:`~arcgis.features.Feature`) in a table do not have a geometry, and tables ignore any geometry related
     operation.
     """
@@ -1722,27 +1337,27 @@ class MapTable(MapFeatureLayer):
     @classmethod
     def fromitem(cls, item: Item, table_id: int = 0):
         """
-        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapTable` from a GIS :class:`~arcgis.gis.Item`.
+        The ``fromitem`` method creates a :class:`~arcgis.layers.MapTable` from a GIS :class:`~arcgis.gis.Item`.
 
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapImageService` object.
+                                                 a :class:`~arcgis.layers.MapImageService` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
         ====================================     ====================================================================
 
         :return:
-            A :class:`~arcgis.mapping.MapTable` object
+            A :class:`~arcgis.layers.MapTable` object
 
         .. code-block:: python
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapTable
+            >>> from arcgis.layers import MapImageLayer, MapTable
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -1752,7 +1367,7 @@ class MapTable(MapFeatureLayer):
             >>> map_table = MapFeatureLayer.fromitem(item = map_image_item,
                                                              layer_id = 2)
             >>> print(f"{map_table.properties.name:30}{type(map_table)}")
-            <State Boundaries              <class 'arcgis.mapping.MapTable'>>
+            <State Boundaries              <class 'arcgis.layers.MapTable'>>
         """
         return item.tables[table_id]
 
@@ -1775,7 +1390,7 @@ class MapTable(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -2020,7 +1635,7 @@ class MapTable(MapFeatureLayer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.layers import MapImageLayer, MapFeatureLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -2060,255 +1675,40 @@ class MapTable(MapFeatureLayer):
             >>> query_count
             <149>
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
-
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCountOnly"] = return_count_only
-        params["returnIdsOnly"] = return_ids_only
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if object_ids:
-            params["objectIds"] = object_ids
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if key in ("returnCountOnly", "returnIdsOnly") and val:
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld])
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
-                except:
-                    df[fld] = pd.to_datetime(df[fld])
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_all_records=return_all_records,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            range_values=range_values,
+            parameter_values=parameter_values,
+            **kwargs,
+        )
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the _MSILayerFactory class found in `arcgis.layers._MSILayerFactory` instead.",
+)
 class _MSILayerFactory(type):
     """
     Factory that generates the Map Service Layers
@@ -2326,11 +1726,11 @@ class _MSILayerFactory(type):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(s_layer.properties.name)
         >> 'pipe_properties'
@@ -2364,6 +1764,11 @@ class _MSILayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapServiceLayer class found in `arcgis.layers.MapServiceLayer` instead.",
+)
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
     The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.
@@ -2381,11 +1786,11 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import MapServiceLayer
+        from arcgis.layers import MapServiceLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.mapping._types.MapTable
+        >> arcgis.layers._types.MapTable
 
         print(ms_layer.properties.name)
         >> 'pipe_properties'

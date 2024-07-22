@@ -9,6 +9,7 @@ from arcgis.gis import (
     ViewLayerDefParameter,
 )
 from arcgis.gis._impl import SpatialRelationship, SpatialFilter
+from utils.decorators import integration_test
 
 
 __logger__ = logging.getLogger()
@@ -32,7 +33,11 @@ _fs_dict = {
     "geometryType": "esriGeometryPoint",
     "spatialReference": {"wkid": 102100, "latestWkid": 3857},
     "fields": [
-        {"name": "objectid", "alias": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "name": "objectid",
+            "alias": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "name": "requestid",
             "alias": "Service Request ID",
@@ -51,7 +56,12 @@ _fs_dict = {
             "type": "esriFieldTypeString",
             "length": 255,
         },
-        {"name": "name", "alias": "Name", "type": "esriFieldTypeString", "length": 150},
+        {
+            "name": "name",
+            "alias": "Name",
+            "type": "esriFieldTypeString",
+            "length": 150,
+        },
         {
             "name": "phone",
             "alias": "Phone Number",
@@ -134,21 +144,69 @@ _fs_dict = {
 }
 
 
+@integration_test
 class Test_ItemViewManagerAGOL(unittest.TestCase):
     """Tests the Item View Manager"""
 
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(profile='your_online_profile', verify_cert=False)
-        from arcgis.features import FeatureSet, FeatureLayerCollection, FeatureLayer
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
 
         fs = FeatureSet.from_dict(_fs_dict)
         sdf = fs.sdf
         cls._item = cls._gis.content.import_data(sdf)
+        cls._item2 = cls._gis.content.import_data(sdf)
         flc = FeatureLayerCollection.fromitem(cls._item)
         cls._view_item = flc.manager.create_view(
             name=f"test_view_{uuid.uuid4().hex[:5]}"
         )
+
+    def test_create_join_view(self):
+        """tests the create join view method"""
+        from arcgis.gis._impl._dataclasses._viewdc import JoinType
+
+        target = self._item
+        fl2 = self._item2.layers[0]
+        join_name = f"join_name1235_{uuid.uuid4().hex[:5]}"
+
+        target_join_field = ["status"]
+        join = fl2
+        join_fields = ["status"]
+        join_type = "LEFT"
+        include_geometry = True
+        vm = target.view_manager
+        view_item = vm.create_join_layer(
+            join_name=join_name,
+            target_join_fields=target_join_field,
+            join=join,
+            join_fields=join_fields,
+            join_type=JoinType.LEFT,
+            include_geometry=True,
+        )
+        assert isinstance(view_item, Item)
+
+    def test_create_view_query_fields(self):
+        """ """
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
+
+        flc = FeatureLayerCollection.fromitem(self._item)
+        mgr = flc.manager
+        oid_field = flc.layers[0].properties['objectIdField']
+        view_item = mgr.create_view(
+            name=f"test_view_{uuid.uuid4().hex[:5]}",
+            query=f"{oid_field} > 0",
+            visible_fields=["phone", "building", oid_field],
+        )
+        view_item.delete()
 
     def test_get_view_manager(self):
         """tests that the logic to get the ViewManger is correct"""
@@ -172,7 +230,16 @@ class Test_ItemViewManagerAGOL(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         assert all([v.delete() for v in cls._item.view_manager.list()])
+        item1_data = cls._item.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
+        item2_data = cls._item2.related_items(
+            rel_type="Service2Data", direction='forward'
+        )
         assert cls._item.delete()
+        assert cls._item2.delete()
+        [i.delete() for i in item1_data]
+        [i.delete() for i in item2_data]
         del cls._gis
 
 
@@ -182,7 +249,11 @@ class Test_ItemViewManagerEnterprise(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(profile='your_enterprise_profile', verify_cert=False)
-        from arcgis.features import FeatureSet, FeatureLayerCollection, FeatureLayer
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
 
         fs = FeatureSet.from_dict(_fs_dict)
         sdf = fs.sdf

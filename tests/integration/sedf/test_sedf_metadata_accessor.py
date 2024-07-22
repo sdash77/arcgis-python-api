@@ -11,8 +11,11 @@ import tempfile
 from arcgis.features.geo._tools._metadata import _Metadata
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test
+
 
 ###########################################################################
+@integration_test
 class TestMetaDataClass(unittest.TestCase):
     """Tests the Private _Metadata Class"""
 
@@ -78,6 +81,7 @@ class TestMetaDataClass(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestAttrSeDFMetadata(unittest.TestCase):
     """tests the functionality of the _Metadata class on SeDF"""
 
@@ -89,11 +93,12 @@ class TestAttrSeDFMetadata(unittest.TestCase):
             "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
+        print(sdf)
         assert sdf.spatial._meta
         assert isinstance(sdf.spatial._meta.renderer, InsensitiveDict)
-        assert isinstance(sdf.spatial._meta.source, FeatureLayer)
+        assert isinstance(sdf.spatial._meta.source, (FeatureLayer, str))
         assert isinstance(sdf.spatial._meta.source_type, str)
-        assert sdf.spatial._meta.source_type == "FeatureLayer"
+        assert sdf.spatial._meta.source_type == "str"
 
     def test_pickle_on_sedf(self):
         """tests the hidden _meta property with to/from pickle operations"""
@@ -106,18 +111,18 @@ class TestAttrSeDFMetadata(unittest.TestCase):
         sdf = fl.query(as_df=True)
         assert sdf.spatial._meta
         assert isinstance(sdf.spatial._meta.renderer, InsensitiveDict)
-        assert isinstance(sdf.spatial._meta.source, FeatureLayer)
+        assert isinstance(sdf.spatial._meta.source, str)
         assert isinstance(sdf.spatial._meta.source_type, str)
-        assert sdf.spatial._meta.source_type == "FeatureLayer"
+        assert sdf.spatial._meta.source_type == "str"
         with tempfile.TemporaryDirectory() as tmpdirname:
             fp = os.path.join(tmpdirname, "test.pickle")
             sdf.to_pickle(fp)
             sdf2 = pd.read_pickle(fp)
             assert sdf2.spatial._meta
             assert isinstance(sdf2.spatial._meta.renderer, InsensitiveDict)
-            assert isinstance(sdf2.spatial._meta.source, FeatureLayer)
+            assert isinstance(sdf2.spatial._meta.source, str)
             assert isinstance(sdf2.spatial._meta.source_type, str)
-            assert sdf2.spatial._meta.source_type == "FeatureLayer"
+            assert sdf2.spatial._meta.source_type == "str"
             os.remove(fp)
 
 

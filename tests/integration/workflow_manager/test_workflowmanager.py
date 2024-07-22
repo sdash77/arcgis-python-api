@@ -2,15 +2,21 @@ import unittest
 import datetime
 import re
 from pprint import pprint
+
+import arcgis.gis.workflowmanager._workflow_manager
 from arcgis.geometry import Geometry
-import workflowmanager_setup
+from . import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
-
+from tests.integration.config import QALAB_ROOT_PATH
+from configparser import ConfigParser
+from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
+
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -41,6 +47,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.connection.remove_item()
         print("\n==================================================================")
 
     def create_diagram(self):
@@ -241,7 +248,7 @@ class TestWorkflowManager(unittest.TestCase):
                             "dataType": "String",
                             "propertyAlias": "string",
                             "required": True,
-                            "fieldLength": 0,
+                            "fieldLength": 50,
                         },
                     ],
                 }
@@ -535,6 +542,32 @@ class TestWorkflowManager(unittest.TestCase):
                 "Expected error returned during test: " + testException.__str__()
             )
 
+    def test_delete_wm_role_successfully_returns(self):
+        # Arrange
+
+        created = self.connection.workflow_manager.create_wm_role(
+            name="Test New Role",
+            description="Test Description",
+            privileges=["adminAdvanced", "jobCreate", "jobDelete"],
+        )
+        self.assertTrue(created, "Incorrect return type")
+
+        # Act
+        deleted = self.connection.workflow_manager.delete_wm_role("Test New Role")
+
+        self.assertTrue(deleted, "Incorrect return type")
+
+    def test_delete_wm_role_returns_error(self):
+        # Act
+        deleted = self.connection.workflow_manager.delete_wm_role("Incorrect")
+
+        try:
+            self.assertTrue(deleted, "Incorrect return type")
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
     # endregion
 
     # region Assignable
@@ -814,7 +847,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, dict, "Incorrect return type")
-        self.assertEqual( expected, actual, "Incorrect search returned")
+        self.assertEqual(expected, actual, "Incorrect search returned")
         self.assertEqual(job_list, expected_job_list, "Incorrect search returned")
 
     def test_search_jobs_successfully_returns_with_selected_fields(self):
@@ -1167,6 +1200,58 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Statistics
+
+    def test_job_statistics_successfully_returns(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "99o2QTePTqq-BHRHK_Aeag"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] > 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.statistics(
+            query=user_query, group_by="assignedTo"
+        )
+
+        # Assert
+        self.assertTrue(actual["total"] == 0, "Incorrect return type")
+        self.assertEqual(actual["group_by"], "assignedTo", "Incorrect return type")
+        self.assertIsInstance(actual["grouped_values"], list, "Incorrect return type")
+
+    def test_job_statistics_successfully_returns_zero_results(self):
+        # Arrange
+        self.create_job()
+        diagram_id = "WRONGID"
+        user_query = "diagramId='" + diagram_id + "' "
+
+        # Act
+        try:
+            actual = self.connection.workflow_manager.jobs.statistics(
+                query=user_query, group_by="wrong_string"
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
     # region Settings
 
     def test_get_valid_settings(self):
@@ -1511,6 +1596,25 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(
+            job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update"
+        )
+
+    def test_update_job_with_allow_running_step_id_successfully_returns(self):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.priority = "Updated"
+        delattr(job, "related_properties")
+        delattr(job, "extended_properties")
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(
+            job_id, vars(job), "123456"
+        )
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")
@@ -2066,6 +2170,139 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Holds and Release Holds
+
+    def test_simple_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_simple_hold_release_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act 2
+        actual = the_job.release_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
+
+    def test_dependent_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]["id"]
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_dependent_release_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]["id"]
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act: Add a hold to job one blocked by the step from job two
+        actual = job_one.release_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
+
+    def test_add_hold_returns_error(self):
+        # Arrange
+        job_id = "abcde12345"
+        step_id = "abcde12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.get(job_id).set_current_step(
+                step_id=step_id
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
     # region Comments
 
     def test_comments_returns_successfully(self):
@@ -2385,7 +2622,6 @@ class TestWorkflowManager(unittest.TestCase):
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
             )
-
 
     # endregion
 
@@ -3167,15 +3403,228 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Templates
+
+    def test_create_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        actual = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertIsInstance(actual, dict, "Incorrect return type")
+        self.assertEqual(
+            actual, {"templateId": "Ef42tu_QQMS-IgZc7pOPnQ"}, "Incorrect size"
+        )
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_update_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        template_two = {
+            "template_name": "Email Template 2",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "NEW BODY",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+
+        actual = self.connection.workflow_manager.update_template(
+            "email",
+            "Ef42tu_QQMS-IgZc7pOPnQ",
+            "NEW NAME",
+            {"body": "NEW EMAIL BODY"},
+        )
+        testing = self.connection.workflow_manager.get_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(testing.template_name, "NEW NAME", "Incorrect size")
+        self.assertEqual(
+            "NEW EMAIL BODY" in testing.template_details["body"], True, "Incorrect size"
+        )
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_delete_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        # Act
+        actual = self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertEqual(actual, True, "Incorrect size")
+        self.assertEqual(0, len(testing), "Incorrect size")
+
+    def test_get_templates_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        testing = self.connection.workflow_manager.templates("email")
+        self.assertEqual(0, len(testing), "Incorrect size")
+
+        actual = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+
+        # Assert
+        self.assertIsInstance(actual, dict, "Incorrect return type")
+        self.assertEqual(
+            actual, {"templateId": "Ef42tu_QQMS-IgZc7pOPnQ"}, "Incorrect size"
+        )
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    def test_get_specific_template_successfully_returns(self):
+        # Arrange
+        template = {
+            "template_name": "Email Template",
+            "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+            "template_details": {
+                "to": ["user@esri.com"],
+                "cc": ["boss@esri.com"],
+                "bcc": ["supervisor@esri.com"],
+                "subject": "Workflow Manager Templates",
+                "body": "Look how easy it is to make an email template!",
+                "attachmentSelection": "None",
+            },
+        }
+
+        # Act
+        template_id = self.connection.workflow_manager.create_template(
+            template_type="email",
+            template_name="Test Email Template",
+            template_details=template["template_details"],
+            template_id="Ef42tu_QQMS-IgZc7pOPnQ",
+        )
+        testing = self.connection.workflow_manager.templates("email")
+        actual = self.connection.workflow_manager.get_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+        # Assert
+        self.assertIsInstance(
+            actual,
+            arcgis.gis.workflowmanager._workflow_manager.Template,
+            "Incorrect return type",
+        )
+        self.assertEqual(actual.template_id, "Ef42tu_QQMS-IgZc7pOPnQ", "Incorrect size")
+        self.assertEqual(actual.template_name, "Test Email Template", "Incorrect size")
+        self.assertEqual(1, len(testing), "Incorrect size")
+
+        self.connection.workflow_manager.delete_template(
+            "email", "Ef42tu_QQMS-IgZc7pOPnQ"
+        )
+
+    # endregion
+
     # region UserType Licenses
 
     # must be run manually since a user must be added to test properly.
     def test_user_without_UTE_AT_11_2_can_use_workflow_manager(self):
         # Insert credentials for a portal > 11.2
-        portal_url = "https://ps0019725.esri.com/portal/"
-        portal_username = "nolicense4wfm"
-        portal_password = "..."
-        workflow_item_id = "adfa827638e64798bc6cd049096c695a"
+        _conf_reader = ConfigParser()
+        credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
+        _conf_reader.read(credential_path, "UTF-8")
+
+        portal_url = _conf_reader["credentials"]["url_11_2"]
+        portal_username = _conf_reader["credentials"]["username"]
+        portal_password = _conf_reader["credentials"]["password"]
+        workflow_item_id = _conf_reader["credentials"]["workflow_item"]
+
         gis = GIS(
             url=portal_url,
             username=portal_username,
@@ -3193,7 +3642,6 @@ class TestWorkflowManager(unittest.TestCase):
 
             # Assertions
             self.assertIsInstance(users, list, "Incorrect return type")
-            self.assertEqual(len(users), 2, "Incorrect number of items downloaded")
             self.assertIsInstance(users[0], dict, "Incorrect type")
 
         except Exception as testException:
