@@ -2259,7 +2259,7 @@ class DatastoreManager(object):
         :class:`datastores <arcgis.gis.Datastore>`, and an instance of the
         :class:`~arcgis.gis.DatastoreManager` for each server is returned by
         the respective `get_datastores()` function:
-          * GeoAnalytics Server: :meth:`~arcgis.geoanalytics.get_datastores`
+
           * Raster Analytics Server: :meth:`~arcgis.raster.analytics.get_datastores`
     """
 
@@ -2341,7 +2341,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
+            >>> arcgis.raster.analytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
         """
         conn_type = "shared"
         if client_path is not None:
@@ -2400,7 +2400,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_bigdata("name")
+            >>> arcgis.raster.analytics.get_datastores.add_bigdata("name")
         """
         output = None
         path = self._admin_url + "/data/registerItem"
@@ -2482,7 +2482,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
+            >>> arcgis.raster.analytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
 
         """
         if folder is not None:
@@ -2554,7 +2554,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
+            >>> arcgis.raster.analytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2650,7 +2650,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
+            >>> arcgis.raster.analytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2715,7 +2715,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_databse("name", "connection_info")
+            >>> arcgis.raster.analytics.get_datastores.add_databse("name", "connection_info")
         """
 
         item = {
@@ -2769,7 +2769,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add("name", {})
+            >>> arcgis.raster.analytics.get_datastores.add("name", {})
 
         """
         params = {"f": "json"}
@@ -2843,7 +2843,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.search(parentPath= "parent_path",
+            >>> arcgis.raster.analytics.get_datastores.search(parentPath= "parent_path",
             ancestorPath= "ancestor_path", id="id")
         """
         params = {
@@ -13256,19 +13256,10 @@ class Item(dict):
         )
 
     def _populate_layers(self):
-        from arcgis.features import (
-            FeatureLayer,
-            FeatureCollection,
-            FeatureLayerCollection,
-            Table,
-        )
-        from arcgis.layers import (
-            VectorTileLayer,
-            MapImageLayer,
-            SceneLayer,
-        )
-        from arcgis.network import NetworkDataset
+        from ..layers import Service
         from arcgis.raster import ImageryLayer
+        from arcgis.features import FeatureCollection
+        from arcgis.network import NetworkDataset
 
         if self._has_layers():
             layers = []
@@ -13300,10 +13291,10 @@ class Item(dict):
                 serviceinfo = self._portal.con.post(self.url, params)
                 for lyr in serviceinfo["children"]:
                     lyrurl = self.url + "/" + lyr["name"]
-                    layers.append(Layer(lyrurl, self._gis))
+                    layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(VectorTileLayer(self.url, self._gis))
+                layers.append(Service(self.url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13320,9 +13311,9 @@ class Item(dict):
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
-                    svc = FeatureLayerCollection.fromitem(self)
+                    svc = Service(self, self._gis)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
                         if (
@@ -13341,26 +13332,27 @@ class Item(dict):
                         tables.append(tbl)
 
             elif self.type == "Map Service":
-                svc = MapImageLayer.fromitem(self)
+                svc = Service(self, self._gis)
                 for lyr in svc.layers:
                     layers.append(lyr)
+                tables.extend(svc.tables)
             else:
                 m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
-                    layers.append(FeatureLayer(self.url, self._gis))
+                    layers.append(Service(self.url, self._gis))
                 else:
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + "/layers/" + str(lyr.id)
-                            lyr = SceneLayer(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis)
                         else:
                             lyr_url = svc.url + "/" + str(lyr.id)
                             lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:
-                            lyr = Table(svc.url + "/" + str(lyr.id), self._gis)
+                            lyr = Service(svc.url + "/" + str(lyr.id), self._gis)
                             tables.append(lyr)
                     except Exception:
                         pass
@@ -14166,7 +14158,7 @@ class Item(dict):
                 del lyr["layerType"]
                 layers.append(lyr)
             for lyr in mapjson["operationalLayers"]:
-                flyr = Service(url=lyr["url"], server=self._gis._con)
+                flyr = Service(url_or_item=lyr["url"], server=self._gis)
                 if container is None and isinstance(flyr, FeatureLayer):
                     container = FeatureLayerCollection(
                         url=os.path.dirname(flyr._url), gis=self._gis
@@ -14584,7 +14576,7 @@ class Item(dict):
                         </a>
                         <br/>"""
             + snippet
-            + """<img src='"""
+            + """<br/><img src='"""
             + self._get_icon()
             + """' style="vertical-align:middle;" width=16 height=16>"""
             + self._ux_item_type()
@@ -18687,7 +18679,7 @@ class Layer(_GISResource):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": type(self).__name__, "url": url}
