@@ -11089,11 +11089,11 @@ class User(dict):
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
 
-    def __getattr__(
-        self, name
-    ):  # support user attributes as user.access, user.email, user.role etc
+    def __getattr__(self, name):
         if not self._hydrated and not name.startswith("_"):
             self._hydrate()
+        if name.startswith("_ipython_"):
+            return None  # Skip IPython-specific attributes
         try:
             return dict.__getitem__(self, name)
         except AttributeError:
