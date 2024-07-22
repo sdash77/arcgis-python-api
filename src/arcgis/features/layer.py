@@ -5490,6 +5490,8 @@ class FeatureLayerCollection(_GISResource):
                 dl_url = res["resultUrl"]
             elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
+            elif "URL" in res:
+                dl_url = res["URL"]
 
             if dl_url is not None:
                 download_url = self._con.get(
