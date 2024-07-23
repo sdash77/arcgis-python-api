@@ -1434,6 +1434,7 @@ class Survey:
 
         tmpdir = tempfile.TemporaryDirectory()
         tmp_name = tmpdir.name
+        connect_version = _get_version()
         # Identify if publishing a new survey or re-publishing an existing survey.
         if "Draft" in self._si.typeKeywords:
             if xlsform is None:
@@ -1457,6 +1458,31 @@ class Survey:
                 forminfo.write(
                     json.dumps({"name": self._si.title, "type": "xform"}, indent=4)
                 )
+            # Create itemInfo file
+            with open(
+                os.path.join(directory, f"{self._si.title}.itemInfo"), "w"
+            ) as forminfo:
+                forminfo.write(
+                    json.dumps(
+                        {
+                            "access": "private",
+                            "id": self._si.id,
+                            "isOrgItem": True,
+                            "created": int(time.time()),
+                            "modified": int(time.time()),
+                            "name": f"{self._si.id}.zip",
+                            "orgId": self._gis.properties.id,
+                            "owner": self._gis.users.me.username,
+                            "ownerFolder": self._si.ownerFolder,
+                            "properties": {"connectVersion": connect_version},
+                            "type": "Form",
+                            "typeKeywords": [
+                                "xForm, Form, Survey123, Survey123 Connect"
+                            ],
+                        },
+                        indent=4,
+                    )
+                )
         else:
             # Since this is a re-publish of an existing survey we work with the current state of the form item.
             initial_publish = False
@@ -1465,7 +1491,6 @@ class Survey:
             os.remove(form_zip)
             directory = os.path.join(tmp_name, self._si.id, "esriinfo")
 
-        connect_version = _get_version()
         # Copy all files from a user supplied media folder
         if media:
             clear_media = False
@@ -1595,8 +1620,7 @@ class Survey:
             # Check for duplicate geometry in the same layer, can only have one geometry per layer.
             duplicate = _duplicate_geometry(xform)
             if duplicate is not None:
-                print(duplicate)
-                exit()
+                raise RuntimeError(duplicate)
 
             # Generate webform file if desired
             if create_web_form is True:
@@ -1882,6 +1906,7 @@ class Survey:
                 for x in self._si.related_items("Survey2Service", direction="forward")
                 + self._si.related_items("Survey2Data", direction="forward")
             ]
+        tmpdir.cleanup()
         shutil.rmtree(tmp_name, ignore_errors=True)
         return Survey(item=self._gis.content.get(self._si.id), sm=self._sm)
 

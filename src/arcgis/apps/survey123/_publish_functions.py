@@ -465,7 +465,7 @@ def _modify_schema(
             ]
             [
                 error_reciept[f"{layer} Errors"]["Geometry Errors"].append(
-                    f"Incompatible geometry types: {x['xmlgeometry']['geometryType']} set in the survey does not match {x['servicegeometry']['geometryType']} in the {x['xmllayer']} layer."
+                    f"Incompatible geometry types: {x['xmlgeometry']['geometryType']} set in the survey does not match {x['servicegeometry']['geometryType']} in the {layer} layer."
                 )
                 for x in deltas[layer]["geometry"]
                 if "servicegeometry" in list(x.keys())
@@ -700,6 +700,7 @@ def _id_relationships(service, layer):
         for relationship in parent_layer.properties["relationships"]:
             if relationship["keyField"] not in keyfield:
                 keyfield.append(relationship["keyField"])
+            role = relationship["role"]
         if len(keyfield) > 1:
             return False
         else:
@@ -708,11 +709,13 @@ def _id_relationships(service, layer):
                 for x in parent_layer.properties["fields"]
                 if x["name"] == keyfield[0]
             ][0]
-            if keyfield_type == "esriFieldTypeGlobalID":
+            if role != "esriRelRoleDestination":
+                if keyfield_type == "esriFieldTypeGlobalID":
+                    return False
+                elif keyfield_type == "esriFieldTypeGUID":
+                    return True
+            else:
                 return False
-            elif keyfield_type == "esriFieldTypeGUID":
-                return True
-
     else:
         return False
 
@@ -903,7 +906,7 @@ def _xml2sd(xmldict, useGUID):
 
                 sd["layers"].append(pointjson)
 
-            elif xmldict[layer]["geometryType"] == "esriGeometryLine":
+            elif xmldict[layer]["geometryType"] == "esriGeometryPolyline":
                 """line"""
                 linejson = {
                     "allowGeometryUpdates": True,
@@ -1514,7 +1517,7 @@ def _append_fields(node, ns_dict, new_dict, parent, model, create_domain, use_GU
                 new_dict[parent].update({"hasZ": True})
             new_dict[parent].update({"geometryType": "esriGeometryPoint"})
         elif ns_dict[node.attrib["ref"]]["type"] == "geotrace":
-            new_dict[parent].update({"geometryType": "esriGeometryLine"})
+            new_dict[parent].update({"geometryType": "esriGeometryPolyline"})
         elif ns_dict[node.attrib["ref"]]["type"] == "geoshape":
             new_dict[parent].update({"geometryType": "esriGeometryPolygon"})
         else:
@@ -1622,30 +1625,53 @@ def _append_fields(node, ns_dict, new_dict, parent, model, create_domain, use_GU
 # =============================================================================================================
 
 
-def _gen_schema(body, parent, ns_dict, model, create_domain, use_GUID, old_parent=None):
+def _gen_schema(
+    body,
+    parent,
+    ns_dict,
+    model,
+    create_domain,
+    use_GUID,
+    old_parent=None,
+    existing_schema={},
+):
     """Generates a dictionary of all layers and fields in the XForm"""
+    if len(existing_schema) > 0:
+        oid_field = [
+            x
+            for x in existing_schema[parent]["fields"]
+            if x["type"] == "esriFieldTypeOID"
+        ][0]
+        globalid_field = [
+            x
+            for x in existing_schema[parent]["fields"]
+            if x["type"] == "esriFieldTypeGlobalID"
+        ][0]
+    else:
+        oid_field = {
+            "name": "objectid",
+            "type": "esriFieldTypeOID",
+            "alias": "ObjectID",
+            "nullable": False,
+            "editable": False,
+            "domain": None,
+            "defaultValue": None,
+        }
+        globalid_field = {
+            "name": "globalid",
+            "type": "esriFieldTypeGlobalID",
+            "alias": "GlobalID",
+            "length": 38,
+            "nullable": False,
+            "editable": False,
+            "domain": None,
+            "defaultValue": None,
+        }
     new_dict = {
         parent: {
             "fields": [
-                {
-                    "name": "objectid",
-                    "type": "esriFieldTypeOID",
-                    "alias": "ObjectID",
-                    "nullable": False,
-                    "editable": False,
-                    "domain": None,
-                    "defaultValue": None,
-                },
-                {
-                    "name": "globalid",
-                    "type": "esriFieldTypeGlobalID",
-                    "alias": "GlobalID",
-                    "length": 38,
-                    "nullable": False,
-                    "editable": False,
-                    "domain": None,
-                    "defaultValue": None,
-                },
+                oid_field,
+                globalid_field,
             ],
             "relationships": [],
         }
@@ -1840,7 +1866,14 @@ def _xmlschema(
             ]
 
     schema = _gen_schema(
-        body, parent, ns_dict, full_model, create_domains, use_GUID, old_parent=None
+        body,
+        parent,
+        ns_dict,
+        full_model,
+        create_domains,
+        use_GUID,
+        old_parent=None,
+        existing_schema=existing_schema,
     )
 
     # Append hidden questions
