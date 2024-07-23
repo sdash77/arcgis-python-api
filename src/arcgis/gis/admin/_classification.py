@@ -26,6 +26,14 @@ class ClassificationManager:
         self.session = gis.session
 
     # ---------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Classification Manager @ {self.url} >"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"< Classification Manager @ {self.url} >"
+
+    # ---------------------------------------------------------------------
     @property
     def properties(self) -> dict[str, Any]:
         if self._properties is None:
