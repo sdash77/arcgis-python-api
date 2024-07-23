@@ -1855,6 +1855,7 @@ class GroupMigrationManager(object):
         overwrite=False,
         folder_id=None,
         folder_owner=None,
+        keep_package_item_after_import: bool | None = None,
     ):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
@@ -1875,6 +1876,10 @@ class GroupMigrationManager(object):
                 "folderOwnerUsername": "",
                 "token": self._con.token,
             }
+            if keep_package_item_after_import in [True, False]:
+                params["keepPackageItemAfterImport"] = json.dumps(
+                    keep_package_item_after_import
+                )
             if item_id_list:
                 params["itemIdList"] = item_id_list
             if overwrite is not None:
@@ -2041,6 +2046,7 @@ class GroupMigrationManager(object):
         future: bool = True,
         folder_id: Optional[str] = None,
         folder_owner: Optional[str] = None,
+        keep_items: bool | None = None,
     ):
         """
         The ``load`` method imports the contents of an *export package*
@@ -2087,6 +2093,11 @@ class GroupMigrationManager(object):
         ----------------  -------------------------------------------------------------------------------
         folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
                           folder owner.
+        ----------------  -------------------------------------------------------------------------------
+        keep_items        Optional Boolean. Introduced at 11.3. Specifies whether the export package
+                          item will be deleted after it's items have been imported. If true, the package
+                          will not be deleted and will remain as an item in the organization. By default,
+                          the package will be deleted (false).
         ================  ===============================================================================
 
         :return:
@@ -2141,6 +2152,7 @@ class GroupMigrationManager(object):
                 overwrite=overwrite,
                 folder_id=folder_id,
                 folder_owner=folder_owner,
+                keep_package_item_after_import=keep_items,
             )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
