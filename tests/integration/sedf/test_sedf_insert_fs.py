@@ -2185,7 +2185,7 @@ tbl_data = [
     },
 ]
 
-@profiles.agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestSeDFInsert(unittest.TestCase):
     """tests the insert_layer on the SeDF when creating a feature layer"""
@@ -2222,8 +2222,7 @@ class TestSeDFInsert(unittest.TestCase):
             assert num_layers + 1 == len(updated_item.layers)
             assert len(updated_item.layers[1].query().features) == 7
         except Exception as e:
-            print(e)
-            pass
+            print(str(e))
         finally:
             # clean up
             if polygon_item:
