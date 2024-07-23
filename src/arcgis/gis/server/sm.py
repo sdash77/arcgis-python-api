@@ -276,8 +276,8 @@ class ServerManager(object):
         ------------------     --------------------------------------------------------------------
         function               Optional string. The specific function associated with this server. Provide a
                                comma-separated list of values, but it is not recommend that a single
-                               server have all the server functions. The allowed values are GeoAnalytics,
-                               RasterAnalytics, and ImageHosting.
+                               server have all the server functions. The allowed values are
+                               RasterAnalytics and ImageHosting.
         ==================     ====================================================================
 
 
@@ -292,7 +292,6 @@ class ServerManager(object):
             "HOSTING_SERVER",
         ]
         functions = {
-            "geoanalytics": "GeoAnalytics",
             "rasteranalytics": "RasterAnalytics",
             "imagehosting": "ImageHosting",
             "none": None,

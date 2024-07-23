@@ -5,9 +5,16 @@ Generates Layer Types from the given inputs.
 
 from __future__ import absolute_import
 import os
+from arcgis.auth.tools import LazyLoader
+
 from urllib.parse import urlparse
 from arcgis.gis import GIS
-from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.features.layer import (
+    FeatureLayer,
+    FeatureLayerCollection,
+    OrientedImageryLayer,
+    Table,
+)
 from arcgis.geocoding import Geocoder
 from arcgis.geoprocessing._tool import Toolbox
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
@@ -21,6 +28,185 @@ from arcgis.schematics import SchematicLayers
 from arcgis.layers._scenelyrs import SceneLayer
 from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
+import requests
+
+_arcgis = LazyLoader("arcgis")
+
+
+###########################################################################
+class _DataServiceUrlFactory(type):
+    """
+    A factory that handles URLs that endwith /data.  This would normally be Item
+    urls where the Item type is not known coming from the webmap.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /data
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    """
+
+    def __call__(cls, url, gis=None):
+        if hasattr(url, "url") and getattr(url, "url"):
+            #  item object is given for some reason
+            url = url.url
+        if url.lower().endswith("/data"):
+            item_url: str = url.replace("/data", "")
+            resp: requests.Response = gis.session.get(
+                item_url,
+                params={
+                    "f": "json",
+                },
+            )
+            data: dict = resp.json()
+            if data["type"] in ["KML", "KML Collection"]:
+                from .._ogc import KMLLayer
+
+                return KMLLayer(url=url, gis=gis)
+            elif data["type"] in ["GeoJSON", "GeoJson"]:
+                from .._ogc import GeoJSONLayer
+
+                return GeoJSONLayer(url=url, gis=gis)
+            elif data["type"] == "CSV":
+                from .._ogc import CSVLayer
+
+                return CSVLayer(url_or_item=url, gis=gis)
+        else:
+            raise ValueError("Invalid URL. The URL for this factory must end in /data")
+
+
+###########################################################################
+class DataServiceLayer(Layer, metaclass=_DataServiceUrlFactory):
+    """
+    The ``SceneLayer`` class represents a Web scene layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+
+    .. note::
+        Web scene layers can be used to represent 3D points, point clouds, 3D objects and
+        integrated mesh layers.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.layers import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.layers._types.PointCloudLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url: str, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super().__init__(url=url, gis=gis)
+
+
+###########################################################################
+class _FeatureServiceLayerFactory(type):
+    """
+    Factory that generates the Scene Layers
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /FeatureServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.layers import SceneLayer
+        s_layer = FeatureServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/FeatureServer')
+
+        type(s_layer)
+        >> arcgis.layers._types.PointCloudLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __call__(cls, url, gis=None):
+        lyr = Layer(url=url, gis=gis)
+        props = lyr.properties
+        if props["type"] in ["Feature Layer", "Catalog Layer"]:
+            return FeatureLayer(url, gis=gis)
+        elif props["type"] == "Oriented Imagery Layer":
+            return OrientedImageryLayer(url, gis=gis)
+        elif props["type"] == "Table":
+            return Table(url, gis=gis)
+
+        return lyr
+
+
+###########################################################################
+class FeatureServiceLayer(Layer, metaclass=_FeatureServiceLayerFactory):
+    """
+    The ``SceneLayer`` class represents a Web scene layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+
+    .. note::
+        Web scene layers can be used to represent 3D points, point clouds, 3D objects and
+        integrated mesh layers.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.layers import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.layers._types.PointCloudLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url: str, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(SceneLayer, self).__init__(url, gis)
+
+
+def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
+    url: str = f"{gis.resturl}content/items/{itemid}"
+    return gis.session.get(url, params={"f": "json"}).json(), url
 
 
 class ServiceFactory(type):
@@ -29,20 +215,55 @@ class ServiceFactory(type):
     JSON (dictionary or iterable)
     """
 
-    def __call__(cls, url=None, item=None, server=None, initialize=False):
+    def __call__(
+        cls,
+        url_or_item: _arcgis.gis.Item | str = None,
+        server=None,
+        initialize=False,
+    ):
         """generates the proper type of layer from a given url"""
         from ...gis.server import ServicesDirectory
 
+        url: str
+
+        if server is None:
+
+            server = _arcgis.env.active_gis
         hasLayer = False
-        if url is None and item is None:
+        if isinstance(url_or_item, _arcgis.gis.Item):
+            url = url_or_item.url
+            if url in [None, ""]:
+                props: dict
+                item_url: str
+                props, item_url = _item_properties(url_or_item.id, gis=server)
+                if props["type"] in [
+                    "KML",
+                    "KML Collection",
+                    "CSV",
+                    "GeoJSON",
+                    "GeoJson",
+                ]:
+                    if item_url.endswith("/data") == False:
+
+                        url = item_url + "/data"
+                    else:
+                        url = item_url
+                else:
+                    raise Exception("Invalid item type")
+
+        elif isinstance(url_or_item, str):
+            url = url_or_item
+        else:
+
             raise ValueError("A URL to the service or an arcgis.Item is required.")
-        elif url is None and item is not None:
-            url = item.url
 
         if isinstance(server, Connection) or hasattr(server, "token"):
             connection = server
-        elif isinstance(server, (GIS, ServicesDirectory)):
+
+        elif isinstance(server, (ServicesDirectory)):
             connection = server._con
+        elif isinstance(server, GIS):
+            ...
         else:
             try:
                 parsed = urlparse(url)
@@ -73,13 +294,15 @@ class ServiceFactory(type):
                 return MapImageLayer(url=url, gis=server)
         elif base_name.lower() == "featureserver":
             if hasLayer:
-                return FeatureLayer(url=url, gis=server)
+                return FeatureServiceLayer(url=url, gis=server)
             else:
                 return FeatureLayerCollection(url=url, gis=server)
         elif base_name.lower() == "imageserver":
             return ImageryLayer(url=url, gis=server)
         elif base_name.lower() == "gpserver":
-            from arcgis.geoprocessing import import_toolbox as _import_toolbox
+            from arcgis.geoprocessing import (
+                import_toolbox as _import_toolbox,
+            )
 
             res = _import_toolbox(url, server)
             return res
@@ -103,9 +326,27 @@ class ServiceFactory(type):
             return SchematicLayers(url=url, gis=server)
         elif base_name.lower() == "vectortileserver":
             return VectorTileLayer(url=url, gis=server)
+        elif base_name.find(".geojson") > -1:
+            from .._ogc import GeoJSONLayer
+
+            return GeoJSONLayer(url=url, gis=server)
+        elif base_name.find(".csv") > -1:
+            from .._ogc import CSVLayer
+
+            return CSVLayer(url_or_item=url, gis=server)
+        elif base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
+            from .._ogc import KMLLayer
+
+            return KMLLayer(url=url, gis=server)
+        elif base_name.lower() == "ogcfeatureserver":
+            from .._ogc._service import OGCFeatureService
+
+            return OGCFeatureService(url, gis=server)
+        elif base_name.lower() == "data":
+            return DataServiceLayer(url=url, gis=server)
         else:
             return Layer(url=url, gis=server)
-        return type.__call__(cls, url, connection, item, initialize)
+        return type.__call__(cls, url, server, initialize)
 
 
 ###########################################################################

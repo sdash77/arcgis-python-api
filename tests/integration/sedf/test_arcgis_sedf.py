@@ -101,7 +101,7 @@ if HAS_ARCPY:
         def test_with_geometry(self):
             """test with geometries"""
             for url in fs_urls:
-                fl = Service(url=url)
+                fl = Service(url_or_item=url)
                 oidname = [
                     fld['name']
                     for fld in fl.properties['fields']
@@ -124,7 +124,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_without_geometry(self):
             """table test"""
-            fl = Service(url=table_url)
+            fl = Service(url_or_item=table_url)
             oidname = [
                 fld.name
                 for fld in fl.properties.fields
@@ -173,7 +173,7 @@ if HAS_ARCPY:
             """test io.from_layer"""
 
             url = fs_urls[0]
-            sdf = pd.DataFrame.spatial.from_layer(layer=Service(url=url))
+            sdf = pd.DataFrame.spatial.from_layer(layer=Service(url_or_item=url))
             self.assertIsInstance(sdf, pd.DataFrame)
             self.assertTrue(_is_geoenabled(sdf))
 

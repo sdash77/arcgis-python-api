@@ -57,7 +57,6 @@ class _StoryMapDefinition(CloneNode):
             "typeKeywords",
             "extent",
             "url",
-            "properties",
         ]
         self.portal_item = portal_item
         self.folder = folder
@@ -85,14 +84,13 @@ class _StoryMapDefinition(CloneNode):
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             item_id = self.portal_item.itemid
         if self.folder:
-            folder = self.target.content.folder.get(self.folder, self.owner)
+            folder = self.target.content.folders.get(self.folder, self.owner)
         else:
-            folder = self.target.content.folder.get(owner=self.owner)
+            folder = self.target.content.folders.get(owner=self.owner)
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
         new_item = folder.add(
             item_properties=item_properties,
-            text=data,
             item_id=item_id,
         ).result()
         if self.portal_item.url:
@@ -328,13 +326,18 @@ class _StoryMapDefinition(CloneNode):
                     for k, v in webmap_mapper.items():
                         s_res = s_res.replace(k, v)
                     res = json.loads(s_res)
-                    tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-                    json.dump(res, tfile)
-                    tfile.seek(0)
-                    new_item.resources.update(
-                        file_name=resource["resource"],
-                        file=tfile.name,
-                    )
+                    with tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        suffix=".json",
+                        dir=tempfile.gettempdir(),
+                        delete=False,
+                    ) as tfile:
+                        json.dump(res, tfile)
+                        tfile.seek(0)
+                        new_item.resources.update(
+                            file_name=resource["resource"],
+                            file=tfile.name,
+                        )
             if new_item.url:
                 new_item.update(
                     {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
