@@ -30,7 +30,7 @@ class TestMFASecurityAuth(unittest.TestCase):
         cls.url = "https://devext.arcgis.com/sharing/rest"
         cls.username = "mfauser"
         cls.password = "esri.agp2"
-        cls.mfa_code = "QHM72ADVWBPIQHYT"
+        cls.mfa_code = "5BYTJTGFUPV7UT6C"
 
     def test_login_mfa(self):
         auth = EsriBuiltInAuth(
