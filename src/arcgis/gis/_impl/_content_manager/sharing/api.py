@@ -136,13 +136,17 @@ class SharingGroupManager:
             do_update = True
         if do_update:
             resp = self._sm._share(level=self._sm.sharing_level, groups=groups)
-            current_groups = [grp.id for grp in self.list()]
-            verify_groups: list[bool] = [
-                True if grp_id in current_groups else False
-                for grp_id in groups.split(",")
-            ]
+            if "results" in resp and not "error" in resp["results"][0]:
+                import time
 
-            return all(verify_groups)
+                time.sleep(1)
+                return group.id in [g.id for g in self.list()]
+            elif "error" in resp:
+                raise Exception(resp)
+            elif "results" in resp and "error" in resp["results"][0]:
+                raise Exception(resp)
+            else:
+                return False
         return False
 
     # ---------------------------------------------------------------------
