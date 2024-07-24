@@ -1928,6 +1928,50 @@ def generate_dem(
     context                Optional dictionary. Additional allowed point cloud generation parameter and DEM 
                            interpolation parameter can be assigned here.  
                            
+                           This dictionary can contain the following keys:
+
+                           - parallelProcessingFactor : Specifies the number or percentage of
+                             processes will be used for the analysis. The default value is 50% .
+                           
+                           - maxObjectSize : A search radium within surface objects, such as
+                             buildings and trees, will be identified. It's the linear size in map units.
+                           
+                           - groundSpacing : The ground spacing, in meters, at which the 3D points are generated.
+                           
+                           - minAngle : The value, in degrees, that defines the minimum
+                             intersection angle the stereo pair must meet.
+                           
+                           - maxAngle : The value, in degrees, that defines the maximum
+                             intersection angle the stereo pair must meet.
+                           
+                           - minOverlap : Specifies a minimum overlap threshold that is acceptable,
+                             which is a percentage of overlap between a pair of images. Image pairs
+                             with overlap areas smaller than this threshold will receive a score of 0
+                             for this criteria and will descend in the ordered list.
+                             The range of values is from 0 to 1.
+                           
+                           - maxOmegaPhiDif : Specifies the maximum threshold for the Omega/Phi
+                           difference between the image pair. The Omega and Phi values for the image
+                           pair are compared, and a difference greater than this threshold will receive
+                           a score of 0 and will descend in the ordered list.
+                           
+                           - maxGSDDif : Specifies the maximum allowable threshold for the ground sample
+                           distance (GSD) between two images in a pair. The resolution ration between the
+                           two images will be compared with the threshold value. Image pairs with a GSD
+                           greater than this threshold will receive a score of 0 and will descend in the ordered list.
+                           
+                           - numImagePairs : The number of pairs used to generate 3D points.
+                           
+                           - adjQualityThreshold : Specifies the minimum acceptable adjustment quality.
+                           The threshold value will be compared to the quality value stored within the
+                           stereo model. Image pairs with an adjustment quality less than the specified
+                           threshold will receive a score of 0 and will descend in the ordered list.
+                           The range of values for the threshold is between 0 and 1.
+                           
+                           - regenPointCloud : Regenerates the 3D point cloud when set to True.   
+                           
+                           - pointCloudFolder : The point cloud folder to use. This can be one of "DSM", "DTM", "LAS".
+                           
                            For Example:
 
                                 | Point cloud generation parameters -  
@@ -1940,7 +1984,8 @@ def generate_dem(
                                 | "maxGSDDif": 2, 
                                 | "numImagePairs": 2, 
                                 | "adjQualityThreshold": 0.2, 
-                                | "regenPointCloud": False 
+                                | "regenPointCloud": False,
+                                | "pointCloudFolder": "DSM"
                                 | } 
                                 | 
                                 | DEM interpolation parameters -  
