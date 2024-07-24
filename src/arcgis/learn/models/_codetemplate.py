@@ -264,8 +264,9 @@ class ArcGISObjectDetector:
                 border_img = resized_image[extra_padding_tytx:bottom_coords, extra_padding_tytx:bottom_coords]
 
             raster_pixels = np.moveaxis(border_img,-1,0)
-            pixelBlocks["raster_pixels"] = raster_pixels
-            polygon_list, scores, classes = self.tta_detect_objects(**pixelBlocks)
+            pixelBlocks_updated = {}
+            pixelBlocks_updated['raster_pixels'] = raster_pixels
+            polygon_list, scores, classes = self.tta_detect_objects(**pixelBlocks_updated)
 
             updated_tta_polygons = []
             if scale <= 1:
