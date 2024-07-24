@@ -141,15 +141,7 @@ class SharingGroupManager:
                 True if grp_id in current_groups else False
                 for grp_id in groups.split(",")
             ]
-            """
-            if (
-                "notSharedWith" in resp["results"][0]
-                and len(resp["results"][0]["notSharedWith"]) > 0
-            ):
-                # successfully sent the request, but the group was not shared with
-                return False
-            return True
-            """
+
             return all(verify_groups)
         return False
 
