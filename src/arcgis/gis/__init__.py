@@ -2046,7 +2046,7 @@ class GroupMigrationManager(object):
         future: bool = True,
         folder_id: Optional[str] = None,
         folder_owner: Optional[str] = None,
-        keep_items: bool | None = None,
+        keep_epk_item: bool | None = None,
     ):
         """
         The ``load`` method imports the contents of an *export package*
@@ -2094,7 +2094,7 @@ class GroupMigrationManager(object):
         folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
                           folder owner.
         ----------------  -------------------------------------------------------------------------------
-        keep_items        Optional Boolean. Introduced at 11.3. Specifies whether the export package
+        keep_epk_item     Optional Boolean. Introduced at 11.3. Specifies whether the export package
                           item will be deleted after it's items have been imported. If true, the package
                           will not be deleted and will remain as an item in the organization. By default,
                           the package will be deleted (false).
@@ -2152,7 +2152,7 @@ class GroupMigrationManager(object):
                 overwrite=overwrite,
                 folder_id=folder_id,
                 folder_owner=folder_owner,
-                keep_package_item_after_import=keep_items,
+                keep_package_item_after_import=keep_epk_item,
             )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
