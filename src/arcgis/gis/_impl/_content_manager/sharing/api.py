@@ -145,6 +145,8 @@ class SharingGroupManager:
                 raise Exception(resp)
             elif "results" in resp and "error" in resp["results"][0]:
                 raise Exception(resp)
+            elif "notSharedWith" in resp and not group.id in resp["notSharedWith"]:
+                return True
             else:
                 return False
         return False
@@ -295,8 +297,13 @@ class SharingManager:
         ======================  ========================================================
         """
         # if not in org use different url
-
-        if self._gis.users.get(self._item.owner, outside_org=False):
+        pop_items: bool = False
+        if self._item.owner != self._gis.users.me.username:
+            url: str = "{resturl}content/items/{itemid}/share".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
+            pop_items = True
+        elif self._gis.users.get(self._item.owner, outside_org=False):
             url: str = "{resturl}content/users/{owner}/shareItems".format(
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
@@ -304,6 +311,7 @@ class SharingManager:
             url: str = "{resturl}content/items/{itemid}/share".format(
                 resturl=self._gis._portal.resturl, itemid=self._item.itemid
             )
+            pop_items = True
 
         params: dict[str, Any] = {
             "f": "json",
@@ -335,6 +343,9 @@ class SharingManager:
             k: (json.dumps(v) if isinstance(v, bool) else v)
             for (k, v) in params.items()
         }
+        if pop_items:
+            params.pop("items", None)
+
         resp: requests.Response = self._session.post(url=url, data=params)
         resp.raise_for_status()
         self._item._hydrated = False
