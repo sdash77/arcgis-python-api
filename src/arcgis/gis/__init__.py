@@ -9775,11 +9775,11 @@ class Group(dict):
         except Exception as e:
             raise e
 
-    def __getattr__(
-        self, name
-    ):  # support group attributes as group.access, group.owner, group.phone etc
+    def __getattr__(self, name):
         if not self._hydrated and not name.startswith("_"):
             self._hydrate()
+        if name.startswith("_ipython_"):
+            return None  # Skip IPython-specific attributes
         try:
             return dict.__getitem__(self, name)
         except AttributeError:
@@ -10028,7 +10028,7 @@ class Group(dict):
             + str(owner)
             + """
                         <br/><b>Created</b>: """
-            + str(_dt.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
