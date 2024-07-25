@@ -3008,6 +3008,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = re.sub("\W+", "_", name)
                 name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
+                if self.folder:
+                    folder = self.target.content.folders.get(
+                        folder=self.folder, owner=self.owner
+                    )
+                else:
+                    folder = self.target.content.folders.get()
 
                 if export_113 and export_service:
                     serv_url = self.portal_item._gis.hosting_servers[0].url
@@ -3017,9 +3023,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     sd_res = pt.export_service(service_name = service_name, service_type = "FeatureServer", service_folder = folder_name, gis = self.portal_item._gis)
                     temp_dir = tempfile.mkdtemp()
                     temp_local = sd_res.download(temp_dir)
-                    rand_name = "".join(random.choices(string.ascii_letters, k=12))
-                    rand_temp = temp_local.split(".sd")[0] + "_" + rand_name + ".sd"
-                    os.rename(temp_local, rand_temp)
+                    dir_name, base_name = os.path.split(temp_local)
+                    unique_temp = os.path.join(dir_name, name + ".sd")
+                    os.rename(temp_local, unique_temp)
 
                     item_id = None
                     if (
@@ -3029,48 +3035,49 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         item_id = self.portal_item.itemid
                     
                     try:
-                        temp_name = self.portal_item.title
                         propus = {
                             "title": name,
                             "type": "Service Definition",
                             "url": self.target.url,
                         }
-                        service_item = self.target.content.add(
-                            item_properties=propus,
-                            data=rand_temp,
-                            folder=self.folder,
-                            owner=self.owner,
-                            item_id=item_id,
+
+                        job = folder.add(
+                            **{
+                                "item_properties": propus,
+                                "item_id": item_id,
+                                "file": unique_temp,
+                            }
                         )
+                        
+                        service_item = job.result()
                         if service_item is None:
                             raise RuntimeError("already exists")
-                        try:
-                            new_item = service_item.publish()
-                        except:
-                            name = self._get_unique_name(self.target, name, True)
-                            pub_params = {'name' : name}
-                            service_definition["name"] = name
-                            new_item = service_item.publish(pub_params)
+
+                        pub_params = {'name' : name}
+                        new_item = service_item.publish(pub_params, overwrite=True)
                         if new_item is None:
                             raise RuntimeError("already exists")
                         self.created_items.append(new_item)
                     except Exception as ex:
                         if "already exists" in str(ex):
                             name = self._get_unique_name(self.target, name, True)
-                            rand_name = "".join(random.choices(string.ascii_letters, k=12))
-                            rand_temp = temp_local.split(".sd")[0] + "_" + rand_name + ".sd"
-                            os.rename(temp_local, rand_temp)
+                            dir_name, base_name = os.path.split(unique_temp)
+                            unique_temp2 = os.path.join(dir_name, name + ".sd")
+                            os.rename(unique_temp, unique_temp2)
                             propus["title"] = name
                             service_definition["name"] = name
 
-                            service_item = self.target.content.add(
-                                item_properties=propus,
-                                data=rand_temp,
-                                folder=self.folder,
-                                owner=self.owner,
-                                item_id=item_id,
+                            job = folder.add(
+                                **{
+                                    "item_properties": propus,
+                                    "item_id": item_id,
+                                    "file": unique_temp2,
+                                }
                             )
-                            new_item = service_item.publish()
+                            
+                            service_item = job.result()
+                            pub_params = {'name' : name}
+                            new_item = service_item.publish(pub_params, overwrite=True)
                             self.created_items.append(new_item)
                         elif "managed database" in str(ex):
                             raise Exception(
@@ -3078,6 +3085,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             )
                         else:
                             raise
+                    item_properties = self._get_item_properties(self.item_extent)
 
                 elif export_service:
                     temp_export = self.portal_item.export(
@@ -3105,13 +3113,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             "type": "File Geodatabase",
                             "url": self.target.url,
                         }
-                        service_item = self.target.content.add(
-                            item_properties=propus,
-                            data=temp_zipped.filename,
-                            folder=self.folder,
-                            owner=self.owner,
-                            item_id=item_id,
+                        job = folder.add(
+                            **{
+                                "item_properties": propus,
+                                "item_id": item_id,
+                                "file": temp_zipped.filename,
+                            }
                         )
+                        
+                        service_item = job.result()
                         if service_item is None:
                             raise RuntimeError("already exists")
                         # new_item_name = self.portal_item.title
@@ -3127,13 +3137,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             propus["title"] = name
                             service_definition["name"] = name
 
-                            service_item = self.target.content.add(
-                                item_properties=propus,
-                                data=temp_zipped.filename,
-                                folder=self.folder,
-                                owner=self.owner,
-                                item_id=item_id,
+                            job = folder.add(
+                                **{
+                                    "item_properties": propus,
+                                    "item_id": item_id,
+                                    "file": temp_zipped.filename,
+                                }
                             )
+                            
+                            service_item = job.result()
                             # new_item_name = self.portal_item.title
                             # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
                             new_item = service_item.publish()
