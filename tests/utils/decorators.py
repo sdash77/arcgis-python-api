@@ -6,6 +6,7 @@ from .timeout_decorator import (
     timeout_class as _timeout_class,
 )
 from .classproperty import classproperty
+from ._common import environ_key_to_bool
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
@@ -13,12 +14,7 @@ from threading import TIMEOUT_MAX
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
-NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in (
-    "true",
-    "1",
-    "y",
-    "yes",
-)
+NO_TIMEOUT = environ_key_to_bool("ARCGIS_TEST_NO_TIMEOUT")
 
 DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else TIMEOUT_MAX
 EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else TIMEOUT_MAX
@@ -87,8 +83,9 @@ class credentials:
 
     If multiple credentials are injected, the test will be run once for each credential.
     """
+
     _avworld_username = "creator2"
-    _avworld_username_with_domain = fr"avworld\{_avworld_username}"
+    _avworld_username_with_domain = rf"avworld\{_avworld_username}"
     _avworld_password = "portalaccount1"
 
     _enterprise_credential_parameters = (
