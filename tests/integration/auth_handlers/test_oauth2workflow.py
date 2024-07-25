@@ -18,12 +18,13 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the manual workflow for the client_id only workflow
         """
+        sharing_api_url = f"{self.portal_url}/sharing/rest"
         client_oauth = EsriOAuth2Auth(
-            base_url=self.portal_url,
+            base_url=sharing_api_url,
             client_id=self.client_id,
         )
         with EsriSession(auth=client_oauth) as session:
-            resp = session.get(f"{self.portal_url}/portals/self?f=json")
+            resp = session.get(f"{sharing_api_url}/portals/self?f=json")
             data = resp.json()
             assert data["user"]
 
@@ -31,14 +32,14 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the client/secret workflow
         """
-
+        sharing_api_url = f"{self.portal_url}/sharing/rest"
         client_oauth = EsriOAuth2Auth(
-            base_url=self.portal_url,
+            base_url=sharing_api_url,
             client_id=self.client_id,
             client_secret=self.client_secret,
         )
         with EsriSession(auth=client_oauth) as session:
-            resp = session.get(f"{self.portal_url}/portals/self?f=json")
+            resp = session.get(f"{sharing_api_url}/portals/self?f=json")
             data = resp.json()
             assert data["appInfo"]["appOwner"]
 
@@ -46,15 +47,15 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the client + username/password provided workflow
         """
-
+        sharing_api_url = f"{self.portal_url}/sharing/rest"
         client_oauth = EsriOAuth2Auth(
-            base_url=self.portal_url,
+            base_url=sharing_api_url,
             client_id=self.client_id,
             username=self.username,
             password=self.password,
         )
         with EsriSession(auth=client_oauth) as session:
-            resp = session.get(f"{self.portal_url}/portals/self?f=json")
+            resp = session.get(f"{sharing_api_url}/portals/self?f=json")
             data = resp.json()
             assert data["appInfo"]["appOwner"]
 
@@ -62,15 +63,16 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the client/secret + username/password provided workflow
         """
+        sharing_api_url = f"{self.portal_url}/sharing/rest"
         client_oauth = EsriOAuth2Auth(
-            base_url=self.portal_url,
+            base_url=sharing_api_url,
             client_id=self.client_id,
             client_secret=self.client_secret,
             username=self.username,
             password=self.password,
         )
         with EsriSession(auth=client_oauth) as session:
-            resp = session.get(f"{self.portal_url}/portals/self?f=json")
+            resp = session.get(f"{sharing_api_url}/portals/self?f=json")
             data = resp.json()
             assert data["appInfo"]["appOwner"]
 
@@ -78,16 +80,16 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the refresh token operation
         """
-
+        sharing_api_url = f"{self.portal_url}/sharing/rest"
         client_oauth = EsriOAuth2Auth(
-            base_url=self.portal_url,
+            base_url=sharing_api_url,
             client_id=self.client_id,
             client_secret=self.client_secret,
             username=self.username,
             password=self.password,
         )
         with EsriSession(auth=client_oauth) as session:
-            resp = session.get(f"{self.portal_url}/sharing/rest/portals/self?f=json")
+            resp = session.get(f"{sharing_api_url}/portals/self?f=json")
             data = resp.json()
             assert data["appInfo"]["appOwner"]
             session.auth._token = None  # ensures refresh token case is fired off
