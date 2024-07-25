@@ -87,15 +87,18 @@ class credentials:
     _avworld_username = "creator2"
     _avworld_username_with_domain = rf"avworld\{_avworld_username}"
     _avworld_password = "portalaccount1"
+    _standard_enterprise_url = environ.get(
+        "STANDARD_ENTERPRISE_URL",
+        "https://pythonapitest.dev.geocloud.com/portal",
+    )
+    _standard_enterprise_username = environ.get("STANDARD_ENTERPRISE_USERNAME", "arcgis_python")
+    _standard_enterprise_password = environ.get("STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123")
 
     _enterprise_credential_parameters = (
         "enterprise",
-        environ.get(
-            "STANDARD_ENTERPRISE_URL",
-            "https://pythonapi.playground.esri.com/portal",
-        ),
-        environ.get("STANDARD_ENTERPRISE_USERNAME", "esri_requests"),
-        environ.get("STANDARD_ENTERPRISE_PASSWORD", "portalaccount1"),
+        _standard_enterprise_url,
+        _standard_enterprise_username,
+        _standard_enterprise_password,
     )
     _enterprise_pki_credential_parameters = (
         "enterprise_pki",
