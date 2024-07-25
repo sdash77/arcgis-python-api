@@ -4,6 +4,8 @@ import subprocess
 from subprocess import Popen, PIPE, STDOUT
 import logging
 
+TRUTHY_STRINGS_LOWER = {"y", "yes", "t", "true", "on", "1"}
+
 log = logging.getLogger("__main__")
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(
@@ -37,6 +39,27 @@ GEOSAURUS_PYTHON_EXEC = [
     '"' + sys.executable + '"',
 ]
 GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
+
+
+def environ_key_to_bool(environ_key: str):
+    """Returns True if the value of the environment variable by provided key is a truthy string"""
+    return environ_str_to_bool(os.environ.get(environ_key))
+
+
+def environ_str_to_bool(environ_str: str | bool | None):
+    """
+    Returns True if the string is a truthy string
+
+    >>> environ_str_to_bool("yes")
+    True
+    >>> environ_str_to_bool("no")
+    False
+    >>> environ_str_to_bool("1")
+    True
+    >>> environ_str_to_bool("0")
+    False
+    """
+    return str(environ_str).lower() in TRUTHY_STRINGS_LOWER
 
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
@@ -83,12 +106,14 @@ def setup_env():
     ]
     run_shell_command(" ".join(pip_install_cmd))
 
+
 def should_smoketest_arcgis_learn():
-    test_arcgis_learn = os.environ.get("TEST_ARCGIS_LEARN", "true")
-    return test_arcgis_learn.lower() in ["true", "yes", "1"]
+    return environ_key_to_bool("TEST_ARCGIS_LEARN")
+
 
 def should_allow_testing_against_packaged():
-    return os.environ.get("ALLOW_INSTALLED_ARCGIS", "false").lower() in ["true", "yes", "1"]
+    return environ_key_to_bool("ALLOW_INSTALLED_ARCGIS")
+
 
 def run_unittest_on(
     paths,
@@ -121,8 +146,9 @@ def run_unittest_on(
         """
         if output_coverage_dir:
             unittest_args += [
-                "--with-coverage", "--cover-html",
-                f"--cover-html-dir={output_coverage_dir}"
+                "--with-coverage",
+                "--cover-html",
+                f"--cover-html-dir={output_coverage_dir}",
             ]
         return unittest_args
 
