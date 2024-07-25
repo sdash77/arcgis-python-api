@@ -91,8 +91,12 @@ class credentials:
         "STANDARD_ENTERPRISE_URL",
         "https://pythonapitest.dev.geocloud.com/portal",
     )
-    _standard_enterprise_username = environ.get("STANDARD_ENTERPRISE_USERNAME", "arcgis_python")
-    _standard_enterprise_password = environ.get("STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123")
+    _standard_enterprise_username = environ.get(
+        "STANDARD_ENTERPRISE_USERNAME", "arcgis_python"
+    )
+    _standard_enterprise_password = environ.get(
+        "STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123"
+    )
 
     _enterprise_credential_parameters = (
         "enterprise",
@@ -175,6 +179,17 @@ class credentials:
             "AAPKddd59ccb5147417c89cc5a933c60cf51nGh5AkuWMHell2cLvgIjjRmrMRGLBqlKvpAnOPN6sHIOpc-SDkAuqTzW3vEvLkOP",
         ),
     )
+    _enterprise_oauth_credential_parameters = (
+        "enterprise_oauth",
+        _standard_enterprise_url,
+        _standard_enterprise_username,
+        _standard_enterprise_password,
+        None,
+        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "SUNKY9CZtx6bSGvH"),
+        environ.get(
+            "ENTERPRISE_OAUTH_CLIENT_SECRET", "e600165a5aa5476c8c879fc6bb3b17a7"
+        ),
+    )
 
     def _get_credentials_parameterized_class(*args):
         """Returns a parameterized class for the credentials parameters from provided args"""
@@ -184,6 +199,8 @@ class credentials:
             "username",
             "password",
             "cert",
+            "client_id",
+            "client_secret",
         )
         """Returns a parameterized class for the credentials parameters from provided args"""
         return parameterized_class(
@@ -259,6 +276,13 @@ class credentials:
         """
         return cls._get_credentials_parameterized_class(
             cls._agol_api_key_credential_parameters
+        )
+
+    @classproperty
+    def enterprise_oauth(cls):
+        """Run tests for enterprise oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_oauth_credential_parameters
         )
 
     @classproperty
