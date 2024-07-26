@@ -3211,7 +3211,7 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             token = self._token or self._con.token
             url += "?token=" + token
 

@@ -1855,6 +1855,7 @@ class GroupMigrationManager(object):
         overwrite=False,
         folder_id=None,
         folder_owner=None,
+        keep_package_item_after_import: bool | None = None,
     ):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
@@ -1875,6 +1876,10 @@ class GroupMigrationManager(object):
                 "folderOwnerUsername": "",
                 "token": self._con.token,
             }
+            if keep_package_item_after_import in [True, False]:
+                params["keepPackageItemAfterImport"] = json.dumps(
+                    keep_package_item_after_import
+                )
             if item_id_list:
                 params["itemIdList"] = item_id_list
             if overwrite is not None:
@@ -2041,6 +2046,7 @@ class GroupMigrationManager(object):
         future: bool = True,
         folder_id: Optional[str] = None,
         folder_owner: Optional[str] = None,
+        keep_epk_item: bool | None = None,
     ):
         """
         The ``load`` method imports the contents of an *export package*
@@ -2087,6 +2093,11 @@ class GroupMigrationManager(object):
         ----------------  -------------------------------------------------------------------------------
         folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
                           folder owner.
+        ----------------  -------------------------------------------------------------------------------
+        keep_epk_item     Optional Boolean. Introduced at 11.3. Specifies whether the export package
+                          item will be deleted after it's items have been imported. If true, the package
+                          will not be deleted and will remain as an item in the organization. By default,
+                          the package will be deleted (false).
         ================  ===============================================================================
 
         :return:
@@ -2141,6 +2152,7 @@ class GroupMigrationManager(object):
                 overwrite=overwrite,
                 folder_id=folder_id,
                 folder_owner=folder_owner,
+                keep_package_item_after_import=keep_epk_item,
             )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
@@ -2259,7 +2271,7 @@ class DatastoreManager(object):
         :class:`datastores <arcgis.gis.Datastore>`, and an instance of the
         :class:`~arcgis.gis.DatastoreManager` for each server is returned by
         the respective `get_datastores()` function:
-          * GeoAnalytics Server: :meth:`~arcgis.geoanalytics.get_datastores`
+
           * Raster Analytics Server: :meth:`~arcgis.raster.analytics.get_datastores`
     """
 
@@ -2341,7 +2353,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
+            >>> arcgis.raster.analytics.get_datastores.add_folder("fileshare name", "folder_path", "clienth_path")
         """
         conn_type = "shared"
         if client_path is not None:
@@ -2400,7 +2412,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_bigdata("name")
+            >>> arcgis.raster.analytics.get_datastores.add_bigdata("name")
         """
         output = None
         path = self._admin_url + "/data/registerItem"
@@ -2482,7 +2494,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
+            >>> arcgis.raster.analytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
 
         """
         if folder is not None:
@@ -2554,7 +2566,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
+            >>> arcgis.raster.analytics.get_datastores.add_ms_azure_storage("name", "key", "secret", "cont_name")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2650,7 +2662,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
+            >>> arcgis.raster.analytics.get_datastores.add_cloudstore("name", "connection_info", "path", "provider")
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2715,7 +2727,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add_databse("name", "connection_info")
+            >>> arcgis.raster.analytics.get_datastores.add_databse("name", "connection_info")
         """
 
         item = {
@@ -2769,7 +2781,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.add("name", {})
+            >>> arcgis.raster.analytics.get_datastores.add("name", {})
 
         """
         params = {"f": "json"}
@@ -2843,7 +2855,7 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.search(parentPath= "parent_path",
+            >>> arcgis.raster.analytics.get_datastores.search(parentPath= "parent_path",
             ancestorPath= "ancestor_path", id="id")
         """
         params = {
@@ -9775,11 +9787,11 @@ class Group(dict):
         except Exception as e:
             raise e
 
-    def __getattr__(
-        self, name
-    ):  # support group attributes as group.access, group.owner, group.phone etc
+    def __getattr__(self, name):
         if not self._hydrated and not name.startswith("_"):
             self._hydrate()
+        if name.startswith("_ipython_"):
+            return None  # Skip IPython-specific attributes
         try:
             return dict.__getitem__(self, name)
         except AttributeError:
@@ -10028,7 +10040,7 @@ class Group(dict):
             + str(owner)
             + """
                         <br/><b>Created</b>: """
-            + str(_dt.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(_dt.datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
             + """
 
                     </div>
@@ -11089,11 +11101,11 @@ class User(dict):
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
 
-    def __getattr__(
-        self, name
-    ):  # support user attributes as user.access, user.email, user.role etc
+    def __getattr__(self, name):
         if not self._hydrated and not name.startswith("_"):
             self._hydrate()
+        if name.startswith("_ipython_"):
+            return None  # Skip IPython-specific attributes
         try:
             return dict.__getitem__(self, name)
         except AttributeError:
@@ -14158,7 +14170,7 @@ class Item(dict):
                 del lyr["layerType"]
                 layers.append(lyr)
             for lyr in mapjson["operationalLayers"]:
-                flyr = Service(url=lyr["url"], server=self._gis._con)
+                flyr = Service(url_or_item=lyr["url"], server=self._gis)
                 if container is None and isinstance(flyr, FeatureLayer):
                     container = FeatureLayerCollection(
                         url=os.path.dirname(flyr._url), gis=self._gis
@@ -18679,7 +18691,7 @@ class Layer(_GISResource):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": type(self).__name__, "url": url}

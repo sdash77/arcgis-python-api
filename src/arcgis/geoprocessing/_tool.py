@@ -122,31 +122,54 @@ def _call_generator(fnname, spec):
         return self._execute(inputs)
 
     code = call.__code__
-
+    PY38 = sys.version_info[:2] == (3, 8) and sys.version_info[:2] < (3, 11)
+    PY311 = sys.version_info[:2] >= (3, 11)
     if hasattr(types.CodeType, "co_posonlyargcount"):  # pragma: no branch
         """
                rgcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
         |        flags, codestring, constants, names, varnames, filename, name,
         |        firstlineno, lnotab[, freevars[, cellvars]]
         """
-        new_code = types.CodeType(
-            len(spec) + 1,
-            0,
-            0,
-            len(spec) + 2,
-            code.co_stacksize,
-            code.co_flags,
-            code.co_code,
-            code.co_consts,
-            code.co_names,
-            varnames,
-            code.co_filename,
-            _camelCase_to_underscore(fnname),
-            code.co_firstlineno,
-            code.co_lnotab,
-            code.co_freevars,
-            cellvars=code.co_cellvars,
-        )
+        if PY38:
+            new_code = types.CodeType(
+                len(spec) + 1,
+                0,
+                0,
+                len(spec) + 2,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                varnames,
+                code.co_filename,
+                _camelCase_to_underscore(fnname),
+                code.co_firstlineno,
+                code.co_lnotab,
+                code.co_freevars,
+                cellvars=code.co_cellvars,
+            )
+        elif PY311:
+            new_code = types.CodeType(
+                len(spec) + 1,
+                code.co_posonlyargcount,
+                code.co_kwonlyargcount,
+                len(spec) + 1,
+                code.co_stacksize,
+                code.co_flags,
+                code.co_code,
+                code.co_consts,
+                code.co_names,
+                varnames,
+                code.co_filename,
+                _camelCase_to_underscore(fnname),
+                code.co_qualname,
+                code.co_firstlineno,
+                code.co_linetable,
+                code.co_exceptiontable,
+                code.co_cellvars,  # this is the trickery
+                (),
+            )
     else:
         new_code = types.CodeType(
             len(spec) + 1,
