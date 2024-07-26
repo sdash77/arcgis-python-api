@@ -1349,6 +1349,40 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def delete_wm_role(self, name: str):
+        """
+        Returns boolean indicating whether or not the role was deleted.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. Role Name
+        ===============     ====================================================================
+
+        :return:
+            Boolean
+
+        """
+        try:
+            url = "{base}/community/roles/{role}".format(
+                base=self._url, role=urllib.parse.quote(name), item=self._item.id
+            )
+            return_obj = json.loads(self._gis._con.delete(url, try_json=False))
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj:
+                return return_obj["success"]
+            elif "found" in return_obj:
+                return return_obj["found"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
     def job_template(self, id: str):
         """
         Returns a job template with the given ID
@@ -1987,6 +2021,271 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def templates(self, template_type):
+        """
+        Returns Templates by given type
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_type       Required string. The type of template stored in the workflow item.
+                            Get the email templates by entering 'email', the Web Request Templates by entering
+                            'webRequest', or, enter your own value to get the custom templates.
+        ===============     ====================================================================
+
+        :return:
+           Workflow Manager :class:`Template <arcgis.gis.workflowmanager.Template>` List
+
+        """
+        try:
+            template_list = self._gis._con.get(
+                f"{self._url}/templates/{template_type}"
+            )["templates"]
+
+            return [
+                self.get_template(template_type, template_dict["templateId"])
+                for template_dict in template_list
+            ]
+        except:
+            self._handle_error(sys.exc_info())
+
+    def get_template(self, template_type: str, template_id: str):
+        """
+        Returns a Template by the given type and id
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_type       Required string. The type of template stored in the workflow item.
+                            Get an email template by entering 'email', a Web Request Template by entering
+                            'webRequest', or enter your own value to get a custom template.
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. The id of the template to be retrieved
+        ===============     ====================================================================
+
+        :return:
+           Workflow Manager :class:`Template <arcgis.gis.workflowmanager.Template>` Object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Get a Template
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # get a template
+            wm.get_template(template_type="email", template_id="Ef42tu_QQMS-IgZc7pOPnQ")
+
+            >> { "template_name": "Email Template",
+                 "template_id": "Ef42tu_QQMS-IgZc7pOPnQ",
+                 "template_details": {"to":["user@esri.com"],
+                                      "cc":["boss@esri.com"],
+                                      "bcc":["supervisor@esri.com"],
+                                      "subject":"Workflow Manager Templates",
+                                      "body":"Look how easy it is to make an email template!",
+                                      "attachmentSelection":"None",
+                                      "attachmentFolder":null }
+               }
+        """
+        try:
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            template_dict = self._gis._con.get(url, {})
+            return Template(
+                template_dict["templateName"],
+                template_dict["templateId"],
+                template_dict["templateDetails"],
+                self._gis,
+                url,
+            )
+        except:
+            self._handle_error(sys.exc_info())
+
+    def delete_template(self, template_type: str, template_id: str):
+        """
+        Returns a boolean indicating whether or not the template has been deleted.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        template_type       Required string. The type of template stored in the workflow item.
+                            Delete an email template by entering 'email', a Web Request Template by entering
+                            'webRequest', or enter your own value to delete a custom template.
+        ---------------     --------------------------------------------------------------------
+        template_id         Required string. The id of the template to be deleted
+        ===============     ====================================================================
+
+        :return:
+           Boolean
+
+        """
+        try:
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            return_obj = json.loads(self._gis._con.delete(url, try_json=False))
+            if "error" in return_obj:
+                raise Exception(return_obj["error"].get("message"))
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    def update_template(
+        self,
+        template_type: str,
+        template_id: str,
+        template_name: str,
+        template_details: str,
+    ):
+        """
+        Returns a boolean indicating whether or not the template was updated.
+
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        template_type         Required string. The type of template stored in the workflow item.
+                              Update an email template by entering 'email', a Web Request Template by entering
+                              'webRequest', or enter your own value to update a custom template.
+        -----------------     --------------------------------------------------------------------
+        template_id           Required string. The id of the template to be updated
+        -----------------     --------------------------------------------------------------------
+        template_name         Required string. The new name to be given to the template
+        -----------------     --------------------------------------------------------------------
+        template_details      Required dict. The new information to be stored in the template
+        =================     ====================================================================
+
+        :return:
+           Boolean
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Update a Template
+
+            # update a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # update the template object
+            details = { "to":["user@esri.com"],
+                         "cc":["boss@esri.com"],
+                         "bcc":["supervisor@esri.com"],
+                         "subject": "Workflow Manager Templates",
+                         "body": "Look how easy it is to make an email template!",
+                         "attachmentSelection":"None" }
+
+            wm.update_template(template_type="email",
+                               template_id='Ef42tu_QQMS-IgZc7pOPnQ'
+                               template_name="Email Template",
+                               template_details=details)
+            >> True  # returns True if updated successfully
+        """
+        try:
+            details = self.get_template(template_type, template_id).template_details
+            details = {**details, **template_details}
+            details_str = json.dumps(details)
+            obj = {
+                "templateId": template_id,
+                "templateName": template_name,
+                "templateDetails": details_str,
+            }
+            url = f"{self._url}/templates/{template_type}/{template_id}"
+            return_obj = json.loads(
+                self._gis._con.put(
+                    url,
+                    obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+            if "error" in return_obj:
+                raise Exception(return_obj["error"].get("message"))
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return_obj = {
+                _camelCase_to_underscore(k): v
+                for k, v in return_obj.items()
+                if v is not None and not k.startswith("_")
+            }
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    def create_template(
+        self,
+        template_type: str,
+        template_name: str,
+        template_details: dict,
+        template_id: Optional[str] = None,
+    ):
+        """
+        Returns the newly created template id.
+
+        =================     ====================================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------------------------
+        template_type         Required string. The type of template stored in the workflow item.
+                              Create an email template by entering 'email', a Web Request Template by entering
+                              'webRequest', or enter your own value to define a custom template.
+        -----------------     --------------------------------------------------------------------
+        template_name         Required string. The new name to be given to the template
+        -----------------     --------------------------------------------------------------------
+        template_details      Required dict. The new information to be stored in the template
+        -----------------     --------------------------------------------------------------------
+        template_id           Optional string. The id of the template to be created
+        =================     ====================================================================
+
+        :return:
+           Workflow Manager :class:`Template <arcgis.gis.workflowmanager.Template>` ID
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Creating a Template
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # create the template object
+            details = { "to":["user@esri.com"],
+                         "cc":["boss@esri.com"],
+                         "bcc":["supervisor@esri.com"],
+                         "subject":"Workflow Manager Templates",
+                         "body":"Look how easy it is to make an email template!",
+                         "attachmentSelection":"None" }
+
+            wm.create_template(template_type="email", template_name="Email Template", template_details=details)
+            >> Ef42tu_QQMS-IgZc7pOPnQ  # returns Template ID if created successfully
+        """
+        try:
+            details_str = json.dumps(template_details)
+            obj = {
+                "templateName": template_name,
+                "templateDetails": details_str,
+            }
+            if template_id is not None:
+                obj["templateId"] = template_id
+
+            url = f"{self._url}/templates/{template_type}"
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+            if "error" in return_obj:
+                raise Exception(return_obj["error"].get("message"))
+            elif "success" in return_obj:
+                return return_obj["success"]
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
 
 class LookUpTable(object):
     """
@@ -2061,6 +2360,44 @@ class LookUpTable(object):
             if v is not None and not k.startswith("_")
         }
         return return_obj
+
+
+class Template(object):
+    """
+    Represents a Workflow Manager Template object with accompanying GET, POST, and DELETE methods.
+
+    =================     ====================================================================
+    **Parameter**          **Description**
+    -----------------     --------------------------------------------------------------------
+    template_name         The template name
+    -----------------     --------------------------------------------------------------------
+    template_details      The details of the template
+    -----------------     --------------------------------------------------------------------
+    template_id           The template ID
+    =================     ====================================================================
+    """
+
+    _camelCase_to_underscore = _camelCase_to_underscore
+    _underscore_to_camelcase = _underscore_to_camelcase
+
+    def __init__(
+        self, template_name, template_id, template_details, gis=None, url=None
+    ):
+        self.template_name = template_name
+        self.template_id = template_id
+        self.template_details = json.loads(template_details)
+        self._gis = gis
+        self._url = url
+
+    def __getattr__(self, item):
+        gis = object.__getattribute__(self, "_gis")
+        url = object.__getattribute__(self, "_url")
+        full_object = gis._con.get(url, {})
+        try:
+            setattr(self, _camelCase_to_underscore(item), full_object[item])
+            return full_object[item]
+        except KeyError:
+            raise KeyError(f'The attribute "{item}" is invalid for Templates')
 
 
 class SavedSearchesManager:
