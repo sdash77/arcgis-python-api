@@ -225,6 +225,13 @@ class credentials:
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
         )
+    
+    @classproperty
+    def enterprise_iwa(cls):
+        """Run tests for iwa and multi-iwa enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_iwa_credential_parameters,
+        )
 
     @classproperty
     def enterprise_kerberos(cls):
