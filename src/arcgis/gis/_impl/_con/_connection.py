@@ -22,28 +22,6 @@ except:
     HAS_GSSAPI = False
 
 import sys
-
-if sys.platform == "win32" and check_module_exists("certifi_win32"):
-    try:
-        import certifi_win32
-
-        certifi_win32.wincerts.where()
-
-        if certifi_win32.wincerts.verify_combined_pem() == False:
-            certifi_win32.generate_pem()
-
-    except ImportError:
-        pass
-elif check_module_exists("truststore"):  # pragma: no cover
-    try:
-        import truststore
-
-        truststore.inject_into_ssl()
-    except ImportError as ie:
-        pass
-    except Exception as e:
-        pass
-
 import os
 import copy
 import json

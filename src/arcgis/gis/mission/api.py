@@ -2,7 +2,7 @@ from __future__ import annotations
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
-from arcgis.gis.server._service import Service
+from arcgis.layers import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
 from typing import Optional, Union
@@ -104,7 +104,7 @@ class Mission(object):
                     isinstance(value, str)
                     and value.lower().find("/featureserver/") > -1
                 ):
-                    i[key] = Service(url=value, server=self._gis)
+                    i[key] = Service(url_or_item=value, server=self._gis)
 
     # ---------------------------------------------------------------------
     @cached_property

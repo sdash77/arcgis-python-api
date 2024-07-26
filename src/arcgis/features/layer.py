@@ -415,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
@@ -3747,12 +3751,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional list of fields to be included in the returned result set.
                                             This list is a comma-delimited list of field names. You can also specify
-                                            the wildcard "*" as the value of this parameter. In this case, the query
-                                            results include all the field values.
-
-                                            .. note::
-                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
-                                                as True, do not specify this parameter in order to avoid errors.
+                                            the wildcard "*" as the value of this parameter to return all
+                                            fields in the result.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -3918,8 +3918,13 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if where is None:
-            where = "1=1"
+        if not where:
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
         return _query._common_query(
             layer=self,
             is_layer=True,

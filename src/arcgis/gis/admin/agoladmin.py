@@ -55,6 +55,7 @@ class AGOLAdminManager(object):
     _certificates = None
     _servers = None
     _dmm = None
+    _orb = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
@@ -79,6 +80,24 @@ class AGOLAdminManager(object):
             type(self).__name__,
             self._gis._portal.resturl,
         )
+
+    # ----------------------------------------------------------------------
+    @property
+    def org_recyclebin(self) -> "OrgRecycleBin":
+        """
+        Returns the organization recyclebin, which will allow administrators to look
+        at the entire organization recyclebin contents.
+
+        :return: OrgRecycleBin
+        """
+        if self._orb is None:
+            from .._impl._content_manager._recyclebin import OrgRecycleBin
+
+            url: str = (
+                f"{self._gis.resturl}content/portals/{self._gis.properties['id']}"
+            )
+
+            return OrgRecycleBin(url=url, gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property

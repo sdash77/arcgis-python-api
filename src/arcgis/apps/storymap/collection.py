@@ -129,8 +129,8 @@ class Collection(object):
 
     # ----------------------------------------------------------------------
     def _create_new_collection(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.collection)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["collection"])
         # Add correct by-line and locale
         template["nodes"]["n-U3Ou63"]["data"]["byline"] = self._gis._username
 
@@ -171,9 +171,10 @@ class Collection(object):
             "type": "StoryMap",
         }
         # Add item to active gis and set properties
-        item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+        item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._item = item
         self._itemid = item.itemid
@@ -256,9 +257,8 @@ class Collection(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        removed_in="3.0.0",
-        current_version="2.4.0",
-        details="Use the Cover class that is accessed in the cover property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that is accessed in the cover property.",
     )
     def cover(
         self,
