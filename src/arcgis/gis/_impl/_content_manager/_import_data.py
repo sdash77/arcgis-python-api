@@ -94,7 +94,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 zip_loc = temp_dir
 
             # Writes the df to file as features
-            sanitize_columns = kwargs.pop("sanitize_columns", False)
+            sanitize_columns = kwargs.pop("sanitize_columns", True)
             df.spatial.to_featureclass(
                 location=location, sanitize_columns=sanitize_columns
             )
@@ -217,8 +217,8 @@ def _add_item_dependency(
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
-        features = new_item.layers[0].query().features
-        fs_item.layers[fl_index].edit_features(adds=features)
+        new_features = new_item.layers[0].query().features
+        fs_item.layers[fl_index].edit_features(adds=new_features)
     fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
 
