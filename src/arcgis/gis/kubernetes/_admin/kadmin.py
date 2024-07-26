@@ -14,6 +14,11 @@ from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
 from arcgis.gis.tasks._schedule import Task
+from arcgis.gis.admin._livingatlas import (
+    LivingAtlas,
+    LivingAtlasJob,
+    LivingAtlasManager,
+)
 
 
 class KubernetesAdmin(_BaseKube):

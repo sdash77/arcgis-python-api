@@ -36,6 +36,7 @@ from ._timm_utils import get_backbone
 from fastprogress.fastprogress import progress_bar
 from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
+from ._transformer_backbone import vit_config
 
 
 def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
@@ -134,33 +135,44 @@ class Deeplab(nn.Module):
         self.pointrend = pointrend
         self.backbone = get_backbone(backbone_fn, pretrained)
         backbone_name = backbone_fn.__name__
-        modify_dilation_index, self.vgg = get_dilation_index(
-            backbone_name, pointrend, keep_dilation
-        )
-        hookable_modules = get_last_module(self.backbone)
-        add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
-        hooks = get_hooks(backbone_name, hookable_modules)
+        self._is_transformer = False
+        self.vgg = False
+        if not backbone_name in vit_config.keys():
+            modify_dilation_index, self.vgg = get_dilation_index(
+                backbone_name, pointrend, keep_dilation
+            )
+            hookable_modules = get_last_module(self.backbone)
+            add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
+            hooks = get_hooks(backbone_name, hookable_modules)
 
-        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
-        self.hook = hook_outputs(hooks)
+            ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
+            self.hook = hook_outputs(hooks)
 
-        ## returns the size of various activations
-        feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
+            ## returns the size of various activations
+            feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
 
-        if not self.vgg:
-            ## Geting the number of channel persent in stored activation inside of the hook
-            num_channels_aux_classifier = self.hook[0].stored.shape[1]
-            ## Get number of channels in the last layer
-            num_channels_classifier = feature_sizes[-1][1]
+            if not self.vgg:
+                ## Geting the number of channel persent in stored activation inside of the hook
+                num_channels_aux_classifier = self.hook[0].stored.shape[1]
+                ## Get number of channels in the last layer
+                num_channels_classifier = feature_sizes[-1][1]
+            else:
+                num_channels_aux_classifier = self.hook[-2].stored.shape[1]
+                num_channels_classifier = self.hook[-1].stored.shape[1]
         else:
-            num_channels_aux_classifier = self.hook[-2].stored.shape[1]
-            num_channels_classifier = self.hook[-1].stored.shape[1]
+            num_channels_classifier = self.backbone[0].output_shape["channels"]
+            num_channels_aux_classifier = self.backbone[0].output_shape["channels"]
+            self._is_transformer = True
 
         self.classifier = DeepLabHead(num_channels_classifier, num_classes)
         self.aux_classifier = FCNHead(num_channels_aux_classifier, num_classes)
 
         if self.pointrend:
-            if self.vgg:
+            if self._is_transformer:
+                num_channels = self.backbone[0].output_shape["channels"]
+                stride = self.backbone[0].output_shape["stride"]
+
+            elif self.vgg:
                 num_channels = (
                     self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
                 )
@@ -181,7 +193,10 @@ class Deeplab(nn.Module):
     def forward(self, x):
         x_size = x.size()
         x = self.backbone(x)
-        features = self.hook.stored
+        if self._is_transformer:
+            features = [x, x]
+        else:
+            features = self.hook.stored
 
         if self.vgg:
             x = self.classifier(features[-1])

@@ -9,9 +9,17 @@ from arcgis.gis import GIS
 from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+
+
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the WMSLayer class found in `arcgis.layers.WMSLayer` instead.",
+)
 class WMSLayer(BaseOGC):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
@@ -220,7 +228,7 @@ class WMSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView's widget JSON format"""
+        """Represents the Map's widget JSON format"""
         layers = self.layers
         if not isinstance(layers, list):
             layers = [layers]
@@ -239,7 +247,7 @@ class WMSLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         new_layer = self._lyr_json
         layers = self.layers
         if not isinstance(layers, list):

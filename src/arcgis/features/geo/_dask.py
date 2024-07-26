@@ -5,12 +5,21 @@ import importlib
 from functools import lru_cache
 import numpy as np
 import pandas as pd
+from arcgis.geometry import BaseGeometry, Geometry, Polyline, SpatialReference
+from arcgis.features import FeatureCollection
+from arcgis._impl.common._isd import InsensitiveDict
+from arcgis._impl.common._mixins import PropertyMap
+from ._array import GeoType, GeoArray
+from ._io.fileops import to_featureclass, from_featureclass
+from ._index._dqtree import DaskSpatialIndex
+from ._viz._dmapping import dask_plot
 from distutils.version import LooseVersion
 import dask
 from dask.dataframe import Series, from_pandas
 import dask.dataframe as dd
-from dask.dataframe.core import get_parallel_type, make_meta
 from dask.base import normalize_token
+import arcgis
+
 from dask.dataframe.extensions import (
     make_array_nonempty,
     make_scalar,
@@ -34,15 +43,6 @@ else:
         meta_nonempty_dataframe,
         meta_nonempty,
     )
-
-from arcgis.geometry import BaseGeometry, Geometry
-from arcgis.features import FeatureCollection
-from arcgis._impl.common._isd import InsensitiveDict
-from arcgis._impl.common._mixins import PropertyMap
-from ._array import GeoType, GeoArray
-from ._io.fileops import to_featureclass, from_featureclass
-from ._index._dqtree import DaskSpatialIndex
-from ._viz._dmapping import dask_plot
 
 
 # -------------------------------------------------------------------------
@@ -292,7 +292,7 @@ class GeoDaskSpatialAccessor:
                 elif "shape" in cols:
                     idx = cols.index("shape")
                     self._name = self._data.columns[idx]
-            except:
+            except Exception:
                 raise Exception("Spatial column not defined, please use `set_geometry`")
         return self._name
 
@@ -398,10 +398,10 @@ class GeoDaskSpatialAccessor:
         data = ge[q].tolist()
         array = np.array(data)
         return (
-            float(array[:, 0][array[:, 0] != None].min()),
-            float(array[:, 1][array[:, 1] != None].min()),
-            float(array[:, 2][array[:, 2] != None].max()),
-            float(array[:, 3][array[:, 3] != None].max()),
+            float(array[:, 0][array[:, 0] is not None].min()),
+            float(array[:, 1][array[:, 1] is not None].min()),
+            float(array[:, 2][array[:, 2] is not None].max()),
+            float(array[:, 3][array[:, 3] is not None].max()),
         )
 
     # ----------------------------------------------------------------------
@@ -645,7 +645,7 @@ class GeoDaskSpatialAccessor:
         return self._data[self.name].geom.length.sum()
 
     # ----------------------------------------------------------------------
-    def plot(self, map_widget: "MapView" = None, renderer: dict = None):
+    def plot(self, map_widget: "arcgis.map.Map" = None, renderer: dict = None):
         """Displays the Dask DataFrame on a Map Widget"""
         return dask_plot(
             df=self._data,  # dask dataframe
@@ -909,7 +909,7 @@ class GeoDaskSpatialAccessor:
         :returns: String
 
         """
-        if location and not str(os.path.dirname(location)).lower() in [
+        if location and str(os.path.dirname(location)).lower() not in [
             "memory",
             "in_memory",
         ]:

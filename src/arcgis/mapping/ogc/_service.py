@@ -6,9 +6,15 @@ from arcgis.geometry import Geometry
 from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCCollection class found in `arcgis.layers.OGCCollection` instead.",
+)
 class OGCCollection:
     """
     Represents a single OGC dataset
@@ -70,7 +76,7 @@ class OGCCollection:
         **kwargs,
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """
-        Queries the :class:`~arcgis.mapping.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
+        Queries the :class:`~arcgis.layers.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -176,6 +182,11 @@ class OGCCollection:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OGCFeatureService class found in `arcgis.layers.OGCFeatureService` instead.",
+)
 class OGCFeatureService:
     """
     Represents the Hosted OGC Feature Server
@@ -236,7 +247,7 @@ class OGCFeatureService:
         """
         Yields all the OGC Feature Service Layers within the service.
 
-        :return: Iterator[:class:`~arcgis.mapping.ogc.OGCCollection`]
+        :return: Iterator[:class:`~arcgis.layers.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
         params = {"f": "json"}

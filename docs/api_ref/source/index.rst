@@ -18,7 +18,6 @@ Contents:
    arcgis.raster.toc
    arcgis.network.toc
    arcgis.notebook
-   arcgis.geoanalytics.toc
    arcgis.geocoding
    arcgis.geoenrichment
    arcgis.geometry
@@ -27,7 +26,6 @@ Contents:
    arcgis.mapping.toc
    arcgis.realtime
    arcgis.schematics
-   arcgis.widgets
    arcgis.apps
    arcgis.learn.toc
    arcgis.auth
