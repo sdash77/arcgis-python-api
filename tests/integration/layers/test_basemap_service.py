@@ -1,39 +1,42 @@
-from arcgis.layers._basemap.basemap_service import BasemapServices
+import sys
+sys.path.insert(0, r"C:\\workspace\\geosaurus\\tests")
+sys.path.insert(1, r"C:\\workspace\\geosaurus\\src")
+from arcgis.layers._basemap.basemap_service import BasemapServices, BasemapService
 from arcgis.gis import GIS
 import unittest
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-profiles = ['your_online_profile', 'test_enterprise']
-
+@profiles.agol
 @integration_test
 class Test_BasemapService(unittest.TestCase):
     """Tests Basemap Service Class"""
-    def test_get_styles(self):
+    def test_get_services(self):
         """Tests getting styles"""
-        for profile in profiles:
-            gis = GIS(profile=profile)
-            bs = BasemapServices(gis)
-            styles = bs.styles
-            self.assertTrue(isinstance(styles, list))
-            self.assertTrue(len(styles) > 0)
+        gis = self.gis
+        bs = BasemapServices(gis)
+        services = bs.services
+        self.assertTrue(isinstance(services, list))
+        self.assertTrue(len(services) > 0)
+        self.assertTrue(isinstance(services[0], BasemapService))
+        
+        style = services[0].style
+        self.assertTrue(isinstance(style, dict))
     
     def test_get_languages(self):
         """Tests getting languages"""
-        for profile in profiles:
-            gis = GIS(profile=profile)
-            bs = BasemapServices(gis)
-            languages = bs.languages
-            self.assertTrue(isinstance(languages, list))
-            self.assertTrue(len(languages) > 0)
+        gis = self.gis
+        bs = BasemapServices(gis)
+        languages = bs.languages
+        self.assertTrue(isinstance(languages, list))
+        self.assertTrue(len(languages) > 0)
 
     def test_get_places(self):
         """Tests getting places"""
-        for profile in profiles:
-            gis = GIS(profile=profile)
-            bs = BasemapServices(gis)
-            places = bs.places
-            self.assertTrue(isinstance(places, list))
-            self.assertTrue(len(places) > 0)
+        gis = self.gis
+        bs = BasemapServices(gis)
+        places = bs.places
+        self.assertTrue(isinstance(places, list))
+        self.assertTrue(len(places) > 0)
 
 if __name__ == "__main__":
     unittest.main()

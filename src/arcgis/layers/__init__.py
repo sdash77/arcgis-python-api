@@ -9,7 +9,7 @@ from ._vtl._vector_tile_layers import (
     EnterpriseVectorTileLayerManager,
 )
 
-from ._basemap.basemap_service import BasemapServices
+from ._basemap.basemap_service import BasemapServices, BasemapService
 
 from arcgis.layers._scenelyrs import (
     Object3DLayer,
@@ -74,4 +74,5 @@ __all__ = [
     "Service",
     "ServiceFactory",
     "BasemapServices",
+    "BasemapService",
 ]

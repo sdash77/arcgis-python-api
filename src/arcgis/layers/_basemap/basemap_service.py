@@ -93,7 +93,7 @@ class BasemapService:
         self._session = gis._session
         self._service_name = service_name
         self._service_path = service_path
-        self.style = self._get_style()
+        self._style = self._get_style()
 
     def __repr__(self) -> str:
         return f"{self._service_name}"
@@ -106,3 +106,10 @@ class BasemapService:
         params = {"f": "json"}
         resp = self._session.get(url, params=params)
         return resp.json()
+
+    @property
+    def style(self) -> dict:
+        """
+        Returns the style JSON for the specified style name or path.
+        """
+        return self._style

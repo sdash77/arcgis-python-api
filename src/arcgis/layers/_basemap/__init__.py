@@ -1,1 +1,1 @@
-from .basemap_service import BasemapServices
+from .basemap_service import BasemapServices, BasemapService
