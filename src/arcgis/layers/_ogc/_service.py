@@ -57,7 +57,9 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def _process_row(self, feature: dict[str, Any]) -> Dict[str, Any]:
         """Converts the GeoJSON Geometry to Esri JSON and format the row accordingly"""
-        row = {"SHAPE": Geometry(feature["geometry"]) if feature["geometry"] else None}
+        row = {
+            "SHAPE": (Geometry(feature["geometry"]) if feature["geometry"] else None)
+        }
         row.update(feature["properties"])
         return row
 
@@ -214,7 +216,11 @@ class OGCFeatureService:
             gis = _env.active_gis or GIS()
         self._gis = gis
         self._url = url
-        self._session = gis.session
+        if hasattr(gis, "_session"):
+
+            self._session = gis._session
+        else:
+            self._session = gis.session
 
     # ---------------------------------------------------------------------
     @property

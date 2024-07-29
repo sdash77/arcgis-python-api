@@ -1,7 +1,6 @@
 import sys, uuid
 import unittest
 from arcgis.gis import GIS, GroupManager, Group, User
-import arcgis.geoanalytics
 from utils.decorators import integration_test
 
 PROFILES = ["your_ent_admin_profile", "your_online_admin_profile"]
@@ -24,7 +23,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
-                role="org_user"
+                role="org_user",
             )
             gm = gis.groups
 
@@ -59,7 +58,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
                 firstname="testaccount",
                 lastname="testaccount",
                 email="test@esri.com",
-                role="org_user"
+                role="org_user",
             )
             gm = gis.groups
 

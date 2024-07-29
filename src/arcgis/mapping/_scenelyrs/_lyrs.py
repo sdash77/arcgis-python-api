@@ -3,10 +3,16 @@ import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
 _layers = LazyLoader("arcgis.layers")
 
 
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SceneLayerManager class found in `arcgis.layers.SceneLayerManager` instead.",
+)
 class SceneLayerManager(_GISResource):
     """
     The ``SceneLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted scene layers.
@@ -298,6 +304,11 @@ class SceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseSceneLayerManager class found in `arcgis.layers.EnterpriseSceneLayerManager` instead.",
+)
 class EnterpriseSceneLayerManager(_GISResource):
     """
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
@@ -627,6 +638,11 @@ class EnterpriseSceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Object3dLayer class found in `arcgis.layers.Object3DLayer` instead.",
+)
 class Object3DLayer(Layer):
     """
     The ``Object3DLayer`` represents a Web scene 3D Object layer.
@@ -683,7 +699,7 @@ class Object3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -738,6 +754,11 @@ class Object3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the IntegratedMeshLayer class found in `arcgis.layers.IntegratedMeshLayer` instead.",
+)
 class IntegratedMeshLayer(Layer):
     """
     The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
@@ -794,7 +815,7 @@ class IntegratedMeshLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
@@ -849,6 +870,11 @@ class IntegratedMeshLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayerManager class found in `arcgis.layers.Tiles3DLayerManager` instead.",
+)
 class Tiles3DLayerManager(_GISResource):
     def __init__(self, url, gis=None, tiles3d_service=None):
         if url.split("/")[-1].isdigit():
@@ -868,6 +894,11 @@ class Tiles3DLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayer class found in `arcgis.layers.Tiles3DLayer` instead.",
+)
 class Tiles3DLayer(Layer):
     """
     The ``Tiles3DLayer`` class represents a Web scene 3D Tile Service Layer.
@@ -911,7 +942,7 @@ class Tiles3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "3DTiles Service", "url": url}
@@ -936,7 +967,10 @@ class Tiles3DLayer(Layer):
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             else:
-                rd = {"/rest/": "/admin/", "/3DTilesServer": ".3DTilesServer"}
+                rd = {
+                    "/rest/": "/admin/",
+                    "/3DTilesServer": ".3DTilesServer",
+                }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
@@ -964,8 +998,11 @@ class Tiles3DLayer(Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VoxelLayer class found in `arcgis.layers.VoxelLayer` instead.",
+)
 class VoxelLayer(Layer):
     """
     The ``VoxelLayer`` class represents a Web Scene Voxel layer.
@@ -1023,7 +1060,7 @@ class VoxelLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "VoxelLayer", "url": url}
@@ -1079,6 +1116,11 @@ class VoxelLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Point3DLayer class found in `arcgis.layers.Point3DLayer` instead.",
+)
 class Point3DLayer(Layer):
     """
     The ``Point3DLayer`` class represents a Web scene 3D Point layer.
@@ -1136,7 +1178,7 @@ class Point3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -1191,6 +1233,11 @@ class Point3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the PointCloudLayer class found in `arcgis.layers.PointCloudLayer` instead.",
+)
 class PointCloudLayer(Layer):
     """
     The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
@@ -1247,7 +1294,7 @@ class PointCloudLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "PointCloudLayer", "url": url}
@@ -1302,6 +1349,11 @@ class PointCloudLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the BuildingLayer class found in `arcgis.layers.BuildingLayer` instead.",
+)
 class BuildingLayer(Layer):
     """
     The ``BuildingLayer`` class represents a Web building layer.
@@ -1358,7 +1410,7 @@ class BuildingLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "BuildingSceneLayer", "url": url}
@@ -1413,6 +1465,11 @@ class BuildingLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the _SceneLayerFactory class found in `arcgis.layers._SceneLayerFactory` instead.",
+)
 class _SceneLayerFactory(type):
     """
     Factory that generates the Scene Layers
@@ -1465,6 +1522,11 @@ class _SceneLayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SceneLayer class found in `arcgis.layers.SceneLayer` instead.",
+)
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
     The ``SceneLayer`` class represents a Web scene layer.

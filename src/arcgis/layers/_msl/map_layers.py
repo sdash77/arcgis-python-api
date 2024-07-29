@@ -91,7 +91,7 @@ class MapFeatureLayer(Layer):
     @property
     def _lyr_json(self) -> dict:
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -115,7 +115,6 @@ class MapFeatureLayer(Layer):
             and self.properties["supportsQueryAttachments"]
             and self._attachments is None
         ):
-
             self._attachments = _features.managers.AttachmentManager(self)
         return self._attachments
 
@@ -189,7 +188,6 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     @renderer.setter
     def renderer(self, value: dict | None):
-
         if isinstance(value, (dict, PropertyMap)):
             self._renderer = dict(value)
         elif value is None:
@@ -1261,7 +1259,7 @@ class MapRasterLayer(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
@@ -1353,7 +1351,7 @@ class MapTable(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -2319,7 +2317,7 @@ class MapImageLayer(_gis.Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             token = self._token or self._con.token
             url += "?token=" + token
 
@@ -2371,7 +2369,9 @@ class MapImageLayer(_gis.Layer):
         return mystring
 
     @property
-    def manager(self) -> MapImageLayerManager | EnterpriseMapImageLayerManager:
+    def manager(
+        self,
+    ) -> MapImageLayerManager | EnterpriseMapImageLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.MapImageLayerManager` class
         for ArcGIS Online and :class:`~arcgis.layers.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
@@ -3294,7 +3294,10 @@ class MapImageLayer(_gis.Layer):
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 resp: requests.Response = self._session.post(
-                    url=url, data=params, out_folder=save_folder, file_name=save_file
+                    url=url,
+                    data=params,
+                    out_folder=save_folder,
+                    file_name=save_file,
                 )
                 resp.raise_for_status()
                 return resp.json()
@@ -3306,7 +3309,10 @@ class MapImageLayer(_gis.Layer):
                 return resp.json()
         elif f == "kmz":
             resp: requests.Response = self._session.post(
-                url=url, data=params, out_folder=save_folder, file_name=save_file
+                url=url,
+                data=params,
+                out_folder=save_folder,
+                file_name=save_file,
             )
             resp.raise_for_status()
             return resp.json()

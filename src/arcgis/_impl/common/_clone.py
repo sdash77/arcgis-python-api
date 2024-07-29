@@ -2146,17 +2146,25 @@ class _ItemDefinition(CloneNode):
         if thumbnail:
             item_properties["thumbnail"] = thumbnail
 
-        job = folder.add(
-            **{
-                "item_properties": item_properties,
-                "item_id": item_id,
-                self._data_type_lu[data]: data,
-            }
-        )
+        if data:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                    self._data_type_lu(data): data,
+                }
+            )
+        else:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                }
+            )
         new_item = job.result()
 
         if self.metadata_xml:
-            new_item.metadata = self.metadata_xml
+            new_item["metadata"] = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -5321,7 +5329,9 @@ class _FormDefinition(_ItemDefinition):
                         file.write(json.dumps(dict(new_item)))
 
                 elif path.lower() == "form.json":
-                    with open(os.path.join(zip_dir, path), "r") as file:
+                    with open(
+                        os.path.join(zip_dir, path), "r", encoding="utf8"
+                    ) as file:
                         form_json = file.read()
                         for key, value in clone_mapping["Item IDs"].items():
                             form_json = re.sub(
@@ -5339,7 +5349,9 @@ class _FormDefinition(_ItemDefinition):
                                 0,
                                 re.IGNORECASE,
                             )
-                        with open(os.path.join(zip_dir, path), "w") as file:
+                        with open(
+                            os.path.join(zip_dir, path), "w", encoding="utf8"
+                        ) as file:
                             file.write(form_json)
                         for new_id in clone_mapping["Item IDs"].values():
                             new_flayer = target.content.get(new_id)
@@ -5348,7 +5360,10 @@ class _FormDefinition(_ItemDefinition):
                                 and new_flayer.type == "Feature Service"
                             ):
                                 with tempfile.NamedTemporaryFile(
-                                    mode="w+", suffix=".json", delete=False
+                                    mode="w+",
+                                    suffix=".json",
+                                    delete=False,
+                                    encoding="utf8",
                                 ) as tfile:
                                     json.dump(json.loads(form_json), tfile)
                                     tfile.close()
