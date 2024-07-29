@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\\workspace\\geosaurus\\tests")
-sys.path.insert(1, r"C:\\workspace\\geosaurus\\src")
 from arcgis.layers._basemap.basemap_service import BasemapServices, BasemapService
 from arcgis.gis import GIS
 import unittest
