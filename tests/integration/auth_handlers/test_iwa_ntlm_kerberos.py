@@ -71,7 +71,7 @@ class TestKerberos(unittest.TestCase):
 
         url = f"{portal_url}/sharing/rest/portals/self/servers?f=json"
         auth = EsriKerberosAuth()
-        with EsriSession(auth=auth) as session:
+        with EsriSession(auth=auth, verify_cert=False) as session:
             resp = session.get(url=url)
             data = resp.json()
             assert data
@@ -110,8 +110,8 @@ class TestLDAPAuth(unittest.TestCase):
     def test_ldap(self):
         url = f"{self.portal_url}/sharing/rest/portals/self?f=json"
         server_url = f"{self.portal_url}/sharing/rest/portals/self/servers?f=json"
-        auth = EsriBasicAuth(self.username, self.password)
-        with EsriSession(auth=auth) as session:
+        auth = EsriBasicAuth(self.username, self.password, verify_cert=False)
+        with EsriSession(auth=auth, verify_cert=False) as session:
             resp = session.get(url)
             data = resp.json()
             assert data["user"]
