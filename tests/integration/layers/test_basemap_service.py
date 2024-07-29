@@ -1,9 +1,9 @@
-from arcgis.mapping.basemap_service import BasemapServices
+from arcgis.layers._basemap.basemap_service import BasemapServices
 from arcgis.gis import GIS
 import unittest
 from utils.decorators import integration_test
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_profile', 'test_enterprise']
 
 @integration_test
 class Test_BasemapService(unittest.TestCase):
