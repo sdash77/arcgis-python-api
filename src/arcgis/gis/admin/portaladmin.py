@@ -363,8 +363,8 @@ class PortalAdminManager(BasePortalAdmin):
         Provides access to the functionality for managing the ArcGIS Enterprise
         classification schema if it has been configured.
         
-        :return
-            An instance of :class:`~arcgis.gis.admin.ClassificationManager`.
+        :return:
+            An instance of the :class:`~arcgis.gis.admin.ClassificationManager`.
         """
         if (
             self._classification is None
