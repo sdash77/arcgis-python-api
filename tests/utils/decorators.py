@@ -176,7 +176,7 @@ class credentials:
         None,
         environ.get(
             "AGOL_API_KEY",
-            "AAPKddd59ccb5147417c89cc5a933c60cf51nGh5AkuWMHell2cLvgIjjRmrMRGLBqlKvpAnOPN6sHIOpc-SDkAuqTzW3vEvLkOP",
+            "AAPKed706a70151045f3a51b1917d84757610pwOA7fIeA6M3kLOR0_kBLPRMfwnympI0ql7knab8d6sTEJyRRKAzQBGqgP6XSDj",
         ),
     )
     _enterprise_oauth_credential_parameters = (
