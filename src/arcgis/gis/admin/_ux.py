@@ -2999,7 +2999,7 @@ class UtilityServicesSettings:
                                 ArcGIS Online credentials.
 
                                 The list can be any combination of these values:
-                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Orthomapping Elevation"]
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Orthomapping Elevation", "Network", "Traffic Data"]
         ------------------      ---------------------------------------
         gis                     The GIS object that is connected to your
                                 ArcGIS Online organization where the routing
@@ -3056,6 +3056,7 @@ class UtilityServicesSettings:
                 "asyncRoute",
                 "asyncVRP",
                 "asyncServiceArea",
+                "asyncFleetRouting",
                 "route",
                 "routingUtilities",
                 "serviceArea",
@@ -3063,6 +3064,7 @@ class UtilityServicesSettings:
                 "syncVRP",
                 "traffic",
                 "odCostMatrix",
+                "snapToRoads",
             ],
             "Traffic Data": ["trafficData"],
             "Orthomapping Elevation": ["orthomappingElevation"],
@@ -3108,18 +3110,24 @@ class UtilityServicesSettings:
                     (x for x in search_result if x.title == item_props["title"]), ""
                 )
                 if not this_item:
-                    # False positive. pylint: disable=no-member
                     if helper_svc == "orthomappingElevation":
                         svc_item_url = item_props["url"]
                     else:
-                        svc_item = self._gis.content.add(item_props, folder=folder_name)
-                        # convert from private URL to a public URL for the proxy item
-                        svc_item_url = svc_item.url.replace(
-                            ":7443/arcgis/", f"/{self._gis.properties.customBaseUrl}/"
-                        )
-                        # pylint: enable=no-member
-                        svc_item.protect(enable=True)
-                        svc_item.sharing.sharing_level = "ORGANIZATION"
+                        try:
+                            svc_item = self._gis.content.add(
+                                item_props, folder=folder_name
+                            )
+                            # convert from private URL to a public URL for the proxy item
+                            svc_item_url = svc_item.url.replace(
+                                ":7443/arcgis/",
+                                f"/{self._gis.properties.customBaseUrl}/",
+                            )
+                            # pylint: enable=no-member
+                            svc_item.protect(enable=True)
+                            svc_item.sharing.sharing_level = "ORGANIZATION"
+                        except:
+                            # if proxy item fails, continue
+                            pass
                     if helper_svc == "geocode":
                         # Set batch geocoder properties
                         geocoders = [
@@ -3143,25 +3151,7 @@ class UtilityServicesSettings:
         proxy_urls["elevationSyncService"] = agol_helper_svcs["elevationSync"]
         # Update portal properties
         if "Network" in services:  # replace with config utilityServices
-            agol_token_params = {
-                "username": username,
-                "password": password,
-                "client": "referer",
-                "referer": gis.url,
-                "expiration": 60,
-                "f": "json",
-            }
-            agol_token = self._gis._session.post(
-                f"{gis.url}/sharing/rest/generateToken",
-                data=agol_token_params,
-                timeout=60,
-            ).json()["token"]
-            user_self_params = {"f": "json", "token": agol_token}
-            agol_user_info = self._gis._session.post(
-                f"{gis.url}/sharing/rest/community/self",
-                data=user_self_params,
-                timeout=60,
-            ).json()
+            agol_user_info = self._gis.users.me
             proxy_urls["routingServicesSource"] = {
                 "sourceName": "ArcGISOnline",
                 "agoUsername": username,
@@ -3198,6 +3188,7 @@ class UtilityServicesSettings:
                 "asyncRoute",
                 "asyncVRP",
                 "asyncServiceArea",
+                "asyncFleetRouting",
                 "route",
                 "routingUtilities",
                 "serviceArea",
@@ -3205,6 +3196,7 @@ class UtilityServicesSettings:
                 "syncVRP",
                 "traffic",
                 "odCostMatrix",
+                "snapToRoads",
             ],
             "Orthomapping Elevation": ["orthomappingElevation"],
         }
