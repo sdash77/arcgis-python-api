@@ -123,7 +123,7 @@ _item_classification: dict = {
 }
 
 
-# @profiles.enterprise
+@profiles.enterprise
 @integration_test
 class TestPortalitemClassification(unittest.TestCase):
     @classmethod
@@ -131,12 +131,6 @@ class TestPortalitemClassification(unittest.TestCase):
         cls._item_classification = _item_classification
         cls._classification_schema = _schema
         cls.fp = os.path.join(tempfile.gettempdir(), "schema_1234.txt")
-        cls.gis = GIS(
-            url="https://dev0013440.esri.com/portal",
-            username="admin",
-            password="esri.agp2",
-            verify_cert=False,
-        )
 
     def test_classification(self):
         if self.gis.version > [10, 3]:
@@ -151,10 +145,9 @@ class TestPortalitemClassification(unittest.TestCase):
             assert c.properties
             assert c.delete()  #  should be True
 
-            # fp = self.fp
-            fp = r"/Users/john3092/Job/data_formats/json/classification_schema/default_schema.json"
-            # with open(fp, 'w') as writer:
-            # writer.write(json.dumps(_schema))
+            fp = self.fp
+            with open(fp, 'w') as writer:
+                writer.write(json.dumps(_schema))
             assert c.add(fp)
             assert c.schema
             assert c.delete()
