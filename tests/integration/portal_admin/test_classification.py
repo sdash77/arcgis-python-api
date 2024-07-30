@@ -122,7 +122,8 @@ _item_classification: dict = {
     "lastEditedDate": 1721654431371,
 }
 
-#@profiles.enterprise
+
+# @profiles.enterprise
 @integration_test
 class TestPortalitemClassification(unittest.TestCase):
     @classmethod
@@ -134,7 +135,7 @@ class TestPortalitemClassification(unittest.TestCase):
             url="https://dev0013440.esri.com/portal",
             username="admin",
             password="esri.agp2",
-            verify_cert=False
+            verify_cert=False,
         )
 
     def test_classification(self):
@@ -150,10 +151,10 @@ class TestPortalitemClassification(unittest.TestCase):
             assert c.properties
             assert c.delete()  #  should be True
 
-            #fp = self.fp
+            # fp = self.fp
             fp = r"/Users/john3092/Job/data_formats/json/classification_schema/default_schema.json"
-            #with open(fp, 'w') as writer:
-                #writer.write(json.dumps(_schema))
+            # with open(fp, 'w') as writer:
+            # writer.write(json.dumps(_schema))
             assert c.add(fp)
             assert c.schema
             assert c.delete()
@@ -180,7 +181,7 @@ class TestPortalitemClassification(unittest.TestCase):
             assert c.delete()  #  should be True
 
             fp = self.fp
-            with open(fp, 'w') as writer:
+            with open(fp, "w") as writer:
                 writer.write(json.dumps(_schema))
             assert c.add(fp)
             assert c.schema
