@@ -136,13 +136,19 @@ class SharingGroupManager:
             do_update = True
         if do_update:
             resp = self._sm._share(level=self._sm.sharing_level, groups=groups)
-            if (
-                "notSharedWith" in resp["results"][0]
-                and len(resp["results"][0]["notSharedWith"]) > 0
-            ):
-                # successfully sent the request, but the group was not shared with
+            if "results" in resp and not "error" in resp["results"][0]:
+                import time
+
+                time.sleep(1)
+                return group.id in [g.id for g in self.list()]
+            elif "error" in resp:
+                raise Exception(resp)
+            elif "results" in resp and "error" in resp["results"][0]:
+                raise Exception(resp)
+            elif "notSharedWith" in resp and not group.id in resp["notSharedWith"]:
+                return True
+            else:
                 return False
-            return True
         return False
 
     # ---------------------------------------------------------------------
@@ -291,8 +297,13 @@ class SharingManager:
         ======================  ========================================================
         """
         # if not in org use different url
-
-        if self._gis.users.get(self._item.owner, outside_org=False):
+        pop_items: bool = False
+        if self._item.owner != self._gis.users.me.username:
+            url: str = "{resturl}content/items/{itemid}/share".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
+            pop_items = True
+        elif self._gis.users.get(self._item.owner, outside_org=False):
             url: str = "{resturl}content/users/{owner}/shareItems".format(
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
@@ -300,6 +311,7 @@ class SharingManager:
             url: str = "{resturl}content/items/{itemid}/share".format(
                 resturl=self._gis._portal.resturl, itemid=self._item.itemid
             )
+            pop_items = True
 
         params: dict[str, Any] = {
             "f": "json",
@@ -331,6 +343,9 @@ class SharingManager:
             k: (json.dumps(v) if isinstance(v, bool) else v)
             for (k, v) in params.items()
         }
+        if pop_items:
+            params.pop("items", None)
+
         resp: requests.Response = self._session.post(url=url, data=params)
         resp.raise_for_status()
         self._item._hydrated = False
