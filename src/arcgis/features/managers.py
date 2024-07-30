@@ -2325,7 +2325,7 @@ class FeatureLayerCollectionManager(_GISResource):
             folder = self._gis.content.folders.get(folder_id)
         else:
             folder = self._gis.content.folders.get()
-            
+
         file_item = folder.add(
             item_properties={
                 "type": file_type,

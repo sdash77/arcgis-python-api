@@ -213,6 +213,10 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
+        try:
+            fs_item.layers[fl_index].update_metadata(new_item.layers[0].metadata)
+        except:
+            pass
         _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
@@ -279,6 +283,7 @@ def import_as_item(gis, df, **kwargs):
 
         if len(new_item.layers) > 0:
             layer_definition = new_item.layers[0].properties
+            metadata = new_item.layers[0].metadata
         elif len(new_item.tables) > 0:
             layer_definition = new_item.tables[0].properties
 
