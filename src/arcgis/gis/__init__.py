@@ -8580,6 +8580,8 @@ class ContentManager(object):
         group_mapping: Optional[dict[str, str]] = None,
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
+        export_service: bool = False,
+        preserve_editing_info: bool = False,
         **kwargs,
     ):
         """
@@ -8696,6 +8698,8 @@ class ContentManager(object):
             group_mapping,
             owner_name,
             preserve_item_id=preserve_item_id,
+            export_service=export_service,
+            preserve_editing_info=preserve_editing_info,
             from_dash=kwargs.pop("from_dash", False),
             wab_code_attach=kwargs.pop("copy_code_attachment", True),
         )

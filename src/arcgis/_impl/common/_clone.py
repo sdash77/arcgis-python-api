@@ -88,6 +88,8 @@ class _DeepCloner:
         preserve_item_id=False,
         from_dash=False,
         wab_code_attach=True,
+        export_service=False,
+        preserve_editing_info=False,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -110,6 +112,8 @@ class _DeepCloner:
             "Services": {},
             "Web Tools": {},
         }
+        self._export_service = export_service
+        self._track_edits = preserve_editing_info
         if item_mapping is not None:
             self._clone_mapping["Item IDs"] = item_mapping
         if group_mapping is not None:
@@ -709,6 +713,8 @@ class _DeepCloner:
                         search_existing=self._search_existing_items,
                         owner=self.owner,
                         preserve_item_id=self._preserve_item_id,
+                        export_service=self._export_service,
+                        track_edits=self._track_edits
                     )
 
                     for source_fs_definition in source_fs_definitions:
@@ -767,6 +773,8 @@ class _DeepCloner:
                         search_existing=self._search_existing_items,
                         owner=self.owner,
                         preserve_item_id=self._preserve_item_id,
+                        export_service=self._export_service,
+                        track_edits=self._track_edits
                     )
             self._graph[item.id] = item_definition
             if "Workforce Project" in item.typeKeywords:
@@ -1654,6 +1662,8 @@ class _DeepCloner:
                 search_existing=self._search_existing_items,
                 owner=self.owner,
                 preserve_item_id=self._preserve_item_id,
+                export_service=self._export_service,
+                track_edits=self._track_edits
             )
 
         # If the item is a feature collection get the FeatureCollectionDefintion
@@ -2582,6 +2592,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         self._copy_global_ids = copy_global_ids
         self._logger = None
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
+        self._export = kwargs.pop("export_service", False)
+        self._track_edits = kwargs.pop("track_edits", False)
         if verbose:
             self._logger = logging.getLogger()
 
@@ -2974,16 +2986,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
 
             if not new_item:
-                export_113 = False # sd file workflow for enterprise 11.3+
-                export_service = False # file gdb workflow for other applicable cases
-
-                try:
-                    if self.portal_item._gis._is_agol == False:
-                        vers = self.portal_item._gis.properties.enterpriseVersion
-                        if float(vers[:4]) >= 11.3:
-                            export_113 = True
-                except:
-                    pass
+                can_export = False # file gdb workflow for other applicable cases
 
                 try:
                     source_user = self.portal_item._gis.users.me
@@ -2991,14 +2994,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         source_user.role == "org_admin"
                         or self.portal_item.owner == source_user.username
                     ):
-                        export_service = True
+                        can_export = True
                 except:
                     pass
 
                 # Get the definition of the original feature service
                 service_definition = self.service_definition
                 if "Extract" in service_definition["capabilities"]:
-                    export_service = True
+                    can_export = True
 
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
@@ -3014,80 +3017,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                 else:
                     folder = self.target.content.folders.get()
+                
+                pub_params = {'name' : name}
+                if self._track_edits:
+                    pub_params["editorTrackingInfo"] = {"preserveEditUsersAndTimestamps": True}
 
-                if export_113 and export_service:
-                    serv_url = self.portal_item._gis.hosting_servers[0].url
-                    pt = import_toolbox(serv_url + "/System/PublishingTools/GPServer", gis=self.portal_item._gis)
-                    service_name = self.portal_item.url.split("/")[-2]
-                    folder_name = self.portal_item.url.split("/")[-3]
-                    sd_res = pt.export_service(service_name = service_name, service_type = "FeatureServer", service_folder = folder_name, gis = self.portal_item._gis)
-                    temp_dir = tempfile.mkdtemp()
-                    temp_local = sd_res.download(temp_dir)
-                    dir_name, base_name = os.path.split(temp_local)
-                    unique_temp = os.path.join(dir_name, name + ".sd")
-                    os.rename(temp_local, unique_temp)
-
-                    item_id = None
-                    if (
-                        self._preserve_item_id
-                        and self.target._portal.is_arcgisonline == False
-                    ):
-                        item_id = self.portal_item.itemid
-                    
-                    try:
-                        propus = {
-                            "title": name,
-                            "type": "Service Definition",
-                            "url": self.target.url,
-                        }
-
-                        job = folder.add(
-                            **{
-                                "item_properties": propus,
-                                "item_id": item_id,
-                                "file": unique_temp,
-                            }
-                        )
-                        
-                        service_item = job.result()
-                        if service_item is None:
-                            raise RuntimeError("already exists")
-
-                        pub_params = {'name' : name}
-                        new_item = service_item.publish(pub_params, overwrite=True)
-                        if new_item is None:
-                            raise RuntimeError("already exists")
-                        self.created_items.append(new_item)
-                    except Exception as ex:
-                        if "already exists" in str(ex):
-                            name = self._get_unique_name(self.target, name, True)
-                            dir_name, base_name = os.path.split(unique_temp)
-                            unique_temp2 = os.path.join(dir_name, name + ".sd")
-                            os.rename(unique_temp, unique_temp2)
-                            propus["title"] = name
-                            service_definition["name"] = name
-
-                            job = folder.add(
-                                **{
-                                    "item_properties": propus,
-                                    "item_id": item_id,
-                                    "file": unique_temp2,
-                                }
-                            )
-                            
-                            service_item = job.result()
-                            pub_params = {'name' : name}
-                            new_item = service_item.publish(pub_params, overwrite=True)
-                            self.created_items.append(new_item)
-                        elif "managed database" in str(ex):
-                            raise Exception(
-                                "The target portal's managed database must be an ArcGIS Data Store."
-                            )
-                        else:
-                            raise
-                    item_properties = self._get_item_properties(self.item_extent)
-
-                elif export_service:
+                if self._export and can_export:
                     temp_export = self.portal_item.export(
                         "temp export", "File Geodatabase"
                     )
@@ -3126,16 +3061,17 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             raise RuntimeError("already exists")
                         # new_item_name = self.portal_item.title
                         # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
-                        new_item = service_item.publish()
+                        new_item = service_item.publish(publish_parameters = pub_params)
                         # new_item.update(item_properties={"title": temp_name})
                         if new_item is None:
-                            raise RuntimeError("already exists")
+                            raise Exception("already exists")
                         self.created_items.append(new_item)
-                    except RuntimeError as ex:
+                    except Exception as ex:
                         if "already exists" in str(ex):
                             name = self._get_unique_name(self.target, name, True)
                             propus["title"] = name
                             service_definition["name"] = name
+                            pub_params["name"] = name
 
                             job = folder.add(
                                 **{
@@ -3148,7 +3084,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             service_item = job.result()
                             # new_item_name = self.portal_item.title
                             # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
-                            new_item = service_item.publish()
+                            new_item = service_item.publish(publish_parameters = pub_params)
                             # new_item.update(item_properties={"title": temp_name})
                             self.created_items.append(new_item)
                         elif "managed database" in str(ex):
@@ -4294,7 +4230,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             )
             self.resolved = True
             self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
-            if export_service:
+            if self._export and can_export:
                 self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
                     "id": new_item["id"],
                     "url": new_item["url"].rstrip("/"),
