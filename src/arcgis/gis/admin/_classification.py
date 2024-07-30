@@ -95,7 +95,7 @@ class ClassificationManager:
             Dictionary representation of the classification schema.
 
         .. note::
-            The various value of each key returned will vary by organization.
+            The value of each key returned will vary by organization.
             For a description of what each key means, see the ArcGIS/
             Classification GitHub repository.
         """
