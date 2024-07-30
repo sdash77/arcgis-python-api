@@ -283,7 +283,6 @@ def import_as_item(gis, df, **kwargs):
 
         if len(new_item.layers) > 0:
             layer_definition = new_item.layers[0].properties
-            metadata = new_item.layers[0].metadata
         elif len(new_item.tables) > 0:
             layer_definition = new_item.tables[0].properties
 
