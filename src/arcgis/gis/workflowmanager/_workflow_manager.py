@@ -3055,11 +3055,13 @@ class Job(object):
                 json_encode=False,
             )
         )
-
         # If it fails, unsubscribe then throw
         if "error" in return_obj:
             wm.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj and return_obj['success'] is False:
+            wm.notification_manager.unsubscribe([self.job_id])
+            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3111,6 +3113,9 @@ class Job(object):
         if "error" in return_obj:
             wm.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj and return_obj['success'] is False:
+            wm.notification_manager.unsubscribe([self.job_id])
+            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3159,6 +3164,9 @@ class Job(object):
         if "error" in return_obj:
             wm.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj and return_obj['success'] is False:
+            wm.notification_manager.unsubscribe([self.job_id])
+            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3209,7 +3217,7 @@ class JobExecution:
         self._execution_type = execution_type
 
     def _callback(self, msg: Notification):
-        if msg.message['jobId'] == self._job.job_id and msg.msg_type != MessageType.JOBSTATE:
+        if 'jobId' in msg.message and msg.message['jobId'] == self._job.job_id and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]:
             self._messages.append(msg)
             # TODO Need to consider cancelling GP case (https://devtopia.esri.com/WebGIS/workflow-manager/issues/7844)
             if self._execution_type is ExecutionType.RUN:
@@ -3954,12 +3962,13 @@ class NotificationManager:
         message_dict = json.loads(message)
         if 'msgType' in message_dict.keys():
             msg = Notification(message_dict)
-            job_id = msg.message['jobId']
 
             try:
-                if job_id in self.subscribed_jobs.keys():
-                    callback = self.subscribed_jobs[job_id]
-                    callback(msg)
+                if 'jobId' in msg.message:
+                    job_id = msg.message['jobId']
+                    if job_id in self.subscribed_jobs.keys():
+                        callback = self.subscribed_jobs[job_id]
+                        callback(msg)
             except Exception as e:
                 print(e)
 
@@ -4076,15 +4085,24 @@ class MessageType(str, Enum):
     CREATED = 'CREATED'
     ERROR = 'ERROR'
     JOBSTATE = 'JOBSTATE'
+    JOBUPDATED = 'JOBUPDATED'
+    JOBCOMMENTUPDATED = 'JOBCOMMENTUPDATED'
+    JOBATTACHMENTUPDATED = 'JOBATTACHMENTUPDATED'
+    JOBLOCATIONUPDATED = 'JOBLOCATIONUPDATED'
     STEPSTARTED = 'STEPSTARTED'
-    STEPINFOREQUIRED = 'STEPINFOREQUIRED'
-    STEPSTOPPED = 'STEPSTOPPED'
-    STEPPAUSED = 'STEPPAUSED'
-    STEPCANCELLED = 'STEPCANCELLED'
-    STEPFINISHED = 'STEPFINISHED'
-    STEPERROR = 'STEPERROR'
     STEPPROGRESS = 'STEPPROGRESS'
+    STEPCANCELLED = 'STEPCANCELLED'
+    STEPPAUSED = 'STEPPAUSED'
     STEPSTOPPING = 'STEPSTOPPING'
+    STEPSTOPPED = 'STEPSTOPPED'
+    STEPWARNINGSTOPPED = 'STEPWARNINGSTOPPED'
+    STEPFINISHED = 'STEPFINISHED'
+    STEPREASSIGNED = 'STEPREASSIGNED'
+    STEPHELD = 'STEPHELD'
+    STEPHOLDRELEASED = 'STEPHOLDRELEASED'
+    STEPERROR = 'STEPERROR'
+    STEPINFOREQUIRED = 'STEPINFOREQUIRED'
+    STEPINFORMATION = 'STEPINFORMATION'
 
 
 class ExecutionType(str, Enum):
