@@ -147,7 +147,10 @@ def apply_edits(
         data = {
             "adds": adds,
             "updates": updates,
-            "deletes": deletes,
+            "deletes": [
+                int(d) if (isinstance(d, str) and d.isdigit()) else d
+                for d in deletes.split(",")
+            ],
             "attachments": {
                 "adds": [],
                 "updates": [],
