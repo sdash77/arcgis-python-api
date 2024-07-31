@@ -31,6 +31,7 @@ from .story_content import (
     Navigation,
     Cover,
     CollectionNavigation,
+    Separator,
 )
 
-__all__ = ["StoryMap", "Briefing"]
+__all__ = ["StoryMap", "Briefing", "Collection"]
