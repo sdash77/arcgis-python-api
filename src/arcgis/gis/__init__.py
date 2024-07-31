@@ -3404,9 +3404,9 @@ class UserManager(object):
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
         role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
-                          assign the new member. To assign one of the `default Administrator, Publisher,
-                          or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
-                          enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
+                          assign the new member. To assign one of the `default Publisher or User
+                          roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
+                          enter ``org_publisher``, or ``org_user``, respectively.
                           For any other default role, or a custom role within the organization, enter
                           the `role_id` value returned from the :meth:`~arcgis.gis.RoleManager.all` method
                           on the :class:`~arcgis.gis.RoleManager` class.
@@ -3419,6 +3419,12 @@ class UserManager(object):
 
                               >>> for org_role in gis.users.roles.all():
                                       print(f"{org_role.name:25}{org_role.role_id}")
+
+                          .. note::
+                              You can not create a :class:`~arcgis.gis.User` object with the default
+                              `org_admin` role. In order to create a user with those privileges, you
+                              can create a *user* with another role, then call the
+                              :meth:`~arcgis.gis.User.update_role` method with the *org_admin* argument.
         ----------------  -------------------------------------------------------------------------------
         description       Optional string. The description of the user account.
         ----------------  -------------------------------------------------------------------------------
