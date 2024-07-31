@@ -252,7 +252,13 @@ class EsriSession:
             self._session.cert = None
 
         else:
-            adapter = TruststoreAdapter(max_retries=retry)
+            if self.verify_cert == False:
+                import ssl
+
+                context = ssl._create_unverified_context()
+            else:
+                context = None
+            adapter = TruststoreAdapter(max_retries=retry, ssl_context=context)
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
 

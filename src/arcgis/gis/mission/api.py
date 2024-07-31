@@ -104,7 +104,7 @@ class Mission(object):
                     isinstance(value, str)
                     and value.lower().find("/featureserver/") > -1
                 ):
-                    i[key] = Service(url=value, server=self._gis)
+                    i[key] = Service(url_or_item=value, server=self._gis)
 
     # ---------------------------------------------------------------------
     @cached_property

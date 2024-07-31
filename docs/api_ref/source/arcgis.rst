@@ -25,9 +25,6 @@ arcgis.notebook module
 arcgis.schematics module
 -----------------
 
-arcgis.geoanalytics module
--------------------
-
 arcgis.geocoding module
 -----------------
 
