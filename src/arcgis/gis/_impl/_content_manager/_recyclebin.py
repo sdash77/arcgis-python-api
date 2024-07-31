@@ -5,6 +5,8 @@ from arcgis.auth.api import LazyLoader
 from arcgis.auth import EsriSession
 import logging
 
+from arcgis.gis._impl._content_manager.folder import Folder
+
 json = LazyLoader("json")
 requests = LazyLoader("requests")
 _arcgis_gis = LazyLoader("arcgis.gis")
@@ -58,14 +60,16 @@ class RecycleItem:
         return self._properties
 
     # ---------------------------------------------------------------------
-    def restore(self, folder: str) -> _arcgis_gis.Item | None:
+    def restore(self, folder: str | Folder) -> _arcgis_gis.Item | None:
         """
         Restores the Item from the recycling bin.
 
         =====================     ==============================================
         **Parameter**              **Description**
         ---------------------     ----------------------------------------------
-        folder                    Optional string. Name of the folder to restore
+        folder                    Optional string or
+                                  :class:`~arcgis.gis._impl._content_manager.Folder`
+                                  object. The folder to restore
                                   the *item* to.
         =====================     ==============================================
 
@@ -89,7 +93,12 @@ class RecycleItem:
         }
         if folder:
             try:
-                folder_id = self._gis.content.folders.get(folder).properties["id"]
+                if isinstance(folder, str):
+                    folder_id = self._gis.content.folders.get(folder).properties["id"]
+                elif isinstance(folder, Folder):
+                    folder_id = folder.properties["id"]
+                else:
+                    raise Exception("The folder argument must be a string or Folder object.")
                 params.update({"folder": folder_id})
             except AttributeError as ae:
                 print(f"Could not get {folder} for {self.owner}")
