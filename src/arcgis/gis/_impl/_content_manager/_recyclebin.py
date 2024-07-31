@@ -98,7 +98,9 @@ class RecycleItem:
                 elif isinstance(folder, Folder):
                     folder_id = folder.properties["id"]
                 else:
-                    raise Exception("The folder argument must be a string or Folder object.")
+                    raise Exception(
+                        "The folder argument must be a string or Folder object."
+                    )
                 params.update({"folder": folder_id})
             except AttributeError as ae:
                 print(f"Could not get {folder} for {self.owner}")
