@@ -159,11 +159,11 @@ class CSVLayer(BaseOpenData):
                 "outline": {
                     "type": "esriSLS",
                     "color": [0, 0, 0, 255],
-                    "width":0.75,
-                    "style": "esriSLSSolid"
-                }
+                    "width": 0.75,
+                    "style": "esriSLSSolid",
+                },
             }
-            sr = {"type": "simple", "symbol": symbol},
+            sr = ({"type": "simple", "symbol": symbol},)
             self._renderer = dict(sr)
         return self._renderer
 
@@ -274,7 +274,7 @@ class CSVLayer(BaseOpenData):
             "layerDefinition": {
                 "fields": self.fields,
                 "objectIDField": "__OBJECTID",
-                "drawingInfo": {"renderer": self.renderer._json()},
+                "drawingInfo": {"renderer": self.renderer},
             },
             "id": self._id,
             "title": self.title,
