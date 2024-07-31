@@ -4,7 +4,7 @@ from arcgis.gis import GIS
 from arcgis.auth import EsriKerberosAuth, EsriSession, EsriWindowsAuth
 from arcgis.auth._auth._basic import EsriBasicAuth
 from utils.decorators import integration_test, credentials
-from utils._common import environ_key_to_bool
+from utils._common import environ_key_to_bool, parse_username
 
 # skip multi_iwa on automation runs
 iwa_credentials = credentials.enterprise_iwa if environ_key_to_bool("CI") else credentials.enterprise_all_iwa
@@ -27,7 +27,7 @@ class TestWinAuth(unittest.TestCase):
             )
             data = resp.json()
             assert data
-            assert self.username in data.get("user", {}).get("username")
+            assert parse_username(self.username) in data.get("user", {}).get("username")
 
     @unittest.skipIf(not AVWORLD, "Must be on AVWORLD to test implicit credentials")
     def test_get_portal_config_implicit_user(self):
@@ -37,7 +37,7 @@ class TestWinAuth(unittest.TestCase):
             resp = session.get(url=url + "/sharing/rest/portals/self?f=json")
             data = resp.json()
             assert data
-            assert self.username in data.get("user", {}).get("username")
+            assert parse_username(self.username) in data.get("user", {}).get("username")
 
     @unittest.skipIf(not AVWORLD, "Must be on AVWORLD to test implicit credentials")
     def test_get_server_system_services_implicit_user(self):
@@ -69,7 +69,7 @@ class TestWinAuth(unittest.TestCase):
         servers = gis.admin.servers.list()
         if len(servers) > 0:
             assert servers[0].properties
-        assert gis.users.me in self.username
+        assert gis.users.me in parse_username(self.username)
 
     @unittest.skipIf(not AVWORLD, "Must be on AVWORLD to test implicit credentials")
     def test_list_servers_implicit_user_gis(self):

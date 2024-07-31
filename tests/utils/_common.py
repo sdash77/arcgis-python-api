@@ -41,6 +41,24 @@ GEOSAURUS_PYTHON_EXEC = [
 GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 
+def parse_username(username):
+    """
+    Extracts the username from a string that may contain a domain
+
+    >>> parse_username(r'domain\\username')
+    'username'
+    >>> parse_username('username@domain')
+    'username'
+    >>> parse_username('username')
+    'username'
+    """
+    return (
+        username.split("\\")[1]
+        if "\\" in username
+        else username.split("@")[0] if "@" in username else username
+    )
+
+
 def environ_key_to_bool(environ_key: str):
     """Returns True if the value of the environment variable by provided key is a truthy string"""
     return environ_str_to_bool(os.environ.get(environ_key))
