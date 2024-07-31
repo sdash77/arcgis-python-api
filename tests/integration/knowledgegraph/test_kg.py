@@ -6,14 +6,15 @@ from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from typing import Generator
 import requests
+import uuid
 from utils.decorators import integration_test
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
-domain = "dev0025246.esri.com"
+domain = "dev0028833.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
-portal_url = "https://dev0025246.esri.com/portal"
+server_url = "https://dev0028833.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
+portal_url = "https://dev0028833.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
 
@@ -126,11 +127,13 @@ class TestKGMethods(unittest.TestCase):
                 }
             ]
         )
+        char_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
+        snor_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
         add_list = [
             {
                 "_objectType": "entity",
                 "_typeName": "Pokemon",
-                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995409}".upper(),
+                "_id": char_uuid,
                 "_properties": {
                     "name": "Charizard",
                 },
@@ -138,7 +141,7 @@ class TestKGMethods(unittest.TestCase):
             {
                 "_objectType": "entity",
                 "_typeName": "Pokemon",
-                "_id": "{50ce30a4-b311-4ab3-bb2e-e896fb920601}".upper(),
+                "_id": snor_uuid,
                 "_properties": {
                     "shape": {
                         "rings": [
@@ -154,13 +157,13 @@ class TestKGMethods(unittest.TestCase):
                         "spatialReference": {"wkid": 4326},
                     },
                     "name": "Snorlax",
-                    "globalid": "{50ce30a4-b311-4ab3-bb2e-e896fb920601}".upper(),
+                    "globalid": snor_uuid,
                     "objectid": 2,
                 },
             },
         ]
 
-        kg.apply_edits(adds=add_list)
+        add_res = kg.apply_edits(adds=add_list)
 
         # make sure our graph has stuff in it
         q = """MATCH (n) RETURN n.objectid, n.shape, n LIMIT 10"""
@@ -214,18 +217,19 @@ class TestKGMethods(unittest.TestCase):
 
         # test provenance in search
         with self.subTest(msg="Provenance inclusion test"):
+            prov_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
             prov_entity = {
                 "_objectType": "entity",
                 "_typeName": "Provenance",
-                "_id": "{1794b6b2-4d91-48ad-b51f-5dfb80e58c02}".upper(),
+                "_id": prov_uuid,
                 "_properties": {
-                    "instanceID": "{3e16d8fe-7f68-45ef-805a-a54d78995409}".upper(),
+                    "instanceID": char_uuid,
                     "propertyName": "name",
                     "sourceType": "String",
                     "typeName": "Pokemon",
                     "sourceName": "MySourceName",
                     "source": "MySource",
-                    "globalid": "{1794b6b2-4d91-48ad-b51f-5dfb80e58c02}".upper(),
+                    "globalid": prov_uuid,
                 },
             }
             kg.apply_edits(adds=[prov_entity])
@@ -237,6 +241,14 @@ class TestKGMethods(unittest.TestCase):
             assert isinstance(no_prov, Generator)
             # query with provenance included should have more results than other
             assert len(list(has_prov)) > len(list(no_prov))
+        
+        # cleanup
+        dels = {
+                "_objectType": "entity",
+                "_typeName": "Pokemon",
+                "_ids": [char_uuid, snor_uuid],
+        }
+        kg.apply_edits(deletes=[dels], cascade_delete_provenance=True)
 
     def test_search(self):
         search = kg.search("China")
@@ -325,12 +337,12 @@ class TestKGMethods(unittest.TestCase):
 
     def test_apply_edits(self):
         import time
-
+        pika_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
         with self.subTest(msg="Add test"):
             add_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper(),
+                "_id": pika_uuid,
                 "_properties": {
                     "name": "Pikachu",
                 },
@@ -345,7 +357,7 @@ class TestKGMethods(unittest.TestCase):
             update_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper(),
+                "_id": pika_uuid,
                 "_properties": {
                     "name": "Raichu",
                 },
@@ -360,7 +372,7 @@ class TestKGMethods(unittest.TestCase):
             delete_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper()],
+                "_ids": [pika_uuid],
             }
 
             res = kg.apply_edits(deletes=[delete_dict])
@@ -376,12 +388,14 @@ class TestKGMethods(unittest.TestCase):
                 list(kg.query_streaming(query=test_query, include_provenance=True))
             )
 
+            poli_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
+            prov_uuid = f'{{{str(uuid.uuid4()).upper()}}}'
             # test adding provenance
             adds_list = [
                 {
                     "_objectType": "entity",
                     "_typeName": "Document",
-                    "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995411}".upper(),
+                    "_id": poli_uuid,
                     "_properties": {
                         "name": "Poliwhirl",
                     },
@@ -389,15 +403,15 @@ class TestKGMethods(unittest.TestCase):
                 {
                     "_objectType": "entity",
                     "_typeName": "Provenance",
-                    "_id": "{1794b6b2-4d91-48ad-b51f-5dfb80e58c01}".upper(),
+                    "_id": prov_uuid,
                     "_properties": {
-                        "instanceID": "{3e16d8fe-7f68-45ef-805a-a54d78995411}".upper(),
+                        "instanceID": poli_uuid,
                         "propertyName": "name",
                         "sourceType": "String",
                         "typeName": "Document",
                         "sourceName": "MySourceName",
                         "source": "MySource",
-                        "globalid": "{1794b6b2-4d91-48ad-b51f-5dfb80e58c01}".upper(),
+                        "globalid": prov_uuid,
                     },
                 },
             ]
@@ -414,7 +428,7 @@ class TestKGMethods(unittest.TestCase):
             delete_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995411}".upper()],
+                "_ids": [poli_uuid],
             }
             res = kg.apply_edits(deletes=[delete_dict], cascade_delete_provenance=True)
             assert isinstance(res, dict)
@@ -450,6 +464,47 @@ class TestKGMethods(unittest.TestCase):
             res = kg.constraint_rule_adds([constraint_rule])
             assert isinstance(res, dict)
             assert "PokemonCS" in kg.datamodel["constraint_rules"]
+
+        with self.subTest(msg="Update Test"):
+
+            constraint_rule = {
+                "name": "PokemonCS",
+                "alias": "gymdata",
+                "disabled": False,
+            }
+
+            mask = {
+                "update_name": False,
+                "update_alias": True,
+                "update_disabled": True
+            }
+
+            relationship_exclusion_rule_update =  {
+                "update_origin_entity_types": {
+                    "add_named_types": ["Trainer"],
+                    "remove_named_types": ["Pokemon"]
+                },
+                "update_relationship_types": {
+                    "add_named_types": ["TrainedAt"],
+                    "remove_named_types": ["HealedAt"]
+                },
+                "update_destination_entity_types": {
+                    "add_named_types": ["Gym"],
+                    "remove_named_types": ["PokeCenter"]
+                }
+            }
+
+            constraint_rule_update = {
+                "rule_name": "PokemonCS",
+                "mask": mask,
+                "constraint_rule": constraint_rule,
+                "relationship_exclusion_rule_update": relationship_exclusion_rule_update
+            }
+
+            res = kg.constraint_rule_updates([constraint_rule_update])
+            assert isinstance(res, dict)
+            assert "PokemonCS" in kg.datamodel['constraint_rules']
+            assert kg.datamodel['constraint_rules']['PokemonCS']['alias'] == 'gymdata'
 
         with self.subTest(msg="Delete Test"):
 
