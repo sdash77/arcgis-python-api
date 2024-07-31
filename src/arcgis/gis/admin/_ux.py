@@ -16,6 +16,7 @@ import requests
 
 _basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
+_cm = LazyLoader("arcgis.gis._impl._content_manager")
 
 _log = logging.getLogger(__name__)
 
@@ -675,7 +676,7 @@ class UX(object):
             folder = self._gis.content.folders.get()
             im_item = folder.add(item_props, file=logo).result()
             # share to everyone
-            im_item.sharing.sharing_level = "EVERYONE"
+            im_item.sharing.sharing_level = _cm.SharingLevel.EVERYONE.value
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
@@ -3124,7 +3125,7 @@ class UtilityServicesSettings:
                             )
                             # pylint: enable=no-member
                             svc_item.protect(enable=True)
-                            svc_item.sharing.sharing_level = "ORGANIZATION"
+                            svc_item.sharing.sharing_level = _cm.SharingLevel.ORG.value
                         except:
                             # if proxy item fails, continue
                             pass
