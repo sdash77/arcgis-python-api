@@ -2031,7 +2031,27 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
         elif HASSHAPELY:
-            return self.as_shapely.crosses(other=second_geometry.as_shapely)
+            from shapely.validation import explain_validity
+
+            geometry1 = self.as_shapely
+            geometry2 = second_geometry.as_shapely
+            # Check if geometries are valid
+            is_valid1 = geometry1.is_valid
+            is_valid2 = geometry2.is_valid
+
+            # If invalid, explain the issues
+            if is_valid1 is False:
+                print(
+                    f"Geometry 1 validity issue: {explain_validity(geometry1)}. Using buffer(0) to fix the issue."
+                )
+                geometry1 = geometry1.buffer(0)
+
+            if is_valid2 is False:
+                print(
+                    f"Geometry 2 validity issue: {explain_validity(geometry2)}. Using buffer(0) to fix the issue."
+                )
+                geometry2 = geometry2.buffer(0)
+            return geometry1.crosses(other=geometry2)
         return None
 
     # ----------------------------------------------------------------------
