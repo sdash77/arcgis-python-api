@@ -1880,6 +1880,7 @@ def reconstruct_surface(
     output_dsm_mesh_name: Optional[str] = None,
     output_point_cloud_name: Optional[str] = None,
     output_mesh_name: Optional[str] = None,
+    output_dtm_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
@@ -1959,6 +1960,11 @@ def reconstruct_surface(
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                used as the output for the tool.
+
+                                                                                A RuntimeError is raised if a service by that name already exists.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    output_dtm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
@@ -2072,6 +2078,7 @@ def reconstruct_surface(
         output_dsm_mesh_name=output_dsm_mesh_name,
         output_point_cloud_name=output_point_cloud_name,
         output_mesh_name=output_mesh_name,
+        output_dtm_name=output_dtm_name,
         context=context,
         future=future,
         flight_json_details=flight_json_details,

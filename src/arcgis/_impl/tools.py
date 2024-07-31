@@ -9287,6 +9287,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         output_dsm_mesh_name=None,
         output_point_cloud_name=None,
         output_mesh_name=None,
+        output_dtm_name=None,
         context=None,
         gis=None,
         future=False,
@@ -9526,6 +9527,17 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             )
             output_products["dsm"] = json.loads(output_dsm_raster)
 
+        if output_dtm_name is not None:
+            (
+                output_dtm_raster,
+                output_dtm_service,
+            ) = self._set_output_raster(
+                output_name=output_dtm_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_products["dtm"] = json.loads(output_dtm_raster)
+
         if output_true_ortho_name is not None:
             (
                 output_true_ortho_raster,
@@ -9558,7 +9570,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                 output_mesh_dict["folderId"] = folderId
             output_products["mesh"] = output_mesh_dict
 
-        for product in ["dsm", "true_ortho"]:
+        for product in ["dsm", "true_ortho", "dtm"]:
             if product in output_products and context and product in context:
                 output_products[product].update(context[product])
 
@@ -9586,6 +9598,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             items["dsm"] = json.loads(output_dsm_raster)
         if output_true_ortho_name is not None:
             items["true_ortho"] = json.loads(output_true_ortho_raster)
+        if output_dtm_name is not None:
+            items["dtm"] = json.loads(output_dtm_raster)
         final_job = None
         job._is_reality = True
         final_job = RMJob(job, item=items)

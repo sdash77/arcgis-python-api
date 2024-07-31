@@ -200,7 +200,7 @@ class Mission:
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        if product.lower() not in ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]:
+        if product.lower() not in ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]:
             raise RuntimeError("Invalid product type")
         
         product = product.lower()
@@ -276,7 +276,7 @@ class Mission:
             mission_json = self._mission_json
             oid = mission_json["oid"]
 
-            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]
+            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
             items_list = []
             slpk_items_list = []
             image_collection_item = None

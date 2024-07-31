@@ -1588,7 +1588,8 @@ class RMJob(GPJob):
                     "dsm_mesh",
                     "mesh",
                     "true_ortho",
-                    "point_cloud"
+                    "point_cloud",
+                    "dtm"
                 ]
                 for key in keys:
                     if key in mission_json["jobs"].keys():
@@ -1599,7 +1600,7 @@ class RMJob(GPJob):
                                 {key: {"checked": False, "mode": "Quick"}}
                             )
 
-                item_keys = ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud"]
+                item_keys = ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
                 for key in item_keys:
                     if key in mission_json["items"]:
                         item_info = mission_json["items"][key]
