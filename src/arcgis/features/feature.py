@@ -1543,8 +1543,30 @@ class FeatureCollection(Layer):
     # noinspection PyMissingConstructor
     def __init__(self, dictdata):
         self._hydrated = True
-        self.properties = PropertyMap(dictdata)
-        self.layer = self.properties
+        self._properties = PropertyMap(dictdata)
+
+    @property
+    def properties(self):
+        """
+        Returns the current definition for the FeatureCollection.
+        Contains a list of layer definitions, under the "layers" property.
+        Each layer in the list contains properties such as "featureSet" and "layerDefinition".
+
+        See https://developers.arcgis.com/web-map-specification/objects/featureCollection for full details.
+        """
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties):
+        self._properties = PropertyMap(properties)
+
+    @property
+    def layer(self):
+        return self.properties
+
+    @layer.setter
+    def layer(self, layer):
+        self.properties = PropertyMap(layer)
 
     @property
     def _lyr_json(self):
@@ -1715,3 +1737,6 @@ class FeatureCollection(Layer):
 
         # create a FC and return
         return FeatureCollection(fc_dict)
+
+
+FeatureCollection.layer.__doc__ = FeatureCollection.properties.__doc__
