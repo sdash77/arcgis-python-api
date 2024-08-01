@@ -1300,7 +1300,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False) | self.get("z", False)
+        return self.get("hasZ", False) | (self.get("z", False) != False)
 
     # ----------------------------------------------------------------------
     @property
