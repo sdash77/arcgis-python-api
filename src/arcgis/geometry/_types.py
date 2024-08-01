@@ -1300,7 +1300,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False) | (self.get("z", False) != False)
+        if self.as_arcpy:
+            return self.as_arcpy.has_z
+        elif self.as_shapely:
+            return self.as_shapely.has_z
+
+        return self.get("hasZ", False) or self.get("z", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1312,6 +1317,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
+        if self.as_arcpy:
+            return self.as_arcpy.has_m
         return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
@@ -3033,10 +3040,11 @@ class MultiPoint(Geometry):
         self.update(kwargs)
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> dict:
+        """returns the EsriJSON as GeoJSON"""
         return {
             "type": "Multipoint",
-            "coordinates": [(pt[0], pt[1]) for pt in self["points"]],
+            "coordinates": [tuple(pt) for pt in self["points"]],
         }
 
     # ----------------------------------------------------------------------
@@ -3240,15 +3248,28 @@ class Point(Geometry):
         for d in data:
             if d.lower() == "coordinates":
                 coordkey = d
-        coordinates = data[coordkey]
+        coordinates = list(data[coordkey])
+        if len(coordinates) == 2:
+            keys = ["x", "y"]
+        elif len(coordinates) == 3:
+            keys = ["x", "y", "z"]
+        elif len(coordinates) == 4:
+            keys = ["x", "y", "z", "m"]
+        keys.append("spatialReference")
+        coordinates.append(sr)
+        v: dict = dict(zip(keys, coordinates))
+        return cls(v)
 
-        return cls(
-            {
-                "x": coordinates[0],
-                "y": coordinates[1],
-                "spatialReference": sr,
-            }
-        )
+    # ----------------------------------------------------------------------
+    @property
+    def __geo_interface__(self) -> dict:
+        """returns the EsriJSON as GeoJSON"""
+        gj: dict = {"type": "Point", "coordinates": [self["x"], self["y"]]}
+        if "z" in self:
+            gj["coordinates"].append(self["z"])
+        if "m" in self:
+            gj["coordinates"].append(self["m"])
+        return gj
 
 
 ########################################################################
@@ -3390,6 +3411,14 @@ class Polygon(Geometry):
                 part_list.append(part_item)
         return cls({"rings": part_list, "spatialReference": sr})
 
+    @property
+    def __geo_interface__(self) -> dict:
+        """returns the Polygon as a MultiPolygon GeoJSON"""
+        col = []
+        for part in self["rings"]:
+            col.append([tuple(pt) for pt in part])
+        return {"coordinates": [col], "type": "MultiPolygon"}
+
 
 ########################################################################
 class Polyline(Geometry):
@@ -3490,14 +3519,25 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     @property
-    def __geo_interface__(self):
-        return {
-            "type": "MultiLineString",
-            "coordinates": [
-                [((pt[0], pt[1]) if pt else None) for pt in part]
-                for part in self["paths"]
-            ],
-        }
+    def __geo_interface__(self) -> dict:
+        """Returns the EsriJSON as GeoJSON"""
+        parts: list = []
+
+        for part in self["paths"]:
+            coordinates: list = []
+            for pt in part:
+                if pt:
+                    if len(pt) == 2:
+                        coordinates.append((pt[0], pt[1]))
+                    elif len(pt) == 3:
+                        coordinates.append((pt[0], pt[1], pt[2]))
+                    elif len(pt) == 4:
+                        coordinates.append((pt[0], pt[1], pt[2], pt[3]))
+                else:
+                    coordinates.append(None)
+            parts.append(coordinates)
+
+        return {"type": "MultiLineString", "coordinates": parts}
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
@@ -3614,7 +3654,8 @@ class Envelope(Geometry):
                     dtype=float,
                 )
             return np.array(
-                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]],
+                dtype=float,
             )
         else:
             return np.array([])
