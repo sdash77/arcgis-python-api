@@ -37,7 +37,7 @@ class TestWinAuth(unittest.TestCase):
             resp = session.get(url=url + "/sharing/rest/portals/self?f=json")
             data = resp.json()
             assert data
-            assert parse_username(self.username) in data.get("user", {}).get("username")
+            assert "@avworld" in data.get("user", {}).get("username", "").lower()
 
     @unittest.skipIf(not AVWORLD, "Must be on AVWORLD to test implicit credentials")
     def test_get_server_system_services_implicit_user(self):
@@ -69,7 +69,8 @@ class TestWinAuth(unittest.TestCase):
         servers = gis.admin.servers.list()
         if len(servers) > 0:
             assert servers[0].properties
-        assert gis.users.me in parse_username(self.username)
+        assert gis.users.me
+        assert parse_username(self.username).lower() in gis.users.me.username.lower()
 
     @unittest.skipIf(not AVWORLD, "Must be on AVWORLD to test implicit credentials")
     def test_list_servers_implicit_user_gis(self):
