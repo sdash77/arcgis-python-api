@@ -97,14 +97,11 @@ class RecycleItem:
                     folder_id = self._gis.content.folders.get(folder).properties["id"]
                 elif isinstance(folder, Folder):
                     folder_id = folder.properties["id"]
-                else:
-                    raise Exception(
-                        "The folder argument must be a string or Folder object."
-                    )
                 params.update({"folder": folder_id})
-            except AttributeError as ae:
-                print(f"Could not get {folder} for {self.owner}")
-                print(f"{ae}")
+            except:
+                raise ValueError(
+                    f"Could note get {folder} for {self.properties['owner']}"
+                )
         resp: requests.Response = self._session.post(url, data=params)
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
