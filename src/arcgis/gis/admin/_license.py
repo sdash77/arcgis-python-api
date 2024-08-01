@@ -8,6 +8,9 @@ from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
+import logging
+
+_LOG = logging.getLogger()
 
 
 ########################################################################
@@ -143,11 +146,19 @@ class LicenseManager(BasePortalAdmin):
         if "purchases" in self.properties:
             purchases = self.properties["purchases"]
             for purchase in purchases:
-                licenses.append(License(gis=self._gis, info=purchase))
+                try:
+
+                    licenses.append(License(gis=self._gis, info=purchase))
+                except Exception as ex:
+                    _LOG.warning(str(ex))
         if "trials" in self.properties:
             purchases = self.properties["trials"]
             for purchase in purchases:
-                licenses.append(License(gis=self._gis, info=purchase))
+                try:
+
+                    licenses.append(License(gis=self._gis, info=purchase))
+                except Exception as ex:
+                    _LOG.warning(str(ex))
         return licenses
 
     # ----------------------------------------------------------------------

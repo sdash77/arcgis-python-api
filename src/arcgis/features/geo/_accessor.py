@@ -1843,7 +1843,7 @@ class GeoAccessor(object):
         def _plot_map_widget(mp_wdgt):
             plot(
                 df=self._data,
-                map_widget=mp_wdgt,
+                map=mp_wdgt,
                 name=kwargs.pop("name", "Feature Collection Layer"),
                 renderer=kwargs.pop("renderer", None),
                 **kwargs,
@@ -3600,11 +3600,19 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].geom.centroid.isnull()
+        columns = ["x", "y"]
+        if self.has_z:
+            columns.append("z")
+
         df = pd.DataFrame(
             self._data[~q][self.name].geom.centroid.tolist(),
-            columns=["x", "y"],
+            columns=columns,
         )
-        return df["x"].mean(), df["y"].mean()
+        if self.has_z == False:
+
+            return df["x"].mean(), df["y"].mean()
+        else:
+            return df["x"].mean(), df["y"].mean(), df["z"].mean()
 
     # ----------------------------------------------------------------------
     @property

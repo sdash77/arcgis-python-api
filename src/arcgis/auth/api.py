@@ -14,10 +14,10 @@ from ._auth._winauth import HAS_KERBEROS
 from ._auth._negotiate import HAS_GSSAPI
 from .tools import LazyLoader
 from .tools._adapter import (
-    TruststoreAdapter,
     EsriHostHeaderSSLAdapter,
     PKIAdapter,
 )
+from .tools.cert import TruststoreAdapter
 
 urllib3 = LazyLoader("urllib3")
 __USERAGENT__ = f"Geosaurus/{__version__}"
@@ -252,7 +252,13 @@ class EsriSession:
             self._session.cert = None
 
         else:
-            adapter = TruststoreAdapter(max_retries=retry)
+            if self.verify_cert == False:
+                import ssl
+
+                context = ssl._create_unverified_context()
+            else:
+                context = None
+            adapter = TruststoreAdapter(max_retries=retry, ssl_context=context)
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
 

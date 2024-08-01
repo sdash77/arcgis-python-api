@@ -7,37 +7,28 @@ img_norm_flood_model = dict(
     means=[0.14245495, 0.13921481, 0.12434631, 0.31420089, 0.20743526, 0.12046503],
     stds=[0.04036231, 0.04186983, 0.05267646, 0.0822221, 0.06834774, 0.05294205],
 )
+nframes = 1
 
 norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type="TemporalEncoderDecoder",
-    pretrained=None,
-    frozen_backbone=True,
+    type="EncoderDecoder",
     backbone=dict(
-        type="TemporalViTEncoder",
-        pretrained=None,
+        type="PrithviBackbone",
         img_size=224,
-        patch_size=16,
-        num_frames=1,
-        tubelet_size=1,
         in_chans=len(bands),
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        mlp_ratio=4.0,
-        norm_pix_loss=False,
+        num_frames=nframes,
+        tubelet_size=1,
+        pretrained=False,
     ),
     neck=dict(
-        type="ConvTransformerTokensToEmbeddingNeck",
-        embed_dim=768,
-        output_embed_dim=768,
-        drop_cls_token=True,
-        Hp=14,
-        Wp=14,
+        type="PrithviNeck",
+        embed_dim=768 * nframes,
+        output_embed_dim=768 * nframes,
+        input_hw=(14, 14),
     ),
     decode_head=dict(
         num_classes=2,
-        in_channels=768,
+        in_channels=768 * nframes,
         ignore_index=2,
         type="FCNHead",
         in_index=-1,
@@ -56,7 +47,7 @@ model = dict(
     ),
     auxiliary_head=dict(
         num_classes=2,
-        in_channels=768 * 1,
+        in_channels=768 * nframes,
         ignore_index=2,
         type="FCNHead",
         in_index=-1,

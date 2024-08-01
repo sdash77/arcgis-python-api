@@ -6,11 +6,13 @@ from ._arcgis_model import _EmptyData
 try:
     from fastai.vision import flatten_model
     import torch
+    import fastai
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
+    from ._transformer_backbone import swin_config
 
     HAS_FASTAI = True
 
@@ -39,19 +41,10 @@ class CustomBDCN:
 
         if backbone is None:
             self._backbone = self.models.vgg19
-        elif type(backbone) is str:
-            if hasattr(self.models, backbone):
-                self._backbone = getattr(self.models, backbone)
-            elif hasattr(self.models.detection, backbone):
-                self._backbone = getattr(self.models.detection, backbone)
-            elif "timm:" in backbone:
-                import timm
-
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
         else:
-            self._backbone = backbone
+            from arcgis.learn.models._arcgis_model import get_backbone_func
+
+            self._backbone = get_backbone_func(backbone, data, is_fpn=True)
 
         model = self.bdcn._BDCNModel(
             self._backbone, data.chip_size, pretrained=pretrained_backbone
@@ -149,10 +142,19 @@ class BDCNEdgeDetector(ModelExtension):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
+        layers = flatten_model(self.learn.model.backbone)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
         count = 0
         count_strided_conv = 0
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+        for idx, i in enumerate(layers[start_idx:]):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
 
             for p in i.parameters():
@@ -184,6 +186,11 @@ class BDCNEdgeDetector(ModelExtension):
         """Supported list of backbones for this model."""
         return BDCNEdgeDetector._supported_backbones()
 
+    @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(swin_config.keys())
+        return transformer_backbone
+
     @property
     def supported_backbones(self):
         """Supported list of backbones for this model."""
@@ -208,13 +215,8 @@ class BDCNEdgeDetector(ModelExtension):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        from ._hf_weightutils import hf_resnet_cfgs
-
-        return (
-            [*_resnet_family, *_vgg_family]
-            + timm_backbones
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
-        )
+        transformer_backbone = BDCNEdgeDetector.transformer_backbones()
+        return [*_resnet_family, *_vgg_family] + transformer_backbone + timm_backbones
 
     @property
     def supported_datasets(self):

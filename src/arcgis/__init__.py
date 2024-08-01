@@ -6,7 +6,6 @@ from arcgis import env
 
 os = LazyLoader("os")
 features = LazyLoader("arcgis.features")
-geoanalytics = LazyLoader("arcgis.geoanalytics")
 geocoding = LazyLoader("arcgis.geocoding")
 geometry = LazyLoader("arcgis.geometry")
 geoprocessing = LazyLoader("arcgis.geoprocessing")
@@ -14,7 +13,7 @@ network = LazyLoader("arcgis.network")
 raster = LazyLoader("arcgis.raster")
 realtime = LazyLoader("arcgis.realtime")
 schematics = LazyLoader("arcgis.schematics")
-mapping = LazyLoader("arcgis.mapping")
+mapping_layers = LazyLoader("arcgis.layers")
 apps = LazyLoader("arcgis.apps")
 
 if not os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":
@@ -80,6 +79,7 @@ __all__ = [
     "apps",
     "calculate_composite_index",
     "calculate_density",
+    "choose_best_facilities",
     "connect_origins_to_destinations",
     "create_buffers",
     "create_drive_time_areas",
@@ -96,8 +96,10 @@ __all__ = [
     "find_existing_locations",
     "find_hot_spots",
     "find_nearest",
+    "find_outliers",
+    "find_point_clusters",
     "find_similar_locations",
-    "geoanalytics",
+    "generate_tessellation",
     "geocode",
     "geocoding",
     "geometry",

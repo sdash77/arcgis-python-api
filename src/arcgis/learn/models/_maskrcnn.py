@@ -11,6 +11,7 @@ try:
     import torch
     import torch.nn as nn
     from collections import OrderedDict
+    import fastai
     from fastai.vision.learner import create_body
     from fastai.callbacks.hooks import num_features_model
     from fastai.vision import flatten_model
@@ -57,6 +58,7 @@ try:
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
+    from ._transformer_backbone import vit_config, custom_backbone
 
     HAS_FASTAI = True
 except Exception as e:
@@ -388,6 +390,15 @@ class MaskRCNN(ArcGISModel):
                         backbone_fpn.out_channels = num_features_model(
                             torch.nn.Sequential(*backbone_fpn.children())
                         )
+            elif backbone in MaskRCNN.transformer_backbones():
+                backbone_fpn = custom_backbone(
+                    backbone_name=backbone,
+                    pretrained=pretrained_backbone,
+                    is_fpn=True,
+                    img_size=int(1.5 * data.chip_size),
+                    in_chans=len(data._extract_bands),
+                ).backbone_fpn
+                backbone_fpn._is_transformer = True
             else:
                 ## warning_fix 'pretrained' replaced with 'weights'
                 backbone_fpn = resnet_fpn_backbone(
@@ -498,11 +509,26 @@ class MaskRCNN(ArcGISModel):
             param.requires_grad = True
 
     def _freeze(self):
-        "Freezes the pretrained backbone."
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+        if hasattr(self.learn.model.backbone, "backbone"):
+            backbone = self.learn.model.backbone.backbone
+        elif hasattr(self.learn.model.backbone, "body"):
+            backbone = self.learn.model.backbone.body
+        else:
+            backbone = self.learn.model.backbone
+        layers = flatten_model(backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
                 continue
-            for p in i.parameters():
+            for p in layer.parameters():
                 p.requires_grad = False
         return idx
 
@@ -522,6 +548,11 @@ class MaskRCNN(ArcGISModel):
         return MaskRCNN._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return MaskRCNN._supported_backbones()
@@ -530,10 +561,12 @@ class MaskRCNN(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        transformer_backbone = MaskRCNN.transformer_backbones()
         from ._hf_weightutils import hf_resnet_cfgs
 
         return (
             [*_resnet_family]
+            + transformer_backbone
             + timm_backbones
             + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         )
