@@ -5,6 +5,7 @@ arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
 urllib = LazyLoader("urllib")
 
+
 @deprecated(
     deprecated_in="2.4.0",
     removed_in="2.4.2",
@@ -278,6 +279,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
             raise ValueError(
                 "Invalid parameters -- Must specify a webmap if setting feature layer"
             )
+
 
 @deprecated(
     deprecated_in="2.4.0",
