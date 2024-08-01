@@ -7,11 +7,11 @@
 from __future__ import print_function
 
 import argparse
-from os.path import dirname, abspath, join as pjoin
 
 
 def install(user=False, symlink=False, enable=False):
-    """Install the widget nbextension and optionally enable it.
+    """The Jupyter Notebook widget has been removed from this release.
+    This function is a no-op.
 
     Parameters
     ----------
@@ -20,23 +20,8 @@ def install(user=False, symlink=False, enable=False):
     symlink: bool
         Symlink instead of copy (for development).
     """
-    try:
-        from notebook.nbextensions import install_nbextension
-        from notebook.services.config import ConfigManager
-    except ModuleNotFoundError:
-        print('"notebook" not installed, silently failing...')
-        return
-    widgetsdir = pjoin(dirname(abspath(__file__)), "widgets")
-    install_nbextension(widgetsdir, destination="arcgis", user=user, symlink=symlink)
-
-    cm = ConfigManager()
-    cm.update(
-        "notebook",
-        {
-            "load_extensions": {
-                "arcgis/mapview": True,
-            }
-        },
+    print(
+        "The Jupyter Notebook widget has been removed from this release.  Continuing."
     )
 
 
@@ -51,7 +36,7 @@ def uninstall():
         uninstall_nbextension("arcgis", user=False)
     except:
         print(
-            'Manually uninstall any prior version of arcgis widget using:\n\t"jupyter nbextension uninstall arcgis --user" and \n\t"jupyter nbextension uninstall arcgis"'
+            "Failed to automatically remove prior versions.\nManually uninstall any prior version of arcgis widget using:\n\t`jupyter nbextension uninstall arcgis --user` and \n\t`jupyter nbextension uninstall arcgis`"
         )
 
 

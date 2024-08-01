@@ -1,546 +1,100 @@
-# -------------------------------------------------------------------------------
-# Name:        AttachmentManager class tests
-# Purpose:     Tests for reading, editing FeatureLayer definitions
-# -------------------------------------------------------------------------------
+import os
 import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
+from arcgis.features.managers import AttachmentManager
 from integration.config import QALAB_ROOT_PATH
-from configparser import ConfigParser
-import datetime
-from utils.decorators import integration_test
-
-# region PreCondition check
-test_skip = False
-class_skip = False
-module_skip = False
-
-r1 = PreconditionChecks.check_API_import()
-r2 = PreconditionChecks.check_Python_version()
-
-if r1 & r2:
-    print("## Precondition checks passed ##")
-    module_skip = False
-else:
-    module_skip = True
-    print("Pre condition checks failed. Quitting tests")
-    raise (exit())
-
-# Import the module after Precondition checks pass
-try:
-    import arcgis
-    from arcgis.gis import GIS
-    from arcgis import features
-except ImportError:
-    print("API import error. Quitting test")
-    raise (exit())
-# endregion PreCondition Check
-
-# TestModule
-@unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Features module"
-)
-def setUpModule():
-    """
-    Set up code for full arcgis.features module Featurelayer class tests
-    :return:
-    """
-    # Get environment status
-    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
-    print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
-    print("Host OS: " + PreconditionChecks.get_OS())
+from utils.decorators import integration_test, profiles
 
 
+@profiles.enterprise_and_agol
 @integration_test
-class Test_AttachmentManager_portal(unittest.TestCase):
+class TestAttachmentManager(unittest.TestCase):
     """
-    Test to check if a FeatureLayer object works with builtin portal
+    Test for AttachmentManager object
     """
 
     @classmethod
     def setUpClass(cls):
         """
-        Check if portal builtin can be reached
-        Get class test asset location
-        :return:
+        Set up QALAB path and test_item
         """
-
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["admin_user"]
-        cls.portal_password = _conf_reader["teamportal"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
         cls.qalab_base_path = QALAB_ROOT_PATH
-        cls.qalab_cls_path = (
-            cls.qalab_base_path
-            + _conf_reader2["test_data"]["qalab_FeatureLayerManager_cls"]
+        cls.qalab_cls_path = os.path.join(
+            cls.qalab_base_path, "features_mod_AttachmentManager_cls"
         )
-        # endregion
+        cls.new_attachment = os.path.join(cls.qalab_cls_path, "cows3.jpg")
+        cls.update_attachment = os.path.join(cls.qalab_cls_path, "cows4.jpg")
 
-        # region sign in
-        cls.gis = GIS(
-            profile="your_ent_admin_profile", verify_cert=False
-        )
-        if cls.gis is None:
-            cls.class_skip = True
-        # endregion
+        cls.test_item = cls.gis.content.search(
+            "dino_AttachmentManager_basic", "Feature Layer"
+        )[0]
 
-        # region print banner
-        print("==================================================================")
-        print("Beginning tests in Test_FeatureLayer_portal class")
-        # endregion
-
-    def setUp(self):
-        test_skip = False  # reset the skip flag
-        print("Test: " + self._testMethodName)
-        # self.namePrefix = "dino_FeatureLayer_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
-
-    @classmethod
-    def tearDownClass(cls):
-        print("\n==================================================================")
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
     def test_create_AttachmentManager_object(self):
         """
-        Purpose of this test is to create instances of AttachmentManager class in multiple ways
+        Test create instances of AttachmentManager class in multiple ways
         :return:
         """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-            self.assertIsInstance(
-                test_item,
-                arcgis.gis.Item,
-                "Input item is not of type Item, cannot run rest of the test case",
-            )
+        # create FeatureLayerManager object from item feature layer
+        fl = self.test_item.layers[0]
+        fl_amgr = fl.attachments
+        assert isinstance(fl_amgr, AttachmentManager)
 
-            # check Item.layers property yields a list of FeatureLayer objects
-            flayers = test_item.layers
-            self.assertIsInstance(
-                flayers, list, "Item.layers property does not return a list"
-            )
-            self.assertIsInstance(
-                flayers[0],
-                arcgis.features.FeatureLayer,
-                "Item.layers property does not return a list of FeatureLayer objects",
-            )
+        # create FeatureLayerManager object from item
+        fl_amgr2 = AttachmentManager(self.test_item)
+        assert isinstance(fl_amgr2, AttachmentManager)
 
-            # check a FeatureLayerManager object can be created from FeatureLayer object
-            flayer0 = flayers[0]
-            flayer0_amgr = flayer0.attachments
-            self.assertIsInstance(
-                flayer0_amgr,
-                arcgis.features.managers.AttachmentManager,
-                "Cannot create a AttachmentManager obj from FeatureLayer Item",
-            )
-
-            # check FeatureLayerManager object can be created from item
-            am2 = features.managers.AttachmentManager(test_item)
-            self.assertIsInstance(
-                am2,
-                arcgis.features.managers.AttachmentManager,
-                "AttachmentManager constructor does not create a manager object",
-            )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_png_attachment(self):
+    def test_getlist_and_download_attachment(self):
         """
-        Download png to default dir and given dir
+        Test download attachment using AttachmentManager
         """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
+        fl = self.test_item.layers[0]
+        fl_am = fl.attachments
+        attachment_list = fl_am.get_list(1)
+        assert len(attachment_list) >= 1, "At least 1 attchment should be found"
+        assert attachment_list[0]["id"] == 1, "attachment id mismatch"
+        assert attachment_list[0]["name"] == "cows.jpg", "attachment name mismatch"
 
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 1, "At least 1 attchment should be found"
-            )
-            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
-            )
+        # download png
+        png_id = fl_am.get_list(1)[2]["id"]
+        download_result_png = fl.attachments.download(1, png_id)
+        assert isinstance(download_result_png[0], str)
 
-            # download
-            download_result = flayer.attachments.download(1, 1)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
+        # download pdf
+        pdf_id = fl_am.get_list(1)[1]["id"]
+        download_result_pdf = fl.attachments.download(1, pdf_id)
+        assert isinstance(download_result_pdf[0], str)
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
+        # download all
+        download_result_all = fl.attachments.download()
+        assert isinstance(download_result_all, list)
 
-        except unittest.SkipTest as skipException:
-            raise skipException
+        # download a list of feature oid
+        download_result_listoid = fl.attachments.download([1, 2])
+        assert isinstance(download_result_listoid, list)
 
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
+        # download multiple attachment from one feature
+        download_result_multi = fl.attachments.download(1)
+        assert isinstance(download_result_multi, list)
 
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_pdf_attachment(self):
+    def test_add_update_delete_attachment(self):
         """
-        Download png to default dir and given dir
+        Test count attachment
         """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
+        fl = self.test_item.layers[0]
+        fl_am = fl.attachments
 
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 1, "At least 1 attchment should be found"
-            )
-            self.assertEqual(attch_list[1]["id"], 2, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[1]["att_name"], "crime_pdf.pdf", "attachment name mismatch"
-            )
+        # add
+        add_res = fl_am.add(2, self.new_attachment)
+        assert add_res["addAttachmentResult"]["success"]
 
-            # download
-            download_result = flayer.attachments.download(1, 2)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
+        # update
+        attachment_id = fl_am.get_list(2)[1]["id"]
+        update_res = fl_am.update(2, attachment_id, self.update_attachment)
+        assert update_res["updateAttachmentResult"]["success"]
 
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
+        # delete
+        delete_res = fl_am.delete(2, attachment_id)
+        assert delete_res["deleteAttachmentResults"][0]["success"]
 
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_multiple_attachments(self):
-        """
-        Download png to default dir and given dir
-        """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 1, "At least 3 attachments should be found"
-            )
-            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
-            )
-
-            # download
-            download_result = flayer.attachments.download(1, 1)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
-
-            download_result2 = flayer.attachments.download(1, 2)
-            self.assertIsInstance(
-                download_result2[0], str, "download does not return a str path"
-            )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-
-@integration_test
-class Test_AttachmentManager_online(unittest.TestCase):
-    """
-    Test to check if a FeatureLayer object works with AGO
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Check if portal builtin can be reached
-        Get class test asset location
-        :return:
-        """
-
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["admin_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
-        cls.qalab_cls_path = (
-            cls.qalab_base_path
-            + _conf_reader2["test_data"]["qalab_FeatureLayerManager_cls"]
-        )
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
-        )
-        if cls.gis is None:
-            cls.class_skip = True
-        # endregion
-
-        # region print banner
-        print("==================================================================")
-        print("Beginning tests in Test_FeatureLayer_portal class")
-        # endregion
-
-    def setUp(self):
-        test_skip = False  # reset the skip flag
-        print("Test: " + self._testMethodName)
-        # self.namePrefix = "dino_FeatureLayer_"
-
-        t = datetime.datetime.now()
-        self.time_stamp = str.format(
-            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
-            str(t.year),
-            str(t.month),
-            str(t.day),
-            str(t.hour),
-            str(t.minute),
-            str(t.second),
-        )
-        print("Time stamp: " + self.time_stamp)
-
-    def tearDown(self):
-        print("------------------------------------------------------------------\n")
-
-    @classmethod
-    def tearDownClass(cls):
-        print("\n==================================================================")
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_create_AttachmentManager_object(self):
-        """
-        Purpose of this test is to create instances of AttachmentManager class in multiple ways
-        :return:
-        """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-            self.assertIsInstance(
-                test_item,
-                arcgis.gis.Item,
-                "Input item is not of type Item, cannot run rest of the test case",
-            )
-
-            # check Item.layers property yields a list of FeatureLayer objects
-            flayers = test_item.layers
-            self.assertIsInstance(
-                flayers, list, "Item.layers property does not return a list"
-            )
-            self.assertIsInstance(
-                flayers[0],
-                arcgis.features.FeatureLayer,
-                "Item.layers property does not return a list of FeatureLayer objects",
-            )
-
-            # check a FeatureLayerManager object can be created from FeatureLayer object
-            flayer0 = flayers[0]
-            flayer0_amgr = flayer0.attachments
-            self.assertIsInstance(
-                flayer0_amgr,
-                arcgis.features.managers.AttachmentManager,
-                "Cannot create a AttachmentManager obj from FeatureLayer Item",
-            )
-
-            # check FeatureLayerManager object can be created from item
-            am2 = features.managers.AttachmentManager(test_item)
-            self.assertIsInstance(
-                am2,
-                arcgis.features.managers.AttachmentManager,
-                "AttachmentManager constructor does not create a manager object",
-            )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_png_attachment(self):
-        """
-        Download png to default dir and given dir
-        """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 1, "At least 1 attchment should be found"
-            )
-            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
-            )
-
-            # download
-            download_result = flayer.attachments.download(1, 1)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_pdf_attachment(self):
-        """
-        Download png to default dir and given dir
-        """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 1, "At least 1 attchment should be found"
-            )
-            self.assertEqual(attch_list[1]["id"], 3, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[1]["name"], "crime_pdf.pdf", "attachment name mismatch"
-            )
-
-            # download
-            download_result = flayer.attachments.download(1, 3)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Precondition error, skipping test.")
-    def test_download_multiple_attachments(self):
-        """
-        Download png to default dir and given dir
-        """
-        try:
-            test_item = PortalUtils.search_portal_item(
-                self.gis, "dino_AttachmentManager_basic", "Feature Layer"
-            )
-
-            # get attachment list
-            flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(1)
-            self.assertGreaterEqual(
-                len(attch_list), 2, "At least 2 attachments should be found"
-            )
-            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
-            self.assertEqual(
-                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
-            )
-
-            # download
-            
-            download_result = flayer.attachments.download(1, 1)
-            self.assertIsInstance(
-                download_result[0], str, "download does not return a str path"
-            )
-
-            download_result2 = flayer.attachments.download(1,3)
-            self.assertIsInstance(
-                download_result2[0], str, "download does not return a str path"
-            )
-
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-
-# TestModule
-def tearDownModule():
-    print("**End GIS module Tests**")
 
 if __name__ == "__main__":
     unittest.main()

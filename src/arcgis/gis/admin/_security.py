@@ -1176,10 +1176,12 @@ class EnterpriseUsers(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         user_license	                Optional string. The user type for the account. (10.7+)
 
-                                        Values: creator, editor, advanced (GIS Advanced),
+                                        Values before Enterprise 11.4: creator, editor, advanced (GIS Advanced),
                                                 basic (GIS Basic), standard (GIS Standard), viewer,
                                                 fieldworker
 
+                                        Values for Enterprise 11.4+: creator, contributor, fieldworker, viewer,
+                                                professionalplus, professional
         ===========================     ====================================================================
 
         :return: boolean
@@ -1191,15 +1193,25 @@ class EnterpriseUsers(BasePortalAdmin):
             "org_editor": "iBBBBBBBBBBBBBBB",
             "org_viewer": "iAAAAAAAAAAAAAAA",
         }
-        user_license_lu = {
-            "creator": "creatorUT",
-            "editor": "editorUT",
-            "advanced": "GISProfessionalAdvUT",
-            "basic": "GISProfessionalBasicUT",
-            "standard": "GISProfessionalStdUT",
-            "viewer": "viewerUT",
-            "fieldworker": "fieldWorkerUT",
-        }
+        if self._gis.version >= [11, 4]:
+            user_license_lu = {
+                "creator": "creatorUT",
+                "contributor": "editorUT",
+                "fieldworker": "fieldWorkerUT",
+                "viewer": "viewerUT",
+                "professionalplus": "GISProfessionalAdvUT",
+                "professional": "GISProfessionalStdUT",
+            }
+        else:
+            user_license_lu = {
+                "creator": "creatorUT",
+                "editor": "editorUT",
+                "advanced": "GISProfessionalAdvUT",
+                "basic": "GISProfessionalBasicUT",
+                "standard": "GISProfessionalStdUT",
+                "viewer": "viewerUT",
+                "fieldworker": "fieldWorkerUT",
+            }
         if user_license and user_license.lower() in user_license_lu:
             user_license = user_license_lu[user_license.lower()]
         else:

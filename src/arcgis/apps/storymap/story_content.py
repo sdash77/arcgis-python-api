@@ -7,6 +7,7 @@ from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+_imports = LazyLoader("arcgis._impl.imports")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 story = LazyLoader("arcgis.apps.storymap.story")
 collection = LazyLoader("arcgis.apps.storymap.collection")
@@ -1442,7 +1443,7 @@ class Embed:
 ###############################################################################################################
 class Map:
     """
-    Class representing a `webmap` or `webscene` for the story
+    Class representing a `map` or `scene` for the story
 
     .. note::
         Once you create a Map instance you must add it to the story to be able to edit it further.
@@ -1450,13 +1451,14 @@ class Map:
     =================       ====================================================================
     **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
-    item                    An Item of type :class:`~arcgis.mapping.WebMap` or
-                            :class:`~arcgis.mapping.WebScene` or a String representing the item
+    item                    An Item of type :class:`~arcgis.map.Map` or
+                            :class:`~arcgis.map.Scene` or a String representing the item
                             id to add to the story map.
     =================       ====================================================================
     """
 
     def __init__(self, item: Optional[arcgis.gis.Item] = None, **kwargs):
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Can be created from scratch or already exist in story
         # Map is not an immersive node
         self._story = kwargs.pop("story", None)
@@ -1532,9 +1534,9 @@ class Map:
             # Create map object to extract properties
             if isinstance(item, arcgis.gis.Item):
                 if item.type == "Web Map":
-                    map_item = arcgis.mapping.WebMap(item)
+                    map_item = arcgismapping.Map(item)
                 elif item.type == "Web Scene":
-                    map_item = arcgis.mapping.WebScene(item)
+                    map_item = arcgismapping.Scene(item)
                 else:
                     raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
@@ -1544,21 +1546,21 @@ class Map:
             self._type = item.type
             self._offline_dependent = None
             if item.type == "Web Map":
-                self._extent = map_item._mapview.extent
-                if map_item._mapview.center is None:
+                self._extent = map_item.extent.dict()
+                if map_item.center.dict() is None or map_item.center.dict() == {}:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
                     self._center = {
-                        "spatialReference": map_item.definition.spatialReference,
+                        "spatialReference": self._extent["spatialReference"],
                         "x": x_center,
                         "y": y_center,
                     }
                 else:
-                    self._center = map_item._mapview.center
-                self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
+                    self._center = map_item.center.dict()
+                self._zoom = map_item.zoom if map_item.zoom is not False else 2
                 self._viewpoint = {
-                    "rotation": map_item._mapview.rotation,
-                    "scale": map_item._mapview.scale,
+                    "rotation": map_item.rotation.dict(),
+                    "scale": map_item.scale.dict(),
                     "targetGeometry": self._center,
                 }
 
@@ -1566,8 +1568,8 @@ class Map:
                 # Create layer dictionary:
                 for layer in map_item.layers:
                     layer_props = {}
-                    layer_props["id"] = layer["id"]
-                    layer_props["title"] = layer["title"]
+                    layer_props["id"] = layer.id
+                    layer_props["title"] = layer.title
                     if "visibility" in layer:
                         layer_props["visible"] = layer["visibility"]
                     elif "layer_visibility" in map_item:
@@ -1578,10 +1580,10 @@ class Map:
             elif item.type == "Web Scene":
                 layers = []
                 # Create layer dictionary:
-                for layer in map_item["operationalLayers"]:
+                for layer in map_item.layers:
                     layer_props = {}
-                    layer_props["id"] = layer["id"]
-                    layer_props["title"] = layer["title"]
+                    layer_props["id"] = layer.id
+                    layer_props["title"] = layer.title
                     if "visibility" in layer:
                         layer_props["visible"] = layer["visibility"]
                     else:
@@ -1589,15 +1591,18 @@ class Map:
                     layers.append(layer_props)
                 self._map_layers = layers
                 self._extent = None
-                self._center = map_item["initialState"]["viewpoint"]["camera"][
+                scene_dict = map_item._webscene_dict
+                self._center = scene_dict["initialState"]["viewpoint"]["camera"][
                     "position"
                 ]
                 self._zoom = 2
                 self._viewpoint = map_item["initialState"]["viewpoint"]
                 self._camera = map_item["initialState"]["viewpoint"]["camera"]
-                self._lighting_date = map_item["initialState"]["environment"][
-                    "lighting"
-                ]["datetime"]
+                self._lighting_date = (
+                    map_item["initialState"]["environment"]["lighting"]["datetime"]
+                    if "datetime" in map_item["initialState"]["environment"]["lighting"]
+                    else None
+                )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -1638,12 +1643,12 @@ class Map:
         map                 One of three choices:
 
                             * String being an item id for an Item of type
-                            :class:`~arcgis.mapping.WebMap`
-                            or :class:`~arcgis.mapping.WebScene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
 
                             * An :class:`~arcgis.gis.Item` of type
-                            :class:`~arcgis.mapping.WebMap`
-                            or :class:`~arcgis.mapping.WebScene`.
+                            :class:`~arcgis.map.Map`
+                            or :class:`~arcgis.map.Scene`.
         ==================  ========================================
 
         .. note::
@@ -1667,16 +1672,121 @@ class Map:
             return self.map
 
     # ----------------------------------------------------------------------
+    def _calculate_z_value(self, scale: int = None):
+        import math
+
+        # Calculate the camera height (z-coordinate)
+        # We assume a 45-degree field of view vertically
+        fov = 45  # degrees
+        fov_radians = math.radians(fov)
+
+        # Calculate camera height based on meters per pixel
+        z_value = scale / (2 * math.tan(fov_radians / 2))
+
+        return z_value
+
+    # ----------------------------------------------------------------------
+    def _update_extent(self, extent: dict):
+        if isinstance(extent, dict):
+            if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
+                raise ValueError(
+                    "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
+                )
+            if "spatialReference" not in extent:
+                try:
+                    extent["spatialReference"] = self._story._properties["resources"][
+                        self.resource_node
+                    ]["data"]["extent"]["spatialReference"]
+                except Exception:
+                    extent["spatialReference"] = {"wkid": 4326}
+
+            # In order to correctly edit, the viewpoint, extent, and center must be updated.
+            # update extent
+            self._story._properties["nodes"][self.node]["data"]["extent"] = extent
+            # update center
+            center_x = (extent["xmin"] + extent["xmax"]) / 2
+            center_y = (extent["ymin"] + extent["ymax"]) / 2
+
+            if self._type == "Web Map":
+                new_center = {
+                    "spatialReference": extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                }
+                self._story._properties["nodes"][self.node]["data"][
+                    "center"
+                ] = new_center
+            else:
+                # Need to account for z value
+                if "zmin" and "zmax" in extent:
+                    center_z = (extent["zmin"] + extent["zmax"]) / 2
+                else:
+                    # z based on scale
+                    center_z = self._calculate_z_value(
+                        self._viewpoint["scale"]
+                        if "scale" in self._viewpoint
+                        else 3000000
+                    )
+                new_center = {
+                    "spatialReference": extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                    "z": center_z,
+                }
+                self._story._properties["nodes"][self.node]["data"][
+                    "center"
+                ] = new_center
+                # update the camera with the new center
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "camera"
+                ]["position"] = new_center
+            # update viewpoint
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "targetGeometry"
+            ] = new_center
+        else:
+            raise ValueError("Extent must be a dictionary")
+
+    # ----------------------------------------------------------------------
+    def _update_scale(self, scale: Scales | str):
+        if isinstance(scale, Scales):
+            scale = scale.value
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "scale"
+            ] = scale["scale"]
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale["zoom"]
+        elif isinstance(scale, dict):
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "scale"
+            ] = scale["scale"]
+            self._story._properties["nodes"][self.node]["data"]["zoom"] = scale["zoom"]
+        if self._type == "Web Scene":
+            # Update the z value for the new scale
+            new_z = self._calculate_z_value(
+                scale["scale"],
+            )
+            # update camera
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"]["camera"][
+                "position"
+            ]["z"] = new_z
+            # update target geometry
+            self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                "targetGeometry"
+            ]["z"] = new_z
+            # update center
+            self._story._properties["nodes"][self.node]["data"]["center"]["z"] = new_z
+
+    # ----------------------------------------------------------------------
     def set_viewpoint(self, extent: dict = None, scale: Scales = None):
         """
         Set the extent and/or scale for the map in the story.
 
         If you have an extent to use from a bookmark,
         find this extent by using the `bookmarks` property in
-        the :class:`~arcgis.mapping.WebMap` Class.
+        the :class:`~arcgis.map.Map` Class.
         The `map` property on this class will return the Web Map
         Item being used. By passing this item into
-        the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
+        the :class:`~arcgis.map.Map` Class you can retrieve a list of all
         bookmarks and their extents with the `bookmarks` property.
 
         To see the current viewpoint call the `properties` property on the Map
@@ -1706,6 +1816,8 @@ class Map:
 
         :return: The current viewpoint dictionary
         """
+        if self._existing is False:
+            raise ValueError("Map must be added to the story before setting viewpoint")
         rdata_dict = self._story._properties["resources"][self.resource_node]["data"]
         if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
             try:
@@ -1722,62 +1834,24 @@ class Map:
         change_made = False
         # set new extent if specified
         if extent:
-            if isinstance(extent, dict):
-                if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
-                    raise ValueError(
-                        "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
-                    )
-                if "spatialReference" not in extent:
-                    try:
-                        extent["spatialReference"] = self._story._properties[
-                            "resources"
-                        ][self.resource_node]["data"]["extent"]["spatialReference"]
-                    except Exception:
-                        extent["spatialReference"] = {"wkid": 4326}
-
-                # In order to correctly edit, the viewpoint, extent, and center must be updated.
-                # update extent
-                self._story._properties["nodes"][self.node]["data"]["extent"] = extent
-                # update center
-                center_x = (extent["xmin"] + extent["xmax"]) / 2
-                center_y = (extent["ymin"] + extent["ymax"]) / 2
-                self._story._properties["nodes"][self.node]["data"]["center"] = {
-                    "spatialReference": extent["spatialReference"],
-                    "x": center_x,
-                    "y": center_y,
-                }
-                # update viewpoint
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "targetGeometry"
-                ] = self._story._properties["nodes"][self.node]["data"]["center"]
-
-                change_made = True
+            self._update_extent(extent)
+            change_made = True
         # set new scale if specified
         if scale:
-            if isinstance(scale, Scales):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale.value["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = (
-                    scale.value["zoom"]
-                )
-                change_made = True
-            elif isinstance(scale, dict):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
-                    "zoom"
-                ]
+            self._update_scale(scale)
+            change_made = True
 
         if change_made:
-            # Once the update made, remove the original information from resources
-            new_data = {
-                "itemId": rdata_dict["itemId"],
-                "itemType": rdata_dict["itemType"],
-                "type": "minimal",
-            }
-            self._story._properties["resources"][self.resource_node]["data"] = new_data
+            # Once the update made, remove the original information from resources so
+            # that the new information is used.
+            rdata_dict.pop("extent", None)
+            rdata_dict.pop("center", None)
+            rdata_dict.pop("viewpoint", None)
+            rdata_dict.pop("zoom", None)
+            rdata_dict["type"] = "minimal"
+            self._story._properties["resources"][self.resource_node][
+                "data"
+            ] = rdata_dict
 
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
@@ -2113,15 +2187,24 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
-        new_map = Map(map)
+        arcgismapping = _imports.get_arcgis_map_mod(True)
         # Check for error.
+        # First find the type of the new map
+        if isinstance(map, str):
+            map = self._story._gis.content.get(map)
         if (
-            new_map._type
+            map.type
             != self._story._properties["resources"][self.resource_node]["data"][
                 "itemType"
             ]
         ):
             raise ValueError("New Map must be of same type as the existing map.")
+
+        # create new map
+        if map.type == "Web Map":
+            new_map = arcgismapping.Map(map)
+        elif map.type == "Web Scene":
+            new_map = arcgismapping.Scene(map)
 
         # Get all the old properties but update with new map where needed
 

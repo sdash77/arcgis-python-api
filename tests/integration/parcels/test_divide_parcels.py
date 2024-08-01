@@ -2,7 +2,7 @@ import concurrent.futures
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS
-from arcgis.features.layer import FeatureLayerCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
 from utils.decorators import integration_test
 from . import parcel_fabric_utils as pfutils
@@ -37,6 +37,16 @@ class TestDivideParcels(unittest.TestCase):
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
+        
+        cls.tax_lyr_info = pfutils.basic_lyr_info(
+            cls.parcel_fabric_flc, "Tax_Div"
+        )[0]
+        cls.tax_lyr_id = cls.tax_lyr_info.lyr_id
+
+        cls.tax_line_info = pfutils.basic_lyr_info(
+            cls.parcel_fabric_flc, "Tax_Div_Lines"
+        )[0]
+        cls.tax_line_id = cls.tax_line_info.lyr_id
 
     def test_divide_proportional_area_no_dist_remainder(self):
         fq_version_name = pfutils.create_version(self.vms, "api-divide_prop_area")
@@ -825,7 +835,7 @@ class TestDivideParcels(unittest.TestCase):
                 self.fail(f"Divide failed: {ex}")
 
     def test_equal_width_merge_remainder_include_lines(self):
-        fq_version_name = versioning_utils.create_version(self.vms)
+        fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = self.tax_lyr_id
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"

@@ -57,7 +57,6 @@ class _StoryMapDefinition(CloneNode):
             "typeKeywords",
             "extent",
             "url",
-            "properties",
         ]
         self.portal_item = portal_item
         self.folder = folder
@@ -84,14 +83,16 @@ class _StoryMapDefinition(CloneNode):
         item_id = None
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             item_id = self.portal_item.itemid
-        new_item = self.target.content.add(
+        if self.folder:
+            folder = self.target.content.folders.get(self.folder, self.owner)
+        else:
+            folder = self.target.content.folders.get(owner=self.owner)
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+        new_item = folder.add(
             item_properties=item_properties,
-            data=data,
-            thumbnail=thumbnail,
-            folder=self.folder,
-            owner=self.owner,
             item_id=item_id,
-        )
+        ).result()
         if self.portal_item.url:
             if self.target._portal.is_arcgisonline:
                 url = f"https://storymaps.arcgis.com/stories/{new_item.id}"
@@ -122,7 +123,10 @@ class _StoryMapDefinition(CloneNode):
                         folder_name = os.path.dirname(resource_name)
                         resource_name = os.path.basename(resource_name)
                     resource_path = resources.get(
-                        resource["resource"], False, resources_dir, resource_name
+                        resource["resource"],
+                        False,
+                        resources_dir,
+                        resource_name,
                     )
                     new_item.resources.add(resource_path, folder_name, resource_name)
 
@@ -148,7 +152,10 @@ class _StoryMapDefinition(CloneNode):
         extent = _deep_get(item_properties, "extent")
         if item_extent is not None and extent is not None and len(extent) > 0:
             item_properties["extent"] = "{0}, {1}, {2}, {3}".format(
-                item_extent.xmin, item_extent.ymin, item_extent.xmax, item_extent.ymax
+                item_extent.xmin,
+                item_extent.ymin,
+                item_extent.xmax,
+                item_extent.ymax,
             )
 
         return item_properties
@@ -313,24 +320,33 @@ class _StoryMapDefinition(CloneNode):
             for resource in new_item.resources.list():
                 if ".json" in resource["resource"]:
                     s_res = json.dumps(
-                        new_item.resources.get(resource["resource"]), ensure_ascii=False
+                        new_item.resources.get(resource["resource"]),
+                        ensure_ascii=False,
                     )
                     for k, v in webmap_mapper.items():
                         s_res = s_res.replace(k, v)
                     res = json.loads(s_res)
-                    tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-                    json.dump(res, tfile)
-                    tfile.seek(0)
-                    new_item.resources.update(
-                        file_name=resource["resource"],
-                        file=tfile.name,
-                    )
+                    with tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        suffix=".json",
+                        dir=tempfile.gettempdir(),
+                        delete=False,
+                    ) as tfile:
+                        json.dump(res, tfile)
+                        tfile.seek(0)
+                        new_item.resources.update(
+                            file_name=resource["resource"],
+                            file=tfile.name,
+                        )
             if new_item.url:
                 new_item.update(
                     {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
                 )
             with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", dir=tempfile.gettempdir(), delete=False
+                mode="w",
+                suffix=".json",
+                dir=tempfile.gettempdir(),
+                delete=False,
             ) as jsonfile:
                 jsonfile.write(story_map_text)
                 new_item.resources.add(file=jsonfile.name)

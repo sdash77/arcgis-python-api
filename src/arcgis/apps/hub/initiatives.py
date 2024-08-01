@@ -298,7 +298,9 @@ class Initiative(OrderedDict):
                     new_content_list.append(item_temp)
                 # share item back to the content group
                 self._gis.content.share_items(
-                    new_content_list, groups=[core_team], allow_members_to_edit=True
+                    new_content_list,
+                    groups=[core_team],
+                    allow_members_to_edit=True,
                 )
                 # reassign core team to target owner
                 core_team.reassign_to(target_owner)
@@ -344,7 +346,11 @@ class Initiative(OrderedDict):
         return self._gis.content.get(self.itemid)
 
     def share(
-        self, everyone=False, org=False, groups=None, allow_members_to_edit=False
+        self,
+        everyone=False,
+        org=False,
+        groups=None,
+        allow_members_to_edit=False,
     ):
         """
         Shares an initiative and associated site with the specified list of groups.
@@ -579,7 +585,9 @@ class InitiativeManager(object):
             _item_dict["properties"]["followersGroupId"] = followers_group.id
 
         # Create initiative and share it with collaboration group if exists
-        item = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+        folder = self._gis.content.folders.get()
+
+        item = folder.add(_item_dict).result()
         try:
             item.sharing.groups.add(collab_group)
         except:
