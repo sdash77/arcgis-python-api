@@ -196,7 +196,7 @@ class BaseGeometry(dict):
             if name in self._class_attributes:
                 return super(BaseGeometry, self).__getattr__(name)
             return self.__getitem__(name)
-        except:
+        except Exception as ex:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
@@ -1300,7 +1300,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        if self.as_arcpy:
+        if "hasZ" in self:
+            return self["hasZ"]
+        elif "z" in self:
+            return True
+        elif self.as_arcpy:
             return self.as_arcpy.has_z
         elif self.as_shapely:
             return self.as_shapely.has_z
@@ -1317,7 +1321,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        if self.as_arcpy:
+        if "hasM" in self:
+            return self.get("hasM", False)
+        elif "m" in self:
+            return True
+        elif self.as_arcpy:
             return self.as_arcpy.has_m
         return self.get("hasM", False) | self.get("m", False)
 
@@ -3489,6 +3497,45 @@ class Polyline(Geometry):
     def type(self):
         """Gets the type of the current ``Polyline`` object."""
         return self._type
+
+    # ----------------------------------------------------------------------
+    @property
+    def has_z(self):
+        """
+        The ``has_z`` method determines if the geometry has a `Z` value.
+
+        :return:
+            A boolean indicating yes (True), or no (False)
+
+        """
+        if "hasZ" in self:
+            return self["hasZ"]
+        elif "z" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_z
+        elif self.as_shapely:
+            return self.as_shapely.has_z
+
+        return self.get("hasZ", False) or self.get("z", False)
+
+    # ----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        The ``has_m`` method determines if the geometry has a `M` value.
+
+        :return:
+            A boolean indicating yes (True), or no (False)
+
+        """
+        if "hasM" in self:
+            return self.get("hasM", False)
+        elif "m" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_m
+        return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
     def __hash__(self):
