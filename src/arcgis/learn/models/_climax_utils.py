@@ -500,8 +500,6 @@ class climaX(nn.Module):
         preds = self.head(out_transformers)  # B, L, V*p*p
 
         preds = self.unpatchify(preds)
-        out_var_ids = self.get_var_ids(tuple(out_variables), preds.device)
-        preds = preds[:, out_var_ids]
 
         preds = F.interpolate(preds, size=(x.shape[2], x.shape[3]), mode="bicubic")
 
@@ -520,14 +518,14 @@ class lat_weighted_mse(nn.Module):
         lat: H
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self, model):
         super().__init__()
-        pass
+        self.model = model
 
     def forward(self, pred_meta, y):
-        pred, out_var, lat = pred_meta
+        preds, out_var, lat = pred_meta
+        out_var_ids = self.model.get_var_ids(tuple(out_var), preds.device)
+        pred = preds[:, out_var_ids]
         lat = lat[0, :]
 
         error = (pred - y) ** 2  # [N, C, H, W]

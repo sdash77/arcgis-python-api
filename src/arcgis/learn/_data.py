@@ -1491,6 +1491,10 @@ def prepare_data(
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
     ---------------------   -------------------------------------------
+    out_variables           Optional list of string. Default is set to predict
+                            all input variables. The loss will be calculated for only the
+                            selected single output variable based on the other input variables.
+    ---------------------   -------------------------------------------
     forecast_timesteps      Required int. Default set to 1. How far the
                             model should forecast into the future. A forecast timestep
                             is the interval at which predictions are made, For example,
@@ -1635,7 +1639,10 @@ def prepare_data(
         elif not has_esri_files:
             try:
                 varlst = [i for i in os.listdir(path) if i not in ["DATA", "models"]]
-                emd_file = os.path.join(path, varlst[0], "esri_model_definition.emd")
+                dim_name = [i for i in os.walk(os.path.join(path, varlst[0]))][0][1][0]
+                emd_file = os.path.join(
+                    path, varlst[0], dim_name, "esri_model_definition.emd"
+                )
                 with open(emd_file) as f:
                     emd = json.load(f)
                 if emd.get("IsMultidimensional"):

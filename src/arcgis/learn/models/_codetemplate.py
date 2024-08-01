@@ -1428,7 +1428,8 @@ class ArcGISSuperResolution:
         #raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+        smooth = getattr(self.child_image_classifier, "smoothing", 'True')
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth") and (smooth == 'True'):
             xx = self.child_image_classifier.updatePixelsSmooth( tlc, shape, props, **pixelBlocks).astype(props["pixelType"], copy=False)
             pixelBlocks["output_pixels"] = xx
         else:

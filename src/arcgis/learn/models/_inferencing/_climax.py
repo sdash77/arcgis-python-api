@@ -78,7 +78,7 @@ class ChildImageClassifier:
                     "name": "output_variables",
                     "dataType": "string",
                     "required": False,
-                    "value": self.json_info["variables"][0],
+                    "value": self.json_info["out_variables"][0],
                     "displayName": "output_variables",
                     "description": "output_variables",
                 },
@@ -116,6 +116,7 @@ class ChildImageClassifier:
         )
         self.leadtimes = self.json_info["lead_times"][0]
         self.numforecasts = int(scalars.get("number_of_time_steps_to_forecast", 1))
+        self.variable_name = str(scalars.get("output_variables"))
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 

@@ -203,7 +203,9 @@ def GlobalForecastData(
 # HOURS_PER_YEAR = 12  # 8760  # 365-day year
 
 
-def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kwargs):
+def nc2np(
+    path, dim_name, variables, years, save_dir, partition, num_shards_per_year, **kwargs
+):
 
     lenallyear = len(years)
     multi_imgs = {}
@@ -223,7 +225,7 @@ def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kw
         lat_chips = {}
 
         for var in variables:
-            emd_path = os.path.join(path, var, "esri_model_definition.emd")
+            emd_path = os.path.join(path, var, dim_name, "esri_model_definition.emd")
             with open(emd_path) as f:
                 emd_stats = json.load(f)
             normalize_mean[var] = np.mean(
@@ -242,7 +244,7 @@ def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kw
     max_val = {}
     min_val = {}
     for var in variables:
-        emd_path = os.path.join(path, var, "esri_model_definition.emd")
+        emd_path = os.path.join(path, var, dim_name, "esri_model_definition.emd")
         with open(emd_path) as f:
             emd_stats = json.load(f)
         max_val[var] = np.array([i["Max"] for i in emd_stats["AllTilesStats"]]).max()
@@ -252,10 +254,12 @@ def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kw
     constant_fields = ["lattitude"]  # ["orography", "lattitude"]
 
     imgs_var_lst = [
-        glob.glob(os.path.join(path, var, "images", "*.tif")) for var in variables
+        glob.glob(os.path.join(path, var, dim_name, "images", "*.tif"))
+        for var in variables
     ]
     tfw_var_lst = [
-        glob.glob(os.path.join(path, var, "images", "*.tfw")) for var in variables
+        glob.glob(os.path.join(path, var, dim_name, "images", "*.tfw"))
+        for var in variables
     ]
 
     for n, (img, tfw) in enumerate(zip(imgs_var_lst[0], tfw_var_lst[0])):
@@ -263,7 +267,7 @@ def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kw
         for year, i in zip(years, range(lenallyear)):
             np_vars = {}
             for var in variables:
-                ds = gdal.Open(img.replace(img.split("\\")[-3], var))
+                ds = gdal.Open(img.replace(img.split("\\")[-4], var))
                 img_arr = ds.ReadAsArray()
 
                 width = ds.RasterXSize
@@ -354,6 +358,7 @@ def nc2np(path, variables, years, save_dir, partition, num_shards_per_year, **kw
 
 def create_data(
     root_dir,
+    dim_name,
     save_dir,
     variables,
     start_train_year,
@@ -371,6 +376,7 @@ def create_data(
 
     nc2np(
         root_dir,
+        dim_name,
         variables,
         train_years,
         save_dir,
@@ -381,6 +387,7 @@ def create_data(
     )
     nc2np(
         root_dir,
+        dim_name,
         variables,
         val_years,
         save_dir,
@@ -402,7 +409,6 @@ def check_timeseries_type(realdates):
 
 def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs):
     path = Path(path)
-    images = os.path.join(path, "images")
 
     if working_dir is not None:
         save_path = working_dir
@@ -416,8 +422,9 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
     folds = os.listdir(path)
 
     varfolds = [i for i in folds if i not in ["DATA", "models"]]
+    dim_name = [i for i in os.walk(os.path.join(path, varfolds[0]))][0][1][0]
 
-    emd_path = os.path.join(path, varfolds[0], "esri_model_definition.emd")
+    emd_path = os.path.join(path, varfolds[0], dim_name, "esri_model_definition.emd")
     with open(emd_path) as f:
         emd_stats = json.load(f)
     ImageHeight, ImageWidth = emd_stats.get("ImageHeight"), emd_stats.get("ImageWidth")
@@ -442,6 +449,7 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
 
         create_data(
             path,
+            dim_name,
             os.path.join(save_path, "DATA"),
             varfolds,
             start_train_year=train_dates[0],
@@ -452,9 +460,11 @@ def create_train_val_sets(path, val_split_pct, working_dir, batch_size, **kwargs
             img_shp=(ImageHeight, ImageWidth),
         )
 
-    out_variables = kwargs.get("out_variables", varfolds)
-
-    out_variables = sorted(out_variables, key=lambda x: varfolds.index(x))
+    if not kwargs.get("out_variables", None):
+        out_variables = kwargs.get("out_variables", varfolds)
+        out_variables = sorted(out_variables, key=lambda x: varfolds.index(x))
+    else:
+        out_variables = kwargs.get("out_variables")
 
     data = GlobalForecastData(
         root_dir=os.path.join(save_path, "DATA"),
@@ -515,9 +525,16 @@ def prepare_climax_data(
 
 def show_results(self, rows, variable, **kwargs):
     variable = self._data._out_variables[0] if variable == "" else variable
-    variable_no = {i: n for n, i in enumerate(self._data._out_variables)}[
-        variable.lower()
-    ]
+    if len(self._data._out_variables) != 1:
+        variable_no_x = {i: n for n, i in enumerate(self._data._out_variables)}[
+            variable.lower()
+        ]
+        variable_no_y = variable_no_x
+    else:
+        variable_no_x = {i: n for n, i in enumerate(self._data._variables)}[
+            variable.lower()
+        ]
+        variable_no_y = 0
     from .._data_utils.pix2pix_data import display_row
     from fastai.vision import image2np
 
@@ -546,17 +563,17 @@ def show_results(self, rows, variable, **kwargs):
         x_A.cpu(),
         self._data._norm_mean[None, :, None, None],
         self._data._norm_std[None, :, None, None],
-    )[:, variable_no, None, :, :]
+    )[:, variable_no_x, None, :, :]
     x_B = denormfunc(
         x_B.cpu(),
         self._data._norm_mean[None, :, None, None],
         self._data._norm_std[None, :, None, None],
-    )[:, variable_no, None, :, :]
+    )[:, variable_no_y, None, :, :]
     activations = denormfunc(
         activations.detach().cpu(),
         self._data._norm_mean[None, :, None, None],
         self._data._norm_std[None, :, None, None],
-    )[:, variable_no, None, :, :]
+    )[:, variable_no_y, None, :, :]
 
     rows = min(rows, x_A.shape[0])
 
@@ -602,11 +619,18 @@ def show_batch(self, rows=4, variable="", **kwargs):
     """
     xs, ys, years = [], [], []
     variable = self._out_variables[0] if variable == "" else variable
-    variable_no = {i: n for n, i in enumerate(self._out_variables)}[variable.lower()]
+    if not len(self._out_variables) == 1:
+        variable_no_x = {i: n for n, i in enumerate(self._out_variables)}[
+            variable.lower()
+        ]
+        variable_no_y = variable_no_x
+    else:
+        variable_no_x = {i: n for n, i in enumerate(self._variables)}[variable.lower()]
+        variable_no_y = 0
     for n, imgs in enumerate(self.train_dl):
         if n != rows:
-            xs.append(imgs[0][0][:, None, variable_no, :, :])
-            ys.append(imgs[1][:, None, variable_no, :, :])
+            xs.append(imgs[0][0][:, None, variable_no_x, :, :])
+            ys.append(imgs[1][:, None, variable_no_y, :, :])
             years.extend(imgs[0][3])
         else:
             break

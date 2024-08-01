@@ -882,11 +882,19 @@ def pixel_classify_climax_image(self, model, tiles, device, leadtimes, model_inf
     normfunc = lambda btch_arr, mean, std: (btch_arr - mean) / std
     denormfunc = lambda btch_arr, mean, std: (btch_arr * std) + mean
 
+    var_map = {i: n for n, i in enumerate(model_info.get("out_variables"))}
     mean_stat = torch.tensor(model_info.get("mean_norm_stats")).to(device)[
         None, :, None, None
     ]
     std_stat = torch.tensor(model_info.get("std_norm_stats")).to(device)[
         None, :, None, None
+    ]
+
+    denorm_mean_stat = torch.tensor(model_info.get("mean_norm_stats")).to(device)[
+        None, None, var_map[self.variable_name], None, None
+    ]
+    denorm_std_stat = torch.tensor(model_info.get("std_norm_stats")).to(device)[
+        None, None, var_map[self.variable_name], None, None
     ]
 
     model = model.to(device)
@@ -901,11 +909,11 @@ def pixel_classify_climax_image(self, model, tiles, device, leadtimes, model_inf
         model.eval()
         with torch.no_grad():
             predictions = model(normed_batch_tensor, leadtimes, 0, 0, 0)
-            forecasts.append(predictions[0])
+            forecasts.append(predictions[0][:, None, var_map[self.variable_name], :, :])
             normed_batch_tensor = predictions[0]
 
     denormed_batch_tensor = torch.cat(
-        [denormfunc(i, mean_stat, std_stat) for i in forecasts], axis=1
+        [denormfunc(i, denorm_mean_stat, denorm_std_stat) for i in forecasts], axis=1
     )
 
     return denormed_batch_tensor

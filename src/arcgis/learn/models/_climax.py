@@ -96,7 +96,6 @@ class ClimaX(ArcGISModel):
         self._backbone = backbone
         if backbone:
             kwargs["parallel_patch_embed"] = False
-            kwargs["patch_size"] = 4
 
         climax = climaX(
             default_vars=data._variables,
@@ -108,7 +107,7 @@ class ClimaX(ArcGISModel):
         self.learn = Learner(
             data,
             climax,
-            loss_func=lat_weighted_mse(),
+            loss_func=lat_weighted_mse(climax),
             opt_func=partial(optim.Adam, betas=(0.9, 0.99)),
         )
 
