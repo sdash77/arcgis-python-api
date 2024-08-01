@@ -1,10 +1,15 @@
 from arcgis.auth.api import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
 urllib = LazyLoader("urllib")
 
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use build_field_maps_url instead.",
+)
 def build_collector_url(
     webmap=None,
     center=None,
@@ -274,7 +279,11 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
                 "Invalid parameters -- Must specify a webmap if setting feature layer"
             )
 
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use build_field_maps_url instead.",
+)
 def build_explorer_url(
     webmap=None,
     search=None,
@@ -893,6 +902,11 @@ def _validate_survey123_url(survey, center, fields):
             )
 
 
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use build_field_maps_url instead.",
+)
 def build_tracker_url(portal_url=None, url_type="Web"):
     """
     Creates a url that can be used to open ArcGIS Tracker
