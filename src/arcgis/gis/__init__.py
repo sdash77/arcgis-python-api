@@ -3452,7 +3452,7 @@ class UserManager(object):
                           for detailed description.
 
                           .. note::
-                              This parameter was deprecated with the 10.7 release.
+                              This parameter was deprecated with the 10.7 release and will be removed.
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string, unless specified in the `New Member Defaults`. The user type
                           license for an organization member. See
@@ -3890,13 +3890,15 @@ class UserManager(object):
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
-                if user_type is None and role is None:
+
+                if user_type is None:
                     if (
                         self.user_settings
                         and "userLicenseType" in self.user_settings
                         and user_type is None
                     ):
                         user_type = self.user_settings["userLicenseType"]
+                if role is None:
                     if (
                         self.user_settings
                         and "userLicenseType" in self.user_settings
@@ -3916,20 +3918,6 @@ class UserManager(object):
             raise ValueError(
                 "The user must supply a role and user_type when defaults are not present."
             )
-        if level == 2 and user_type is None and role is None:
-            user_type = "creator"
-            role = "publisher"
-        elif level == 1 and user_type is None and role is None:
-            user_type = "viewer"
-            role = "viewer"
-        elif level == 1 and user_type is None:
-            user_type = "viewer"
-        elif level == 1 and role is None:
-            role = "viewer"
-        elif level == 2 and user_type is None:
-            user_type = "creator"
-        elif level == 2 and role is None:
-            role = "publisher"
 
         user_li_lu = {
             "creatorUT": "creatorUT",
@@ -4065,10 +4053,11 @@ class UserManager(object):
                     return None
                 else:
                     new_user = self.get(username)
+
                     if (
                         self.user_settings
-                        and "userType" in self.user_settings
-                        and not self.user_settings["userType"] == "arcgisonly"
+                        and "userType" in new_user
+                        and not new_user["userType"] == "arcgisonly"
                     ):
                         update_url = "community/users/" + username + "/update"
                         user_params = {
