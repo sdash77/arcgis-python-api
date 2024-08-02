@@ -7,9 +7,9 @@ from utils.decorators import credentials, integration_test
 import requests
 
 try:
-    fp = os.path.join(INTEGRATION_TESTS_DIR, "gis", "dataset_test_123a.zip")
+    fp = os.path.join(INTEGRATION_TESTS_DIR, "auth", "dataset_test_123a.zip")
 except:
-    fp = Path(Path.cwd(), "integration", "gis", "dataset_test_123a.zip")
+    fp = Path(Path.cwd(), "integration", "auth", "dataset_test_123a.zip")
 
 
 @integration_test
