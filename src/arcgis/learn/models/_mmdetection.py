@@ -4,6 +4,7 @@ import warnings
 from ._model_extension import ModelExtension
 
 try:
+    import fastai
     from fastai.vision import flatten_model, ImageList
     from fastai.vision import imagenet_stats
     import torch
@@ -64,7 +65,12 @@ class MMDetection(ModelExtension):
     def _freeze(self):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
             for p in i.parameters():
                 p.requires_grad = False
@@ -94,6 +100,7 @@ class MMDetection(ModelExtension):
         "cascade_rpn",
         "dcn",
         "detectors",
+        "dino",
         "double_heads",
         "dynamic_rcnn",
         "empirical_attention",
