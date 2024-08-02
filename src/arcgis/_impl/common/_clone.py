@@ -23,8 +23,6 @@ import time
 import pathlib
 import random
 import string
-from arcgis.geoprocessing._support import _execute_gp_tool
-from arcgis.geoprocessing import import_toolbox
 
 
 _TEXT_BASED_ITEM_TYPES = [
@@ -3069,11 +3067,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         and self.target._portal.is_arcgisonline == False
                     ):
                         item_id = self.portal_item.itemid
-                    # publish_params = {}
                     try:
-                        # try:
-                        #     temp_name = self.portal_item.layers[0].properties["name"]
-                        # except:
                         temp_name = self.portal_item.title
                         propus = {
                             "title": name,
@@ -3091,10 +3085,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         service_item = job.result()
                         if service_item is None:
                             raise RuntimeError("already exists")
-                        # new_item_name = self.portal_item.title
-                        # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
                         new_item = service_item.publish(publish_parameters=pub_params)
-                        # new_item.update(item_properties={"title": temp_name})
                         if new_item is None:
                             raise Exception("already exists")
                         self.created_items.append(new_item)
@@ -3114,12 +3105,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             )
 
                             service_item = job.result()
-                            # new_item_name = self.portal_item.title
-                            # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
                             new_item = service_item.publish(
                                 publish_parameters=pub_params
                             )
-                            # new_item.update(item_properties={"title": temp_name})
                             self.created_items.append(new_item)
                         elif "managed database" in str(ex):
                             raise Exception(
@@ -3978,7 +3966,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 relationships_definition
                             )
 
-                    # look here!
                     # Get the item properties from the original item
                     item_properties = self._get_item_properties(self.item_extent)
 
