@@ -3367,9 +3367,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             original_id = os.path.basename(url)
 
                             new_service = None
-                            for key, value in self._clone_mapping[
-                                "Services"
-                            ].items():
+                            for key, value in self._clone_mapping["Services"].items():
                                 if _compare_url(key, original_feature_service):
                                     new_service = value
                                     break
@@ -3380,23 +3378,19 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 and "adminLayerInfo" in layer
                                 and "viewLayerDefinition" in layer["adminLayerInfo"]
                             ):
-                                layer["adminLayerInfo"]["viewLayerDefinition"][
-                                    "table"
-                                ]["sourceServiceName"] = os.path.basename(
+                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                    "sourceServiceName"
+                                ] = os.path.basename(
                                     os.path.dirname(new_service["url"])
                                 )
-                                layer["adminLayerInfo"]["viewLayerDefinition"][
-                                    "table"
-                                ]["sourceLayerId"] = new_service[
-                                    "layer_id_mapping"
-                                ][
-                                    int(original_id)
-                                ]
+                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                    "sourceLayerId"
+                                ] = new_service["layer_id_mapping"][int(original_id)]
                                 if (
                                     "relatedTables"
-                                    in layer["adminLayerInfo"][
-                                        "viewLayerDefinition"
-                                    ]["table"]
+                                    in layer["adminLayerInfo"]["viewLayerDefinition"][
+                                        "table"
+                                    ]
                                 ):
                                     # Update the name of the related table to use the new items name
                                     for related_table in layer["adminLayerInfo"][
@@ -3410,24 +3404,22 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 os.path.basename(os.path.dirname(k))
                                                 == name
                                             ):
-                                                related_table[
-                                                    "sourceServiceName"
-                                                ] = os.path.basename(
-                                                    os.path.dirname(v["url"])
+                                                related_table["sourceServiceName"] = (
+                                                    os.path.basename(
+                                                        os.path.dirname(v["url"])
+                                                    )
                                                 )
                                                 if (
                                                     "sourceLayerId" in related_table
                                                     and "layer_id_mapping" in v
                                                     and int(
-                                                        related_table[
-                                                            "sourceLayerId"
-                                                        ]
+                                                        related_table["sourceLayerId"]
                                                     )
                                                     in v["layer_id_mapping"]
                                                 ):
-                                                    related_table[
-                                                        "sourceLayerId"
-                                                    ] = v["layer_id_mapping"][
+                                                    related_table["sourceLayerId"] = v[
+                                                        "layer_id_mapping"
+                                                    ][
                                                         int(
                                                             related_table[
                                                                 "sourceLayerId"
