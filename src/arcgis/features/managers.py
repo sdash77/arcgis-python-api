@@ -3299,7 +3299,6 @@ class FeatureLayerCollectionManager(_GISResource):
             not isinstance(data_file, str)
             or not os.path.exists(data_file)
             or not os.path.isfile(data_file)
-            or os.stat(data_file).st_size > int(2.5e7)
         ):
             raise ValueError(
                 "The data file provided does not exist or could not be accessed."
