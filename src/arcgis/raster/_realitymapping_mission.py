@@ -4,12 +4,12 @@ from typing import Any, Optional
 from arcgis.gis import GIS, Item
 
 
-from arcgis.raster.realitymapping import Project
+from src.arcgis.raster._realitymapping import Project
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Mission:
+class RMMission:
     """
 
     Mission represents a mission in an Realitymapping Project.
