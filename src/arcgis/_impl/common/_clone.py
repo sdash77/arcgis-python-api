@@ -2667,7 +2667,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         return total_features
 
     def _add_features(
-        self, layers, relationships, layer_field_mapping, spatial_reference, keep_edits = False,
+        self,
+        layers,
+        relationships,
+        layer_field_mapping,
+        spatial_reference,
+        keep_edits=False,
     ):
         """Add the features from the definition to the layers returned from the cloned item.
         Keyword arguments:
@@ -2846,7 +2851,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         adds=features_chunk,
                         use_global_ids=self._copy_global_ids,
                     )
-                    
+
                     if self._logger:
                         self._logger.debug(edits)
                     add_results += edits["addResults"]
@@ -2879,7 +2884,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
         # if needed, revert to determined editor tracking
         if keep_edits and "editorTrackingInfo" in self.service_definition:
-            edit_params = {"editorTrackingInfo": self.service_definition["editorTrackingInfo"]}
+            edit_params = {
+                "editorTrackingInfo": self.service_definition["editorTrackingInfo"]
+            }
             layers[0].container.manager.update_definition(edit_params)
 
         # Add attachments
@@ -3007,7 +3014,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
 
             if not new_item:
-                can_export = False # file gdb workflow for other applicable cases
+                can_export = False  # file gdb workflow for other applicable cases
 
                 try:
                     source_user = self.portal_item._gis.users.me
@@ -3038,10 +3045,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                 else:
                     folder = self.target.content.folders.get()
-                
-                pub_params = {'name' : name}
+
+                pub_params = {"name": name}
                 if self._track_edits:
-                    pub_params["editorTrackingInfo"] = {"preserveEditUsersAndTimestamps": True}
+                    pub_params["editorTrackingInfo"] = {
+                        "preserveEditUsersAndTimestamps": True
+                    }
 
                 if self._is_view or original_item["id"] in self._cant_export:
                     can_export = False
@@ -3078,13 +3087,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 "file": temp_zipped.filename,
                             }
                         )
-                        
+
                         service_item = job.result()
                         if service_item is None:
                             raise RuntimeError("already exists")
                         # new_item_name = self.portal_item.title
                         # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
-                        new_item = service_item.publish(publish_parameters = pub_params)
+                        new_item = service_item.publish(publish_parameters=pub_params)
                         # new_item.update(item_properties={"title": temp_name})
                         if new_item is None:
                             raise Exception("already exists")
@@ -3103,11 +3112,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     "file": temp_zipped.filename,
                                 }
                             )
-                            
+
                             service_item = job.result()
                             # new_item_name = self.portal_item.title
                             # new_item = service_item.publish(publish_parameters = {'maxRecordCount': 1000})
-                            new_item = service_item.publish(publish_parameters = pub_params)
+                            new_item = service_item.publish(
+                                publish_parameters=pub_params
+                            )
                             # new_item.update(item_properties={"title": temp_name})
                             self.created_items.append(new_item)
                         elif "managed database" in str(ex):
@@ -3116,7 +3127,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             )
                         else:
                             raise
-                    
+
                     # Get the item properties from the original item
                     item_properties = self._get_item_properties(self.item_extent)
                     # del item_properties["url"]
@@ -3141,7 +3152,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     "Extract",
                                 ]
                                 og_capabilities = _deep_get(og_layer, "capabilities")
-                                if og_capabilities is not None and self.target.properties.isPortal:
+                                if (
+                                    og_capabilities is not None
+                                    and self.target.properties.isPortal
+                                ):
                                     update_properties["capabilities"] = ",".join(
                                         [
                                             x
@@ -3152,7 +3166,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 break
                         new_layer.manager.update_definition(update_properties)
                     temp_export.delete()
-                                
+
                 else:
                     for key in ["layers", "tables", "fullExtent", "hasViews"]:
                         if key in service_definition:
@@ -3487,20 +3501,20 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         # retain this previous logic when admin_layer_info is not already avalible
                                         admin_layer_info = {}
                                         view_layer_definition = {}
-                                        view_layer_definition[
-                                            "sourceServiceName"
-                                        ] = os.path.basename(
-                                            os.path.dirname(new_service["url"])
+                                        view_layer_definition["sourceServiceName"] = (
+                                            os.path.basename(
+                                                os.path.dirname(new_service["url"])
+                                            )
                                         )
-                                        view_layer_definition[
-                                            "sourceLayerId"
-                                        ] = new_service["layer_id_mapping"][
-                                            int(original_id)
-                                        ]
+                                        view_layer_definition["sourceLayerId"] = (
+                                            new_service["layer_id_mapping"][
+                                                int(original_id)
+                                            ]
+                                        )
                                         view_layer_definition["sourceLayerFields"] = "*"
-                                        admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ] = view_layer_definition
+                                        admin_layer_info["viewLayerDefinition"] = (
+                                            view_layer_definition
+                                        )
                                         layer["adminLayerInfo"] = admin_layer_info
                                         break
 
@@ -3687,9 +3701,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 and new_globalid_field is not None
                                 and new_globalid_field != ""
                             ):
-                                field_mapping[
-                                    original_globalid_field
-                                ] = new_globalid_field
+                                field_mapping[original_globalid_field] = (
+                                    new_globalid_field
+                                )
 
                         for field in original_fields:
                             if field["name"] in field_mapping:
@@ -3783,11 +3797,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     "viewDefinitionQuery"
                                 ]
                                 if layer_id in layer_field_mapping:
-                                    update_definition[
-                                        "viewDefinitionQuery"
-                                    ] = _find_and_replace_fields_sql(
-                                        update_definition["viewDefinitionQuery"],
-                                        layer_field_mapping[layer_id],
+                                    update_definition["viewDefinitionQuery"] = (
+                                        _find_and_replace_fields_sql(
+                                            update_definition["viewDefinitionQuery"],
+                                            layer_field_mapping[layer_id],
+                                        )
                                     )
 
                             if len(self.view_sources[layer_id]) == 1:
@@ -4054,9 +4068,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 for keyword in list(type_keywords):
                     if keyword in self._clone_mapping["Item IDs"]:
                         type_keywords.remove(keyword)
-                        type_keywords.append(
-                            self._clone_mapping["Item IDs"][keyword]
-                        )
+                        type_keywords.append(self._clone_mapping["Item IDs"][keyword])
                 item_properties["typeKeywords"] = ",".join(type_keywords)
 
                 # If the item title has a guid, check if it is in the clone_mapping and replace if it is.
@@ -4103,9 +4115,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                     dispatcher_webmap_item.update(
                         item_properties={
-                            "properties": {
-                                "workforceFeatureServiceId": new_item.id
-                            },
+                            "properties": {"workforceFeatureServiceId": new_item.id},
                             "text": json.dumps(wm_item_data),
                         }
                     )
@@ -4122,18 +4132,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ] = new_worker_webmap_id
 
                     # replace operational layers with new data
-                    worker_webmap_item = self.target.content.get(
-                        new_worker_webmap_id
-                    )
+                    worker_webmap_item = self.target.content.get(new_worker_webmap_id)
                     wm_item_data = worker_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
                         wm_item_data, new_item, original_item["id"]
                     )
                     worker_webmap_item.update(
                         item_properties={
-                            "properties": {
-                                "workforceFeatureServiceId": new_item.id
-                            },
+                            "properties": {"workforceFeatureServiceId": new_item.id},
                             "text": json.dumps(wm_item_data),
                         }
                     )
@@ -4184,15 +4190,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Update the item definition of the service
                 thumbnail = self.thumbnail
                 if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(
-                        self._temp_dir.name, original_item["id"]
-                    )
+                    temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
                     if not os.path.exists(temp_dir):
                         os.makedirs(temp_dir)
                     thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item.update(
-                    item_properties=item_properties, thumbnail=thumbnail
-                )
+                new_item.update(item_properties=item_properties, thumbnail=thumbnail)
 
                 # Clone any item resources
                 self._clone_resources(new_item)
@@ -4244,9 +4246,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         except KeyError:
                             # itemid does not necessarily exist in the url template
                             continue
-                    new_proj.integrations_table.edit_features(
-                        updates=new_integrations
-                    )
+                    new_proj.integrations_table.edit_features(updates=new_integrations)
 
             # share items
             _share_item_with_groups(
