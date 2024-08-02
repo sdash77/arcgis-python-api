@@ -114,6 +114,7 @@ class _DeepCloner:
         }
         self._export_service = export_service
         self._track_edits = preserve_editing_info
+        self._cant_export = []
         if item_mapping is not None:
             self._clone_mapping["Item IDs"] = item_mapping
         if group_mapping is not None:
@@ -672,6 +673,7 @@ class _DeepCloner:
                             layers_definition["tables"].append(properties)
 
                         for layer_source in _sources:
+                            self._cant_export.append(layer_source["serviceItemId"])
                             if layer_source["serviceItemId"] not in source_item_ids:
                                 source_item = source.content.get(
                                     layer_source["serviceItemId"]
@@ -714,7 +716,8 @@ class _DeepCloner:
                         owner=self.owner,
                         preserve_item_id=self._preserve_item_id,
                         export_service=self._export_service,
-                        track_edits=self._track_edits
+                        track_edits=self._track_edits,
+                        cant_export=self._cant_export,
                     )
 
                     for source_fs_definition in source_fs_definitions:
@@ -774,7 +777,8 @@ class _DeepCloner:
                         owner=self.owner,
                         preserve_item_id=self._preserve_item_id,
                         export_service=self._export_service,
-                        track_edits=self._track_edits
+                        track_edits=self._track_edits,
+                        cant_export=self._cant_export,
                     )
             self._graph[item.id] = item_definition
             if "Workforce Project" in item.typeKeywords:
@@ -1663,7 +1667,8 @@ class _DeepCloner:
                 owner=self.owner,
                 preserve_item_id=self._preserve_item_id,
                 export_service=self._export_service,
-                track_edits=self._track_edits
+                track_edits=self._track_edits,
+                cant_export=self._cant_export,
             )
 
         # If the item is a feature collection get the FeatureCollectionDefintion
@@ -2594,6 +2599,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
         self._export = kwargs.pop("export_service", False)
         self._track_edits = kwargs.pop("track_edits", False)
+        self._cant_export = kwargs.pop("cant_export", [])
         if verbose:
             self._logger = logging.getLogger()
 
@@ -3037,6 +3043,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 if self._track_edits:
                     pub_params["editorTrackingInfo"] = {"preserveEditUsersAndTimestamps": True}
 
+                if self._is_view or original_item["id"] in self._cant_export:
+                    can_export = False
                 if self._export and can_export:
                     temp_export = self.portal_item.export(
                         "temp export", "File Geodatabase"

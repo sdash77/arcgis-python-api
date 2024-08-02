@@ -8640,6 +8640,20 @@ class ContentManager(object):
         preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS
                                   Online, the clone item will attempt to keep the same item ids for the
                                   items if available.  ArcGIS Enterprise must be 10.9+.
+        ---------------------     --------------------------------------------------------------------
+        export_service            Optional Boolean.  When True, a feature layer cloned over will be
+                                  exported to a File GeoDatabase that is then published in the new
+                                  organization. In order for this to work, user must be the owner of
+                                  the item, have admin privileges, or have export enabled on the
+                                  service. Default is False.
+
+                                  .. note::
+                                      This parameter is currently not usable with views.
+        ---------------------     --------------------------------------------------------------------
+        preserve_editing_info     Optional Boolean.  When True, a feature layer being cloned with
+                                  editor tracking fields will maintain the current values from the
+                                  source organization instead of automatically updating the values
+                                  to the new org/user. Default is False.
         =====================     ====================================================================
 
         **keyword arguments**
