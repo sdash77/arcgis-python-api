@@ -122,7 +122,9 @@ class MMSegmentationConfig:
         model_name = kwargs.get("model")
         if model_name.startswith("prithvi100m"):
             # register custom prithvi head
-            from arcgis.learn.models._prithvi_archs import TemporalViTEncoder
+            from arcgis.learn.models._prithvi_utils import register_prithvi
+
+            register_prithvi()
 
         kwargs["model_type"] = "Segmentation"
         model, cfg = mmlab_models(data, **kwargs)
