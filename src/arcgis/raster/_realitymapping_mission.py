@@ -4,7 +4,7 @@ from typing import Any, Optional
 from arcgis.gis import GIS, Item
 
 
-from src.arcgis.raster._realitymapping import Project
+from src.arcgis.raster._realitymapping import RMProject
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,10 +12,10 @@ _LOGGER = logging.getLogger(__name__)
 class RMMission:
     """
 
-    Mission represents a mission in an Realitymapping Project.
+    RMMission represents a mission in an Realitymapping Project.
 
     .. note :: This class is not created by users directly. An instance of this class is returned as output for
-      get_mission() and add_mission() methods on the Project class of arcgis.raster.realitymapping module.
+      get_mission() and add_mission() methods on the RMProject class of arcgis.raster.realitymapping module.
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -26,7 +26,7 @@ class RMMission:
 
                                                 mission_name='Mission_Yucaipa'
     ------------------------------------     --------------------------------------------------------------------
-    project                                  Required Project object or an Realitymapping Project portal item. The realitymapping project to which the mission belongs to.
+    project                                  Required RMProject object or an Realitymapping Project portal item. The realitymapping project to which the mission belongs to.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -34,7 +34,7 @@ class RMMission:
         # Example Usage 1
 
         rm_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
-        project = Project(rm_item, gis=gis)
+        project = RMProject(rm_item, gis=gis)
 
         mission_1 = project.add_mission(image_list,
                                         mission_name="mission_name",
@@ -45,7 +45,7 @@ class RMMission:
         # Example Usage 2
 
         rm_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
-        project = Project(rm_item, gis=gis)
+        project = RMProject(rm_item, gis=gis)
 
         mission_1 = project.get_mission("mission_name")
 
@@ -53,11 +53,11 @@ class RMMission:
 
     def __init__(self, mission_name, project):
         self._mission_name = mission_name
-        if isinstance(project, Project):
+        if isinstance(project, RMProject):
             self._project = project
         elif isinstance(project, Item):
             if project.type == "Ortho Mapping Project": # "Reality Mapping Project"
-                self._project = Project(project, gis=project._gis)
+                self._project = RMProject(project, gis=project._gis)
 
         self._project_item = project._project_item
         self._gis = project._gis
@@ -260,7 +260,7 @@ class RMMission:
 
     def delete(self):
         """
-        The ``delete`` method deletes the Mission and all the associated products.
+        The ``delete`` method deletes the RMMission and all the associated products.
 
         :return: A boolean indicating whether the deletion was successful or not
         """
@@ -444,7 +444,7 @@ class RMMission:
 
         """
         flight_json_details = {}
-        if isinstance(self, Mission):
+        if isinstance(self, RMMission):
             mission = self
             image_collection = self.image_collection
 
@@ -630,7 +630,7 @@ class RMMission:
         """
 
         flight_json_details = {}
-        if isinstance(self, Mission):
+        if isinstance(self, RMMission):
             mission = self
             image_collection = self.image_collection
 

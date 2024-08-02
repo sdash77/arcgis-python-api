@@ -150,7 +150,7 @@ def _create_project(
     image_collection parameter.
 
     The realitymapping project item can be opened in Reality Maker web app.
-    The Project includes all project inputs, ancillary data such as image footprints and block adjustment reports,
+    The RMProject includes all project inputs, ancillary data such as image footprints and block adjustment reports,
     intermediate products such as image collections, quick block adjustment results, final products,
     and status at each stage of processing.
 
@@ -187,7 +187,7 @@ def _create_project(
         folder_dict = folder_item.properties
     except:
         raise RuntimeError(
-            "Unable to create folder for Orthomapping Project Item. The project name is not available."
+            "Unable to create folder for Realitymapping Project Item. The project name is not available."
         )
     folder = folder_dict["title"]
     folderId = folder_dict["id"]
@@ -707,7 +707,7 @@ def compute_sensor_model(
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection on which to compute
                            the sensor model.
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMRMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -761,10 +761,10 @@ def compute_sensor_model(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -828,7 +828,7 @@ def alter_processing_states(
     ------------------     --------------------------------------------------------------------
     mission                Required, This is the image collection that will be adjusted.
 
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -855,10 +855,10 @@ def alter_processing_states(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = image_collection.image_collection
 
     return gis._tools.realitymapping.alter_processing_states(
@@ -883,7 +883,7 @@ def get_processing_states(
     ------------------     --------------------------------------------------------------------
     mission                Required, This is the image collection that will be adjusted.
 
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -896,10 +896,10 @@ def get_processing_states(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
 
     return gis._tools.realitymapping.get_processing_states(
@@ -931,7 +931,7 @@ def match_control_points(
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection that will be adjusted.
 
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                             
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1040,10 +1040,10 @@ def match_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1088,7 +1088,7 @@ def compute_control_points(
     ------------------------------------    --------------------------------------------------------------------
     mission                                 Required. This is the image collection that will be adjusted.
 
-                                            The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                                            The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                             
                                             The mission must exist.
     ------------------------------------    --------------------------------------------------------------------
@@ -1163,10 +1163,10 @@ def compute_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1210,7 +1210,7 @@ def edit_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required.
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
@@ -1294,10 +1294,10 @@ def edit_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1339,7 +1339,7 @@ def generate_orthomosaic(
     -----------------------------------    --------------------------------------------------------------------
     mission                                Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
-                                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                                            The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
     out_ortho                               Required. This is the ortho-mosaicked image converted from the image
@@ -1421,11 +1421,11 @@ def generate_orthomosaic(
     gis = arcgis.env.active_gis if gis is None else gis
 
     update_flight_json = False
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
     flight_json_details = {}
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1578,7 +1578,7 @@ def generate_report(
     -------------------    --------------------------------------------------------------------
     mission                Required. The input image collection that should be
                            used to generate a report from.
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                            The mission must exist.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
@@ -1593,10 +1593,10 @@ def generate_report(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1679,7 +1679,7 @@ def query_control_points(
     mission                Required, the input image collection on which to query
                            the the control points.
 
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1700,10 +1700,10 @@ def query_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1739,7 +1739,7 @@ def reset_image_collection(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection to reset
-                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------
@@ -1751,10 +1751,10 @@ def reset_image_collection(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
 
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -1895,7 +1895,7 @@ def reconstruct_surface(
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     mission                                                                     Required String/Item. The adjusted input image collection.
-                                                                                The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                                                                                The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
                                                                                 The mission must exist.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
@@ -2033,11 +2033,11 @@ def reconstruct_surface(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
-    from ._realitymapping_mission import Mission
+    from ._realitymapping_mission import RMMission
     update_flight_json = False
     flight_json_details = {}
     image_collection = mission
-    if isinstance(mission, Mission):
+    if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
 
@@ -2089,9 +2089,9 @@ def reconstruct_surface(
 class RMProject:
     """
 
-    Project represents an Realitymapping Project Item in the portal.
+    RMProject represents an Realitymapping Project Item in the portal.
 
-    Usage: ``arcgis.raster.Project(project, gis=gis)``
+    Usage: ``arcgis.raster.RMProject(project, gis=gis)``
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -2114,12 +2114,12 @@ class RMProject:
 
         # Example Usage
 
-        project = Project('rm_proj', gis=gis)
+        project = RMProject('rm_proj', gis=gis)
 
         # Example Usage
 
         rm_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
-        project = Project(rm_item, gis=gis)
+        project = RMProject(rm_item, gis=gis)
 
     """
 
@@ -2163,7 +2163,7 @@ class RMProject:
 
         :return: A list of missions of the realitymapping project
         """
-        from ._realitymapping_mission import Mission
+        from ._realitymapping_mission import RMMission
 
         res_list = self._project_item.resources.list()
         self._mission_list = []
@@ -2172,7 +2172,7 @@ class RMProject:
             res_name = full_res_name[
                 full_res_name.find("/") + 1 : full_res_name.find(".")
             ]
-            self._mission_list.append(Mission(mission_name=res_name, project=self))
+            self._mission_list.append(RMMission(mission_name=res_name, project=self))
 
         return self._mission_list
 
@@ -2360,7 +2360,7 @@ class RMProject:
         """
 
         try:
-            from ._realitymapping_mission import Mission
+            from ._realitymapping_mission import RMMission
 
             collection, mission_name = _add_mission(
                 project=self,
@@ -2372,26 +2372,26 @@ class RMProject:
                 out_sr=out_sr,
                 context=context,
             )
-            return Mission(mission_name=mission_name, project=self)
+            return RMMission(mission_name=mission_name, project=self)
 
         except:
             raise RuntimeError("Failed to add the mission to the project")
 
     def get_mission(self, name):
         """
-        Returns a Mission object with the name specified using the name parameter.
+        Returns a RMMission object with the name specified using the name parameter.
 
         ==================                   ====================================================================
         **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
-        name                                 Required string. The name of the Mission.
+        name                                 Required string. The name of the RMMission.
         ==================                   ====================================================================
 
         :return: The imagery layer url
 
 
         """
-        from ._realitymapping_mission import Mission
+        from ._realitymapping_mission import RMMission
 
         res_list = self._project_item.resources.list()
         for resource in res_list:
@@ -2400,7 +2400,7 @@ class RMProject:
                 full_res_name.find("/") + 1 : full_res_name.find(".")
             ]
             if name == res_name:
-                return Mission(mission_name=name, project=self)
+                return RMMission(mission_name=name, project=self)
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)
