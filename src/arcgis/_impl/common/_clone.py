@@ -2661,7 +2661,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         return total_features
 
     def _add_features(
-        self, layers, relationships, layer_field_mapping, spatial_reference
+        self, layers, relationships, layer_field_mapping, spatial_reference, keep_edits = False,
     ):
         """Add the features from the definition to the layers returned from the cloned item.
         Keyword arguments:
@@ -2807,6 +2807,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 }
 
         # Add features to all other layers and tables
+        # if we're keeping edits from source, temporarily disable editor tracking
+        if keep_edits and "editorTrackingInfo" in self.service_definition:
+            edit_params = {
+                "editorTrackingInfo": {
+                    "enableEditorTracking": False,
+                }
+            }
+            layers[0].container.manager.update_definition(edit_params)
+
         for layer_id in layer_ids:
             layer_features = features[str(layer_id)]
             if len(layer_features) == 0:
@@ -2831,6 +2840,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         adds=features_chunk,
                         use_global_ids=self._copy_global_ids,
                     )
+                    
                     if self._logger:
                         self._logger.debug(edits)
                     add_results += edits["addResults"]
@@ -2860,6 +2870,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     {"multiScaleGeometryInfo": {"levels": []}}
                 )
                 layers[layer_id]._refresh()
+
+        # if needed, revert to determined editor tracking
+        if keep_edits and "editorTrackingInfo" in self.service_definition:
+            edit_params = {"editorTrackingInfo": self.service_definition["editorTrackingInfo"]}
+            layers[0].container.manager.update_definition(edit_params)
 
         # Add attachments
         for original_layer in original_layers:
@@ -4017,6 +4032,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             relationships,
                             layer_field_mapping,
                             spatial_reference,
+                            keep_edits=self._track_edits,
                         )
 
                 del item_properties["url"]
