@@ -315,6 +315,7 @@ class profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
+    _agol_anonymous_profile_parameters = ("agol_anonymous", "your_anonymous_online_profile")
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_devext_profile_parameters = ("devext", "your_dev_online_profile")
     _agol_admin_profile_parameters = (
@@ -365,6 +366,13 @@ class profiles:
         )
 
     # region decorators
+    @classproperty
+    def anonymous_agol(cls):
+        """Run tests for agol anonymous profile"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_anonymous_profile_parameters
+        )
+
     @classproperty
     def admin_agol(cls):
         """Run tests for agol admin profile"""

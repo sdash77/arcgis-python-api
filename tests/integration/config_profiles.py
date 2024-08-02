@@ -10,6 +10,7 @@ from arcgis.gis import ProfileManager
 def setup_profiles(
     online_name="your_online_profile",
     online_admin_name="your_online_admin_profile",
+    online_anonymous_name="your_anonymous_online_profile",
     online_api_data_owner_name="your_online_api_data_owner_profile",
     online_admin_publication_name="your_online_admin_publication_profile",
     ent_name="your_enterprise_profile",
@@ -24,6 +25,7 @@ def setup_profiles(
         online_name,
         ent_name,
         online_admin_name,
+        online_anonymous_name,
         ent_admin_name,
         online_api_data_owner_name,
         online_admin_publication_name,
@@ -61,6 +63,15 @@ def setup_profiles(
             password="geosaurus_automation123",
         )
         print(f"Created profile {online_admin_name}")
+
+    if not online_anonymous_name in updated_list:
+        pm.create(
+            online_anonymous_name,
+            url="https://www.arcgis.com",
+            username=None,
+            password=None,
+        )
+        print(f"Created profile {online_anonymous_name}")
 
     if not online_api_data_owner_name in updated_list:
         pm.create(
