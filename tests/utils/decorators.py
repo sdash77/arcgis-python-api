@@ -335,6 +335,10 @@ class profiles:
         "k8s_admin",
         "your_kubernetes_admin_profile",
     )
+    _utility_network_profile_parameters = (
+        "utility_network",
+        "your_utility_network_profile",
+    )
 
     def _get_profile_parameterized_class(*args):
         """Returns a parameterized class for the profile parameters from provided args"""
@@ -450,6 +454,12 @@ class profiles:
             cls._k8s_admin_profile_parameters,
         )
 
+    @classproperty
+    def utility_network(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._utility_network_profile_parameters
+        )
     # endregion
 
 

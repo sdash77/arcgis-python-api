@@ -18,6 +18,7 @@ def setup_profiles(
     kube_name="your_kubernetes_profile",
     kube_admin_name="your_kubernetes_admin_profile",
     devext_admin_name="your_dev_online_profile",
+    utility_network_name="your_utility_network_profile",
     reset=False,
 ):
     """create profiles"""
@@ -32,6 +33,7 @@ def setup_profiles(
         kube_name,
         kube_admin_name,
         devext_admin_name,
+        utility_network_name,
     ]
 
     pm = ProfileManager()
@@ -136,9 +138,18 @@ def setup_profiles(
             cert_file=None,
             client_id=None,
         )
+    if not utility_network_name in updated_list:
+        pm.create(
+            utility_network_name,
+            url="https://utilitynetwork.esri.com/portal",
+            username="python_api_team",
+            password="python_api_team.109",
+        )
+        print(f"Created profile {utility_network_name}")
     print("------------------")
     print(pm.get(online_name))
     print(pm.get(online_admin_name))
+    print(pm.get(online_anonymous_name))
     print(pm.get(online_api_data_owner_name))
     print(pm.get(online_admin_publication_name))
     print(pm.get(ent_name))
@@ -146,6 +157,7 @@ def setup_profiles(
     print(pm.get(kube_name))
     print(pm.get(kube_admin_name))
     print(pm.get(devext_admin_name))
+    print(pm.get(utility_network_name))
     print("------------------")
 
 
