@@ -1630,37 +1630,36 @@ def _gen_schema(
     existing_schema={},
 ):
     """Generates a dictionary of all layers and fields in the XForm"""
-    if len(existing_schema) > 0:
-        oid_field = [
-            x
-            for x in existing_schema[parent]["fields"]
-            if x["type"] == "esriFieldTypeOID"
-        ][0]
-        globalid_field = [
-            x
-            for x in existing_schema[parent]["fields"]
-            if x["type"] == "esriFieldTypeGlobalID"
-        ][0]
-    else:
-        oid_field = {
-            "name": "objectid",
-            "type": "esriFieldTypeOID",
-            "alias": "ObjectID",
-            "nullable": False,
-            "editable": False,
-            "domain": None,
-            "defaultValue": None,
-        }
-        globalid_field = {
-            "name": "globalid",
-            "type": "esriFieldTypeGlobalID",
-            "alias": "GlobalID",
-            "length": 38,
-            "nullable": False,
-            "editable": False,
-            "domain": None,
-            "defaultValue": None,
-        }
+    existing_fields = existing_schema.get(parent, {}).get("fields", [])
+    existing_oid_fields = [
+        x
+        for x in existing_fields
+        if x["type"] == "esriFieldTypeOID"
+    ]
+    existing_globalid_fields = [
+        x
+        for x in existing_fields
+        if x["type"] == "esriFieldTypeGlobalID"
+    ]
+    oid_field = existing_oid_fields[0] if existing_oid_fields else {
+        "name": "objectid",
+        "type": "esriFieldTypeOID",
+        "alias": "ObjectID",
+        "nullable": False,
+        "editable": False,
+        "domain": None,
+        "defaultValue": None,
+    }
+    globalid_field = existing_globalid_fields[0] if existing_globalid_fields else {
+        "name": "globalid",
+        "type": "esriFieldTypeGlobalID",
+        "alias": "GlobalID",
+        "length": 38,
+        "nullable": False,
+        "editable": False,
+        "domain": None,
+        "defaultValue": None,
+    }
     new_dict = {
         parent: {
             "fields": [
