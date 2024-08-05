@@ -1586,10 +1586,10 @@ class FeatureCollection(Layer):
     def properties(self, properties):
         self._properties = PropertyMap(properties)
 
+    @property
     @deprecated(
         deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead."
     )
-    @property
     def layer(self):
         return self.properties
 
