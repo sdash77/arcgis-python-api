@@ -334,6 +334,23 @@ class TestSystemManager(unittest.TestCase):
                 assert system.job_details(job_id=job)
                 break
 
+    def test_recent_stats(self):
+        """tests the recent statistics added at 10.81"""
+        nbs = self._find_nb_server(gis=self.gis)
+        system = nbs.system
+        assert system.recent_statistics
+        assert isinstance(system.recent_statistics, dict)
+
+    def test_list_jobs(self):
+        """tests the `list_jobs` method added at 10.9"""
+        nbs = self._find_nb_server(gis=self.gis)
+        system = nbs.system
+        assert isinstance(system.list_jobs(), list)
+        assert system.list_jobs(details=False)
+        assert system.list_jobs(details=True)
+        assert system.list_jobs(details=True, num=5)
+        assert system.list_jobs(details=False, num=5)
+
 
 @profiles.admin_enterprise
 @integration_test

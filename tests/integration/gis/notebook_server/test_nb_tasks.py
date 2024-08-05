@@ -1,5 +1,5 @@
+import types
 import unittest
-from arcgis.gis.nb import NotebookServer, NotebookManager
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
 from utils.decorators import integration_test, profiles
@@ -7,12 +7,13 @@ from utils.decorators import integration_test, profiles
 
 @profiles.admin_enterprise
 @integration_test
-class TestGISAdminAllTasks1081(unittest.TestCase):
+class TestGetTasks(unittest.TestCase):
     """
-    This is 10.8.1+ Functionality Tests for Notebook Server
+    This is 10.8.1+ Functionality Tests for Notebook Server, test gis.tasks submodule
     """
 
     def test_user_search(self):
+        """tests getting tasks from user"""
         tasks = self.gis.users.me.tasks
         assert isinstance(tasks, TaskManager)
         assert isinstance(
@@ -20,18 +21,18 @@ class TestGISAdminAllTasks1081(unittest.TestCase):
         )
 
     def test_list_all_tasks(self):
-        """tests listing all the tasks"""
+        """tests listing all the tasks from PortalAdminManager"""
         st = self.gis.admin.scheduled_tasks
-        # assert st()
-        assert isinstance(st(), list)
-        assert isinstance(st(user=self.gis.users.me), list)
-        assert isinstance(st(active=False), list)
-        assert isinstance(st(active=True), list)
+        assert isinstance(st(), types.GeneratorType)
+        assert isinstance(list(st()), list)
+        assert isinstance(st(user=self.gis.users.me), types.GeneratorType)
+        assert isinstance(st(active=False), types.GeneratorType)
+        assert isinstance(st(active=True), types.GeneratorType)
         assert isinstance(
             st(
                 types="ExecuteNotebook,UpdateInsightsWorkbook",
             ),
-            list,
+            types.GeneratorType,
         )
 
 
@@ -135,39 +136,6 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             if len(runs) > 0:
                 assert isinstance(runs[0], Run)
                 runs[0].properties
-
-
-@integration_test
-@profiles.admin_enterprise
-class TestNotebookServer1081(unittest.TestCase):
-    """Tests New 10.8.1 Functionality"""
-
-    def test_recent_stats(self):
-        """tests the recent statistics"""
-        servers = self.gis.admin.servers.list()
-        for server in self.gis.admin.servers.list():
-            if isinstance(server, NotebookServer):
-                break
-        assert server.system.recent_statistics
-        assert isinstance(server.system.recent_statistics, dict)
-
-
-@integration_test
-@profiles.admin_enterprise
-class TestNotebookServer109(unittest.TestCase):
-    """Tests New 10.9 Functionality"""
-
-    def test_list_jobs(self):
-        """tests the `list_jobs` method added at 10.9"""
-        servers = self.gis.admin.servers.list()
-        for server in self.gis.admin.servers.list():
-            if isinstance(server, NotebookServer):
-                break
-        assert server.system.list_jobs()
-        assert server.system.list_jobs(details=False)
-        assert server.system.list_jobs(details=True)
-        assert server.system.list_jobs(details=True, num=5)
-        assert server.system.list_jobs(details=False, num=5)
 
 
 if __name__ == "__main__":
