@@ -877,18 +877,18 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     def token(self):
         """
         Obtains the login token for the session.
-        
+
         .. code-block:: python
-        
+
             # Usage Example: Get token for built-in authenticated user
             >>> gis = GIS(
                          url="url_to_Web_GIS",
                          username="valid_username",
                          password="strong_password"
                       )
-            
+
             >>> token = gis.session.auth.token
-            
+
             '6ABHt6i4urlQtqPu ... adKfJhTrM4cYBWkO7WGo.'
         """
         try:
