@@ -356,9 +356,7 @@ class Image:
         Values: `small` | `wide` | `full` | `float`
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["config"].get(
-                "size", None
-            )
+            return self._story._properties["nodes"][self.node]["config"].get("size")
 
     # ----------------------------------------------------------------------
     @display.setter
