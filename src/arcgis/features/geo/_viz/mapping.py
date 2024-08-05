@@ -51,7 +51,6 @@ def plot(
     ======================  =========================================================
 
     """
-    renderer = kwargs.pop("renderer", None)
 
     if not hasattr(df, "spatial") and not hasattr(df, "geom"):
         raise ValueError("DataFrame or Series must be spatially enabled.")
