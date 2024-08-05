@@ -356,8 +356,8 @@ class Image:
         Values: `small` | `wide` | `full` | `float`
         """
         if self._existing is True:
-            return (
-                self._story._properties["nodes"][self.node]["config"].get("size", None)
+            return self._story._properties["nodes"][self.node]["config"].get(
+                "size", None
             )
 
     # ----------------------------------------------------------------------
@@ -1551,9 +1551,7 @@ class Map:
             self._type = item.type
             self._offline_dependent = None
             if item.type == "Web Map":
-                self._extent = dict(
-                    map_item.extent
-                )
+                self._extent = dict(map_item.extent)
                 if map_item.center is None or map_item.center == []:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
@@ -1581,7 +1579,9 @@ class Map:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    layer_props["visible"] = hasattr(layer, "visibility") and layer.visibility
+                    layer_props["visible"] = (
+                        hasattr(layer, "visibility") and layer.visibility
+                    )
                     layers.append(layer_props)
                 self._map_layers = layers
             # Add properties for Web Scene
@@ -1592,7 +1592,9 @@ class Map:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    layer_props["visible"] = hasattr(layer, "visibility") and layer.visibility
+                    layer_props["visible"] = (
+                        hasattr(layer, "visibility") and layer.visibility
+                    )
                     layers.append(layer_props)
                 self._map_layers = layers
                 self._extent = None
