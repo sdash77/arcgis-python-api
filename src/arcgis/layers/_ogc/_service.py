@@ -263,9 +263,12 @@ class OGCFeatureService:
         :return: Iterator[:class:`~arcgis.layers.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
-        resp: requests.Response = self._session.get(url=url)
+        resp: requests.Response = self._session.get(url=url, params={"f": "json"})
         resp.raise_for_status()
-        collections = resp.json()["collections"]
+        resp_json = resp.json()
+        if "collections" not in resp_json:
+            raise ValueError("No collections found. Error: " + str(resp_json))
+        collections = resp_json["collections"]
         for _, lyr in enumerate(collections):
             service_url = f"{url}/{lyr['id']}"
             yield OGCCollection(url=service_url, gis=self._gis)
