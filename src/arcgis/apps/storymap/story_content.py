@@ -357,9 +357,7 @@ class Image:
         """
         if self._existing is True:
             return (
-                self._story._properties["nodes"][self.node]["config"]["size"]
-                if "size" in self._story._properties["nodes"][self.node]["config"]
-                else None
+                self._story._properties["nodes"][self.node]["config"].get("size", None)
             )
 
     # ----------------------------------------------------------------------
@@ -1553,10 +1551,8 @@ class Map:
             self._type = item.type
             self._offline_dependent = None
             if item.type == "Web Map":
-                self._extent = (
-                    map_item.extent.dict()
-                    if not isinstance(map_item.extent, dict)
-                    else map_item.extent
+                self._extent = dict(
+                    map_item.extent
                 )
                 if map_item.center is None or map_item.center == []:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
@@ -1585,10 +1581,7 @@ class Map:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if hasattr(layer, "visibility"):
-                        layer_props["visible"] = layer.visibility
-                    else:
-                        layer_props["visible"] = False  # Default
+                    layer_props["visible"] = hasattr(layer, "visibility") and layer.visibility
                     layers.append(layer_props)
                 self._map_layers = layers
             # Add properties for Web Scene
@@ -1599,10 +1592,7 @@ class Map:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if hasattr(layer, "visibility"):
-                        layer_props["visible"] = layer.visibility
-                    else:
-                        layer_props["visible"] = False
+                    layer_props["visible"] = hasattr(layer, "visibility") and layer.visibility
                     layers.append(layer_props)
                 self._map_layers = layers
                 self._extent = None
