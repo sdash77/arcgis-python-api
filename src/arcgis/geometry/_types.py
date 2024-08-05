@@ -872,10 +872,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if _HASSHAPELY:
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
+                from shapely.validation import explain_validity
+
 
                 if "curvePaths" in self or "curveRings" in self:
                     return {}
-                return shape(self.__geo_interface__)
+                geom_shply = shape(self.__geo_interface__)
+                
+                if not geom_shply.is_valid:
+                    print(f"Geometry failed validation: {explain_validity(geom_shply)}. Repairing with `buffer(0)`.")
+                    geom_shply = geom_shply.buffer(0)
+                return geom_shply
         return None
 
     @property
@@ -2031,17 +2038,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
         elif HASSHAPELY:
-            from shapely.validation import explain_validity
-
-            def validate(geometries):
-              for idx, geometry in enumerate(geometries):
-                if geometry.is_valid:
-                  yield geometry
-                print(f"Geometry {idx + 1} failed validation: {explain_validity(geometry1)}. Repairing with `buffer(0)`.")
-                yield geometry.buffer(0)
-
-            geometries = list(validate([self.as_shapely, second_geometry.as_shapely]))
-            return geometries[0].crosses(other=geometries[1])
+            
+            return self.as_shapely.crosses(other=second_geometry.as_shapely)
         return None
 
     # ----------------------------------------------------------------------
