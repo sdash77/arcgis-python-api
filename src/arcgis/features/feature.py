@@ -17,6 +17,7 @@ tempfile = LazyLoader("tempfile")
 uuid = LazyLoader("uuid")
 
 from datetime import datetime
+from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
@@ -1585,13 +1586,15 @@ class FeatureCollection(Layer):
     def properties(self, properties):
         self._properties = PropertyMap(properties)
 
+    @deprecated(deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead.")
     @property
     def layer(self):
         return self.properties
 
+    @deprecated(deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead.")
     @layer.setter
     def layer(self, layer):
-        self.properties = PropertyMap(layer)
+        self.properties(layer)
 
     @property
     def _lyr_json(self):
