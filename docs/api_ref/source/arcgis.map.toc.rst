@@ -1,15 +1,53 @@
-Working with 2D Maps
---------------------S
+arcgis.map module
+=================
+
+.. automodule:: arcgis.map
+
+
+Map
+--------------
+.. autoclass:: arcgis.map.Map
+    :members:
+    :undoc-members:
+
+Scene
+--------------
+.. autoclass:: arcgis.map.Scene
+    :members:
+    :undoc-members:
+
+GroupLayer
+--------------
+.. autoclass:: arcgis.map.GroupLayer
+    :members:
+    :undoc-members:
+
+SmartMappingManager
+--------------
+.. autoclass:: arcgis.map.SmartMappingManager
+    :members:
+    :undoc-members:
+
+PopupManager
+--------------
+.. autoclass:: arcgis.map.PopupManager
+    :members:
+    :undoc-members:
+
+RendererManager
+--------------
+.. autoclass:: arcgis.map.RendererManager
+    :members:
+    :undoc-members:
+
 OfflineMapAreaManager
-^^^^^^^^^^^^^^^^^^^^^
+--------------
 .. autoclass:: arcgis.map.OfflineMapAreaManager
     :members:
     :undoc-members:
-    :show-inheritance:
 
-PackagingJob
-^^^^^^^^^^^^
-.. autoclass:: arcgis.map.offline_mapping.PackagingJob
+LayerVisibility
+--------------
+.. autoclass:: arcgis.map.LayerVisibility
     :members:
     :undoc-members:
-    :show-inheritance:
