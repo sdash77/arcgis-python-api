@@ -45,7 +45,7 @@ class TestRendererProperty(unittest.TestCase):
         lyr.renderer.symbol.color = [255, 0, 0, 100]
         wm.add_layer(lyr)
         assert list(
-            wm.definition.operationalLayers[
+            wm.content.layers[
                 0
             ].layerDefinition.drawingInfo.renderer.symbol.color
         ) == [255, 0, 0, 100]
