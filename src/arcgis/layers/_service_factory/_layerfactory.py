@@ -108,7 +108,7 @@ class DataServiceLayer(Layer, metaclass=_DataServiceUrlFactory):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -143,7 +143,7 @@ class _FeatureServiceLayerFactory(type):
         s_layer = FeatureServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/FeatureServer')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -191,7 +191,7 @@ class FeatureServiceLayer(Layer, metaclass=_FeatureServiceLayerFactory):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
