@@ -1,19 +1,18 @@
-import types
 import unittest
-from arcgis.gis.tasks._schedule import TaskManager, Task
-from arcgis.gis.tasks._schedule import Run
+from arcgis.gis.tasks import TaskManager, Task
+from arcgis.gis.tasks import Run
 from utils.decorators import integration_test, profiles
 
 
 @profiles.admin_enterprise
 @integration_test
-class TestGetTasks(unittest.TestCase):
+class TestListAllTasks(unittest.TestCase):
     """
-    This is 10.8.1+ Functionality Tests for Notebook Server, test gis.tasks submodule
+    tests get tasks from user search and scheduled_tasks for notebook server, enterprise must be 10.8.1+
     """
 
     def test_user_search(self):
-        """tests getting tasks from user"""
+        """tests list all tasks through User"""
         tasks = self.gis.users.me.tasks
         assert isinstance(tasks, TaskManager)
         assert isinstance(
@@ -21,24 +20,24 @@ class TestGetTasks(unittest.TestCase):
         )
 
     def test_list_all_tasks(self):
-        """tests listing all the tasks from PortalAdminManager"""
+        """tests list all the tasks through PortalAdminManager"""
         st = self.gis.admin.scheduled_tasks
-        assert isinstance(st(), types.GeneratorType)
         assert isinstance(list(st()), list)
-        assert isinstance(st(user=self.gis.users.me), types.GeneratorType)
-        assert isinstance(st(active=False), types.GeneratorType)
-        assert isinstance(st(active=True), types.GeneratorType)
+        assert isinstance(list(st(user=self.gis.users.me)), list)
+        assert isinstance(list(st(active=False)), list)
+        assert isinstance(list(st(active=True)), list)
         assert isinstance(
-            st(
+            list(st(
                 types="ExecuteNotebook,UpdateInsightsWorkbook",
-            ),
-            types.GeneratorType,
+            )),
+            list,
         )
 
 
 @integration_test
 @profiles.admin_enterprise
-class TestUserScheduleTasks1081(unittest.TestCase):
+class TestUserScheduleTaskManager(unittest.TestCase):
+    """test Task Manager for notebook server in gis.tasks submodule, enterprise must be 10.8.1+"""
 
     def test_task_properties(self):
         """tests the task's properties"""

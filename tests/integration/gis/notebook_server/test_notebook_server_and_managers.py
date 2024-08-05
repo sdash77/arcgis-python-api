@@ -1,21 +1,19 @@
 import unittest
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.gis.nb import NotebookServer  #
-from arcgis.gis.nb._logs import LogManager  #
-from arcgis.gis.nb._machines import Machine, MachineManager  #
-from arcgis.gis.nb._nbm import Runtime, NotebookManager  #
-from arcgis.gis.nb._security import SecurityManager  #
-from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
-from arcgis.gis.nb._system import Container, DirectoryManager
+from arcgis.gis.nb import NotebookServer
+from arcgis.gis.nb import LogManager
+from arcgis.gis.nb import Machine, MachineManager
+from arcgis.gis.nb import Runtime, NotebookManager
+from arcgis.gis.nb import SecurityManager
+from arcgis.gis.nb import SystemManager, WebAdaptor, WebAdaptorManager
+from arcgis.gis.nb import Container, DirectoryManager
 from utils.decorators import integration_test, profiles
 
 
 @profiles.admin_enterprise
 @integration_test
-class TestNBLogManager(unittest.TestCase):
+class TestLogManager(unittest.TestCase):
     """tests the log functionality of the notebook server"""
-
-    _server = None
 
     def _find_nb_server(self, gis):
         nbs = [
@@ -56,7 +54,6 @@ class TestNBLogManager(unittest.TestCase):
         logs = nb.logs
         isinstance(logs, LogManager)
         val = logs.query()
-        print(val)
 
     def test_clean(self):
         """tests getting the settings"""
@@ -97,15 +94,15 @@ class TestNotebookServer(unittest.TestCase):
     def test_str_repr_method(self):
         nbs = self._find_nb_server(gis=self.gis)
         if nbs:
-            assert str(nbs).find("<NotebookServer @") > -1
-            assert str(nbs.__repr__()).find("<NotebookServer @") > -1
+            assert str(nbs).find("< NotebookServer @") > -1
+            assert str(nbs.__repr__()).find("< NotebookServer @") > -1
 
 
 @profiles.admin_enterprise
 @integration_test
-class TestNBSecurityModule(unittest.TestCase):
+class TestSecurityManager(unittest.TestCase):
     """
-    Tests the Security Module for the ArcGIS Notebook Server
+    Tests the Security Manager for the ArcGIS Notebook Server
     """
 
     def _find_nb_server(self, gis):
@@ -141,7 +138,7 @@ class TestNBSecurityModule(unittest.TestCase):
 
 @profiles.admin_enterprise
 @integration_test
-class TestNBMachineManager(unittest.TestCase):
+class TestMachineManager(unittest.TestCase):
     """tests the MachineManager methods"""
 
     def _find_nb_server(self, gis):
@@ -188,7 +185,6 @@ class TestNBMachineManager(unittest.TestCase):
             assert isinstance(m, Machine)
             assert isinstance(m.properties, (dict, PropertyMap))
 
-    @unittest.skip("Skipped due to REST API error")
     def test_machine_properties_set(self):
         """tests the property get operation"""
         nbs = self._find_nb_server(gis=self.gis)
@@ -250,7 +246,7 @@ class TestNBMachineManager(unittest.TestCase):
 
 @profiles.admin_enterprise
 @integration_test
-class TestNBNotebookManager(unittest.TestCase):
+class TestNotebookManager(unittest.TestCase):
     """Tests the Notebook Manager Class"""
 
     def _find_nb_server(self, gis):
@@ -334,22 +330,22 @@ class TestSystemManager(unittest.TestCase):
                 assert system.job_details(job_id=job)
                 break
 
-    def test_recent_stats(self):
-        """tests the recent statistics added at 10.81"""
+    def test_recent_statistics(self):
+        """tests recent_statistics method, enterprise must be 10.8.1+"""
         nbs = self._find_nb_server(gis=self.gis)
-        system = nbs.system
-        assert system.recent_statistics
-        assert isinstance(system.recent_statistics, dict)
+        isinstance(nbs, NotebookServer)
+        assert nbs.system.recent_statistics
+        assert isinstance(nbs.system.recent_statistics, dict)
 
     def test_list_jobs(self):
-        """tests the `list_jobs` method added at 10.9"""
+        """tests list_jobs method, enterprise must be 10.9+"""
         nbs = self._find_nb_server(gis=self.gis)
-        system = nbs.system
-        assert isinstance(system.list_jobs(), list)
-        assert system.list_jobs(details=False)
-        assert system.list_jobs(details=True)
-        assert system.list_jobs(details=True, num=5)
-        assert system.list_jobs(details=False, num=5)
+        isinstance(nbs, NotebookServer)
+        assert isinstance(nbs.system.list_jobs(), list)
+        assert isinstance(nbs.system.list_jobs(details=False), list)
+        assert isinstance(nbs.system.list_jobs(details=True), list)
+        assert isinstance(nbs.system.list_jobs(details=True, num=5), list)
+        assert isinstance(nbs.system.list_jobs(details=False, num=5), list)
 
 
 @profiles.admin_enterprise
@@ -417,8 +413,8 @@ class TestDirectoryManager(unittest.TestCase):
                 sd.unregister(d[0])
             assert sd.register(
                 name="amazingdirtest",
-                path=r"/data/arcgis/notebookserver/usr/directories",
-                directory_type="WORKSPACE",
+                path=r"/net/FILESERVER/gisdata/notebookserver/directories/directories/",
+                directory_type="DATA",
             )
             d = [d["id"] for d in sd.list() if d["name"] == "amazingdirtest"]
             assert len(d) == 1
