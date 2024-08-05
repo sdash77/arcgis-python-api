@@ -2033,25 +2033,15 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         elif HASSHAPELY:
             from shapely.validation import explain_validity
 
-            geometry1 = self.as_shapely
-            geometry2 = second_geometry.as_shapely
-            # Check if geometries are valid
-            is_valid1 = geometry1.is_valid
-            is_valid2 = geometry2.is_valid
+            def validate(geometries):
+              for idx, geometry in enumerate(geometries):
+                if geometry.is_valid:
+                  yield geometry
+                print(f"Geometry {idx + 1} failed validation: {explain_validity(geometry1)}. Repairing with `buffer(0)`.")
+                yield geometry.buffer(0)
 
-            # If invalid, explain the issues
-            if is_valid1 is False:
-                print(
-                    f"Geometry 1 validity issue: {explain_validity(geometry1)}. Using buffer(0) to fix the issue."
-                )
-                geometry1 = geometry1.buffer(0)
-
-            if is_valid2 is False:
-                print(
-                    f"Geometry 2 validity issue: {explain_validity(geometry2)}. Using buffer(0) to fix the issue."
-                )
-                geometry2 = geometry2.buffer(0)
-            return geometry1.crosses(other=geometry2)
+            geometries = list(validate([self.as_shapely, second_geometry.as_shapely]))
+            return geometries[0].crosses(other=geometries[1])
         return None
 
     # ----------------------------------------------------------------------
