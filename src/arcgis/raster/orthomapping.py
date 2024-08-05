@@ -1985,7 +1985,6 @@ def generate_dem(
                                 | "numImagePairs": 2, 
                                 | "adjQualityThreshold": 0.2, 
                                 | "regenPointCloud": False,
-                                | "pointCloudFolder": "DSM"
                                 | } 
                                 | 
                                 | DEM interpolation parameters -  
@@ -1993,6 +1992,7 @@ def generate_dem(
                                 | "smoothingMethod": "GAUSS5x5", 
                                 | "applyToOrtho": True, 
                                 | "fillDEM": "``https://....``"
+                                | "pointCloudFolder": "DSM"
                                 | } 
  
                            Note:  
