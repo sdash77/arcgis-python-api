@@ -709,13 +709,7 @@ def _id_relationships(service, layer):
                 for x in parent_layer.properties["fields"]
                 if x["name"] == keyfield[0]
             ][0]
-            if role != "esriRelRoleDestination":
-                if keyfield_type == "esriFieldTypeGlobalID":
-                    return False
-                elif keyfield_type == "esriFieldTypeGUID":
-                    return True
-            else:
-                return False
+            return role != "esriRelRoleDestination" and keyfield_type == "esriFieldTypeGUID"
     else:
         return False
 
