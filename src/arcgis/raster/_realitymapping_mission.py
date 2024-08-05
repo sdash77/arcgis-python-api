@@ -4,7 +4,7 @@ from typing import Any, Optional
 from arcgis.gis import GIS, Item
 
 
-from src.arcgis.raster._realitymapping import RMProject
+from arcgis.raster._realitymapping import RMProject
 
 _LOGGER = logging.getLogger(__name__)
 
