@@ -1,47 +1,57 @@
-FormCollection
+CSVLayer
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormCollection
+.. autoclass:: arcgis.layers.ogc.CSVLayer
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-FormInfo
+GeoJSONLayer
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormInfo
+.. autoclass:: arcgis.layers.ogc.GeoJSONLayer
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-FormElement
+GeoRSSLayer
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormElement
+.. autoclass:: arcgis.layers.ogc.GeoRSSLayer
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-FormFieldElement
+OGCFeatureService
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormFieldElement
+.. autoclass:: arcgis.layers.ogc.OGCFeatureService
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-FormGroupElement
+OGCCollection
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormGroupElement
+.. autoclass:: arcgis.layers.ogc.OGCCollection
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+    
+WMSLayer
+---------------------------
+.. autoclass:: arcgis.layers.ogc.WMSLayer
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
 
-FormExpressionInfo
+WMTSLayer
 ---------------------------
-.. autoclass:: arcgis.mapping.forms.FormExpressionInfo
+.. autoclass:: arcgis.layers.ogc.WMTSLayer
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
+    
+

@@ -1,77 +1,57 @@
-.. arcgis documentation master file, created by
-   sphinx-quickstart on Thu Oct 20 23:21:00 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-arcgis.mapping module
+arcgis.layers module
 =================
 
-.. automodule:: arcgis.mapping
+.. automodule:: arcgis.layers
 
-Working with 2D Maps
---------------------S
-OfflineMapAreaManager
-^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.OfflineMapAreaManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-PackagingJob
-^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.PackagingJob
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 Working with 3D Maps
 --------------------
 
 SceneLayer
 ^^^^^^^^^^
-.. autoclass:: arcgis.mapping.SceneLayer
+.. autoclass:: arcgis.layers.SceneLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 SceneLayerManager
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.SceneLayerManager
+.. autoclass:: arcgis.layers.SceneLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 EnterpriseSceneLayerManager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.EnterpriseSceneLayerManager
+.. autoclass:: arcgis.layers.EnterpriseSceneLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 BuildingLayer
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.BuildingLayer
+.. autoclass:: arcgis.layers.BuildingLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 IntegratedMeshLayer
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.IntegratedMeshLayer
+.. autoclass:: arcgis.layers.IntegratedMeshLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 Tiles3DLayer
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.Tiles3DLayer
+.. autoclass:: arcgis.layers.Tiles3DLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 Object3DLayer
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.Object3DLayer
+.. autoclass:: arcgis.layers.Object3DLayer
     :members:
     :undoc-members:
     :show-inheritance:
@@ -79,21 +59,21 @@ Object3DLayer
 
 Point3DLayer
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.Point3DLayer
+.. autoclass:: arcgis.layers.Point3DLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 PointCloudLayer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.PointCloudLayer
+.. autoclass:: arcgis.layers.PointCloudLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 VoxelLayer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.VoxelLayer
+.. autoclass:: arcgis.layers.VoxelLayer
     :members:
     :undoc-members:
     :show-inheritance:
@@ -102,133 +82,125 @@ Working with Map Service Layers
 -------------------------------
 MapServiceLayer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.MapServiceLayer
+.. autoclass:: arcgis.layers.MapServiceLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 MapFeatureLayer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.MapFeatureLayer
+.. autoclass:: arcgis.layers.MapFeatureLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 MapRasterLayer
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.MapRasterLayer
+.. autoclass:: arcgis.layers.MapRasterLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 MapImageLayer
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.MapImageLayer
+.. autoclass:: arcgis.layers.MapImageLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 MapImageLayerManager
 ^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.MapImageLayerManager
+.. autoclass:: arcgis.layers.MapImageLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 EnterpriseMapImageLayerManager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.EnterpriseMapImageLayerManager
+.. autoclass:: arcgis.layers.EnterpriseMapImageLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 MapTable
 ^^^^^^^^
-.. autoclass:: arcgis.mapping.MapTable
+.. autoclass:: arcgis.layers.MapTable
     :members:
     :undoc-members:
     :show-inheritance:
 
 VectorTileLayer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.VectorTileLayer
+.. autoclass:: arcgis.layers.VectorTileLayer
     :members:
     :undoc-members:
     :show-inheritance:
     
 VectorTileLayerManager
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.VectorTileLayerManager
+.. autoclass:: arcgis.layers.VectorTileLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
     
 EnterpriseVectorTileLayerManager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.mapping.EnterpriseVectorTileLayerManager
+.. autoclass:: arcgis.layers.EnterpriseVectorTileLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
 
 Working with OGC layers
 -----------------------
-arcgis.mapping.ogc
+arcgis.layers.ogc
 ^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 3
 
-   arcgis.mapping.ogc
+   arcgis.layers.ogc
 
-Working with Map Forms
-----------------------
-arcgis.mapping.forms
-^^^^^^^^^^^^^^^^^^^^
-.. toctree::
-   :maxdepth: 3
-
-   arcgis.mapping.forms
 
 Utility Functions for Mapping
 -----------------------------
 export_map
 ^^^^^^^^^^
-.. autofunction:: arcgis.mapping.export_map
+.. autofunction:: arcgis.map.export_map
 
 create_colormap
 ^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.create_colormap
+.. autofunction:: arcgis.map.create_colormap
 
 get_layout_templates
 ^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.get_layout_templates
+.. autofunction:: arcgis.map.get_layout_templates
 
 Symbology
 ^^^^^^^^^
-.. automodule:: arcgis.mapping.symbol
+.. automodule:: arcgis.map.symbol
     :members:
     :undoc-members:
     :show-inheritance:
 
 generate_simple
 ^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.generate_simple
+.. autofunction:: arcgis.map.renderer.generate_simple
 
 generate_heatmap
 ^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.generate_heatmap
+.. autofunction:: arcgis.map.renderer.generate_heatmap
 
 generate_unique
 ^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.generate_unique
+.. autofunction:: arcgis.map.renderer.generate_unique
 
 generate_classbreaks
 ^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.generate_classbreaks
+.. autofunction:: arcgis.map.renderer.generate_classbreaks
 
 generate_renderer
 ^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.generate_renderer
+.. autofunction:: arcgis.map.renderer.generate_renderer
 
 visual_variables
 ^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.mapping.renderer.visual_variables
+.. autofunction:: arcgis.map.renderer.visual_variables
