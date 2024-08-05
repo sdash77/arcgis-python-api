@@ -2,39 +2,29 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-gis = GIS(
-    "https://utilitynetwork.esri.com/portal",
-    "python_api_team",
-    "python_api_team.109",
-    verify_cert=False,
-)
+utility_network_url = "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer"
+   
 
-# Get Utility Service
-try:
-    # Server gets updated at 2:30PM PST Everyday. Do not test around then.
-    utility_nm = UtilityNetworkManager(
-        "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer",
-        gis=gis,
-    )
-    assert utility_nm
-    module_skip = False
-except:
-    print("No valid service found. Please try another service.")
-    module_skip = True
-
-
-@unittest.skipIf(module_skip, "No Utility Network Service Found. Skipping Test.")
+# Server gets updated at 2:30PM PST Everyday. Do not test around then.
+@profiles.utility_network
 @integration_test
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
+    def setUp(self):
+        self.utility_netowrk_manager = UtilityNetworkManager(
+            utility_network_url,
+            gis=self.gis,
+        )
+        assert self.utility_network_manager
+
     def test_associations(self):
         """Test getting associations, querying, and traversing them"""
-        assert utility_nm.associations()
+        assert self.utility_network_manager.associations()
 
-        association = utility_nm.query_associations(
+        association = self.utility_network_manager.query_associations(
             types=["containment"],
             elements=[
                 {
@@ -46,7 +36,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert association
         assert association["success"] is True
 
-        traverse = utility_nm.traverse_associations(
+        traverse = self.utility_network_manager.traverse_associations(
             direction="ascending",
             stop_at_first_spatial=False,
             elements=[
@@ -61,9 +51,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_locations(self):
         """Test getting locations, and querying them."""
-        assert utility_nm.locations()
+        assert self.utility_network_manager.locations()
 
-        locations = utility_nm.query_locations(
+        locations = self.utility_network_manager.query_locations(
             max_geom_count=100,
             elements=[
                 {
@@ -79,7 +69,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
     def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
         # Get trace config manager
-        manager = utility_nm.trace_configurations()
+        manager = self.utility_network_manager.trace_configurations()
         assert manager
 
         configs = manager.list()
@@ -193,7 +183,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
     def test_validate_topology(self):
         """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
         try:
-            validate = utility_nm.validate_topology(
+            validate = self.utility_network_manager.validate_topology(
                 envelope={
                     "xmin": 1034659.2752358826,
                     "ymin": 1871561.7755379943,
@@ -213,19 +203,19 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_query_network(self):
         """Test query network method"""
-        query1 = utility_nm.query_network_moments(
+        query1 = self.utility_network_manager.query_network_moments(
             moments_to_return=["enableTopology", "initialEnableTopology"]
         )
         assert query1
         assert len(query1["networkMoments"]) == 2
 
-        query2 = utility_nm.query_network_moments()
+        query2 = self.utility_network_manager.query_network_moments()
         assert query2
         assert len(query2["networkMoments"]) == 8
 
     def test_synthesize_association_geometries(self):
         """Test the method"""
-        sag = utility_nm.synthesize_association_geometries(
+        sag = self.utility_network_manager.synthesize_association_geometries(
             connectivity_associations=True,
             count=25,
             extent={
@@ -265,7 +255,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
                 },
             ],
         )
-        trace = utility_nm.trace(
+        trace = self.utility_network_manager.trace(
             locations=[
                 {
                     "traceLocationType": "startingPoint",
@@ -282,7 +272,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
     def test_export_subnetwork(self):
         """Test export of subnetwork"""
         try:
-            export = utility_nm.export_subnetwork(
+            export = self.utility_network_manager.export_subnetwork(
                 domain_name="electric",
                 tier_name="Electric Distribution",
                 subnetwork_name="RMT001",
