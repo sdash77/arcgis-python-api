@@ -1582,7 +1582,7 @@ class FeatureCollection(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties):  
+    def properties(self, properties):
         self._properties = PropertyMap(properties)
 
     @property
