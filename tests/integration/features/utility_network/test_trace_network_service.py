@@ -1,42 +1,34 @@
 import unittest
-from arcgis.gis import GIS
 from arcgis.features._trace import TraceNetworkManager
-from utils.decorators import integration_test
-
-gis = GIS(
-    "https://utilitynetwork.esri.com/portal",
-    "python_api_team",
-    "python_api_team.109",
-    verify_cert=False,
-)
-
-# Get Trace Network Service
-try:
-    # Server gets updated at 2:30PM PST Everyday. Do not test around then.
-    trace_nm = TraceNetworkManager(
-        "https://utilitynetwork.esri.com/server/rest/services/Hydro_HUC4/TraceNetworkServer",
-        gis=gis,
-    )
-    assert trace_nm
-    module_skip = False
-except:
-    print("No valid service found. Please try another service.")
-    module_skip = True
+from utils.decorators import integration_test, profiles
 
 
-@unittest.skipIf(module_skip, "No Trace Network Service Found. Skipping Test.")
+trace_service_url = "https://utilitynetwork.esri.com/server/rest/services/Hydro_HUC4/TraceNetworkServer"
+
+
+# Server gets updated at 2:30PM PST Everyday. Do not test around then.
+@profiles.utility_network
+@unittest.skip("No Url of this type exists on the server")
+# TODO @achapkowski @nanaeaubry -- This test is failing because the URL is not valid.
 @integration_test
 class TestTraceNetworkManager(unittest.TestCase):
     """Tests the Trace Network Service"""
 
+    def setUp(self):
+        self.trace_network_manager = TraceNetworkManager(
+            trace_service_url,
+            gis=self.gis,
+        )
+        assert self.trace_network_manager
+
     def test_properties(self):
         """Test getting properties"""
-        assert trace_nm.properties
+        assert self.trace_network_manager.properties
 
     def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
         # Get trace config manager
-        manager = trace_nm.trace_configurations()
+        manager = self.trace_network_manager.trace_configurations()
         assert manager
 
         configs = manager.list()
@@ -145,7 +137,7 @@ class TestTraceNetworkManager(unittest.TestCase):
     def test_validate_topology(self):
         """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
         try:
-            validate = trace_nm.validate_topology(
+            validate = self.trace_network_manager.validate_topology(
                 envelope={
                     "xmin": 1034659.2752358826,
                     "ymin": 1871561.7755379943,
@@ -161,13 +153,13 @@ class TestTraceNetworkManager(unittest.TestCase):
 
     def test_query_network(self):
         """Test query network method"""
-        query1 = trace_nm.query_network_moments(
+        query1 = self.trace_network_manager.query_network_moments(
             moments_to_return=["enableTopology", "initialEnableTopology"]
         )
         assert query1
         assert len(query1["networkMoments"]) == 2
 
-        query2 = trace_nm.query_network_moments()
+        query2 = self.trace_network_manager.query_network_moments()
         assert query2
         assert len(query2["networkMoments"]) == 7
 
@@ -175,7 +167,7 @@ class TestTraceNetworkManager(unittest.TestCase):
         """
         Test using trace method with the Trace Network Service
         """
-        trace = trace_nm.trace(
+        trace = self.trace_network_manager.trace(
             locations=[
                 {
                     "traceLocationType": "startingPoint",

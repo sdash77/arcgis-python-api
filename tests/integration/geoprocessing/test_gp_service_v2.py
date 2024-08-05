@@ -1,13 +1,13 @@
 import types
 import unittest
-from arcgis.gis import GIS
 from arcgis.geoprocessing import GPService, GPTask, GPJob
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 SYNC_URL = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer"
 ASYNC_URL = "https://sampleserver5.arcgisonline.com/arcgis/rest/services/911CallsHotspot/GPServer"
 
 
+@profiles.anonymous_agol
 @integration_test
 class TestGPService(unittest.TestCase):
     """
@@ -17,19 +17,19 @@ class TestGPService(unittest.TestCase):
 
     def test_properties(self):
         """tests that the `tasks` returns a collection of GPTask objects"""
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         assert gp.properties
 
     def test_tasks(self):
         """tests that the `tasks` returns a collection of GPTask objects"""
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         assert gp.tasks
         if len(gp.tasks) > 0:
             assert isinstance(gp.tasks[0], GPTask)
 
     def test_refresh(self):
         """tests the service reset"""
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         gp.properties
         gp.tasks
         gp.refresh()
@@ -37,29 +37,31 @@ class TestGPService(unittest.TestCase):
         assert gp._tasks is None
 
 
+@profiles.anonymous_agol
 @integration_test
 class TestGPServiceInfo(unittest.TestCase):
     def test_info(self):
         """tests that the `info`"""
-        gp = GPService(ASYNC_URL, GIS())
+        gp = GPService(ASYNC_URL, self.gis)
         assert gp.info
 
     def test_item_info(self):
         """tests that the `item_info`"""
-        gp = GPService(ASYNC_URL, GIS())
+        gp = GPService(ASYNC_URL, self.gis)
         assert gp.info.item_info
 
     def test_info_metadata(self):
         """tests that the `metadata`"""
-        gp = GPService(ASYNC_URL, GIS())
+        gp = GPService(ASYNC_URL, self.gis)
         assert gp.info.metadata
 
     def test_info_thumbnail(self):
         """tests that the `thumbnail`"""
-        gp = GPService(ASYNC_URL, GIS())
+        gp = GPService(ASYNC_URL, self.gis)
         assert gp.info.thumbnail
 
 
+@profiles.anonymous_agol
 @integration_test
 class TestGPTask(unittest.TestCase):
     """
@@ -68,7 +70,7 @@ class TestGPTask(unittest.TestCase):
     """
 
     def test_async_operation(self):
-        gp = GPService(url=ASYNC_URL, gis=GIS())
+        gp = GPService(url=ASYNC_URL, gis=self.gis)
         task = gp.tasks[0]
         fn = getattr(task, task.name)
         # Not Default Query
@@ -78,29 +80,29 @@ class TestGPTask(unittest.TestCase):
         assert result.result()
 
     def test_task_exists(self):
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         task = gp.tasks[0]
         fn = getattr(task, task.name)
         assert isinstance(fn, types.MethodType)
 
     def test_sync_operation(self):
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         task = gp.tasks[1]
         fn = getattr(task, task.name)
         assert fn()
 
     def test_name(self):
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         assert all([isinstance(t.name, str) for t in gp.tasks])
 
     def test_choice_list(self):
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         task = gp.tasks[0]
         cl = task.choice_list
         assert cl
 
     def test_properties(self):
-        gp = GPService(SYNC_URL, GIS())
+        gp = GPService(SYNC_URL, self.gis)
         task = gp.tasks[0]
         assert isinstance(task, GPTask)
         assert task.properties
