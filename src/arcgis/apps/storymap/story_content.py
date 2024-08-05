@@ -356,7 +356,11 @@ class Image:
         Values: `small` | `wide` | `full` | `float`
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["config"]["size"]
+            return (
+                self._story._properties["nodes"][self.node]["config"]["size"]
+                if "size" in self._story._properties["nodes"][self.node]["config"]
+                else None
+            )
 
     # ----------------------------------------------------------------------
     @display.setter
@@ -1185,7 +1189,7 @@ class Embed:
     **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The url that will be added as a webpage, video, or
-                            audio embed into the story.
+                            audio embed into the story. Make sure your url includes "https://" or "http://".
     ==================      ====================================================================
     """
 
@@ -1208,6 +1212,8 @@ class Embed:
                 ]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
+            if path and _parse.urlparse(path).scheme not in ["https", "http"]:
+                path = "https://" + path
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._offline_dependent = None
@@ -1419,17 +1425,22 @@ class Embed:
                 "providerUrl": sections.netloc,
                 "alt": alt_text or "",
                 "display": display or "inline",
+                "embedSrc": self._path,
             },
         }
 
     # ----------------------------------------------------------------------
     def _update_link(self, new_link):
+        # check new link has http or https
+        if _parse.urlparse(new_link).scheme not in ["https", "http"]:
+            new_link = "https://" + new_link
         # parse new url
         sections = _parse.urlparse(new_link)
         # set new path
         self._path = new_link
         # update dictionary properties
         self._story._properties["nodes"][self.node]["data"]["url"] = self._path
+        self._story._properties["nodes"][self.node]["data"]["embedSrc"] = self._path
         self._story._properties["nodes"][self.node]["data"]["title"] = sections.netloc
         self._story._properties["nodes"][self.node]["data"][
             "providerUrl"
@@ -1516,10 +1527,6 @@ class Map:
 
             # only in rdata
             self._type = rdata["itemType"]
-            if self._type == "Web Scene":
-                self._lighting_date = self._story._properties["resources"][
-                    self.resource_node
-                ]["data"]["lightingDate"]
 
             # check if offline dependents exist
             if "dependents" in self._story._properties["nodes"][self.node]:
@@ -1534,9 +1541,9 @@ class Map:
             # Create map object to extract properties
             if isinstance(item, arcgis.gis.Item):
                 if item.type == "Web Map":
-                    map_item = arcgismapping.Map(item)
+                    map_item = arcgismapping.Map(item=item)
                 elif item.type == "Web Scene":
-                    map_item = arcgismapping.Scene(item)
+                    map_item = arcgismapping.Scene(item=item)
                 else:
                     raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
@@ -1546,8 +1553,12 @@ class Map:
             self._type = item.type
             self._offline_dependent = None
             if item.type == "Web Map":
-                self._extent = map_item.extent.dict()
-                if map_item.center.dict() is None or map_item.center.dict() == {}:
+                self._extent = (
+                    map_item.extent.dict()
+                    if not isinstance(map_item.extent, dict)
+                    else map_item.extent
+                )
+                if map_item.center is None or map_item.center == []:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
                     self._center = {
@@ -1556,36 +1567,40 @@ class Map:
                         "y": y_center,
                     }
                 else:
-                    self._center = map_item.center.dict()
+                    self._center = {
+                        "x": map_item.center[0],
+                        "y": map_item.center[1],
+                        "spatialReference": self._extent["spatialReference"],
+                    }
                 self._zoom = map_item.zoom if map_item.zoom is not False else 2
                 self._viewpoint = {
-                    "rotation": map_item.rotation.dict(),
-                    "scale": map_item.scale.dict(),
+                    "rotation": map_item.rotation,
+                    "scale": map_item.scale,
                     "targetGeometry": self._center,
                 }
 
                 layers = []
-                # Create layer dictionary:
-                for layer in map_item.layers:
+                # Create layer dictionary from pydantic dataclasses:
+                for layer in map_item._webmap.operational_layers:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if "visibility" in layer:
-                        layer_props["visible"] = layer["visibility"]
-                    elif "layer_visibility" in map_item:
-                        layer_props["visible"] = map_item["layer_visibility"]
+                    if hasattr(layer, "visibility"):
+                        layer_props["visible"] = layer.visibility
+                    else:
+                        layer_props["visible"] = False  # Default
                     layers.append(layer_props)
                 self._map_layers = layers
             # Add properties for Web Scene
             elif item.type == "Web Scene":
                 layers = []
                 # Create layer dictionary:
-                for layer in map_item.layers:
+                for layer in map_item._webscene.operational_layers:
                     layer_props = {}
                     layer_props["id"] = layer.id
                     layer_props["title"] = layer.title
-                    if "visibility" in layer:
-                        layer_props["visible"] = layer["visibility"]
+                    if hasattr(layer, "visibility"):
+                        layer_props["visible"] = layer.visibility
                     else:
                         layer_props["visible"] = False
                     layers.append(layer_props)
@@ -1596,13 +1611,8 @@ class Map:
                     "position"
                 ]
                 self._zoom = 2
-                self._viewpoint = map_item["initialState"]["viewpoint"]
-                self._camera = map_item["initialState"]["viewpoint"]["camera"]
-                self._lighting_date = (
-                    map_item["initialState"]["environment"]["lighting"]["datetime"]
-                    if "datetime" in map_item["initialState"]["environment"]["lighting"]
-                    else None
-                )
+                self._viewpoint = scene_dict["initialState"]["viewpoint"]
+                self._camera = scene_dict["initialState"]["viewpoint"]["camera"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -1744,8 +1754,6 @@ class Map:
             self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                 "targetGeometry"
             ] = new_center
-        else:
-            raise ValueError("Extent must be a dictionary")
 
     # ----------------------------------------------------------------------
     def _update_scale(self, scale: Scales | str):
@@ -2175,14 +2183,8 @@ class Map:
         # Add for Web Scene
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
-                "lightingDate"
-            ] = self._lighting_date
-            self._story._properties["resources"][self.resource_node]["data"][
                 "camera"
             ] = self._camera
-            self._story._properties["nodes"][self.node]["data"][
-                "lightingDate"
-            ] = self._lighting_date
             self._story._properties["nodes"][self.node]["data"]["camera"] = self._camera
 
     # ----------------------------------------------------------------------
@@ -2201,10 +2203,7 @@ class Map:
             raise ValueError("New Map must be of same type as the existing map.")
 
         # create new map
-        if map.type == "Web Map":
-            new_map = arcgismapping.Map(map)
-        elif map.type == "Web Scene":
-            new_map = arcgismapping.Scene(map)
+        new_map = Map(item=map)
 
         # Get all the old properties but update with new map where needed
 
@@ -2230,14 +2229,8 @@ class Map:
         # Extra necessary updates when it is a Web Scene (3D Map)
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
-                "lightingDate"
-            ] = new_map._lighting_date
-            self._story._properties["resources"][self.resource_node]["data"][
                 "camera"
             ] = new_map._camera
-            self._story._properties["nodes"][self.node]["data"][
-                "lightingDate"
-            ] = new_map._lighting_date
             self._story._properties["nodes"][self.node]["data"][
                 "camera"
             ] = new_map._camera
@@ -3712,9 +3705,10 @@ class Sidecar:
         self,
         slide_number: int,
         text: str,
-        viewpoint: dict,
+        viewpoint: dict | None = None,
         extent: dict | None = None,
         map_layers: list[dict] | None = None,
+        media: Image | Video | Embed | None = None,
     ):
         """
         Add a map action button to a slide. You can specify the data of the action.
@@ -3726,8 +3720,10 @@ class Sidecar:
         ---------------     --------------------------------------------------------------------
         text                Required String. The map action button text
         ---------------     --------------------------------------------------------------------
-        viewpoint           Required Dictionary. The viewpoint to be set. The minimum keys to include are
+        viewpoint           Optional Dictionary. The viewpoint to be set. The minimum keys to include are
                             an x and y center point in the target geometry.
+
+                            Set the viewpoint, extent, and map layers if you want the action to be a map action.
 
                             Example:
                                 viewpoint = {
@@ -3769,73 +3765,96 @@ class Sidecar:
                                         "visible": true
                                     }
                                 ]
+        ---------------     --------------------------------------------------------------------
+        media               Optional item that is a story content item of type Image, Video, or Embed.
+                            Set the media if you want the action to be a media action.
         ===============     ====================================================================
 
         :return: The node id for the action that was added to the slide
         """
-        # create node for the action
-        node = "n-" + uuid.uuid4().hex[0:6]
+        # Error Checking
+        if not (viewpoint or extent or media):
+            raise ValueError(
+                "You must provide either a viewpoint, extent, or media content to create an action."
+            )
 
         # find the target map
         slide_node = self._slides[slide_number - 1]
         slide_dict = self.properties[slide_number][slide_node]
-        if "media" not in slide_dict:
+
+        if "media" not in slide_dict and (viewpoint or extent) is not None:
+            # Only map action needs map to be present: when user provides viewpoint
             raise ValueError(
                 "The slide needs a webmap or expressmap for the map action to be created."
             )
 
-        # get the map type
-        map_type = list(slide_dict["media"].keys())[0]
-        if map_type not in ["expressmap", "webmap"]:
-            raise ValueError(
-                "The slide needs a webmap or expressmap for the map action to be created."
-            )
-        map_node = slide_dict["media"][map_type]
+        # Start creating the action
+        node = "n-" + uuid.uuid4().hex[:6]
 
-        # compose the action dict
-        action_dict = {
-            "origin": node,
-            "trigger": "ActionButton_Apply",
-            "target": map_node,
-            "event": (
-                "ExpressMap_UpdateData"
-                if map_type == "expressmap"
-                else "WebMap_UpdateData"
-            ),
-            "data": {},
-        }
-        if extent and not viewpoint:
-            action_dict["data"]["extent"] = extent
-            x_center = (extent["xmin"] + extent["xmax"]) / 2
-            y_center = (extent["ymin"] + extent["ymax"]) / 2
-            viewpoint = {
-                "rotation": 0,
-                "targetGeometry": {
-                    "spatialReference": (
-                        extent["spatialReference"]
-                        if "spatialReference" in extent
-                        else {"latestWkid": 3857, "wkid": 102100}
-                    ),
-                    "x": x_center,
-                    "y": y_center,
-                },
+        if viewpoint or extent:
+            # get the map type
+            map_type = list(slide_dict["media"].keys())[0]
+            map_node = slide_dict["media"][map_type]
+
+            # compose the action dict
+            action_dict = {
+                "origin": node,
+                "trigger": "ActionButton_Apply",
+                "target": map_node,
+                "event": (
+                    "ExpressMap_UpdateData"
+                    if map_type == "expressmap"
+                    else "WebMap_UpdateData"
+                ),
+                "data": {},
             }
-        if map_layers:
-            action_dict["data"]["mapLayers"] = map_layers
-        if viewpoint:
-            action_dict["data"]["viewpoint"] = viewpoint
+            if extent and not viewpoint:
+                # set extent and create the viewpoint
+                action_dict["data"]["extent"] = extent
+                x_center = (extent["xmin"] + extent["xmax"]) / 2
+                y_center = (extent["ymin"] + extent["ymax"]) / 2
+                viewpoint = {
+                    "rotation": 0,
+                    "targetGeometry": {
+                        "spatialReference": (
+                            extent["spatialReference"]
+                            if "spatialReference" in extent
+                            else {"latestWkid": 3857, "wkid": 102100}
+                        ),
+                        "x": x_center,
+                        "y": y_center,
+                    },
+                }
+            if viewpoint:
+                action_dict["data"]["viewpoint"] = viewpoint
+            if map_layers:
+                action_dict["data"]["mapLayers"] = map_layers
 
-        # add to actions list in story properties
-        if "actions" in self._story._properties:
-            self._story._properties["actions"].append(action_dict)
         else:
-            self._story._properties["actions"] = [action_dict]
+            # check if media node part of story
+            if media.node not in self._story._properties["nodes"]:
+                media._add_to_story(story=self._story)
+
+            # compose the action dict
+            action_dict = {
+                "origin": node,
+                "trigger": "ActionButton_Apply",
+                "target": slide_node,
+                "event": "ImmersiveSlide_ReplaceMedia",
+                "data": {"media": media.node},
+            }
+
+        # Add action to story properties
+        self._story._properties.setdefault("actions", []).append(action_dict)
 
         # compose the node dict in story properties
         self._story._properties["nodes"][node] = {
             "type": "action-button",
             "data": {"text": text},
             "config": {"size": "wide"},
+            "dependents": {
+                "actionMedia": media.node if media else "",
+            },
         }
 
         # add to the narrative panel
@@ -4462,6 +4481,206 @@ class MapTour:
 
 
 ###############################################################################################################
+class MediaAction:
+    """
+    Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
+    to deliver an immersive experience. If the media panel consists of a web map or web scene, the map actions
+    functionality allows authors to include options for further interactivity.
+    Simply put, map actions are buttons that change something on the map or scene when toggled.
+    These buttons can be configured to modify the map extent, the visibility of different layers etc., and this can be
+    useful to include additional details without deviating from the primary narrative.
+
+    There are two main types: Inline text map actions and map action blocks in sidecar.
+
+    To create a media action you must use the `add_action` method found in the sidecar.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, **kwargs) -> None:
+        node = kwargs.pop("node_id", None)
+        story = kwargs.pop("story", None)
+        if node:
+            self.node = node
+            self._story = story
+            actions = story._properties["actions"]
+            for action in actions:
+                if action["origin"] == node:
+                    self.target = action["target"]
+                    self.properties = action
+
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._story = story
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Media Action"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Media Action"
+
+    # ----------------------------------------------------------------------
+    @property
+    def viewpoint(self) -> dict:
+        for action in self._story._properties["actions"]:
+            if action["origin"] == self.node:
+                return (
+                    action["data"]["viewpoint"] if "viewpoint" in action["data"] else {}
+                )
+
+    # ----------------------------------------------------------------------
+    @property
+    def media(self):
+        """
+        Get the media node id for the media action.
+        """
+        node = None
+        for action in self._story._properties["actions"]:
+            if action["origin"] == self.node:
+                node = action["data"]["media"] if "media" in action["data"] else None
+        if node:
+            return utils._assign_node_class(self._story, node)
+        return None
+
+    # ----------------------------------------------------------------------
+    @property
+    def text(self) -> str:
+        """
+        Get/Set the button text for a map action button.
+        """
+        node_dict = self._story._properties["nodes"][self.node]
+        if "text" in node_dict["data"]:
+            return node_dict["data"]["text"]
+        return ""
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text: str) -> None:
+        """"""
+        if isinstance(text, str):
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+
+    # ----------------------------------------------------------------------
+    def set_media(self, media: Image | Video | Embed):
+        """
+        Set the media for the map action.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        media               Required item that is a story content item.
+                            Item type for the media node can be: Image, Video, or Embed.
+        ==================  ========================================
+
+        :return: The media node id for the media action.
+        """
+        if media.node not in self._story._properties["nodes"]:
+            media._add_to_story(story=self._story)
+
+        # Assign new media to action and update story properties
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                self._story._properties["actions"][idx]["data"] = {"media": media.node}
+        self._story._properties["nodes"][self.node]["dependents"] = {
+            "actionMedia": media.node
+        }
+        return self.media
+
+    # ----------------------------------------------------------------------
+    def set_viewpoint(
+        self, target_geometry: dict, scale: Scales, rotation: int | None = None
+    ):
+        """
+        Set the extent and/or scale for the map action in the story.
+
+        To see the current viewpoint call the `viewpoint` property on the Map Action
+        node.
+
+        .. note::
+            You can only set the viewpoint for an action pertaining to a map. If the action
+            is associated with an image, video, or other media type, then the viewpoint will not be set.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        target_geometry     Required dictionary representing the target geometry of the
+                            viewpoint.
+
+                            Example:
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'x': -609354.6306080809,
+                                | 'y': 2885721.2797636474}
+        ------------------  ----------------------------------------
+        scale               Required Scales enum class value or int.
+
+                            Scale is a unit-less way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
+        ------------------  ----------------------------------------
+        rotation            Optional float. Determine the rotation for an
+                            action on a 3D map.
+        ==================  ========================================
+
+        :return: The current viewpoint dictionary
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                if "WebMap_UpdateData" not in action["event"]:
+                    raise ValueError("You can only set the viewpoint for a map action.")
+                if rotation is None:
+                    if "viewpoint" in self._story._properties["actions"][idx]["data"]:
+                        rotation = (
+                            self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]["rotation"]
+                            if "rotation"
+                            in self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]
+                            else 0
+                        )
+                    else:
+                        rotation = 0
+                if isinstance(scale, Scales):
+                    scale = scale.value
+                self._story._properties["actions"][idx]["data"]["viewpoint"] = {
+                    "rotation": rotation,
+                    "scale": scale,
+                    "targetGeometry": target_geometry,
+                }
+        return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        return self._story is not None and self.node is not None
+
+
+###############################################################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    details="Use MediaAction class instead. This will have the same methods and properties but the class name has changed.",
+)
 class MapAction:
     """
     Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
