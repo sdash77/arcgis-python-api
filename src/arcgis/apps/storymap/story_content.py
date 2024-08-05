@@ -925,11 +925,6 @@ class Audio:
     def __init__(self, path: Optional[str] = None, **kwargs):
         # Can be created from scratch or already exist in story
         # Audio is not an immersive node
-        if not path or _parse.urlparse(path).scheme == "https":
-            # Audio cannot be added by URL at this time.
-            raise ValueError(
-                "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
-            )
         # Assign audio node properties
         self._story = kwargs.pop("story", None)
         self._type = "audio"
@@ -946,6 +941,11 @@ class Audio:
                 "data"
             ]["resourceId"]
         else:
+            if not path or _parse.urlparse(path).scheme == "https":
+                # Audio cannot be added by URL at this time.
+                raise ValueError(
+                    "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
+                )
             # Create a new instance
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
