@@ -116,10 +116,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
         if folder:
             # Get specific folder
             folder_name = folder
-            folder = gis.content.folders.get(folder_name)
-            if folder is None:
-                # Create specific folder
-                folder = gis.content.folders.create(folder_name)
+            folder = gis.content.folders.get(folder_name) or gis.content.folders.create(folder_name)
         else:
             # Get the root folder
             folder = gis.content.folders.get()
