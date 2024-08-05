@@ -1548,9 +1548,9 @@ class FeatureCollection(Layer):
     @property
     def properties(self):
         """
-        Returns a dictionary-like object of the current definition for the 
+        Returns a dictionary-like object of the current definition for the
         *Feature Collection* object. Each feature collection is comprised of a:
-        
+
         * *featureSet*,
         * *layerDefinition*
         * *popupInfo*.
@@ -1558,27 +1558,27 @@ class FeatureCollection(Layer):
         See the
         `featureCollection Object Specification <https://developers.arcgis.com/web-map-specification/objects/featureCollection>`_
         for full details.
-        
+
         .. note::
             The *properties* and *layer* property of a :class:`~arcgis.features.FeatureCollection`
             return the same information.
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_profile")
-            
+
             >>> fcolln_item = gis.content.search(
                                    query="*",
                                    item_type="Feature Collection"
                                 )[0]
-            
+
             >>> fcolln_obj = fcolln_item.layers[0]
             >>> list(fcolln_obj.properties.keys())
-            
-            ['featureSet', 'layerDefinition', 'popupInfo'] 
-        """          
+
+            ['featureSet', 'layerDefinition', 'popupInfo']
+        """
         return self._properties
 
     @properties.setter
@@ -1762,6 +1762,3 @@ class FeatureCollection(Layer):
 
         # create a FC and return
         return FeatureCollection(fc_dict)
-
-
-FeatureCollection.layer.__doc__ = FeatureCollection.properties.__doc__
