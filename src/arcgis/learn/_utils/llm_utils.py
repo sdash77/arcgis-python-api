@@ -6,7 +6,7 @@ import importlib
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from torch.utils.data import DataLoader, Dataset
 
 SYSTEM_PROMPT = """You are an advanced AI designed for ArcGIS customers. Upon receiving the information in the context,
@@ -21,6 +21,7 @@ TASK_EXAMPLE = {
         "class_2": ["sentence_5", "sentence_6"],
     },
     "ner": [("Jim stays in London", {"name": ["Jim"], "location": ["London"]})],
+    "seq-to-seq": [["input_1", "output_1"], ["input_2", "output_2"]],
 }
 
 ner_pydantic_template = """
@@ -34,6 +35,11 @@ text_class_pydantic_template = """
 class txtresp(BaseModel):
 $placeholder
 """
+
+
+class seqexample(BaseModel):
+    x: List[Tuple[str, str]]
+
 
 MAPPING_DICT = {
     "question-answering": {
@@ -49,7 +55,25 @@ MAPPING_DICT = {
     "seq-to-seq": {
         "end_seq": "Ignore all the formatting instruction provided above and "
         "return the answer as a string indexed by question number",
-        "prompt": None,
+        "prompt": "You are supposed to perform the task as per given examples",
+        "system_prompt": """You are a model defined to generate the sequence as per the user request.
+                
+                $user_prompt
+                
+                Your output must be devoid of any biases.
+                
+                You must not generate any explanation or notes for your response. Just generate the Output as per below schema. 
+
+                You must adhere the below JSON schema while generating the output
+                $schema
+                
+                This is the representative example: 
+                
+                "input": $sentence
+                "output": $answer
+                
+                "input": $next_sentence
+                """,
     },
     "ner": {
         "end_seq": "Ignore all the formatting instruction provided above and "
@@ -125,7 +149,7 @@ def process_text(text):
     return text.strip()
 
 
-def data_sanity_llm(data, **kwargs):
+def data_sanity_llm(data, **kwargs: Dict):
     """
     Verifies the combination of data and examples. There can be three scenarios.
 
@@ -226,6 +250,58 @@ def data_sanity_llm(data, **kwargs):
                     f"Pydantic Schema: List[Tuple[str, Dict[str, List]]]\n"
                     f"Example: {TASK_EXAMPLE[task]}"
                 )
+    if task == "seq-to-seq":
+        if not data and not kwargs.get("examples", None):
+            raise Exception("Either a data object or examples must be provided.")
+
+        sampled_records = []
+        if data:
+            if data._train_df is not None:
+                no_of_samples = 6
+                # Sample out first few records. Since the sampling in not label dependent
+                sample_df = data._train_df[:no_of_samples]
+                for i in sample_df.index:  # This is slower than itertuples
+                    val = sample_df.iloc[i]
+                    sampled_records.append(
+                        tuple([val[data._text_cols], val[data._label_cols[0]]])
+                    )
+
+        examples = kwargs.get("examples", [])
+        is_example_valid = True
+        try:
+            seqexample(**{"x": examples})
+        except:
+            is_example_valid = False
+            examples = (
+                []
+            )  # if validation fails, we will set the examples to an empty list
+
+        if not is_example_valid and not len(
+            sampled_records
+        ):  # raise an exception if there is no data object and examples are not formatted
+            raise Exception(
+                f"{task} requires the examples in the below format \n"
+                f"Pydantic Schema: List[Tuple[str, str]]\n"
+                f"Example: {TASK_EXAMPLE[task]}"
+            )
+        else:
+            if (
+                not is_example_valid
+            ):  # warn the user, since we are dropping the examples.
+                warnings.warn(
+                    f"Ignoring the provided examples as it has failed during validation."
+                    f" Proceeding with the sampled records from the data object."
+                    f"{task} requires the examples in the below format \n"
+                    f"Pydantic Schema: List[Tuple[str, str]]\n"
+                    f"Example: {TASK_EXAMPLE[task]}",
+                    SyntaxWarning,
+                )
+            if len(examples):
+                examples += sampled_records
+            else:
+                examples = sampled_records
+
+        kwargs.update({"examples": examples})
     return kwargs
 
 
@@ -248,21 +324,21 @@ def safe_ner_check(text):
     return is_dict
 
 
-def safe_extract_ner(text):
+def safe_extract_ner(text: str):
     # first check if the collect dict can be parsed directly
     if not safe_ner_check(text):
         # try with regex to identify the dict location
         pattern = r"{.*?}+"
         # Extracting the dictionary
         text = re.findall(pattern, text)[0]
-        print(text)
+        # print(text)
         # check if it can be parsed
         if safe_ner_check(text):
             return text
     return text
 
 
-def safe_literal_eval_dict(text, task):
+def safe_literal_eval_dict(text: str, task: str):
     if task == "ner":
         try:
             text = ast.literal_eval(text)
@@ -290,7 +366,7 @@ def safe_literal_eval_dict(text, task):
         return text.split("\n")[:1]
 
 
-def safe_extract_classifier(text):
+def safe_extract_classifier(text: str):
     try:
         text = ast.literal_eval(text)["class"]
         return text
@@ -305,7 +381,7 @@ def safe_extract_classifier(text):
             return ""
 
 
-def format_result(results, task="cls"):
+def format_result(results, task: str = "cls"):
     # Check for the nearest python native object
     response = None
     if len(results) > 0:
@@ -361,7 +437,7 @@ def format_result(results, task="cls"):
 
 
 class completion_message:
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.message = None
         self.generations = []
         if isinstance(message, dict):

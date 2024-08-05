@@ -157,8 +157,6 @@ class TestApplyEditsAsync(unittest.TestCase):
             assert isinstance(res, concurrent.futures.Future)
             result = res.result()
             assert result
-        except Exception as e:
-            raise e
         finally:
             if item:
                 item.delete()

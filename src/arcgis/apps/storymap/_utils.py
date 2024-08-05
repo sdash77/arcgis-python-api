@@ -971,7 +971,7 @@ def _assign_node_class(story, node_id):
             "sidecar": Content.Sidecar,
             # Add more subtypes as needed
         },
-        "action-button": Content.MapAction,
+        "action-button": Content.MediaAction,
         "expressmap": Content.ExpressMap,
         "navigation": Content.Navigation,
         "storycover": Content.Cover,

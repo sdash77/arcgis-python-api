@@ -19,7 +19,7 @@ class TestCertificateMgr(unittest.TestCase):
             cm = gis.admin.certificates
             assert cm.properties
             assert isinstance(gis.admin.certificates.certificates, (list, tuple))
-            data_dir = Path(Path.cwd(), "integration", "gis", "cert_test.txt")
+            data_dir = Path(Path.cwd(), "integration", "gis", "admin", "cert_test.txt")
             with open(data_dir) as reader:
                 result = cm.add(
                     name="MYSELFSIGNEDCERT",

@@ -14,14 +14,9 @@ from arcgis.gis import (
 from arcgis.gis._impl._jb import StatusJob
 from utils.decorators import integration_test
 
+import os
 
-try:
-    from utils import NOTEBOOK_TESTS_DIR
-
-    fp = os.path.join(NOTEBOOK_TESTS_DIR, "parkinglots.zip")
-
-except:
-    fp = r"./parkinglots.zip"
+fp = os.path.join(os.path.dirname(__file__), "parkinglots.zip")
 
 
 try:
