@@ -941,7 +941,7 @@ class Audio:
                 "data"
             ]["resourceId"]
         else:
-            if not path or _parse.urlparse(path).scheme == "https":
+            if not path or _parse.urlparse(path).scheme in ["ftp", "http", "https"]:
                 # Audio cannot be added by URL at this time.
                 raise ValueError(
                     "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
