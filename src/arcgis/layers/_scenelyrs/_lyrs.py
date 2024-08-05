@@ -676,7 +676,7 @@ class Object3DLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -707,7 +707,7 @@ class Object3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -787,7 +787,7 @@ class IntegratedMeshLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -818,7 +818,7 @@ class IntegratedMeshLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
@@ -935,7 +935,7 @@ class Tiles3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "3DTiles Service", "url": url}
@@ -960,7 +960,10 @@ class Tiles3DLayer(Layer):
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             else:
-                rd = {"/rest/": "/admin/", "/3DTilesServer": ".3DTilesServer"}
+                rd = {
+                    "/rest/": "/admin/",
+                    "/3DTilesServer": ".3DTilesServer",
+                }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
@@ -1016,7 +1019,7 @@ class VoxelLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.VoxelLayer
+        >> arcgis.layers.VoxelLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1047,7 +1050,7 @@ class VoxelLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "VoxelLayer", "url": url}
@@ -1128,7 +1131,7 @@ class Point3DLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1160,7 +1163,7 @@ class Point3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -1240,7 +1243,7 @@ class PointCloudLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1271,7 +1274,7 @@ class PointCloudLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "PointCloudLayer", "url": url}
@@ -1351,7 +1354,7 @@ class BuildingLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.BuildingLayer
+        >> arcgis.layers.BuildingLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1382,7 +1385,7 @@ class BuildingLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "BuildingSceneLayer", "url": url}
@@ -1458,7 +1461,7 @@ class _SceneLayerFactory(type):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1517,7 +1520,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'

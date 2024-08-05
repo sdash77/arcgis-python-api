@@ -2321,18 +2321,11 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # Add to the same folder as the service
         folder_id = orig_item.ownerFolder
-        if folder_id is not None:
-            folder_name = self._gis.content.get_folder(folder_id)
-        else:
-            folder_name = None
-
-        # Add the file as an item to portal
-        if folder_name:
-            folder = self._gis.content.folders.get(
-                folder_name, self._gis.users.me.username
-            )
+        if folder_id:
+            folder = self._gis.content.folders.get(folder_id)
         else:
             folder = self._gis.content.folders.get()
+
         file_item = folder.add(
             item_properties={
                 "type": file_type,
@@ -2340,7 +2333,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 "tags": "inserted",
             },
             file=data_path,
-        )
+        ).result()
 
         # Analyze the file to get publish parameters
         if file_type == "CSV" or file_type == "Excel":
@@ -2373,10 +2366,14 @@ class FeatureLayerCollectionManager(_GISResource):
                     in orig_item.layers[index].properties.supportedAppendFormats
                 ) or file_type != "File Geodatabase":
                     # Workflow for all file types and file geo databases that support append
+                    if file_type == "File Geodatabase":
+                        upload_format = "filegdb"
+                    else:
+                        upload_format = file_type.lower()
                     ItemDependency(orig_item).add("itemid", file_item.id)
                     orig_item.layers[index].append(
                         item_id=file_item.id,
-                        upload_format="filegdb",
+                        upload_format=upload_format,
                     )
                 elif file_type == "File Geodatabase":
                     # When filegdb not supported through append, use edit features
@@ -3299,7 +3296,6 @@ class FeatureLayerCollectionManager(_GISResource):
             not isinstance(data_file, str)
             or not os.path.exists(data_file)
             or not os.path.isfile(data_file)
-            or os.stat(data_file).st_size > int(2.5e7)
         ):
             raise ValueError(
                 "The data file provided does not exist or could not be accessed."
