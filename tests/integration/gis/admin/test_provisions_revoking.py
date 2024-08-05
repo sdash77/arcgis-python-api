@@ -1,18 +1,14 @@
 import uuid
 import unittest
-from arcgis.gis import GIS, UserManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 
+@profiles.admin_agol
 @integration_test
 class TestLicenseProvisions(unittest.TestCase):
     def test_assign_provisions(self):
         """tests assign provision"""
-        gis = GIS(
-            profile="your_online_admin_profile",
-            verify_cert=False,
-        )
-        um = gis.users
+        um = self.gis.users
         username = f"t3rdpart{uuid.uuid4().hex[:4]}"
         try:
 
@@ -24,12 +20,12 @@ class TestLicenseProvisions(unittest.TestCase):
                 email="achapkowski@esri.com",
                 role='org_user'
             )
-            user = gis.users.get(username)
+            user = self.gis.users.get(username)
         except Exception as e:
             print(e)
-            user = gis.users.get(username)
+            user = self.gis.users.get(username)
 
-        lm = gis.admin.license
+        lm = self.gis.admin.license
         for license in lm.all():
             if license.properties.listing.title == "TRIAL PAID \xa0LBU":
 
@@ -43,10 +39,7 @@ class TestLicenseProvisions(unittest.TestCase):
 
     def test_revoke_provisions(self):
         """tests revoke provision"""
-        gis = GIS(
-            profile="your_online_admin_profile",
-            verify_cert=False,
-        )
+        gis = self.gis
         um = gis.users
         username = f"t3rdpart{uuid.uuid4().hex[:4]}"
         try:
@@ -81,10 +74,7 @@ class TestLicenseProvisions(unittest.TestCase):
         assert user.delete()
 
     def test_lmgr_provisions(self):
-        gis = GIS(
-            profile="your_online_admin_profile",
-            verify_cert=False,
-        )
+        gis = self.gis
         lm = gis.admin.license
         user = gis.users.me
         p1 = lm.provisions(

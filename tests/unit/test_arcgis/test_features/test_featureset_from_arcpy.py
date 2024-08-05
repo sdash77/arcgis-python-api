@@ -1,18 +1,15 @@
 import unittest
 from arcgis.features import FeatureSet
-from utils.decorators import integration_test
 
 try:
     import arcpy
 
-    SKIPNOARCPY = False
+    HAS_ARCPY = True
 except:
-    SKIPNOARCPY = True
-import json
+    HAS_ARCPY = False
 
 
-fs = FeatureSet.from_geojson(
-    {
+geojson = {
         "type": "FeatureCollection",
         "features": [
             {
@@ -27,18 +24,17 @@ fs = FeatureSet.from_geojson(
             },
         ],
     }
-)
+fs = FeatureSet.from_geojson(geojson)
 
 
-@unittest.skipIf(SKIPNOARCPY, "ArcPY cannot be imported!")
-@integration_test
-class TestArcPyFeatureSet(unittest.TestCase):
+@unittest.skipIf(not HAS_ARCPY, "Environment does not have arcpy")
+class TestFeatureSetFromArcpy(unittest.TestCase):
     def test_from_arcpy(self):
         """tests the featureset from arcpy"""
         fs_arcpy = arcpy.FeatureSet(fs.to_json)
         fs_from_arcpy = FeatureSet.from_arcpy(fs_arcpy)
         assert isinstance(fs_from_arcpy, FeatureSet)
-        assert len(fs_from_arcpy.features) == 2
+        assert len(fs_from_arcpy.features) == len(geojson["features"])
 
 
 if __name__ == "__main__":
