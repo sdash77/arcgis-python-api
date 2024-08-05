@@ -1593,9 +1593,6 @@ class FeatureCollection(Layer):
     def layer(self):
         return self.properties
 
-    @deprecated(
-        deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead."
-    )
     @layer.setter
     def layer(self, layer):
         self.properties(layer)
