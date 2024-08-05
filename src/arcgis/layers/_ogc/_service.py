@@ -267,7 +267,7 @@ class OGCFeatureService:
         resp.raise_for_status()
         resp_json = resp.json()
         if "collections" not in resp_json:
-            raise ValueError("No collections found. Error: " + str(resp_json))
+            return []
         collections = resp_json["collections"]
         for _, lyr in enumerate(collections):
             service_url = f"{url}/{lyr['id']}"
