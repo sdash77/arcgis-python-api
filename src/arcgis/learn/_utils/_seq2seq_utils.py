@@ -9,6 +9,7 @@ import warnings
 import traceback
 import pandas as pd
 from functools import partial
+from typing import List
 
 HAS_FASTAI = True
 try:
@@ -45,7 +46,6 @@ try:
     warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 except:
     HAS_NUMPY = False
-
 
 max_len = 100
 DatasetType = Enum("DatasetType", "Train Valid Test Single Fix")
@@ -226,7 +226,12 @@ class NGram:
         return np.all(np.array(self.ngram) == np.array(other.ngram))
 
     def __hash__(self):
-        return int(sum([o * self.max_n**i for i, o in enumerate(self.ngram)]))
+        if isinstance(self.ngram, str):
+            return (
+                int(hashlib.sha256(self.ngram.encode("utf-8")).hexdigest(), 16) % 10**8
+            )
+        else:
+            return int(sum([o * self.max_n**i for i, o in enumerate(self.ngram)]))
 
 
 def get_grams(x, n, max_n=5000):
@@ -244,6 +249,26 @@ def get_correct_ngrams(pred, targ, n, max_n=5000):
     )
     pred_cnt, targ_cnt = Counter(pred_grams), Counter(targ_grams)
     return sum([min(c, targ_cnt[g]) for g, c in pred_cnt.items()]), len(pred_grams)
+
+
+def calculate_bleu(output: List, target: List, vocab_sz: int) -> float:
+    pred_len, targ_len, corrects, counts = (
+        0,
+        0,
+        [0] * 4,
+        [0] * 4,
+    )
+    for pred, targ in zip(output, target):
+        pred_len += len(pred)
+        targ_len += len(targ)
+        for i in range(4):
+            c, t = get_correct_ngrams(pred, targ, i + 1, max_n=vocab_sz)
+            corrects[i] += c
+            counts[i] += t
+    precs = [c / t for c, t in zip(corrects, counts)]
+    len_penalty = exp(1 - targ_len / pred_len) if pred_len < targ_len else 1
+    bleu = len_penalty * ((precs[0] * precs[1] * precs[2] * precs[3]) ** 0.25)
+    return bleu
 
 
 class CorpusBLEU(Callback):

@@ -133,7 +133,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # assert
             self.assertIsInstance(
                 oma_manager,
-                arcgis.layers._types.OfflineMapAreaManager,
+                arcgis.layers.OfflineMapAreaManager,
                 "Cannot create OMA manager object from web map object",
             )
 
@@ -195,7 +195,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
 
             wm = arcgismapping.Map(wmitem)
 
-            bookmark1 = wm.definition.bookmarks[-1]["name"]
+            bookmark1 = wm.bookmarks.list[-1].name
 
             import arcgis
 
@@ -344,7 +344,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
             wm = arcgismapping.Map(wmitem)
 
-            bookmark1 = wm.definition.bookmarks[-1]["name"]
+            bookmark1 = wm.bookmarks.list[-1].name
 
             import arcgis
 

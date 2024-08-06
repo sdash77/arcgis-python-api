@@ -27,7 +27,7 @@ from .._utils.llm_utils import (
     ner_pydantic_template,
 )
 from .._utils.common import _get_device_id
-from ._prompt_schema import textclassifierprompt, nerprompt
+from ._prompt_schema import textclassifierprompt, nerprompt, seqtoseqprompt
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from string import Template
 from copy import deepcopy
@@ -37,7 +37,6 @@ try:
     import tenacity
 except:
     HAS_TENACITY = False
-
 
 if HAS_TENACITY:
     from tenacity import stop_after_attempt, wait_exponential, retry_if_exception_type
@@ -138,7 +137,10 @@ class llm_base(AbstractLLM):
                     " https://github.com/Esri/deep-learning-frameworks?tab=readme-ov-file#additional-installation-for-disconnected-environment"
                 )
             self._llm_model = (
-                AutoModelForCausalLM.from_pretrained(model_path).half().to(self._device)
+                AutoModelForCausalLM.from_pretrained(model_path)
+                .half()
+                .to(self._device)
+                .eval()
             )
             self._tokenizer = AutoTokenizer.from_pretrained(model_path)
             self._tokenizer.pad_token_id = self._tokenizer.eos_token_id
@@ -157,12 +159,13 @@ class llm_base(AbstractLLM):
         model_inputs = encodes.to(self._device)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", module="transformers")
-            generated_ids = self._llm_model.generate(
-                model_inputs,
-                max_new_tokens=200,
-                do_sample=False,
-                pad_token_id=self._tokenizer.eos_token_id,
-            )
+            with torch.no_grad():
+                generated_ids = self._llm_model.generate(
+                    model_inputs,
+                    max_new_tokens=2048,
+                    do_sample=False,
+                    pad_token_id=self._tokenizer.eos_token_id,
+                )
         resp = self._tokenizer.batch_decode(
             [generated_ids[0][len(model_inputs[0]) : -1]]
         )[0]
@@ -209,12 +212,13 @@ class llm_base(AbstractLLM):
                 batch_token = self._tokenizer(
                     batch, return_tensors="pt", padding=True
                 ).to("cuda")
-                resps = self._llm_model.generate(
-                    **batch_token,
-                    max_new_tokens=200,
-                    do_sample=True,
-                    pad_token_id=self._tokenizer.eos_token_id,
-                )
+                with torch.no_grad():
+                    resps = self._llm_model.generate(
+                        **batch_token,
+                        max_new_tokens=2048,
+                        do_sample=True,
+                        pad_token_id=self._tokenizer.eos_token_id,
+                    )
                 for idx, generated_ids in enumerate(resps):
                     sliced_response = self._tokenizer.batch_decode(
                         [generated_ids[len(batch_token["input_ids"][idx]) : -1]],
@@ -283,6 +287,7 @@ class llm_base(AbstractLLM):
                 #     s = self._llm_onprim_inference(data)
                 # print("generated resp", s)
                 # final_resp.append(s)
+                # print(payload)
                 final_resp = self._llm_onprim_inference_batch(
                     payload, show_progress=show_progress, batch_size=batch_size
                 )
@@ -379,6 +384,17 @@ class LLM:
                 )
             ne._valid()
             self.example = ne._format_example()
+        elif self.task == "seq-to-seq":
+            try:
+                seq_valid = seqtoseqprompt(**prompt_dict)
+            except:
+                raise Exception(
+                    f"{self.task} requires the examples in the below format \n"
+                    f"Pydantic Schema: List[Tuple[str, str]]\n"
+                    f"Example: {TASK_EXAMPLE[self.task]}"
+                )
+            seq_valid._valid()
+            self.example = seq_valid._format_example()
         else:
             return None
 
@@ -427,9 +443,11 @@ class LLM:
             for key, val in example.items():
                 add_str[f"{key}"] = "List"
                 key_list.append(key)
-        else:
+        elif self.task == "text-classifier":
             key_list = list(self.examples.keys())
             add_str["class"] = "List"
+        else:
+            add_str["output"] = "str"
 
         if self.task == "ner":
             payload = {
@@ -440,7 +458,7 @@ class LLM:
                 "schema": str(add_str),
                 "classes": ",".join(key_list),
             }
-        else:
+        elif self.task == "text-classifier":
             payload = {
                 "user_prompt": self.prompt,
                 "sentence": self.example[0].split("\n\n")[0],
@@ -453,6 +471,16 @@ class LLM:
                 "schema": str(add_str),
                 "classes": ",".join(key_list),
             }
+        else:
+            # print(self.examples)
+            payload = {
+                "user_prompt": self.prompt,
+                "sentence": self.example[0].split("\n\n")[0],
+                "answer": (self.example[0].split("\n\n")[1]),
+                "next_sentence": self.example[1].split("\n\n")[0],
+                "schema": str(add_str),
+            }
+
         system_prompt = Template(
             MAPPING_DICT.get(self.task).get("system_prompt")
         ).substitute(**payload)
@@ -475,7 +503,7 @@ class LLM:
                     self.prompt += [
                         {"role": "assistant", "content": i.split("\n\n")[1]}
                     ]
-        else:
+        elif self.task == "text-classifier":
             for idx, i in enumerate(self.example):
                 if idx == 0:
                     pass
@@ -492,6 +520,25 @@ class LLM:
                         {
                             "role": "assistant",
                             "content": str({"class": i.split("\n\n")[1]}),
+                        }
+                    ]
+        else:
+            for idx, i in enumerate(self.example):
+                if idx == 0:
+                    pass
+                elif idx == 1:
+                    self.prompt += [
+                        {
+                            "role": "assistant",
+                            "content": str({"output": i.split("\n\n")[1]}),
+                        }
+                    ]
+                else:
+                    self.prompt += [{"role": "user", "content": i.split("\n\n")[0]}]
+                    self.prompt += [
+                        {
+                            "role": "assistant",
+                            "content": str({"output": i.split("\n\n")[1]}),
                         }
                     ]
 
