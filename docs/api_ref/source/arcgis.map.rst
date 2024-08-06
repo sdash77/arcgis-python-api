@@ -1,5 +1,5 @@
 Working with 2D Maps
---------------------S
+--------------------
 OfflineMapAreaManager
 ^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.map.OfflineMapAreaManager

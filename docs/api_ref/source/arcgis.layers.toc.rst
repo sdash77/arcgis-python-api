@@ -152,13 +152,62 @@ EnterpriseVectorTileLayerManager
 
 Working with OGC layers
 -----------------------
-arcgis.layers.ogc
-^^^^^^^^^^^^^^^^^^
-.. toctree::
-   :maxdepth: 3
+CSVLayer
+^^^^^^^^
+.. autoclass:: arcgis.layers.CSVLayer
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
 
-   arcgis.layers.ogc
+GeoJSONLayer
+^^^^^^^^^^^^
+.. autoclass:: arcgis.layers.GeoJSONLayer
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
 
+GeoRSSLayer
+^^^^^^^^^^^
+.. autoclass:: arcgis.layers.GeoRSSLayer
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+OGCFeatureService
+^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.layers.OGCFeatureService
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+OGCCollection
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.layers.OGCCollection
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+    
+WMSLayer
+^^^^^^^^
+.. autoclass:: arcgis.layers.WMSLayer
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+WMTSLayer
+^^^^^^^^^
+.. autoclass:: arcgis.layers.WMTSLayer
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+    
 
 Utility Functions for Mapping
 -----------------------------
@@ -166,41 +215,11 @@ export_map
 ^^^^^^^^^^
 .. autofunction:: arcgis.map.export_map
 
-create_colormap
-^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.create_colormap
-
-get_layout_templates
-^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.get_layout_templates
 
 Symbology
 ^^^^^^^^^
-.. automodule:: arcgis.map.symbol
+.. automodule:: arcgis.map.symbols
     :members:
     :undoc-members:
     :show-inheritance:
 
-generate_simple
-^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.generate_simple
-
-generate_heatmap
-^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.generate_heatmap
-
-generate_unique
-^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.generate_unique
-
-generate_classbreaks
-^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.generate_classbreaks
-
-generate_renderer
-^^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.generate_renderer
-
-visual_variables
-^^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.renderer.visual_variables
