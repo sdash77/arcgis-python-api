@@ -1686,7 +1686,7 @@ class _MSILayerFactory(type):
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.layers._types.MapTable
+        >> arcgis.layers.MapTable
 
         print(s_layer.properties.name)
         >> 'pipe_properties'
@@ -1741,7 +1741,7 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.layers._types.MapTable
+        >> arcgis.layers.MapTable
 
         print(ms_layer.properties.name)
         >> 'pipe_properties'
