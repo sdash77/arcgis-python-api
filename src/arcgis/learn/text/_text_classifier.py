@@ -870,7 +870,7 @@ class TextClassifier(ArcGISModel):
                 if self._backbone == "llm":
                     self.logger.error(f"{e}")
                 else:
-                    self.logger.error(f"Metric not found in the loaded model")
+                    self.logger.error("Metric not found in the loaded model")
 
         else:
             if not HAS_NUMPY:
