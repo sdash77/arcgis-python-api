@@ -1024,7 +1024,8 @@ class ArcGISModel(object):
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
             kwargs.pop("callbacks", None)
             monitored_names = self.available_metrics
-            if self.is_transformer:
+
+            if getattr(self, "_is_mmtransformer", False):
                 monitored_names = ["valid_loss"]
             if monitor not in monitored_names:
                 raise Exception(f"`monitor` must be set to one from {monitored_names}")

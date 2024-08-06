@@ -1,14 +1,13 @@
-pretrained = "https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth"  # noqa
+pretrained = "https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_large_patch4_window12_384_22k.pth"
 num_levels = 5
 
 model = dict(
     type="DINO",
-    num_queries=900,  # num_matching_queries
+    num_queries=900,
     with_box_refine=True,
     as_two_stage=True,
     num_feature_levels=num_levels,
     backbone=dict(
-        # _delete_=True,
         type="SwinTransformer",
         pretrain_img_size=384,
         embed_dims=192,
@@ -41,53 +40,44 @@ model = dict(
     encoder=dict(
         num_layers=6,
         layer_cfg=dict(
-            self_attn_cfg=dict(
-                embed_dims=256, num_levels=num_levels, dropout=0.0
-            ),  # 0.1 for DeformDETR
+            self_attn_cfg=dict(embed_dims=256, num_levels=num_levels, dropout=0.0),
             ffn_cfg=dict(
                 embed_dims=256,
-                feedforward_channels=2048,  # 1024 for DeformDETR
+                feedforward_channels=2048,
                 ffn_drop=0.0,
             ),
         ),
-    ),  # 0.1 for DeformDETR
+    ),
     decoder=dict(
         num_layers=6,
         return_intermediate=True,
         layer_cfg=dict(
-            self_attn_cfg=dict(
-                embed_dims=256, num_heads=8, dropout=0.0
-            ),  # 0.1 for DeformDETR
-            cross_attn_cfg=dict(
-                embed_dims=256, num_levels=num_levels, dropout=0.0
-            ),  # 0.1 for DeformDETR
+            self_attn_cfg=dict(embed_dims=256, num_heads=8, dropout=0.0),
+            cross_attn_cfg=dict(embed_dims=256, num_levels=num_levels, dropout=0.0),
             ffn_cfg=dict(
                 embed_dims=256,
-                feedforward_channels=2048,  # 1024 for DeformDETR
+                feedforward_channels=2048,
                 ffn_drop=0.0,
             ),
-        ),  # 0.1 for DeformDETR
+        ),
         post_norm_cfg=None,
     ),
-    positional_encoding=dict(
-        num_feats=128, normalize=True, offset=0.0, temperature=20  # -0.5 for DeformDETR
-    ),  # 10000 for DeformDETR
+    positional_encoding=dict(num_feats=128, normalize=True, offset=0.0, temperature=20),
     bbox_head=dict(
         type="DINOHead",
-        # num_classes=80,
         num_classes=1,
         sync_cls_avg_factor=True,
         loss_cls=dict(
             type="FocalLoss", use_sigmoid=True, gamma=2.0, alpha=0.25, loss_weight=1.0
-        ),  # 2.0 in DeformDETR
+        ),
         loss_bbox=dict(type="L1Loss", loss_weight=5.0),
         loss_iou=dict(type="GIoULoss", loss_weight=2.0),
     ),
-    dn_cfg=dict(  # TODO: Move to model.train_cfg ?
+    dn_cfg=dict(
         label_noise_scale=0.5,
-        box_noise_scale=1.0,  # 0.4 for DN-DETR
+        box_noise_scale=1.0,
         group_cfg=dict(dynamic=True, num_groups=None, num_dn_queries=100),
-    ),  # TODO: half num_dn_queries
+    ),
     # training and testing settings
     train_cfg=dict(
         assigner=dict(
@@ -100,7 +90,7 @@ model = dict(
         )
     ),
     test_cfg=dict(max_per_img=300),
-)  # 100 for DeformDETR
+)
 
 
 checkpoint = "https://github.com/RistoranteRist/mmlab-weights/releases/download/dino-swinl/dino-5scale_swin-l_8xb2-36e_coco-5486e051.pth"
