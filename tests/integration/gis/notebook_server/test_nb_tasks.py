@@ -11,6 +11,10 @@ class TestGetTasks(unittest.TestCase):
     """
     Tests gis.tasks submodule
     """
+    def setUp(self):
+        """check portal version"""
+        if self.gis.version < [10, 8, 1]:
+            self.skipTest("Portal version must be 10.8.1 or higher")
 
     def test_user_search(self):
         """tests getting tasks from user"""
@@ -38,7 +42,13 @@ class TestGetTasks(unittest.TestCase):
 
 @integration_test
 @profiles.admin_enterprise
-class TestUserScheduleTaskManager(unittest.TestCase):
+class TestUserScheduledTaskManager(unittest.TestCase):
+    """Test get Task through User class"""
+
+    def setUp(self):
+        """check portal version"""
+        if self.gis.version < [10, 8, 1]:
+            self.skipTest("Portal version must be 10.8.1 or higher")
 
     def test_task_properties(self):
         """tests the task's properties"""
