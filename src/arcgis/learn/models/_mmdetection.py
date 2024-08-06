@@ -53,6 +53,10 @@ class MMDetection(ModelExtension):
             model=model,
             model_weight=model_weight,
         )
+        if model in self.supported_transformer_models:
+            self.is_transformer = True
+        else:
+            self.is_transformer = False
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -122,6 +126,8 @@ class MMDetection(ModelExtension):
     """
     List of models supported by this class.
     """
+
+    supported_transformer_models = ["dino"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
