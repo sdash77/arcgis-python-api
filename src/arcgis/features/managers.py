@@ -2338,14 +2338,15 @@ class FeatureLayerCollectionManager(_GISResource):
             if "Item with this filename already exists" not in str(e):
                 raise e
             # rename the file item if it already exists with unique id appended
-            data_path = (
-                os.path.splitext(data_path)[0] + "_" + str(uuid.uuid4()) + ".zip"
-            )
             file_item = folder.add(
                 item_properties={
                     "type": file_type,
                     "title": name,
                     "tags": "inserted",
+                    "filename": os.path.splitext(data_path)[0]
+                    + "_"
+                    + str(uuid.uuid4())
+                    + ".zip",
                 },
                 file=data_path,
             ).result()
