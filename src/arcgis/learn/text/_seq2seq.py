@@ -141,11 +141,11 @@ class SequenceToSequence(ArcGISModel):
 
             _raise_fastai_import_error(import_exception=import_exception)
 
-        self.logger = logging.get_logger()
+        self._logger = logging.get_logger()
         if kwargs.get("verbose", None):
-            self.logger.setLevel(kwargs.get("verbose").upper())
+            self._logger.setLevel(kwargs.get("verbose").upper())
         else:
-            self.logger.setLevel(logging.ERROR)
+            self._logger.setLevel(logging.ERROR)
 
         if backbone.lower() == "llm":
             raise Exception(
@@ -205,7 +205,7 @@ class SequenceToSequence(ArcGISModel):
         seq_len=transformer_seq_length,
     ):
         self._model_type = infer_model_type(backbone, transformer_architectures)
-        self.logger.info(f"Inferred Backbone: {self._model_type}")
+        self._logger.info(f"Inferred Backbone: {self._model_type}")
         pretrained_model_name = backbone
         transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
         pad_first = True if transformer_tokenizer.padding_side == "left" else False
@@ -223,7 +223,7 @@ class SequenceToSequence(ArcGISModel):
         )
         transformer_processor = [tokenize_processor, numericalize_processor]
         if data._is_empty or data._backbone != backbone:
-            self.logger.info("Creating DataBunch")
+            self._logger.info("Creating DataBunch")
             data._prepare_seq2seq_databunch(
                 transformer_processor=transformer_processor,
                 pad_first=pad_first,
@@ -272,7 +272,7 @@ class SequenceToSequence(ArcGISModel):
                     f" or choose a different transformer architectures from - {transformer_architectures}"
                 )
                 raise Exception(error_message)
-            self.logger.info("Converting model to 16 Bit Floating Point precision")
+            self._logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
     def __str__(self):
@@ -478,11 +478,17 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
+        overwrite               Optional boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
-                                Boolean `zip_files` if True, it will create the Deep
+        ---------------------   -------------------------------------------
+        zip_files               Optional boolean `zip_files` if True, it will create the Deep
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
@@ -625,7 +631,7 @@ class SequenceToSequence(ArcGISModel):
             if acc or bleu:
                 return {"seq2seq_acc": acc, "bleu": bleu}
             else:
-                self.logger.error("Metric not found in the loaded model")
+                self._logger.error("Metric not found in the loaded model")
         else:
             if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
@@ -643,7 +649,7 @@ class SequenceToSequence(ArcGISModel):
 
     def _calculate_model_metrics(self):
         self._check_requisites()
-        self.logger.info("Calculating Model Metrics")
+        self._logger.info("Calculating Model Metrics")
         metrics_names = ["accuracy", "bleu"]
         metrics = {}
         if self._backbone == "llm":
@@ -905,7 +911,7 @@ class SequenceToSequence(ArcGISModel):
         import matplotlib.pyplot as plt
 
         if not hasattr(self.learn, "recorder"):  # return none if the recorder is empty
-            self.logger.error(
+            self._logger.error(
                 "Model needs to be trained first. Please call `model.fit()` to train the model."
                 " Then call this method to plot/return the loss curve."
             )
