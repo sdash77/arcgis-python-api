@@ -46,13 +46,7 @@ class TestSaveAndUpdateMap(unittest.TestCase):
         assert len(new_wm.item.tags) == 3
 
         # delete the item
-        if bool(self.gis.properties.recycleBinSupported):
-            if bool(self.gis.properties.recycleBinEnabled):
-                new_item.delete(permanent=True)
-            else:
-                new_item.delete()
-        else:
-            new_item.delete()
+        new_item.delete(permanent=self.gis.properties.recycleBinSupported and self.gis.properties.recycleBinEnabled)
 
 
 if __name__ == "__main__":
