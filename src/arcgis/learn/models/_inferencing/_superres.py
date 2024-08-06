@@ -177,7 +177,7 @@ class ChildImageClassifier:
             ]
         )
         if modelarch:
-            if modelarch == "SR3":
+            if modelarch.startswith("SR3"):
                 required_parameters.extend(
                     [
                         {

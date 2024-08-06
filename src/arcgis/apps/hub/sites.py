@@ -9,6 +9,7 @@ import json
 import os
 import re
 from arcgis.gis import Item
+from arcgis.gis import SharingLevel
 from functools import wraps
 
 
@@ -189,17 +190,13 @@ class Site(OrderedDict):
             items = [self._gis.content.get(item_id) for item_id in items_list]
         else:
             items = items_list
-        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        # Share each item with content group
         for item in items:
-            sharing = item.shared_with
-            everyone = sharing["everyone"]
-            org = sharing["org"]
-            groups = sharing["groups"]
-            # add current site's content group to list of groups to share to
-            groups.append(self.content_group_id)
-            # share item to this group
-            status = item.share(everyone=everyone, org=org, groups=groups)
-            if status["results"][0]["success"] == False:
+            # Fetch the content group
+            group = self._gis.groups.get(self.content_group_id)
+            # Share item with group
+            status = item.sharing.groups.add(group)
+            if status == False:
                 return status
         return status
 
@@ -791,7 +788,9 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
+        site_data["values"]["map"] = {
+            "basemaps": {"primary": self._gis.properties["defaultBasemap"]}
+        }
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
         return site_data
@@ -1041,11 +1040,13 @@ class SiteManager(object):
             _datafile = "sites-data.json"
 
         # Create site item, share with group
-        site = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
+
+        folder = self._gis.content.folders.get()
+        site = folder.add(_item_dict).result()
 
         # Share with necessary group if group exists
         try:
-            site.share(groups=[collab_group])
+            site.sharing.groups.add(collab_group)
         except:
             pass
 
@@ -1222,13 +1223,12 @@ class SiteManager(object):
                 _site_properties["properties"]["collaborationGroupId"] = collab_group_id
 
         # Create site item, share with group
-        new_item = self._gis.content.add(
-            _site_properties, owner=self._gis.users.me.username
-        )
+        folder = self._gis.content.folders.get()
+        new_item = folder.add(_site_properties).result()
 
         # Share with necessary group
         try:
-            new_item.share(groups=[collab_group])
+            new_item.sharing.groups.add(collab_group)
         except:
             pass
 

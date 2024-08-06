@@ -132,9 +132,7 @@ def compute_metrics(model, dl, show_progress, **kwargs):
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=False):
-            if model.model_type == "UNet":
-                prediction = model.learn.model(input)
-            else:
+            if not hasattr(model._backbone, "__call__"):
                 device = next(model.learn.model.parameters()).device.type
 
                 if sampling == "ddim":
@@ -175,9 +173,11 @@ def compute_metrics(model, dl, show_progress, **kwargs):
                 avg_psnr += psnr(prediction, target)
                 avg_ssim += ssim(prediction, target)
                 break
+            else:
+                prediction = model.learn.model(input)
             avg_psnr += psnr(prediction, target)
             avg_ssim += ssim(prediction, target)
-    if model.model_type == "UNet":
+    if hasattr(model._backbone, "__call__"):
         return avg_psnr / len(dl), avg_ssim.item() / len(dl)
     else:
         return avg_psnr, avg_ssim

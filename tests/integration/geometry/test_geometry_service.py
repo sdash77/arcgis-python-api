@@ -1,10 +1,8 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
+from utils.decorators import integration_test
 
 profiles = [
     None,
@@ -32,6 +30,7 @@ if not "your_kubernetes_profile" in ProfileManager().list():
 
 ###########################################################################
 # @unittest.skip('said so')
+@integration_test
 class TestGSSettingSR(unittest.TestCase):
     """
     Tests that async and sync operations set the spatial reference on the geometry objects
@@ -90,6 +89,7 @@ class TestGSSettingSR(unittest.TestCase):
 
 
 ###########################################################################
+@integration_test
 class TestGeometryService(unittest.TestCase):
     """Tests the underlying Geometry Service"""
 

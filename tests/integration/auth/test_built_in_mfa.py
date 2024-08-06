@@ -1,11 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-
-# sys.path.insert(
-#    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
-# )
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -27,14 +20,17 @@ def enable_verbose_logging(root):
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestMFASecurityAuth(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.url = "https://devext.arcgis.com/sharing/rest"
         cls.username = "mfauser"
         cls.password = "esri.agp2"
-        cls.mfa_code = "5BYTJTGFUPV7UT6C"
+        cls.mfa_code = "QHM72ADVWBPIQHYT"
 
     def test_login_mfa(self):
         auth = EsriBuiltInAuth(

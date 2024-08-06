@@ -88,233 +88,235 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def _oauth_token(self):
         """performs the oauth2 when secret and client exist"""
-        auth_url = "%s/oauth2/authorize" % self.baseurl
-        tu = "%s/oauth2/token" % self.baseurl
-        # handles the refreshing of the token
-        if not (self._create_time is None) and (
-            _dt.datetime.now()
-            >= self._create_time + _dt.timedelta(minutes=self._expiration)
-        ):
-            self._token = None
-        elif (
-            not (self._create_time is None)
-            and not (self._token is None)
-            and (
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            auth_url = "%s/oauth2/authorize" % self.baseurl
+            tu = "%s/oauth2/token" % self.baseurl
+            # handles the refreshing of the token
+            if not (self._create_time is None) and (
                 _dt.datetime.now()
-                < self._create_time + _dt.timedelta(minutes=self._expiration)
-            )
-        ):
-            return self._token
-        # Handles token generation
-        if (
-            self._refresh_token is not None
-            and self._client_id is not None
-            and self._token is None
-        ):  # Case 1: Refreshing a token
-            parameters = {
-                "client_id": self._client_id,
-                "grant_type": "refresh_token",
-                "refresh_token": self._refresh_token,
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-            }
-            token_info = self._session.post(tu, data=parameters)
-            self._token = token_info["access_token"]
-            return self._token
-        elif (
-            self._client_id
-            and self._client_secret
-            and self._username
-            and self._password
-        ):
-            oauth = OAuth2Session(
-                client=BackendApplicationClient(client_id=self._client_id),
-            )
+                >= self._create_time + _dt.timedelta(minutes=self._expiration)
+            ):
+                self._token = None
+            elif (
+                not (self._create_time is None)
+                and not (self._token is None)
+                and (
+                    _dt.datetime.now()
+                    < self._create_time + _dt.timedelta(minutes=self._expiration)
+                )
+            ):
+                return self._token
+            # Handles token generation
+            if (
+                self._refresh_token is not None
+                and self._client_id is not None
+                and self._token is None
+            ):  # Case 1: Refreshing a token
+                parameters = {
+                    "client_id": self._client_id,
+                    "grant_type": "refresh_token",
+                    "refresh_token": self._refresh_token,
+                    "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                }
+                token_info = self._session.post(tu, data=parameters)
+                self._token = token_info["access_token"]
+                return self._token
+            elif (
+                self._client_id
+                and self._client_secret
+                and self._username
+                and self._password
+            ):
+                oauth = OAuth2Session(
+                    client=BackendApplicationClient(client_id=self._client_id),
+                )
 
-            oauth.verify = False
-            if self._proxies:
-                oauth.proxies = self._proxies
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
+                oauth.verify = False
+                if self._proxies:
+                    oauth.proxies = self._proxies
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    res = oauth.fetch_token(
+                        token_url=tu,
+                        username=self._username,
+                        password=self._password,
+                        client_id=self._client_id,
+                        client_secret=self._client_secret,
+                        include_client_id=True,
+                        verify=False,
+                        proxies=self._proxies,
+                        expiration=26000,
+                    )
+                if "expires_in" in res:
+                    self._create_time = _dt.datetime.fromtimestamp(
+                        res["expires_at"]
+                    ) - _dt.timedelta(seconds=7200)
+                    self._expiration = res["expires_in"] / 60
+                    if "token" in res:
+                        return res["token"]
+                    if "access_token" in res:
+                        return res["access_token"]
+            elif (
+                self._client_id and self._client_secret
+            ):  # case 2: has both client and secret keys
+                client = BackendApplicationClient(client_id=self._client_id)
+                oauth = OAuth2Session(
+                    client=client, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                )
+                if self._proxies:
+                    oauth.proxies = self._proxies
+                oauth.verify = False
                 res = oauth.fetch_token(
                     token_url=tu,
-                    username=self._username,
-                    password=self._password,
                     client_id=self._client_id,
                     client_secret=self._client_secret,
                     include_client_id=True,
                     verify=False,
                     proxies=self._proxies,
-                    expiration=26000,
                 )
-            if "expires_in" in res:
-                self._create_time = _dt.datetime.fromtimestamp(
-                    res["expires_at"]
-                ) - _dt.timedelta(seconds=7200)
-                self._expiration = res["expires_in"] / 60
-                if "token" in res:
-                    return res["token"]
-                if "access_token" in res:
-                    return res["access_token"]
-        elif (
-            self._client_id and self._client_secret
-        ):  # case 2: has both client and secret keys
-            client = BackendApplicationClient(client_id=self._client_id)
-            oauth = OAuth2Session(
-                client=client, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-            if self._proxies:
-                oauth.proxies = self._proxies
-            oauth.verify = False
-            res = oauth.fetch_token(
-                token_url=tu,
-                client_id=self._client_id,
-                client_secret=self._client_secret,
-                include_client_id=True,
-                verify=False,
-                proxies=self._proxies,
-            )
-            if "expires_in" in res:
-                self._create_time = _dt.datetime.fromtimestamp(
-                    res["expires_at"]
-                ) - _dt.timedelta(seconds=7200)
-                self._expiration = res["expires_in"] / 60
-                if "token" in res:
-                    return res["token"]
-                if "access_token" in res:
-                    return res["access_token"]
-        elif (
-            self._client_id and self._username is None and self._password is None
-        ):  # case 3: client id only
-            auth_url = "%s/oauth2/authorize" % self.baseurl
-            tu = "%s/oauth2/token" % self.baseurl
-            oauth = OAuth2Session(
-                self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-            if self._proxies:
-                oauth.proxies = self._proxies
-            oauth.verify = False
-            authorization_url, state = oauth.authorization_url(
-                auth_url, **{"allow_verification": "false"}
-            )
-            print(
-                "Please sign in to your GIS and paste the code that is obtained below."
-            )
-            print(
-                "If a web browser does not automatically open, please navigate to the URL below yourself instead."
-            )
-            print("Opening web browser to navigate to: " + authorization_url)
+                if "expires_in" in res:
+                    self._create_time = _dt.datetime.fromtimestamp(
+                        res["expires_at"]
+                    ) - _dt.timedelta(seconds=7200)
+                    self._expiration = res["expires_in"] / 60
+                    if "token" in res:
+                        return res["token"]
+                    if "access_token" in res:
+                        return res["access_token"]
+            elif (
+                self._client_id and self._username is None and self._password is None
+            ):  # case 3: client id only
+                auth_url = "%s/oauth2/authorize" % self.baseurl
+                tu = "%s/oauth2/token" % self.baseurl
+                oauth = OAuth2Session(
+                    self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                )
+                if self._proxies:
+                    oauth.proxies = self._proxies
+                oauth.verify = False
+                authorization_url, state = oauth.authorization_url(
+                    auth_url, **{"allow_verification": "false"}
+                )
+                print(
+                    "Please sign in to your GIS and paste the code that is obtained below."
+                )
+                print(
+                    "If a web browser does not automatically open, please navigate to the URL below yourself instead."
+                )
+                print("Opening web browser to navigate to: " + authorization_url)
 
-            webbrowser.open_new(authorization_url)
-            authorization_response = getpass.getpass(
-                "Enter code obtained on signing in using SAML: "
-            )
+                webbrowser.open_new(authorization_url)
+                authorization_response = getpass.getpass(
+                    "Enter code obtained on signing in using SAML: "
+                )
 
-            self._create_time = _dt.datetime.now()
-            token_info = oauth.fetch_token(
-                tu,
-                code=authorization_response,
-                verify=False,
-                proxies=self._proxies,
-                include_client_id=True,
-                authorization_response="authorization_code",
-            )
-            self._expiration = token_info["expires_in"] / 60 - 2
-            self._refresh_token = token_info["refresh_token"]
-            self._token = token_info["access_token"]
-            return self._token
-        elif self._client_id and not (
-            self._username is None and self._password is None
-        ):  # case 4: client id and username/password (SAML workflow)
-            parameters = {
-                "client_id": self._client_id,
-                "response_type": "code",
-                "expiration": -1,  # we want refresh_token to work for the life of the script
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-                "allow_verification": "false",
-            }
-            content = str(self._session.get(auth_url, params=parameters).content)
+                self._create_time = _dt.datetime.now()
+                token_info = oauth.fetch_token(
+                    tu,
+                    code=authorization_response,
+                    verify=False,
+                    proxies=self._proxies,
+                    include_client_id=True,
+                    authorization_response="authorization_code",
+                )
+                self._expiration = token_info["expires_in"] / 60 - 2
+                self._refresh_token = token_info["refresh_token"]
+                self._token = token_info["access_token"]
+                return self._token
+            elif self._client_id and not (
+                self._username is None and self._password is None
+            ):  # case 4: client id and username/password (SAML workflow)
+                parameters = {
+                    "client_id": self._client_id,
+                    "response_type": "code",
+                    "expiration": -1,  # we want refresh_token to work for the life of the script
+                    "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                    "allow_verification": "false",
+                }
+                content = str(self._session.get(auth_url, params=parameters).content)
 
-            pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
-            if len(pattern.findall(content)) == 0:
-                pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
+                pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
+                if len(pattern.findall(content)) == 0:
+                    pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
 
-            soup = lxml.html.fromstring(content)
+                soup = lxml.html.fromstring(content)
 
-            def _load_oauth_info(js_object):
-                """converts the js oauth to dict"""
-                try:
-                    oauth_info = json.loads(js_object)
-                except:
-                    oauth_info = json.loads(js_object + "}")
-                return oauth_info
-
-            for script in soup.xpath("//script/text()"):
-                script_code = str(script).strip()
-                matches = pattern.search(script_code)
-                if not matches is None:
-                    js_object = matches.groups()[0]
+                def _load_oauth_info(js_object):
+                    """converts the js oauth to dict"""
                     try:
-                        oauth_info = _load_oauth_info(js_object)
-                    except Exception:
-                        raise Exception(
-                            (
-                                "Could not login. Please validate your creden"
-                                "tials or make sure the security question is set on the user."
+                        oauth_info = json.loads(js_object)
+                    except:
+                        oauth_info = json.loads(js_object + "}")
+                    return oauth_info
+
+                for script in soup.xpath("//script/text()"):
+                    script_code = str(script).strip()
+                    matches = pattern.search(script_code)
+                    if not matches is None:
+                        js_object = matches.groups()[0]
+                        try:
+                            oauth_info = _load_oauth_info(js_object)
+                        except Exception:
+                            raise Exception(
+                                (
+                                    "Could not login. Please validate your creden"
+                                    "tials or make sure the security question is set on the user."
+                                )
                             )
+                        break
+
+                parameters = {
+                    "user_orgkey": "",
+                    "username": self._username,
+                    "password": self._password,
+                    "oauth_state": oauth_info["oauth_state"],
+                }
+                resp = self._session.post(
+                    "%s/oauth2/signin" % self.baseurl,
+                    data=parameters,
+                    verify=False,
+                    proxies=self._proxies,
+                    allow_redirects=False,
+                )
+                if resp.status_code == 302:
+                    url = resp.headers["Location"]
+                    if url.find("acceptTermsAndConditions") > -1:
+                        r2 = self._session.post(
+                            url, data={"acceptTermsAndConditions": True}
                         )
-                    break
+                        content = r2.text
+                    elif url.find("oauth2/approval") > -1:
+                        r2 = self._session.get(url)
+                        content = r2.text
 
-            parameters = {
-                "user_orgkey": "",
-                "username": self._username,
-                "password": self._password,
-                "oauth_state": oauth_info["oauth_state"],
-            }
-            resp = self._session.post(
-                "%s/oauth2/signin" % self.baseurl,
-                data=parameters,
-                verify=False,
-                proxies=self._proxies,
-                allow_redirects=False,
-            )
-            if resp.status_code == 302:
-                url = resp.headers["Location"]
-                if url.find("acceptTermsAndConditions") > -1:
-                    r2 = self._session.post(
-                        url, data={"acceptTermsAndConditions": True}
-                    )
-                    content = r2.text
-                elif url.find("oauth2/approval") > -1:
-                    r2 = self._session.get(url)
-                    content = r2.text
+                soup = lxml.html.fromstring(content)
+                codes = [
+                    t[len("SUCCESS code=") :]
+                    for t in soup.xpath("//title//text()")
+                    if t.find("SUCCESS") > -1
+                ]
+                if len(codes) > 0:
+                    code = codes[0]
 
-            soup = lxml.html.fromstring(content)
-            codes = [
-                t[len("SUCCESS code=") :]
-                for t in soup.xpath("//title//text()")
-                if t.find("SUCCESS") > -1
-            ]
-            if len(codes) > 0:
-                code = codes[0]
+                oauth = OAuth2Session(
+                    self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+                )
+                if code is None:
+                    raise Exception("Could not generate a token.")
+                self._create_time = _dt.datetime.now()
+                token_info = oauth.fetch_token(
+                    tu,
+                    code=code,
+                    verify=False,
+                    include_client_id=True,
+                    authorization_response="authorization_code",
+                )
+                self._refresh_token = token_info["refresh_token"]
+                self._token = token_info["access_token"]
+                self._expiration = token_info["expires_in"] / 60 - 2
 
-            oauth = OAuth2Session(
-                self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
-            )
-            if code is None:
-                raise Exception("Could not generate a token.")
-            self._create_time = _dt.datetime.now()
-            token_info = oauth.fetch_token(
-                tu,
-                code=code,
-                verify=False,
-                include_client_id=True,
-                authorization_response="authorization_code",
-            )
-            self._refresh_token = token_info["refresh_token"]
-            self._token = token_info["access_token"]
-            self._expiration = token_info["expires_in"] / 60 - 2
-
-            return self._token
+                return self._token
         return None
 
     # ----------------------------------------------------------------------

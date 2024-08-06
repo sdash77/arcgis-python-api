@@ -1,6 +1,3 @@
-# model settings
-custom_imports = dict(imports=["arcgis.learn.models._prithvi_archs"])
-
 # required bands Blue, Green, Red, Narrow NIR, SWIR 1, SWIR 2
 bands = [0, 1, 2, 3, 4, 5]
 
@@ -24,36 +21,26 @@ img_norm_burn_model = dict(
         0.07241979477437814,
     ],
 )
-
+nframes = 1
 norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type="TemporalEncoderDecoder",
-    pretrained=None,
-    frozen_backbone=True,
+    type="EncoderDecoder",
     backbone=dict(
-        type="TemporalViTEncoder",
-        pretrained=None,
+        type="PrithviBackbone",
         img_size=224,
-        patch_size=16,
-        num_frames=1,
-        tubelet_size=1,
         in_chans=len(bands),
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        mlp_ratio=4.0,
-        norm_pix_loss=False,
+        num_frames=nframes,
+        tubelet_size=1,
+        pretrained=False,
     ),
     neck=dict(
-        type="ConvTransformerTokensToEmbeddingNeck",
-        embed_dim=768 * 1,
-        output_embed_dim=768 * 1,
-        drop_cls_token=True,
-        Hp=14,
-        Wp=14,
+        type="PrithviNeck",
+        embed_dim=768 * nframes,
+        output_embed_dim=768 * nframes,
+        input_hw=(14, 14),
     ),
     decode_head=dict(
-        in_channels=768 * 1,
+        in_channels=768 * nframes,
         type="FCNHead",
         in_index=-1,
         channels=256,
@@ -67,7 +54,7 @@ model = dict(
         ),
     ),
     auxiliary_head=dict(
-        in_channels=768 * 1,
+        in_channels=768 * nframes,
         type="FCNHead",
         in_index=-1,
         channels=256,

@@ -603,35 +603,6 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
-    def query_overrides(
-        self,
-        attribute_ids: Optional[list[str]] = None,
-        all_attributes: bool = False,
-        all_connectivity: bool = False,
-    ):
-        """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (e.g., jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). This operation allows the
-        client to query all the overrides associated with the network
-        attributes (by network attribute id). In addition, all connectivity
-        overrides are returned.
-        """
-        url = "%s/queryOverrides" % self._url
-        params = {
-            "f": "json",
-            "attributeIDs": attribute_ids,
-            "allAttributes": all_attributes,
-            "allConnectivity": all_connectivity,
-        }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
     def synthesize_association_geometries(
         self,
         attachment_associations: bool = False,
@@ -879,30 +850,6 @@ class UtilityNetworkManager(object):
             params["validateSet"] = validate_set
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.3.0")
-    def apply_overrides(
-        self,
-        adds: Optional[Union[list, dict[str, Any]]] = None,
-        deletes: Optional[Union[list, dict[str, Any]]] = None,
-    ):
-        """
-        Network attributes support the ability to have their values
-        overridden without having to edit features and validate the network
-        topology (build the index). The utility network also supports the
-        ability to place ephemeral connectivity (for example, jumpers in an
-        electrical network) between two devices or junctions without having
-        to edit features or connectivity associations and validate the
-        network topology (build the index). When specified by the client, a
-        trace operation may optionally incorporate the network attribute
-        and connectivity override values when the trace is run on.
-
-
-        """
-        url = "%s/applyOverrides" % self._url
-        params = {"f": "json", "adds": adds, "deletes": deletes}
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------

@@ -57,6 +57,7 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
+    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -340,7 +341,8 @@ class SaveModelCallback(TrackerCallback):
 
             try:
                 self.model.save(
-                    f"{self.name}_epoch_{self.best_epoch}", compute_metrics=False
+                    f"{self.name}_epoch_{self.best_epoch}",
+                    compute_metrics=False,
                 )
             except:
                 # logging this to notify about possible errors.
@@ -378,6 +380,8 @@ def _get_tail(model):
 
 def _get_ms_tail(tail, data, type_init="random"):
     in_chanls = len(data._extract_bands)
+    if tail.in_channels == in_chanls:
+        return tail
     new_tail = nn.Conv2d(
         in_channels=in_chanls,
         out_channels=tail.out_channels,
@@ -550,6 +554,38 @@ def _device_check():
     return move_to_cpu
 
 
+def get_backbone_func(backbone, data, **kwargs):
+    if backbone is None:
+        backbone = models.resnet34
+    elif backbone == "llm":
+        backbone = "llm"
+    elif type(backbone) is str:
+        if hasattr(models, backbone):
+            backbone = getattr(models, backbone)
+        elif hasattr(models.detection, backbone):
+            backbone = getattr(models.detection, backbone)
+        elif "timm:" in backbone:
+            bckbn = backbone.split(":")[1]
+            if hasattr(timm.models, bckbn):
+                backbone = getattr(timm.models, bckbn)
+        elif backbone in transformer_backbone_downstream:
+            backbone_name = backbone
+            in_channels = (
+                len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
+            )
+            backbone = partial(
+                custom_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                in_chans=in_channels,
+                is_fpn=kwargs.get("is_fpn", False),
+            )
+            backbone.__name__ = backbone_name
+    else:
+        backbone = backbone
+    return backbone
+
+
 class ArcGISModel(object):
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
@@ -564,24 +600,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        if backbone is None:
-            self._backbone = models.resnet34
-        elif backbone == "llm":
-            self._backbone = "llm"
-        elif type(backbone) is str:
-            if hasattr(models, backbone):
-                self._backbone = getattr(models, backbone)
-            elif hasattr(models.detection, backbone):
-                self._backbone = getattr(models.detection, backbone)
-            elif "timm:" in backbone:
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
-        else:
-            self._backbone = backbone
-
-        if not hasattr(self, "_backbone"):
-            self._backbone = models.resnet34
+        self._backbone = get_backbone_func(backbone, data)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -1024,7 +1043,10 @@ class ArcGISModel(object):
             if early_stopping:
                 callbacks.append(
                     EarlyStoppingCallback(
-                        learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
+                        learn=self.learn,
+                        monitor=monitor,
+                        min_delta=0.001,
+                        patience=5,
                     )
                 )
             self._is_checkpointed = checkpoint
@@ -1038,7 +1060,8 @@ class ArcGISModel(object):
                     )
                 every = "improvement" if checkpoint is True else "epoch"
                 save_callback_params = kwargs.get(
-                    "save_callback_params", {"monitor": monitor, "every": every}
+                    "save_callback_params",
+                    {"monitor": monitor, "every": every},
                 )
                 callbacks.append(
                     SaveModelCallback(
@@ -1054,7 +1077,9 @@ class ArcGISModel(object):
                     import tensorboardX
 
                     # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
-                    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+                    from fastai.callbacks.tensorboard import (
+                        LearnerTensorboardWriter,
+                    )
                     from .._utils.tensorboard_utils import ArcGISTBCallback
                 except:
                     raise
@@ -1123,7 +1148,11 @@ class ArcGISModel(object):
 
             if not _emd_template.get("LearningRate"):
                 _emd_template["LearningRate"] = "0.0"
-            if _emd_template["ModelName"] in ["MaskRCNN", "UnetClassifier", "CycleGAN"]:
+            if _emd_template["ModelName"] in [
+                "MaskRCNN",
+                "UnetClassifier",
+                "CycleGAN",
+            ]:
                 _emd_template["SupportsVariableTileSize"] = True
             else:
                 _emd_template["SupportsVariableTileSize"] = False
@@ -1203,15 +1232,9 @@ class ArcGISModel(object):
         _emd_template["ModelName"] = type(self).__name__.replace("_", "")
         _emd_template["backend"] = self._backend
 
-        modtype = getattr(self, "model_type", "SR3")
         if getattr(self, "_is_mmsegdet", False):
             model_params = {
                 "model_name": self._kwargs["model"],
-                "backend": self._backend,
-            }
-        elif modtype.startswith("SR3"):
-            model_params = {
-                "backbone": "SR3_UViT" if modtype == "SR3_UViT" else "SR3",
                 "backend": self._backend,
             }
         else:
@@ -1595,7 +1618,9 @@ class ArcGISModel(object):
                     if isinstance(self.learn.model, DistributedDataParallel):
                         if not int(os.environ.get("RANK", 0)):
                             saved_path = self.learn.save(
-                                name, return_path=True, with_opt=save_optimizer
+                                name,
+                                return_path=True,
+                                with_opt=save_optimizer,
                             )
                         return
                 if self._backbone != "llm":
@@ -1620,7 +1645,10 @@ class ArcGISModel(object):
                         # temp_path = os.getcwd()
                         saved_path = Path(
                             os.path.join(
-                                temp_path, "models", name_or_path, name_or_path
+                                temp_path,
+                                "models",
+                                name_or_path,
+                                name_or_path,
                             )
                         )
                         # print(f"Save path {saved_path}")
@@ -1648,7 +1676,9 @@ class ArcGISModel(object):
             )
         else:
             _emd_template = self._create_emd_template(
-                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+                saved_path.with_suffix(".pth"),
+                compute_metrics,
+                save_inference_file,
             )
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1663,13 +1693,19 @@ class ArcGISModel(object):
 
         if self._backend != "tensorflow" and framework.lower() == "tflite":
             if len(tflite_paths) != 0:
-                _script_save_params = {"tf": tflite_paths[0], "sm": tflite_paths[1]}
+                _script_save_params = {
+                    "tf": tflite_paths[0],
+                    "sm": tflite_paths[1],
+                }
                 _emd_template["TFLite"] = _script_save_params
 
         # TODO: merge all
         if framework.lower() == "torchscript":
             if len(script_paths) != 0:  # TODO: change_siammask
-                _script_save_params = {"GPU": script_paths[1], "CPU": script_paths[0]}
+                _script_save_params = {
+                    "GPU": script_paths[1],
+                    "CPU": script_paths[0],
+                }
                 _emd_template["TorchScript"] = _script_save_params
             else:
                 from ._siammask_utils import Custom
@@ -1791,7 +1827,8 @@ class ArcGISModel(object):
                     _emd_template["InferenceFunction"] = inference_file
 
                 with open(
-                    saved_path.parent / _emd_template["InferenceFunction"], "w"
+                    saved_path.parent / _emd_template["InferenceFunction"],
+                    "w",
                 ) as f:
                     f.write(self._code)
             if not save_inference_file:
@@ -1825,7 +1862,8 @@ class ArcGISModel(object):
 
         if _emd_template.get("ModelConfigurationFile", False):
             with open(
-                saved_path.parent / _emd_template["ModelConfigurationFile"], "w"
+                saved_path.parent / _emd_template["ModelConfigurationFile"],
+                "w",
             ) as f:
                 f.write(inspect.getsource(self._model_conf_class))
 
@@ -2023,16 +2061,16 @@ class ArcGISModel(object):
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
             )
-
-        item = gis_user.content.add(
+        folder = gis_user.content.folders.get()
+        item = folder.add(
             {
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
                 "overwrite": "true" if overwrite else "false",
             },
-            data=str(dlpk_path.absolute()),
-        )
+            file=str(dlpk_path.absolute()),
+        ).result()
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
@@ -2216,7 +2254,10 @@ class ArcGISModel(object):
             if hasattr(self, "_is_mmsegdet"):
                 logging.disable(logging.INFO)
             self.learn.load(
-                name, purge=False, device=device, strict=kwargs.get("strict", "True")
+                name,
+                purge=False,
+                device=device,
+                strict=kwargs.get("strict", "True"),
             )
             logging.disable(logging.NOTSET)
         except Exception as e:

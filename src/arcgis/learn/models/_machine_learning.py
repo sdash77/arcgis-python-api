@@ -11,7 +11,11 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
+from .._utils.tabular_data import (
+    TabularDataObject,
+    explain_prediction,
+    add_h3,
+)
 
 try:
     import sklearn
@@ -297,7 +301,10 @@ class MLModel(object):
             else:
                 self.constraint = fairness_args["mitigation_constraint"]
 
-            if self.constraint not in ["demographic_parity", "equalized_odds"]:
+            if self.constraint not in [
+                "demographic_parity",
+                "equalized_odds",
+            ]:
                 raise ValueError(_FAIRNESS_ARGS_KEY_NOT_FOUND)
 
             self.fairness_label_encoder = LabelEncoder()
@@ -476,12 +483,15 @@ class MLModel(object):
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
-            y_pred = self._predict(self._validation_df)
+            y_pred = self._predict(self._data._ml_data[2])
 
             y_pred = labelEncoder.transform(y_pred)
         else:
             y_true = self._validation_labels
-            y_pred = self._predict(self._validation_df, self.group_validation)
+            if self._fairness:
+                y_pred = self._predict(self._validation_df, self.group_validation)
+            else:
+                y_pred = self._predict(self._data._ml_data[2], self.group_validation)
 
         return _fairlearn.calculate_metrics(
             self._data._is_classification,
@@ -770,16 +780,16 @@ class MLModel(object):
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
             )
-
-        item = gis_user.content.add(
+        folder = gis_user.content.folders.get()
+        item = folder.add(
             {
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
                 "overwrite": True if overwrite else False,
             },
-            data=str(dlpk_path.absolute()),
-        )
+            file=str(dlpk_path.absolute()),
+        ).result()
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
@@ -935,7 +945,12 @@ class MLModel(object):
         with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(data, emd["ModelName"], pretrained_model=model, **model_parameters)
+        return cls(
+            data,
+            emd["ModelName"],
+            pretrained_model=model,
+            **model_parameters,
+        )
 
     def _predict(self, data, group_data=None):
         if self._fairness and self.mitigation_method == "threshold_optimizer":
@@ -1254,7 +1269,7 @@ class MLModel(object):
         rasters=None,
         datefield=None,
         distance_feature_layers=None,
-        output_name="Prediction Layer",
+        output_name=None,
         gis=None,
         match_field_names=None,
         prediction_type="features",
@@ -1265,6 +1280,9 @@ class MLModel(object):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
+
+        if output_name is None:
+            output_name = "Prediction Layer"
 
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
@@ -1377,10 +1395,17 @@ class MLModel(object):
             with tempfile.TemporaryDirectory() as tmpdir:
                 table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add(
-                    {"type": "Microsoft Excel", "overwrite": True}, table_file
-                )
-                return online_table.publish(overwrite=True)
+                try:
+                    folder = gis.content.folders.get()
+                    online_table = folder.add(
+                        {"type": "Microsoft Excel", "overwrite": True},
+                        file=table_file,
+                    ).result()
+                    return online_table.publish(overwrite=True)
+                except Exception as ex:
+                    raise Exception(
+                        f"Filename {output_name} already exists. Please provide different output filename."
+                    )
 
     def _predict_rasters(
         self,
@@ -1517,7 +1542,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1544,7 +1572,10 @@ class MLModel(object):
                     ),
                     ncols=max_raster_columns,
                     nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                    cell_size=(
+                        cell_size_translated.x,
+                        cell_size_translated.y,
+                    ),
                 )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1603,7 +1634,8 @@ class MLModel(object):
         predictions = self._predict(processed_numpy)
 
         predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
+            predictions.reshape([max_raster_rows, max_raster_columns]),
+            dtype="float64",
         )
 
         processed_raster = arcpy.NumPyArrayToRaster(

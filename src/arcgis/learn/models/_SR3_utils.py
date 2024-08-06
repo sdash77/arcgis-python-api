@@ -998,7 +998,10 @@ class UViT(nn.Module):
         self.in_chans = in_chans
         norm_layer = nn.LayerNorm
 
-        self.patch_embed = PatchEmbed(
+        self.patch_embedx = PatchEmbed(
+            patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim
+        )
+        self.patch_embedy = PatchEmbed(
             patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim
         )
         num_patches = (img_size // patch_size) ** 2
@@ -1080,8 +1083,8 @@ class UViT(nn.Module):
 
     def forward(self, x, timesteps, y=None):
         timesteps = timesteps[:, 0]
-        y1 = self.patch_embed(x[:, : self.in_chans, :, :])
-        x1 = self.patch_embed(x[:, self.in_chans :, :, :])
+        y1 = self.patch_embedy(x[:, : self.in_chans, :, :])
+        x1 = self.patch_embedx(x[:, self.in_chans :, :, :])
         x = torch.cat((x1, y1), dim=1)
 
         B, L, D = x.shape

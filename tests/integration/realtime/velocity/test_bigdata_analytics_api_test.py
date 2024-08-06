@@ -2,6 +2,7 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.realtime.velocity.bigdata_analytics_manager import BigDataAnalytics
+from utils.decorators import integration_test
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -17,6 +18,7 @@ except:
 
 
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
+@integration_test
 class TestBigDataAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     bigdata_analytics = velocity.bigdata_analytics

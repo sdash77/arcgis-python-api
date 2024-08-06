@@ -2,15 +2,13 @@
 # Name:        Workforce Project class tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
-
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 # region PreCondition check
 test_skip = False
 class_skip = False
@@ -31,7 +29,6 @@ else:
 try:
     from arcgis.gis import GIS, Group, User, Item
     from arcgis.features import Feature, FeatureLayer
-    from arcgis.mapping import WebMap
     from arcgis.apps.workforce import *
     from arcgis.apps.workforce.managers import *
 except ImportError:
@@ -52,7 +49,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class Test_Workforce_Project(unittest.TestCase):
     """
     Test to verify that a workforce project has the correct properties and methods
@@ -137,7 +137,7 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.assignments_layer_url, str, "Incorrect type")
 
             self.assertIsInstance(project.dispatcher_web_map_id, str, "Incorrect type")
-            self.assertIsInstance(project.dispatcher_webmap, WebMap, "Incorrect type")
+            self.assertIsInstance(project.dispatcher_webmap, arcgismapping.Map, "Incorrect type")
             self.assertIsInstance(
                 project.dispatchers, DispatcherManager, "Incorrect type"
             )
@@ -167,7 +167,7 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.version, str, "Incorrect type")
 
             self.assertIsInstance(project.worker_web_map_id, str, "Incorrect type")
-            self.assertIsInstance(project.worker_webmap, WebMap, "Incorrect type")
+            self.assertIsInstance(project.worker_webmap, arcgismapping.Map, "Incorrect type")
             self.assertIsInstance(project.workers, WorkerManager, "Incorrect type")
             self.assertIsInstance(project.workers_item, Item, "Incorrect type")
             self.assertIsInstance(project.workers_layer, FeatureLayer, "Incorrect type")

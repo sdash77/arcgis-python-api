@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ValidationError
-from typing import List, Tuple, Optional, Dict, Union
+from pydantic import BaseModel
+from typing import List, Tuple, Optional, Dict
 
 
 class textclassifierprompt(BaseModel):
@@ -36,7 +36,25 @@ class nerprompt(BaseModel):
         if self.examples is not None:
             temp = []
             for i in self.examples:
-                tstrin = str({"0": i[1]})
+                tstrin = str(i[1])
                 temp.append(f"{i[0]}\n\n {tstrin}")
             self.examples = temp
+        return self.examples
+
+
+class seqtoseqprompt(BaseModel):
+    examples: Optional[List[Tuple[str, str]]]  # Pydantic evaluates a Tuple as a List.
+    # This type of schema supports restricting the number of elements.
+    prompt: Optional[str]
+
+    def _valid(self):
+        # check if label and example both are missing
+        if self.examples is None:
+            raise ValueError("The value of examples cannot be None.")
+
+    def _format_example(self):
+        temp = []
+        for i in self.examples:
+            temp.append(f"{i[0]} \n\n {i[1]}")
+        self.examples = temp
         return self.examples

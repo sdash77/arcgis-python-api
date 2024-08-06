@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import logging
 import unittest
 import uuid
@@ -10,6 +6,7 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.raster import Raster, ImageryLayer
 import arcgis
+from utils.decorators import integration_test
 
 from arcgis.raster.analytics import copy_raster
 from integration.config import QALAB_ROOT_PATH
@@ -32,6 +29,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestImageRasterService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

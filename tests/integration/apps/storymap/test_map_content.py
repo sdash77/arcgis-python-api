@@ -1,13 +1,14 @@
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap
-from arcgis.apps.storymap.story_content import Map, Scales
+from arcgis.apps import storymap
+from utils.decorators import integration_test, profiles
+from arcgis.auth.tools import LazyLoader
+arcgismapping = LazyLoader("arcgis.map")
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
 
-
+@integration_test
+@profiles.enterprise_and_agol
 class TestMapContent(unittest.TestCase):
     """Test adding an map and seeing properties"""
 
@@ -20,10 +21,9 @@ class TestMapContent(unittest.TestCase):
             with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
-                story = StoryMap()
-                from arcgis.mapping import WebMap
+                story = storymap.StoryMap()
 
-                wm_test = WebMap()
+                wm_test = arcgismapping.Map()
                 wm_item = wm_test.save(
                     item_properties={
                         "title": "Test WebMap for ArcGIS StoryMap Test",
@@ -31,7 +31,7 @@ class TestMapContent(unittest.TestCase):
                         "snippet": "Creating a map for the purpose of the ArcGIS StoryMap in Python API Test.",
                     }
                 )
-                map_content = Map(wm_item.id)
+                map_content = arcgismapping.Map(wm_item.id)
                 map = story.add(
                     map_content, caption="This is a map that has nothing special on it."
                 )
@@ -40,10 +40,10 @@ class TestMapContent(unittest.TestCase):
                 assert map_content.properties
                 assert isinstance(map_content.map, Item)
                 assert map_content.caption
-                assert isinstance(map.set_viewpoint(scale=Scales.CONTINENT), dict)
+                assert isinstance(map.set_viewpoint(scale=storymap.Scales.CONTINENT), dict)
 
-                item = gis.content.get(story._itemid)
-                assert item.delete()
+        item = gis.content.get(story._itemid)
+        assert item.delete()
 
 
 if __name__ == "__main__":

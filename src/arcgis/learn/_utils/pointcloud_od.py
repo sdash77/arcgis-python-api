@@ -582,7 +582,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
             ],
             layout=layout,
         )
-        fig.show()
+        fig2 = go.FigureWidget(fig)
+        display(fig2)
 
 
 def pointcloud_od(
