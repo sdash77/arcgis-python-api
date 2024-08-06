@@ -1,20 +1,16 @@
-import sys
-
-#######################################################################
 import unittest
-import tempfile
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
 
 enable_verbose_logging()
 
 
-@profiles.agol
+@profiles.admin_agol
 @integration_test
 class TestCreateNotebookServiceAGOL(unittest.TestCase):
     def setUp(self):
         self.notebook_item = self.gis.content.get(
-            "79f4e79b982747c9a3514af9a6c8c0ef"
+            "2078a889b01e40eda0d29fd157c0c325"
         )
         if self.notebook_item:
             self.skip = False
