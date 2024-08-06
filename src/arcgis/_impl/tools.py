@@ -8554,6 +8554,7 @@ class _OrthoMappingTools:
         gis=None,
         future=False,
         flight_json_details=None,
+        classify_ground_options=None,
         **kwargs,
     ):
         """
@@ -8676,16 +8677,36 @@ class _OrthoMappingTools:
                         output_properties=kwargs,
                     )
 
-        job = tool(
-            image_collection=image_collection,
-            cell_size=cell_size,
-            output_dem=output_dem,
-            surface_type=surface_type,
-            matching_method=matching_method,
-            context=context,
-            gis=gis,
-            future=True,
-        )
+        if classify_ground_options is not None and surface_type.lower() != "dtm":
+            raise RuntimeError(
+                "Classify ground options can only be specified for DTM surface type."
+            )
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version >= 11.4:
+                job = tool(
+                    image_collection=image_collection,
+                    cell_size=cell_size,
+                    output_dem=output_dem,
+                    surface_type=surface_type,
+                    matching_method=matching_method,
+                    context=context,
+                    classify_ground_options=classify_ground_options,
+                    gis=gis,
+                    future=True,
+                )
+            else:
+                job = tool(
+                    image_collection=image_collection,
+                    cell_size=cell_size,
+                    output_dem=output_dem,
+                    surface_type=surface_type,
+                    matching_method=matching_method,
+                    context=context,
+                    gis=gis,
+                    future=True,
+                )
 
         job._is_ortho = True
         job._item_properties = True
