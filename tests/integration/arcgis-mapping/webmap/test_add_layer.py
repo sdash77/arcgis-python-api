@@ -163,7 +163,7 @@ class TestAddLayersToMap(unittest.TestCase):
         assert wm
 
         layer = OGCFeatureService(
-            "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/4fdc09_ogc/OGCFeatureServer"
+            "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
         )
         assert layer
 
