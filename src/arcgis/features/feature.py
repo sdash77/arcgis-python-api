@@ -17,6 +17,7 @@ tempfile = LazyLoader("tempfile")
 uuid = LazyLoader("uuid")
 
 from datetime import datetime
+from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
@@ -1543,8 +1544,58 @@ class FeatureCollection(Layer):
     # noinspection PyMissingConstructor
     def __init__(self, dictdata):
         self._hydrated = True
-        self.properties = PropertyMap(dictdata)
-        self.layer = self.properties
+        self._properties = PropertyMap(dictdata)
+
+    @property
+    def properties(self):
+        """
+        Returns a dictionary-like object of the current definition for the
+        *Feature Collection* object. Each feature collection is comprised of a:
+
+        * *featureSet*,
+        * *layerDefinition*
+        * *popupInfo*.
+
+        See the
+        `featureCollection Object Specification <https://developers.arcgis.com/web-map-specification/objects/featureCollection>`_
+        for full details.
+
+        .. note::
+            The *properties* and *layer* property of a :class:`~arcgis.features.FeatureCollection`
+            return the same information.
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> fcolln_item = gis.content.search(
+                                   query="*",
+                                   item_type="Feature Collection"
+                                )[0]
+
+            >>> fcolln_obj = fcolln_item.layers[0]
+            >>> list(fcolln_obj.properties.keys())
+
+            ['featureSet', 'layerDefinition', 'popupInfo']
+        """
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties):
+        self._properties = PropertyMap(properties)
+
+    @property
+    @deprecated(
+        deprecated_in="2.4.0", removed_in="2.5.0", details="Use 'properties' instead."
+    )
+    def layer(self):
+        return self.properties
+
+    @layer.setter
+    def layer(self, layer):
+        self.properties(layer)
 
     @property
     def _lyr_json(self):
