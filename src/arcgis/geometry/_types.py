@@ -3259,10 +3259,9 @@ class Point(Geometry):
         coordinates = list(data[coordkey])
         if len(coordinates) == 2:
             keys = ["x", "y"]
-        elif len(coordinates) == 3:
+        elif len(coordinates) >= 3:
             keys = ["x", "y", "z"]
-        elif len(coordinates) == 4:
-            keys = ["x", "y", "z", "m"]
+            coordinates = coordinates[:3]
         keys.append("spatialReference")
         coordinates.append(sr)
         v: dict = dict(zip(keys, coordinates))
@@ -3500,7 +3499,7 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     @property
-    def has_z(self):
+    def has_z(self) -> bool:
         """
         The ``has_z`` method determines if the geometry has a `Z` value.
 
@@ -3517,7 +3516,7 @@ class Polyline(Geometry):
         elif self.as_shapely:
             return self.as_shapely.has_z
 
-        return self.get("hasZ", False) or self.get("z", False)
+        return False
 
     # ----------------------------------------------------------------------
     @property
