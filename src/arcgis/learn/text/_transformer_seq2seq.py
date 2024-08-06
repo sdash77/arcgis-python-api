@@ -34,9 +34,10 @@ backbone_models_map = {
     "marian": [
         "See all Marian models at https://huggingface.co/models?search=Helsinki-NLP "
     ],
+    "llm": ["mistral"],
 }
 
-transformer_architectures = ["T5", "Bart", "Marian"]
+transformer_architectures = ["T5", "Bart", "Marian", "LLM"]
 
 backbone_models_reverse_map = {
     x: key for key, val in backbone_models_map.items() for x in val
