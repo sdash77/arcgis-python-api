@@ -1669,9 +1669,11 @@ def _gen_schema(
             "relationships": [],
         }
     }
-
+    existing_rels = existing_schema.get(parent, {}).get("relationships", [])
     if old_parent is not None:
-        if use_GUID is True:
+        if existing_rels:
+            k_field = existing_rels[0]['keyField']
+        elif use_GUID is True:
             k_field = "parentrowid"
         else:
             k_field = "parentglobalid"
@@ -1687,7 +1689,11 @@ def _gen_schema(
             }
         )
     else:
-        if use_GUID is True:
+        if existing_rels:
+            for rel in existing_rels:
+                if len([x for x in new_dict[parent]["fields"] if x['name'] == rel['keyField']]) == 0:
+                    new_dict[parent]["fields"].append([x for x in existing_fields if x["name"] == rel['keyField']][0])
+        elif use_GUID is True:
             if "uniquerowid" not in [x["name"] for x in new_dict[parent]["fields"]]:
                 new_dict[parent]["fields"].append(
                     {
@@ -1712,31 +1718,41 @@ def _gen_schema(
                 node, ns_dict, new_dict, parent, model, create_domain, use_GUID
             )
         else:
-            if use_GUID is True:
-                if "uniquerowid" not in [x["name"] for x in new_dict[parent]["fields"]]:
-                    new_dict[parent]["fields"].append(
-                        {
-                            "name": "uniquerowid",
-                            "type": "esriFieldTypeGUID",
-                            "alias": "RowID",
-                            "length": 38,
-                            "domain": None,
-                        }
-                    )
-                key_field = "uniquerowid"
+            if existing_rels:
+                for rel in existing_rels:
+                    if len([x for x in new_dict[parent]["fields"] if x['name'] == rel['keyField']]) == 0:
+                        new_dict[parent]["fields"].append([x for x in existing_fields if x["name"] == rel['keyField']][0])
+                    rel.update(
+                        {"parent": parent,
+                        "child": node.attrib["ref"].split("/")[-1]}
+                    )    
+                    new_dict[parent]["relationships"].append(rel)
             else:
-                key_field = "globalid"
-            new_dict[parent]["relationships"].append(
-                {
-                    "name": f"{parent}_{node.attrib['ref'].split('/')[-1]}",
-                    "cardinality": "esriRelCardinalityOneToMany",
-                    "role": "esriRelRoleOrigin",
-                    "keyField": key_field,
-                    "composite": True,
-                    "parent": parent,
-                    "child": node.attrib["ref"].split("/")[-1],
-                }
-            )
+                if use_GUID is True:
+                    if "uniquerowid" not in [x["name"] for x in new_dict[parent]["fields"]]:
+                        new_dict[parent]["fields"].append(
+                            {
+                                "name": "uniquerowid",
+                                "type": "esriFieldTypeGUID",
+                                "alias": "RowID",
+                                "length": 38,
+                                "domain": None,
+                            }
+                        )
+                    key_field = "uniquerowid"
+                else:
+                    key_field = "globalid"
+                new_dict[parent]["relationships"].append(
+                    {
+                        "name": f"{parent}_{node.attrib['ref'].split('/')[-1]}",
+                        "cardinality": "esriRelCardinalityOneToMany",
+                        "role": "esriRelRoleOrigin",
+                        "keyField": key_field,
+                        "composite": True,
+                        "parent": parent,
+                        "child": node.attrib["ref"].split("/")[-1],
+                    }
+                )
             new_dict.update(
                 _gen_schema(
                     node[1],
@@ -1746,26 +1762,31 @@ def _gen_schema(
                     create_domain,
                     use_GUID,
                     parent,
+                    existing_schema
                 )
             )
     if old_parent is not None:
-        if use_GUID is True:
-            guid_name = "parentrowid"
-            guid_alias = "ParentRowID"
+        if existing_rels:
+            for rel in existing_rels:
+                    if len([x for x in new_dict[parent]["fields"] if x['name'] == rel['keyField']]) == 0:
+                        new_dict[parent]["fields"].append([x for x in existing_fields if x["name"] == rel['keyField']][0])
         else:
-            guid_name = "parentglobalid"
-            guid_alias = "ParentGlobalID"
+            if use_GUID is True:
+                guid_name = "parentrowid"
+                guid_alias = "ParentRowID"
+            else:
+                guid_name = "parentglobalid"
+                guid_alias = "ParentGlobalID"
 
-        new_dict[parent]["fields"].append(
-            {
-                "name": guid_name,
-                "type": "esriFieldTypeGUID",
-                "alias": guid_alias,
-                "length": 38,
-                "domain": None,
-            }
-        )
-
+            new_dict[parent]["fields"].append(
+                {
+                    "name": guid_name,
+                    "type": "esriFieldTypeGUID",
+                    "alias": guid_alias,
+                    "length": 38,
+                    "domain": None,
+                }
+            )
     return new_dict
 
 
