@@ -2288,8 +2288,6 @@ class FeatureLayerCollectionManager(_GISResource):
                 )
 
         # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
-        data_path = data_path.replace(" ", "_")
-        data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
             name = re.sub(r"\.", "_", name)
