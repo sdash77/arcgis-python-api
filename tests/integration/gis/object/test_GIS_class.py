@@ -7,7 +7,7 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
-from utils.decorators import integration_test
+from utils.decorators import integration_test, credentials
 
 # region PreCondition check
 test_skip = False
@@ -134,6 +134,7 @@ class Test_GIS_ago(unittest.TestCase):
 
 
 @integration_test
+@credentials.enterprise
 class Test_GIS_portal(unittest.TestCase):
     """
     Test to check if a GIS object can be created with Portal
@@ -188,7 +189,7 @@ class Test_GIS_portal(unittest.TestCase):
 
     def test_sign_in(self):
         try:
-            gis = GIS(self.portal_url, self.portal_username, self.portal_password)
+            gis = GIS(self.portal_url, self.username, self.password)
             self.assertIsNotNone(gis, "Cannot sign into portal")
 
         except AssertionError as assertErrorException:
@@ -203,7 +204,7 @@ class Test_GIS_portal(unittest.TestCase):
 
     @unittest.skipIf(test_skip, "Sign in failed. Skipping test case")
     def test_properties(self):
-        gis = GIS(self.portal_url, self.portal_username, self.portal_password)
+        gis = GIS(self.portal_url, self.username, self.password)
         try:
             gis_properties = gis.properties
             self.assertIsNotNone(gis_properties, "gis.properties returns None")
