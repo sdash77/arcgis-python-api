@@ -227,9 +227,12 @@ class TestSystemManager(unittest.TestCase):
 
     def test_job_details(self):
         """tests getting the job details"""
-        for job in self.system.jobs:
-            assert self.system.job_details(job_id=job['jobId'])
-            break
+        if not self.system.jobs:
+          self.skipTest("No notebook server system jobs configured.")
+        job = self.system.jobs[0]:
+        job_details = self.system.job_details(job_id=job['jobId'])
+        assert isinstance(job_details, dict)
+        assert job_details
 
     def test_recent_statistics(self):
         """tests recent_statistics method, enterprise must be 10.8.1+"""
