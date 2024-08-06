@@ -6,6 +6,10 @@ The ArcGIS API for Python occasionally deprecates functionalities, scheduling th
 
 These classes, functions, and modules in the ArcGIS API for Python are deprecated and may cause compatibility issues in future versions:
 
+### `arcgis.gis` Module 
+
+- `arcgis.gis.UserManager.create` - the `level` parameter is depreacted at **2.4.0** and will be removed from the method signature in a future release. 
+
 ### `arcgis.apps` Module 
 
 - `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future major release (example: 2.x to 3.x). 
