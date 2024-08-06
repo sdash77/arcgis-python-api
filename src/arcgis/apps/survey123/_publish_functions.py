@@ -709,7 +709,10 @@ def _id_relationships(service, layer):
                 for x in parent_layer.properties["fields"]
                 if x["name"] == keyfield[0]
             ][0]
-            return role != "esriRelRoleDestination" and keyfield_type == "esriFieldTypeGUID"
+            return (
+                role != "esriRelRoleDestination"
+                and keyfield_type == "esriFieldTypeGUID"
+            )
     else:
         return False
 
@@ -1632,34 +1635,38 @@ def _gen_schema(
     """Generates a dictionary of all layers and fields in the XForm"""
     existing_fields = existing_schema.get(parent, {}).get("fields", [])
     existing_oid_fields = [
-        x
-        for x in existing_fields
-        if x["type"] == "esriFieldTypeOID"
+        x for x in existing_fields if x["type"] == "esriFieldTypeOID"
     ]
     existing_globalid_fields = [
-        x
-        for x in existing_fields
-        if x["type"] == "esriFieldTypeGlobalID"
+        x for x in existing_fields if x["type"] == "esriFieldTypeGlobalID"
     ]
-    oid_field = existing_oid_fields[0] if existing_oid_fields else {
-        "name": "objectid",
-        "type": "esriFieldTypeOID",
-        "alias": "ObjectID",
-        "nullable": False,
-        "editable": False,
-        "domain": None,
-        "defaultValue": None,
-    }
-    globalid_field = existing_globalid_fields[0] if existing_globalid_fields else {
-        "name": "globalid",
-        "type": "esriFieldTypeGlobalID",
-        "alias": "GlobalID",
-        "length": 38,
-        "nullable": False,
-        "editable": False,
-        "domain": None,
-        "defaultValue": None,
-    }
+    oid_field = (
+        existing_oid_fields[0]
+        if existing_oid_fields
+        else {
+            "name": "objectid",
+            "type": "esriFieldTypeOID",
+            "alias": "ObjectID",
+            "nullable": False,
+            "editable": False,
+            "domain": None,
+            "defaultValue": None,
+        }
+    )
+    globalid_field = (
+        existing_globalid_fields[0]
+        if existing_globalid_fields
+        else {
+            "name": "globalid",
+            "type": "esriFieldTypeGlobalID",
+            "alias": "GlobalID",
+            "length": 38,
+            "nullable": False,
+            "editable": False,
+            "domain": None,
+            "defaultValue": None,
+        }
+    )
     new_dict = {
         parent: {
             "fields": [
