@@ -66,7 +66,7 @@ def apply_edits(
     fl: _arcgis_features.FeatureLayer,
     adds: list[dict[str, Any]] | None = None,
     updates: list[dict[str, Any]] | None = None,
-    deletes: list[dict[str, Any]] | None = None,
+    deletes: list[str] | list[int] | str | None = None,
     attachments: Attachments | None = None,
     use_global_ids: bool = False,
     version_info: VersionInfo | None = None,
@@ -144,6 +144,14 @@ def apply_edits(
         in fl.properties["advancedEditingCapabilities"]
         and fl.properties["advancedEditingCapabilities"]["supportsApplyEditsbyUploadID"]
     ):
+        if isinstance(deletes, str):
+            deletes = [
+                int(d) if (isinstance(d, str) and d.isdigit()) else d
+                for d in deletes.split(",")
+            ]
+        elif deletes is None:
+            deletes = []
+
         data = {
             "adds": adds,
             "updates": updates,
