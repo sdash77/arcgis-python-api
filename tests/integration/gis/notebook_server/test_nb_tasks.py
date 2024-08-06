@@ -1,3 +1,4 @@
+import types
 import unittest
 from arcgis.gis.tasks import TaskManager, Task
 from arcgis.gis.tasks import Run
@@ -6,13 +7,13 @@ from utils.decorators import integration_test, profiles
 
 @profiles.admin_enterprise
 @integration_test
-class TestListAllTasks(unittest.TestCase):
+class TestGetTasks(unittest.TestCase):
     """
-    tests get tasks from user search and scheduled_tasks for notebook server, enterprise must be 10.8.1+
+    Tests gis.tasks submodule
     """
 
     def test_user_search(self):
-        """tests list all tasks through User"""
+        """tests getting tasks from user"""
         tasks = self.gis.users.me.tasks
         assert isinstance(tasks, TaskManager)
         assert isinstance(
@@ -20,24 +21,24 @@ class TestListAllTasks(unittest.TestCase):
         )
 
     def test_list_all_tasks(self):
-        """tests list all the tasks through PortalAdminManager"""
+        """tests listing all the tasks from PortalAdminManager"""
         st = self.gis.admin.scheduled_tasks
+        assert isinstance(st(), types.GeneratorType)
         assert isinstance(list(st()), list)
-        assert isinstance(list(st(user=self.gis.users.me)), list)
-        assert isinstance(list(st(active=False)), list)
-        assert isinstance(list(st(active=True)), list)
+        assert isinstance(st(user=self.gis.users.me), types.GeneratorType)
+        assert isinstance(st(active=False), types.GeneratorType)
+        assert isinstance(st(active=True), types.GeneratorType)
         assert isinstance(
-            list(st(
+            st(
                 types="ExecuteNotebook,UpdateInsightsWorkbook",
-            )),
-            list,
+            ),
+            types.GeneratorType,
         )
 
 
 @integration_test
 @profiles.admin_enterprise
 class TestUserScheduleTaskManager(unittest.TestCase):
-    """test Task Manager for notebook server in gis.tasks submodule, enterprise must be 10.8.1+"""
 
     def test_task_properties(self):
         """tests the task's properties"""
