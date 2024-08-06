@@ -2343,9 +2343,9 @@ class FeatureLayerCollectionManager(_GISResource):
                     "type": file_type,
                     "title": name,
                     "tags": "inserted",
-                    "filename": os.path.splitext(data_path)[0]
+                    "fileName": os.path.splitext(data_path)[0]
                     + "_"
-                    + str(uuid.uuid4())
+                    + str(uuid.uuid4())[0:5]
                     + ".zip",
                 },
                 file=data_path,
@@ -2369,8 +2369,16 @@ class FeatureLayerCollectionManager(_GISResource):
             source_info = None
 
         # Publish the item
-        new_item = file_item.publish(publish_parameters=publish_parameters)
-
+        try:
+            new_item = file_item.publish(publish_parameters=publish_parameters)
+        except Exception as e:
+            if "already exists" in str(e):
+                # If the item already exists rename it and try again
+                file_item.update(
+                    item_properties={"title": name + "_" + str(uuid.uuid4())}
+                )
+                publish_parameters["name"] = os.path.splitext(file_item["name"])[0]
+                new_item = file_item.publish(publish_parameters=publish_parameters)
         try:
             # Insert layer or table
             if len(new_item.layers) > 0:
