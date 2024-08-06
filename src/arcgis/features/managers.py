@@ -8,6 +8,7 @@ import os
 import json
 import time
 import logging
+import uuid
 import tempfile
 import collections
 import concurrent.futures
@@ -2324,14 +2325,30 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             folder = self._gis.content.folders.get()
 
-        file_item = folder.add(
-            item_properties={
-                "type": file_type,
-                "title": name,
-                "tags": "inserted",
-            },
-            file=data_path,
-        ).result()
+        try:
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                },
+                file=data_path,
+            ).result()
+        except Exception as e:
+            if "Item with this filename already exists" not in str(e):
+                raise e
+            # rename the file item if it already exists with unique id appended
+            data_path = (
+                os.path.splitext(data_path)[0] + "_" + str(uuid.uuid4()) + ".zip"
+            )
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                },
+                file=data_path,
+            ).result()
 
         # Analyze the file to get publish parameters
         if file_type == "CSV" or file_type == "Excel":
