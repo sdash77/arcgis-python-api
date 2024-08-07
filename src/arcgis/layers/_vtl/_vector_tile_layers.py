@@ -577,7 +577,9 @@ class SymbolService:
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-            self._properties = self._session.get(url=self._url, params={"f":"json"}).json()
+            self._properties = self._session.get(
+                url=self._url, params={"f": "json"}
+            ).json()
         return self._properties
 
     def generate_symbol(self, svg: str) -> dict:

@@ -193,7 +193,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         try:
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
 
-            wm = arcgismapping.Map(item = wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             bookmark1 = wm.bookmarks.list[-1].name
 

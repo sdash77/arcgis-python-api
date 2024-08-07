@@ -60,7 +60,8 @@ class TestAddLayersToMap(unittest.TestCase):
 
         # add layer
         layer = VectorTileLayer(
-            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer", gis=self.gis
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
+            gis=self.gis,
         )
         assert layer
         self.wm.content.add(layer)
@@ -269,10 +270,10 @@ class TestAddLayersToMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureLayer)
         assert (
-                self.wm._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "heatmap"
+            self.wm._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "heatmap"
         )
 
     def test_oriented_imagery_layer(self):

@@ -213,10 +213,10 @@ class TestAddLayersToMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureLayer)
         assert (
-                self.wm._webscene.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "heatmap"
+            self.wm._webscene.operational_layers[
+                0
+            ].layer_definition.drawing_info.dict()["renderer"]["type"]
+            == "heatmap"
         )
 
 
