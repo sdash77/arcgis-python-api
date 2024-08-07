@@ -3091,7 +3091,11 @@ class UtilityServicesSettings:
                 if helper_svc == "geocode":
                     url = agol_helper_svcs[helper_svc][0]["url"]
                 else:
-                    url = agol_helper_svcs[helper_svc]["url"]
+                    try:
+                        url = agol_helper_svcs[helper_svc]["url"]
+                    except:
+                        # Not all services available on AGOL at the moment
+                        pass
                 svc_type = "".join(set(url.split("/")).intersection(set(svc_types)))
 
                 item_props = {
@@ -3198,6 +3202,7 @@ class UtilityServicesSettings:
                 "traffic",
                 "odCostMatrix",
                 "snapToRoads",
+                "routingServicesSource",
             ],
             "Orthomapping Elevation": ["orthomappingElevation"],
         }
@@ -3209,36 +3214,44 @@ class UtilityServicesSettings:
                 for helper_svc in helper_services[service]:
                     # First find the item id of the current service if one
                     if helper_svc in current_services:
-                        if helper_svc == "orthomappingElevation":
-                            full_url = None
-                        elif helper_svc == "geocode":
-                            full_url = current_services[helper_svc][1]["url"]
+                        if helper_svc == "routingServicesSource":
+                            self._gis.update_properties(
+                                {helper_svc: {}, "clearEmptyFields": True}
+                            )
                         else:
-                            full_url = current_services[helper_svc]["url"]
-                        segments = full_url.split("/")
-                        item_id = segments[segments.index("servers") + 1]
-                        item = self._gis.content.get(item_id)
-                        if item:
-                            item.protect(enable=False)
-                            item.delete()
-                    if helper_svc == "geocodeService":
-                        self._gis.update_properties(
-                            {
-                                helper_svc
-                                + "Service": [
-                                    {
-                                        "westLon": "Xmin",
-                                        "southLat": "Ymin",
-                                        "name": "ArcGIS World Geocoding Service",
-                                        "batch": false,
-                                        "placefinding": true,
-                                        "northLat": "Ymax",
-                                        "eastLon": "Xmax",
-                                        "suggest": true,
-                                        "url": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer",
-                                    }
-                                ]
-                            }
-                        )
-                    else:
-                        self._gis.update_properties({helper_svc + "Service": None})
+                            if helper_svc == "orthomappingElevation":
+                                full_url = None
+                            elif helper_svc == "geocode":
+                                full_url = current_services[helper_svc][1]["url"]
+                            else:
+                                full_url = current_services[helper_svc]["url"]
+                            segments = full_url.split("/")
+                            item_id = segments[segments.index("servers") + 1]
+                            item = self._gis.content.get(item_id)
+                            if item:
+                                item.protect(enable=False)
+                                item.delete()
+                        if helper_svc == "geocodeService":
+                            self._gis.update_properties(
+                                {
+                                    helper_svc
+                                    + "Service": [
+                                        {
+                                            "westLon": "Xmin",
+                                            "southLat": "Ymin",
+                                            "name": "ArcGIS World Geocoding Service",
+                                            "batch": False,
+                                            "placefinding": True,
+                                            "northLat": "Ymax",
+                                            "eastLon": "Xmax",
+                                            "suggest": True,
+                                            "url": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer",
+                                        }
+                                    ]
+                                }
+                            )
+                        else:
+                            self._gis.update_properties(
+                                {helper_svc + "Service": "", "clearEmptyFields": True}
+                            )
+        return True
