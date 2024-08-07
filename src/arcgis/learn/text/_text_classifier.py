@@ -99,7 +99,7 @@ class TextClassifier(ArcGISModel):
                             on Text Classification Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=text-classification
 
-                            To learn more about mistral
+                            To learn more about mistral, kindly visit:
                             https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
     =====================   ===========================================
 
@@ -136,7 +136,7 @@ class TextClassifier(ArcGISModel):
     prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
                             LLM family.
 
-                            This parameter use to describe the task and guardrails for the task.
+                            This parameter outlines the task and its corresponding guardrails.
     ---------------------   -------------------------------------------
     examples                Optional dictionary. The dictionary's keys represent labels or classes, with the
                             corresponding values being lists of sentences belonging to each class.
@@ -189,11 +189,11 @@ class TextClassifier(ArcGISModel):
                 kwargs.update(llm_params)
                 backbone = "llm"
 
-        self.logger = logging.get_logger()
+        self._logger = logging.get_logger()
         if kwargs.get("verbose", None):
-            self.logger.setLevel(kwargs.get("verbose").upper())
+            self._logger.setLevel(kwargs.get("verbose").upper())
         else:
-            self.logger.setLevel(logging.ERROR)
+            self._logger.setLevel(logging.ERROR)
         if backbone == "llm":
             kwargs["task"] = "text-classifier"
             kwargs = data_sanity_llm(data, **kwargs)
@@ -226,6 +226,7 @@ class TextClassifier(ArcGISModel):
                 #     # since data hadnle is marked as empty. Try to sample it from the examples
                 #     self._l2id = list(self._llm.examples.keys())
         model_backbone = ModelBackbone(backbone)
+
         super().__init__(data, model_backbone if backbone != "llm" else backbone)
 
         self._emodel = None
@@ -250,7 +251,7 @@ class TextClassifier(ArcGISModel):
                     mixed_precision=self._mixed_precision,
                     seq_len=self._seq_len,
                 )
-
+                # print(self.learn)
                 self.learn.model = self.learn.model.to(self._device)
                 layer_groups = self.learn.model.get_layer_groups()
                 self.learn.split(layer_groups)
@@ -265,7 +266,7 @@ class TextClassifier(ArcGISModel):
         config=None,
     ):
         model_type = infer_model_type(backbone, transformer_architectures)
-        self.logger.info(f"Inferred Backbone: {model_type}")
+        self._logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
         if not config:
@@ -287,7 +288,7 @@ class TextClassifier(ArcGISModel):
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
 
         if data._is_empty or data._backbone != backbone:
-            self.logger.info("Creating DataBunch")
+            self._logger.info("Creating DataBunch")
             classes = None
             data._prepare_databunch(
                 tokenizer=tokenizer,
@@ -296,7 +297,7 @@ class TextClassifier(ArcGISModel):
                 pad_idx=pad_idx,
                 backbone=backbone,
                 classes=classes,
-                logger=self.logger,
+                logger=self._logger,
             )
 
         databunch = data.get_databunch()
@@ -344,7 +345,7 @@ class TextClassifier(ArcGISModel):
                     f" or choose a different transformer architectures from - {transformer_architectures}"
                 )
                 raise Exception(error_message)
-            self.logger.info("Converting model to 16 Bit Floating Point precision")
+            self._logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
     def __str__(self):
@@ -378,7 +379,7 @@ class TextClassifier(ArcGISModel):
                                 suitable for your dataset, kindly visit:-
                                 https://huggingface.co/transformers/pretrained_models.html
 
-                                To learn more about mistral
+                                To learn more about mistral, kindly visit:
                                 https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
         =====================   ===========================================
 
@@ -719,11 +720,17 @@ class TextClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
+        overwrite               Optional boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
-                                Boolean `zip_files` if True, it will create the Deep
+        ---------------------   -------------------------------------------
+        zip_files               Optional boolean `zip_files` if True, it will create the Deep
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
@@ -868,13 +875,13 @@ class TextClassifier(ArcGISModel):
                 return acc
             else:
                 if self._backbone == "llm":
-                    self.logger.error(f"{e}")
+                    self._logger.error(f"{e}")
                 else:
-                    self.logger.error("Metric not found in the loaded model")
+                    self._logger.error(f"Metric not found in the loaded model")
 
         else:
             if not HAS_NUMPY:
-                self.logger.error("This function requires numpy.")
+                self._logger.error("This function requires numpy.")
                 return
             if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
@@ -892,7 +899,7 @@ class TextClassifier(ArcGISModel):
             return metric
 
     def _calculate_model_metric(self):
-        self.logger.info("Calculating Model Metrics")
+        self._logger.info("Calculating Model Metrics")
         validation_dataframe = self._data._valid_df
 
         if self.is_multilabel_problem:
@@ -1056,7 +1063,7 @@ class TextClassifier(ArcGISModel):
                 explain_index = None
 
         if self.is_multilabel_problem is False and thresh is not None:
-            self.logger.error(
+            self._logger.error(
                 "Passing a threshold value for non multi-label classification task "
                 "will not have any affect on the predicting the class label"
             )
@@ -1187,7 +1194,7 @@ class TextClassifier(ArcGISModel):
                 metrics_per_label = json.loads(metrics_per_label)
                 return self._create_dataframe_from_dict(metrics_per_label)
             else:
-                self.logger.error("Metric not found in the loaded model")
+                self._logger.error("Metric not found in the loaded model")
         else:
             validation_dataframe = self._data._valid_df
             if self.is_multilabel_problem:

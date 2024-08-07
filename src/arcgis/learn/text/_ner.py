@@ -91,7 +91,7 @@ class EntityRecognizer:
                             on Named Entity Recognition Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=token-classification
 
-                            To learn more about mistral
+                            To learn more about mistral, kindly visit:
                             https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
 
     =====================   ===========================================
@@ -127,7 +127,7 @@ class EntityRecognizer:
     prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
                             LLM family.
 
-                            This parameter use to describe the task and guardrails for the task.
+                            This parameter outlines the task and its corresponding guardrails.
     ---------------------   -------------------------------------------
     examples                Optional List. The list comprises tuple(s) where the first element denotes the text for
                             entity extraction, while the second element is a dictionary used for mapping named entities.
@@ -409,11 +409,17 @@ class EntityRecognizer:
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False
                                 Not applicable for models with `spaCy` backbone.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
+        overwrite               Optional boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
-                                Boolean `zip_files` if True, it will create the Deep
+        ---------------------   -------------------------------------------
+        zip_files               Optional boolean `zip_files` if True, it will create the Deep
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
         """
