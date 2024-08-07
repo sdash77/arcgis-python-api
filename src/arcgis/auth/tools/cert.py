@@ -161,7 +161,8 @@ class TruststoreAdapter(HTTPAdapter):
         ssl_context: truststore.SSLContext | ssl.SSLContext | None = None,
     ):
         if ssl_context is None:
-            ssl_context = truststore.SSLContext()
+
+            ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.custom_context = ssl_context
 
         super().__init__(
