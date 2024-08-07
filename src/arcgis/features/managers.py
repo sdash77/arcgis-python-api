@@ -2249,6 +2249,22 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    def _perform_insert(self, layer_definition, table=False):
+        # Add new layer to definition
+        if table:
+            self.add_to_definition({"tables": [dict(layer_definition)]})
+            for table in self.properties.tables:
+                if table["name"] == layer_definition["name"]:
+                    fl_index = table["id"]
+        else:
+            self.add_to_definition({"layers": [dict(layer_definition)]})
+            # Find the index at which the layer was added
+            for layer in self.properties.layers:
+                if layer["name"] == layer_definition["name"]:
+                    fl_index = layer["id"]
+        return fl_index
+
+    # ----------------------------------------------------------------------
     def insert_layer(self, data_path: str, name: str = None):
         """
         This method will create a feature layer or table and insert it into the existing feature service.
@@ -2266,8 +2282,6 @@ class FeatureLayerCollectionManager(_GISResource):
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
-
-        from ..gis._impl._content_manager._import_data import _perform_insert
 
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
@@ -2370,7 +2384,7 @@ class FeatureLayerCollectionManager(_GISResource):
             else:
                 upload_format = file_type.lower()
             if lyr_info["type"] == "Feature Layer":
-                index = _perform_insert(self, lyr_info)
+                index = self._perform_insert(lyr_info)
                 if (
                     file_type == "File Geodatabase"
                     and "filegdb"
@@ -2402,7 +2416,7 @@ class FeatureLayerCollectionManager(_GISResource):
                         orig_item.layers[index].edit_features(adds=features)
                     new_item.delete()
             elif lyr_info["type"] == "Table":
-                index = _perform_insert(self, lyr_info)
+                index = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
                     upload_format=upload_format,

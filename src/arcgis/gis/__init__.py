@@ -8517,15 +8517,12 @@ class ContentManager(object):
         overwrite              Optional boolean. If True, the specified feature layer for the specified
                                feature service will be overwritten.
         ---------------------  --------------------------------------------------------------------------
-        append                 Optional boolean. If True, the SeDF will be appended to the specified
-                               feature service.
-        ---------------------  --------------------------------------------------------------------------
-        service                Dictionary that is required if `overwrite = True` or `append = True`.
+        service                Dictionary that is required if `overwrite = True`.
                                Dictionary with two keys: "FeatureServiceId" and "layers".
                                "featureServiceId" value is a string of the feature service id that the layer
                                belongs to.
                                "layer" value is an integer depicting the index value of the layer to
-                               overwrite. For append, None can be passed as value.
+                               overwrite.
         =====================  ==========================================================================
 
 
@@ -8548,8 +8545,7 @@ class ContentManager(object):
 
         # Check which workflow to do
         overwrite = kwargs.get("overwrite", False)
-        insert = kwargs.get("append", False)
-        if _geo._is_geoenabled(df) or (overwrite or insert):
+        if _geo._is_geoenabled(df) or (overwrite):
             # Item Workflow
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
