@@ -2366,23 +2366,30 @@ class FeatureLayerCollectionManager(_GISResource):
                 "layerInfo": {"capabilities": "Query"},
                 "targetSR": {"wkid": 102100, "latestWkid": 3857},
             }
-            source_info = None
+            ft = (
+                "filegeodatabase"
+                if file_type == "File Geodatabase"
+                else file_type.lower()
+            )
+            source_info = self._gis.content.analyze(item=file_item, file_type=ft)[
+                "publishParameters"
+            ]
 
-        # Publish the item
-        try:
-            new_item = file_item.publish(publish_parameters=publish_parameters)
-        except Exception as e:
-            if "already exists" in str(e):
-                # If the item already exists rename it and try again
-                file_item.update(
-                    item_properties={"title": name + "_" + str(uuid.uuid4())}
-                )
-                publish_parameters["name"] = os.path.splitext(file_item["name"])[0]
-                new_item = file_item.publish(publish_parameters=publish_parameters)
+        # # Publish the item
+        # try:
+        #     new_item = file_item.publish(publish_parameters=publish_parameters)
+        # except Exception as e:
+        #     if "already exists" in str(e):
+        #         # If the item already exists rename it and try again
+        #         file_item.update(
+        #             item_properties={"title": name + "_" + str(uuid.uuid4())[0:5]}
+        #         )
+        #         publish_parameters["name"] = os.path.splitext(file_item["title"])[0]
+        #         new_item = file_item.publish(publish_parameters=publish_parameters)
         try:
             # Insert layer or table
-            if len(new_item.layers) > 0:
-                publish_parameters = new_item.layers[0].properties
+            if len(source_info["layers"]) > 0:
+                publish_parameters = source_info["layers"][0]
                 index = _perform_insert(self, publish_parameters)
                 if (
                     file_type == "File Geodatabase"
@@ -2398,9 +2405,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     orig_item.layers[index].append(
                         item_id=file_item.id,
                         upload_format=upload_format,
+                        source_table_name=publish_parameters["name"],
                     )
                 elif file_type == "File Geodatabase":
                     # When filegdb not supported through append, use edit features
+                    new_item = file_item.publish(publish_parameters=publish_parameters)
                     layer = new_item.layers[0]
                     features = layer.query().features
                     if self._gis._is_agol or (
@@ -2416,8 +2425,9 @@ class FeatureLayerCollectionManager(_GISResource):
                         )
                     else:
                         orig_item.layers[index].edit_features(adds=features)
-            elif len(new_item.tables) > 0:
-                publish_parameters = new_item.tables[0].properties
+                    new_item.delete()
+            elif len(source_info["tables"]) > 0:
+                publish_parameters = source_info["tables"][0]
                 index = _perform_insert(self, publish_parameters)
                 ItemDependency(orig_item).add("itemid", file_item.id)
                 orig_item.tables[index].append(
@@ -2429,10 +2439,9 @@ class FeatureLayerCollectionManager(_GISResource):
             # Add relationship between service and data
             orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
             # Remove newly published item since inserted into service
-            new_item.delete()
         except Exception as e:
             # Remove newly published item since inserted into service
-            new_item.delete()
+            self._gis.content.delete_items([file_item], permanent=True)
             raise e
         return orig_item
 
