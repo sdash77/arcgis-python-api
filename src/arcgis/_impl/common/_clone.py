@@ -3151,6 +3151,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             if x in supported_capabilities
                                         ]
                                     )
+                                new_fields = new_props["fields"]
+                                for i in range(len(new_fields)):
+                                    if og_layer["fields"][i]["editable"] == False:
+                                        new_fields[i]["editable"] = False
+                                update_properties["fields"] = new_fields
                                 break
                         new_layer.manager.update_definition(update_properties)
                     temp_export.delete()
