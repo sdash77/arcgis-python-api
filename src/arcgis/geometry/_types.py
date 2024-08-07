@@ -3283,8 +3283,6 @@ class Point(Geometry):
         gj: dict = {"type": "Point", "coordinates": [self["x"], self["y"]]}
         if "z" in self:
             gj["coordinates"].append(self["z"])
-        if "m" in self:
-            gj["coordinates"].append(self["m"])
         return gj
 
 
