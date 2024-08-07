@@ -2,7 +2,7 @@ import time
 import unittest
 from arcgis.features.layer import FeatureLayerCollection
 from arcgis.gis import GIS
-from . import parcel_fabric_utils as pfutils
+from tests.integration.parcels import parcel_fabric_utils as pfutils
 
 
 class TestVersionManagementSQL(unittest.TestCase):
