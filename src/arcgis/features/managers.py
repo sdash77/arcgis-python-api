@@ -2352,60 +2352,35 @@ class FeatureLayerCollectionManager(_GISResource):
             ).result()
 
         # Analyze the file to get publish parameters
-        if file_type == "CSV" or file_type == "Excel":
-            publish_parameters = self._gis.content.analyze(item=file_item)[
-                "publishParameters"
-            ]
-            source_info = publish_parameters
-        else:
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": "Query"},
-                "targetSR": {"wkid": 102100, "latestWkid": 3857},
-            }
-            ft = (
-                "filegeodatabase"
-                if file_type == "File Geodatabase"
-                else file_type.lower()
-            )
-            source_info = self._gis.content.analyze(item=file_item, file_type=ft)[
-                "publishParameters"
-            ]
+        analyze_ft = file_type.lower().replace(" ", "")
+        publish_parameters = self._gis.content.analyze(
+            item=file_item, file_type=analyze_ft
+        )["publishParameters"]
 
-        # # Publish the item
-        # try:
-        #     new_item = file_item.publish(publish_parameters=publish_parameters)
-        # except Exception as e:
-        #     if "already exists" in str(e):
-        #         # If the item already exists rename it and try again
-        #         file_item.update(
-        #             item_properties={"title": name + "_" + str(uuid.uuid4())[0:5]}
-        #         )
-        #         publish_parameters["name"] = os.path.splitext(file_item["title"])[0]
-        #         new_item = file_item.publish(publish_parameters=publish_parameters)
+        # Get the layer info which will be used to append the data
+        if file_type == "CSV" or file_type == "Excel":
+            lyr_info = publish_parameters["layerInfo"]
+        else:
+            lyr_info = publish_parameters["layers"][0]
+
         try:
             # Insert layer or table
-            if len(source_info["layers"]) > 0:
-                publish_parameters = source_info["layers"][0]
-                index = _perform_insert(self, publish_parameters)
+            if file_type == "File Geodatabase":
+                upload_format = "filegdb"
+            else:
+                upload_format = file_type.lower()
+            if lyr_info["type"] == "Feature Layer":
+                index = _perform_insert(self, lyr_info)
                 if (
                     file_type == "File Geodatabase"
                     and "filegdb"
                     in orig_item.layers[index].properties.supportedAppendFormats
                 ) or file_type != "File Geodatabase":
                     # Workflow for all file types and file geo databases that support append
-                    if file_type == "File Geodatabase":
-                        upload_format = "filegdb"
-                    else:
-                        upload_format = file_type.lower()
-                    ItemDependency(orig_item).add("itemid", file_item.id)
                     orig_item.layers[index].append(
                         item_id=file_item.id,
                         upload_format=upload_format,
-                        source_table_name=publish_parameters["name"],
+                        source_table_name=lyr_info["name"],
                     )
                 elif file_type == "File Geodatabase":
                     # When filegdb not supported through append, use edit features
@@ -2426,14 +2401,12 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         orig_item.layers[index].edit_features(adds=features)
                     new_item.delete()
-            elif len(source_info["tables"]) > 0:
-                publish_parameters = source_info["tables"][0]
-                index = _perform_insert(self, publish_parameters)
-                ItemDependency(orig_item).add("itemid", file_item.id)
+            elif lyr_info["type"] == "Table":
+                index = _perform_insert(self, lyr_info)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
-                    upload_format=file_type,
-                    source_info=source_info,
+                    upload_format=upload_format,
+                    source_info=lyr_info,
                 )
 
             # Add relationship between service and data
