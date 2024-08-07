@@ -1,48 +1,29 @@
-import sys
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-from utils.decorators import integration_test
+from arcgis.gis.admin import PartneredCollabManager
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
+from types import GeneratorType
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+enable_verbose_logging()
 
 
-profiles = ["your_online_admin_profile"]
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
-
+@profiles.admin_agol
 @integration_test
 class TestPartneredCollaboration(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.gis = GIS(
-            profile="your_online_admin_profile", verify_cert=False, proxy=PROXIES
+    def setUp(self):
+        self.gis = GIS(
+            profile="your_online_admin_profile", verify_cert=False, proxy=self.proxies
         )
-        cls.dest_url: str = "https://pythonapi.maps.arcgis.com/home/index.html"
+        self.dest_url: str = "https://pythonapi.maps.arcgis.com/home/index.html"
 
     def test_admin_property(self):
-        from arcgis.gis.admin import PartneredCollabManager
-
         gis: GIS = self.gis
         assert gis.users.me.role == "org_admin"
         assert gis.admin.partnered_collaboration
         assert isinstance(gis.admin.partnered_collaboration, PartneredCollabManager)
 
     def test_partnered_collab_properties(self):
-        from types import GeneratorType
-
         collab = self.gis.admin.partnered_collaboration
         assert collab.properties
         assert isinstance(collab.coordinators, GeneratorType)

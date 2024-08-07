@@ -1,31 +1,26 @@
-import sys
-import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from utils._logging import enable_verbose_logging
 from utils.decorators import profiles, integration_test
 
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging()
 
 
 @profiles.admin_agol
 @integration_test
-class TestAcceptPartneredCollab(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.gis_dest = GIS(
+class TestPartneredCollabAccept(unittest.TestCase):
+    def setUp(self):
+        self.gis_dest = GIS(
             username='python_collaboration',
             password='FrankTheTank1!',
             verify_cert=False,
-            proxy=PROXIES,
+            proxy=self.proxies,
         )
-        cls.admin_source = cls.gis.admin
-        pc_source = cls.admin_source.partnered_collaboration
+        self.admin_source = self.gis.admin
+        pc_source = self.admin_source.partnered_collaboration
 
-        cls.admin_dest = cls.gis_dest.admin
+        self.admin_dest = self.gis_dest.admin
         pc_dest = cls.admin_dest.partnered_collaboration
 
         for c in pc_dest.collaborations():
@@ -41,10 +36,11 @@ class TestAcceptPartneredCollab(unittest.TestCase):
         if len(collabs) > 0:
             assert collabs[0].is_active in [True, False]
             assert collabs[0].accept(True)
+        else:
+            self.skipTest("No collaborations to accept")
 
-    @classmethod
-    def tearDownClass(cls):
-        pc_dest = cls.admin_dest.partnered_collaboration
+    def tearDown(self):
+        pc_dest = self.admin_dest.partnered_collaboration
 
         for c in pc_dest.collaborations():
             c.delete()

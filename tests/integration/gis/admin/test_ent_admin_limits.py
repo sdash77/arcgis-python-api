@@ -1,44 +1,13 @@
-import sys
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
+enable_verbose_logging()
 
 
-profiles = ['your_enterprise_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
-
-
+@profiles.admin_enterprise
 @integration_test
 class TestEnterpriseLimits(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        username = "PAPIadmin"
-
-        password = "PAPIletmein01"
-
-        cls.gis = GIS(
-            url="https://rqawinbi01pt.ags.esri.com/gis",
-            username=username,
-            password=password,
-            verify_cert=False,
-            proxy=PROXIES,
-        )
-
     def test_get_limits(self):
         system = self.gis.admin.system
         assert system.limits
