@@ -680,7 +680,6 @@ class DataStoreManager(BaseServer):
         conn_str: str,
         object_store: str,
         provider: str,
-        managed: bool = False,
         folder: Optional[str] = None,
     ) -> Datastore:
         """
@@ -698,11 +697,6 @@ class DataStoreManager(BaseServer):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be amazon or azure.
-        ---------------     --------------------------------------------------------------------
-        managed             Optional boolean. When the data store is server only, the database
-                            is entirely managed and owned by the server and cannot be accessed
-                            by the publisher directly. When this option is chosen, the
-                            managed property should be set to true. Otherwise it is false.
         ---------------     --------------------------------------------------------------------
         folder              Optional string. For some Azure cloud stores, an optional folder
                             can be specified.
