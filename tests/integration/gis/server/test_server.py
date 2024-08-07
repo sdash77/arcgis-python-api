@@ -1,30 +1,31 @@
-"""
-Tests Related to Server API Frame
-"""
 import unittest
 import pandas as pd
-import os, shutil
+from arcgis.gis.server import ServicesDirectory
+from arcgis.gis.server import ServerManager
+from arcgis.gis.server import Server
+from arcgis.gis.server.admin._data import Datastore, DataStoreManager
+from arcgis.gis.server.admin._info import Info
+from arcgis.gis.server.admin._kml import KML
+from arcgis.gis.server.admin._logs import LogManager
+from arcgis.gis.server.admin._machines import Machine, MachineManager
+from arcgis.gis.server.admin._security import (
+    Role,
+    RoleManager,
+    Security,
+    User,
+    UserManager,
+)
+from arcgis.gis.server.admin._services import Extension, Service, ServiceManager
+from arcgis.gis.server.admin._uploads import Uploads
+from arcgis.gis.server.admin._usagereports import Report, ReportManager
+from arcgis.features import FeatureLayerCollection
+from arcgis._impl.common._isd import InsensitiveDict
+from utils.decorators import integration_test, profiles
 
-unittest.TestLoader.sortTestMethodsUsing = None
 
-try:
-    import arcpy
-
-    HAS_ARCPY = True
-except:
-    HAS_ARCPY = False
-URLS = [
-    "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services",  # 10.1
-    "http://sampleserver2.arcgisonline.com/ArcGIS/rest/services",  # 9.31
-    "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services",  # 10.05
-    "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services",  # 10.02
-    "https://sampleserver6.arcgisonline.com/arcgis/rest",  # 10.41
-    # "https://pythonapi.playground.esri.com/server/rest/",  # 10.91
-    # "https://rextapilnxsvr01.esri.com/server/rest/services",  # 11.1
-]
 ENT_SETS = [
     {
-        "url": "https://pythonapi.playground.esri.com/server/rest/",
+        "url": "https://pythonapitest.playground.esri.com/server/rest/",
         "portal": "https://pythonapi.playground.esri.com/portal",
         "username": "ServerTestAdmin",
         "password": "y0ugot$erved!",
@@ -36,7 +37,7 @@ ENT_SETS = [
         "portal": "",
         "username": "siteadmin",
         "password": "esri.agp2",
-        "server": "11.1 standalone",
+        "server": "11.4 standalone",
         "token": "https://rextapilnxsvr01.esri.com/server/tokens/",
     },
 ]
@@ -70,791 +71,583 @@ ALT_SETS = [
     },
 ]
 
-# ENT_SETS.append(ALT_SETS[0])
-# ENT_SETS.append(ALT_SETS[1])
-# ENT_SETS = [ALT_SETS[2]]
 
-import os
-import arcgis
-from arcgis.gis import GIS
-from arcgis.gis.server import ServicesDirectory
-from arcgis.gis.server import ServerManager
-from arcgis.gis.server import Server
-
-from arcgis.gis.server.admin._clusters import Cluster, ClusterProtocol, Clusters
-from arcgis.gis.server.admin._data import Datastore, DataStoreManager
-from arcgis.gis.server.admin._info import Info
-from arcgis.gis.server.admin._kml import KML
-from arcgis.gis.server.admin._logs import LogManager
-from arcgis.gis.server.admin._machines import Machine, MachineManager
-from arcgis.gis.server.admin._mode import Mode
-from arcgis.gis.server.admin._security import (
-    Role,
-    RoleManager,
-    Security,
-    User,
-    UserManager,
-)
-from arcgis.gis.server.admin._services import Extension, Service, ServiceManager
-from arcgis.gis.server.admin._uploads import Uploads
-from arcgis.gis.server.admin._usagereports import Report, ReportManager
-from utils.decorators import integration_test
-
-#############################################################################
-AGOL_URL = None
-AGOL_USERNAME = None
-AGOL_PASSWORD = None
-
-if AGOL_USERNAME and AGOL_PASSWORD:
-
-    # @unittest.SkipTest
-    @integration_test
-    class ServerAGOLTest(unittest.TestCase):
-        """test the AGOL Server functionality"""
-
-        @classmethod
-        def setUpClass(cls):
-            cls._gis = GIS(
-                url=AGOL_URL,
-                username=AGOL_USERNAME,
-                password=AGOL_PASSWORD,
-                verify_cert=False,
-            )
-
-        # @unittest.SkipTest
-        def test_reports(self):
-            res = []
-            urls = self._gis._con.get(
-                path="%s/portals/%s/urls"
-                % (self._gis._portal.resturl, self._gis.properties.id),
-                params={"f": "json"},
-            )
-            url = [
-                "%s://%s/%s/arcgis/rest/services"
-                % (
-                    "https",
-                    urls["urls"]["features"]["https"][0],
-                    self._gis.properties.id,
-                )
-            ]
-            for server in url:
-                c = ServicesDirectory(
-                    url=server, portal_connection=self._gis, is_agol=True
-                )
-                break
-            html = c.report()
-            res.append(isinstance(html, str))
-            df = c.report(as_html=False)
-            res.append(isinstance(df, pd.DataFrame))
-            self.assertTrue(all(res))
-
-        # @unittest.SkipTest
-        def test_get_found(self):
-            from arcgis.features import FeatureLayerCollection
-
-            res = []
-            urls = self._gis._con.get(
-                path="%s/portals/%s/urls"
-                % (self._gis._portal.resturl, self._gis.properties.id),
-                params={"f": "json"},
-            )
-            url = [
-                "%s://%s/%s/arcgis/rest/services"
-                % (
-                    "https",
-                    urls["urls"]["features"]["https"][0],
-                    self._gis.properties.id,
-                )
-            ]
-            for server in url:
-                c = ServicesDirectory(
-                    url=server, portal_connection=self._gis, is_agol=True
-                )
-                break
-            s = c.get(name="06_14_2016__Info_Lookup_Link")
-            if s is None:
-                s = c.get(name="02_2016__Gas_Transmission_Facility_Layers_PD")
-            if s:
-
-                self.assertIsInstance(s, FeatureLayerCollection)
-
-        # @unittest.SkipTest
-        def test_get_not_found(self):
-            from arcgis.features import FeatureLayerCollection
-
-            res = []
-            urls = self._gis._con.get(
-                path="%s/portals/%s/urls"
-                % (self._gis._portal.resturl, self._gis.properties.id),
-                params={"f": "json"},
-            )
-            url = [
-                "%s://%s/%s/arcgis/rest/services"
-                % (
-                    "https",
-                    urls["urls"]["features"]["https"][0],
-                    self._gis.properties.id,
-                )
-            ]
-            for server in url:
-                c = ServicesDirectory(
-                    url=server, portal_connection=self._gis, is_agol=True
-                )
-                break
-            s = c.get(name="IDONTEXIST")
-            self.assertIsNone(s)
-
-        # @unittest.SkipTest
-        def test_agol_server(self):
-            res = []
-            urls = self._gis._con.get(
-                path="%s/portals/%s/urls"
-                % (self._gis._portal.resturl, self._gis.properties.id),
-                params={"f": "json"},
-            )
-            url = [
-                "%s://%s/%s/arcgis/rest/services"
-                % (
-                    "https",
-                    urls["urls"]["features"]["https"][0],
-                    self._gis.properties.id,
-                )
-            ]
-            for server in url:
-                res.append(
-                    isinstance(
-                        ServicesDirectory(
-                            url=server, portal_connection=self._gis, is_agol=True
-                        ),
-                        ServicesDirectory,
-                    )
-                )
-            self.assertTrue(all(res))
-
-
-#############################################################################
-# @unittest.SkipTest
+@profiles.admin_agol
 @integration_test
-class ServerPortalTest(unittest.TestCase):
-    """tests the connection to arcgis server object from portal"""
+class TestServerAGOL(unittest.TestCase):
+    """test the AGOL Server functionality"""
+
+    def setUp(self):
+        self.urls = self.gis._con.get(
+            path="%s/portals/%s/urls"
+                 % (self.gis._portal.resturl, self.gis.properties.id),
+            params={"f": "json"},
+        )
+        self.url = [
+            "%s://%s/%s/arcgis/rest/services"
+            % (
+                "https",
+                self.urls["urls"]["features"]["https"][0],
+                self.gis.properties.id,
+            )
+        ]
+
+        sd_list = []
+        for service in self.url:
+            sd = ServicesDirectory(url=service, portal_connection=self.gis, is_agol=True)
+            assert isinstance(sd, ServicesDirectory)
+            sd_list.append(sd)
+        self.sd = sd_list[0]
+
+    def test_reports(self):
+        """tests getting html and dataframe reports from ServiceDirectory class"""
+        html = self.sd.report()
+        assert isinstance(html, str)
+
+        df = self.sd.report(as_html=False)
+        assert isinstance(df, pd.DataFrame)
+
+    def test_get_exist_service(self):
+        """tests getting existing service"""
+        service = self.sd.get(name="NYCHotels")
+        assert isinstance(service, FeatureLayerCollection)
+
+    def test_get_service_not_found(self):
+        """tests getting non-existing service"""
+        service = self.sd.get(name="IDONTEXIST")
+        self.assertIsNone(service)
+
+
+@unittest.skip("waiting for standalone server setup")
+@integration_test
+class TestServerStandalone(unittest.TestCase):
+    """tests the connection to arcgis server object (standalone)"""
 
     def test_server_portal_not_gis(self):
-        """tests creating a Server object"""
-        from arcgis.gis.server import Server
+        """tests creating a Server object without gis - standalone server"""
 
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                s = Server(
-                    url=ent["url"],
-                    gis=None,
-                    username=ent["username"],
-                    password=ent["password"],
-                    tokenurl=ent["token"],
-                )
-                self.assertIsInstance(s, Server)
+        # TODO: get standalone server url and generateToken url, create Server object, and assert Server object
 
-    # @unittest.SkipTest
-    def test_portal_get_server_manager(self):
+
+@profiles.admin_enterprise
+@integration_test
+class TestServerFederated(unittest.TestCase):
+    """Tests arcgis server object (federated)"""
+
+    def test_get_server_from_server_manager(self):
+        """tests getting server object through gis.server.ServerManager"""
+
+        sm = self.gis.admin.servers
+        self.assertIsInstance(sm, ServerManager)
+
+        server = sm.get(role="hosting_server")[0]
+        self.assertIsInstance(server, Server)
+
+    def test_get_server_from_server(self):
+        """tests getting server object through gis.server.Server with gis param"""
+
+        server = Server(url=self.gis._url.replace("/portal/", "/server/admin"), gis=self.gis)
+        self.assertIsInstance(server, Server)
+
+    def test_get_server_from_server_connection(self):
+        """tests getting server object through gis.server.Server with gis connection param"""
+
+        server = Server(url=self.gis._url.replace("/portal/", "/server/admin"), portal_connection=self.gis._portal.con)
+        self.assertIsInstance(server, Server)
+
+
+@profiles.admin_enterprise
+# TODO: add stand-alone credentials
+@integration_test
+class TestServerManager(unittest.TestCase):
+    """tests ServerManager class"""
+
+    def test_server_manager(self):
         """tests getting server manager object"""
-        from arcgis.gis import GIS
-        from arcgis.gis.server import ServerManager, Server
+        self.assertIsInstance(self.gis.admin.servers, ServerManager)
 
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                gis = GIS(
-                    url=ent["portal"],
-                    username=ent["username"],
-                    password=ent["password"],
-                )
-                self.assertIsInstance(gis.admin.servers, ServerManager)
-
-    # @unittest.SkipTest
     def test_list_servers(self):
-        """tests the server listing function on server manager"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                gis = GIS(
-                    url=ent["portal"],
-                    username=ent["username"],
-                    password=ent["password"],
-                )
-                sm = gis.admin.servers
-                self.assertTrue(all(sm.list()))
+        """tests listing servers"""
+        sm = self.gis.admin.servers
+        server_list = sm.list()
+        self.assertIsInstance(server_list, list)
 
     # @unittest.SkipTest
     def test_validate(self):
-        """tests validate servers"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                gis = GIS(
-                    url=ent["portal"],
-                    username=ent["username"],
-                    password=ent["password"],
-                )
-                sm = gis.admin.servers
-                self.assertIsInstance(sm.validate(), (bool, int))
+        """tests validating servers"""
+        sm = self.gis.admin.servers
+        validation = sm.validate()
+        self.assertIsInstance(validation, (bool, int))
+
+    def test_properties(self):
+        """tests ServerManager properties"""
+        sm = self.gis.admin.servers
+        properties = sm.properties
+        self.assertIsInstance(properties, InsensitiveDict)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise_and_agol
+# TODO: add stand-alone credentials
 @integration_test
-class ServerCatalogCreationTests(unittest.TestCase):
+class TestServiceDirectory(unittest.TestCase):
     """
-    test server login
+    Tests ServiceDirectory class
     """
 
-    # ----------------------------------------------------------------------
-    def test_931_catalog(self):
-        """catalog 931"""
-        url_931 = URLS[1]
-        server = ServicesDirectory(url=url_931)
-        assert server.properties
-        self.assertIsInstance(server, ServicesDirectory)
+    @classmethod
+    def setUpClass(cls):
+        cls.online_urls = [
+            "https://sampleserver5.arcgisonline.com/arcgis/rest/",  # 10.91
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/",  # 10.91
+        ]
 
-    # ----------------------------------------------------------------------
-    @unittest.skip("url broken")
-    def test_101_catalog(self):
-        """catalog 10.1 Anonymous"""
-        url_101 = URLS[0]
-        server = ServicesDirectory(url=url_101)
-        assert server.properties
-        self.assertIsInstance(server, ServicesDirectory)
-
-    # ----------------------------------------------------------------------
-    @unittest.skip("url broken")
-    def test_1005_catalog(self):
-        """catalog 10.05 Anonymous"""
-        url_1005 = URLS[2]
-        server = ServicesDirectory(url=url_1005)
-        assert server.properties
-        self.assertIsInstance(server, ServicesDirectory)
-
-    # ----------------------------------------------------------------------
-    def test_1041_catalog(self):
-        """catalog 10.41"""
-        url_1041 = URLS[4]
-        server = ServicesDirectory(url=url_1041)
-        assert server.properties
-        self.assertIsInstance(server, ServicesDirectory)
-
-    # ----------------------------------------------------------------------
-    def test_ent_catalog_anon(self):
-        """catalog of recent enterprise versions anonymous"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                ent_url = ent["url"]
-                server = ServicesDirectory(url=ent_url)
+    def test_service_directory(self):
+        """test service directories for online and enterprise"""
+        if self.gis._is_agol:
+            for url in self.online_urls:
+                server = ServicesDirectory(url=url)
                 self.assertIsInstance(server, ServicesDirectory)
+        else:
+            url = self.gis.url.replace("portal/", "server/rest/")
+            server = ServicesDirectory(url=url)
+            self.assertIsInstance(server, ServicesDirectory)
 
-    # ----------------------------------------------------------------------
-    def test_ent_catalog_token_login(self):
-        """catalog of recent enterprise versions with token"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"],
-                    username=ent["username"],
-                    password=ent["password"],
-                    tokenurl=ent["token"],
-                )
-                self.assertIsInstance(server, ServicesDirectory)
+    def test_ent_service_directory_anonymous(self):
+        """tests access enterprise ServiceDirectory anonymously"""
+        server = ServicesDirectory(url=self.gis.url)
+        self.assertIsInstance(server, ServicesDirectory)
+
+    def test_ent_service_directory_token(self):
+        """access enterprise ServiceDirectory catalog token"""
+        if not self.gis._is_agol:
+            server = ServicesDirectory(
+                url=self.gis.url.replace("portal/", "server/rest/"),
+                username=self.gis._username,
+                password=self.gis._password,
+                tokenurl=self.gis.resturl + "generateToken/",
+            )
+            self.assertIsInstance(server, ServicesDirectory)
 
     # ---------------------------------------------------------------------
-    def test_ent_catalog_admin(self):
+    def test_ent_service_directory_admin(self):
         """test getting the admin object to server from direct connection"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"],
-                    username=ent["username"],
-                    password=ent["password"],
-                    tokenurl=ent["token"],
-                )
-                self.assertIsInstance(server.admin, Server)
+        if not self.gis._is_agol:
+            server = ServicesDirectory(
+                url=self.gis.url.replace("portal/", "server/rest/"),
+                username=self.gis._username,
+                password=self.gis._password,
+                tokenurl=self.gis.resturl + "generateToken/",
+            )
+            self.assertIsInstance(server.admin, Server)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone server credentials
 @integration_test
-class ServerPropertyTest(unittest.TestCase):
+class TestServerProperty(unittest.TestCase):
     """
     test server login & properties on class
     """
 
-    # ----------------------------------------------------------------------
-    def test_content(self):
-        """catalog enterprise content"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                # print(ent["username"])
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                ).admin
-                self.assertIsInstance(server, Server)
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
 
-    def test_data_storemanager(self):
-        """catalog enterprise data"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin.datastores
-                self.assertIsInstance(ds, DataStoreManager)
+    def test_service_directory(self):
+        """enterprise server services"""
+        server_content = self.server_manager.content
+        self.assertIsInstance(server_content, ServicesDirectory)
+
+    def test_datastore_manager(self):
+        """enterprise server datastore manager"""
+        ds = self.server_manager.datastores
+        self.assertIsInstance(ds, DataStoreManager)
 
     def test_info(self):
-        """catalog enterprise info"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin._info
-                self.assertIsInstance(ds, Info)
+        """enterprise server info"""
+        info = self.server_manager._info
+        self.assertIsInstance(info, Info)
 
     def test_kml(self):
-        """catalog enterprise kml"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin._kml
-                self.assertIsInstance(ds, KML)
+        """enterprise server kml"""
+        kml = self.server_manager._kml
+        self.assertIsInstance(kml, KML)
 
     def test_log(self):
-        """catalog enterprise data"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin.logs
-                self.assertIsInstance(ds, LogManager)
+        """enterprise server logs"""
+        lm = self.server_manager.logs
+        self.assertIsInstance(lm, LogManager)
 
     def test_services(self):
-        """catalog enterprise data"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin.services
-                self.assertIsInstance(ds, ServiceManager)
+        """enterprise server service manager"""
+        service_mgr = self.server_manager.services
+        self.assertIsInstance(service_mgr, ServiceManager)
 
     def test_usage(self):
-        """catalog enterprise data"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                ).admin
-                ds = server.usage
-                self.assertIsInstance(ds, ReportManager)
+        """enterprise server report manager"""
+        report_mgr = self.server_manager.usage
+        self.assertIsInstance(report_mgr, ReportManager)
 
     def test_users(self):
-        """catalog enterprise data"""
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                ds = server.admin.users
-                self.assertIsInstance(ds, UserManager)
+        """enterprise server user manager"""
+        user_mgr = self.server_manager.users
+        self.assertIsInstance(user_mgr, UserManager)
 
 
-############################################################################
-
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone credentials
+# TODO: test online?
 @integration_test
-class catalog_info_test(unittest.TestCase):
+class TestServerInfo(unittest.TestCase):
     """
-    test server catalog view for a server
+    Tests Server Info property
     """
 
-    # ----- No Auth Test ---------------------------------------------------
-    def test_info_noauth(self):
-        if hasattr(ServicesDirectory(url=URLS[0]), "admin"):
-            self.assertTrue(False)
-        self.assertTrue(True)
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
 
-    # -------- Auth Test ---------------------------------------------------
-    # @unittest.SkipTest
-    def test_info_auth(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                info = server.admin._info
-                self.assertIsInstance(info, Info)
+    def test_get_info(self):
+        """tests getting server info"""
+        info = self.server_manager._info
+        self.assertIsInstance(info, Info)
 
-    # @unittest.SkipTest
     def test_info_auth_timezones(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                info = server.admin._info
-                self.assertIsInstance(info.available_time_zones(), dict)
+        """tests get available time zones"""
+        info = self.server_manager._info
+        available_time_zones = info.available_time_zones()
+        self.assertIsInstance(available_time_zones, dict)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone server
 @integration_test
-class server_logs_test(unittest.TestCase):
+class TestServerLog(unittest.TestCase):
     """
-    test server catalog view for a server
+    Tests Server Log Manager class
     """
 
-    # -------- Auth Test ---------------------------------------------------
-    def test_logs_auth(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                logs = server.admin.logs
-                self.assertIsInstance(logs, LogManager)
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
+
+    def test_log_manager(self):
+        """tests getting log manager object"""
+        logs = self.server_manager.logs
+        self.assertIsInstance(logs, LogManager)
 
     def test_query_logs(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                logs = server.admin.logs
-                results = logs.query()
-                self.assertIsInstance(results, dict)
-                results2 = logs.query(max_records_return=5002)
-                self.assertIsInstance(results2, dict)
+        """tests querying logs with specific parameters"""
+        logs = self.server_manager.logs
+
+        results = logs.query()
+        self.assertIsInstance(results, dict)
+
+        results_max_record = logs.query(max_records_return=5002)
+        self.assertIsInstance(results_max_record, dict)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone server
 @integration_test
-class server_machines_test(unittest.TestCase):
+class TestServerMachine(unittest.TestCase):
     """
-    test server machines module
+    Tests Server Machine Manager class
     """
 
-    # -------- Auth Test ---------------------------------------------------
-    def test_machines_auth(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                machines = server.admin.machines
-                isinstance(machines, MachineManager)
-                self.assertIsInstance(machines, MachineManager)
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
 
-    def test_machines(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                machines = server.admin.machines
-                isinstance(machines, MachineManager)
-                self.assertIsInstance(machines.list(), (list, tuple))
+    def test_machine_manager(self):
+        """tests getting machine manager object"""
+        machines = self.server_manager.machines
+        self.assertIsInstance(machines, MachineManager)
+
+    def test_list_machines(self):
+        """tests listing machines"""
+        machines = self.server_manager.machines
+        machine_list = machines.list()
+        self.assertIsInstance(machine_list, (list, tuple))
 
     def test_get_machine(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                machines = server.admin.machines
-                isinstance(machines, MachineManager)
-                self.assertIsInstance(
-                    machines.get(
-                        machine_name=machines.list()[0].properties.machineName
-                    ),
-                    Machine,
-                )
+        """tests getting one of the machines"""
+        machines = self.server_manager.machines
+        machine_name = machines.list()[0].properties.machineName
+        machine = machines.get(machine_name=machine_name)
+        self.assertIsInstance(machine, Machine)
+        self.assertEquals(machine.properties.machineName, machine_name)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone server
 @integration_test
-class server_usagereports_test(unittest.TestCase):
+class TestServerReport(unittest.TestCase):
     """
-    test server usage module
+    Tests Server Report class
     """
 
-    # -------- Auth Test ---------------------------------------------------
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
+
     def test_reports(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                usage = server.admin.usage
-                isinstance(usage, ReportManager)
-                self.assertIsInstance(usage.list(), (list, tuple))
+        """tests listing server usage report"""
+        usage = self.server_manager.usage
+        self.assertIsInstance(usage, ReportManager)
 
-    def test_metrics(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                usage = server.admin.usage
-                self.assertIsNotNone(usage.properties.metrics)
+        report_list = usage.list()
+        self.assertIsInstance(report_list, (list, tuple))
+
+    def test_usage_metrics(self):
+        """tests getting server usage report metrics"""
+        usage = self.server_manager.usage
+        metrics = usage.properties.metrics
+        self.assertIsNotNone(metrics)
 
     def test_usage_settings(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                usage = server.admin.usage
-                self.assertIsNotNone(usage.settings)
+        """tests getting server usage report settings"""
+        usage = self.server_manager.usage
+        settings = usage.settings
+        self.assertIsNotNone(settings)
 
-    def test_report(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                usage = server.admin.usage
-                report = usage.list()[0]
-                self.assertIsInstance(report, Report)
+    def test_get_report(self):
+        """tests listing reports"""
+        usage = self.server_manager.usage
+        report = usage.list()[0]
+        self.assertIsInstance(report, Report)
 
     def test_report_query(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                usage = server.admin.usage
-                report = usage.list()[0]
-                isinstance(report, Report)
-                res = report.query()
-                self.assertIsInstance(res, dict)
+        """tests querying report"""
+        usage = self.server_manager.usage
+        report = usage.list()[0]
+        res = report.query()
+        self.assertIsInstance(res, dict)
 
 
-############################################################################
-# @unittest.SkipTest
+@profiles.admin_enterprise
+# TODO: add standalone server
 @integration_test
-class server_userandusers_test(unittest.TestCase):
+class TestServerSecurity(unittest.TestCase):
     """
-    test server usage module
+    Tests Server Security module - User Manager and Role Manager classes
     """
 
-    # -------- Auth Test ---------------------------------------------------
-    # @unittest.SkipTest
-    def test_users(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                self.assertIsInstance(users, UserManager)
-                isinstance(users, UserManager)
+    @classmethod
+    def setUpClass(cls):
+        cls.server_manager = ServicesDirectory(
+            url=cls.gis.url.replace("portal", "server/rest/"),
+            username=cls.gis._username,
+            password=cls.gis._password,
+        ).admin
 
-    # @unittest.SkipTest
-    def test_create_user(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
+    def test_user_manager(self):
+        """tests getting UserManager object"""
+        users = self.server_manager.users
+        self.assertIsInstance(users, UserManager)
 
-                if len(users.search("PyAPIServerTest123")) > 0:
-                    users.search("PyAPIServerTest123")[0].delete()
-                user = users.create(
-                    username="PyAPIServerTest123",
-                    password="lovetheapi1",
-                    fullname="b d",
-                    email="d@esri.com",
-                    description="account",
-                )
+    def test_create_and_delete_user(self):
+        """tests creating user"""
+        users = self.server_manager.users
 
-                self.assertIsInstance(user, User)
+        # create user
+        user = users.create(
+            username="PyAPIServerTest123",
+            password="lovetheapi1",
+            fullname="b d",
+            email="d@esri.com",
+            description="account",
+        )
 
-    # @unittest.SkipTest
-    def test_get(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                isinstance(users, UserManager)
-                user = users.get(username="PyAPIServerTest123")
-                self.assertIsInstance(user, (list, User))
+        self.assertIsInstance(user, User)
 
-    # @unittest.SkipTest
+        # delete user
+        users.search("PyAPIServerTest123")[0].delete()
+
+    def test_get_user(self):
+        """tests getting user"""
+        users = self.server_manager.users
+
+        # create user
+        res = users.create(
+            username="PyAPIServerTest123",
+            password="lovetheapi1",
+            fullname="b d",
+            email="d@esri.com",
+            description="account",
+        )
+
+        # get user
+        user = users.get(username="PyAPIServerTest123")
+        self.assertIsInstance(user, (list, User))
+
+        # delete user
+        users.search("PyAPIServerTest123")[0].delete()
+
     def test_me(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                self.assertIsInstance(users.me, (str, User))
+        """tests getting current authenticated user"""
+        users = self.server_manager.users
+        self.assertIsInstance(users.me, (str, User))
 
-    # @unittest.SkipTest
-    def test_search(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                self.assertIsInstance(users.search(username="Py"), list)
+    def test_search_user(self):
+        """tests search user by username"""
+        users = self.server_manager.users
 
-    # @unittest.SkipTest
-    def test_roles(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                self.assertIsInstance(roles, RoleManager)
+        # create user
+        res = users.create(
+            username="PyAPIServerTest123",
+            password="lovetheapi1",
+            fullname="b d",
+            email="d@esri.com",
+            description="account",
+        )
+        self.assertIsInstance(users.search(username="Py"), list)
 
-    # @unittest.SkipTest
-    def test_roles_all(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                isinstance(roles, RoleManager)
-                theroles = roles.all()
-                self.assertIsInstance(theroles, list)
+        # delete user
+        users.search("PyAPIServerTest123")[0].delete()
 
-    # @unittest.SkipTest
-    def test_roles_get_role(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                isinstance(roles, RoleManager)
-                role = roles.get_role("admin")
-                self.assertIsInstance(role, (list, Role))
+    def test_update_user(self):
+        """tests update a user"""
+        users = self.server_manager.users
 
-    # @unittest.SkipTest
-    def test_role_create(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                isinstance(roles, RoleManager)
-                if len(roles.get_role("role1")) == 1:
-                    roles.get_role("role1")[0].delete()
-                role = roles.create(name="role1", description="role description")
-                self.assertTrue(role)
+        # create user
+        user = users.create(
+            username="PyAPIServerTest123",
+            password="lovetheapi1",
+            fullname="b d",
+            email="d@esri.com",
+            description="account",
+        )
 
-    # @unittest.SkipTest
-    def test_role_update(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                isinstance(roles, RoleManager)
-                role = roles.get_role("role1")[0]
-                isinstance(role, Role)
-                self.assertIsInstance(
-                    role.update(description="New Description"), (dict, Role, bool)
-                )
+        # update user
+        res = user.update(
+            password="pw12356",
+            full_name="Jane Doe",
+            description="description new",
+            email=None,
+        )
+        self.assertTrue(res)
 
-    # @unittest.SkipTest
-    def test_set_privileges(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                isinstance(roles, RoleManager)
-                role = roles.get_role("role1")[0]
-                isinstance(role, Role)
-                self.assertIsInstance(
-                    role.set_privileges("publish"), (dict, Role, bool)
-                )
+        # delete user
+        users.search("PyAPIServerTest123")[0].delete()
 
-    # ----------------------------------------------------------------------
-    # @unittest.SkipTest
-    def test_user(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                user = users.search(username="PyAPIServerTest123")[0]
-                self.assertIsInstance(user, (dict, User))
+    def test_role_manager(self):
+        """tests getting RoleManager object"""
+        users = self.server_manager.users
+        roles = users.roles
+        self.assertIsInstance(roles, RoleManager)
 
-    # ----------------------------------------------------------------------
-    # @unittest.SkipTest
-    def test_user_update(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                user = users.search(username="PyAPIServerTest123")[0]
-                isinstance(user, User)
-                res = user.update(
-                    password="pw12356",
-                    full_name="Jane Doe",
-                    description="description new",
-                    email=None,
-                )
-                self.assertTrue(res)
+    def test_list_roles(self):
+        """tests getting all roles """
+        users = self.server_manager.users
+        roles = users.roles
+        roles_list = roles.all()
+        self.assertIsInstance(roles_list, list)
 
-    # @unittest.SkipTest
-    def test_user_assign_role(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
-                roles = users.roles
-                user = users.search(username="PyAPIServerTest123")[0]
-                isinstance(user, User)
-                role = roles.get_role("role1")[0]
-                res = user.add_role(role.rolename)
-                self.assertTrue(res)
+    def test_get_role(self):
+        """tests getting a role"""
+        users = self.server_manager.users
+        roles = users.roles
+        role = roles.get_role("admin")
+        self.assertIsInstance(role, (list, Role))
 
-    # --------------------------------------------------------------------------
-    # @unittest.SkipTest
-    def test_user_zdelete(self):
-        for ent in ENT_SETS:
-            with self.subTest(msg="enterprise " + ent["server"]):
-                server = ServicesDirectory(
-                    url=ent["url"], username=ent["username"], password=ent["password"]
-                )
-                users = server.admin.users
+    def test_create_role(self):
+        """tests creating a role"""
+        users = self.server_manager.users
+        roles = users.roles
 
-                if len(users.search("PyAPIServerTest123")) > 0:
-                    resp = users.search("PyAPIServerTest123")[0].delete()
-                    self.assertTrue(resp)
+        # create role
+        if len(roles.get_role("role1")) == 1:
+            roles.get_role("role1")[0].delete()
+        role = roles.create(name="role1", description="role description")
+        self.assertIsInstance(role, Role)
+
+        # delete role
+        roles.get_role("role1")[0].delete()
+
+    def test_update_role(self):
+        """tests update a role"""
+        users = self.server_manager.users
+        roles = users.roles
+
+        # create role
+        if len(roles.get_role("role1")) == 1:
+            roles.get_role("role1")[0].delete()
+        role = roles.create(name="role1", description="role description")
+        self.assertIsInstance(role, Role)
+
+        # update role
+        self.assertIsInstance(
+            role.update(description="New Description"), (dict, Role, bool)
+        )
+
+        # delete role
+        roles.get_role("role1")[0].delete()
+
+    def test_set_role_privileges(self):
+        """tests set role privileges"""
+        users = self.server_manager.users
+        roles = users.roles
+
+        # create role
+        role = roles.create(name="role1", description="role description")
+        self.assertIsInstance(role, Role)
+
+        # set privileges
+        role = roles.get_role("role1")[0]
+        self.assertIsInstance(
+            role.set_privileges("publish"), (dict, Role, bool)
+        )
+
+        # delete role
+        roles.get_role("role1")[0].delete()
+
+    def test_assign_role_to_user(self):
+        """tests assigning a role to a user"""
+        users = self.server_manager.users
+        roles = users.roles
+
+        # create user
+        user = users.create(
+            username="PyAPIServerTest123",
+            password="lovetheapi1",
+            fullname="b d",
+            email="d@esri.com",
+            description="account",
+        )
+
+        # create role
+        role = roles.create(name="role1", description="role description")
+
+        # assign role to user
+        role = roles.get_role("role1")[0]
+        res = user.add_role(role.rolename)
+        self.assertTrue(res)
+
+        # delete user and role
+        users.search("PyAPIServerTest123")[0].delete()
+        roles.get_role("role1")[0].delete()
 
 
-# --------------------------------------------------------------------------
 if __name__ == "__main__":
     unittest.main()

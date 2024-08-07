@@ -229,7 +229,7 @@ class TestSystemManager(unittest.TestCase):
         """tests getting the job details"""
         if not self.system.jobs:
           self.skipTest("No notebook server system jobs configured.")
-        job = self.system.jobs[0]:
+        job = self.system.jobs[0]
         job_details = self.system.job_details(job_id=job['jobId'])
         assert isinstance(job_details, dict)
         assert job_details
