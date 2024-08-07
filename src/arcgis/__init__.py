@@ -1,12 +1,11 @@
-__version__ = "2.3.1"
+__version__ = "2.4.0"
 
 from arcgis.auth.tools import LazyLoader
 
-os = LazyLoader("os")
 from arcgis import env
-from arcgis import features
 
-geoanalytics = LazyLoader("arcgis.geoanalytics")
+os = LazyLoader("os")
+features = LazyLoader("arcgis.features")
 geocoding = LazyLoader("arcgis.geocoding")
 geometry = LazyLoader("arcgis.geometry")
 geoprocessing = LazyLoader("arcgis.geoprocessing")
@@ -14,7 +13,7 @@ network = LazyLoader("arcgis.network")
 raster = LazyLoader("arcgis.raster")
 realtime = LazyLoader("arcgis.realtime")
 schematics = LazyLoader("arcgis.schematics")
-mapping = LazyLoader("arcgis.mapping")
+mapping_layers = LazyLoader("arcgis.layers")
 apps = LazyLoader("arcgis.apps")
 
 if not os.environ.get("DISABLE_ARCGIS_LEARN", None) == "1":
@@ -76,23 +75,11 @@ except Exception as e:
 
 __all__ = [
     "GIS",
-    "geocode",
-    "features",
-    "geoanalytics",
-    "geocoding",
-    "geometry",
-    "geoprocessing",
-    "network",
-    "notebook",
-    "raster",
-    "apps",
-    "realtime",
-    "schematics",
-    "mapping",
-    "learn",
     "aggregate_points",
+    "apps",
     "calculate_composite_index",
     "calculate_density",
+    "choose_best_facilities",
     "connect_origins_to_destinations",
     "create_buffers",
     "create_drive_time_areas",
@@ -102,30 +89,35 @@ __all__ = [
     "derive_new_locations",
     "dissolve_boundaries",
     "enrich_layer",
+    "env",
     "extract_data",
+    "features",
+    "find_centroids",
     "find_existing_locations",
     "find_hot_spots",
     "find_nearest",
+    "find_outliers",
+    "find_point_clusters",
     "find_similar_locations",
-    "find_centroids",
+    "generate_tessellation",
+    "geocode",
+    "geocoding",
+    "geometry",
+    "geoprocessing",
     "interpolate_points",
     "join_features",
+    "learn",
+    "mapping",
     "merge_layers",
+    "network",
+    "notebook",
     "overlay_layers",
     "plan_routes",
-    "summarize_nearby",
+    "raster",
+    "realtime",
+    "schematics",
     "summarize_center_and_dispersion",
+    "summarize_nearby",
     "summarize_within",
     "trace_downstream",
 ]
-
-
-def _jupyter_nbextension_paths():
-    return [
-        {
-            "section": "notebook",
-            "src": "widgets/js/dist",
-            "dest": "arcgis",
-            "require": "arcgis/extension",
-        }
-    ]

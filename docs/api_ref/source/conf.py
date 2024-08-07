@@ -17,21 +17,23 @@ import sys
 import os
 import shlex
 import sphinx_rtd_theme
+from datetime import datetime
 
 # -----------------------------------------------------------------------
 # Edit this for each new release
 # -----------------------------------------------------------------------
 
-# Bump year if it is out of date
-copyright = "2016-2023, Esri"
+copyright = f"2016-{datetime.now().year}, Esri"
 
 # Bump both versions. The short X.Y version.
-version = "2.3.0"
+version = "2.4.0"
 # The full version, including alpha/beta/rc tags.
-release = "2.3.0"
+release = "2.4.0"
 
 # Add currently public version to this list - this is needed for the picker UI
 versions = [
+    "2.3.1",
+    "2.3.0",
     "2.2.0",
     "2.1.0",
     "2.0.1",

@@ -68,6 +68,12 @@ LookUpTable
     :members:
     :show-inheritance:
 
+Template
+--------------------
+.. autoclass:: arcgis.gis.workflowmanager.Template
+    :members:
+    :show-inheritance:
+
 WMRole
 --------------
 .. autoclass:: arcgis.gis.workflowmanager.WMRole

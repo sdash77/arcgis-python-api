@@ -139,3 +139,22 @@ class NotebookDataAccess:
             "fileName": filename,
         }
         return self._gis._con.post(url, params).get("status") == "success"
+
+    # ---------------------------------------------------------------------
+    def create_folder(self, folder: str) -> bool:
+        """
+        create a folder in your `/arcgis/home` notebook workspace directory.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        folder               Required String. The name of the folder to create.
+        ===================  ==========================================================================
+
+        """
+        url = f"{self._url}/notebookworkspace/createFolder"
+        params = {
+            "f": "json",
+            "folderName": folder,
+        }
+        return self._gis._con.post(url, params).get("status") == "success"

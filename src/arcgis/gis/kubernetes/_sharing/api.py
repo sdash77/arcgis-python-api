@@ -154,6 +154,7 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
                 )
             else:
                 if token == api_key:
@@ -182,6 +183,7 @@ class KbertnetesPy(object):
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
                     security_kwargs=self._security_kwargs,
+                    is_hosted_nb_home=kwargs.pop("is_hosted_nb_home", False),
                 )
         # self.get_version(True)
         self.get_properties(True)

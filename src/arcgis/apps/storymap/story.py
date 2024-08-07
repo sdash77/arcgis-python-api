@@ -78,7 +78,7 @@ class StoryMap(object):
         if gis is None:
             # If no gis, find active env
             gis = arcgis.env.active_gis
-            self._gis = gis
+        self._gis = gis
 
         if not (gis and gis._portal.is_logged_in):
             raise ValueError("Must be logged into a Portal Account")
@@ -166,9 +166,12 @@ class StoryMap(object):
         }
 
         # Step 10: Add item to active GIS and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties, text=" ").result()
+
         self._itemid = self._item.itemid
 
         # Step 11: Make a resource call with the template to create json draft needed
@@ -180,7 +183,7 @@ class StoryMap(object):
         )
 
     def _get_storymap_template(self):
-        return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
+        return copy.deepcopy(utils._TEMPLATES["storymap_2"])
 
     def _customize_template(self, template):
         template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
@@ -280,6 +283,11 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
+    )
     def cover_date(self):
         """
         Get/Set the date type shown on the story cover.
@@ -341,28 +349,6 @@ class StoryMap(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.2.0",
-        removed_in="2.3.2",
-        current_version="2.3.1",
-        details="`nodes` property has been deprecated, use `content_list` property instead.",
-    )
-    @property
-    def nodes(self):
-        """
-        Get main nodes in order of appearance in the story. This will return a list
-        of dictionaries specifying the node ids and the class content they correspond to.
-        If there is no class for the content, a string is returned with the content type.
-        """
-        # node_dict contains key-value pairs where the value is the class instance
-        node_dict = self._create_node_dict()
-        # make the value the string representation of the class
-        nodes = []
-        for node in node_dict:
-            nodes.append({k: node[k] for k in node})
-        return nodes
-
-    # ----------------------------------------------------------------------
     @property
     def content_list(self):
         """
@@ -415,8 +401,6 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.3.1",
         details="`get` method has been deprecated, use `content_list` property instead.",
     )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
@@ -462,6 +446,11 @@ class StoryMap(object):
         return utils.get(self, node, type)
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -510,6 +499,60 @@ class StoryMap(object):
         return True
 
     # ----------------------------------------------------------------------
+    def get_logo(self):
+        """
+        Get the logo image for the story. The logo is seen in the header of the story.
+        """
+        # logo is found in story node (i.e. root node id)
+        root = self._properties["root"]
+        logo_resource = self._properties["nodes"][root]["data"]["storyLogoResource"]
+        resource = self._properties["resources"][logo_resource]["data"]["resourceId"]
+
+        return self._item.resources.get(resource)
+
+    # ----------------------------------------------------------------------
+    def set_logo(
+        self,
+        image: Optional[str] = None,
+        link: Optional[str] = None,
+        alt_text: Optional[str] = None,
+    ):
+        """
+        Set the logo for the story. The logo is seen in the header of the story.
+
+        .. note::
+            To remove the logo, link, or alt text, pass in an empty string. If they are None, nothing
+            will be changed for that parameter. For example if you only want to update the link but leave
+            the image and alt text as is, pass in None for the image and alt text. Pass in the new link
+            for the link parameter.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        image               Required string. The file path to the image to be used as the
+                            logo.
+        ---------------     --------------------------------------------------------------------
+        link                Optional string. The url to link to when the logo is clicked.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. The alt text to be used for screen readers.
+        ===============     ====================================================================
+
+        :return: True if successful.
+
+        .. code-block:: python
+
+            story = StoryMap("<story item>")
+            story.set_logo("<image-path>.jpg/jpeg/png/gif")
+        """
+        # call method to update logo
+        return utils.set_logo(self, image, link, alt_text)
+
+    # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Navigation` class instead found when calling `content_list` property.",
+    )
     def navigation(
         self,
         nodes: Optional[list[str]] = None,
@@ -842,16 +885,14 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if content:
-            content._add_to_story(
-                story=self,
-                caption=caption,
-                alt_text=alt_text,
-                display=display,
-            )
-        else:
+        if not content:
             content = Content.Separator(story=self, node_id=node_id)
-            content._add_separator(story=self)
+        content._add_to_story(
+            story=self,
+            caption=caption,
+            alt_text=alt_text,
+            display=display,
+        )
 
         # Add to story children
         utils._add_child(self, node_id=node_id, position=position)

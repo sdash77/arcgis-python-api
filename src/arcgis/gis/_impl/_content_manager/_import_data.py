@@ -17,12 +17,6 @@ _arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 pd = LazyLoader("pandas")
-try:
-    from arcgis.features.geo import _is_geoenabled
-except:
-
-    def _is_geoenabled(o):
-        return False
 
 
 try:
@@ -100,7 +94,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 zip_loc = temp_dir
 
             # Writes the df to file as features
-            sanitize_columns = kwargs.pop("sanitize_columns", False)
+            sanitize_columns = kwargs.pop("sanitize_columns", True)
             df.spatial.to_featureclass(
                 location=location, sanitize_columns=sanitize_columns
             )
@@ -119,15 +113,23 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 my_csv.close()
 
         # add item to portal
-        file_item = gis.content.add(
+        if folder:
+            # Get specific folder
+            folder_name = folder
+            folder = gis.content.folders.get(folder_name) or gis.content.folders.create(
+                folder_name
+            )
+        else:
+            # Get the root folder
+            folder = gis.content.folders.get()
+        file_item = folder.add(
             item_properties={
                 "title": title,
                 "type": file_type,
                 "tags": tags,
             },
-            data=file,
-            folder=folder,
-        )
+            file=file,
+        ).result()
 
         if file_type == "CSV":
             # analyze the csv for publish params
@@ -210,12 +212,16 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
+        try:
+            fs_item.layers[fl_index].update_metadata(new_item.layers[0].metadata)
+        except:
+            pass
         _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
-        features = new_item.layers[0].query().features
-        fs_item.layers[fl_index].edit_features(adds=features)
+        new_features = new_item.layers[0].query().features
+        fs_item.layers[fl_index].edit_features(adds=new_features)
     fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
 
@@ -228,7 +234,7 @@ def import_as_item(gis, df, **kwargs):
         df = df.sdf
 
     # Check whether it will be a layer or a table
-    if _is_geoenabled(df):
+    if features.geo._is_geoenabled(df):
         # layer
         if has_arcpy == False and has_pyshp == False:
             raise Exception(
