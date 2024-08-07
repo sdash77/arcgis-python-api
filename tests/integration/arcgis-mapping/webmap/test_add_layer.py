@@ -276,27 +276,29 @@ class TestAddLayersToMap(unittest.TestCase):
         )
 
     def test_oriented_imagery_layer(self):
+        try:
+            ip = ItemProperties(
+                **{
+                    "item_type": ItemTypeEnum.FILE_GEODATABASE,
+                    "title": f"FGDB{uuid.uuid4().hex[: 4]}",
+                    "tags": "tags",
+                }
+            )
 
-        ip = ItemProperties(
-            **{
-                "item_type": ItemTypeEnum.FILE_GEODATABASE,
-                "title": f"FGDB{uuid.uuid4().hex[: 4]}",
-                "tags": "tags",
-            }
-        )
+            item = self.gis.content.add(item_properties=ip, data=self.PDATA)
+            pitem = item.publish()
 
-        item = self.gis.content.add(item_properties=ip, data=self.PDATA)
-        pitem = item.publish()
+            assert pitem
 
-        assert pitem
+            layer = OrientedImageryLayer.fromitem(pitem)
+            assert layer
 
-        layer = OrientedImageryLayer.fromitem(pitem)
-        assert layer
-
-        self.wm.content.add(layer)
-        assert self.wm.content.layers
-        assert len(self.wm.content.layers) == 1
-        assert isinstance(self.wm.content.layers[0], FeatureLayer)
+            self.wm.content.add(layer)
+            assert self.wm.content.layers
+            assert len(self.wm.content.layers) == 1
+            assert isinstance(self.wm.content.layers[0], FeatureLayer)
+        finally:
+            self.gis.content.delete_items([item, pitem], permanent=True)
 
 
 if __name__ == "__main__":
