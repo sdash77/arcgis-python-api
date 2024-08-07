@@ -9,9 +9,15 @@ from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the WMTSLayer class found in `arcgis.layers.WMTSLayer` instead.",
+)
 class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
@@ -183,7 +189,7 @@ class WMTSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
-        """Represents the MapView's widget JSON format"""
+        """Represents the Map's widget JSON format"""
         return {
             "id": self._id,
             "title": self._title or "WMTS Layer",
@@ -273,5 +279,5 @@ class WMTSLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self):
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self.__text__

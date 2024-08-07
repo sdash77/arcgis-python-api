@@ -5,10 +5,11 @@ from typing import Optional, Any
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
-from ._service import Service
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ServerProfileManager
+from arcgis.auth.tools import LazyLoader
 
+_layers = LazyLoader("arcgis.layers")
 _log = logging.getLogger()
 
 
@@ -18,7 +19,7 @@ class ServicesDirectory(BaseServer):
     Provides ArcGIS Server Services Directory access.
 
     The Services Directory allows you to browse the contents of an ArcGIS Server and obtain
-    information that can be useful to endusers for developing applications, performing analysis, or
+    information that can be useful to end-users for developing applications, performing analysis, or
     cataloging services. The ServicesDirectory is a view of the ArcGIS Server REST API in a python
     class.
 
@@ -258,6 +259,11 @@ class ServicesDirectory(BaseServer):
                 f"Profile {profile} was not saved, using user provided credentials for the `GIS` object."
             )
 
+    @property
+    def session(self) -> "EsriSession":
+        """returns the session for the ServiceDirectory"""
+        return self._con._session
+
     # ----------------------------------------------------------------------
     @property
     def _pm(self) -> ServerProfileManager:
@@ -326,7 +332,7 @@ class ServicesDirectory(BaseServer):
         if "services" in res:
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
-                    return Service(
+                    return _layers.Service(
                         url="%s/%s/%s" % (self._url, s["name"], s["type"]),
                         server=self._con,
                     )
@@ -369,7 +375,7 @@ class ServicesDirectory(BaseServer):
         return :class:`~arcgis.features.FeatureLayerCollection` objects,
         ``Geoprocessing Services`` return
         :class:`~arcgis.geoprocessing._tool.Toolbox` objects, while ``Map
-        Services`` return :class:`~arcgis.mapping.MapImageLayer` objects.
+        Services`` return :class:`~arcgis.layers.MapImageLayer` objects.
 
         .. note::
             This method is not to be confused with the
@@ -377,9 +383,9 @@ class ServicesDirectory(BaseServer):
             :class:`~arcgis.gis.server.ServerManager` class, which returns
             :class:`~arcgis.gis.server.Server` or
             :class:`~arcgis.gis.nb.NotebookServer` objects, or the
-            :class:`~arcgis.gis.server.ServiceManager.list` method of
-            the :class:`~arcgis.gis.server.ServiceManager` class, which
-            returns a list of :class:`~arcgis.gis.server.Service` objects and modules.
+            :class:`~arcgis.layers.ServiceManager.list` method of
+            the :class:`~arcgis.layers.ServiceManager` class, which
+            returns a list of :class:`~arcgis.layers.Service` objects and modules.
 
         """
         services = []
@@ -393,7 +399,7 @@ class ServicesDirectory(BaseServer):
             for s in res["services"]:
                 try:
                     services.append(
-                        Service(
+                        _layers.Service(
                             url="%s/%s/%s" % (self._url, s["name"], s["type"]),
                             server=self._con,
                         )

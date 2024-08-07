@@ -4,6 +4,7 @@ import uuid
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -120,8 +121,8 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def _create_new_briefing(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["briefing"])
         # Add correct by-line and locale
         template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
 
@@ -162,10 +163,11 @@ class Briefing(object):
             "typeKeywords": keywords,
             "type": "StoryMap",
         }
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
         # Add item to active gis and set properties
-        self._item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        self._item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._itemid = self._item.itemid
         # Make a resource call with the template to create json draft needed
@@ -272,6 +274,11 @@ class Briefing(object):
         return actions
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that can be accessed through the cover property in the cover slide.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -461,7 +468,10 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     def move(
-        self, slide: int, position: Optional[int] = None, delete_current: bool = False
+        self,
+        slide: int,
+        position: Optional[int] = None,
+        delete_current: bool = False,
     ):
         """
         Move a slide to another position. The slide currently at that position will

@@ -180,6 +180,11 @@ class SiamMask(ArcGISModel):
 
         self.iou_threshold = 0
 
+        if hasattr(self._data, "emd"):
+            if "mean_IOU" in self._data.emd:
+                if str(self._data.emd["mean_IOU"]) == "nan":
+                    self._data.emd["mean_IOU"] = -1.0
+
     def __str__(self):
         return self.__repr__()
 
@@ -691,8 +696,9 @@ class SiamMask(ArcGISModel):
                     fp += fp_temp
 
         f_measure = get_f_measure(tp, fp, fn)
-        mean_iou = np.mean(all_ious, axis=0)
-
+        mean_iou = np.nanmean(all_ious, axis=0)
+        if np.isnan(mean_iou):
+            mean_iou = -1.0
         self.track_list = []
         self.state_list = {}
         self.num_tracks = 0

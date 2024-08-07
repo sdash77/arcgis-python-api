@@ -1959,7 +1959,7 @@ class FeatureClassifier(ArcGISModel):
         from tensorflow.keras.losses import CategoricalCrossentropy
         from tensorflow.keras.models import Model
         from tensorflow.keras import applications
-        from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.optimizers.legacy import Adam
         from fastai.basics import defaults
         from .._utils.image_classification import TF_IC_get_head_output
 
