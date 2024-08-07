@@ -552,6 +552,8 @@ class Runtime(object):
             manifest = ""
         if manifest:
             file = {"manifestFile": manifest}
+        else:
+            file = None
 
         params = {
             "name": name,
@@ -580,15 +582,12 @@ class Runtime(object):
             if isinstance(params[k], bool):
                 params[k] = json.dumps(params[k])
             elif isinstance(params[k], (int, float)):
-                params[k] = float(params[k])
+                params[k] = json.dumps(float(params[k]))
 
         if len(params) == 1:
             return False
-        res = self._con.post(
-            url,
-            params,
-            files={"manifestFile": manifest},
-        )
+        res = self._con.post_multipart(url, params, files=file)
+
         if "status" in res:
             return res["status"] == "success"
         return res
