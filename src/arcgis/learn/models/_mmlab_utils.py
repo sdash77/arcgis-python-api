@@ -179,6 +179,7 @@ def prepare_mmbatch(batch_shape, **kwargs):
     metas_dict["pad_shape"] = batch_shape[1:3]
     metas_dict["img_shape"] = batch_shape[1:3]
     metas_dict["ori_shape"] = batch_shape[1:3]
+    metas_dict["batch_input_shape"] = batch_shape[1:3]
     metas_dict["scale_factor"] = scale_factor
     model_type = kwargs.get("model_type")
 
