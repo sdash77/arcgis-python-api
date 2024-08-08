@@ -14,10 +14,18 @@ class TestGISClass(unittest.TestCase):
     def test_properties(self):
         gis_properties = self.gis.properties
         self.assertIsNotNone(gis_properties, "gis.properties returns None")
-        # weak assertion
         self.assertGreaterEqual(
             len(gis_properties), 20, "gis.properties may not be fully hydrated"
         )
+        if self.gis._is_agol:
+            self.assertFalse(gis_properties["isPortal"])
+        else:
+            self.assertTrue(gis_properties["isPortal"])
+
+        assert "portalProperties" in gis_properties
+        assert "user" in gis_properties
 
 if __name__ == "__main__":
     unittest.main()
+
+
