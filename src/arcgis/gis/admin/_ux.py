@@ -3095,7 +3095,7 @@ class UtilityServicesSettings:
                         url = agol_helper_svcs[helper_svc]["url"]
                     except:
                         # Not all services available on AGOL at the moment
-                        pass
+                        continue
                 svc_type = "".join(set(url.split("/")).intersection(set(svc_types)))
 
                 item_props = {
@@ -3243,7 +3243,6 @@ class UtilityServicesSettings:
                             item.delete()
                     except (ValueError, IndexError) as e:
                         print(f"Error processing URL for {helper_svc}: {e}")
-                        continue
 
                 if helper_svc == "geocode":
                     geocode_service_config = [
