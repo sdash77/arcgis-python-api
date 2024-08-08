@@ -1978,7 +1978,7 @@ class GeoAccessor(object):
         if _is_geoenabled(self._data):
             _HAS_ARCPY, _HAS_PYSHP = self._check_geometry_engine()
             # layer
-            if _HAS_ARCPY == False and _HAS_PYSHP == False:
+            if not _HAS_ARCPY and not _HAS_PYSHP:
                 raise Exception(
                     "Spatially enabled DataFrame's must have either pyshp or"
                     + " arcpy available to use import_data"
