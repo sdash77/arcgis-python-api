@@ -389,7 +389,7 @@ def get_stac_info(stac_url, verbose=True):
 
     .. code-block:: python
 
-        # Example 1: Fetching detailed information from a STAC Catalog/API (Planetary Computer)
+        # Example 1: Fetching detailed information from a STAC API (Planetary Computer)
         stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1", verbose=True)
         print(stac_info)
 
@@ -401,7 +401,7 @@ def get_stac_info(stac_url, verbose=True):
         stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-8-c2-l2/items/LC08_L1TP_047027_20200818_20200823_02_T1")
         print(stac_info)
 
-        # Example 4: Fetching detailed information from an ItemCollection (NAIP data on Earth Search)
+        # Example 4: Fetching essential information from an ItemCollection (NAIP data on Earth Search)
         stac_info = get_stac_info("https://earth-search.aws.element84.com/v1/collections/naip/items", verbose=False)
         print(stac_info)
     """
