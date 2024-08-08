@@ -1179,6 +1179,8 @@ class ArcGISModel(object):
             else:
                 if "timm" in self._backbone.__module__:
                     backbone = "timm:" + self._backbone.__name__
+                elif "_hf_" in self._backbone.__module__:
+                    backbone = "hf:" + self._backbone.__name__
                 else:
                     backbone = self._backbone.__name__
             if backbone == "backbone_wrapper":
