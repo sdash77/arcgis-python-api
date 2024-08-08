@@ -366,13 +366,13 @@ def publish_hosted_imagery_layer(
 
 def get_stac_info(stac_url, verbose=True):
     """
-    Retrieves information from a `STAC (SpatioTemporal Asset Catalog) <https://stacspec.org/en>` URL.
+    Retrieves information from a `STAC (SpatioTemporal Asset Catalog) <https://stacspec.org/en>`__ URL.
 
     This function fetches and parses information from a given STAC URL.
-    It supports STAC `Catalogs <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`,
-    `Collections <https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md>`,
-    `Items <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`, and
-    `ItemCollections <https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md>`.
+    It supports STAC `Catalogs <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__,
+    `Collections <https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md>`__,
+    `Items <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__, and
+    `ItemCollections <https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md>`__.
     The information is returned in a dictionary format.
 
     ====================================     ====================================================================
