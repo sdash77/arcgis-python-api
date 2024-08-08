@@ -46,10 +46,10 @@ class TestRenderers(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "heatmap"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "heatmap"
         )
 
     def test_create_unique_value(self):
@@ -103,10 +103,10 @@ class TestRenderers(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "uniqueValue"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "uniqueValue"
         )
 
     def test_create_classbreaks(self):
@@ -165,10 +165,10 @@ class TestRenderers(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "classBreaks"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "classBreaks"
         )
 
     def test_create_simple(self):
@@ -196,10 +196,10 @@ class TestRenderers(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "simple"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "simple"
         )
 
     def create_dot_density(self):
@@ -233,10 +233,10 @@ class TestRenderers(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "dotDensity"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["type"]
+            == "dotDensity"
         )
 
     def test_create_visual_variables(self):

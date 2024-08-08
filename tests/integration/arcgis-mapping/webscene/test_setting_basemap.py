@@ -19,7 +19,8 @@ class TestAddLayersToMap(unittest.TestCase):
         """Test adding a vector tile layer as a basemap"""
         # add layer
         layer = VectorTileLayer(
-            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
+            gis=self.gis,
         )
         assert layer
 
