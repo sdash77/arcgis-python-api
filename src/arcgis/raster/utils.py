@@ -368,9 +368,12 @@ def get_stac_info(stac_url, verbose=True):
     """
     Retrieves information from a STAC (SpatioTemporal Asset Catalog) URL.
 
-    This function fetches and parses information from a given STAC URL. It supports
-    STAC Catalogs, Collections, Items, and FeatureCollections. The information is
-    returned in a dictionary format.
+    This function fetches and parses information from a given [STAC](https://stacspec.org/en) URL.
+    It supports STAC [Catalogs](https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md),
+    [Collections](https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md),
+    [Items](https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md), and
+    [ItemCollections](https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md).
+    The information is returned in a dictionary format.
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -398,7 +401,7 @@ def get_stac_info(stac_url, verbose=True):
         stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-8-c2-l2/items/LC08_L1TP_047027_20200818_20200823_02_T1")
         print(stac_info)
 
-        # Example 4: Fetching detailed information from a FeatureCollection (NAIP data on Earth Search)
+        # Example 4: Fetching detailed information from an ItemCollection (NAIP data on Earth Search)
         stac_info = get_stac_info("https://earth-search.aws.element84.com/v1/collections/naip/items", verbose=False)
         print(stac_info)
     """
