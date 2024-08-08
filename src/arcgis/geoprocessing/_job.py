@@ -1532,7 +1532,7 @@ class RMJob(GPJob):
                             except:
                                 pass
                     mission_json["items"].update({key: {}})
-                    if key in mission_json["jobs"]:
+                    if "jobs" in mission_json and key in mission_json["jobs"]:
                         mission_json["jobs"].update({key: {"checked": False}})
 
     # ----------------------------------------------------------------------
@@ -1561,18 +1561,19 @@ class RMJob(GPJob):
             )
             end_time = self._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
 
-            mission_json["jobs"].update(
-                {
-                    item_name: {
-                        "messages": job_messages,
-                        "checked": True,
-                        "progress": 100,
-                        "success": True,
-                        "startTime": start_time,
-                        "completionTime": end_time,
+            if "jobs" in mission_json:
+                mission_json["jobs"].update(
+                    {
+                        item_name: {
+                            "messages": job_messages,
+                            "checked": True,
+                            "progress": 100,
+                            "success": True,
+                            "startTime": start_time,
+                            "completionTime": end_time,
+                        }
                     }
-                }
-            )
+                )
             if item_name == "reset":
                 keys = [
                     "adjustment",
@@ -1591,14 +1592,15 @@ class RMJob(GPJob):
                     "point_cloud",
                     "dtm"
                 ]
-                for key in keys:
-                    if key in mission_json["jobs"].keys():
-                        if key != "adjustment":
-                            mission_json["jobs"].update({key: {"checked": False}})
-                        else:
-                            mission_json["jobs"].update(
-                                {key: {"checked": False, "mode": "Quick"}}
-                            )
+                if "jobs" in mission_json:
+                    for key in keys:
+                        if key in mission_json["jobs"].keys():
+                            if key != "adjustment":
+                                mission_json["jobs"].update({key: {"checked": False}})
+                            else:
+                                mission_json["jobs"].update(
+                                    {key: {"checked": False, "mode": "Quick"}}
+                                )
 
                 item_keys = ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
                 for key in item_keys:
@@ -1636,13 +1638,14 @@ class RMJob(GPJob):
                 itemid = imagery_items[item_name]["itemId"]
                 self._try_delete_item(item_name, itemid, None, mission_json, mission)
 
-            if processing_states is not None:
+            if processing_states is not None and "processingSettings" in mission_json:
                 mission_json["processingSettings"].update(
                     {item_name: processing_states}
                 )
             if adjust_settings is not None:
                 mode = adjust_settings.pop("mode", None)
-                mission_json["jobs"][item_name].update({"mode": mode})
+                if "jobs" in mission_json:
+                    mission_json["jobs"][item_name].update({"mode": mode})
                 mission_json["adjustSettings"].update(adjust_settings)
 
             properties = json.loads(resource["properties"])
