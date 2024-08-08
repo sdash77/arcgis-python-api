@@ -1,7 +1,4 @@
 import sys, os
-
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
-sys.path.insert(1, r"C:\workspace\geosaurus\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -21,7 +18,6 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 

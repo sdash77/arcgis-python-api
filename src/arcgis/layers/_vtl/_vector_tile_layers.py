@@ -697,7 +697,7 @@ class VectorTileLayer(arcgis.gis.Layer):
     name, description, and any overriding style definition.
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis):
         super(VectorTileLayer, self).__init__(url, gis)
         if gis is None:
             raise ValueError("GIS object must be provided")
