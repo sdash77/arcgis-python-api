@@ -194,7 +194,7 @@ def _create_project(
 
     item_properties = {
         "title": name,
-        "type": "Ortho Mapping Project", # "Reality Mapping Project",
+        "type": "Reality Mapping Project", # "Reality Mapping Project",
         "properties": {"flightCount": 0, "status": "inProgress"},
     }
     if definition is None:
@@ -467,7 +467,7 @@ def _add_mission(
                 "referenceData": [],
                 "layers": {"visibilities": {"footprint": False}},
             },
-            "projectVersion": 2,
+            "projectVersion": 1,
             "createTS": "",
             "oid": oid,
             "gcsExtent": {},
@@ -2134,7 +2134,7 @@ class RMProject:
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
-        if project.type == "Ortho Mapping Project": # Reality Mapping Project
+        if project.type == "Reality Mapping Project": # Reality Mapping Project
             self._project_item = project
         else:
             raise RuntimeError(
