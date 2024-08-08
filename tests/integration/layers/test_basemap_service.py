@@ -3,10 +3,12 @@ from arcgis.gis import GIS
 import unittest
 from utils.decorators import integration_test, profiles
 
+
 @profiles.agol
 @integration_test
 class Test_BasemapService(unittest.TestCase):
     """Tests Basemap Service Class"""
+
     def test_get_services(self):
         """Tests getting styles"""
         gis = self.gis
@@ -15,10 +17,10 @@ class Test_BasemapService(unittest.TestCase):
         self.assertTrue(isinstance(services, list))
         self.assertTrue(len(services) > 0)
         self.assertTrue(isinstance(services[0], BasemapService))
-        
+
         style = services[0].style
         self.assertTrue(isinstance(style, dict))
-    
+
     def test_get_languages(self):
         """Tests getting languages"""
         gis = self.gis
@@ -34,6 +36,7 @@ class Test_BasemapService(unittest.TestCase):
         places = bs.places
         self.assertTrue(isinstance(places, list))
         self.assertTrue(len(places) > 0)
+
 
 if __name__ == "__main__":
     unittest.main()

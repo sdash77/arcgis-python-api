@@ -121,10 +121,17 @@ class OGCCollection:
             ]
             params["offset"] += limit
             while True:
-                resp: requests.Response = self._session.get(url=url, params=params)
-                resp.raise_for_status()
-                res = resp.json()
-                if res == {} or res["numberReturned"] == 0:
+                try:
+                    resp: requests.Response = self._session.get(url=url, params=params)
+                    resp.raise_for_status()
+                    res = resp.json() or resp.text
+                except:
+                    # with new session get an error is returned rather than an empty response for some services
+                    if resp.text == "":
+                        # If text empty then json is empty
+                        break
+                    raise Exception(resp.text)
+                if res["numberReturned"] == 0:
                     break
                 elif return_all == False and len(results) >= limit:
                     results = results[:limit]
@@ -157,11 +164,17 @@ class OGCCollection:
             res = copy.deepcopy(results)
             params["offset"] += limit
             while res["numberReturned"] > 0:
-                resp: requests.Response = self._session.get(url=url, params=params)
-                resp.raise_for_status()
-                res = resp.json()
-
-                if res == {} or res["numberReturned"] == 0:
+                try:
+                    resp: requests.Response = self._session.get(url=url, params=params)
+                    resp.raise_for_status()
+                    res = resp.json()
+                except:
+                    # with new session get an error is returned rather than an empty response for some services
+                    if resp.text == "":
+                        # If text empty then json is empty
+                        break
+                    raise Exception(resp.text)
+                if res["numberReturned"] == 0:
                     break
 
                 results["features"].extend(res["features"])
