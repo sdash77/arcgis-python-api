@@ -17,11 +17,8 @@ class TestGISClass(unittest.TestCase):
         self.assertGreaterEqual(
             len(gis_properties), 20, "gis.properties may not be fully hydrated"
         )
-        if self.gis._is_agol:
-            self.assertFalse(gis_properties["isPortal"])
-        else:
-            self.assertTrue(gis_properties["isPortal"])
-
+        assert "isPortal" in gis_properties
+        assert gis_properties.get("isPortal") == not self.gis._is_agol
         assert "portalProperties" in gis_properties
         assert "user" in gis_properties
 
