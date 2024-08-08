@@ -5704,6 +5704,9 @@ class ImageryLayer(Layer):
         else:
             from .analytics import is_supported, generate_raster, _save_ra
 
+            if self._rendering_rule_from_item:
+                self._fnra = None
+
             if self._fnra is None:
                 from .functions import identity
 
