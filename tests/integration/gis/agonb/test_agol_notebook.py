@@ -186,7 +186,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         if "containers" in r and len(r["containers"]) > 0:
             container_id = r['containers'][0]['id']
             container = cm.get(container_id)
-            container.terminate()
+            container.shutdown()
             start = cm.start(
                 runtime=nb.runtimes.list()[0]['id'],
             )
@@ -195,7 +195,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
             container = cm.get(container_id)
             assert container.properties
             container.notebooks
-            container.terminate()
+            container.shutdown()
 
     def test_snapshots(self):
         nb = self._gis.notebook_server[0]

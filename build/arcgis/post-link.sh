@@ -1,1 +1,0 @@
-"${PREFIX}/bin/python" -m arcgis.install --remove  >> "${PREFIX}/.messages.txt" 2>&1

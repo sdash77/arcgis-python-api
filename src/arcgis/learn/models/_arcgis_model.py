@@ -57,6 +57,7 @@ try:
     from .._utils.evaluate_batchsize import estimate_batch_size
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
+    from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -363,22 +364,15 @@ def get_band_mapping(band_name):
 
 
 def _get_tail(model):
-    if hasattr(model, "named_children"):
-        child_name, child = next(model.named_children())
-        if isinstance(child, nn.Conv2d):
-            return child_name, child
-
-    if hasattr(model, "children"):
-        for children in model.children():
-            try:
-                child_name, child = _get_tail(children)
-                return child_name, child
-            except:
-                pass
+    for module_name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            return module_name, module
 
 
 def _get_ms_tail(tail, data, type_init="random"):
     in_chanls = len(data._extract_bands)
+    if tail.in_channels == in_chanls:
+        return tail
     new_tail = nn.Conv2d(
         in_channels=in_chanls,
         out_channels=tail.out_channels,
@@ -417,19 +411,15 @@ def _get_ms_tail(tail, data, type_init="random"):
 
 
 def _set_tail(model, new_tail):
-    updated = False
-    if hasattr(model, "named_children"):
-        child_name, child = next(model.named_children())
-        if isinstance(child, nn.Conv2d):
-            setattr(model, child_name, new_tail)
-            updated = True
-    if hasattr(model, "children") and not updated:
-        for children in model.children():
-            try:
-                _set_tail(children, new_tail)
-                return
-            except:
-                pass
+    for module_name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            name = module_name
+            break
+    attributes = name.split(".")
+    obj = model
+    for a in attributes[:-1]:
+        obj = getattr(obj, a)
+    setattr(obj, attributes[-1], new_tail)
 
 
 def change_tail_transformer(model, data):
@@ -551,6 +541,38 @@ def _device_check():
     return move_to_cpu
 
 
+def get_backbone_func(backbone, data, **kwargs):
+    if backbone is None:
+        backbone = models.resnet34
+    elif backbone == "llm":
+        backbone = "llm"
+    elif type(backbone) is str:
+        if hasattr(models, backbone):
+            backbone = getattr(models, backbone)
+        elif hasattr(models.detection, backbone):
+            backbone = getattr(models.detection, backbone)
+        elif "timm:" in backbone:
+            bckbn = backbone.split(":")[1]
+            if hasattr(timm.models, bckbn):
+                backbone = getattr(timm.models, bckbn)
+        elif backbone in transformer_backbone_downstream:
+            backbone_name = backbone
+            in_channels = (
+                len(data._extract_bands) if hasattr(data, "_extract_bands") else 3
+            )
+            backbone = partial(
+                custom_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                in_chans=in_channels,
+                is_fpn=kwargs.get("is_fpn", False),
+            )
+            backbone.__name__ = backbone_name
+    else:
+        backbone = backbone
+    return backbone
+
+
 class ArcGISModel(object):
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
@@ -565,24 +587,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        if backbone is None:
-            self._backbone = models.resnet34
-        elif backbone == "llm":
-            self._backbone = "llm"
-        elif type(backbone) is str:
-            if hasattr(models, backbone):
-                self._backbone = getattr(models, backbone)
-            elif hasattr(models.detection, backbone):
-                self._backbone = getattr(models.detection, backbone)
-            elif "timm:" in backbone:
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
-        else:
-            self._backbone = backbone
-
-        if not hasattr(self, "_backbone"):
-            self._backbone = models.resnet34
+        self._backbone = get_backbone_func(backbone, data)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -1019,6 +1024,9 @@ class ArcGISModel(object):
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
             kwargs.pop("callbacks", None)
             monitored_names = self.available_metrics
+
+            if getattr(self, "_is_mmtransformer", False):
+                monitored_names = ["valid_loss"]
             if monitor not in monitored_names:
                 raise Exception(f"`monitor` must be set to one from {monitored_names}")
             self.monitor = monitor

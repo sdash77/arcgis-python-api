@@ -11,6 +11,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from arcgis.gis.tasks._schedule import Task
+from ._classification import ClassificationManager
 
 
 ########################################################################
@@ -55,6 +56,7 @@ class PortalAdminManager(BasePortalAdmin):
     _livingatlas = None
     _category_schema = None
     _whm = None
+    _classification: ClassificationManager = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
@@ -353,6 +355,19 @@ class PortalAdminManager(BasePortalAdmin):
             url = "%s/portaladmin/machines" % self._gis._portal.url
             self._machines = Machines(url=url, gis=self._gis, portaladmin=self)
         return self._machines
+
+    # ----------------------------------------------------------------------
+    @property
+    def classification(self) -> ClassificationManager:
+        """provides enterprise portal access to the classification endpoints"""
+        if (
+            self._classification is None
+            and "hasClassificationSchema" in self._gis.properties
+            and self._gis.version >= [2024, 2]
+        ):
+            url: str = f"{self._gis.resturl}portals/self/classification"
+            self._classification = ClassificationManager(url=url, gis=self._gis)
+        return self._classification
 
     # ----------------------------------------------------------------------
     @property

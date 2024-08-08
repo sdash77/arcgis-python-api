@@ -112,11 +112,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
-      - name: Checkout binaries
-        uses: actions/checkout@v4
-        with:
-          ref: binaries/main
-          path: binaries
       - name: Configure conda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -167,17 +162,8 @@ jobs:
           conda list
           conda info
       - name: Copy binary dependencies
-        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          cp ./binaries/linux/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/linux/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/linux/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-      - name: Copy binary dependencies
-        if: runner.os == 'Windows'
-        run: |
-          cp ./binaries/windows/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/windows/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/windows/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
+          python build/manage_binaries.py copy --local
       - name: Install arcgis from source
         run: |
           python -m pip install -e ./src --no-deps

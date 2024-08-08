@@ -285,7 +285,8 @@ class StoryMap(object):
     @property
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Cover class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
     )
     def cover_date(self):
         """
@@ -447,7 +448,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Cover class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class instead found when calling `content_list` property.",
     )
     def cover(
         self,
@@ -548,7 +550,8 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     @deprecated(
         deprecated_in="2.4.0",
-        details="Use the Navigation class instead found when calling `content_list` property.",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Navigation` class instead found when calling `content_list` property.",
     )
     def navigation(
         self,
@@ -882,16 +885,14 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if content:
-            content._add_to_story(
-                story=self,
-                caption=caption,
-                alt_text=alt_text,
-                display=display,
-            )
-        else:
+        if not content:
             content = Content.Separator(story=self, node_id=node_id)
-            content._add_separator(story=self)
+        content._add_to_story(
+            story=self,
+            caption=caption,
+            alt_text=alt_text,
+            display=display,
+        )
 
         # Add to story children
         utils._add_child(self, node_id=node_id, position=position)

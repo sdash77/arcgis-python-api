@@ -2,16 +2,21 @@ from __future__ import annotations
 import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
-from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
+from arcgis._impl.common._deprecate import deprecated
 
-_services = LazyLoader("arcgis.gis.server.admin._services")
+_layers = LazyLoader("arcgis.layers")
 
 
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SceneLayerManager class found in `arcgis.layers.SceneLayerManager` instead.",
+)
 class SceneLayerManager(_GISResource):
     """
     The ``SceneLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted scene layers.
-    A :class:`~arcgis.mapping.SceneLayerManager` offers access to map and layer content.
+    A :class:`~arcgis.layers.SceneLayerManager` offers access to map and layer content.
     """
 
     def __init__(self, url, gis=None, scene_lyr=None):
@@ -299,10 +304,15 @@ class SceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseSceneLayerManager class found in `arcgis.layers.EnterpriseSceneLayerManager` instead.",
+)
 class EnterpriseSceneLayerManager(_GISResource):
     """
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
-    A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
+    A :class:`~arcgis.layers.SceneLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/``
     """
@@ -316,7 +326,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy: dict):
+    def edit(self, service_dictionary: dict):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the
@@ -326,25 +336,25 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===================     ====================================================================
         **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary     Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
 
 
         :return: boolean
         """
-        sl_service = _services.Service(self.url, self._gis)
-        return sl_service.edit(service_dictionairy)
+        sl_service = _layers.Service(self.url, self._gis)
+        return sl_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -361,13 +371,13 @@ class EnterpriseSceneLayerManager(_GISResource):
         :return: Boolean
 
         """
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        sl_service = _services.Service(self.url, self._gis)
+        sl_service = _layers.Service(self.url, self._gis)
         return sl_service.delete()
 
     # ----------------------------------------------------------------------
@@ -628,13 +638,18 @@ class EnterpriseSceneLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Object3dLayer class found in `arcgis.layers.Object3DLayer` instead.",
+)
 class Object3DLayer(Layer):
     """
     The ``Object3DLayer`` represents a Web scene 3D Object layer.
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -649,11 +664,11 @@ class Object3DLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -684,7 +699,7 @@ class Object3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -699,8 +714,8 @@ class Object3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -739,13 +754,18 @@ class Object3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the IntegratedMeshLayer class found in `arcgis.layers.IntegratedMeshLayer` instead.",
+)
 class IntegratedMeshLayer(Layer):
     """
     The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -760,11 +780,11 @@ class IntegratedMeshLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -795,7 +815,7 @@ class IntegratedMeshLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
@@ -810,8 +830,8 @@ class IntegratedMeshLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -850,6 +870,11 @@ class IntegratedMeshLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayerManager class found in `arcgis.layers.Tiles3DLayerManager` instead.",
+)
 class Tiles3DLayerManager(_GISResource):
     def __init__(self, url, gis=None, tiles3d_service=None):
         if url.split("/")[-1].isdigit():
@@ -869,13 +894,18 @@ class Tiles3DLayerManager(_GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Tiles3DLayer class found in `arcgis.layers.Tiles3DLayer` instead.",
+)
 class Tiles3DLayer(Layer):
     """
     The ``Tiles3DLayer`` class represents a Web scene 3D Tile Service Layer.
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -912,7 +942,7 @@ class Tiles3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "3DTiles Service", "url": url}
@@ -927,7 +957,7 @@ class Tiles3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.Tiles3DLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.Tiles3DLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -937,7 +967,10 @@ class Tiles3DLayer(Layer):
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             else:
-                rd = {"/rest/": "/admin/", "/3DTilesServer": ".3DTilesServer"}
+                rd = {
+                    "/rest/": "/admin/",
+                    "/3DTilesServer": ".3DTilesServer",
+                }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
@@ -965,8 +998,11 @@ class Tiles3DLayer(Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VoxelLayer class found in `arcgis.layers.VoxelLayer` instead.",
+)
 class VoxelLayer(Layer):
     """
     The ``VoxelLayer`` class represents a Web Scene Voxel layer.
@@ -974,7 +1010,7 @@ class VoxelLayer(Layer):
     .. note::
         Web scene layers are cached web layers that are optimized for displaying
         a large amount of 2D and 3D features. See the
-        :class:`~arcgis.mapping.SceneLayer` class for more information.
+        :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     =============================================================
     **Parameter**           **Description**
@@ -989,11 +1025,11 @@ class VoxelLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.VoxelLayer
+        >> arcgis.layers._types.VoxelLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1024,7 +1060,7 @@ class VoxelLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "VoxelLayer", "url": url}
@@ -1040,8 +1076,8 @@ class VoxelLayer(Layer):
     def manager(self):
         """
         The ``manager`` property returns an instance of
-        :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1080,13 +1116,18 @@ class VoxelLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the Point3DLayer class found in `arcgis.layers.Point3DLayer` instead.",
+)
 class Point3DLayer(Layer):
     """
     The ``Point3DLayer`` class represents a Web scene 3D Point layer.
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1101,11 +1142,11 @@ class Point3DLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.Point3DLayer
+        >> arcgis.layers._types.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1137,7 +1178,7 @@ class Point3DLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "SceneLayer", "url": url}
@@ -1152,8 +1193,8 @@ class Point3DLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1192,13 +1233,18 @@ class Point3DLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the PointCloudLayer class found in `arcgis.layers.PointCloudLayer` instead.",
+)
 class PointCloudLayer(Layer):
     """
     The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
 
     .. note::
         Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1213,11 +1259,11 @@ class PointCloudLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1248,7 +1294,7 @@ class PointCloudLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "PointCloudLayer", "url": url}
@@ -1263,8 +1309,8 @@ class PointCloudLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1303,13 +1349,18 @@ class PointCloudLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the BuildingLayer class found in `arcgis.layers.BuildingLayer` instead.",
+)
 class BuildingLayer(Layer):
     """
     The ``BuildingLayer`` class represents a Web building layer.
 
     .. note::
         Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        See the :class:`~arcgis.layers.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Parameter**           **Description**
@@ -1324,11 +1375,11 @@ class BuildingLayer(Layer):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.BuildingLayer
+        >> arcgis.layers._types.BuildingLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1359,7 +1410,7 @@ class BuildingLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "BuildingSceneLayer", "url": url}
@@ -1374,8 +1425,8 @@ class BuildingLayer(Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.SceneLayerManager` class
+        or :class:`~arcgis.layers.EnterpriseSceneLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -1414,6 +1465,11 @@ class BuildingLayer(Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the _SceneLayerFactory class found in `arcgis.layers._SceneLayerFactory` instead.",
+)
 class _SceneLayerFactory(type):
     """
     Factory that generates the Scene Layers
@@ -1431,11 +1487,11 @@ class _SceneLayerFactory(type):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1466,6 +1522,11 @@ class _SceneLayerFactory(type):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SceneLayer class found in `arcgis.layers.SceneLayer` instead.",
+)
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
     The ``SceneLayer`` class represents a Web scene layer.
@@ -1490,11 +1551,11 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a SceneLayer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.layers import SceneLayer
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.mapping._types.PointCloudLayer
+        >> arcgis.layers._types.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'

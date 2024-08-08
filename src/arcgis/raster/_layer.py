@@ -246,7 +246,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -321,7 +321,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -477,7 +477,7 @@ class ImageryLayerCacheManager(_GISResource):
 
         .. code-block:: python
 
-            from arcgis.mapping import ImageryLayer
+            from arcgis.layers import ImageryLayer
             from arcgis.gis import GIS
 
             # Example Usage
@@ -817,7 +817,7 @@ class ImageryLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": type(self).__name__, "url": url}
@@ -8105,7 +8105,7 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
                                              :class:`~arcgis.map.Map` widget, what matplotlib colormap
-                                             to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
+                                             to apply to the raster. See :meth:`arcgis.layers.symbol.display_colormaps`
                                              for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
@@ -8287,7 +8287,7 @@ class Raster:
         in a :class:`~arcgis.widgets.Map` widget).
 
         .. note::
-            The ``cmap`` value must be a string. See :attr:`arcgis.mapping.symbol.display_colormaps`
+            The ``cmap`` value must be a string. See :attr:`arcgis.layers.symbol.display_colormaps`
             for a list of compatible values.
         """
         return self._cmap
@@ -9038,7 +9038,7 @@ class Raster:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        band_ids_or_names     Required list. The index number or names of the bands to return as
+        band_ids_or_names     Required list. The index number (uses one-based indexing) or names of the bands to return as
                               Raster objects. If not specified, all bands will be extracted.
         =================     ====================================================================
 
@@ -9050,7 +9050,7 @@ class Raster:
             # Usage Example: Generates the raster pertaining to the first band
 
             raster1 = Raster(r"./data/Amberg.tif")
-            raster1.get_raster_bands(band_ids_or_names=[0])
+            raster1.get_raster_bands(band_ids_or_names=[1])
 
         """
         return self._engine_obj.get_raster_bands(band_ids_or_names)
