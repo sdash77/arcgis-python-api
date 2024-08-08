@@ -366,13 +366,13 @@ def publish_hosted_imagery_layer(
 
 def get_stac_info(stac_url, verbose=True):
     """
-    Retrieves information from a STAC (SpatioTemporal Asset Catalog) URL.
+    Retrieves information from a `STAC (SpatioTemporal Asset Catalog) <https://stacspec.org/en>` URL.
 
-    This function fetches and parses information from a given [STAC](https://stacspec.org/en) URL.
-    It supports STAC [Catalogs](https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md),
-    [Collections](https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md),
-    [Items](https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md), and
-    [ItemCollections](https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md).
+    This function fetches and parses information from a given STAC URL.
+    It supports STAC `Catalogs <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`,
+    `Collections <https://github.com/radiantearth/stac-spec/blob/master/collection-spec/collection-spec.md>`,
+    `Items <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`, and
+    `ItemCollections <https://github.com/radiantearth/stac-api-spec/blob/release/v1.0.0/fragments/itemcollection/README.md>`.
     The information is returned in a dictionary format.
 
     ====================================     ====================================================================
@@ -420,7 +420,6 @@ def get_stac_info(stac_url, verbose=True):
                 info["type"] = "Catalog"
                 info["title"] = data.get("title")
 
-                # Check if the URL is a collections URL
                 if stac_url.endswith("/collections"):
                     collections_url = stac_url
                 else:
@@ -452,7 +451,6 @@ def get_stac_info(stac_url, verbose=True):
                             link["href"] for link in collections_data.get("links", [])
                         ]
                 else:
-                    # Handle case where collections might not be present
                     info["collections"] = []
                     info["links"] = [link["href"] for link in data.get("links", [])]
             elif "extent" in data:
@@ -502,12 +500,11 @@ def get_stac_info(stac_url, verbose=True):
                     info["assets"] = list(data.get("assets", {}).keys())
                     info["links"] = [link["href"] for link in data.get("links", [])]
             elif "type" in data and data["type"] == "FeatureCollection":
-                # It's a STAC FeatureCollection
+                # It's a STAC ItemCollection
                 info = _util._parse_feature_collection(data, verbose)
             else:
                 info["error"] = "Unknown STAC resource type"
         else:
-            # Handle FeatureCollection without stac_version
             if "type" in data and data["type"] == "FeatureCollection":
                 info = _util._parse_feature_collection(data, verbose)
             else:
