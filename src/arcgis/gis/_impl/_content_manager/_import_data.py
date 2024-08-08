@@ -99,9 +99,9 @@ def _create_file(df, file_type, **kwargs):
 
     elif file_type == "CSV":
         # Table Workflow
-        file = tempfile.gettempdir() + "\\%s%s.csv" % (
-            random.choice(string.ascii_lowercase),
-            uuid4().hex[:5],
+        file = os.path.join(
+            tempfile.gettempdir(),
+            "%s%s.csv" % (random.choice(string.ascii_lowercase), uuid4().hex[:5]),
         )
         with open(file, "w") as my_csv:
             df.to_csv(my_csv)
@@ -119,10 +119,7 @@ def _create_items(gis, file, file_type, **kwargs):
     # add item to portal
     if folder:
         # Get specific folder
-        folder_name = folder
-        folder = gis.content.folders.get(folder_name) or gis.content.folders.create(
-            folder_name
-        )
+        folder = gis.content.folders._get_or_create(folder)
     else:
         # Get the root folder
         folder = gis.content.folders.get()

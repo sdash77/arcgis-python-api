@@ -2256,12 +2256,14 @@ class FeatureLayerCollectionManager(_GISResource):
             for table in self.properties.tables:
                 if table["name"] == layer_definition["name"]:
                     fl_index = table["id"]
+                    break
         else:
             self.add_to_definition({"layers": [dict(layer_definition)]})
             # Find the index at which the layer was added
             for layer in self.properties.layers:
                 if layer["name"] == layer_definition["name"]:
                     fl_index = layer["id"]
+                    break
         return fl_index
 
     # ----------------------------------------------------------------------
