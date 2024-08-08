@@ -488,9 +488,9 @@ def get_stac_info(stac_url, verbose=True):
                 info["type"] = "Item"
                 info["id"] = data["id"]
                 info["title"] = data.get("title")
-                info["geometry"] = data.get("geometry", {})
                 info["bbox"] = data.get("bbox", [])
                 if verbose:
+                    info["geometry"] = data.get("geometry", {})
                     info["properties"] = data.get("properties", {})
                     info["assets"] = data.get("assets", {})
                     info["links"] = data.get("links", [])
