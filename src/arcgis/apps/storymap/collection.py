@@ -5,6 +5,7 @@ from arcgis.auth.tools import LazyLoader
 import re
 import os
 import copy
+from arcgis._impl.common._deprecate import deprecated
 
 arcgis = LazyLoader("arcgis")
 content = LazyLoader("arcgis.apps.storymap.story_content")
@@ -128,8 +129,8 @@ class Collection(object):
 
     # ----------------------------------------------------------------------
     def _create_new_collection(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.collection)
+        # Get template from _util module
+        template = copy.deepcopy(utils._TEMPLATES["collection"])
         # Add correct by-line and locale
         template["nodes"]["n-U3Ou63"]["data"]["byline"] = self._gis._username
 
@@ -170,9 +171,10 @@ class Collection(object):
             "type": "StoryMap",
         }
         # Add item to active gis and set properties
-        item = self._gis.content.add(
-            item_properties=item_properties, thumbnail=thumbnail
-        )
+        folder = self._gis.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+        item = folder.add(item_properties=item_properties).result()
         # Assign to story properties
         self._item = item
         self._itemid = item.itemid
@@ -253,6 +255,11 @@ class Collection(object):
         return utils.show(self._item, width, height)
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.4.0",
+        removed_in="2.4.2",
+        details="Use the `arcgis.apps.storymap.Cover` class that is accessed in the cover property.",
+    )
     def cover(
         self,
         title: Optional[str] = None,
@@ -292,6 +299,15 @@ class Collection(object):
         # call method to update cover
         utils.cover(self, title, type, summary, by_line)
         return True
+
+    # ----------------------------------------------------------------------
+    def get_theme(self) -> str:
+        """
+        Get the theme name or the theme item that is used in the collection.
+
+        return: The theme name or the theme item item_id.
+        """
+        return utils.get_theme(self)
 
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
@@ -380,7 +396,7 @@ class Collection(object):
     @property
     def content(self):
         """
-        Returns the content of the collection.
+        Returns the content of the collection. This includes the cover and navigation.
         """
         # content is found in the collection-ui node.
         root_node = self._properties["root"]
@@ -388,6 +404,12 @@ class Collection(object):
         ui = self._properties["nodes"][ui_node]
 
         content = []
+        # first look in children
+        for child in ui["children"]:
+            # get the node id
+            node = utils._assign_node_class(self, child)
+            content.append(node)
+        # then look in items
         for item in ui["data"]["items"]:
             if "nodeId" in item:
                 # Either a node that is a story content type

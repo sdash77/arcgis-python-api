@@ -157,7 +157,17 @@ class ServerManager(object):
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
         for server in self._federation.servers["servers"]:
-            if str(role).lower() == server["serverRole"].lower():
+            if (
+                (str(role).lower() == server["serverRole"].lower() and function is None)
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and role is None
+                )
+                or (
+                    str(function).lower() in server["serverFunction"].lower()
+                    and str(role).lower() == server["serverRole"].lower()
+                )
+            ):
                 admin_url = server["adminUrl"]
                 public_url = server["url"]
                 try:
@@ -170,24 +180,7 @@ class ServerManager(object):
                     c.properties
                     c.logs.properties
                     servers.append(c)
-            elif str(function).lower() in server["serverFunction"].lower():
-                admin_url = server["adminUrl"]
-                public_url = server["url"]
-                try:
-                    c = Server(url=admin_url, gis=self._gis)
-                    if hasattr(c, "admin"):
-                        c.admin.logs.properties
-                    else:
-                        c.logs.properties
-                    servers.append(c)
-                except:
-                    c = Server(url=public_url, gis=self._gis)
-                    if hasattr(c, "admin"):
 
-                        c.admin.logs.properties
-                    else:
-                        c.logs.properties
-                    servers.append(c)
         return servers
 
     # ----------------------------------------------------------------------
@@ -283,8 +276,8 @@ class ServerManager(object):
         ------------------     --------------------------------------------------------------------
         function               Optional string. The specific function associated with this server. Provide a
                                comma-separated list of values, but it is not recommend that a single
-                               server have all the server functions. The allowed values are GeoAnalytics,
-                               RasterAnalytics, and ImageHosting.
+                               server have all the server functions. The allowed values are
+                               RasterAnalytics and ImageHosting.
         ==================     ====================================================================
 
 
@@ -299,7 +292,6 @@ class ServerManager(object):
             "HOSTING_SERVER",
         ]
         functions = {
-            "geoanalytics": "GeoAnalytics",
             "rasteranalytics": "RasterAnalytics",
             "imagehosting": "ImageHosting",
             "none": None,

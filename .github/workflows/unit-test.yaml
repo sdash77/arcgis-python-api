@@ -2,9 +2,9 @@ name: Unit Test
 on:
   pull_request:
   schedule:
-    # every Monday at 4:30 AM Pacific/7:30 AM Eastern/12:30 PM UTC (all platforms, all python versions)
+    # Mondays at 12:30 PM UTC (4:30 AM Pacific/7:30 AM Eastern) (all platforms, all python versions)
     - cron: '30 12 * * 1'
-    # every other day at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
+    # Tuesday-Sunday at 12:30 PM UTC (Windows & Linux, Python 3.11)(Default supported platforms for ArcGIS Pro/Enterprise)
     - cron: '30 12 * * 0,2-6'
   workflow_dispatch:
     inputs:
@@ -21,11 +21,6 @@ on:
       windows:
         type: boolean
         description: Run unit tests on Windows?
-        required: false
-        default: false
-      py39:
-        type: boolean
-        description: Run unit tests on Python 3.9?
         required: false
         default: false
       py310:
@@ -70,7 +65,6 @@ jobs:
           echo "linux=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.linux }}" >> $GITHUB_OUTPUT
           echo "macos=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.macos }}" >> $GITHUB_OUTPUT
           echo "windows=${{ github.event_name == 'schedule' || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
-          echo "py39=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py39 }}" >> $GITHUB_OUTPUT
           echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
           echo "py311=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
       - name: Construct matrix
@@ -88,10 +82,6 @@ jobs:
           if [ "${{ steps.get-parameters.outputs.windows }}" = 'true' ]; then
             echo "Running on Windows"
             matrix=$(echo $matrix | jq '.os += ["windows-latest"]' | jq -r tostring)
-          fi
-          if [ "${{ steps.get-parameters.outputs.py39 }}" = 'true' ]; then
-            echo "Running on Python 3.9"
-            matrix=$(echo $matrix | jq '.python_version += ["3.9"]' | jq -r tostring)
           fi
           if [ "${{ steps.get-parameters.outputs.py310 }}" = 'true' ]; then
             echo "Running on Python 3.10"
@@ -121,12 +111,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout code
         uses: actions/checkout@v4
-        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-      - name: Checkout binaries
-        uses: actions/checkout@v4
-        with:
-          ref: binaries/main
-          path: binaries
+        if: github.event_name != 'pull_request'
       - name: Configure conda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -138,52 +123,48 @@ jobs:
       - name: Get arcgis release info
         id: arcgis-info
         run: |
-          echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-      - name: Load Cache
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            # osx-arm64 is currently only available on prerelease label
+            echo "latest-version=$(conda search -c esri -c esri/label/prerelease arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          else
+            echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
-          restore-keys: |
-            conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
-      - name: Install dependencies
+      - name: Install shared dependencies
         run: |
           conda install -c main nose2 --yes
-          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          conda install -c esri-build pydantic --yes
-          conda install -c esri-build puremagic --yes
-          conda install -c main "pyarrow>=11" --yes
-          conda install -c main "urllib3>=1.26.1,<3" --yes
+          conda install conda-forge::requests-mock --yes
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            conda install -c esri -c esri/label/prerelease arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          else
+            conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          fi
         if: steps.restore-cache.outputs.cache-hit != 'true'
-      - name: Save Cache
+      - name: Save dependency cache
         id: save-cache
+        if: steps.restore-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-      - name: Force install requests-kerberos
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: Install Linux-specific dependencies
+        if: runner.os == 'Linux'
         run: |
-          pip install -U requests-kerberos
+          conda install -c main keyrings.alt --yes
       - name: Show conda environment
         run: |
           conda list
           conda info
-        if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Copy binary dependencies
-        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          cp ./binaries/linux/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/linux/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/linux/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-      - name: Copy binary dependencies
-        if: runner.os == 'Windows'
-        run: |
-          cp ./binaries/windows/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/windows/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/windows/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-      - name: Install arcgis
+          python build/manage_binaries.py copy --local
+      - name: Install arcgis from source
         run: |
           python -m pip install -e ./src --no-deps
       - name: Run smoke tests

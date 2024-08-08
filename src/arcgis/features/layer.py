@@ -103,6 +103,7 @@ class FeatureLayer(Layer):
         else:
             return False
 
+    @property
     def _upload_manager(self) -> "UploadManager":
         """Provides the upload endpoint for a feature layer"""
 
@@ -414,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
@@ -2242,7 +2247,7 @@ class FeatureLayer(Layer):
             as_df=as_df,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -2501,6 +2506,7 @@ class FeatureLayer(Layer):
         skip_inserts: Optional[bool] = None,
         upsert_matching_field: Optional[str] = None,
         upload_id: Optional[str] = None,
+        layer_mappings: Optional[list[dict[str, int]]] = None,
         *,
         return_messages: Optional[bool] = None,
         future: bool = False,
@@ -2594,6 +2600,10 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
+        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+
+                                    Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
+        ------------------------   --------------------------------------------------------------------
         return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
                                    not be returned.  This alters the output to be a tuple consisting of
@@ -2658,6 +2668,7 @@ class FeatureLayer(Layer):
             "appendItemId": item_id,
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
+            "layerMappings": layer_mappings,
         }
         if (
             self._gis
@@ -2928,7 +2939,6 @@ class FeatureLayer(Layer):
         use_previous_moment: bool = False,
         datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
         future: bool = False,
-        asset_maps: Optional[dict[str, list[Any]]] = None,
     ):
         """
         Adds, updates, and deletes features to the
@@ -3039,39 +3049,6 @@ class FeatureLayer(Layer):
         future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
                                 to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
-        ---------------------   --------------------------------------------------------------------------------------
-        asset_maps              Optional. For 3D feature layers, a dictionary with keys: "adds" and "deletes" whose
-                                value's are lists of features to add or delete. Omit geometry.
-                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature,
-                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will
-                                result in a partial update of the feature (i.e., only attributes, only shape).
-                                The existing geometry and the new asset_maps are mutually exclusive.
-
-                                .. code-block:: python
-
-                                    # Example of asset_maps parameter with adds request
-                                    adds=[
-                                        {
-                                            "attributes": {
-                                            "OWNER": "Joe Smith",
-                                            "VALUE": 94820.37,
-                                            "APPROVED": true,
-                                            "LASTUPDATE": 1227663551096,
-                                            "GlobalID": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}"
-                                            }
-                                        }
-                                    ]
-                                    asset_maps={
-                                    "adds":[
-                                        {
-                                        "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}",
-                                        "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
-                                        "assetName": "geometry.glb",
-                                        "assetHash": "6486ee53c8faba18045ef29d382f1c8227bde3a25d37f7a62fe0d2259a3a14dd",
-                                        "flags": ["PROJECT_VERTICES"]
-                                        }
-                                    ]
-                                    }
         =====================   ======================================================================================
 
         :return:
@@ -3142,8 +3119,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = adds[cols].spatial.__feature_set__["features"]
             params["adds"] = json.dumps(
-                adds[cols].spatial.__feature_set__["features"],
+                adds,
                 default=_date_handler,
             )
         elif (
@@ -3155,22 +3133,21 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = [{"attributes": row} for row in adds[cols].to_dict("records")]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict("records")],
+                adds,
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
-            params["adds"] = json.dumps(
-                [f.as_dict for f in adds.features], default=_date_handler
-            )
-
+            adds = adds.to_dict()["features"]
+            params["adds"] = json.dumps(adds, default=_date_handler)
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
-                params["adds"] = json.dumps([f for f in adds], default=_date_handler)
+                adds = [f for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], PropertyMap):
-                params["adds"] = json.dumps(
-                    [dict(f) for f in adds], default=_date_handler
-                )
+                adds = [dict(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], Feature):
 
                 def _handle_feature(f):
@@ -3179,20 +3156,19 @@ class FeatureLayer(Layer):
                         d["attributes"] = {}
                     return d
 
-                params["adds"] = json.dumps(
-                    [_handle_feature(f) for f in adds], default=_date_handler
-                )
+                adds = [_handle_feature(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if isinstance(updates, FeatureSet):
-            params["updates"] = json.dumps(
-                [f.as_dict for f in updates.features], default=_date_handler
-            )
+            updates = [f.as_dict for f in updates.features]
+            params["updates"] = json.dumps(updates, default=_date_handler)
         elif (
             HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
         ):
+            updates = updates.spatial.__feature_set__["features"]
             params["updates"] = json.dumps(
-                updates.spatial.__feature_set__["features"],
+                updates,
                 default=_date_handler,
             )
         elif (
@@ -3200,29 +3176,27 @@ class FeatureLayer(Layer):
             and isinstance(updates, pd.DataFrame)
             and _is_geoenabled(updates) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c
                 for c in updates.columns.tolist()
                 if c.lower() not in ["objectid", "fid"]
             ]
+            updates = [{"attributes": row} for row in updates[cols].to_dict("records")]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict("records")],
+                updates,
                 default=_date_handler,
             )
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
-                params["updates"] = json.dumps(
-                    [f for f in updates], default=_date_handler
-                )
+                updates = [f for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], PropertyMap):
-                params["updates"] = json.dumps(
-                    [dict(f) for f in updates], default=_date_handler
-                )
+                updates = [dict(f) for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], Feature):
-                params["updates"] = json.dumps(
-                    [f.as_dict for f in updates], default=_date_handler
-                )
+                updates = [f.as_dict for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if deletes is not None and isinstance(deletes, str):
@@ -3235,8 +3209,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in deletes.columns.tolist() if c.lower() in ["objectid", "fid"]
             ]
+            deletes = ",".join([str(d) for d in deletes[cols[0]]])
             if len(cols) > 0:
-                params["deletes"] = ",".join([str(d) for d in deletes[cols[0]]])
+                params["deletes"] = deletes
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
@@ -3249,20 +3224,20 @@ class FeatureLayer(Layer):
                 print("deletes FeatureSet must have object_id_field_name parameter set")
 
             if field_name:
-                params["deletes"] = ",".join(
+                deletes = ",".join(
                     [
                         str(feat.get_value(field_name=field_name))
                         for feat in deletes.features
                     ]
                 )
+                params["deletes"] = deletes
         elif isinstance(deletes, (list, tuple)):
-            params["deletes"] = ",".join([str(d) for d in deletes])
+            deletes = ",".join([str(d) for d in deletes])
+            params["deletes"] = deletes
         if return_edit_moment is not None:
             params["returnEditMoment"] = return_edit_moment
         if attachments and isinstance(attachments, dict):
             params["attachments"] = attachments
-        if asset_maps and isinstance(asset_maps, dict):
-            params["assetMaps"] = asset_maps
         if true_curve_client is not None:
             params["trueCurveClient"] = true_curve_client
         if not use_previous_moment is None:
@@ -3737,281 +3712,6 @@ class FeatureLayer(Layer):
         return df
 
     # ----------------------------------------------------------------------
-    def assets(self, asset_hash: str) -> dict:
-        """
-        For 3D Feature Services.
-
-        An individual asset resource returns the asset information for a feature layer.
-        An asset is a chunk of binary data such as a texture, image, or a 3D geometry.
-        Assets can be bulky. Their efficient exchange between a client and a service
-        is key to achieving low latency in editing workflows.
-
-        An asset is identified by its hash using a hash algorithm such as SHA-256.
-        The hash algorithm is a part of the layer description (assetHashAlgorithm).
-        The assets can be shared between layers depending on the settings of the
-        3D Object feature class, where assets can be shared within a feature class
-        or across feature classes in a workspace. However, assets are kept as part
-        of the layer not the service.
-
-        If a client already has an asset, it should not be requested again.
-        If the server already has an asset, the client should be able to find that
-        and not upload that asset again. To facilitate their efficient exchange, the
-        service has separate asset operations on the layer resource.
-
-        ========================    ====================================================================
-        **Parameter**               **Description**
-        ------------------------    --------------------------------------------------------------------
-        asset_hash                  Required string. An asset is identified by its hash using a hash algorithm such as SHA-256.
-        ========================    ====================================================================
-        """
-        if self._is_3d:
-            url = self._url + f"/assets/{asset_hash}".format(asset_hash=asset_hash)
-            resp = self._gis._con._session.post(url, {"f": "json"}).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def cleanup_assets(
-        self,
-        retention_period: int,
-        retention_period_unit: str,
-        asynchronous: bool = False,
-    ) -> dict:
-        """
-        For 3D Feature Services.
-
-        Unused assets may also be purposefully created using the uploadAssets
-        operation. These assets would be added to the asset map at a later time
-        with an applyEdits request. To avoid deleting purposefully unused assets,
-        the cleanupAssets operation can be used to set a retention period.
-        The retention period limits asset deletion to assets that are older than
-        the specified period, preserving assets that do not exceed the retention period.
-
-        ========================    ====================================================================
-        **Parameter**               **Description**
-        ------------------------    --------------------------------------------------------------------
-        retention_period            Required int. A numerical value. Only unused assets older than the
-                                    retention_period are deleted.
-        ------------------------    --------------------------------------------------------------------
-        retention_period_unit       Required string. Values: "days" | "hours" | "minutes" | "seconds"
-        ------------------------    --------------------------------------------------------------------
-        asynchronous                Optional bool. Whether to cleanup assets asynchronously (True) or
-                                    synchronously (False). The default is False.
-        ========================    ====================================================================
-
-        """
-        if self._is_3d:
-            url = self._url + "/cleanupAssets"
-            params = {
-                "f": "json",
-                "retentionPeriod": retention_period,
-                "retentionPeriodUnits": retention_period_unit,
-                "async": asynchronous,
-            }
-            resp = self._gis._session.get(url, params=params).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def has_assets(self, asset_hashes: list[str]):
-        """
-        The has_assets operation is performed on a feature service layer to
-        determine if an array of asset hashes is included in a service.
-        The response only returns the hashes for assets that are in the service.
-        The hashes returned in the response are a subset of the hashes submitted in the request.
-
-        ========================    ====================================================================
-        **Parameter**               **Description**
-        ------------------------    --------------------------------------------------------------------
-        asset_hashes                Required list. An array of SHA256 hashes associated with the assets
-                                    that the client is requesting information about.
-
-                                    Example: asset_hashes=["<assetHash1>","<assetHash2>"]
-        ========================    ====================================================================
-        """
-        if self._is_3d:
-            if isinstance(asset_hashes, str):
-                asset_hashes = [asset_hashes]
-
-            url = self._url + "/hasAssets"
-            params = {"f": "json", "assetHashes": str(asset_hashes)}
-            resp = self._gis._session.get(url, params=params).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def query_assets(
-        self, asset_hashes: list[str], transport_type: str | None = None
-    ) -> dict:
-        """
-        The query_assets operation is used to retrieve either multiple assets or
-        asset references. If the assets are small (that is, extruded footprints),
-        it may be more efficient for the client to request multiple assets to
-        be embedded in the response instead of requesting the asset resources individually.
-
-        ========================    ====================================================================
-        **Parameter**               **Description**
-        ------------------------    --------------------------------------------------------------------
-        asset_hashes                Required list. An array of SHA256 hashes associated with the assets
-                                    that the client is requesting information about.
-
-                                    Example: asset_hashes=["<assetHash1>","<assetHash2>"]
-        ------------------------    --------------------------------------------------------------------
-        transport_type              Optional string. Specifies how the assets will be retrieved.
-                                    When `transport_type` is set to "esriTransportTypeUrl", the response
-                                    will return asset references. When `transport_type` is set to
-                                    "esriTransportTypeEmbedded", the response will return multiple assets.
-                                    The default value is "esriTransportTypeUrl".
-
-                                    Values: "esriTransportTypeUrl" | "esriTransportTypeEmbedded"
-        ========================    ====================================================================
-        """
-        if self._is_3d:
-            url = self._url + "/queryAssets"
-            if transport_type is None:
-                transport_type = "esriTransportTypeUrl"
-            if isinstance(asset_hashes, str):
-                asset_hashes = [asset_hashes]
-
-            params = {
-                "f": "json",
-                "assetHashes": str(asset_hashes),
-                "transportType": transport_type,
-            }
-            resp = self._gis._session.get(url, params=params).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def upload_assets(self, assets: list):
-        """
-        The upload_assets operation uploads assets to a service either by referencing
-        the upload ID of an asset or having the asset embedded in the request. Assets
-        must be uploaded to a service before they can be referenced in applyEdits or convert3D requests.
-
-        If the operation is successful, the response will include the uploadResults property,
-        which will have a result object for each asset included in the request.
-        If an asset is uploaded successfully, the result object will return success as
-        true and the computed hash for the asset. If an asset was not uploaded
-        successfully, the result object will return success as false and an error
-        object that includes an error code and description of the error.
-        If the operation is not successful, the response will return an error.
-
-        ========================    ====================================================================
-        **Parameter**               **Description**
-        ------------------------    --------------------------------------------------------------------
-        assets                      Required list. An array of asset objects. Each asset object contains
-                                    the assetType property and either the assetData or assetUploadId properties,
-                                    which specify the asset data to be uploaded. For the assetData property,
-                                    the value is base64 encoded asset data. For the assetUploadId property,
-                                    the value references an upload ID that's returned after using the
-                                    upload operation to upload an asset to the server. The list of
-                                    possible assetType values is configured per feature service and can
-                                    be obtained from a feature layer resource's JSON format, in the
-                                    "infoFor3D": {"editFormats":[]} JSON object.
-
-                                    Example:
-                                    //General syntax example
-                                    assets=[<asset1>, <asset2>]
-
-                                    //assetData syntax example
-                                    assets=[{"assetType": "<assetType>","assetData": "<base64EncodedAssetBytes>"}]
-
-                                    //assetUploadId syntax example
-                                    assets=[{"assetType": "<assetType>","assetUploadId": "<uploadId>"}]
-        ========================    ====================================================================
-
-        """
-        if self._is_3d:
-            url = self._url + "/uploadAssets"
-            if isinstance(assets, str):
-                assets = [assets]
-
-            params = {"f": "json", "assets": str(assets)}
-
-            resp = self._gis._session.post(url, data=params).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def convert_3d(
-        self,
-        assets: list,
-        target_format: str,
-        transport_type: str | None = None,
-    ):
-        """
-        The convert_3d operation is used to convert small assets from one format to another.
-        The assets must be uploaded previously by `upload_assets`. Similar to
-        `query_assets`, the converted assets can be retrieved from the
-        response (esriTransportTypeEmbedded) or as asset references (esriTransportTypeUrl).
-
-        ===============================     ====================================================================
-        **Parameter**                        **Description**
-        -------------------------------     --------------------------------------------------------------------
-        assets                              Required list of assets describing the 3D object that the client wants
-                                            to convert to the specified target_format.
-
-                                            Syntax:
-                                            [
-                                                {
-                                                "assetName": "<assetName1>",
-                                                "assetHash": "<assetHash1>"
-                                                },
-                                                {
-                                                "assetName": "<assetName2>",
-                                                "assetHash": "<assetHash2>"
-                                                }
-                                            ]
-        -------------------------------     --------------------------------------------------------------------
-        target_format                       Required string. The format in which the converted assets should be
-                                            returned in the response.
-
-                                            Values: "3D_dae" | "3D_dwg" | "3D_fbx" | "3D_glb" | "3D_gltf" | "3D_ifc" |
-                                            "3D_obj" | "3D_shapebufferg" | "3D_usdc" | "3D_usdz"
-        -------------------------------     --------------------------------------------------------------------
-        transport_type                      Optional string. Used to determine how the assets will be retrieved.
-
-                                            Values: "esriTransportTypeUrl"(default) | "esriTransportTypeEmbedded"
-        ===============================     ====================================================================
-        """
-        if self._is_3d:
-            if transport_type is None:
-                transport_type = "esriTransportTypeUrl"
-
-            url = self._url + "/convert3D"
-
-            params = {
-                "f": "json",
-                "assets": str(assets),
-                "targetFormat": target_format,
-                "transportType": transport_type,
-            }
-
-            resp = self._gis._session.get(url, params=params).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    def relationship_3d(self):
-        """
-        The relationships_3d resource returns information about the relationship
-        between the layer and the asset map and asset table of a 3D object feature layer.
-        """
-        if self._is_3d:
-            url = self._url + "/relationshipsfor3d?f=json"
-            resp = self._gis._session.get(url).json()
-            return resp
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
     def query_3d(
         self,
         where: str | None = None,
@@ -4057,12 +3757,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional list of fields to be included in the returned result set.
                                             This list is a comma-delimited list of field names. You can also specify
-                                            the wildcard "*" as the value of this parameter. In this case, the query
-                                            results include all the field values.
-
-                                            .. note::
-                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
-                                                as True, do not specify this parameter in order to avoid errors.
+                                            the wildcard "*" as the value of this parameter to return all
+                                            fields in the result.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -4228,8 +3924,13 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if where is None:
-            where = "1=1"
+        if not where:
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
         return _query._common_query(
             layer=self,
             is_layer=True,
@@ -4251,7 +3952,7 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            raw=True,
+            query_3d=True,
         )
 
 
@@ -4571,7 +4272,7 @@ class Table(FeatureLayer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             as_df=as_df,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 

@@ -1,15 +1,13 @@
-import sys
-
-sys.path.insert(0, r"/Users/cowboy/GitHub/geosaurus/src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.expbuilder import WebExperience
 from arcgis.apps.expbuilder._ref import templates
 import pathlib
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "np_playground"]
 
-
+@integration_test
 class TestExperience(unittest.TestCase):
     """Test Basic WebExperience Methods"""
 

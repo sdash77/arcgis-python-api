@@ -8,6 +8,7 @@ import os
 import json
 import time
 import logging
+import uuid
 import tempfile
 import collections
 import concurrent.futures
@@ -140,7 +141,62 @@ class AttachmentManager(object):
         size: tuple[int] | list[int] | None = None,
         keywords: str | None = None,
     ) -> int:
-        """"""
+        """
+        The count operation returns the total number of attachments that satisfy
+        the specific criteria entered as arguments to the method. The default
+        count is the number of attachments for all features in the layer.
+
+        =====================   =======================================================
+        **Parameters**          **Description**
+        ---------------------   -------------------------------------------------------
+        where                   Optional String. Clause to specify the set of features
+                                for which to return the attachment count.
+        ---------------------   -------------------------------------------------------
+        attachment_where        Optional String. Clause to specify criteria to apply to
+                                the attachments table for which specific attachments to
+                                include in the count value.
+        ---------------------   -------------------------------------------------------
+        object_ids              Optional List. List of *object_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        global_ids              Optional List. List of *global_id* values to be queried
+                                for which to count the number of attachments.
+        ---------------------   -------------------------------------------------------
+        attachment_types        Optional String. Value specifying the specific format
+                                of attachments to count. See *attachmentTypes* at
+                                the `Query Attachments <https://developers.arcgis.com/rest/services-reference/enterprise/query-attachments-feature-service-layer-.htm>`_
+                                page for a list of options to use.
+        ---------------------   -------------------------------------------------------
+        size                    Optional Integer or integer range. Value or values to
+                                to query attachments of a specific size.
+        =====================   =======================================================
+
+        :returns:
+            Integer of total number of attachments.
+
+        .. code-block:: python
+
+            # Usage Example 1: Default
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_organizational_profile")
+
+            >>> flyr_item = gis.content.get("<item id>")
+
+            >>> att_mgr = flyr_item.attachments
+            >>> att_mgr.count()
+
+            9
+
+            # Usage Example 2: List of Object Ids:
+            >>> att_mgr.count(object_ids=[1, 3])
+
+            5
+
+            # Usage Example 3: List of Global Ids:
+            >>> att_mgr.count(global_ids=['{D432BA85-8702-437D-B740-C214DDE65846}'])
+
+            2
+        """
         url: str = "{}/{}".format(self._layer.url, "queryAttachments")
         if object_ids is None:
             object_ids = []
@@ -148,8 +204,8 @@ class AttachmentManager(object):
             global_ids = []
         if attachment_types is None:
             attachment_types = []
-        if where is None:
-            where = ""
+        if where is None and not object_ids and not global_ids:
+            where = "1=1"
         if keywords is None:
             keywords = []
         params: dict[str, Any] = {
@@ -158,7 +214,6 @@ class AttachmentManager(object):
             "attachmentTypes": ",".join(attachment_types),
             "objectIds": ",".join([str(v) for v in object_ids]),
             "globalIds": ",".join([str(v) for v in global_ids]),
-            "definitionExpression": where,
             "attachmentsDefinitionExpression": attachment_where or "",
             "keywords": ",".join([str(v) for v in keywords]),
             "size": size,
@@ -1561,14 +1616,15 @@ class SyncManager(object):
         if os.path.isfile(db) == False:
             raise Exception("Could not create the replica")
         destination_content = destination_gis.content
-        item = destination_content.add(
+        folder = destination_content.folders().get()
+        item = folder.add(
             item_properties={
                 "type": "SQLite Geodatabase",
                 "tags": "replication",
                 "title": replica_name,
             },
-            data=db,
-        )
+            file=db,
+        ).result()
         published = item.publish()
         return published
 
@@ -2013,7 +2069,13 @@ class WebHookServiceManager(object):
             params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
-            hook_url = self._url + f"/{resp['globalId']}"
+            if "globalId" in resp:
+                guid = resp.get("globalId")
+            elif "id" in resp:
+                guid = resp.get("id")
+            else:
+                raise Exception(str(resp))
+            hook_url = self._url + f"/{guid}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
             return WebHook(url=resp["url"], gis=self._gis)
@@ -2227,10 +2289,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 )
 
         # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
-        data_path = data_path.replace(" ", "_")
-        data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
+            name = re.sub(r"\.", "_", name)
 
         # Get the file type
         file_type = os.path.splitext(data_path)[1]
@@ -2259,81 +2320,102 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # Add to the same folder as the service
         folder_id = orig_item.ownerFolder
-        if folder_id is not None:
-            folder_name = self._gis.content.get_folder(folder_id)
+        if folder_id:
+            folder = self._gis.content.folders.get(folder_id)
         else:
-            folder_name = None
+            folder = self._gis.content.folders.get()
 
-        # Add the file as an item to portal
-        file_item = self._gis.content.add(
-            item_properties={
-                "type": file_type,
-                "title": name,
-                "tags": "inserted",
-            },
-            data=data_path,
-            owner=self._gis.users.me.username,
-            folder=folder_name,
-        )
+        try:
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                },
+                file=data_path,
+            ).result()
+        except Exception as e:
+            if "Item with this filename already exists" not in str(e):
+                raise e
+            # rename the file item if it already exists with unique id appended
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                    "fileName": os.path.splitext(data_path)[0]
+                    + "_"
+                    + str(uuid.uuid4())[0:5]
+                    + ".zip",
+                },
+                file=data_path,
+            ).result()
 
         # Analyze the file to get publish parameters
+        analyze_ft = file_type.lower().replace(" ", "")
+        publish_parameters = self._gis.content.analyze(
+            item=file_item, file_type=analyze_ft
+        )["publishParameters"]
+
+        # Get the layer info which will be used to append the data
         if file_type == "CSV" or file_type == "Excel":
-            publish_parameters = self._gis.content.analyze(item=file_item)[
-                "publishParameters"
-            ]
+            lyr_info = publish_parameters["layerInfo"]
         else:
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": "Query"},
-                "targetSR": {"wkid": 102100, "latestWkid": 3857},
-            }
+            lyr_info = publish_parameters["layers"][0]
 
-        # Publish the item
-        new_item = file_item.publish(publish_parameters=publish_parameters)
-
-        # Insert layer or table
-        source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
-        if len(new_item.layers) > 0:
-            publish_parameters = new_item.layers[0].properties
-            index = _perform_insert(self, publish_parameters)
-            if (
-                file_type == "File Geodatabase"
-                and "filegdb"
-                in orig_item.layers[index].properties.supportedAppendFormats
-            ) or file_type != "File Geodatabase":
-                if file_type == "File Geodatabase":
-                    upload_format = "filegdb"
-                else:
-                    upload_format = file_type.lower()
-                # Workflow for all file types and file geo databases that support append
-                ItemDependency(orig_item).add("itemid", file_item.id)
-                orig_item.layers[index].append(
+        try:
+            # Insert layer or table
+            if file_type == "File Geodatabase":
+                upload_format = "filegdb"
+            else:
+                upload_format = file_type.lower()
+            if lyr_info["type"] == "Feature Layer":
+                index = _perform_insert(self, lyr_info)
+                if (
+                    file_type == "File Geodatabase"
+                    and "filegdb"
+                    in orig_item.layers[index].properties.supportedAppendFormats
+                ) or file_type != "File Geodatabase":
+                    # Workflow for all file types and file geo databases that support append
+                    orig_item.layers[index].append(
+                        item_id=file_item.id,
+                        upload_format=upload_format,
+                        source_table_name=lyr_info["name"],
+                    )
+                elif file_type == "File Geodatabase":
+                    # When filegdb not supported through append, use edit features
+                    new_item = file_item.publish(publish_parameters=publish_parameters)
+                    layer = new_item.layers[0]
+                    features = layer.query().features
+                    if self._gis._is_agol or (
+                        "advancedEditingCapabilities" in layer.properties
+                        and "supportsAsyncApplyEdits"
+                        in layer.properties["advancedEditingCapabilities"]
+                        and layer.properties["advancedEditingCapabilities"][
+                            "supportsAsyncApplyEdits"
+                        ]
+                    ):
+                        orig_item.layers[index].edit_features(
+                            adds=features, future=True
+                        )
+                    else:
+                        orig_item.layers[index].edit_features(adds=features)
+                    new_item.delete()
+            elif lyr_info["type"] == "Table":
+                index = _perform_insert(self, lyr_info)
+                orig_item.tables[index].append(
                     item_id=file_item.id,
                     upload_format=upload_format,
-                    source_info=source_info,
+                    source_info=lyr_info,
                 )
-            elif file_type == "File Geodatabase":
-                # When filegdb not supported through append, use edit features
-                features = new_item.layers[0].query().features
-                orig_item.layers[index].edit_features(adds=features)
-        elif len(new_item.tables) > 0:
-            publish_parameters = new_item.tables[0].properties
-            index = _perform_insert(self, publish_parameters)
-            ItemDependency(orig_item).add("itemid", file_item.id)
-            orig_item.tables[index].append(
-                item_id=file_item.id,
-                upload_format=file_type,
-                source_info=source_info,
-            )
 
-        # Add relationship between service and data
-        orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
-
-        # Remove newly published item since inserted into service
-        new_item.delete()
+            # Add relationship between service and data
+            orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+            # Remove newly published item since inserted into service
+        except Exception as e:
+            # Remove newly published item since inserted into service
+            self._gis.content.delete_items([file_item], permanent=True)
+            raise e
         return orig_item
 
     def swap_view(
@@ -2385,7 +2467,8 @@ class FeatureLayerCollectionManager(_GISResource):
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
-                               JSON object.
+                               JSON object. This parameter is only honored for the ArcGIS Online
+                               platform.
         ==================     ====================================================================
 
         :return: dict | concurrent.futures.Future
@@ -2482,7 +2565,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
             )
             props["adminLayerInfo"]["viewLayerDefinition"]["sourceServiceName"] = (
-                new_source.manager.properties["name"]
+                os.path.basename(os.path.dirname(os.path.dirname(new_source.url)))
             )
             props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
         if isinstance(new_source, features.FeatureLayer):
@@ -2492,9 +2575,13 @@ class FeatureLayerCollectionManager(_GISResource):
             delete_json: dict = {"layers": [], "tables": [{"id": index}]}
             add_json: dict = {"tables": [props]}
         view.manager.delete_from_definition(delete_json)
-        if future:
+        if future and self._gis._is_arcgisonline:
             return view.manager.add_to_definition(add_json, future=True)
         else:
+            if future and self._gis._is_arcgisonline == False:
+                _log.warning(
+                    "Enterprise does not support asynchronous view swap, using synchronous method."
+                )
             return view.manager.add_to_definition(add_json, future=False)
 
     # ----------------------------------------------------------------------
@@ -2658,6 +2745,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
+                    "options": {"dataSourceType": "relational"},
                 }
             ),
             "tags": tags if tags else ",".join(item.tags),
@@ -2864,7 +2952,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     else:
                         _log.error("Unable to parse the view_tables parameter")
 
-        fs_view.manager.add_to_definition(add_def)
+        if self._gis._is_arcgisonline:
+            fs_view.manager.add_to_definition(add_def, future=True).result()
+        else:
+            fs_view.manager.add_to_definition(add_def, future=False)
+
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
                 vw_lyr.manager.update_definition(
@@ -2919,7 +3011,11 @@ class FeatureLayerCollectionManager(_GISResource):
                 flc = FeatureLayerCollection.fromitem(item)
                 lyr = flc.layers[0]
                 mgr = lyr.manager
-                mgr.update_definition(values)
+                if self._gis._is_arcgisonline:
+                    res = mgr.update_definition(values, future=True).result()
+                else:
+                    res = mgr.update_definition(values)
+
         return item
 
     # ----------------------------------------------------------------------
@@ -3206,7 +3302,6 @@ class FeatureLayerCollectionManager(_GISResource):
             not isinstance(data_file, str)
             or not os.path.exists(data_file)
             or not os.path.isfile(data_file)
-            or os.stat(data_file).st_size > int(2.5e7)
         ):
             raise ValueError(
                 "The data file provided does not exist or could not be accessed."

@@ -2,7 +2,7 @@ import logging as _logging
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 
@@ -87,8 +87,8 @@ def aggregate_points(
 
 
 def calculate_composite_index(
-    input_layer=None,
-    input_variables=None,
+    input_layer,
+    input_variables,
     index_method=None,
     output_index_reverse=False,
     output_index_min_max=None,

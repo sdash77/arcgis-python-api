@@ -56,6 +56,9 @@ class MMDetectionConfig:
             self.thresh = self.model.roi_head.test_cfg.score_thr
             self.model.roi_head.test_cfg.nms.iou_threshold = nms_overlap
             self.model.roi_head.test_cfg.score_thr = thresh
+        elif self.model.bbox_head.__class__.__name__ == "DINOHead":
+            self.thresh = thresh
+            self.nms_thres = nms_overlap
         else:
             self.nms_thres = self.model.bbox_head.test_cfg.nms.iou_threshold
             self.thresh = self.model.bbox_head.test_cfg.score_thr
@@ -118,6 +121,13 @@ class MMSegmentationConfig:
 
     def get_model(self, data, backbone=None, **kwargs):
         from arcgis.learn.models._mmlab_utils import mmlab_models, prepare_mmbatch
+
+        model_name = kwargs.get("model")
+        if model_name.startswith("prithvi100m"):
+            # register custom prithvi head
+            from arcgis.learn.models._prithvi_utils import register_prithvi
+
+            register_prithvi()
 
         kwargs["model_type"] = "Segmentation"
         model, cfg = mmlab_models(data, **kwargs)

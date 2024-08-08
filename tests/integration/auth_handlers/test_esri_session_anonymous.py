@@ -1,7 +1,10 @@
 import unittest
 import arcgis.auth
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class TestEsriSessionAnonymous(unittest.TestCase):
     """tests calling ArcGIS Online without any configuration"""
 

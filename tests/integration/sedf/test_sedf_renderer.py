@@ -8,8 +8,10 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 import pandas as pd
 import arcgis
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestSeDFRenderer(unittest.TestCase):
     """tests the visualizer on the SeDF"""
 

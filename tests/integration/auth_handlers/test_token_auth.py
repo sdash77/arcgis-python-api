@@ -1,118 +1,31 @@
-import sys, json, uuid
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
-import unittest
-
-try:
-    SKIPME = False
-    import requests_mock
-except:
-    SKIPME = True
 from arcgis.auth import EsriSession
-
-from arcgis.auth._auth._token import _parse_arcgis_url
+import unittest
 
 try:
-    SKIP_ARCPY = False
     import arcpy
-
-    assert arcpy.GetActivePortalURL()
-    assert arcpy.GetSigninToken()
+    HAS_ARCPY = True
 except:
-    SKIP_ARCPY = True
+    HAS_ARCPY = False
 
-mock_resp = json.dumps({"version": "8.3"})
-mock_generate_token_url = "https://www.arcgis.com/sharing/generateToken"
-mock_portals_self = "https://www.arcgis.com/sharing/rest/portals/self?f=json"
-mock_resp_self = json.dumps({"user": {"username": "fakeaccount"}})
-
-
-mock_generate_token_url = "https://www.arcgis.com/sharing/rest/generateToken"
-mock_generate_token_resp = json.dumps(
-    {
-        "token": "sakjfh97325437hskfsdfd_sdkjfsjf1283763339564921734sdfbdsj",
-        "expires": "13472658353687",
-    }
-)
-
-import unittest
-import unittest.mock
-from unittest.mock import MagicMock
-
-import arcpy
 from arcgis.auth import (
     ArcGISProAuth,
     EsriBuiltInAuth,
-    EsriGenTokenAuth,
     EsriUserTokenAuth,
     EsriOAuth2Auth,
     EsriNotebookAuth,
 )
 
 
-@unittest.skipIf(SKIPME, "Missing requests_mock")
-class TestURLParseLogic(unittest.TestCase):
-    """tests the parse logic for the token url"""
-
-    def test_test_parse_logic(self):
-        assert _parse_arcgis_url(url=None) == "https://www.arcgis.com"
-        assert (
-            _parse_arcgis_url(url="https://www.arcgis.com")
-            == "https://www.arcgis.com"
-        )
-        assert (
-            _parse_arcgis_url(url="https://www.arcgis.com/sharing/rest")
-            == "https://www.arcgis.com"
-        )
-        assert (
-            _parse_arcgis_url(url="https://www.arcgis.com/sharing")
-            == "https://www.arcgis.com"
-        )
-        assert (
-            _parse_arcgis_url(
-                url="http://pythonapi.playground.esri.com/portal"
-            )
-            == "http://pythonapi.playground.esri.com/portal"
-        )
-        assert (
-            _parse_arcgis_url(
-                url="http://pythonapi.playground.esri.com/portal/home"
-            )
-            == "http://pythonapi.playground.esri.com/portal"
-        )
-        assert (
-            _parse_arcgis_url(
-                url="http://pythonapi.playground.esri.com/portal/sharing/rest"
-            )
-            == "http://pythonapi.playground.esri.com/portal"
-        )
-        assert (
-            _parse_arcgis_url(
-                url="http://pythonapi.playground.esri.com/portal/sharing/rest"
-            )
-            == "http://pythonapi.playground.esri.com/portal"
-        )
-        assert (
-            _parse_arcgis_url(
-                url="https://pythonapi.playground.esri.com/portal/sharing/rest"
-            )
-            == "https://pythonapi.playground.esri.com/portal"
-        )
-
-
-@unittest.skipIf(SKIP_ARCPY, "Issue with ArcPy Settings, Skipping.")
+@unittest.skipIf(not HAS_ARCPY, "Issue with ArcPy Settings, Skipping.")
 class TestProTokenAuth(unittest.TestCase):
     """
     Tests the EsriSession Pro Token Auth
     """
-
-    @unittest.skipIf(SKIPME, "Missing requests_mock")
     def test_token(self):
         auth = ArcGISProAuth()
         assert auth.token
 
 
-@unittest.skipIf(SKIPME, "Missing requests_mock")
 class TestArcGISTokenAuth(unittest.TestCase):
     """
     Tests the EsriSession GenerateToken Auth

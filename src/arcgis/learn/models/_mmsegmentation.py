@@ -39,7 +39,10 @@ def norm_prithvi(data, model):
             img_norm_crop_model.get("means"),
             img_norm_crop_model.get("stds"),
         ),
-        "prithvi100m": (data._scaled_mean_values, data._scaled_std_values),
+        "prithvi100m": (
+            data._scaled_mean_values.tolist(),
+            data._scaled_std_values.tolist(),
+        ),
     }
 
     means, stds = scaling_info[model]
@@ -96,6 +99,10 @@ class MMSegmentation(ModelExtension):
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
                             Default: []
+    ---------------------   -------------------------------------------
+    seq_len                 Optional int. Number of timestamp bands.
+                            Applicable for prithvi100m model only.
+                            Default: 1
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.MMSegmentation` Object
@@ -104,10 +111,15 @@ class MMSegmentation(ModelExtension):
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
 
-        if model.startswith("prithvi100m"):
+        if (
+            model.startswith("prithvi100m")
+            and data._is_multispectral
+            and not isinstance(data, _EmptyData)
+        ):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
             data = norm_prithvi(data, model)
+
         self._ignore_classes = kwargs.get("ignore_classes", [])
         self.class_balancing = kwargs.get("class_balancing", False)
         if self._ignore_classes != [] and len(data.classes) <= 2:
@@ -157,8 +169,14 @@ class MMSegmentation(ModelExtension):
 
         self._final_class_weight = class_weight
         is_transformer = False
-        if model in self.supported_transformer_models:
+        if model in self.supported_transformer_models and not model.startswith(
+            "prithvi100m"
+        ):
             is_transformer = True
+
+        kwargs["ignore_class"] = kwargs.get("ignore_class", self._ignore_mapped_class)
+        kwargs["class_weight"] = kwargs.get("class_weight", self._final_class_weight)
+        kwargs["is_transformer"] = is_transformer
 
         super().__init__(
             data,
@@ -166,9 +184,7 @@ class MMSegmentation(ModelExtension):
             pretrained_path=pretrained_path,
             model=model,
             model_weight=model_weight,
-            ignore_class=self._ignore_mapped_class,
-            class_weight=self._final_class_weight,
-            is_transformer=is_transformer,
+            **kwargs,
         )
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -246,7 +262,7 @@ class MMSegmentation(ModelExtension):
     List of models supported by this class.
     """
 
-    supported_transformer_models = ["mask2former"]
+    supported_transformer_models = ["mask2former", "prithvi100m"]
     """
     List of transformer based models supported by this class.
     """

@@ -1,6 +1,3 @@
-import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS
@@ -16,6 +13,7 @@ from integration.geoenrichment.configtest import (
     usa_local,
     usa_agol,
 )
+from utils.decorators import integration_test
 
 
 # root tests
@@ -40,6 +38,7 @@ def get_country_levels_check(cntry: Country, expectation: object) -> None:
         assert len(res.index)
 
 
+@integration_test
 class TestIntrospection(unittest.TestCase):
 
     # local

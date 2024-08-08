@@ -2,74 +2,46 @@
 This configuration file will check and reset all profiles for running gis module integration tests.
 If the parameter "reset" for setup_profiles() set as "True", all existing profiles will be reset,
 and non-existing profiles will be added.
-Reference: https://github.com/ArcGIS/geosaurus/pull/8683
 """
-import requests
-import platform
-import lxml
-import os
-from arcgis.gis import GIS
+
 from arcgis.gis import ProfileManager
-
-
-def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
-    # Important note: code is based off of current rpublicservers page. If
-    # page format or data gets changed, row parameter may have to be altered.
-    # currently set up to find 1110publdapwa server.
-
-    page = requests.get(site, verify=False)
-    html = lxml.html.fromstring(page.content)
-    table = html.xpath("//table")[0]
-    links = list(table[row].iterlinks())
-    server_url = links[1][2]
-    return server_url
-
-
-# scrape credentials page for Kubernetes credentials
-# https://ragsreports.ags.esri.com/information/11.1_users.htm is mirrored
-# to http://geosaurus.esri.com/testing/ragsreports/11.1_users.htm (updated hourly)
-def get_kube_credentials(
-    site="http://geosaurus.esri.com/testing/ragsreports/11.1_users.htm", row=5
-):
-    page = requests.get(site)
-
-    # Important note: code is based off of current ragsreports page. If page
-    # format or data gets changed, row parameter may have to be altered.
-    # Currently set up to get apps0001 credentials.
-    html = lxml.html.fromstring(page.content)
-    table = html.xpath("//table")[0]
-    row_list = table.xpath("//tr")[row]
-    text_list = str(row_list.text_content()).split()
-    username = text_list[0]
-    password = text_list[1]
-    return (username, password)
 
 
 def setup_profiles(
     online_name="your_online_profile",
     online_admin_name="your_online_admin_profile",
+    online_anonymous_name="your_anonymous_online_profile",
     online_api_data_owner_name="your_online_api_data_owner_profile",
+    online_admin_publication_name="your_online_admin_publication_profile",
     ent_name="your_enterprise_profile",
     ent_admin_name="your_ent_admin_profile",
     kube_name="your_kubernetes_profile",
     kube_admin_name="your_kubernetes_admin_profile",
+    devext_admin_name="your_dev_online_profile",
+    utility_network_name="your_utility_network_profile",
     reset=False,
 ):
     """create profiles"""
+    all_profiles = [
+        online_name,
+        ent_name,
+        online_admin_name,
+        online_anonymous_name,
+        ent_admin_name,
+        online_api_data_owner_name,
+        online_admin_publication_name,
+        kube_name,
+        kube_admin_name,
+        devext_admin_name,
+        utility_network_name,
+    ]
 
     pm = ProfileManager()
     profile_list = pm.list()
 
     # remove profiles if they already exist
     if reset is True:
-        for profile in [
-            online_name,
-            ent_name,
-            online_admin_name,
-            ent_admin_name,
-            online_api_data_owner_name,
-            kube_name,
-        ]:
+        for profile in all_profiles:
             if profile in profile_list:
                 pm.delete(profile)
                 print("Deleted " + profile)
@@ -94,6 +66,15 @@ def setup_profiles(
         )
         print(f"Created profile {online_admin_name}")
 
+    if not online_anonymous_name in updated_list:
+        pm.create(
+            online_anonymous_name,
+            url="https://www.arcgis.com",
+            username=None,
+            password=None,
+        )
+        print(f"Created profile {online_anonymous_name}")
+
     if not online_api_data_owner_name in updated_list:
         pm.create(
             online_api_data_owner_name,
@@ -102,6 +83,15 @@ def setup_profiles(
             password="donot3xposeme",
         )
         print(f"Created profile {online_api_data_owner_name}")
+
+    if not online_admin_publication_name in updated_list:
+        pm.create(
+            online_admin_publication_name,
+            url="https://pythonapi.maps.arcgis.com",
+            username="python_api_test",
+            password="esri.agp2",
+        )
+        print(f"Created profile {online_admin_publication_name}")
 
     if not ent_name in updated_list:
         pm.create(
@@ -124,27 +114,51 @@ def setup_profiles(
     if not kube_name in updated_list:
         pm.create(
             kube_name,
-            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
-            username="geosaurusaccnt",
-            password="geosaurus_automation123",
+            url="https://k8s.python.geocloud.com/arcgis/home",
+            username="PAPIpublisher",
+            password="PAPIletmein01%",
         )
         print(f"Created profile {kube_name}")
-    
+
     if not kube_admin_name in updated_list:
         pm.create(
             kube_admin_name,
-            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
-            username="geosaurusadmin",
-            password="geosaurus_automation123",
+            url="https://k8s.python.geocloud.com/arcgis/home",
+            username="PAPIadmin",
+            password="PAPIletmein01%",
         )
         print(f"Created profile {kube_admin_name}")
-
+    if not devext_admin_name in updated_list:
+        pm.create(
+            profile=devext_admin_name,
+            url="https://devgeosaurus.mapsdevext.arcgis.com",
+            username="esrirequests",
+            password="portalaccount1",
+            key_file=None,
+            cert_file=None,
+            client_id=None,
+        )
+    if not utility_network_name in updated_list:
+        pm.create(
+            utility_network_name,
+            url="https://utilitynetwork.esri.com/portal",
+            username="python_api_team",
+            password="python_api_team.109",
+        )
+        print(f"Created profile {utility_network_name}")
+    print("------------------")
     print(pm.get(online_name))
     print(pm.get(online_admin_name))
+    print(pm.get(online_anonymous_name))
     print(pm.get(online_api_data_owner_name))
+    print(pm.get(online_admin_publication_name))
     print(pm.get(ent_name))
     print(pm.get(ent_admin_name))
     print(pm.get(kube_name))
+    print(pm.get(kube_admin_name))
+    print(pm.get(devext_admin_name))
+    print(pm.get(utility_network_name))
+    print("------------------")
 
 
 if __name__ == "__main__":

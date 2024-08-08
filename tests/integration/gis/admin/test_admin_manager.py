@@ -1,8 +1,4 @@
 import os
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_master\tests")
 import pandas as pd
 import unittest
 from arcgis.apps.tracker import LocationTrackingManager
@@ -31,10 +27,9 @@ from utils.decorators import profiles, integration_test
 
 
 @profiles.admin_enterprise_and_agol
-# @integration_test
+@integration_test
 class TestAdminManager(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         if self.gis._is_agol:
             self.admin = AGOLAdminManager(gis=self.gis)
         else:

@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.summarize_data import summarize_center_and_dispersion
 from .config_tests import setup_profiles, stage_data
+from utils.decorators import integration_test
 
 test_items = ["5183636f099c48789628226e5730fb13"]  # Traffic Collisions
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -12,6 +13,7 @@ setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
 
+@integration_test
 class TestSummarizeCenterAndDispersion(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection

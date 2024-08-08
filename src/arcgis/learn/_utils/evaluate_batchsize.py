@@ -199,18 +199,17 @@ def estimate_batch_size(model, mode="train", **kwargs):
                     tblank_img = torch.Tensor(blank_img).to(model._device)
                     eval_model = model.learn.model.to(model._device)
                     eval_model.eval()
-                    with torch.no_grad():
-                        if model.__class__.__name__ in object_detection_models:
-                            eval_model(model._model_conf.transform_input(tblank_img))
-                        elif model.__class__.__name__ in image_translation_models:
-                            if model.__class__.__name__ == "WNet_cGAN":
-                                eval_model(tblank_img, tblank_img, tblank_img)
-                            else:
-                                eval_model(tblank_img, tblank_img)
-                        elif model.__class__.__name__ in image_captioner_models:
-                            eval_model.sample(tblank_img)
+                    if model.__class__.__name__ in object_detection_models:
+                        eval_model(model._model_conf.transform_input(tblank_img))
+                    elif model.__class__.__name__ in image_translation_models:
+                        if model.__class__.__name__ == "WNet_cGAN":
+                            eval_model(tblank_img, tblank_img, tblank_img)
                         else:
-                            eval_model(tblank_img)
+                            eval_model(tblank_img, tblank_img)
+                    elif model.__class__.__name__ in image_captioner_models:
+                        eval_model.sample(tblank_img)
+                    else:
+                        eval_model(tblank_img)
 
                 elif mode == "none":
                     model._data.train_dl.batch_size = max_batchsize

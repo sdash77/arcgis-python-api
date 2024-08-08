@@ -54,8 +54,6 @@ class train_callback(LearnerCallback):
         super().__init__(learn)
 
     def on_batch_end(self, **kwargs):
-        # print(self.counter)
-        self.counter += 1
         is_present = importlib.util.find_spec("arcpy")
         if is_present is not None:
             import arcpy
@@ -65,6 +63,7 @@ class train_callback(LearnerCallback):
         if self.counter > self.stop_var:
             self.counter = 0
             return {"stop_epoch": True}
+        self.counter += 1
 
 
 def generate_output_report(

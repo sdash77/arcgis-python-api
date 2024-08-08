@@ -1,8 +1,9 @@
 import unittest
 from arcgis.auth import EsriSession, EsriUserTokenAuth, EsriBuiltInAuth
-from utils.decorators import credentials
+from utils.decorators import credentials, integration_test
 
 @credentials.enterprise
+@integration_test
 class TestUserToken(unittest.TestCase):
     def setUp(self):
         self.auth_handler = EsriBuiltInAuth(

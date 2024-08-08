@@ -13073,6 +13073,7 @@ def surface_parameters(
     slope_type: Optional[str] = "DEGREE",
     project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
     use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
+    analysis_mask: Optional[Union[Raster, ImageryLayer]] = None,
 ):
     """
     Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
@@ -13082,7 +13083,8 @@ def surface_parameters(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         The input surface raster. This can be an integer or a floating-point raster.
     --------------------------------     --------------------------------------------------------------------
     parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
 
@@ -13194,6 +13196,13 @@ def surface_parameters(
                                             - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
                                             
                                             - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
+    --------------------------------     --------------------------------------------------------------------
+    analysis_mask                        Optional :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                         A raster that specifies the locations where the analysis will occur.
+                                         The raster can be integer or floating point type.
+                                         
+                                         All cells with a valid value, including zero, will compose the mask.
+                                         Cells that are NoData in the mask input will be NoData in the output.
     ================================     ====================================================================     
 
     :return: The output raster with the function applied.
@@ -13206,6 +13215,9 @@ def surface_parameters(
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    if analysis_mask is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, analysis_mask)
 
     template_dict = {
         "rasterFunction": "SurfaceParam",
@@ -13325,6 +13337,9 @@ def surface_parameters(
         template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = (
             eq_aspect_types[use_equatorial_aspect.upper()]
         )
+
+    if analysis_mask is not None:
+        template_dict["rasterFunctionArguments"]["AnalysisMask"] = raster_ra2
 
     return _clone_layer(layer, template_dict, raster_ra)
 

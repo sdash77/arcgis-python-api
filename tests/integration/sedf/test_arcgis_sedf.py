@@ -1,21 +1,18 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
-
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11279\src")
 import ssl
 from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.features.geo._array import GeoArray
-from arcgis.gis.server._service import Service
+from arcgis.layers import Service
 from arcgis.features import FeatureLayer
 import tempfile, uuid
 import unittest
 import pandas as pd
 import os, shutil
+from utils.decorators import integration_test
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -92,6 +89,7 @@ geoms = [
 if HAS_ARCPY:
     #############################################################################
     # @unittest.SkipTest
+    @integration_test
     class FeatureSetConversionTest(unittest.TestCase):
         """
         tests the spatial dataframe operations related
@@ -103,7 +101,7 @@ if HAS_ARCPY:
         def test_with_geometry(self):
             """test with geometries"""
             for url in fs_urls:
-                fl = Service(url=url)
+                fl = Service(url_or_item=url)
                 oidname = [
                     fld['name']
                     for fld in fl.properties['fields']
@@ -126,7 +124,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_without_geometry(self):
             """table test"""
-            fl = Service(url=table_url)
+            fl = Service(url_or_item=table_url)
             oidname = [
                 fld.name
                 for fld in fl.properties.fields
@@ -140,7 +138,8 @@ if HAS_ARCPY:
             )
 
     ###########################################################################
-    @unittest.SkipTest
+    @integration_test
+    @unittest.skipIf(not HAS_ARCPY, "arcpy Not Installed, Skipping")
     class IOTest(unittest.TestCase):
         """tests the spatial dataframe io functions"""
 
@@ -174,7 +173,7 @@ if HAS_ARCPY:
             """test io.from_layer"""
 
             url = fs_urls[0]
-            sdf = pd.DataFrame.spatial.from_layer(layer=Service(url=url))
+            sdf = pd.DataFrame.spatial.from_layer(layer=Service(url_or_item=url))
             self.assertIsInstance(sdf, pd.DataFrame)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -249,6 +248,7 @@ if HAS_ARCPY:
 
     ########################################################################
     # @unittest.SkipTest
+    @integration_test    
     class TestCaseGeoAccessor(unittest.TestCase):
         """
         Tests the GeoAccessor Methods and Properties
@@ -463,6 +463,7 @@ if HAS_ARCPY:
 
     ########################################################################
     # @unittest.SkipTest
+    @integration_test
     class TestCaseGeoSeriesAccessor(unittest.TestCase):
         """Tests the `geom` namespace on the pd.Series object"""
 

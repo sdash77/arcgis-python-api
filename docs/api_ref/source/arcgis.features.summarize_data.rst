@@ -7,10 +7,6 @@ aggregate_points
 ----------------
 .. autofunction:: arcgis.features.summarize_data.aggregate_points
 
-describe_dataset
-----------------
-.. autofunction:: arcgis.features.summarize_data.describe_dataset
-
 join_features
 --------------
 .. autofunction:: arcgis.features.summarize_data.join_features

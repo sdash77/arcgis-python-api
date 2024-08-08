@@ -1,6 +1,3 @@
-import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.geoenrichment._business_analyst import Country
 import pandas as pd
 
