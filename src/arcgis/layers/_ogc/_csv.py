@@ -163,8 +163,7 @@ class CSVLayer(BaseOpenData):
                     "style": "esriSLSSolid",
                 },
             }
-            sr = ({"type": "simple", "symbol": symbol},)
-            self._renderer = dict(sr)
+            self._renderer = {"type": "simple", "symbol": symbol}
         return self._renderer
 
     # ----------------------------------------------------------------------

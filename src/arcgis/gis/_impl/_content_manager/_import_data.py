@@ -94,7 +94,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
                 zip_loc = temp_dir
 
             # Writes the df to file as features
-            sanitize_columns = kwargs.pop("sanitize_columns", False)
+            sanitize_columns = kwargs.pop("sanitize_columns", True)
             df.spatial.to_featureclass(
                 location=location, sanitize_columns=sanitize_columns
             )
@@ -114,8 +114,13 @@ def _create_file_item(gis, df, file_type, **kwargs):
 
         # add item to portal
         if folder:
-            folder = gis.content.folders.get(folder)
+            # Get specific folder
+            folder_name = folder
+            folder = gis.content.folders.get(folder_name) or gis.content.folders.create(
+                folder_name
+            )
         else:
+            # Get the root folder
             folder = gis.content.folders.get()
         file_item = folder.add(
             item_properties={
@@ -207,12 +212,16 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
+        try:
+            fs_item.layers[fl_index].update_metadata(new_item.layers[0].metadata)
+        except:
+            pass
         _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
-        features = new_item.layers[0].query().features
-        fs_item.layers[fl_index].edit_features(adds=features)
+        new_features = new_item.layers[0].query().features
+        fs_item.layers[fl_index].edit_features(adds=new_features)
     fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
 

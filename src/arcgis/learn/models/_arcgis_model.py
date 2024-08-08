@@ -364,18 +364,9 @@ def get_band_mapping(band_name):
 
 
 def _get_tail(model):
-    if hasattr(model, "named_children"):
-        child_name, child = next(model.named_children())
-        if isinstance(child, nn.Conv2d):
-            return child_name, child
-
-    if hasattr(model, "children"):
-        for children in model.children():
-            try:
-                child_name, child = _get_tail(children)
-                return child_name, child
-            except:
-                pass
+    for module_name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            return module_name, module
 
 
 def _get_ms_tail(tail, data, type_init="random"):
@@ -422,19 +413,15 @@ def _get_ms_tail(tail, data, type_init="random"):
 
 
 def _set_tail(model, new_tail):
-    updated = False
-    if hasattr(model, "named_children"):
-        child_name, child = next(model.named_children())
-        if isinstance(child, nn.Conv2d):
-            setattr(model, child_name, new_tail)
-            updated = True
-    if hasattr(model, "children") and not updated:
-        for children in model.children():
-            try:
-                _set_tail(children, new_tail)
-                return
-            except:
-                pass
+    for module_name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            name = module_name
+            break
+    attributes = name.split(".")
+    obj = model
+    for a in attributes[:-1]:
+        obj = getattr(obj, a)
+    setattr(obj, attributes[-1], new_tail)
 
 
 def change_tail_transformer(model, data):
@@ -1048,6 +1035,9 @@ class ArcGISModel(object):
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
             kwargs.pop("callbacks", None)
             monitored_names = self.available_metrics
+
+            if getattr(self, "_is_mmtransformer", False):
+                monitored_names = ["valid_loss"]
             if monitor not in monitored_names:
                 raise Exception(f"`monitor` must be set to one from {monitored_names}")
             self.monitor = monitor
