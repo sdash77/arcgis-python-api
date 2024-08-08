@@ -23,7 +23,7 @@ from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test, profiles
 
 
-@profiles.admin_agol
+@profiles.agol
 @integration_test
 class TestServerAGOL(unittest.TestCase):
     """test the AGOL Server functionality"""
@@ -69,15 +69,26 @@ class TestServerAGOL(unittest.TestCase):
         self.assertIsNone(service)
 
 
-@unittest.skip("waiting for standalone server setup")
 @integration_test
 class TestServerStandalone(unittest.TestCase):
     """tests the connection to arcgis server object (standalone)"""
 
-    def test_server_portal_not_gis(self):
-        """tests creating a Server object without gis - standalone server"""
+    @classmethod
+    def setUpClass(cls):
+        cls.url = "https://rpubs22313.ags.esri.com/server/rest/"
+        cls.username = "publisher"
+        cls.password = "publisher.account"
+        cls.token = "https://rpubs22313.ags.esri.com/server/tokens/"
 
-        # TODO: get standalone server url and generateToken url, create Server object, and assert Server object
+    def test_standalone_server(self):
+        """tests creating a Server object - standalone server"""
+        server = Server(
+            url=self.url,
+            token_url=self.token,
+            username=self.username,
+            password=self.password,
+        )
+        self.assertIsInstance(server, Server)
 
 
 @profiles.admin_enterprise
@@ -100,10 +111,10 @@ class TestServerFederated(unittest.TestCase):
         server = Server(url=self.gis._url.replace("/portal/", "/server/admin"), gis=self.gis)
         self.assertIsInstance(server, Server)
 
-    def test_get_server_from_server_connection(self):
+    def test_get_server_from_portal_connection(self):
         """tests getting server object through gis.server.Server with gis connection param"""
 
-        server = Server(url=self.gis._url.replace("/portal/", "/server/admin"), portal_connection=self.gis._portal.con)
+        server = Server(url=self.gis._url.replace("/portal/", "/server/admin"), portal_connection=self.gis)
         self.assertIsInstance(server, Server)
 
 
@@ -155,9 +166,8 @@ class TestServiceDirectory(unittest.TestCase):
     def test_service_directory(self):
         """test service directories for online and enterprise"""
         if self.gis._is_agol:
-            for url in self.online_urls:
-                server = ServicesDirectory(url=url)
-                self.assertIsInstance(server, ServicesDirectory)
+            server = ServicesDirectory(url=f"{self.gis.url}/arcgis/rest")
+            self.assertIsInstance(server, ServicesDirectory)
         else:
             url = self.gis.url.replace("portal/", "server/rest/")
             server = ServicesDirectory(url=url)
@@ -165,8 +175,9 @@ class TestServiceDirectory(unittest.TestCase):
 
     def test_ent_service_directory_anonymous(self):
         """tests access enterprise ServiceDirectory anonymously"""
-        server = ServicesDirectory(url=self.gis.url)
-        self.assertIsInstance(server, ServicesDirectory)
+        if not self.gis._is_agol:
+            server = ServicesDirectory(url=self.gis.url)
+            self.assertIsInstance(server, ServicesDirectory)
 
     def test_ent_service_directory_token(self):
         """access enterprise ServiceDirectory catalog token"""
@@ -206,6 +217,7 @@ class TestServerProperty(unittest.TestCase):
             url=cls.gis.url.replace("portal", "server/rest/"),
             username=cls.gis._username,
             password=cls.gis._password,
+            tokenurl=cls.gis.resturl + "generateToken/",
         ).admin
 
     def test_service_directory(self):
@@ -399,9 +411,9 @@ class TestServerReport(unittest.TestCase):
 @profiles.admin_enterprise
 # TODO: add standalone server
 @integration_test
-class TestServerSecurity(unittest.TestCase):
+class TestServerUser(unittest.TestCase):
     """
-    Tests Server Security module - User Manager and Role Manager classes
+    Tests Server User Manager class
     """
 
     @classmethod
@@ -412,16 +424,17 @@ class TestServerSecurity(unittest.TestCase):
             password=cls.gis._password,
         ).admin
 
-    def test_user_manager(self):
+    def test_users(self):
         """tests getting UserManager object"""
         users = self.server_manager.users
         self.assertIsInstance(users, UserManager)
 
-    def test_create_and_delete_user(self):
+    def test_create_user(self):
         """tests creating user"""
         users = self.server_manager.users
 
-        # create user
+        if len(users.search("PyAPIServerTest123")) > 0:
+            users.search("PyAPIServerTest123")[0].delete()
         user = users.create(
             username="PyAPIServerTest123",
             password="lovetheapi1",
@@ -432,15 +445,12 @@ class TestServerSecurity(unittest.TestCase):
 
         self.assertIsInstance(user, User)
 
-        # delete user
-        users.search("PyAPIServerTest123")[0].delete()
-
-    def test_get_user(self):
+    def test_get(self):
         """tests getting user"""
         users = self.server_manager.users
 
         # create user
-        res = users.create(
+        user = users.create(
             username="PyAPIServerTest123",
             password="lovetheapi1",
             fullname="b d",
@@ -453,7 +463,8 @@ class TestServerSecurity(unittest.TestCase):
         self.assertIsInstance(user, (list, User))
 
         # delete user
-        users.search("PyAPIServerTest123")[0].delete()
+        if len(users.search("PyAPIServerTest123")) > 0:
+            users.search("PyAPIServerTest123")[0].delete()
 
     def test_me(self):
         """tests getting current authenticated user"""
@@ -463,21 +474,57 @@ class TestServerSecurity(unittest.TestCase):
     def test_search_user(self):
         """tests search user by username"""
         users = self.server_manager.users
-
-        # create user
-        res = users.create(
-            username="PyAPIServerTest123",
-            password="lovetheapi1",
-            fullname="b d",
-            email="d@esri.com",
-            description="account",
-        )
         self.assertIsInstance(users.search(username="Py"), list)
 
-        # delete user
-        users.search("PyAPIServerTest123")[0].delete()
+    def test_role_manager(self):
+        """tests getting RoleManager object"""
+        users = self.server_manager.users
+        roles = users.roles
+        self.assertIsInstance(roles, RoleManager)
 
-    def test_update_user(self):
+    def test_roles_all(self):
+        """tests getting all roles """
+        users = self.server_manager.users
+        roles = users.roles
+        roles_list = roles.all()
+        self.assertIsInstance(roles_list, list)
+
+    def test_get_role(self):
+        """tests getting a role"""
+        users = self.server_manager.users
+        roles = users.roles
+        role = roles.get_role("admin")
+        self.assertIsInstance(role, (list, Role))
+
+    def test_role_create(self):
+        """tests creating a role"""
+        users = self.server_manager.users
+        roles = users.roles
+        if len(roles.get_role("role1")) == 1:
+            roles.get_role("role1")[0].delete()
+        role = roles.create(name="role1", description="role description")
+        self.assertIsInstance(role, Role)
+        # TODO: delete role
+
+    def test_role_update(self):
+        """tests update a role"""
+        users = self.server_manager.users
+        roles = users.roles
+        role = roles.get_role("role1")[0]
+        self.assertIsInstance(
+            role.update(description="New Description"), (dict, Role, bool)
+        )
+
+    def test_set_privileges(self):
+        """tests set role privileges"""
+        users = self.server_manager.users
+        roles = users.roles
+        role = roles.get_role("role1")[0]
+        self.assertIsInstance(
+            role.set_privileges("publish"), (dict, Role, bool)
+        )
+
+    def test_update_user_update(self):
         """tests update a user"""
         users = self.server_manager.users
 
@@ -500,80 +547,10 @@ class TestServerSecurity(unittest.TestCase):
         self.assertTrue(res)
 
         # delete user
-        users.search("PyAPIServerTest123")[0].delete()
+        if len(users.search("PyAPIServerTest123")) > 0:
+            users.search("PyAPIServerTest123")[0].delete()
 
-    def test_role_manager(self):
-        """tests getting RoleManager object"""
-        users = self.server_manager.users
-        roles = users.roles
-        self.assertIsInstance(roles, RoleManager)
-
-    def test_list_roles(self):
-        """tests getting all roles """
-        users = self.server_manager.users
-        roles = users.roles
-        roles_list = roles.all()
-        self.assertIsInstance(roles_list, list)
-
-    def test_get_role(self):
-        """tests getting a role"""
-        users = self.server_manager.users
-        roles = users.roles
-        role = roles.get_role("admin")
-        self.assertIsInstance(role, (list, Role))
-
-    def test_create_role(self):
-        """tests creating a role"""
-        users = self.server_manager.users
-        roles = users.roles
-
-        # create role
-        if len(roles.get_role("role1")) == 1:
-            roles.get_role("role1")[0].delete()
-        role = roles.create(name="role1", description="role description")
-        self.assertIsInstance(role, Role)
-
-        # delete role
-        roles.get_role("role1")[0].delete()
-
-    def test_update_role(self):
-        """tests update a role"""
-        users = self.server_manager.users
-        roles = users.roles
-
-        # create role
-        if len(roles.get_role("role1")) == 1:
-            roles.get_role("role1")[0].delete()
-        role = roles.create(name="role1", description="role description")
-        self.assertIsInstance(role, Role)
-
-        # update role
-        self.assertIsInstance(
-            role.update(description="New Description"), (dict, Role, bool)
-        )
-
-        # delete role
-        roles.get_role("role1")[0].delete()
-
-    def test_set_role_privileges(self):
-        """tests set role privileges"""
-        users = self.server_manager.users
-        roles = users.roles
-
-        # create role
-        role = roles.create(name="role1", description="role description")
-        self.assertIsInstance(role, Role)
-
-        # set privileges
-        role = roles.get_role("role1")[0]
-        self.assertIsInstance(
-            role.set_privileges("publish"), (dict, Role, bool)
-        )
-
-        # delete role
-        roles.get_role("role1")[0].delete()
-
-    def test_assign_role_to_user(self):
+    def test_user_assign_role(self):
         """tests assigning a role to a user"""
         users = self.server_manager.users
         roles = users.roles
@@ -587,17 +564,16 @@ class TestServerSecurity(unittest.TestCase):
             description="account",
         )
 
-        # create role
-        role = roles.create(name="role1", description="role description")
-
-        # assign role to user
         role = roles.get_role("role1")[0]
         res = user.add_role(role.rolename)
         self.assertTrue(res)
 
-        # delete user and role
-        users.search("PyAPIServerTest123")[0].delete()
-        roles.get_role("role1")[0].delete()
+    def test_user_delete(self):
+        """tests deleting a user"""
+        users = self.server_manager.users
+        if len(users.search("PyAPIServerTest123")) > 0:
+            resp = users.search("PyAPIServerTest123")[0].delete()
+            self.assertTrue(resp)
 
 
 if __name__ == "__main__":
