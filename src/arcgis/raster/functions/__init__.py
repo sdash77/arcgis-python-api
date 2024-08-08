@@ -13736,7 +13736,12 @@ def create_color_composite(
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestMatch"):
+def subset_bands(
+    raster: Union[Raster, ImageryLayer],
+    method: str = "BY_IDS",
+    bands: str = None,
+    missing_band_action: str = "BestMatch",
+):
     """
     The subset_bands function allows you to extract a subset of bands using ranges or lists. This function supports both multispectral and hyperspectral images, and maintains the same band order as the input.
     (extraction by range is not supported for 'BY_NAMES' method)
@@ -13761,6 +13766,7 @@ def subset_bands(raster, method="BY_IDS", bands=None, missing_band_action="BestM
     bands                                Optional string or list. The bands to extract based on the method parameter option used.
 
                                          For example,
+
                                          -  If BY_NAMES, bands can be  'band_15 band_13 band_14'
                                          -  If BY_WAVELENGTHS, bands can be '400-700 900'
                                          -  If BY_IDS, bands can be '100 105 110 120-130'. bands should be using one-based indexing.
