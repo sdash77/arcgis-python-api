@@ -23,55 +23,6 @@ from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test, profiles
 
 
-ENT_SETS = [
-    {
-        "url": "https://pythonapitest.playground.esri.com/server/rest/",
-        "portal": "https://pythonapi.playground.esri.com/portal",
-        "username": "ServerTestAdmin",
-        "password": "y0ugot$erved!",
-        "server": "10.9.1 federated",
-        "token": "https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
-    },
-    {
-        "url": "https://rextapilnxsvr01.esri.com/server/rest/services",
-        "portal": "",
-        "username": "siteadmin",
-        "password": "esri.agp2",
-        "server": "11.4 standalone",
-        "token": "https://rextapilnxsvr01.esri.com/server/tokens/",
-    },
-]
-ALT_SETS = [
-    # requires built-in admin credentials for Esri public servers
-    {
-        "url": "https://rqawinbi01sv.ags.esri.com:6443/arcgis/rest/services",
-        "portal": "https://rqawinbi01pt.ags.esri.com/gis/home/",
-        "username": "",
-        "password": "",
-        "server": "11.1 federated built-in",
-        "token": "https://rqawinbi01pt.ags.esri.com/gis/sharing/rest/generateToken",
-    },
-    # requires IWA authentication for Esri public servers
-    {
-        "url": "https://rqawiniwa02sv.ags.esri.com:6443/arcgis/rest/services",
-        "portal": "https://rqawiniwa02pt.ags.esri.com/gis/home/",
-        "username": "",  # use 'AVWORLD\\<username>'
-        "password": "",
-        "server": "11.1 federated IWA",
-        "token": "https://rqawiniwa02pt.ags.esri.com/gis/sharing/rest/generateToken",
-    },
-    # dummy set to test things are failing properly
-    {
-        "url": "this shouldn't work",
-        "portal": "duloc",
-        "username": "donkey",
-        "password": "shrek",
-        "server": "lord farquaad",
-        "token": "token? you're jokin!",
-    },
-]
-
-
 @profiles.admin_agol
 @integration_test
 class TestServerAGOL(unittest.TestCase):
