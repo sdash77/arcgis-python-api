@@ -8545,7 +8545,7 @@ class ContentManager(object):
 
         # Check which workflow to do
         overwrite = kwargs.get("overwrite", False)
-        if _geo._is_geoenabled(df) or (overwrite):
+        if _geo._is_geoenabled(df) or overwrite:
             # Item Workflow
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
