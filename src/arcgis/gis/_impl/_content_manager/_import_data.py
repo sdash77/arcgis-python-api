@@ -60,10 +60,8 @@ def _create_file(df, file_type, **kwargs):
     }
 
     # Pop out kwargs, establish params to be used throughout
-    service_name = kwargs.get("service_name")
-    if service_name is None:
-        # service name can be set to none so need extra check
-        service_name = "a" + uuid4().hex[:5]
+    # generate random service name if not provided
+    service_name = kwargs.get("service_name") or "a" + uuid4().hex[:5]
     temp_dir = os.path.join(tempfile.gettempdir(), service_name)
     name = "%s%s.%s" % (
         random.choice(string.ascii_lowercase),
