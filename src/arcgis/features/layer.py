@@ -2506,6 +2506,7 @@ class FeatureLayer(Layer):
         skip_inserts: Optional[bool] = None,
         upsert_matching_field: Optional[str] = None,
         upload_id: Optional[str] = None,
+        layer_mappings: Optional[list[dict[str, int]]] = None,
         *,
         return_messages: Optional[bool] = None,
         future: bool = False,
@@ -2599,6 +2600,10 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
+        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+
+                                    Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
+        ------------------------   --------------------------------------------------------------------
         return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
                                    not be returned.  This alters the output to be a tuple consisting of
@@ -2663,6 +2668,7 @@ class FeatureLayer(Layer):
             "appendItemId": item_id,
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
+            "layerMappings": layer_mappings,
         }
         if (
             self._gis
