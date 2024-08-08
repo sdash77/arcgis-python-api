@@ -27,6 +27,7 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
+import copy
 
 from arcgis.auth.tools import LazyLoader
 
@@ -758,9 +759,7 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -768,9 +767,7 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import (
-                        PortalAdminManager,
-                    )
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -790,9 +787,7 @@ class GIS(object):
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -828,9 +823,7 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import (
-                            KubernetesAdmin,
-                        )
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -853,9 +846,7 @@ class GIS(object):
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -17857,6 +17848,222 @@ class Item(dict):
         elif return_type == "PRIVATE_ONLY":
             return private_url or public_url
         return url
+
+    # ----------------------------------------------------------------------
+    def remap_data(self, item_mapping: dict[str, str], force=False):
+        """
+        Method to help users easily replace data in web maps, applications, and other item types
+        that may contain references to other items. Users pass in a dictionary of item ids
+        specifying the original item id and the item id of the item meant to replace it, and the
+        function will automatically replace the id's and other associated data with the item.
+        Useful for workflows such as replacing corrupted datasources in an application with
+        valid ones, updating outdated datasources, replacing test data with production data,
+        and more. Can be used by advanced users to replace any string in the item's structure.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_mapping        Required dict. A dictionary of the items to be remapped. The key is
+                            the item id of the original item and the value is the item id of the
+                            item meant to replace the original.
+
+                            .. note::
+                                This dictionary can also be used for regex replacements of other
+                                strings that are in the structure of the item (not just item
+                                id's), but only if the `force` parameter is set to `True`. This
+                                is only recommended for advanced users with a thorough
+                                understanding of their item's data structure.
+        ---------------     --------------------------------------------------------------------
+        force               Optional boolean. If `False`, the function will check if the item
+                            ids in the `item_mapping` dictionary exist correspond to valid,
+                            accessible items item in the GIS, and that all original/replacement
+                            item pairs are of matching type. If `True`, the function will not
+                            check and replace all instances of the `item_mapping` keys with their
+                            corresponding values in the item's data. Default is `False`, is
+                            strongly recommended to remain `False` unless the user has a
+                            specific reason to circumvent item id validation.
+        ===============     ====================================================================
+
+        :return:
+            A boolean indicating success (True) or failure (False).
+
+        .. code-block:: python
+
+            # Usage Example 1: Replace web maps within an application
+
+            storymap = gis.content.get("storyid12345")
+
+            # say we have a webmap with id 'webmapid12345' and want to replace it with another
+            map_dict = {"webmapid12345": "webmapid67890"}
+            storymap.remap_data(map_dict)
+
+            # Usage Example 2: Fix a typo everywhere in an item
+
+            dashboard = gis.content.get("dashboardid12345")
+
+            # say we realized we've been spelling "arcgis" wrong this whole time
+            repl_dict = {"arkgis": "arcgis"}
+            dashboard.remap_data(repl_dict, force=True)
+
+        """
+
+        _TEXT_BASED_ITEM_TYPES = [
+            "Web Map",
+            "Map Service",
+            "Dashboard",
+            "Feature Collection",
+            "Web Mapping Application",
+            "Application",
+            "Web Scene",
+            "Data Pipeline",
+            "Hub Site Application",
+            "Hub Page",
+        ]
+
+        def _replace_related_items(item, item_mapping):
+            return
+
+        if not force:
+            for k, v in item_mapping.items():
+                if self._gis.content.get(v) is None:
+                    raise ValueError(f"Item with id {v} does not exist in the GIS")
+                if self._gis.content.get(k).type != self._gis.content.get(v).type:
+                    raise ValueError(
+                        f"Items with ids {k} and {v} are not of the same type"
+                    )
+
+        # _replace_related_items(self, item_mapping)
+        expanded_dict = copy.deepcopy(item_mapping)
+        for k, v in item_mapping.items():
+            orig_item = self._gis.content.get(k)
+            new_item = self._gis.content.get(v)
+            if orig_item and new_item:
+                expanded_dict[orig_item.title] = new_item.title
+
+                if "layers" in orig_item and "layers" in new_item:
+                    for i, layer in enumerate(orig_item.layers):
+                        expanded_dict[layer.url] = new_item.layers[i].url
+
+        if self.type in _TEXT_BASED_ITEM_TYPES:
+            data = self.get_data()
+            old_string = json.dumps(data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+
+            return self.update(item_properties={}, data=new_data)
+
+        elif self.type == "Web Experience":
+            config_dict = self.resources.get("config/config.json")
+            config_string = json.dumps(config_dict)
+            new_config_string = _common_utils._text_replace(
+                config_string, expanded_dict
+            )
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                tfile.write(new_config_string)
+                tfile.close()
+            self.resources.update(
+                folder_name="config",
+                file_name="config.json",
+                file=tfile.name,
+            )
+
+            data = self.get_data()
+            old_string = json.dumps(data)
+            new_string = _common_utils._text_replace(old_string, expanded_dict)
+            new_data = json.loads(new_string)
+
+            return self.update(item_properties={}, data=new_data)
+
+        elif self.type == "StoryMap":
+
+            def _replace_layer_names(structure, expanded_dict):
+                if "resources" not in structure:
+                    return structure
+                for k, v in expanded_dict.items():
+                    r_name = "r-" + k
+                    if r_name in structure["resources"]:
+                        if structure["resources"][r_name]["type"] == "webmap":
+                            new_layers = []
+                            for layer in self._gis.content.get(v).get_data()[
+                                "operationalLayers"
+                            ]:
+                                lay = {
+                                    "id": layer["id"],
+                                    "title": layer["title"],
+                                    "visible": True,
+                                }
+                                new_layers.append(lay)
+                            structure["resources"][r_name]["data"][
+                                "mapLayers"
+                            ] = new_layers
+                return structure
+
+            for res in self.resources.list():
+                res_name = res["resource"]
+                if (
+                    "draft" in res_name
+                    and ".json" in res_name
+                    and "express" not in res_name
+                ):
+                    draft_name = res_name
+                    break
+
+            draft_dict = self.resources.get(draft_name)
+            draft_dict = _replace_layer_names(draft_dict, expanded_dict)
+            config_string = json.dumps(draft_dict)
+            new_config_string = _common_utils._text_replace(
+                config_string, expanded_dict
+            )
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                tfile.write(new_config_string)
+                tfile.close()
+            self.resources.update(
+                file_name=res_name,
+                file=tfile.name,
+            )
+
+            data = self.get_data()
+            if data != {"unpublished": True} and data != {}:
+                pub_data = self.resources.get("published_data.json")
+                pub_data = _replace_layer_names(pub_data, expanded_dict)
+                old_string = json.dumps(pub_data)
+                new_string = _common_utils._text_replace(old_string, expanded_dict)
+                with tempfile.NamedTemporaryFile(
+                    mode="w+", suffix=".json", delete=False
+                ) as tfile:
+                    tfile.write(new_string)
+                    tfile.close()
+                self.resources.update(
+                    file_name="published_data.json",
+                    file=tfile.name,
+                )
+                new_data = json.loads(new_string)
+
+                return self.update(item_properties={}, data=new_data)
+
+            else:
+                return True
+
+        elif self.type == "Notebook":
+            nb_file = self.get_data()
+            with open(nb_file, "r", encoding="utf8") as file:
+                json_str = file.read()
+            new_string = _common_utils._text_replace(json_str, expanded_dict)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".ipynb", delete=False, encoding="utf8"
+            ) as tfile:
+                tfile.write(new_string)
+                tfile.close()
+            return self.update(item_properties={}, data=tfile.name)
+
+        else:
+            raise ValueError(
+                f"Item type {self.type} is not supported for remapping data"
+            )
 
 
 ########################################################################
