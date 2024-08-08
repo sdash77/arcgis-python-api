@@ -18,7 +18,6 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -29,7 +28,7 @@ class Test_SymbolService(unittest.TestCase):
     def setUpClass(cls):
         cls._gis = GIS(
             url="https://rpubs22001.ags.esri.com/portal",
-            username='PAPIadmin',
+            username="PAPIadmin",
             password="PAPIletmein01",
             verify_cert=False,
             proxy=PROXIES,
@@ -48,10 +47,8 @@ class Test_SymbolService(unittest.TestCase):
         ss = self._gis.symbol_service
 
         fp = os.path.join(tempfile.gettempdir(), "batman.svg")
-        r = requests.get(
-            "https://www.svgrepo.com/show/303233/batman-5-logo.svg"
-        )
-        with open(fp, 'w') as writer:
+        r = requests.get("https://www.svgrepo.com/show/303233/batman-5-logo.svg")
+        with open(fp, "w") as writer:
             writer.write(r.text)
         res = ss.generate_symbol(fp)
         assert res
