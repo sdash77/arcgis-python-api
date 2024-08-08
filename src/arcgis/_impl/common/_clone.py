@@ -2826,6 +2826,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             layers[0].container.manager.update_definition(edit_params)
 
         for layer_id in layer_ids:
+            pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
+            new_fields = copy.deepcopy(layers[layer_id].properties["fields"])
+            read_only_update = False
+            for field in new_fields:
+                if field["type"] != "esriFieldTypeOID" and field["editable"] == False:
+                    read_only_update = True
+                    field["editable"] = True
+            if read_only_update:
+                layers[layer_id].manager.update_definition({"fields": new_fields})
             layer_features = features[str(layer_id)]
             if len(layer_features) == 0:
                 continue
@@ -2874,6 +2883,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 ]
                 for i in range(0, len(layer_features))
             }
+            if read_only_update:
+                layers[layer_id].manager.update_definition({"fields": pre_fields})
             if is_generalized:
                 layers[layer_id].container.manager.layers[layer_id].update_definition(
                     {"multiScaleGeometryInfo": {"levels": []}}
@@ -3151,6 +3162,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             if x in supported_capabilities
                                         ]
                                     )
+                                new_fields = new_props["fields"]
+                                for i in range(len(new_fields)):
+                                    if og_layer["fields"][i]["editable"] == False:
+                                        new_fields[i]["editable"] = False
+                                update_properties["fields"] = new_fields
                                 break
                         new_layer.manager.update_definition(update_properties)
                     temp_export.delete()
