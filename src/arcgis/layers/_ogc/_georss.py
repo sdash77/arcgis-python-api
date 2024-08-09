@@ -1,6 +1,7 @@
 import uuid
 from arcgis.layers._symbol import create_symbol
 from ._base import BaseOGC
+import json
 
 
 ###########################################################################
@@ -159,9 +160,9 @@ class GeoRSSLayer(BaseOGC):
             "opacity": self.opacity,
             "minScale": self.scale[0],
             "maxScale": self.scale[1],
-            "pointSymbol": self.point_symbol._json(),
-            "polygonSymbol": self.polygon_symbol._json(),
-            "lineSymbol": self.line_symbol._json(),
+            "pointSymbol": json.dumps(self.point_symbol),
+            "polygonSymbol": json.dumps(self.polygon_symbol),
+            "lineSymbol": json.dumps(self.line_symbol),
             "id": self._id,
             "title": self.title,
         }

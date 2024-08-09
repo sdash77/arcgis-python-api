@@ -948,6 +948,14 @@ class Folders:
         resp.raise_for_status()
         return resp.json()
 
+    # ---------------------------------------------------------------------
+    def _get_or_create(self, folder: str, owner: str | None = None) -> Folder:
+        """gets or creates a folder"""
+        fldr: Folder = self.get(folder=folder, owner=owner)
+        if fldr is None:
+            fldr = self.create(folder=folder, owner=owner)
+        return fldr
+
     # ----------------------------------------------------------------------
     def get(
         self,

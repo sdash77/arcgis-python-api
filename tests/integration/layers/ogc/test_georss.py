@@ -1,9 +1,5 @@
-import os
-import sys
 import unittest
-import pandas as pd
-from arcgis.gis import GIS
-from arcgis.layers._ogc import GeoRSSLayer
+from arcgis.layers import GeoRSSLayer
 from utils.decorators import integration_test
 
 geo_rss_url = "https://arcgis.github.io/arcgis-samples-javascript/sample-data/layers-georss/sample-georss.xml"
