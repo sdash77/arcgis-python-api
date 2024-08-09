@@ -24,7 +24,8 @@ class TestAddLayersToMap(unittest.TestCase):
             "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         self.layer2 = VectorTileLayer(
-            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
+            gis=self.gis,
         )
         self.layer3 = CSVLayer(
             "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.csv"
