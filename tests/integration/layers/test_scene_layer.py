@@ -8,7 +8,7 @@ from arcgis.layers import (
     PointCloudLayer,  #
     IntegratedMeshLayer,  #
     BuildingLayer,
-    Tiles3DLayer
+    Tiles3DLayer,
 )  #
 from utils.decorators import integration_test
 
@@ -18,8 +18,10 @@ packages = [
     "273aa54c3ec640cd99c88460e8a7c1d7",  # Integrated Mask Layer
     "dcf46a9224f846f49e6e28fc316d5251",  # Point Cloud Layer
     "fea8ebd688124281afd8f526de77bfc9",
-    "0c9a62b019aa4c5297f7ff1ff46bfd14", # 3D Tiles
+    "0c9a62b019aa4c5297f7ff1ff46bfd14",  # 3D Tiles
 ]
+
+
 ###########################################################################
 @integration_test
 class TestSceneLayer(unittest.TestCase):

@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock
 from arcgis.gis import GIS, Item
 from arcgis import env
 from arcgis.auth.tools import LazyLoader
+
 arcgismapping = LazyLoader("arcgis.map")
 from utils.decorators import integration_test
 
@@ -32,7 +33,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ( "deprecated", None):
+                for cs in ("deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [
@@ -77,7 +78,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ( "deprecated", None):
+                for cs in ("deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [
