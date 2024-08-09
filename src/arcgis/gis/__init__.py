@@ -759,7 +759,9 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -767,7 +769,9 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import (
+                        PortalAdminManager,
+                    )
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -787,7 +791,9 @@ class GIS(object):
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -823,7 +829,9 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                        from arcgis.gis.kubernetes._admin.kadmin import (
+                            KubernetesAdmin,
+                        )
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -846,7 +854,9 @@ class GIS(object):
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -8517,15 +8527,12 @@ class ContentManager(object):
         overwrite              Optional boolean. If True, the specified feature layer for the specified
                                feature service will be overwritten.
         ---------------------  --------------------------------------------------------------------------
-        append                 Optional boolean. If True, the SeDF will be appended to the specified
-                               feature service.
-        ---------------------  --------------------------------------------------------------------------
-        service                Dictionary that is required if `overwrite = True` or `append = True`.
+        service                Dictionary that is required if `overwrite = True`.
                                Dictionary with two keys: "FeatureServiceId" and "layers".
                                "featureServiceId" value is a string of the feature service id that the layer
                                belongs to.
                                "layer" value is an integer depicting the index value of the layer to
-                               overwrite. For append, None can be passed as value.
+                               overwrite.
         =====================  ==========================================================================
 
 
@@ -8548,8 +8555,7 @@ class ContentManager(object):
 
         # Check which workflow to do
         overwrite = kwargs.get("overwrite", False)
-        insert = kwargs.get("append", False)
-        if _geo._is_geoenabled(df) or (overwrite or insert):
+        if _geo._is_geoenabled(df) or overwrite:
             # Item Workflow
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
@@ -13365,10 +13371,10 @@ class Item(dict):
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
-                            lyr_url = svc.url + "/layers/" + str(lyr.id)
+                            lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Service(lyr_url, self._gis)
                         else:
-                            lyr_url = svc.url + "/" + str(lyr.id)
+                            lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:

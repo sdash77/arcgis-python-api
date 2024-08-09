@@ -186,15 +186,11 @@ class SurveyManager:
         """
 
         if folder is None:
-            existing_folder = self._gis.content.folders.get(
+            existing_folder = self._gis.content.folders._get_or_create(
                 folder=f"Survey-{title}", owner=self._gis.users.me.username
             )
-            if existing_folder is None:
-                folder_obj = self._gis.content.folders.create(f"Survey-{title}")
-                folder = folder_obj.properties["id"]
-            else:
-                folder_obj = existing_folder
-                folder = folder_obj.properties["id"]
+            folder_obj = existing_folder
+            folder = folder_obj.properties["id"]
         else:
             folder_obj = self._gis.content.folders.get(
                 folder=str(folder), owner=self._gis.users.me.username
