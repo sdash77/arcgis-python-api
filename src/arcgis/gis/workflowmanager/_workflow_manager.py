@@ -363,10 +363,11 @@ class JobManager:
 
     """
 
-    def __init__(self, item):
+    def __init__(self, item, notification_manager=None):
         """initializer"""
         if item is None:
             raise ValueError("Item cannot be None")
+        self.notification_manager = notification_manager
         self._item = item
         _initialize(self, item._gis)
 
@@ -675,7 +676,7 @@ class JobManager:
             job_dict = self._gis._con.get(
                 url, {"extProps": get_ext_props, "holds": get_holds}
             )
-            return Job(job_dict, self._gis, self._url)
+            return Job(job_dict, self._gis, self._url, self.notification_manager)
         except:
             self._handle_error(sys.exc_info())
 
@@ -1020,7 +1021,7 @@ class WorkflowManager:
         _initialize(self, item._gis)
         _check_license(item._gis)
 
-        self.job_manager = JobManager(item)
+        self.job_manager = JobManager(item, self.notification_manager)
         self.saved_searches_manager = SavedSearchesManager(item)
 
     def _handle_error(self, info):
@@ -1086,6 +1087,14 @@ class WorkflowManager:
         """
 
         return self.job_manager
+
+    @property
+    def notification_manager(self):
+        if not self._nm:
+            self._nm = NotificationManager(self._item)
+            self._nm.connect()
+
+        return self._nm
 
     def evaluate_arcade(
         self,
@@ -1994,14 +2003,6 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    @property
-    def notification_manager(self):
-        if not self._nm:
-            self._nm = NotificationManager(self._item)
-            self._nm.connect()
-
-        return self._nm
-
 
 class LookUpTable(object):
     """
@@ -2389,7 +2390,7 @@ class Job(object):
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
-    def __init__(self, init_data, gis=None, url=None):
+    def __init__(self, init_data, gis=None, url=None, notification_manager=None):
         self.job_status = None
         self.notes = None
         self.diagram_id = None
@@ -2421,6 +2422,7 @@ class Job(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
+        self.notification_manager = notification_manager
 
     def post(self):
         post_dict = {
@@ -3017,17 +3019,15 @@ class Job(object):
     # For now, requiring passing the WorkflowManager as we don't flow it down,
     # but we need a singleton NotificationManager / connection
 
-    def run(self, wm: WorkflowManager, step_ids: Optional[list] = None):
+    def run(self, step_ids: Optional[list] = None):
         """
         Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
 
         ================    ===================================================================
         **Argument**        **Description**
         ----------------    -------------------------------------------------------------------
-        wm                  Required. The connection to the Workflow Manager instance.
-        ----------------    -------------------------------------------------------------------
-        step_ids            Optional list. The list of current step ids. If no step ids are provided, the action will be
-                            performed on the current step(s).
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
         ================    ===================================================================
 
         :return:
@@ -3037,7 +3037,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.RUN)
         # Subscribe to this job
-        wm.notification_manager.subscribe([self.job_id], je._callback)
+        self.notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3057,17 +3057,17 @@ class Job(object):
         )
         # If it fails, unsubscribe then throw
         if "error" in return_obj:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj and return_obj['success'] is False:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
         return je
 
-    def stop(self, wm: WorkflowManager, step_ids: Optional[list] = None):
+    def stop(self, step_ids: Optional[list] = None):
         """
         Stops the current step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
         GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
@@ -3077,10 +3077,8 @@ class Job(object):
         ================    ===================================================================
         **Argument**        **Description**
         ----------------    -------------------------------------------------------------------
-        wm                  Required. The connection to the Workflow Manager instance.
-        ----------------    -------------------------------------------------------------------
-        step_ids            Optional list. The list of current step ids. If no step ids are provided, the action will be
-                            performed on the current step(s).
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
         ================    ===================================================================
 
         :return:
@@ -3090,7 +3088,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.STOP)
         # Subscribe to this job
-        wm.notification_manager.subscribe([self.job_id], je._callback)
+        self.notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3111,27 +3109,25 @@ class Job(object):
 
         # If it fails, unsubscribe then throw
         if "error" in return_obj:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj and return_obj['success'] is False:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
         return je
 
-    def finish(self, wm: WorkflowManager, step_ids: Optional[list] = None):
+    def finish(self, step_ids: Optional[list] = None):
         """
         Finishes the current step(s).
 
         ================    ===================================================================
         **Argument**        **Description**
         ----------------    -------------------------------------------------------------------
-        wm                  Required. The connection to the Workflow Manager instance.
-        ----------------    -------------------------------------------------------------------
-        step_ids            Optional list. The list of current step ids. If no step ids are provided, the action will be
-                            performed on the current step(s).
+        step_ids            Optional list. The job's active step ID or active parallel step IDs.
+                            If a step ID isn't provided, the action is performed on the job's current, active step(s).
         ================    ===================================================================
 
         :return:
@@ -3141,7 +3137,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.FINISH)
         # Subscribe to this job
-        wm.notification_manager.subscribe([self.job_id], je._callback)
+        self.notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3162,10 +3158,10 @@ class Job(object):
 
         # If it fails, unsubscribe then throw
         if "error" in return_obj:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj and return_obj['success'] is False:
-            wm.notification_manager.unsubscribe([self.job_id])
+            self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
@@ -3229,7 +3225,7 @@ class JobExecution:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
             elif self._execution_type is ExecutionType.FINISH:
-                if msg.msg_type in [MessageType.STEPSTARTED, MessageType.STEPERROR]:
+                if msg.msg_type in [MessageType.STEPSTARTED, MessageType.STEPERROR, MessageType.STEPFINISHED ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
 
@@ -3815,8 +3811,7 @@ class WebsocketConnection:
     msgs = []
 
     def __init__(self, subscribe_callback: Callable):
-        # TODO Make configurable
-        self.timeout = 300
+        self.timeout = 30
         self.subscribe_callback = subscribe_callback
 
     def __on_message__(self, app, msg):
@@ -3837,7 +3832,6 @@ class WebsocketConnection:
         _open_event = threading.Event()
 
         def on_open(ws: websocket.WebSocket):
-            print(f"Opened ws")
             _open_event.set()
 
         # TODO Set all headers / ssl options
@@ -3846,37 +3840,27 @@ class WebsocketConnection:
                                          on_message=self.__on_message__)
         self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
         self.thread.start()
-        print('Waiting for connection')
         if _open_event.wait(self.timeout):
             print('Connected')
         else:
             raise TimeoutError('Error waiting for connection open event')
 
     def send(self, msg):
-        print(f'Sending {msg}')
+        # print(f'Sending {msg}')
         self.ws.send(msg)
 
-    # TODO Should be specifying what we are waiting for, not just any message (i.e. JobState after a subscribe)
     def send_and_wait(self, msg):
-        # Check if connected, if not, connect now
-        # If it was already connected, see if this job is already subscribed
         self.msgs = []
         self.msgEvent = (msg, threading.Event())
         self.send(msg)
         self.msgEvent[1].wait(self.timeout)
-        # if we did the connection here, disconnect
-        # if not disconnecting, see if we need to unsubscribe
         return self.msgs
 
     def disconnect(self):
         if not self.ws:
-            print('Not connected')
             return
-
-        print('Disconnecting')
         self.ws.close()
         self.thread.join(self.timeout)
-        print('Goodbye')
 
 
 class NotificationManager:
@@ -4017,11 +4001,13 @@ class NotificationManager:
                 ws.send_and_wait(json.dumps(subscribe_obj))
                 ws.disconnect()
             else:
-                # a connection exists, exclude jobs we are already subscribed to
                 ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
                 subscribe_obj = {'msgType': 'subscribe', 'jobIds': ids, 'token': self._token_generator()}
-
-                self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                if len(ids) > 0:
+                    self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
+                else:
+                    # check if the new ids are already subscribed to, so we set the callback correctly.
+                    ids = [i for i in job_ids if i in self.subscribed_jobs.keys()]
 
             for jid in ids:
                 self.subscribed_jobs[jid] = callback
@@ -4048,7 +4034,7 @@ class NotificationManager:
         try:
             if self.websocket_connection is not None:
                 unsubscribe_obj = {'msgType': 'unsubscribe', 'jobIds': job_ids, 'token': self._token_generator()}
-                self.websocket_connection.send_and_wait(json.dumps(unsubscribe_obj))
+                self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
                 for jid in job_ids:
                     self.subscribed_jobs.pop(jid)
