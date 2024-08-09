@@ -39,10 +39,10 @@ class TestDrawOnMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
         assert (
-                self.wm.content.layers[
-                    0
-                ].properties.layerDefinition.drawingInfo.renderer.symbol.style
-                == "esriSMSDiamond"
+            self.wm.content.layers[
+                0
+            ].properties.layerDefinition.drawingInfo.renderer.symbol.style
+            == "esriSMSDiamond"
         )
 
     def test_polyline(self):

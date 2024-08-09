@@ -120,7 +120,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_create_OfflineMapAreaManager(self):
         try:
             wmitem = self.gis.content.get("8d1df5a2b82f406b900f7f623806d36e")
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
             try:
                 oma_manager = wm.offline_areas
             except Exception as e:
@@ -152,7 +152,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_list_offline_areas(self):
         try:
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -193,7 +193,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         try:
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
 
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             bookmark1 = wm.bookmarks.list[-1].name
 
@@ -255,7 +255,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -300,7 +300,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wmitem = self.gis.content.get("7cb38a3325564607a81c0da5733bfbfc")
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             try:
                 oma_mgr = wm.offline_areas
@@ -342,7 +342,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
             # wmitem = self.gis.content.get('3e7159ee4c6c4e6faf2ca2bd066ee972')
             wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
-            wm = arcgismapping.Map(wmitem)
+            wm = arcgismapping.Map(item=wmitem)
 
             bookmark1 = wm.bookmarks.list[-1].name
 
