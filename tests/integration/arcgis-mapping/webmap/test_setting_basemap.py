@@ -21,15 +21,19 @@ class TestAddLayersToMap(unittest.TestCase):
 
         # add layer
         layer = VectorTileLayer(
-            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
+            gis=self.gis,
         )
         assert layer
 
         self.wm.basemap.basemap = layer
         assert (
-                self.wm.basemap.basemap["baseMapLayers"][0]["layerType"] == "VectorTileLayer"
+            self.wm.basemap.basemap["baseMapLayers"][0]["layerType"]
+            == "VectorTileLayer"
         )
-        self.wm.basemap.basemap_title(self.wm.basemap.basemap["baseMapLayers"][0]["title"])
+        self.wm.basemap.basemap_title(
+            self.wm.basemap.basemap["baseMapLayers"][0]["title"]
+        )
         assert self.wm.basemap.basemap["title"] == layer.properties.name.replace(
             "_", " "
         )
@@ -58,7 +62,9 @@ class TestAddLayersToMap(unittest.TestCase):
 
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
-        self.wm.basemap.basemap = self.gis.content.get("e67de4be72b349fd8f8ca114bac82a8c")
+        self.wm.basemap.basemap = self.gis.content.get(
+            "e67de4be72b349fd8f8ca114bac82a8c"
+        )
         assert self.wm
 
 

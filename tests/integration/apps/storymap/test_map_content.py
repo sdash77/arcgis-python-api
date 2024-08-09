@@ -31,7 +31,7 @@ class TestMapContent(unittest.TestCase):
                         "snippet": "Creating a map for the purpose of the ArcGIS StoryMap in Python API Test.",
                     }
                 )
-                map_content = arcgismapping.Map(wm_item.id)
+                map_content = arcgismapping.Map(item=wm_item.id)
                 map = story.add(
                     map_content, caption="This is a map that has nothing special on it."
                 )
