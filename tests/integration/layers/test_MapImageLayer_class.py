@@ -1,7 +1,11 @@
 import unittest
 
 from arcgis.features.layer import FeatureLayer
-from arcgis.layers import MapImageLayer, MapImageLayerManager, EnterpriseMapImageLayerManager
+from arcgis.layers import (
+    MapImageLayer,
+    MapImageLayerManager,
+    EnterpriseMapImageLayerManager,
+)
 from arcgis.gis import GIS, Item
 from utils.decorators import integration_test
 
@@ -17,8 +21,10 @@ except:
     host_server = gis.admin.servers.get(role="HOSTING_SERVER")[0]
     res = host_server.publish_sd(sd_file=fp, folder="South_Asia", future=False)
     item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
-    if not(item):
-        raise("Test data not published. Please configure Map Service for tests to pass.")
+    if not (item):
+        raise (
+            "Test data not published. Please configure Map Service for tests to pass."
+        )
     else:
         layer = MapImageLayer.fromitem(item)
         print(layer)
@@ -40,11 +46,12 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         # Must check that supportDynamicLayers = True in layer properties
         if not layer.properties.supportsDynamicLayers == True:
-            raise ("test_create_dynamic_layer failed. Layer does not support dynamic layers.")
+            raise (
+                "test_create_dynamic_layer failed. Layer does not support dynamic layers."
+            )
         layer_to_add = {
-            "id": 101, 
-            "source": {"type": "mapLayer",
-                            "mapLayerId": 4},
+            "id": 101,
+            "source": {"type": "mapLayer", "mapLayerId": 4},
             "definitionExpression": "\"CNTRY_NAME\" is 'Iran'",
             "drawingInfo": {
                 "renderer": "simple",
@@ -90,7 +97,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
             tolerance=2,
             map_extent="59,-2,75,25",
             layers="all",
-            sr=4326, 
+            sr=4326,
             image_display="600,550,96",
         )
         assert isinstance(identify, dict)
@@ -104,7 +111,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         find = layer.find(
             search_text="Iran",
             contains=True,
-            search_fields="CNTRY_NAME", 
+            search_fields="CNTRY_NAME",
             layers="4",
             return_geometry=False,
             max_offset=100,
@@ -120,14 +127,14 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test generate_kml method
         """
         import tempfile
+
         generate = layer.generate_kml(
-            save_location=tempfile.gettempdir(), 
+            save_location=tempfile.gettempdir(),
             name="map_service_generate_kml_test",
             layers="0",
             options="composite",
         )
         assert isinstance(generate, str)
-
 
     def test_estimate_size_and_export_tiles(self):
         """
@@ -142,12 +149,15 @@ class TestQueryFeatureLayer(unittest.TestCase):
             assert isinstance(size["totalSize"], int)
             assert isinstance(size["totalTilesToExport"], int)
 
-            export = layer.export_tiles(levels="18489297.737236-9244648.868618", export_by="scale")
+            export = layer.export_tiles(
+                levels="18489297.737236-9244648.868618", export_by="scale"
+            )
             assert isinstance(export, list)
             assert len(export) > 0
         except:
             # Export tiles not supported for this layer
             return
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -577,7 +577,9 @@ class SymbolService:
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-            self._properties = self._session.get(url=self._url).json()
+            self._properties = self._session.get(
+                url=self._url, params={"f": "json"}
+            ).json()
         return self._properties
 
     def generate_symbol(self, svg: str) -> dict:
@@ -695,8 +697,10 @@ class VectorTileLayer(arcgis.gis.Layer):
     name, description, and any overriding style definition.
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis):
         super(VectorTileLayer, self).__init__(url, gis)
+        if gis is None:
+            raise ValueError("GIS object must be provided")
         self._session = gis.session
 
     # ----------------------------------------------------------------------
