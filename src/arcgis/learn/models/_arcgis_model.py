@@ -601,9 +601,9 @@ class ArcGISModel(object):
             self._is_multispectral = getattr(data, "_is_multispectral")
         else:
             self._is_multispectral = False
+
         if self._is_multispectral or "hf:" in backbone:
-            self._imagery_type = data._imagery_type
-            self._bands = data._bands
+
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -621,7 +621,10 @@ class ArcGISModel(object):
                     kwargs.get("tail_weights_type"),
                 )
 
-            backbone_wrapper._is_multispectral = True
+            if self._is_multispectral:
+                self._imagery_type = data._imagery_type
+                self._bands = data._bands
+                backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
 
         if not hasattr(data, "class_mapping") and hasattr(data, "classes"):

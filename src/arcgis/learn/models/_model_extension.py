@@ -132,7 +132,7 @@ class ModelExtension(ArcGISModel):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
-        if self._is_multispectral:
+        if self._is_multispectral or "hf:" in backbone:
             model = _change_tail(model, data)
         if not _isnotebook():
             _set_ddp_multigpu(self)

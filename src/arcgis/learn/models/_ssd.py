@@ -990,6 +990,8 @@ class SingleShotDetector(ArcGISModel):
         _emd_template["ExtractBands"] = [0, 1, 2]
         if "timm" in self._backbone.__module__:
             bckbn_name = "timm:" + self._backbone.__name__
+        elif "_hf_" in self._backbone.__module__:
+            bckbn_name = "hf:" + self._backbone.__name__
         else:
             bckbn_name = self._backbone.__name__
         _emd_template["backbone"] = bckbn_name

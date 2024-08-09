@@ -31,6 +31,7 @@ class CustomHED:
         import torch
         from torchvision import models
         from arcgis.learn.models import _hed_utils as hed
+
     except:
         pass
 
@@ -39,6 +40,9 @@ class CustomHED:
         In this fuction you have to define your model with following two arguments!
 
         """
+        from arcgis.learn.models._arcgis_model import _change_tail
+        from functools import wraps
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
 
         if backbone is None:
@@ -53,8 +57,7 @@ class CustomHED:
         else:
             self._is_multispectral = False
         if self._is_multispectral or "hf:" in backbone:
-            self._imagery_type = data._imagery_type
-            self._bands = data._bands
+
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -72,7 +75,10 @@ class CustomHED:
                     kwargs.get("tail_weights_type"),
                 )
 
-            backbone_wrapper._is_multispectral = True
+            if self._is_multispectral:
+                self._imagery_type = data._imagery_type
+                self._bands = data._bands
+                backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
 
         model = self.hed._HEDModel(

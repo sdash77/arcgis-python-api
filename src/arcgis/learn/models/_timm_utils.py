@@ -23,10 +23,13 @@ try:
     import fnmatch
     from timm.models.hub import (
         has_hf_hub,
-        # load_state_dict_from_hf,
-        _download_from_hf,
+        load_state_dict_from_hf,
+        hf_split,
+        hf_hub_url,
+        # _download_from_hf,
         load_state_dict_from_url,
     )
+    from huggingface_hub import hf_hub_download
     from timm.models.helpers import (
         adapt_input_conv,
         build_model_with_cfg,
@@ -136,6 +139,25 @@ hosted_weights = {
     "regnetx_006": "e595c123a67c4a4f87f322b1af4b293c",
     "tf_efficientnet_b6_ns": "20d17115f5db4e11837b8d43e81d59da",
 }
+
+
+# def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
+#     assert has_hf_hub(True)
+#     cached_file = _download_from_hf(model_id, filename)
+#     state_dict = torch.load(cached_file, map_location="cpu")
+#     return state_dict
+
+
+def _download_from_hf(model_id: str, filename: str):
+    hf_model_id, hf_revision = hf_split(model_id)
+    url = hf_hub_url(hf_model_id, filename, revision=hf_revision)
+    # return hf_hub_download(hf_model_id, filename, revision=hf_revision)
+    cached_file = hf_hub_download(hf_model_id, filename, revision=hf_revision)
+    sys.stderr.write(
+        'Downloaded: "{}" pretrained weights to {}\n'.format(filename, cached_file)
+    )
+
+    return cached_file
 
 
 def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
