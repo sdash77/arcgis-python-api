@@ -9407,7 +9407,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                                                                                         processing instances:
 
                                                                                             {"parallelProcessingFactor": "60%"}
-                                                                                    
+
                                                                                     - Output DSM product settings: controls
                                                                                     the environment variables for creating the DSM product.
 
@@ -9551,21 +9551,36 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         if output_dsm_mesh_name is not None:
             if isinstance(output_dsm_mesh_name, str):
-                output_dsm_mesh_dict = {"itemProperties": {"name": output_dsm_mesh_name, "title": output_dsm_mesh_name}}
+                output_dsm_mesh_dict = {
+                    "itemProperties": {
+                        "name": output_dsm_mesh_name,
+                        "title": output_dsm_mesh_name,
+                    }
+                }
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["dsm_mesh"] = output_dsm_mesh_dict
 
         if output_point_cloud_name is not None:
             if isinstance(output_point_cloud_name, str):
-                output_point_cloud_dict = {"itemProperties": {"name": output_point_cloud_name, "title": output_point_cloud_name}}
+                output_point_cloud_dict = {
+                    "itemProperties": {
+                        "name": output_point_cloud_name,
+                        "title": output_point_cloud_name,
+                    }
+                }
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["point_cloud"] = output_point_cloud_dict
 
         if output_mesh_name is not None:
             if isinstance(output_mesh_name, str):
-                output_mesh_dict = {"itemProperties": {"name": output_mesh_name, "title": output_mesh_name}}
+                output_mesh_dict = {
+                    "itemProperties": {
+                        "name": output_mesh_name,
+                        "title": output_mesh_name,
+                    }
+                }
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
             output_products["mesh"] = output_mesh_dict

@@ -387,19 +387,20 @@ class GPJob(object):
                                 }
                                 r[key].update(item_properties=_item_properties)
                             iids.append(val["itemId"])
-                    elif (
-                        isinstance(val, dict)
-                        and "url" in val
-                        and len(val["url"]) > 0
-                    ):
+                    elif isinstance(val, dict) and "url" in val and len(val["url"]) > 0:
                         if not val["url"] in iids:
                             try:
-                                r[key] = arcgis.mapping.SceneLayer(val["url"], self._gis)
+                                r[key] = arcgis.mapping.SceneLayer(
+                                    val["url"], self._gis
+                                )
                             except Exception:
                                 from time import sleep
+
                                 print("sleeping...")
                                 sleep(10)
-                                r[key] = arcgis.mapping.SceneLayer(val["url"], self._gis)
+                                r[key] = arcgis.mapping.SceneLayer(
+                                    val["url"], self._gis
+                                )
                             if self._item_properties:
                                 _item_properties = {
                                     "properties": {
@@ -1394,20 +1395,20 @@ class RMJob(GPJob):
     # ----------------------------------------------------------------------
     def _update_properties_items(self, properties, products):
         properties_items = properties["items"]
-        
+
         if isinstance(properties_items, str):
             properties_items = json.loads(properties_items)
-        
+
         existing_products = []
         for dict_item in properties_items:
             existing_products.append(dict_item["product"])
-        
+
         # Loop through the products generated in this run and add/update them
         for product, itemid in products.items():
             id_or_url = "id"
             if "http" in itemid:
                 id_or_url = "url"
-            
+
             if product not in existing_products:
                 properties_items.append(
                     {"product": product, id_or_url: itemid, "created": True}
@@ -1419,16 +1420,16 @@ class RMJob(GPJob):
                     id_or_url: itemid,
                     "created": True,
                 }
-        
+
         return properties_items
 
     # ----------------------------------------------------------------------
     def _get_items(self, mission, item_name):
         items = {}
-        
+
         if self._item is None:
             return items
-        
+
         if isinstance(self._item, dict):
             for name, item in self._item.items():
                 parsed_item = self._parse_item(mission, item)
@@ -1446,7 +1447,7 @@ class RMJob(GPJob):
         slpk_itemid = ""
         slpk_item = None
         parsed_item = {}
-        
+
         try:
             item_props = json.loads(item)
         except:
@@ -1467,6 +1468,7 @@ class RMJob(GPJob):
             itemid = item_props["id"]
             url = item_props.url
             from arcgis.gis import Item
+
             if isinstance(item_props, Item) and item_props.type == "Scene Service":
                 slpk_item = item_props.related_items("Service2Data")
                 if slpk_item is not None or len(slpk_item) > 0:
@@ -1475,9 +1477,9 @@ class RMJob(GPJob):
             url = item_props["url"]
 
         parsed_item = {"itemId": itemid, "url": url}
-        if slpk_itemid :
+        if slpk_itemid:
             parsed_item["slpkItemId"] = slpk_itemid
-            slpk_itemid = ""        
+            slpk_itemid = ""
 
         if not parsed_item["itemId"]:
             parsed_item.pop("itemId")
@@ -1497,7 +1499,7 @@ class RMJob(GPJob):
 
         if self._op.__class__.__name__ == "FunctionOutput":
             op_dict = self._op._asdict()
-        
+
         for layer, val in op_dict.items():
             if layer.lower() in scene_layers:
                 parsed_item = self._parse_item(mission, val)
@@ -1513,16 +1515,17 @@ class RMJob(GPJob):
                     item_info = mission_json["items"][key]
                     if isinstance(item_info, dict) and "itemId" in item_info:
                         if item_info["itemId"] != itemid:
-                            item_object = mission._gis.content.get(
-                                item_info["itemId"]
-                            )
+                            item_object = mission._gis.content.get(item_info["itemId"])
                             try:
                                 if item_object:
                                     deleted = item_object.delete()
                             except:
                                 pass
                     if slpk_itemid is not None:
-                        if "slpkItemId" in item_info and item_info["slpkItemId"] != slpk_itemid:
+                        if (
+                            "slpkItemId" in item_info
+                            and item_info["slpkItemId"] != slpk_itemid
+                        ):
                             slpk_item = mission._gis.content.get(
                                 item_info["slpkItemId"]
                             )
@@ -1590,7 +1593,7 @@ class RMJob(GPJob):
                     "mesh",
                     "true_ortho",
                     "point_cloud",
-                    "dtm"
+                    "dtm",
                 ]
                 if "jobs" in mission_json:
                     for key in keys:
@@ -1602,20 +1605,32 @@ class RMJob(GPJob):
                                     {key: {"checked": False, "mode": "Quick"}}
                                 )
 
-                item_keys = ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
+                item_keys = [
+                    "ortho",
+                    "dsm",
+                    "dsm_mesh",
+                    "mesh",
+                    "true_ortho",
+                    "point_cloud",
+                    "dtm",
+                ]
                 for key in item_keys:
                     if key in mission_json["items"]:
                         item_info = mission_json["items"][key]
                         if isinstance(item_info, dict):
                             if "itemId" in item_info:
-                                item_object = mission._gis.content.get(item_info["itemId"])
+                                item_object = mission._gis.content.get(
+                                    item_info["itemId"]
+                                )
                             try:
                                 if item_object:
                                     deleted = item_object.delete()
                             except:
                                 pass
                             if "slpkItemId" in item_info:
-                                item_object = mission._gis.content.get(item_info["slpkItemId"])
+                                item_object = mission._gis.content.get(
+                                    item_info["slpkItemId"]
+                                )
                             try:
                                 if item_object:
                                     deleted = item_object.delete()
@@ -1632,8 +1647,10 @@ class RMJob(GPJob):
                 for item, item_info in items.items():
                     itemid = item_info.get("itemId", None)
                     slpk_itemid = item_info.get("slpkItemId", None)
-                    self._try_delete_item(item, itemid, slpk_itemid, mission_json, mission)
-                    
+                    self._try_delete_item(
+                        item, itemid, slpk_itemid, mission_json, mission
+                    )
+
             elif item_name == "ortho":
                 itemid = imagery_items[item_name]["itemId"]
                 self._try_delete_item(item_name, itemid, None, mission_json, mission)

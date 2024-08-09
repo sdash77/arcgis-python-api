@@ -194,7 +194,7 @@ def _create_project(
 
     item_properties = {
         "title": name,
-        "type": "Reality Mapping Project", # "Reality Mapping Project",
+        "type": "Reality Mapping Project",  # "Reality Mapping Project",
         "properties": {"flightCount": 0, "status": "inProgress"},
     }
     if definition is None:
@@ -381,7 +381,7 @@ def _add_mission(
     workspace_name = fname.replace(".json", "")
     # timestamp = datetime.timestamp()
     # workspace_name = f"{mission_name}_{timestamp}"
-    
+
     if context is None:
         context = {"workspace": workspace_name}
     else:
@@ -405,12 +405,14 @@ def _add_mission(
         if output_collection and project._spatial_reference is None:
             # Get the lyr SR and set it on the SR instance variable
             lyr = output_collection.layers[0]
-            project._spatial_reference = {"spatialReference": lyr.extent.spatialReference}
+            project._spatial_reference = {
+                "spatialReference": lyr.extent.spatialReference
+            }
             props = None
             # Get the project item data to update the SR for the portal item
             project_data = project_item.get_data()
             project_data.update(project._spatial_reference)
-            
+
             if "wkid" in project._spatial_reference:
                 wkid = project._spatial_reference["wkid"]
                 props = {"spatialReference": wkid}
@@ -420,7 +422,7 @@ def _add_mission(
             elif "wkt2" in project._spatial_reference:
                 wkt_2 = project._spatial_reference["wkt2"]
                 props = {"spatialReference": wkt_2}
-            
+
             project_item.update(item_properties=props, data=project_data)
     except:
         pass
@@ -2034,6 +2036,7 @@ def reconstruct_surface(
     """
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import RMMission
+
     update_flight_json = False
     flight_json_details = {}
     image_collection = mission
@@ -2134,7 +2137,7 @@ class RMProject:
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
-        if project.type == "Reality Mapping Project": # Reality Mapping Project
+        if project.type == "Reality Mapping Project":  # Reality Mapping Project
             self._project_item = project
         else:
             raise RuntimeError(
@@ -2194,9 +2197,9 @@ class RMProject:
                 self._spatial_reference = item_data.get("spatialReference", None)
             except:
                 self._spatial_reference = None
-        
+
         return self._spatial_reference
-    
+
     @property
     def item(self):
         """
@@ -2205,7 +2208,7 @@ class RMProject:
         :return: A portal item
         """
         return self._project_item
-    
+
     def delete(self):
         """
         The ``delete`` method deletes the project item from the portal and all the associated products.
@@ -2224,7 +2227,6 @@ class RMProject:
     #        return True
     #    except:
     #        raise RuntimeError("Creation of realitymapping project failed.")
-    
 
     def add_mission(
         self,

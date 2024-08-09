@@ -56,7 +56,7 @@ class RMMission:
         if isinstance(project, RMProject):
             self._project = project
         elif isinstance(project, Item):
-            if project.type == "Ortho Mapping Project": # "Reality Mapping Project"
+            if project.type == "Ortho Mapping Project":  # "Reality Mapping Project"
                 self._project = RMProject(project, gis=project._gis)
 
         self._project_item = project._project_item
@@ -68,7 +68,7 @@ class RMMission:
     @property
     def _mission_json(self):
         return self._get_mission_json(self._mission_name)
-    
+
     @property
     def products(self):
         """
@@ -141,7 +141,7 @@ class RMMission:
                 image_collection_item = self._gis.content.get(item_id)
                 self._collection = image_collection_item
                 return image_collection_item
-            
+
     @property
     def workspace(self):
         """
@@ -156,7 +156,7 @@ class RMMission:
         except:
             pass
         return self._workspace
-    
+
     def _update_mission_json(self, mission_json):
         rm = self._project_item.resources
         resource = self._resource_info
@@ -186,7 +186,7 @@ class RMMission:
             )
         except:
             raise RuntimeError("Error updating the mission resource")
-        
+
     def delete_product(self, product):
         """
         The ``delete_product`` method deletes the product specified by the product parameter.
@@ -200,9 +200,17 @@ class RMMission:
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        if product.lower() not in ["ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]:
+        if product.lower() not in [
+            "ortho",
+            "dsm",
+            "dsm_mesh",
+            "mesh",
+            "true_ortho",
+            "point_cloud",
+            "dtm",
+        ]:
             raise RuntimeError("Invalid product type")
-        
+
         product = product.lower()
         deleted = False
         slpk_deleted = False
@@ -276,11 +284,20 @@ class RMMission:
             mission_json = self._mission_json
             oid = mission_json["oid"]
 
-            products_list = ["imageCollection", "ortho", "dsm", "dsm_mesh", "mesh", "true_ortho", "point_cloud", "dtm"]
+            products_list = [
+                "imageCollection",
+                "ortho",
+                "dsm",
+                "dsm_mesh",
+                "mesh",
+                "true_ortho",
+                "point_cloud",
+                "dtm",
+            ]
             items_list = []
             slpk_items_list = []
             image_collection_item = None
-            
+
             for product in products_list:
                 item = self._get_product_item(product)
                 if product in ["dsm_mesh", "mesh", "point_cloud"]:
@@ -290,7 +307,7 @@ class RMMission:
                 # Store the image collection item separately as well since we need it below
                 if product == "imageCollection":
                     image_collection_item = item
-            
+
             prj_data = project_item.get_data()
             flights_list = prj_data.get("flights", [])
 
@@ -666,7 +683,7 @@ class RMMission:
                             gps_data.append(dict_gps)
                     except:
                         gps_data = mission_json["sourceData"]["gps"]
-                
+
                 from datetime import datetime
 
                 lyr = image_collection.layers[0]
