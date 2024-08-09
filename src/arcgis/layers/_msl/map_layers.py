@@ -53,6 +53,7 @@ class MapFeatureLayer(Layer):
         gis: _gis.GIS | None = None,
         container: MapImageLayer | None = None,
         dynamic_layer: dict | None = None,
+        time_filter: _dt.datetime | list[_dt.datetime] | list[str] | None = None,
     ):
         """
         Constructs a map feature layer given a feature layer URL
@@ -70,7 +71,7 @@ class MapFeatureLayer(Layer):
 
         self._attachments = None
         self._dynamic_layer = dynamic_layer
-        self._time_filter = None
+        self._time_filter = time_filter
 
     # ----------------------------------------------------------------------
     @property
@@ -1710,11 +1711,15 @@ class _MSILayerFactory(type):
                 dynamic_layer=dynamic_layer,
             )
         elif "type" in props and props.type.lower() == "feature layer":
+            time_filter = (
+                props.timeInfo.timeExtent if props.timeInfo is not None else None
+            )
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
+                time_filter=time_filter,
             )
         return lyr
 
