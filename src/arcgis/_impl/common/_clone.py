@@ -3381,7 +3381,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 new_service is not None
                                 and "adminLayerInfo" in layer
                                 and "viewLayerDefinition" in layer["adminLayerInfo"]
-                                and "table" in layer["adminLayerInfo"]["viewLayerDefinition"]
+                                and "table"
+                                in layer["adminLayerInfo"]["viewLayerDefinition"]
                             ):
                                 layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                     "sourceServiceName"
