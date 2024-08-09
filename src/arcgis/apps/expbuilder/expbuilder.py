@@ -799,7 +799,7 @@ class WebExperience(object):
                 # first, see if we can already access each one anonymously
                 # or through the passed in GIS
                 url = sources[source]["portalUrl"]
-                test_gis = _arcgis_gis.GIS(url=url, verify_cert=False)
+                test_gis = _arcgis_gis.GIS(url=url)
                 try:
                     try:
                         targ_item = test_gis.content.get(sources[source]["itemId"])
