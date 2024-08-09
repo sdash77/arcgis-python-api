@@ -225,6 +225,13 @@ class credentials:
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
         )
+    
+    @classproperty
+    def enterprise_iwa(cls):
+        """Run tests for iwa and multi-iwa enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_iwa_credential_parameters,
+        )
 
     @classproperty
     def enterprise_kerberos(cls):
@@ -308,6 +315,7 @@ class profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
+    _agol_anonymous_profile_parameters = ("agol_anonymous", "your_anonymous_online_profile")
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_devext_profile_parameters = ("devext", "your_dev_online_profile")
     _agol_admin_profile_parameters = (
@@ -326,6 +334,10 @@ class profiles:
     _k8s_admin_profile_parameters = (
         "k8s_admin",
         "your_kubernetes_admin_profile",
+    )
+    _utility_network_profile_parameters = (
+        "utility_network",
+        "your_utility_network_profile",
     )
 
     def _get_profile_parameterized_class(*args):
@@ -358,6 +370,13 @@ class profiles:
         )
 
     # region decorators
+    @classproperty
+    def anonymous_agol(cls):
+        """Run tests for agol anonymous profile"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_anonymous_profile_parameters
+        )
+
     @classproperty
     def admin_agol(cls):
         """Run tests for agol admin profile"""
@@ -435,6 +454,12 @@ class profiles:
             cls._k8s_admin_profile_parameters,
         )
 
+    @classproperty
+    def utility_network(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._utility_network_profile_parameters
+        )
     # endregion
 
 
@@ -461,7 +486,7 @@ class from_to_profiles:
     _agol_to_enterprise_params = {
         "description": "agol_to_enterprise",
         "from_profile": "your_online_admin_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
     _agol_to_k8s_params = {
         "description": "agol_to_k8s",
@@ -470,18 +495,18 @@ class from_to_profiles:
     }
     _enterprise_to_agol_params = {
         "description": "enterprise_to_agol",
-        "from_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
         "to_profile": "your_online_admin_profile",
     }
     # TODO Andrew: add another profile if you want these to go to different enterprises
     _enterprise_to_enterprise_params = {
         "description": "enterprise_to_enterprise",
-        "from_profile": "your_enterprise_admin_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
     _enterprise_to_k8s_params = {
         "description": "enterprise_to_k8s",
-        "from_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
         "to_profile": "your_kubernetes_profile",
     }
     _k8s_to_agol_params = {
@@ -492,7 +517,7 @@ class from_to_profiles:
     _k8s_to_enterprise_params = {
         "description": "k8s_to_enterprise",
         "from_profile": "your_kubernetes_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
 
     def _get_multi_profile_parameterized_class(*args):

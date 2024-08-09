@@ -196,7 +196,7 @@ class BaseGeometry(dict):
             if name in self._class_attributes:
                 return super(BaseGeometry, self).__getattr__(name)
             return self.__getitem__(name)
-        except:
+        except Exception as ex:
             raise AttributeError(
                 "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
@@ -872,10 +872,18 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if _HASSHAPELY:
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
+                from shapely.validation import explain_validity
 
                 if "curvePaths" in self or "curveRings" in self:
                     return {}
-                return shape(self.__geo_interface__)
+                geom_shply = shape(self.__geo_interface__)
+
+                if not geom_shply.is_valid:
+                    print(
+                        f"Geometry failed validation: {explain_validity(geom_shply)}. Repairing with `buffer(0)`."
+                    )
+                    geom_shply = geom_shply.buffer(0)
+                return geom_shply
         return None
 
     @property
@@ -1300,7 +1308,16 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False) | self.get("z", False)
+        if "hasZ" in self:
+            return self["hasZ"]
+        elif "z" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_z
+        elif self.as_shapely:
+            return self.as_shapely.has_z
+
+        return self.get("hasZ", False) or self.get("z", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1312,6 +1329,12 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             A boolean indicating yes (True), or no (False)
 
         """
+        if "hasM" in self:
+            return self.get("hasM", False)
+        elif "m" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_m
         return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
@@ -2031,6 +2054,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
         elif HASSHAPELY:
+
             return self.as_shapely.crosses(other=second_geometry.as_shapely)
         return None
 
@@ -3033,10 +3057,11 @@ class MultiPoint(Geometry):
         self.update(kwargs)
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> dict:
+        """returns the EsriJSON as GeoJSON"""
         return {
             "type": "Multipoint",
-            "coordinates": [(pt[0], pt[1]) for pt in self["points"]],
+            "coordinates": [tuple(pt) for pt in self["points"]],
         }
 
     # ----------------------------------------------------------------------
@@ -3240,15 +3265,25 @@ class Point(Geometry):
         for d in data:
             if d.lower() == "coordinates":
                 coordkey = d
-        coordinates = data[coordkey]
+        coordinates = list(data[coordkey])
+        if len(coordinates) == 2:
+            keys = ["x", "y"]
+        elif len(coordinates) >= 3:
+            keys = ["x", "y", "z"]
+            coordinates = coordinates[:3]
+        keys.append("spatialReference")
+        coordinates.append(sr)
+        v: dict = dict(zip(keys, coordinates))
+        return cls(v)
 
-        return cls(
-            {
-                "x": coordinates[0],
-                "y": coordinates[1],
-                "spatialReference": sr,
-            }
-        )
+    # ----------------------------------------------------------------------
+    @property
+    def __geo_interface__(self) -> dict:
+        """returns the EsriJSON as GeoJSON"""
+        gj: dict = {"type": "Point", "coordinates": [self["x"], self["y"]]}
+        if "z" in self:
+            gj["coordinates"].append(self["z"])
+        return gj
 
 
 ########################################################################
@@ -3390,6 +3425,14 @@ class Polygon(Geometry):
                 part_list.append(part_item)
         return cls({"rings": part_list, "spatialReference": sr})
 
+    @property
+    def __geo_interface__(self) -> dict:
+        """returns the Polygon as a MultiPolygon GeoJSON"""
+        col = []
+        for part in self["rings"]:
+            col.append([tuple(pt) for pt in part])
+        return {"coordinates": [col], "type": "MultiPolygon"}
+
 
 ########################################################################
 class Polyline(Geometry):
@@ -3462,6 +3505,45 @@ class Polyline(Geometry):
         return self._type
 
     # ----------------------------------------------------------------------
+    @property
+    def has_z(self) -> bool:
+        """
+        The ``has_z`` method determines if the geometry has a `Z` value.
+
+        :return:
+            A boolean indicating yes (True), or no (False)
+
+        """
+        if "hasZ" in self:
+            return self["hasZ"]
+        elif "z" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_z
+        elif self.as_shapely:
+            return self.as_shapely.has_z
+
+        return False
+
+    # ----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        The ``has_m`` method determines if the geometry has a `M` value.
+
+        :return:
+            A boolean indicating yes (True), or no (False)
+
+        """
+        if "hasM" in self:
+            return self.get("hasM", False)
+        elif "m" in self:
+            return True
+        elif self.as_arcpy:
+            return self.as_arcpy.has_m
+        return self.get("hasM", False) | self.get("m", False)
+
+    # ----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
 
@@ -3490,14 +3572,25 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     @property
-    def __geo_interface__(self):
-        return {
-            "type": "MultiLineString",
-            "coordinates": [
-                [((pt[0], pt[1]) if pt else None) for pt in part]
-                for part in self["paths"]
-            ],
-        }
+    def __geo_interface__(self) -> dict:
+        """Returns the EsriJSON as GeoJSON"""
+        parts: list = []
+
+        for part in self["paths"]:
+            coordinates: list = []
+            for pt in part:
+                if pt:
+                    if len(pt) == 2:
+                        coordinates.append((pt[0], pt[1]))
+                    elif len(pt) == 3:
+                        coordinates.append((pt[0], pt[1], pt[2]))
+                    elif len(pt) == 4:
+                        coordinates.append((pt[0], pt[1], pt[2], pt[3]))
+                else:
+                    coordinates.append(None)
+            parts.append(coordinates)
+
+        return {"type": "MultiLineString", "coordinates": parts}
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
@@ -3614,7 +3707,8 @@ class Envelope(Geometry):
                     dtype=float,
                 )
             return np.array(
-                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]],
+                dtype=float,
             )
         else:
             return np.array([])

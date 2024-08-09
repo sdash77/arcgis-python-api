@@ -37,7 +37,10 @@ arcgis.geoenrichment module
 arcgis.geoprocessing module
 -----------------
 
-arcgis.mapping module
+arcgis.layers module
+-----------------
+
+arcgis.map module
 -----------------
 
 arcgis.apps module

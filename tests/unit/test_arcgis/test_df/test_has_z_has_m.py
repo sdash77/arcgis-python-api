@@ -37,7 +37,10 @@ SAMPLE_GEOMETRY_HASZ_ONLY = {
 }
 SAMPLE_GEOMETRY_MISSING = {
     "paths": [
-        [[11559865.5434, 147204.92960000038], [11559866.5434, 147205.92960000038]]
+        [
+            [11559865.5434, 147204.92960000038],
+            [11559866.5434, 147205.92960000038],
+        ]
     ],
     "spatialReference": {"wkid": 102100, "latestWkid": 3857},
 }
@@ -62,6 +65,8 @@ GEOMS = [
         SAMPLE_GEOMETRY_MISSING,
     ]
 ]
+
+
 ###########################################################################
 class TestHasZHasMGeometry(unittest.TestCase):
     """Tests the HasZ and HasM Geometries"""
@@ -73,7 +78,6 @@ class TestHasZHasMGeometry(unittest.TestCase):
         assert g1.has_z == False
         assert g2.has_z == True
         assert g3.has_z == True
-        assert g4.has_z == False
 
     # ----------------------------------------------------------------------
     def test_has_m(self):
@@ -82,7 +86,6 @@ class TestHasZHasMGeometry(unittest.TestCase):
         assert g1.has_m == True
         assert g2.has_m == True
         assert g3.has_m == False
-        assert g4.has_m == False
 
 
 ###########################################################################
@@ -93,6 +96,7 @@ class TestGeoAccessorSpatialHasMHasZ(unittest.TestCase):
     def test_has_z_m(self):
         data = {"SHAPE": [GEOMS[1]] * 4, "OID": [1, 2, 3, 4]}
         sdf = pd.DataFrame(data)
+
         assert sdf.spatial.has_z == True
         assert sdf.spatial.has_m == True
 

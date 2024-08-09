@@ -463,17 +463,15 @@ class Version(object):
                     self._properties = None
                 if self.start_reading():
                     self._mode = value
-            elif value in [None, "none"]:
-                if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
-                    self.stop_editing(save=self.save_edits)
-                    self._properties = None
-                if "isBeingRead" in self.properties and self.properties.isBeingRead:
-                    self._properties = None
-                    self.stop_reading()
-                    self._properties = None
-                    self.stop_reading()
-                    self._properties = None
-                self._mode = None
+        elif value in [None, "none"]:
+            if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
+                self.stop_editing(save=self.save_edits)
+                self._properties = None
+            if "isBeingRead" in self.properties and self.properties.isBeingRead:
+                self._properties = None
+                self.stop_reading()
+                self._properties = None
+            self._mode = None
             self._properties = None
 
     # ----------------------------------------------------------------------
@@ -542,7 +540,8 @@ class Version(object):
         ):
             self._properties = None
             params = {"f": "json", "sessionId": self._guid}
-            self.start_reading()
+            if not self.properties.isBeingRead:
+                self.start_reading()
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
             if res["success"]:
@@ -1072,9 +1071,11 @@ class Version(object):
     # ----------------------------------------------------------------------
     def __enter__(self):
         if self._mode == "edit":
-            self.start_editing()
+            if not self.properties.isBeingEdited:
+                self.start_editing()
         elif self.mode == "read":
-            self.start_reading()
+            if not self.properties.isBeingRead:
+                self.start_reading()
         return self
 
     # ----------------------------------------------------------------------

@@ -56,6 +56,9 @@ class MMDetectionConfig:
             self.thresh = self.model.roi_head.test_cfg.score_thr
             self.model.roi_head.test_cfg.nms.iou_threshold = nms_overlap
             self.model.roi_head.test_cfg.score_thr = thresh
+        elif self.model.bbox_head.__class__.__name__ == "DINOHead":
+            self.thresh = thresh
+            self.nms_thres = nms_overlap
         else:
             self.nms_thres = self.model.bbox_head.test_cfg.nms.iou_threshold
             self.thresh = self.model.bbox_head.test_cfg.score_thr
