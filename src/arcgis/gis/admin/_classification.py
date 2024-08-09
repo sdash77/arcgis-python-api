@@ -242,7 +242,7 @@ class ClassificationManager:
     ) -> bool:
         """
         Operation that would verify whether the classification that would be
-        given to an :class:`~arcgis.gis.Item`.
+        given to an :class:`~arcgis.gis.Item` is in the correct format.
 
         =======================    =============================================================
         **Parameter**              **Description**
