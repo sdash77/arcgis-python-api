@@ -832,7 +832,10 @@ def postprocess(
             if not torch.jit.is_scripting():
                 nms_in = detections_class.cpu().numpy()
                 nms_out_index = nms(
-                    nms_in[:, :4], thresh=nms_thre, score=nms_in[:, 4] * nms_in[:, 5]
+                    nms_in[:, :4],
+                    thresh=nms_thre,
+                    score=nms_in[:, 4] * nms_in[:, 5],
+                    limit=200,
                 )
             else:
                 nms_in = detections_class.detach().clone()

@@ -103,6 +103,7 @@ class FeatureLayer(Layer):
         else:
             return False
 
+    @property
     def _upload_manager(self) -> "UploadManager":
         """Provides the upload endpoint for a feature layer"""
 
@@ -414,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
@@ -2242,7 +2247,7 @@ class FeatureLayer(Layer):
             as_df=as_df,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -2501,6 +2506,7 @@ class FeatureLayer(Layer):
         skip_inserts: Optional[bool] = None,
         upsert_matching_field: Optional[str] = None,
         upload_id: Optional[str] = None,
+        layer_mappings: Optional[list[dict[str, int]]] = None,
         *,
         return_messages: Optional[bool] = None,
         future: bool = False,
@@ -2594,6 +2600,10 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
+        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+
+                                    Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
+        ------------------------   --------------------------------------------------------------------
         return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
                                    not be returned.  This alters the output to be a tuple consisting of
@@ -2658,6 +2668,7 @@ class FeatureLayer(Layer):
             "appendItemId": item_id,
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
+            "layerMappings": layer_mappings,
         }
         if (
             self._gis
@@ -3108,8 +3119,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = adds[cols].spatial.__feature_set__["features"]
             params["adds"] = json.dumps(
-                adds[cols].spatial.__feature_set__["features"],
+                adds,
                 default=_date_handler,
             )
         elif (
@@ -3121,22 +3133,21 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
+            adds = [{"attributes": row} for row in adds[cols].to_dict("records")]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict("records")],
+                adds,
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
-            params["adds"] = json.dumps(
-                [f.as_dict for f in adds.features], default=_date_handler
-            )
-
+            adds = adds.to_dict()["features"]
+            params["adds"] = json.dumps(adds, default=_date_handler)
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
-                params["adds"] = json.dumps([f for f in adds], default=_date_handler)
+                adds = [f for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], PropertyMap):
-                params["adds"] = json.dumps(
-                    [dict(f) for f in adds], default=_date_handler
-                )
+                adds = [dict(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             elif isinstance(adds[0], Feature):
 
                 def _handle_feature(f):
@@ -3145,20 +3156,19 @@ class FeatureLayer(Layer):
                         d["attributes"] = {}
                     return d
 
-                params["adds"] = json.dumps(
-                    [_handle_feature(f) for f in adds], default=_date_handler
-                )
+                adds = [_handle_feature(f) for f in adds]
+                params["adds"] = json.dumps(adds, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if isinstance(updates, FeatureSet):
-            params["updates"] = json.dumps(
-                [f.as_dict for f in updates.features], default=_date_handler
-            )
+            updates = [f.as_dict for f in updates.features]
+            params["updates"] = json.dumps(updates, default=_date_handler)
         elif (
             HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
         ):
+            updates = updates.spatial.__feature_set__["features"]
             params["updates"] = json.dumps(
-                updates.spatial.__feature_set__["features"],
+                updates,
                 default=_date_handler,
             )
         elif (
@@ -3166,29 +3176,27 @@ class FeatureLayer(Layer):
             and isinstance(updates, pd.DataFrame)
             and _is_geoenabled(updates) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c
                 for c in updates.columns.tolist()
                 if c.lower() not in ["objectid", "fid"]
             ]
+            updates = [{"attributes": row} for row in updates[cols].to_dict("records")]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict("records")],
+                updates,
                 default=_date_handler,
             )
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
-                params["updates"] = json.dumps(
-                    [f for f in updates], default=_date_handler
-                )
+                updates = [f for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], PropertyMap):
-                params["updates"] = json.dumps(
-                    [dict(f) for f in updates], default=_date_handler
-                )
+                updates = [dict(f) for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             elif isinstance(updates[0], Feature):
-                params["updates"] = json.dumps(
-                    [f.as_dict for f in updates], default=_date_handler
-                )
+                updates = [f.as_dict for f in updates]
+                params["updates"] = json.dumps(updates, default=_date_handler)
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
         if deletes is not None and isinstance(deletes, str):
@@ -3201,8 +3209,9 @@ class FeatureLayer(Layer):
             cols = [
                 c for c in deletes.columns.tolist() if c.lower() in ["objectid", "fid"]
             ]
+            deletes = ",".join([str(d) for d in deletes[cols[0]]])
             if len(cols) > 0:
-                params["deletes"] = ",".join([str(d) for d in deletes[cols[0]]])
+                params["deletes"] = deletes
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
@@ -3215,14 +3224,16 @@ class FeatureLayer(Layer):
                 print("deletes FeatureSet must have object_id_field_name parameter set")
 
             if field_name:
-                params["deletes"] = ",".join(
+                deletes = ",".join(
                     [
                         str(feat.get_value(field_name=field_name))
                         for feat in deletes.features
                     ]
                 )
+                params["deletes"] = deletes
         elif isinstance(deletes, (list, tuple)):
-            params["deletes"] = ",".join([str(d) for d in deletes])
+            deletes = ",".join([str(d) for d in deletes])
+            params["deletes"] = deletes
         if return_edit_moment is not None:
             params["returnEditMoment"] = return_edit_moment
         if attachments and isinstance(attachments, dict):
@@ -3746,12 +3757,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional list of fields to be included in the returned result set.
                                             This list is a comma-delimited list of field names. You can also specify
-                                            the wildcard "*" as the value of this parameter. In this case, the query
-                                            results include all the field values.
-
-                                            .. note::
-                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
-                                                as True, do not specify this parameter in order to avoid errors.
+                                            the wildcard "*" as the value of this parameter to return all
+                                            fields in the result.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -3917,8 +3924,13 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if where is None:
-            where = "1=1"
+        if not where:
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
         return _query._common_query(
             layer=self,
             is_layer=True,
@@ -4260,7 +4272,7 @@ class Table(FeatureLayer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             as_df=as_df,
             time_reference_unknown_client=time_reference_unknown_client,
-            kwargs=kwargs,
+            **kwargs,
         )
 
 

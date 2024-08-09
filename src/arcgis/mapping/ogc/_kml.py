@@ -1,14 +1,14 @@
-import os
-import sys
-import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
-from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the KMLLayer class found in `arcgis.layers.KMLLayer` instead.",
+)
 class KMLLayer(BaseOGC):
     """
     The KMLLayer class is used to create a layer based on a KML file (.kml, .kmz).
@@ -47,7 +47,7 @@ class KMLLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Represents the MapView's widget JSON format"""
+        """Represents the Map's widget JSON format"""
         add_layer = {
             "type": self._type,
             "url": self._url,
@@ -64,5 +64,5 @@ class KMLLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the WebMap's JSON format"""
+        """Represents the Map's JSON format"""
         return self._lyr_json

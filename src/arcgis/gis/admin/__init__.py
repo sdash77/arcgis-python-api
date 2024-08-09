@@ -12,7 +12,7 @@ from .agoladmin import AGOLAdminManager
 from ._federation import Federation
 from ._logs import Logs
 from ._license import LicenseManager, License, Bundle
-from ._livingatlas import LivingAtlas
+from ._livingatlas import LivingAtlas, LivingAtlasManager, LivingAtlasJob
 from ._machines import Machines, Machine
 from ._metadata import MetadataManager
 from ._security import EnterpriseGroups, EnterpriseUsers, OAuth
@@ -30,6 +30,7 @@ from ._ux import (
     ItemSettings,
     SecuritySettings,
     StockImage,
+    UtilityServicesSettings,
 )
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy

@@ -81,6 +81,21 @@ def set_detctor_parms(data, cfg):
 
 def set_segmentor_parms(data, cfg, **kwargs):
     class_weight = kwargs.get("class_weight", None)
+    if cfg.model.backbone.type == "PrithviBackbone":
+        seq_len = kwargs.get("seq_len", cfg.nframes)
+        cfg.model.backbone.num_frames = seq_len
+        cfg.model.neck.embed_dim = 768 * seq_len
+        cfg.model.neck.output_embed_dim = 768 * seq_len
+        cfg.model.decode_head.in_channels = 768 * seq_len
+        cfg.model.auxiliary_head.in_channels = 768 * seq_len
+        cfg.model.backbone.img_size = data.chip_size
+        cfg.model.backbone.in_chans = (
+            len(getattr(data, "_extract_bands", ["r", "g", "b"])) // seq_len
+        )
+        # devide by patch_size(16) of ViT_base
+        transformer_grid_size = data.chip_size // 16
+        cfg.model.neck.input_hw = tuple([transformer_grid_size] * 2)
+
     if isinstance(cfg.model.decode_head, list):
         for dcd_head in cfg.model.decode_head:
             dcd_head.num_classes = data.c
@@ -164,6 +179,7 @@ def prepare_mmbatch(batch_shape, **kwargs):
     metas_dict["pad_shape"] = batch_shape[1:3]
     metas_dict["img_shape"] = batch_shape[1:3]
     metas_dict["ori_shape"] = batch_shape[1:3]
+    metas_dict["batch_input_shape"] = batch_shape[1:3]
     metas_dict["scale_factor"] = scale_factor
     model_type = kwargs.get("model_type")
 

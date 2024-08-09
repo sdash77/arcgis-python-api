@@ -1,16 +1,15 @@
 from __future__ import absolute_import, annotations
 
 import logging
-from re import search, findall
-from uuid import uuid4
+from re import findall
 from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
-from arcgis.features.layer import FeatureLayer
-from arcgis.gis import Error, Item
+from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
+from arcgis._impl.common._deprecate import deprecated
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -21,34 +20,12 @@ time = LazyLoader("time")
 datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
-_arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
-_utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
-_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
-_forms = LazyLoader("arcgis.mapping.forms")
-_scenelyrs = LazyLoader("arcgis.mapping._scenelyrs")
-_realtime = LazyLoader("arcgis.realtime")
-_services = LazyLoader("arcgis.gis.server.admin._services")
-
-try:
-    from traitlets import HasTraits, observe
-    from arcgis.widgets._mapview._traitlets_extension import ObservableDict
-except ImportError:
-
-    class HasTraits:
-        pass
-
-    class ObservableDict(dict):
-        def tag(*args, **kwargs):
-            pass
-
-    def observe(_=None, *args, **kwargs):
-        return observe
-
-
+_layers = LazyLoader("arcgis.layers")
 _log = logging.getLogger(__name__)
+_imports = LazyLoader("arcgis._impl.imports")
 
 
 ###########################################################################
@@ -108,2729 +85,11 @@ class _ApplicationProperties(object):
 
 
 ###########################################################################
-class WebMap(HasTraits, collections.OrderedDict):
-    """
-    The ``WebMap`` class represents a ``web map`` and provides access to its basemaps and operational layers as well
-    as functionality to visualize and interact with said basemaps and layers.
-
-    An ArcGIS ``web map`` is an interactive display of geographic information that you can use to tell stories and
-    answer questions. Maps contain a basemap over which a set of data layers called operational layers are drawn.
-
-    .. note::
-        To learn more about web maps, see the
-        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page
-
-    ``Web maps`` can be used across ArcGIS apps because they adhere to the same web map specification. This provides
-    the functionality to author web maps in one ArcGIS app (including the Python API) and view and modify them in
-    another ArcGIS app.
-
-    .. note::
-        To learn more about the web map specification, refer to the
-        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    webmapitem             Optional :class:`~arcgis.gis.Item` object whose Item.type is ``Web Map``.
-
-                           .. note::
-                            If not specified,
-                            an empty ``WebMap`` object is created with some useful defaults.
-
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-            # USAGE EXAMPLE 1: Creating a WebMap object from an existing web map item
-
-            from arcgis.mapping import WebMap
-            from arcgis.gis import GIS
-
-            # connect to your GIS and get the web map item
-            gis = GIS(url, username, password)
-            wm_item = gis.content.get('1234abcd_web map item id')
-
-            # create a WebMap object from the existing web map item
-            wm = WebMap(wm_item)
-            type(wm)
-            >> arcgis.mapping._types.WebMap
-
-            # explore the layers in this web map using the 'layers' property
-            wm.layers
-            >> [{}...{}]  # returns a list of dictionaries representing each operational layer
-
-    .. code-block:: python
-
-            # USAGE EXAMPLE 2: Creating a new WebMap object
-
-            from arcgis.mapping import WebMap
-
-            # create a new WebMap object
-            wm = WebMap()
-            type(wm)
-            >> arcgis.mapping._types.WebMap
-
-            # explore the layers in this web map using the 'layers' property
-            wm.layers
-            >> []  # returns an empty list. You can add layers using the `add_layer()` method
-    """
-
-    _webmapdict = ObservableDict({}).tag(sync=True)
-
-    @observe("_webmapdict")
-    def _webmapdict_changed(self, change):
-        try:
-            self._mapview._webmap = {}
-            self._mapview._webmap = change["new"]
-        except Exception:
-            pass
-
-    def __init__(self, webmapitem=None):
-        """
-        Constructs an empty WebMap object. If a web map Item is passed, constructs a WebMap object from item on
-        ArcGIS Online or Enterprise.
-        """
-
-        # Viewer items.
-        self._id = str(uuid4())
-        self.type = "mapWidget"
-
-        self._pop_ups = False
-        self._navigation = False
-        self._scale_bar = "none"
-        self._bookmarks = False
-        self._legend = False
-        self._layer_visibility = False
-        self._basemap_switcher = False
-        self._search = False
-        self._zoom = False
-        self._events = Events._create_events()
-
-        self._height = 1
-        self._width = 1
-        # Viewer items end here.
-
-        from arcgis.widgets import MapView
-
-        if webmapitem:
-            if webmapitem.type.lower() != "web map":
-                raise TypeError("item type must be web map")
-            self.item = webmapitem
-            self._gis = webmapitem._gis
-            self._con = self._gis._con
-            self._webmapdict = self.item.get_data()
-            pmap = _mixins.PropertyMap(self._webmapdict)
-            self.definition = pmap
-            self._layers = None
-            self._tables = None
-            self._basemap = self._webmapdict["baseMap"]
-            self._gallery_basemaps = {}
-            self._extent = self.item.extent
-        else:
-            # default spatial ref for current web map
-            self._default_spatial_reference = {
-                "wkid": 102100,
-                "latestWkid": 3857,
-            }
-
-            # pump in a simple, default webmap dict - no layers yet, just basemap
-            self._basemap = {
-                "baseMapLayers": [
-                    {
-                        "id": "world-hillshade-layer",
-                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
-                        "layerType": "ArcGISTiledMapServiceLayer",
-                        "title": "World Hillshade",
-                        "showLegend": False,
-                        "visibility": True,
-                        "opacity": 1,
-                    },
-                    {
-                        "id": "topo-vector-base-layer",
-                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
-                        "layerType": "VectorTileLayer",
-                        "title": "World Topo",
-                        "visibility": True,
-                        "opacity": 1,
-                    },
-                ],
-                "title": "Topographic Vector",
-            }
-            self._gallery_basemaps = {}
-            self._webmapdict = {
-                "operationalLayers": [],
-                "baseMap": self._basemap,
-                "spatialReference": self._default_spatial_reference,
-                "version": "2.10",
-                "authoringApp": "ArcGISPythonAPI",
-                "authoringAppVersion": str(arcgis.__version__),
-            }
-            pmap = _mixins.PropertyMap(self._webmapdict)
-            self.definition = pmap
-            self._gis = arcgis.env.active_gis
-            if self._gis:  # you can also have a case where there is no GIS obj
-                self._con = self._gis._con
-                if self._gis.properties["defaultBasemap"]:
-                    self._basemap = self._gis.properties["defaultBasemap"]
-                    self._webmapdict["baseMap"] = self._basemap
-            else:
-                self._con = None
-            self.item = None
-            self._layers = []
-            self._tables = []
-            self._extent = []
-
-        # Set up map widget to use in jupyter env: have changes made to
-        # self._webmapdict get passed to the widge to render
-        self._mapview = MapView(gis=self._gis, item=self)
-        self._mapview.hide_mode_switch = True
-        self._mapview._webmap = {}
-        self._mapview._webmap = self._webmapdict
-        rotation = (
-            self._webmapdict.get("initialState", {})
-            .get("viewpoint", {})
-            .get("rotation", 0)
-        )
-        self._mapview.rotation = rotation
-
-    @property
-    def events(self):
-        """
-        Gets the events associated or attached to the widget.
-
-        :return:
-            A list of events attached to the widget.
-        """
-        return self._events
-
-    def _ipython_display_(self, *args, **kwargs):
-        return self._mapview._ipython_display_(*args, **kwargs)
-
-    def __repr__(self):
-        """
-        Hidden, to enhance how the object is represented when you simply query it in non Jupyter envs.
-        :return:
-        """
-        try:
-            return (
-                "WebMap at "
-                + self.item._portal.url
-                + "/home/webmap/viewer.html?webmap="
-                + self.item.itemid
-            )
-        except Exception:
-            return super().__repr__()
-
-    def __str__(self):
-        return json.dumps(self._webmapdict, default=_utils._date_handler)
-
-    def add_table(
-        self,
-        table: _arcgis_features.Table,
-        options: Optional[dict[str, Any]] = None,
-    ):
-        """
-        Adds the given Table to the ``WebMap``.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        table                  Required object. You can add:
-
-                               - :class:`~arcgis.features.Table` objects
-        ------------------     --------------------------------------------------------------------
-        options                Optional dict. Specify properties such as ``title``, ``symbol``, ``opacity``,
-                               ``visibility``, and ``renderer``
-                               for the table that is added. If not specified, appropriate defaults are applied.
-        ==================     ====================================================================
-
-        :return:
-            True if table was successfully added. Else, raises appropriate exception.
-
-        .. code-block:: python
-
-            wm = WebMap()
-            table = Table('https://some-url.com/')
-            wm.add_table(table)
-        """
-        if not isinstance(table, _arcgis_features.Table):
-            raise Exception("Type of object passed in must of type 'Table'")
-        self.add_layer(table, options)
-
-    def move_to_basemap(self, layer: dict):
-        """
-        Move a layer to be a basemap layer.
-        A basemap layer is a layer that provides geographic context to the map.
-        A web map always contains a basemap. The following is a list of possible basemap layer types:
-
-        * Image Service Layer
-
-        * Image Service Vector Layer
-
-        * Map Service Layer
-
-        * Tiled Image Service Layer
-
-        * Tiled Map Service Layer
-
-        * Vector Tile Layer
-
-        =====================       ===================================================================
-        **Parameter**                **Definition**
-        ---------------------       -------------------------------------------------------------------
-        layer                       Required Dictionary. The layer dictionary that will be sent to
-                                    basemap layers. This dictionary is found when calling the `layers`
-                                    property on the WebMap. The layer must already be in the WebMap.
-        =====================       ===================================================================
-
-        :return: The WebMap definition if successful, else an error.
-
-        .. code-block:: python
-
-            # Create a WebMap from an existing WebMap Item.
-            wm = WebMap(<webmap_item_id>)
-            # Get and add the layer to the map
-            vtl = gis.content.get("<vector tile layer id>")
-            wm.add_layer(vtl.layers[0])
-            # Move the layer to the basemap
-            layer = wm.layers[0]
-            wm.move_to_basemap(layer)
-            wm.update()
-        """
-        layer_types = [
-            "ArcGISTiledMapServiceLayer",
-            "ArcGISImageServiceLayer",
-            "ArcGISImageServiceVectorLayer",
-            "ArcGISMapServiceLayer",
-            "ArcGISTiledImageServiceLayer",
-            "ArcGISVectorTileLayer",
-            "VectorTileLayer",
-        ]
-        if layer in self.layers and layer["layerType"] in layer_types:
-            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
-            self._webmapdict["operationalLayers"].remove(layer)
-            self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.basemap
-        elif layer["layerType"] not in layer_types:
-            raise Error(
-                "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
-            )
-        else:
-            raise Error(
-                "Make sure the layer dictionary is already added to the WebMap. Use the layers property to see all layers in the WebMap."
-            )
-
-    def move_from_basemap(self, layer):
-        """
-        Move a layer from the basemap layers to the operational layers. The reverse process of
-        `move_to_basemap`.
-
-        =====================       ===================================================================
-        **Parameter**                **Definition**
-        ---------------------       -------------------------------------------------------------------
-        layer                       Required Dictionary. The layer dictionary that will be sent to
-                                    operational layers. This dictionary is found when calling the `definition`
-                                    property on the WebMap. The layer must already be a part of the baseMapLayers.
-        =====================       ===================================================================
-
-        :return: The WebMap definition if successful, else an error.
-
-        .. code-block:: python
-
-            wm = WebMap(<webmap_item_id>)
-            layer = wm.definition["baseMap"]["baseMapLayer"][0]
-            wm.move_from_basemap(layer)
-            wm.update()
-        """
-        if layer in self.definition["baseMap"]["baseMapLayers"]:
-            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
-            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
-            self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.basemap
-        else:
-            raise Error(
-                "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
-            )
-
-    def basemap_title(self, title: str):
-        """
-        Get/Set the BaseMap Title.
-        Required string title for the basemap that can be used in a table of contents.
-        If None is specified, the current title is returned.
-        """
-        if title is None:
-            return self._webmapdict["baseMap"]["title"]
-
-        self._webmapdict["baseMap"]["title"] = title
-        self.definition = _mixins.PropertyMap(self._webmapdict)
-        return self.basemap
-
-    def add_layer(
-        self,
-        layer: Union[
-            _arcgis_features.FeatureLayer,
-            MapImageLayer,
-            _scenelyrs.SceneLayer,
-            arcgis.raster.ImageryLayer,
-            VectorTileLayer,
-            _realtime.StreamLayer,
-            _arcgis_features.FeatureSet,
-            _gis.Item,
-            _arcgis_features.FeatureCollection,
-            _arcgis_features.Table,
-        ],
-        options: Optional[dict[str, Any]] = None,
-    ):
-        """
-        Adds the given layer to the ``WebMap`` object.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        layer                  Required object. You can add:
-
-                               - Layer objects such as :class:`~arcgis.features.FeatureLayer`, :class:`~arcgis.mapping.MapImageLayer`, :class:`~arcgis.raster.ImageryLayer` etc.
-
-                               - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and :class:`~arcgis.features.FeatureCollection`
-
-                               - :class:`~arcgis.features.Table` objects
-        ------------------     --------------------------------------------------------------------
-        options                Optional Dict. Specify properties such as title, symbol, opacity, visibility, renderer
-                               for the layer that is added. If not specified, appropriate defaults are applied.
-        ==================     ====================================================================
-
-        :return:
-            True if layer was successfully added. Else, raises an appropriate exception.
-
-        .. code-block:: python
-
-           # USAGE EXAMPLE: Add feature layer and map image layer item objects to the WebMap object.
-
-           crime_fl_item = gis.content.search("2012 crime")[0]
-           streets_item = gis.content.search("LA Streets","Map Service")[0]
-
-           wm = WebMap()  # create an empty web map with a default basemap
-           wm.add_layer(streets_item)
-           >> True
-
-           # Add crime layer, but customize the title, transparency and turn off the default visibility.
-           wm.add_layer(fl_item, {'title':'2012 crime in LA city',
-                                  'opacity':0.5,
-                                  'visibility':False})
-            >> True
-        """
-        new_layer = self._create_layer_definition(layer, options)
-        # recursive call already added layers, can return
-        if new_layer is True:
-            return True
-        if "layerType" in new_layer:
-            layer_type = new_layer["layerType"]
-        else:
-            layer_type = None
-
-        # region sort layers into 'operationalLayers' or 'tables'
-        if isinstance(layer, _arcgis_features.Table):
-            if "tables" not in self._webmapdict.keys():
-                # There are no tables yet, create one here
-                self._webmapdict["tables"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # There are tables, just append to it
-                self._webmapdict["tables"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        else:
-            if "operationalLayers" not in self._webmapdict.keys():
-                # there no layers yet, create one here
-                self._webmapdict["operationalLayers"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # there are operational layers, just append to it
-                self._webmapdict["operationalLayers"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        # endregion
-
-        # update layers property
-        if not self._layers:
-            if "operationalLayers" in self._webmapdict:
-                self._layers = []
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
-                # reverse the layer list - webmap viewer reverses the list always
-                self._layers.reverse()
-        else:
-            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-            # need this check to avoid duplicating adding a new table to both layers and tables
-            if "layerType" in new_layer:
-                self._layers.append(_mixins.PropertyMap(new_layer))
-
-        # update tables property
-        if not self._tables:
-            self._tables = []
-            if "tables" in self._webmapdict:
-                for t in self._webmapdict["tables"]:
-                    self._tables.append(_mixins.PropertyMap(t))
-            # reverse the layer list - webmap viewer reverses the list always
-            self._tables.reverse()
-        else:
-            if layer_type == "Table":
-                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-                self._tables.append(_mixins.PropertyMap(new_layer))
-
-        return True
-
-    def _create_layer_definition(self, layer, options):
-        from arcgis.mapping.ogc._base import BaseOGC
-
-        if options is None:
-            options = {}
-        if (
-            isinstance(layer, _arcgis_features.FeatureLayer)
-            and "renderer" not in options
-            and not isinstance(layer, _arcgis_features.Table)
-        ):
-            options["renderer"] = json.loads(layer.renderer.json)
-        elif hasattr(layer, "spatial"):
-            layer = layer.spatial.to_feature_collection()
-        # region extract basic info from options
-        title = options["title"] if options and "title" in options else None
-        opacity = options["opacity"] if options and "opacity" in options else 1
-        visibility = (
-            options["visibility"] if options and "visibility" in options else True
-        )
-        layer_spatial_ref = (
-            options["spatialReference"]
-            if options and "spatialReference" in options
-            else None
-        )
-        popup = (
-            options["popup"] if options and "popup" in options else None
-        )  # from draw method
-        item_id = None
-        # endregion
-
-        # region extract rendering info from options
-        # info for feature layers
-        definition_expression = (
-            options["definition_expression"]
-            if options and "definition_expression" in options
-            else None
-        )
-        renderer = options["renderer"] if options and "renderer" in options else None
-        renderer_field = (
-            options["field_name"] if options and "field_name" in options else None
-        )
-        self._extent = (
-            options["extent"] if options and "extent" in options else self._extent
-        )  # from map widget
-        fset_symbol = (
-            options["symbol"] if options and "symbol" in options else None
-        )  # from draw method
-
-        # info for raster layers
-        image_service_parameters = (
-            options["imageServiceParameters"]
-            if options and "imageServiceParameters" in options
-            else None
-        )
-
-        # endregion
-
-        # region infer layer type
-        layer_type = None
-        if isinstance(layer, _gis.Layer) or isinstance(
-            layer, _arcgis_features.FeatureSet
-        ):
-            if hasattr(layer, "properties"):
-                if hasattr(layer.properties, "name"):
-                    title = layer.properties.name if title is None else title
-
-                # find layer type
-                if (
-                    isinstance(layer, _arcgis_features.FeatureLayer)
-                    or isinstance(layer, _arcgis_features.FeatureCollection)
-                    or isinstance(layer, _arcgis_features.FeatureSet)
-                ):
-                    # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, _arcgis_features.Table):
-                        layer_type = "Table"
-                    else:
-                        layer_type = "ArcGISFeatureLayer"
-                elif isinstance(layer, arcgis.raster.ImageryLayer):
-                    if layer.tiles_only:
-                        layer_type = "ArcGISTiledImageServiceLayer"
-                    else:
-                        layer_type = "ArcGISImageServiceLayer"
-                    # todo : get renderer info
-
-                elif isinstance(layer, _arcgis_mapping.MapImageLayer) or isinstance(
-                    layer, _arcgis_mapping.MapRasterLayer
-                ):
-                    try:
-                        if layer.container is not None:
-                            if (
-                                "TilesOnly"
-                                in layer.container.properties["capabilities"]
-                            ):
-                                layer_type = "ArcGISTiledMapServiceLayer"
-                            else:
-                                layer_type = "ArcGISMapServiceLayer"
-                    except:
-                        if "TilesOnly" in layer.properties["capabilities"]:
-                            layer_type = "ArcGISTiledMapServiceLayer"
-                        else:
-                            layer_type = "ArcGISMapServiceLayer"
-                elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
-                    layer_type = "VectorTileLayer"
-                elif isinstance(layer, _realtime.StreamLayer):
-                    layer_type = "ArcGISStreamLayer"
-
-                if hasattr(layer.properties, "serviceItemId"):
-                    item_id = layer.properties.serviceItemId
-            elif isinstance(layer, _arcgis_features.FeatureSet):
-                layer_type = "ArcGISFeatureLayer"
-        elif isinstance(layer, _gis.Item):
-            # set the item's extent
-            if not self._extent:
-                self._extent = layer.extent
-            if layer.type.lower() == "map service":
-                layer_type = "ArcGISMapServiceLayer"
-                item_id = layer.id
-            else:
-                if not any(hasattr(layer, attr) for attr in ["layers", "tables"]):
-                    raise TypeError(
-                        "Item object without layers or tables is not supported"
-                    )
-                elif hasattr(layer, "layers"):
-                    if layer.type == "Feature Collection":
-                        options["serviceItemId"] = layer.itemid
-                    for lyr in layer.layers:  # recurse - works for all.
-                        lyr.properties.serviceItemId = layer.id
-                        if isinstance(lyr, VectorTileLayer):
-                            # Vector Tile Service does not automatically have this
-                            lyr.properties.name = layer.name
-                        self.add_layer(lyr, dict(options))
-                if hasattr(layer, "tables"):
-                    for tbl in layer.tables:  # recurse - works for all.
-                        tbl.properties.serviceItemId = layer.id
-                        self.add_table(tbl, options)
-                return (
-                    True  # end add_layer execution after iterating through each layer.
-                )
-        elif isinstance(layer, _arcgis_features.FeatureLayerCollection):
-            if not self._extent:
-                if hasattr(layer.properties, "fullExtent"):
-                    self._extent = layer.properties.fullExtent
-            if not any(hasattr(layer, attr) for attr in ["layers", "tables"]):
-                raise TypeError(
-                    "FeatureLayerCollection object without layers or tables is not supported"
-                )
-            if hasattr(layer, "layers"):
-                for lyr in layer.layers:  # recurse - works for all.
-                    self.add_layer(lyr, dict(options))
-            if hasattr(layer, "tables"):
-                for tbl in layer.tables:  # recurse - works for all.
-                    self.add_table(tbl, options)
-            return True
-        elif isinstance(layer, BaseOGC):
-            lyr = layer._lyr_json
-            title = lyr["title"]
-            opacity = lyr["opacity"]
-            id = lyr["id"]
-            layer_type = layer._type
-        else:
-            raise TypeError(
-                "Input layer should either be a Layer object or an Item object. To know the supported layer types, refer"
-                + "to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/"
-            )
-        # endregion
-
-        # region create the new layer dict in memory
-        # dvitale: add ability to specify layer id
-        layer_id = (
-            options["layerId"]
-            if options and "layerId" in options
-            else uuid4().__str__()
-        )
-        # end specify layer id section
-        new_layer = {
-            "title": title,
-            "opacity": opacity,
-            "visibility": visibility,
-            "id": layer_id,
-        }
-
-        # if renderer info is available, then write layer definition
-        layer_definition = {"definitionExpression": definition_expression}
-
-        if renderer:
-            layer_definition["drawingInfo"] = {"renderer": renderer}
-        new_layer["layerDefinition"] = layer_definition
-
-        if (
-            layer_type and layer_type != "Table"
-        ):  # The JSAPI does not accept "Table" as a valid "layerType"
-            new_layer["layerType"] = layer_type
-
-        if item_id:
-            new_layer["itemId"] = item_id
-
-        if hasattr(layer, "url"):
-            new_layer["url"] = layer.url
-        elif isinstance(
-            layer, _arcgis_features.FeatureCollection
-        ):  # feature collection item on web GIS
-            if "serviceItemId" in options:
-                # if ItemId is found, then type is fc and insert item id. Else, leave the type as ArcGISFeatureLayer
-                new_layer["type"] = "Feature Collection"
-                new_layer["itemId"] = options["serviceItemId"]
-            elif hasattr(layer, "properties"):
-                if hasattr(layer.properties, "layerDefinition"):
-                    if hasattr(layer.properties.layerDefinition, "serviceItemId"):
-                        new_layer["type"] = (
-                            "Feature Collection"  # if ItemId is found, then type is fc and insert item id
-                        )
-                        new_layer["itemId"] = (
-                            layer.properties.layerDefinition.serviceItemId
-                        )
-                elif hasattr(layer, "layer"):
-                    if hasattr(layer.layer, "layers"):
-                        if hasattr(layer.layer.layers[0], "layerDefinition"):
-                            if hasattr(
-                                layer.layer.layers[0].layerDefinition,
-                                "serviceItemId",
-                            ):
-                                new_layer["type"] = (
-                                    "Feature Collection"  # if ItemId is found, then type is fc and insert item id
-                                )
-                                new_layer["itemId"] = layer.layer.layers[
-                                    0
-                                ].layerDefinition.serviceItemId
-
-        if layer_type == "ArcGISImageServiceLayer":
-            # find if raster functions are available
-            if "options" in layer._lyr_json:
-                if isinstance(
-                    layer._lyr_json["options"], str
-                ):  # sometimes the rendering info is a string
-                    # load json
-                    layer_options = json.loads(layer._lyr_json["options"])
-                else:
-                    layer_options = layer._lyr_json["options"]
-
-                if "imageServiceParameters" in layer_options:
-                    # get renderingRule and mosaicRule
-                    new_layer.update(layer_options["imageServiceParameters"])
-
-            # if custom rendering rule is passed, then overwrite this
-            if image_service_parameters:
-                new_layer["renderingRule"] = image_service_parameters["renderingRule"]
-
-        # inmem FeatureCollection
-        if isinstance(layer, _arcgis_features.FeatureCollection):
-            if hasattr(layer, "layer"):
-                if hasattr(layer.layer, "layers"):
-                    fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
-                    fc_feature_set = dict(layer.layer.layers[0].featureSet)
-                elif "layers" in layer.layer:
-                    # already a dict
-                    fc_layer_definition = layer.layer["layers"][0]["layerDefinition"]
-                    fc_feature_set = layer.layer["layers"][0]["featureSet"]
-                else:
-                    fc_layer_definition = dict(layer.layer.layerDefinition)
-                    fc_feature_set = dict(layer.layer.featureSet)
-            else:
-                fc_layer_definition = dict(layer.properties.layerDefinition)
-                fc_feature_set = dict(layer.properties.featureSet)
-
-            if "title" not in fc_layer_definition:
-                fc_layer_definition["title"] = title
-
-            new_layer["featureCollection"] = {
-                "layers": [
-                    {
-                        "featureSet": fc_feature_set,
-                        "layerDefinition": fc_layer_definition,
-                    }
-                ]
-            }
-
-        # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
-        if isinstance(layer, _arcgis_features.FeatureSet):
-            if not layer_spatial_ref:
-                if hasattr(layer, "spatial_reference"):
-                    layer_spatial_ref = layer.spatial_reference
-                else:
-                    layer_spatial_ref = self._default_spatial_reference
-
-            if (
-                "spatialReference" not in layer.features[0].geometry
-            ):  # webmap seems to need spatialref for each geometry
-                for feature in layer:
-                    feature.geometry["spatialReference"] = layer_spatial_ref
-
-            fset_dict = layer.to_dict()
-            fc_layer_definition = {
-                "geometryType": fset_dict["geometryType"],
-                "fields": fset_dict["fields"],
-                "objectIdField": layer.object_id_field_name,
-                "type": "Feature Layer",
-                "spatialReference": layer_spatial_ref,
-                "name": title,
-            }
-
-            # region set up default symbols if one is not available.
-            if not fset_symbol:
-                if fc_layer_definition["geometryType"] == "esriGeometryPolyline":
-                    fset_symbol = {
-                        "color": [0, 0, 0, 255],
-                        "width": 1.33,
-                        "type": "esriSLS",
-                        "style": "esriSLSSolid",
-                    }
-                elif fc_layer_definition["geometryType"] in [
-                    "esriGeometryPolygon",
-                    "esriGeometryEnvelope",
-                ]:
-                    fset_symbol = {
-                        "color": [0, 0, 0, 64],
-                        "outline": {
-                            "color": [0, 0, 0, 255],
-                            "width": 1.33,
-                            "type": "esriSLS",
-                            "style": "esriSLSSolid",
-                        },
-                        "type": "esriSFS",
-                        "style": "esriSFSSolid",
-                    }
-                elif fc_layer_definition["geometryType"] in [
-                    "esriGeometryPoint",
-                    "esriGeometryMultipoint",
-                ]:
-                    fset_symbol = {
-                        "type": "esriSMS",
-                        "color": [226, 29, 145, 158],
-                        "angle": 0,
-                        "xoffset": 0,
-                        "yoffset": 0,
-                        "size": 12,
-                        "style": "esriSMSCircle",
-                        "outline": {
-                            "type": "esriSLS",
-                            "color": [0, 0, 0, 255],
-                            "width": 0.75,
-                            "style": "esriSLSSolid",
-                        },
-                    }
-            # endregion
-            # insert symbol into the layerDefinition of featureCollection - pro style
-            if renderer:
-                fc_layer_definition["drawingInfo"] = {"renderer": renderer}
-            else:  # use simple, default renderer
-                fc_layer_definition["drawingInfo"] = {
-                    "renderer": {"type": "simple", "symbol": fset_symbol}
-                }
-
-            new_layer["featureCollection"] = {
-                "layers": [
-                    {
-                        "featureSet": {
-                            "geometryType": fset_dict["geometryType"],
-                            "features": fset_dict["features"],
-                        },
-                        "layerDefinition": fc_layer_definition,
-                    }
-                ]
-            }
-        # endregion
-
-        # Add Vector Tile Layer Properties
-        if isinstance(layer, _arcgis_mapping.VectorTileLayer):
-            new_layer["type"] = "VectorTileLayer"
-            new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
-
-        # region
-        if isinstance(layer, BaseOGC):
-            new_layer = {**new_layer, **layer._operational_layer_json}
-        # endregion
-
-        # region Process popup info
-        if layer_type in [
-            "ArcGISFeatureLayer",
-            "ArcGISImageServiceLayer",
-            "Feature Collection",
-            "Table",
-        ]:  # supports popup
-            popup = {
-                "title": title,
-                "fieldInfos": [],
-                "description": None,
-                "showAttachments": True,
-                "mediaInfos": [],
-            }
-
-            fields_list = []
-            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
-                layer, arcgis.raster.ImageryLayer
-            ):
-                if hasattr(layer.properties, "fields"):
-                    fields_list = layer.properties.fields
-            elif isinstance(layer, _arcgis_features.FeatureSet):
-                if hasattr(layer, "fields"):
-                    fields_list = layer.fields
-            elif isinstance(layer, _arcgis_features.FeatureCollection):
-                if hasattr(layer.properties, "layerDefinition"):
-                    if hasattr(layer.properties.layerDefinition, "fields"):
-                        fields_list = layer.properties.layerDefinition.fields
-
-            for f in fields_list:
-                if isinstance(f, dict) or isinstance(f, _mixins.PropertyMap):
-                    field_dict = {
-                        "fieldName": f["name"],
-                        "label": f["alias"] if "alias" in f else f["name"],
-                        "isEditable": f["editable"] if "editable" in f else True,
-                        "visible": True,
-                    }
-                elif isinstance(
-                    f, str
-                ):  # some layers are saved with fields that are just a list of strings
-                    field_dict = {
-                        "fieldName": f,
-                        "label": f,
-                        "isEditable": True,
-                        "visible": True,
-                    }
-                if field_dict:
-                    popup["fieldInfos"].append(field_dict)
-        else:
-            popup = None
-
-        if popup:
-            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
-                layer, arcgis.raster.ImageryLayer
-            ):
-                new_layer["popupInfo"] = popup
-            elif isinstance(layer, _arcgis_features.FeatureSet) or isinstance(
-                layer, _arcgis_features.FeatureCollection
-            ):
-                new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
-
-        # endregion
-        return new_layer
-
-    def update_drawing_info(
-        self,
-        layer: Union[dict, FeatureLayer],
-        label_info: list[dict] = None,
-        renderer: dict = None,
-        transparency: int = None,
-        show_labels: bool = None,
-    ):
-        """
-        Method to alter a WebMap layer's drawing info. Works for standalone layers and individual layers found
-        within group layers. Allows for a user to manually add their own renderers and label classes, toggle whether
-        the labels are visible, and control the transparency of a layer. Useful in tandem with the map widget,
-        allowing for style changes without opening the online map viewer.
-
-        .. note::
-            In order to save changes made through this method, call ``WebMap.update()`` or ``WebMap.save()``.
-
-        ==================      ====================================================================
-        **Parameter**            **Description**
-        ------------------      --------------------------------------------------------------------
-        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer
-                                dictionary. The existing WebMap layer to be changed.
-
-                                .. note::
-                                    In order for this method to work, the layer must be set to
-                                    have its properties stored in the web map, not the source layer.
-                                    This is the default setting, and can be confirmed or changed in
-                                    the online Map Viewer. (Layer properties -> information)
-        ------------------      --------------------------------------------------------------------
-        label_info              Optional list of dictionaries. Each dictionary in the list
-                                corresponds to a label class. Determines labeling conventions of the
-                                passed layer.
-        ------------------      --------------------------------------------------------------------
-        renderer                Optional dictonary. Can be manually constructed or the output of
-                                ``generate_renderer()``. Determines the layer style of the passed
-                                layer.
-        ------------------      --------------------------------------------------------------------
-        transparency            Optional int. Determines transparency/opacity of the layer on 0-100
-                                scale, with 0 being fully opaque and 100 being fully transparent.
-        ------------------      --------------------------------------------------------------------
-        show_labels             Optional boolean. Determines whether the layer labels are visible or
-                                not.
-        ==================      ====================================================================
-
-        *Hint:*
-
-        Accessing the layers of your Webmap allows you to view the current renderer and label info dictionaries,
-        allowing you to easily copy them and amend the desired details.
-
-        **Example**
-
-        .. code-block:: python
-
-            # Create Webmap from webmap item, choose a layer to edit
-            wm = WebMap(<wm_item_id>)
-            change_layer = wm.layers[0]
-
-            # Specify renderer dictionary and labeling info dictionary/dictionaries
-            rend = {
-                "type": "simple",
-                "symbol": {
-                    "type": "esriSLS",
-                    "color": [200, 50, 0, 250],
-                    "width": 1,
-                    "style": "esriSLSSolid"
-                }
-            }
-
-            label = [
-                {
-                    "labelExpression": "[llid]",
-                    "labelExpressionInfo": {"expression": "$feature[\"llid\"]"},
-                    "labelPlacement": "esriServerLinePlacementCenterAlong",
-                    "maxScale": 0,
-                    "minScale": 2311163,
-                    "repeatLabel": True,
-                    "symbol": {
-                        "type": "esriTS",
-                        "color": [0, 105, 0, 255],
-                        "font": {"family": "Arial", "size": 9.75},
-                        "horizontalAlignment": "center",
-                        "kerning": True,
-                        "haloColor": [211, 211, 211, 250],
-                        "haloSize": 1,
-                        "rotated": False,
-                        "text": "",
-                        "verticalAlignment": "baseline",
-                        "xoffset": 0,
-                        "yoffset": 0,
-                        "angle": 0
-                    }
-                }
-            ]
-
-            # Call the function. This automatically updates the Webmap info
-            wm.update_drawing_info(
-                change_layer,
-                label_info = label,
-                renderer = rend,
-                transparency = 40,
-                show_labels = True,
-            )
-        """
-
-        if "layerDefinition" not in layer:
-            layer["layerDefinition"] = {"drawingInfo": {}}
-        if "drawingInfo" not in layer["layerDefinition"]:
-            layer["layerDefinition"]["drawingInfo"] = {}
-        if show_labels is not None:
-            layer["showLabels"] = show_labels
-        if transparency is not None:
-            layer["opacity"] = 1 - transparency / 100
-        if label_info is not None:
-            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = label_info
-        if renderer is not None:
-            layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
-
-        copy_dict = dict(layer)
-        self.update_layer(copy_dict)
-
-    def update_layer(self, layer: Union[dict, FeatureLayer]):
-        """
-        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
-        and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
-        or any other part of the Feature Layer properties.
-
-        ==================      ====================================================================
-        **Parameter**            **Description**
-        ------------------      --------------------------------------------------------------------
-        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer dictionary.
-                                The existing webmap layer with updated properties.
-                                In order to get a layer on the webmap, use the ``layers`` method and
-                                assign the output to a value. Make edits on this value and pass
-                                it in as a dict to update the rendering on the map.
-
-                                .. warning::
-                                    If the itemId of the feature layer is changed, this will not work.
-        ==================      ====================================================================
-
-        .. code-block:: python
-
-            # Create Webmap from webmap item
-            wm = WebMap(<wm_item_id>)
-
-            # Get a layer and edit the color
-            fl = wm.layers[0]
-            fl["layerDefinition"]["drawingInfo"]["renderer"]["symbol"]["color"] = [0, 0, 0, 255]
-
-            # Update the layer to see it render on map
-            wm.update_layer(dict(my_lyr))
-
-            # Save with the updates
-            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
-            wm.save(wm_properties)
-        """
-        if isinstance(layer, FeatureLayer):
-            # Need to remove to re-create the layer view correctly
-            layer = self._create_layer_definition(layer, None)
-        # Find the layer to update based on the id of the layer passed in.
-        lyr_dict = self.get_layer(layer_id=layer["id"])
-
-        # Get the index so we update the observable list at the correct position.
-        # Once we have the index, update the observable list.
-        try:
-            lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
-            self._webmapdict["operationalLayers"][lyr_idx] = layer
-
-        # In case the layer is within a group layer
-        except ValueError:
-            # temp_dict = self._webmapdict
-            for item in self._webmapdict["operationalLayers"]:
-                if (item["layerType"] == "GroupLayer") and (lyr_dict in item["layers"]):
-                    grp_idx = self._webmapdict["operationalLayers"].index(item)
-                    lyr_idx = item["layers"].index(lyr_dict)
-                    # need to make a copy so observable list picks it up
-                    grp_copy = self._webmapdict["operationalLayers"][grp_idx]
-                    grp_copy["layers"][lyr_idx] = layer
-                    self._webmapdict["operationalLayers"][grp_idx] = grp_copy
-                    break
-
-        # Update the layers property
-        if "operationalLayers" in self._webmapdict:
-            self._layers = []
-            for l in self._webmapdict["operationalLayers"]:
-                self._layers.append(_mixins.PropertyMap(l))
-            # reverse the layer list - webmap viewer reverses the list always
-            self._layers.reverse()
-
-    def _process_extent(self, extent=None):
-        """
-        internal method to transform extent to a string of xmin, ymin, xmax, ymax
-        If extent is not in wgs84, it projects
-        :return:
-        """
-        if extent is None:
-            extent = self._extent
-        if isinstance(extent, _mixins.PropertyMap):
-            extent = dict(extent)
-        if isinstance(extent, list):
-            # passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
-            extent_list = [element for sublist in extent for element in sublist]
-
-            # convert to string
-            return ",".join(str(e) for e in extent_list)
-        elif isinstance(extent, dict):
-            # passed from MapView.extent
-            if "spatialReference" in extent:
-                if "latestWkid" in extent["spatialReference"]:
-                    if extent["spatialReference"]["latestWkid"] != 4326:
-                        # use geometry service to project
-                        input_geom = [
-                            {"x": extent["xmin"], "y": extent["ymin"]},
-                            {"x": extent["xmax"], "y": extent["ymax"]},
-                        ]
-
-                        result = arcgis.geometry.project(
-                            input_geom,
-                            in_sr=extent["spatialReference"]["latestWkid"],
-                            out_sr=4326,
-                        )
-
-                        # process and return the result
-                        if self._contains_nans(result):
-                            return ""
-                        else:
-                            e = [
-                                result[0]["x"],
-                                result[0]["y"],
-                                result[1]["x"],
-                                result[1]["y"],
-                            ]
-                            return ",".join(str(i) for i in e)
-
-            # case when there is no spatialReference. Then simply extract the extent
-            if "xmin" in extent:
-                e = extent
-                e = [e["xmin"], e["ymin"], e["xmax"], e["ymax"]]
-                return ",".join(str(i) for i in e)
-
-        # if I don't know how to process the extent.
-        return extent
-
-    def _contains_nans(self, result):
-        """a bool of if projection output `result` contains any NaNs"""
-        for value in result:
-            if "nan" in str(value["x"]).lower():
-                return True
-            if "nan" in str(value["y"]).lower():
-                return True
-        return False
-
-    def save(
-        self,
-        item_properties: dict[str, Any],
-        thumbnail: Optional[str] = None,
-        metadata: Optional[str] = None,
-        owner: Optional[str] = None,
-        folder: Optional[str] = None,
-    ):
-        """
-        Saves the ``WebMap`` object as a new Web Map Item in your :class:`~arcgis.gis.GIS`.
-
-        .. note::
-            If you started out with a fresh ``WebMap`` object, use this method to save it as a web map
-            :class:`~arcgis.gis.Item` in your
-            GIS.
-
-        .. note::
-            If you started with a ``WebMap`` object from an existing web map item, calling this method will create a new item
-            with your changes. If you want to update the existing ``WebMap`` item with your changes, call the
-            :attr:`~arcgis.mapping.WebMap.update` method instead.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item_properties     Required dictionary. See table below for the keys and values.
-        ---------------     --------------------------------------------------------------------
-        thumbnail           Optional string. Either a path or URL to a thumbnail image.
-        ---------------     --------------------------------------------------------------------
-        metadata            Optional string. Either a path or URL to the metadata.
-        ---------------     --------------------------------------------------------------------
-        owner               Optional string. Defaults to the logged in user.
-        ---------------     --------------------------------------------------------------------
-        folder              Optional string. Name of the folder into which the web map should be
-                            saved.
-        ===============     ====================================================================
-
-        *Key:Value Dictionary Options for Argument item_properties*
-
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all subtypes, see URL 1 below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        description        Optional string. Description of the item.
-        -----------------  ---------------------------------------------------------------------
-        extent             Optional dict, string, or array. The extent of the item.
-        -----------------  ---------------------------------------------------------------------
-        title              Optional string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                           Used for searches on items.
-        -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-        -----------------  ---------------------------------------------------------------------
-        accessInformation  Optional string. Information on the source of the content.
-        -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Locale, country and language information.
-        -----------------  ---------------------------------------------------------------------
-        access             Optional string. Valid values are private, shared, org, or public.
-        -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                           or not allowed (false).
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Language and country information.
-        =================  =====================================================================
-
-        The above are the most common item properties (metadata) that you set. To get a complete list, see
-        the
-        `Common Parameters <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm#ESRI_SECTION1_1FFBA7FE775B4BDA8D97524A6B9F7C98>`_
-        page in the ArcGIS REST API documentation.
-
-        :return:
-            :class:`~arcgis.gis.Item` object corresponding to the new web map Item created.
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE 1: Save a WebMap object into a new web map item
-            from arcgis.gis import GIS
-            from arcgis.mapping import WebMap
-
-            # log into your GIS
-            gis = GIS(url, username, password)
-
-            # compose web map by adding, removing, editing layers and basemaps
-            wm = WebMap()  # new web map
-            wm.add_layer(...)  # add some layers
-
-            # save the web map
-            webmap_item_properties = {'title':'Ebola incidents and facilities',
-                         'snippet':'Map created using Python API showing locations of Ebola treatment centers',
-                         'tags':['automation', 'ebola', 'world health', 'python'],
-                         'extent': {'xmin': -122.68, 'ymin': 45.53, 'xmax': -122.45, 'ymax': 45.6, 'spatialReference': {'wkid': 4326}}}
-
-            new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
-
-            # to visit the web map using a browser
-            print(new_wm_item.homepage)
-            >> 'https://your portal url.com/webadaptor/item.html?id=1234abcd...'
-
-        """
-
-        item_properties["type"] = "Web Map"
-        item_properties["extent"] = self._process_extent(
-            item_properties.get("extent", None)
-        )
-        item_properties["text"] = json.dumps(
-            self._webmapdict, default=_utils._date_handler
-        )
-        if "typeKeywords" not in item_properties:
-            item_properties["typeKeywords"] = self._eval_map_viewer_keywords()
-
-        if (
-            "title" not in item_properties
-            or "snippet" not in item_properties
-            or "tags" not in item_properties
-        ):
-            raise RuntimeError(
-                "title, snippet and tags are required in item_properties dictionary"
-            )
-
-        new_item = self._gis.content.add(
-            item_properties,
-            thumbnail=thumbnail,
-            metadata=metadata,
-            owner=owner,
-            folder=folder,
-        )
-        if not hasattr(self, "item"):
-            self.item = new_item
-
-        return new_item
-
-    def update(
-        self,
-        item_properties: Optional[dict[str, Any]] = None,
-        thumbnail: Optional[str] = None,
-        metadata: Optional[str] = None,
-    ):
-        """
-        The ``update`` method updates the Web Map Item in your :class:`~arcgis.gis.GIS`
-        with the changes you made to the ``WebMap`` object. In addition, you can update
-        other item properties, thumbnail and metadata.
-
-        .. note::
-            If you started with a ``WebMap`` object from an existing web map item, calling this method will update the item
-            with your changes.
-
-            If you started out with a fresh WebMap object (without a web map item), calling this method will raise a
-            RuntimeError exception. If you want to save the WebMap object into a new web map item, call the
-            :attr:`~arcgis.mapping.WebMap.save` method instead.
-
-        For ``item_properties``, pass in arguments for the properties you want to be updated.
-        All other properties will be untouched.  For example, if you want to update only the
-        item's description, then only provide the description argument in ``item_properties``.
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item_properties     Optional dictionary. See table below for the keys and values.
-        ---------------     --------------------------------------------------------------------
-        thumbnail           Optional string. Either a path or URL to a thumbnail image.
-        ---------------     --------------------------------------------------------------------
-        metadata            Optional string. Either a path or URL to the metadata.
-        ===============     ====================================================================
-
-        *Key:Value Dictionary Options for Argument item_properties*
-
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        description        Optional string. Description of the item.
-        -----------------  ---------------------------------------------------------------------
-        title              Optional string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                           Used for searches on items.
-        -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-        -----------------  ---------------------------------------------------------------------
-        accessInformation  Optional string. Information on the source of the content.
-        -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Locale, country and language information.
-        -----------------  ---------------------------------------------------------------------
-        access             Optional string. Valid values are private, shared, org, or public.
-        -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                           or not allowed (false).
-        =================  =====================================================================
-
-        The above are the most common item properties (metadata) that you set. To get a complete list, see
-        the
-        `common parameters <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm#ESRI_SECTION1_1FFBA7FE775B4BDA8D97524A6B9F7C98>`_
-        page in the ArcGIS REST API documentation.
-
-        :return:
-           A boolean indicating success (True) or failure (False).
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE 1: Update an existing web map
-
-            from arcgis.gis import GIS
-            from arcgis.mapping import WebMap
-
-            # log into your GIS
-            gis = GIS(url, username, password)
-
-            # edit web map by adding, removing, editing layers and basemaps
-            wm = WebMap()  # new web map
-            wm.add_layer(...)  # add some layers
-
-            # save the web map
-            webmap_item_properties = {'title':'Ebola incidents and facilities',
-                         'snippet':'Map created using Python API showing locations of Ebola treatment centers',
-                         'tags':['automation', 'ebola', 'world health', 'python']}
-
-            new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
-
-            # to visit the web map using a browser
-            print(new_wm_item.homepage)
-            >> 'https://your portal url.com/webadaptor/item.html?id=1234abcd...'
-        """
-
-        if self.item is not None:
-            if item_properties is None:
-                item_properties = {}
-            item_properties["text"] = json.dumps(
-                self._webmapdict, default=_utils._date_handler
-            )
-            item_properties["extent"] = self._process_extent()
-            if "typeKeywords" not in item_properties:
-                item_properties["typeKeywords"] = self._eval_map_viewer_keywords()
-            if "type" in item_properties:
-                item_properties.pop("type")  # type should not be changed.
-            return self.item.update(
-                item_properties=item_properties,
-                thumbnail=thumbnail,
-                metadata=metadata,
-            )
-        else:
-            raise RuntimeError(
-                "Item object missing, you should use `save()` method if you are creating a "
-                "new web map item"
-            )
-
-    def _eval_map_viewer_keywords(self):
-        # if user passes typeKeywords, adhere to what they have set without overriding anything
-        type_keywords = set(self.item.typeKeywords) if self.item else set([])
-        if "OfflineDisabled" not in type_keywords:
-            if self.layers and self._is_offline_capable_map():
-                type_keywords.add("Offline")
-            else:
-                type_keywords.discard("Offline")
-        if "CollectorDisabled" not in type_keywords:
-            if self.layers and self._is_collector_ready_map():
-                type_keywords.add("Collector")
-                type_keywords.add("Data Editing")
-            else:
-                type_keywords.discard("Collector")
-                type_keywords.discard("Data Editing")
-        return list(type_keywords)
-
-    def _is_collector_ready_map(self):
-        # check that one layer is an editable feature service
-        for layer in self.layers:
-            try:
-                layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
-                if "ArcGISFeatureLayer" in layer.layerType:
-                    if any(
-                        capability in layer_object.properties.capabilities
-                        for capability in [
-                            "Create",
-                            "Update",
-                            "Delete",
-                            "Editing",
-                        ]
-                    ):
-                        return True
-            except Exception:
-                # Not every layer in self.layers has a URL (local featurelayer, SEDF, etc.)
-                continue
-        return False
-
-    def _is_offline_capable_map(self):
-        # check that feature services are sync-enabled and tiled layers are exportable
-        try:
-            for layer in self.layers:
-                layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
-                if "ArcGISFeatureLayer" in layer.layerType:
-                    if "Sync" not in layer_object.properties.capabilities:
-                        return False
-                elif (
-                    "VectorTileLayer" in layer.layerType
-                    or "ArcGISMapServiceLayer" in layer.layerType
-                    or "ArcGISImageServiceLayer" in layer.layerType
-                ):
-                    if not self._is_exportable(layer_object):
-                        return False
-                else:
-                    return False
-            return True
-        except Exception:
-            return False
-
-    def _is_exportable(self, layer):
-        # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
-        if (
-            self._get_layer_wkid(layer) == self._webmapdict["spatialReference"]["wkid"]
-        ) and (
-            layer.properties["exportTilesAllowed"]
-            or "services.arcgisonline.com" in layer.url
-            or "server.arcgisonline.com" in layer.url
-        ):
-            return True
-        else:
-            return False
-
-    def _get_layer_wkid(self, layer):
-        # spatialReference can either be set at the root level or within initialExtent
-        if "spatialReference" in layer.properties:
-            return layer.properties["spatialReference"]["wkid"]
-        elif "initialExtent" in layer.properties:
-            return layer.properties["initialExtent"]["spatialReference"]["wkid"]
-        else:
-            raise ValueError("No wkid found")
-
-    @_utils._lazy_property
-    def forms(self):
-        """
-        The ``forms`` property retrieves the smart forms corresponding to each layer and table in the web map.
-
-        :return: :class:`~arcgis.mapping.forms.FormCollection`
-
-        .. code-block:: python
-
-            # Usage Example: Updating property of a form.
-            wm = WebMap()
-            wm.add_layer(table)
-            forms = wm.forms
-            form = forms.get(title="Manhole Inspection")
-            form.title = "Manhole Inspection Form"
-            form.update()
-        """
-        return _forms.FormCollection(parent=self)
-
-    @property
-    def tables(self):
-        """
-        Gets the tables in the ``WebMap`` object.
-
-        :return: List of :class:`~arcgis.features.Table` as dictionaries
-
-        .. code-block:: python
-
-            wm = WebMap()
-            table = Table('https://some-url.com/')
-            wm.add_layer(table)
-            wm.tables
-            >> [{"id": "fZvgsrA68ElmNajAZl3sOMSPG3iTnL",
-                 "title": "change_table",
-                 "url": "https://some-url.com/",
-                 "popupInfo": {
-                 ...
-        """
-        if self._tables is not None:
-            return self._tables
-        else:
-            self._tables = []
-            if "tables" in self._webmapdict.keys():
-                for l in self._webmapdict["tables"]:
-                    self._tables.append(_mixins.PropertyMap(l))
-
-            # reverse the layer list - webmap viewer reverses the list always
-            self._tables.reverse()
-        return self._tables
-
-    @property
-    def layers(self):
-        """
-        Gets the operational layers in the ``Web Map`` object.
-
-        :return: List of :class:`~arcgis.features.FeatureLayer` as dictionaries
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE 1: Get the list of layers from a web map
-
-            from arcgis.mapping import WebMap
-            wm = WebMap(wm_item)
-
-            wm.layers
-            >> [{"id": "Landsat8_Views_515",
-            "layerType": "ArcGISImageServiceLayer",
-            "url": "https://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer",
-            ...},
-            {...}]
-
-            len(wm.layers)
-            >> 2
-
-        """
-        if self._layers is not None:
-            return self._layers
-        else:
-            self._layers = []
-            if "operationalLayers" in self._webmapdict.keys():
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
-
-            # reverse the layer list - webmap viewer reverses the list always
-            self._layers.reverse()
-            return self._layers
-
-    @property
-    def basemap(self):
-        """
-        Get/Set the base map layers in the ``WebMap``.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required string. What basemap you would like to apply to the map
-                               ('topo', 'national-geographic', etc.).
-                               See :attr:`~arcgis.mapping.WebMap.basemaps` and
-                               :attr:`~arcgis.mapping.WebMap.gallery_basemaps` for a full list.
-        ==================     ====================================================================
-
-        :return: List of basemap layers as dictionaries
-
-        .. code-block:: python
-
-            # Usage example 1: Get the basemap used in the web map
-
-            from arcgis.mapping import WebMap
-            wm = WebMap(wm_item)
-
-            wm.basemap
-            >> {"baseMapLayers": [
-                {"id": "defaultBasemap",
-                "layerType": "ArcGISTiledMapServiceLayer",
-                "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
-                "visibility": true,
-                "opacity": 1,
-                "title": "Topographic"
-                }],
-                "title": "Topographic"
-                }
-
-            # Usage example 2: Set the basemap used in the web map
-            from arcgis.mapping import WebMap
-            wm = WebMap(wm_item)
-
-            print(wm.basemaps)
-            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
-            wm.basemap = 'dark-gray'
-            print(wm.gallery_basemaps)
-            >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
-            wm.basemap = 'custom_dark_gray_canvas'
-
-            # Usage example 3: Set the basemap equal to an item
-            from arcgis.mapping import WebMap
-            wm = WebMap(wm_item)
-            # Use basemap from another item as your own
-            wm.basemap = wm_item_2
-            wm.basemap = tiled_map_service_item
-            wm.basemap = image_layer_item
-            wm.basemap = wm2.basemap
-            wm.basemap = wm2
-
-        .. note::
-            If you set a basemap that does not have the same spatial reference as the map, the map's
-            spatial reference will be updated to reflect this. However, any operational layers will not be
-            re-projected.
-
-        """
-        if "baseMap" in self._webmapdict.keys():
-            self._basemap = self._webmapdict["baseMap"]
-        return _mixins.PropertyMap(self._basemap)
-
-    def _determine_layer_type(self, item):
-        # this function determines the basemap layer type for the Web Map Specification
-        if item.type == "Image Service":
-            layer_type = "ArcGISImageServiceLayer"
-            layer = arcgis.raster.ImageryLayer(item.url, gis=self._gis)
-        else:
-            layer_type = "ArcGISMapServiceLayer"
-            layer = arcgis.mapping.MapImageLayer(item.url, gis=self._gis)
-        if "tileInfo" in layer.properties:
-            layer_type = "ArcGIS" + layer_type.replace("ArcGIS", "Tiled")
-        return layer_type
-
-    @basemap.setter
-    def basemap(self, value):
-        """
-        See main ``basemap`` property docstring.
-        """
-        from arcgis.widgets import MapView
-
-        if isinstance(value, MapView):
-            # get basemap from map widget
-            if value.basemap in self.basemaps:
-                self._basemap = {
-                    "baseMapLayers": _basemap_definitions.basemap_dict[value.basemap],
-                    "title": value.basemap.replace("-", " ").title(),
-                }
-                self._webmapdict["baseMap"] = self._basemap
-        elif value in self.basemaps:
-            self._basemap = {
-                "baseMapLayers": _basemap_definitions.basemap_dict[value],
-                "title": value.replace("-", " ").title(),
-            }
-            self._webmapdict["baseMap"] = self._basemap
-        elif value in self.gallery_basemaps:
-            basemap_dict = self._gallery_basemaps[value]
-            self._check_spatial_reference(basemap_dict)
-            self._basemap = basemap_dict
-            self._webmapdict["baseMap"] = basemap_dict
-        elif isinstance(value, _gis.Item) and value.type.title() == "Web Map":
-            self._basemap = value.get_data()["baseMap"]
-            self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, WebMap):
-            self._basemap = value.basemap
-            self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, _mixins.PropertyMap) and "baseMapLayers" in value:
-            # for map1.basemap = map2.basemap
-            self._basemap = value
-            self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, _gis.Item) and (
-            value.type.title() == "Image Service" or value.type.title() == "Map Service"
-        ):
-            self._check_spatial_reference(value)
-            layer_type = self._determine_layer_type(value)
-            self._basemap = {
-                "baseMapLayers": [
-                    {
-                        "id": "newBasemap",
-                        "layerType": layer_type,
-                        "url": value.url,
-                        "visibility": True,
-                        "opacity": 1,
-                        "title": value.title,
-                    }
-                ],
-                "title": value.title,
-            }
-            self._webmapdict["baseMap"] = self._basemap
-        elif (
-            isinstance(value, _gis.Item) and value.type.title() == "Vector Tile Service"
-        ):
-            self._check_spatial_reference(value.layers[0])
-            try:
-                style_url = (
-                    "%s/sharing/rest/content/items/%s/resources/styles/root.json"
-                    % (value._gis._portal.url, value.id)
-                )
-                value._gis._con.get(path=style_url)
-            except Exception:
-                style_url = value.url + "/resources/styles/root.json"
-            self._basemap = {
-                "baseMapLayers": [
-                    {
-                        "id": "newBasemap",
-                        "layerType": "VectorTileLayer",
-                        "styleUrl": style_url,
-                        "visibility": True,
-                        "itemId": value.id,
-                        "opacity": 1,
-                        "title": value.title,
-                    }
-                ],
-                "title": value.title,
-            }
-            self._webmapdict["baseMap"] = self._basemap
-        elif isinstance(value, VectorTileLayer):
-            self._check_spatial_reference(value)
-            try:
-                style_url = value.url + "/resources/styles/root.json"
-                value._con.get(path=style_url)
-                self._basemap = {
-                    "baseMapLayers": [
-                        {
-                            "id": "newBasemap",
-                            "layerType": "VectorTileLayer",
-                            "styleUrl": style_url,
-                            "visibility": True,
-                            "opacity": 1,
-                            "title": value.properties["name"],
-                        }
-                    ],
-                    "title": value.properties["name"],
-                }
-                self._webmapdict["baseMap"] = self._basemap
-            except Exception:
-                raise RuntimeError("Basemap '{}' isn't valid".format(value))
-        else:
-            raise RuntimeError("Basemap '{}' isn't valid".format(value))
-
-    def _check_spatial_reference(self, service):
-        """
-        The first basemap layer must match the spatial reference of the webmap.
-
-        This method will update the spatial reference of the webmap but will not reproject the layers within
-        the webmap. Users are responsible for understanding how their layers will interact.
-        """
-        # Get the spatial reference from the webmap
-        wm_sr = self.definition["spatialReference"]["wkid"]
-        layer_sr = None
-
-        if isinstance(service, dict) and not isinstance(service, _gis.Item):
-            for layer in service["baseMapLayers"]:
-                if layer["layerType"] == "VectorTileLayer":
-                    # Vector Tile layer always has spatial reference of 4326
-                    layer_sr = 4326
-            if not layer_sr:
-                # If none of the layers are vector tile layers, get the layer from it's itemid or url and then continue
-                if "itemId" in service["baseMapLayers"][0]:
-                    service = self._gis.content.get(
-                        service["baseMapLayers"][0]["itemId"]
-                    )
-                    return self._check_spatial_reference(service)
-                elif "url" in service["baseMapLayers"][0]:
-                    service = _gis.Layer(service["baseMapLayers"][0]["url"])
-                    return self._check_spatial_reference(service)
-        elif isinstance(service, _gis.Item):
-            # Checking spatial reference of an existing WebMap item or of an existing basemap layer in our webmap
-            # If existing basemap layer, it is because user is moving it to first index position
-            if isinstance(service, _gis.Item):
-                # Existing web map item is being used to set basemap, we only care about first layer
-                service = service.get_data()["baseMap"]["baseMapLayers"][0]
-            if "itemId" in service:
-                service = self._gis.content.get(service["itemId"])
-                return self._check_spatial_reference(service)
-            elif "url" in service:
-                service = _gis.Layer(service["url"])
-                return self._check_spatial_reference(service)
-        else:
-            # Check spatial reference of a layer type (Layer, Map Service Layer, Vector Tile Layer, etc)
-            if "spatialReference" in service.properties:
-                layer_sr = service.properties["spatialReference"]
-            elif (
-                "extent" in service.properties
-                and "spatialReference" in service.properties["extent"]
-            ):
-                layer_sr = dict(service.properties["extent"]["spatialReference"])
-            elif (
-                "fullExtent" in service.properties
-                and "spatialReference" in service.properties["fullExtent"]
-            ):
-                layer_sr = dict(service.properties["fullExtent"]["spatialReference"])
-            elif (
-                "tileInfo" in service.properties
-                and "spatialReference" in service.properties
-            ):
-                layer_sr = dict(service.properties["tileInfo"]["spatialReference"])
-
-        # Get the correct wkid
-        if layer_sr is None:
-            # Could not find a spatial reference. Taking a chance.
-            return
-        elif isinstance(layer_sr, str):
-            layer_sr = int(layer_sr)
-        elif isinstance(layer_sr, dict):
-            layer_sr = layer_sr["wkid"]
-        elif isinstance(layer_sr, _mixins.PropertyMap):
-            # property map
-            layer_sr = dict(layer_sr)["wkid"]
-
-        # Check
-        if wm_sr != layer_sr:
-            self._webmapdict["spatialReference"] = {"wkid": layer_sr}
-            logging.warning(
-                f"The layer's spatial reference does not match that of the webmap. The spatial reference of the webmap will be updated but this might affect the rendering of layers."
-            )
-
-    @property
-    def basemaps(self):
-        """
-        Gets a list of possible base maps to set as the
-        :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
-        """
-        if self._gis is not None and self._gis._is_authenticated:
-            return [
-                "dark-gray-vector",
-                "gray-vector",
-                "hybrid",
-                "oceans",
-                "osm",
-                "satellite",
-                "streets-navigation-vector",
-                "streets-night-vector",
-                "streets-relief-vector",
-                "streets-vector",
-                "terrain",
-                "topo-vector",
-                "arcgis-imagery",
-                "arcgis-imagery-standard",
-                "arcgis-imagery-labels",
-                "arcgis-light-gray",
-                "arcgis-dark-gray",
-                "arcgis-navigation",
-                "arcgis-navigation-night",
-                "arcgis-streets",
-                "arcgis-streets-night",
-                "arcgis-streets-relief",
-                "arcgis-topographic",
-                "arcgis-oceans",
-                "osm-standard",
-                "osm-standard-relief",
-                "osm-streets",
-                "osm-streets-relief",
-                "osm-light-gray",
-                "osm-dark-gray",
-                "arcgis-terrain",
-                "arcgis-community",
-                "arcgis-charted-territory",
-                "arcgis-colored-pencil",
-                "arcgis-nova",
-                "arcgis-modern-antique",
-                "arcgis-midcentury",
-                "arcgis-newspaper",
-                "arcgis-hillshade-light",
-                "arcgis-hillshade-dark",
-                "arcgis-human-geography",
-                "arcgis-human-geography-dark",
-            ]
-        else:
-            return [
-                "dark-gray-vector",
-                "gray-vector",
-                "hybrid",
-                "oceans",
-                "osm",
-                "satellite",
-                "streets-navigation-vector",
-                "streets-night-vector",
-                "streets-relief-vector",
-                "streets-vector",
-                "terrain",
-                "topo-vector",
-            ]
-
-    @property
-    def gallery_basemaps(self):
-        """
-        Gets a list of web map titles contained within the
-        :class:`~arcgis.gis.Group` configured as the organization's Basemap
-        gallery.
-        """
-        if self._gis:
-            try:
-                bmquery = self._gis.properties["basemapGalleryGroupQuery"]
-                basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
-                if len(basemapsgrp) == 1:
-                    for bm in basemapsgrp[0].content():
-                        if bm.type.lower() == "web map":  # Only use WebMaps
-                            item_data = bm.get_data()
-                            bm_title = bm.title.lower().replace(" ", "_")
-                            self._gallery_basemaps[bm_title] = item_data["baseMap"]
-                    return list(self._gallery_basemaps.keys())
-                else:
-                    return list(self._gallery_basemaps.keys())
-            except:
-                return []
-        else:
-            return []
-
-    def remove_table(self, table: _arcgis_features.Table):
-        """
-        The ``remove_table`` method removes the specified table from the ``WebMap``.
-
-        .. note::
-            A user can get the list of tables in map using the :attr:`~arcgis.mapping.WebMap.tables` property
-            and pass one of those tables to this method for removal from the map.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        table                  Required object. Pass the :class:`~arcgis.features.Table`
-                               that needs to be removed from the map. You can get the
-                               list of tables in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
-        ==================     ====================================================================
-        """
-        self._webmapdict["tables"].remove(table)
-        self._tables.remove(_mixins.PropertyMap(table))
-
-    def remove_layer(self, layer: _arcgis_features.FeatureLayer):
-        """
-        The ``remove_layer`` method removes the specified layer from the ``WebMap``.
-
-        .. note::
-            A user can get the list of layers in map using the :attr:`~arcgis.mapping.WebMap.layers` property
-            and pass one of those layers to this method for removal from the map.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLayer`
-                               that needs to be removed from the map. You can get the
-                               list of layers in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
-        ==================     ====================================================================
-        """
-
-        self._webmapdict["operationalLayers"].remove(layer)
-        self._layers.remove(_mixins.PropertyMap(layer))
-
-    def get_layer(
-        self,
-        item_id: Optional[str] = None,
-        title: Optional[str] = None,
-        layer_id: Optional[str] = None,
-    ):
-        """
-        The ``get_layer`` method retrieves the first layer with a matching ``itemId``, ``title``, or ``layer_id`` in
-        the``WebMap`` object's operational layers.
-
-        .. note::
-            Pass one of the three parameters into the method to return the layer.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        item_id                Optional string. Pass the item_id for the operational layer you are trying
-                               to reference in the ``WebMap``. Note: Not recommended if using multiple
-                               layers from the same original item.
-        ------------------     --------------------------------------------------------------------
-        title                  Optional string. Pass the title for the operational layer you are trying
-                               to reference in the ``WebMap``.
-        ------------------     --------------------------------------------------------------------
-        layer_id               Optional string. Pass the id for the operational layer you are trying
-                               to reference in the ``WebMap``.
-        ==================     ====================================================================
-
-        :return: A :class:`~arcgis.features.FeatureLayer` as a dictionary
-        """
-        if item_id is None and title is None and layer_id is None:
-            raise ValueError("Please pass at least one parameter into the function")
-        if self.layers:
-            for layer in self.layers:
-                # some layers may be group layers, so explore their layer array
-                if layer["layerType"] == "GroupLayer":
-                    for sublayer in layer["layers"]:
-                        if (
-                            (title == sublayer["title"])
-                            or (layer_id == sublayer["id"])
-                            or (item_id == sublayer["itemId"])
-                        ):
-                            return sublayer
-                # item id is optional in the webmap spec, so we need to try/except
-                try:
-                    if (
-                        (title == layer["title"])
-                        or (layer_id == layer["id"])
-                        or (item_id == sublayer["itemId"])
-                    ):
-                        return layer
-                except Exception:
-                    pass
-        return None
-
-    def get_table(
-        self,
-        item_id: Optional[str] = None,
-        title: Optional[str] = None,
-        layer_id: Optional[str] = None,
-    ):
-        """
-        The ``get_table`` method retrieves the first table with a matching ``itemId``, ``title``, or ``layer_id`` in
-        the ``WebMap`` object's tables.
-
-        .. note::
-            Pass one of the three parameters into the method to return the table.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        item_id                Optional string. Pass the item_id for the table you are trying
-                               to reference in the ``WebMap``.
-        ------------------     --------------------------------------------------------------------
-        title                  Optional string. Pass the title for the table you are trying
-                               to reference in the ``WebMap``.
-        ------------------     --------------------------------------------------------------------
-        layer_id               Optional string. Pass the id for the table you are trying
-                               to reference in the ``WebMap``.
-        ==================     ====================================================================
-
-        :return: A :class:`~arcgis.features.Table` object as a dictionary
-        """
-        if item_id is None and title is None and layer_id is None:
-            raise ValueError("Please pass at least one parameter into the function")
-        if self.tables:
-            for table in self.tables:
-                # item id is optional in the webmap spec, so we need to try/except
-                try:
-                    if (
-                        (title == table["title"])
-                        or (layer_id == table["id"])
-                        or (item_id == table["itemId"])
-                    ):
-                        return table
-                except Exception:
-                    pass
-        return None
-
-    @property
-    def offline_areas(self):
-        """
-        The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
-
-        .. note::
-            To create, edit, and manage offline map areas for a web map, you must be the owner
-            of the map and have privileges to create content.
-
-        .. note::
-            You cannot share a web map that contains an offline map area with a group that allows
-            members to update all items, and organization administrators cannot change ownership of a
-            web map that contains an offline map area.
-
-        :return:
-            The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
-        """
-        # Need to check that the owner of the map is the same as the logged in user
-        if self._gis.users.me.username == self.item.owner:
-            return OfflineMapAreaManager(self.item, self._gis)
-        else:
-            raise RuntimeError(
-                "You do not have permission to manage offline areas for this map. You must be the owner of the item."
-            )
-
-    @property
-    def pop_ups(self):
-        """
-        Get/Set whether pop ups are enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if popups are enabled for viewer widget, False otherwise.
-        """
-        return self._pop_ups
-
-    @pop_ups.setter
-    def pop_ups(self, value: bool):
-        """
-        See main ``pop_ups`` property docstring.
-        """
-        self._pop_ups = value
-        if value in [0, "0", False, "false"]:
-            self._pop_ups = False
-
-    def configure_pop_ups(self, layer_title: str, field_names: list, visibility: bool):
-        """
-        This method can be used to change the visibility of a field for a layer on the Web Map.
-
-        .. note::
-            Changes will not be seen on the Web Map viewer until the Web Map is saved or updated using
-            the ``save`` or ``update`` method. Once this is done, reload the Web Map to see changes or view
-            on the Portal Web Map Viewer.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        layer_title            Required string. The name of the layer.
-        ------------------     --------------------------------------------------------------------
-        field_names            Required list of strings. The name of the field to change the visibility of.
-        ------------------     --------------------------------------------------------------------
-        visibility             Required bool. True if the field should be visible on the pop up for
-                               the layer, else False.
-        ==================     ====================================================================
-        """
-        layer = self.get_layer(title=layer_title)
-
-        for field_name in field_names:
-            idx = 0
-            for field in layer.popupInfo.fieldInfos:
-                if field["fieldName"] == field_name:
-                    layer.popupInfo.fieldInfos[idx].visible = visibility
-                idx += 1
-        return self.get_layer(title=layer_title)
-
-    @property
-    def bookmarks(self):
-        """
-        Get/Set whether bookmarks are enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required list of dictionaries. The new bookmarks to be used.
-                               This will replace current bookmarks with the ones passed into the list.
-        ==================     ====================================================================
-
-        :return: Bookmarks in the WebMap item.
-
-        .. code-block:: python
-
-            # Usage Example:
-
-            from arcgis.mapping import WebMap
-            from arcgis.gis import GIS
-
-            # connect to your GIS and get the web map item
-            gis = GIS(url, username, password)
-            wm_item = gis.content.get('1234abcd_web map item id')
-
-            # create a WebMap object from the existing web map item
-            wm = WebMap(wm_item)
-
-            # get current bookmarks
-            my_bookmarks = wm.bookmarks
-
-            # create new bookmarks to replace others
-            bookmark1 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                        'xmin': -8425179.029160742,
-                        'ymin': 4189089.021381017,
-                        'xmax': -8409834.295732513,
-                        'ymax': 4203784.040068822},
-                        'name': 'Updated Bookmark 1',
-                        'thumbnail': {'url': <url for thumbnail>},
-                        'viewpoint': {'rotation': 30,
-                        'scale': 7222.3819286,
-                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                        'xmin': -8425179.029160742,
-                        'ymin': 4189089.021381017,
-                        'xmax': -8409834.295732513,
-                        'ymax': 4203784.040068822}}}
-            bookmark2 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                        'xmin': -83200.034567,
-                        'ymin': 3127089.021381017,
-                        'xmax': -813434.295732513,
-                        'ymax': 4203784.040068822},
-                        'name': 'Updated Bookmark 2',
-                        'thumbnail': {'url': <url for thumbnail>},
-                        'viewpoint': {'rotation': 30,
-                        'scale': 7222.3819286,
-                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                        'xmin': -8425179.029160742,
-                        'ymin': 4189089.021381017,
-                        'xmax': -8409834.295732513,
-                        'ymax': 4203784.040068822}}}
-
-            # set new bookmark
-            wm.bookmarks = [bookmark1, bookmark2]
-        """
-        if "bookmarks" not in self._webmapdict:
-            self._webmapdict["bookmarks"] = []
-        return self._webmapdict["bookmarks"]
-
-    @bookmarks.setter
-    def bookmarks(self, value: list):
-        """
-        See main ``bookmarks`` property docstring.
-        """
-        if isinstance(value, list):
-            self.definition.bookmarks = value
-            self._webmapdict["bookmarks"] = value
-
-    @property
-    def view_bookmarks(self):
-        """
-        Get/Set whether bookmarks are enabled for the dashboard widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if bookmarks are enabled for viewer widget, False otherwise.
-        """
-        return self._bookmarks
-
-    @view_bookmarks.setter
-    def view_bookmarks(self, value):
-        """
-        See main ``view_bookmarks`` property docstring.
-        """
-        self._bookmarks = value
-        if value in [0, "0", False, "false"]:
-            self._bookmarks = False
-
-    @property
-    def legend(self):
-        """
-        Get/Set whether legend visibility is enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if legend visibility is enabled for viewer widget, False otherwise.
-        """
-        return self._legend
-
-    @legend.setter
-    def legend(self, value: bool):
-        """
-        See main ``legend`` property docstring.
-        """
-        self._legend = value
-        if value in [0, "0", False, "false"]:
-            self._legend = False
-
-    @property
-    def layer_visibility(self):
-        """
-        Get/Set whether layer visibility is enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if layer visibility is enabled for viewer widget, False otherwise.
-        """
-        return self._layer_visibility
-
-    @layer_visibility.setter
-    def layer_visibility(self, value: bool):
-        """
-        See main ``layer_visibility`` property docstring.
-        """
-        self._layer_visibility = value
-        if value in [0, "0", False, "false"]:
-            self._layer_visibility = False
-
-    @property
-    def basemap_switcher(self):
-        """
-        Get/Set whether the basemap of the ``WebMap`` can be switched.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return:
-            True if Basemap switcher is enabled, False otherwise.
-        """
-        return self._basemap_switcher
-
-    @basemap_switcher.setter
-    def basemap_switcher(self, value: bool):
-        """
-        See main ``basemap_switcher`` property docstring.
-        """
-        self._basemap_switcher = value
-        if value in [0, "0", False, "false"]:
-            self._basemap_switcher = False
-
-    @property
-    def search(self):
-        """
-        Get/Set whether search is enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if search is enabled for viewer widget, False otherwise.
-        """
-        return self._search
-
-    @search.setter
-    def search(self, value: bool):
-        """
-        See main ``search`` property docstring.
-        """
-        self._search = value
-        if value in [0, "0", False, "false"]:
-            self._search = False
-
-    @property
-    def zoom(self):
-        """
-        Get/Set whether zoom is enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if zoom is enabled for viewer widget, False otherwise.
-        """
-        return self._zoom
-
-    @zoom.setter
-    def zoom(self, value: bool):
-        """
-        See main ``zoom`` property docstring.
-        """
-        self._zoom = value
-        if value in [0, "0", False, "false"]:
-            self._zoom = False
-
-    @property
-    def navigation(self):
-        """
-        Get/Set whether navigation is enabled for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required bool. True to enable, False to disable
-        ==================     ====================================================================
-
-        :return: True if navigation is enabled for viewer widget, False otherwise.
-        """
-        return self._navigation
-
-    @navigation.setter
-    def navigation(self, value: bool):
-        """
-        See main ``navigation`` property docstring.
-        """
-        if value in [0, "0", False, "false"]:
-            self._navigation = False
-        self._navigation = True
-
-    @property
-    def scale_bar(self):
-        """
-        Get/Set the scale bar type for the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required string.
-                               Values: 'none' (disable) | 'line' | 'ruler'
-        ==================     ====================================================================
-
-        :return: A string representing the scale bar type. If "none" then it is disabled.
-        """
-        return self._scale_bar
-
-    @scale_bar.setter
-    def scale_bar(self, value: bool):
-        """
-        See main ``scale_bar`` property docstring.
-        """
-        self._scale_bar = value
-        if value not in ["none", "line", "ruler"]:
-            self._scale_bar = "none"
-
-    @property
-    def height(self):
-        """
-        Get/Set the height of the widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required float between 0 and 1. (e.g. 0.75)
-        ==================     ====================================================================
-
-        :return: A float representing the height of the widget
-        """
-        raise Warning(
-            "This property is no longer supported and does not operate on the resource."
-        )
-        return self._height
-
-    @height.setter
-    def height(self, value: bool):
-        """
-        See main ``height`` property docstring.
-        """
-        if value > 1:
-            self._height = 1
-        elif value < 0:
-            self._height = 0
-        else:
-            self._height = value
-
-    @property
-    def width(self):
-        """
-        Get/Set the width of the viewer widget.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        value                  Required float between 0 and 1. (e.g. 0.75)
-        ==================     ====================================================================
-
-        :return: A float representing the width of the widget
-        """
-        raise Warning(
-            "This property is no longer supported and does not operate on the resource."
-        )
-        return self._width
-
-    @width.setter
-    def width(self, value: bool):
-        """
-        See main ``width`` property docstring.
-        """
-        if value > 1:
-            self._width = 1
-        elif value < 0:
-            self._width = 0
-        else:
-            self._width = value
-
-    def _convert_to_json(self):
-        data = {
-            "events": [],
-            "type": "mapWidget",
-            "flashRepeats": 3,
-            "itemId": self.item.id,
-            "mapTools": [],
-            "showNavigation": self.navigation,
-            "showPopup": self.pop_ups,
-            "scalebarStyle": self.scale_bar,
-            "layers": [
-                {"type": "featureLayerDataSource", "layerId": layer["id"]}
-                for layer in self.layers
-            ],
-            "id": self._id,
-            "name": self.item.title,
-            "caption": self.item.name,
-            "showLastUpdate": True,
-            "noDataVerticalAlignment": "middle",
-            "showCaptionWhenNoData": False,
-            "showDescriptionWhenNoData": False,
-        }
-
-        if self.bookmarks:
-            data["mapTools"].append({"type": "bookmarksTool"})
-
-        if self.legend:
-            data["mapTools"].append({"type": "legendTool"})
-
-        if self.layer_visibility:
-            data["mapTools"].append({"type": "mapContentsTool"})
-
-        if self.basemap_switcher:
-            data["mapTools"].append({"type": "basemapGalleryTool"})
-
-        if self.search:
-            data["mapTools"].append({"type": "searchTool"})
-
-        if self.events.enable:
-            data["events"].append(
-                {
-                    "type": self.events.type,
-                    "actions": self.events.synced_widgets,
-                }
-            )
-
-        return data
-
-    def print(
-        self,
-        file_format: str,
-        extent: dict[str, Any],
-        dpi: int = 92,
-        output_dimensions: tuple[float] = (500, 500),
-        scale: Optional[float] = None,
-        rotation: Optional[float] = None,
-        spatial_reference: Optional[dict[str, Any]] = None,
-        layout_template: str = "MAP_ONLY",
-        time_extent: Optional[Union[tuple[int], list[int]]] = None,
-        layout_options: Optional[dict[str, Any]] = None,
-    ):
-        """
-        The ``print`` method prints the ``WebMap`` object to a printable file such as a PDF, PNG32, JPG.
-
-        .. note::
-
-            The render and print operations happen
-            server side (ArcGIS Online or Enterprise) and not on the client.
-
-        The ``print`` method takes the state of
-        the ``WebMap``, renders and returns either a page layout or a map without page surrounds of the specified extent
-        in raster or vector format.
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        file_format            Required String. Specifies the output file format. Valid types:
-
-                               ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
-                               | ``SVG`` | ``SVGZ``.
-        ------------------     --------------------------------------------------------------------
-        extent                 Required Dictionary. Specify the extent to be printed.
-
-                               .. code-block:: python
-
-                                   # Example Usage:
-
-                                   >>> extent = {'spatialReference': {'latestWkid': 3857,
-                                                                      'wkid': 102100},
-                                                 'xmin': -15199645.40582486,
-                                                 'ymin': 3395607.5273594954,
-                                                 'xmax': -11354557.134968376,
-                                                 'ymax': 5352395.451459487}
-
-                               The spatial reference of the extent object is optional; when it is
-                               not provided, it is assumed to be in the map's spatial reference.
-                               When the aspect ratio of the map extent is different than the size
-                               of the map on the output page or the ``output_dimensions``,
-                               you might notice more features on the output map.
-        ------------------     --------------------------------------------------------------------
-        dpi                    Optional integer. Specify the print resolution of the output file. ``dpi`` stands for
-                               *dots per inch*. A higher number implies better resolution and a
-                               larger file size.
-        ------------------     --------------------------------------------------------------------
-        output_dimensions      Optional tuple. Specify the dimensions of the output file in pixels. If the
-                               ``layout_template`` is not ``MAP_ONLY``, the specific layout
-                               template chosen takes precedence over this paramter.
-        ------------------     --------------------------------------------------------------------
-        scale                  Optional float. Specify the map scale to be printed. The map scale at which you
-                               want your map to be printed. This parameter is optional but
-                               recommended for optimal results. The ``scale`` property is
-                               especially useful when map services in the web map have
-                               scale-dependent layers or reference scales set. Since the map that
-                               you are viewing on the web app may be smaller than the size of the
-                               output map (for example, 8.5 x 11 in. or A4 size), the scale of the
-                               output map will be different and you could see differences in
-                               features and/or symbols in the web application as compared with
-                               the output map.
-
-                               When scale is used, it takes precedence over the extent, but the
-                               output map is drawn at the requested scale centered on the center
-                               of the extent.
-        ------------------     --------------------------------------------------------------------
-        rotation               Optional float. Specify the number of degrees by which the map frame will be
-                               rotated, measured counterclockwise from the north. To rotate
-                               clockwise, use a negative value.
-        ------------------     --------------------------------------------------------------------
-        spatial_reference      Optional Dictionary.Specify the spatial reference in which map should be printed. When
-                               not specified, the following is the order of precedence:
-
-                               - read from the ``extent`` parameter
-                               - read from the base map layer of your web map
-                               - read from the ``layout_template`` chosen
-        ------------------     --------------------------------------------------------------------
-        layout_template        Optional String. The default value ``MAP_ONLY`` does not use any template. To get the
-                               list of available templates run :meth:`~arcgis.mapping.get_layout_templates()`.
-        ------------------     --------------------------------------------------------------------
-        time_extent            Optional List . If there is a time-aware layer and you want it
-                               to be drawn at a specified time, specify this property. This order
-                               list can have one or two elements. Add two elements (``startTime``
-                               followed by ``endTime``) to represent a time extent, or provide
-                               only one time element to represent a time instant.
-                               Times are always in UTC.
-
-
-                               .. code-block:: python
-
-                                   # Example Usage to represent Tues. Jan 1, 2008 00:00:00 UTC:
-                                   # to Thurs. Jan 1, 2009 00:00:00 UTC.
-
-                                   >>> time_extent = [1199145600000, 1230768000000]
-        ------------------     --------------------------------------------------------------------
-        layout_options         Optional Dictionary. This defines settings for different available page layout elements
-                               and is only needed when an available ``layout_template`` is chosen.
-                               Page layout elements include ``title``, ``copyright text``,
-                               ``scale bar``, ``author name``, and ``custom text elements``.
-                               For more details, see
-                               `ExportWebMap specification. <https://developers.arcgis.com/rest/services-reference/enterprise/exportwebmap-specification.htm>`_
-        ==================     ====================================================================
-
-        :return: A URL to the file which can be downloaded and printed.
-
-        .. code-block:: python
-
-                # USAGE EXAMPLE 1: Printing a web map to a JPG file of desired extent.
-
-                from arcgis.mapping import WebMap
-                from arcgis.gis import GIS
-
-                # connect to your GIS and get the web map item
-                gis = GIS(url, username, password)
-                wm_item = gis.content.get('1234abcd_web map item id')
-
-                # create a WebMap object from the existing web map item
-                wm = WebMap(wm_item)
-
-                # create an empty web map
-                wm2 = WebMap()
-                wm2.add_layer(<desired Item or Layer object>)
-
-                # set extent
-                redlands_extent = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                                     'xmin': -13074746.000753032,
-                                     'ymin': 4020957.451106308,
-                                     'xmax': -13014666.49652086,
-                                     'ymax': 4051532.26242039}
-
-                # print
-                printed_file_url = wm.print(file_format='JPG', extent=redlands_extent)
-                printed_file2_url = wm2.print(file_format='PNG32', extent=redlands_extent)
-
-                # Display the result in a notebook:
-                from IPython.display import Image
-                Image(printed_file_url)
-
-                # Download file to disk
-                import requests
-                with requests.get(printed_file_url) as resp:
-                    with open('./output_file.png', 'wb') as file_handle:
-                        file_handle.write(resp.content)
-
-        """
-        from ._utils import export_map
-
-        # compose map options
-        map_options = {
-            "extent": extent,
-            "scale": scale,
-            "rotation": rotation,
-            "spatialReference": spatial_reference,
-            "time": time_extent,
-        }
-
-        if layout_options:
-            map_options["layoutOptions"] = layout_options
-
-        # compose export options
-        export_options = {"dpi": dpi, "outputSize": output_dimensions}
-
-        # compose combined JSON
-        print_options = {
-            "mapOptions": map_options,
-            "operationalLayers": self._webmapdict["operationalLayers"],
-            "baseMap": self._basemap,
-            "exportOptions": export_options,
-        }
-
-        # add token parameter to the operational layers if token present
-        if self._gis._con.token is not None:
-            for i in range(len(print_options["operationalLayers"])):
-                print_options["operationalLayers"][i]["token"] = self._gis._con.token
-
-        # execute printing
-        result = export_map(
-            web_map_as_json=print_options,
-            format=file_format,
-            layout_template=layout_template,
-        )
-
-        # process output
-        return result.url
-
-
-###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the PackagingJob class found in `arcgis.map.offline_mapping.PackagingJob` instead.",
+)
 class PackagingJob(object):
     """
     The ``PackagingJob`` class represents a Single Packaging Job.
@@ -2867,9 +126,10 @@ class PackagingJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
+        Reports the total amout of time that passed while the
+        :class:`~arcgis.layers.PackagingJob` ran.
 
         :return:
             The elapsed time
@@ -2986,26 +246,31 @@ class PackagingJob(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the OfflineMapAreaManager class found in `arcgis.map.OfflineMapAreaManager` instead.",
+)
 class OfflineMapAreaManager(object):
     """
     The ``OfflineMapAreaManager`` is a helper class to manage offline map areas
     for a Web Map :class:`~arcgis.gis.Item`. Objects of this class should not
     be initialized directly, but rather accessed using the
-    :attr:`~arcgis.mapping.WebMap.offline_areas` property on a
-    :class:`~arcgis.mapping.WebMap` object.
+    :attr:`~arcgis.map.Map.offline_areas` property on a
+    :class:`~arcgis.map.Map` object.
 
     .. code-block:: python
 
         >>> from arcgis.gis import GIS
-        >>> from arcgis.mapping import WebMap
+        >>> from arcgis.map import Map
 
         >>> gis = GIS(profile="your_Web_GIS_profile")
 
         >>> wm_item = gis.content.get("<web map id>")
-        >>> wm_obj = WebMap(wm_item)
+        >>> wm_obj = Map(wm_item)
 
         >>> oma_mgr = wm_obj.offline_areas
-        <arcgis.mapping._types.OfflineMapAreaManager at <memory_addr>>
+        <arcgis.layers._types.OfflineMapAreaManager at <memory_addr>>
 
     .. note::
         There are important concepts to understand about offline mapping before
@@ -3030,10 +295,12 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
+        arcgismapping = _imports.get_arcgis_map_mod(True)
+
         self._gis = gis
         self._portal = gis._portal
         self._item = item
-        self._web_map = WebMap(self._item)
+        self._map = arcgismapping.Map(self._item)
         try:
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
@@ -3106,10 +373,10 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE
 
             >>> from arcgis.gis import GIS
-            >>> from arcgis.mapping import WebMap
+            >>> from arcgis.map import Map
 
             >>> wm_item = gis.content.get("<web_map_id>")
-            >>> wm_obj = WebMap(wm_item)
+            >>> wm_obj = Map(wm_item)
 
             >>> offline_mgr = wm_obj.offline_areas
             >>> offline_mgr.offline_properties = {"download": "features",
@@ -3137,37 +404,47 @@ class OfflineMapAreaManager(object):
             "get_attachments": None,
         }
         if (
-            "applicationProperties" in self._web_map._webmapdict
-            and "offline" in self._web_map._webmapdict["applicationProperties"]
+            "application_properties" in self._map._webmap
+            and "offline" in self._map._webmap.application_properties
         ):
-            v = self._web_map._webmapdict["applicationProperties"]["offline"]
-            if "editableLayers" in v:
-                if "download" in v["editableLayers"]:
-                    values["download"] = dl_lu[v["editableLayers"]["download"]]
+            offline_dict = self._map._webmap.application_properties.offline.dict()
+            if "editableLayers" in offline_dict:
+                if "download" in offline_dict["editableLayers"]:
+                    values["download"] = dl_lu[
+                        offline_dict["editableLayers"]["download"]
+                    ]
                 else:
                     values.pop("download")
-                if "sync" in v["editableLayers"]:
-                    values["sync"] = dl_lu[v["editableLayers"]["sync"]]
+                if "sync" in offline_dict["editableLayers"]:
+                    values["sync"] = dl_lu[offline_dict["editableLayers"]["sync"]]
                 else:
                     values.pop("sync")
             else:
                 values.pop("download")
                 values.pop("sync")
 
-            if "offlinebasemap" in v and "referenceBasemapName" in v["offlinebasemap"]:
-                values["reference_basemap"] = v["offlinebasemap"][
+            if (
+                "offlinebasemap" in offline_dict
+                and "referenceBasemapName" in offline_dict["offlinebasemap"]
+            ):
+                values["reference_basemap"] = offline_dict["offlinebasemap"][
                     "referenceBasemapName"
                 ]
             else:
                 values.pop("reference_basemap")
-            if "readonlyLayers" in v and "downloadAttachments" in v["readonlyLayers"]:
-                values["get_attachments"] = v["readonlyLayers"]["downloadAttachments"]
+            if (
+                "readonlyLayers" in offline_dict
+                and "downloadAttachments" in offline_dict["readonlyLayers"]
+            ):
+                values["get_attachments"] = offline_dict["readonlyLayers"][
+                    "downloadAttachments"
+                ]
             else:
                 values.pop("get_attachments")
             return values
         else:
-            self._web_map._webmapdict["applicationProperties"] = {"offline": {}}
-            return self._web_map._webmapdict["applicationProperties"]["offline"]
+            self._map._webmap.application_properties = {"offline": {}}
+            return {}
 
     # ----------------------------------------------------------------------
     @offline_properties.setter
@@ -3196,10 +473,10 @@ class OfflineMapAreaManager(object):
             "get_attachments": "downloadAttachments",
         }
         remove = set()
-        if "applicationProperties" in self._web_map._webmapdict:
-            v = self._web_map._webmapdict["applicationProperties"]
+        if "applicationProperties" in self._map._webmap:
+            v = self._map._webmap.application_properties.dict()
         else:
-            v = self._web_map._webmapdict["applicationProperties"] = {}
+            v = self._map._webmap.application_properties = {}
         if "offline" not in v:
             v["offline"] = {
                 "editableLayers": {
@@ -3271,12 +548,13 @@ class OfflineMapAreaManager(object):
         del remove
         update_items = {
             "clearEmptyFields": True,
-            "text": json.dumps(self._web_map._webmapdict),
+            "text": json.dumps(self._map._webmap.dict()),
         }
         if self._item.update(item_properties=update_items):
             self._item._hydrated = False
             self._item._hydrate()
-            self._web_map = WebMap(self._item)
+            arcgismapping = _imports.get_arcgis_map_mod(True)
+            self._map = arcgismapping.Map(self._item)
         else:
             raise Exception("Could not update the offline properties.")
 
@@ -3346,7 +624,7 @@ class OfflineMapAreaManager(object):
                                  .. code-block:: python
 
                                     >>> wm_item = gis.content.get("<web map id>")
-                                    >>> wm_obj = WebMap(wm_item)
+                                    >>> wm_obj = Map(wm_item)
 
                                     >>> wm_bookmarks = wm_obj.bookmarks
                                     >>> area = wm_bookmarks[0]
@@ -3400,7 +678,7 @@ class OfflineMapAreaManager(object):
         ------------------     --------------------------------------------------------------------
         layers_to_ignore       Optional List of layer objects to exclude when creating offline
                                packages. You can get the list of layers in a web map by calling
-                               the `layers` property on the `WebMap` object.
+                               the `layers` property on the `Map` object.
         ------------------     --------------------------------------------------------------------
         refresh_schedule       Optional string. Allows for the scheduling of refreshes at given
                                times.
@@ -3506,7 +784,7 @@ class OfflineMapAreaManager(object):
 
         :return:
             Map Area :class:`~arcgis.gis.Item`, or if *future=True*, a
-            :class:`~arcgis.mapping.PackagingJob` object to further query for
+            :class:`~arcgis.layers.PackagingJob` object to further query for
             results.
 
         .. code-block:: python
@@ -3514,20 +792,20 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE #1: Creating offline map areas using *scale* argument
 
             >>> from arcgis.gis import GIS
-            >>> from arcgis.mapping import WebMap
+            >>> from arcgis.map import Map
 
             >>> gis = GIS(profile="your_online_organization_profile")
 
             >>> wm_item = gis.content.get("<web_map_id>")
-            >>> wm_obj = WebMap(wm_item)
+            >>> wm_obj = Map(wm_item)
 
             >>> item_prop = {"title": "Clear lake hyperspectral field campaign",
                              "snippet": "Offline package for field data collection using spectro-radiometer",
                              "tags": ["python api", "in-situ data", "field data collection"]}
 
-            >>> aviris_layer = wm_item.layers[-1]
+            >>> aviris_layer = wm_item.content.layers[-1]
 
-            >>> north_bed = wm_obj.bookmarks[-1]['name']
+            >>> north_bed = wm_obj.bookmarks.list()[-1].name
             >>> wm.offline_areas.create(area=north_bed,
                                         item_properties=item_prop,
                                         folder="clear_lake",
@@ -3540,10 +818,10 @@ class OfflineMapAreaManager(object):
             >>> gis = GIS(profile="your_enterprise_profile")
 
             >>> wm_item = gis.content.get("<item_id>")
-            >>> wm_obj = WebMap(wm_item)
+            >>> wm_obj = Map(wm_item)
 
             # Enterprise: Get the url for tile services from basemap
-            >>> basemap_lyrs = wm_obj.definition["baseMap"]["baseMapLayers"]
+            >>> basemap_lyrs = wm_obj.basemap.basemap["baseMapLayers"]
             >>> basemap_lyrs
 
                 [
@@ -3568,8 +846,8 @@ class OfflineMapAreaManager(object):
             https:/example.com/portal/sharing/servers/042f5e5aadcb8dbd910ae310b1f26d1/rest/services/World_Basemap_Export_v2/VectorTileServer
 
             # Get a list of bookmark names to iterate through
-            >>> bookmarks = wm_obj.bookmarks
-            >>> bkmrk_names = [bookmark["name"] for bookmark in bookmarks]
+            >>> bookmarks = wm_obj.bookmarks.list()
+            >>> bkmrk_names = [bookmark.name for bookmark in bookmarks]
             >>> bname = bkmrk_names[1]
 
             >>> oma = offline_mgr.create(area=bname,
@@ -3895,7 +1173,7 @@ class OfflineMapAreaManager(object):
         }
         item.update(item_properties=update_items)
         if _extent is None and area_type == "BOOKMARK":
-            for bm in self._web_map._webmapdict["bookmarks"]:
+            for bm in self._map._webmap_dict["bookmarks"]:
                 if isinstance(area, dict):
                     if bm["name"].lower() == area["name"].lower():
                         _extent = bm["extent"]
@@ -3940,17 +1218,17 @@ class OfflineMapAreaManager(object):
             # find tile and vector tile layers in map
             cached_layers = [
                 l
-                for l in self._web_map.layers
+                for l in self._map.content.layers
                 if l.layerType in ["VectorTileLayer", "ArcGISTiledMapServiceLayer"]
             ]
 
             # find tile and vector tile layers in basemap set of layers
-            if hasattr(self._web_map, "basemap"):
-                if hasattr(self._web_map.basemap, "baseMapLayers"):
+            if hasattr(self._map.basemap, "basemap"):
+                if "baseMapLayers" in self._map.basemap.basemap:
                     cached_layers_bm = [
                         l
-                        for l in self._web_map.basemap.baseMapLayers
-                        if l.layerType
+                        for l in self._map.basemap.basemap["baseMapLayers"]
+                        if l["layerType"]
                         in ["VectorTileLayer", "ArcGISTiledMapServiceLayer"]
                     ]
 
@@ -3958,16 +1236,16 @@ class OfflineMapAreaManager(object):
                     cached_layers.extend(cached_layers_bm)
 
             for cached_layer in cached_layers:
-                if cached_layer.layerType == "VectorTileLayer":
-                    if hasattr(cached_layer, "url"):
-                        layer0_obj = VectorTileLayer(cached_layer.url, self._gis)
-                    elif hasattr(cached_layer, "itemId"):
+                if cached_layer["layerType"] == "VectorTileLayer":
+                    if "url" in cached_layer:
+                        layer0_obj = VectorTileLayer(cached_layer["url"], self._gis)
+                    elif "itemId" in cached_layer:
                         layer0_obj = VectorTileLayer.fromitem(
-                            self._gis.content.get(cached_layer.itemId)
+                            self._gis.content.get(cached_layer["itemId"])
                         )
-                    elif hasattr(cached_layer, "styleUrl") and getattr(
-                        cached_layer, "title"
-                    ) in ["OpenStreetMap"]:
+                    elif "styleUrl" in cached_layer and cached_layer["title"] in [
+                        "OpenStreetMap"
+                    ]:
                         res = findall(
                             r"[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}",
                             cached_layer["styleUrl"],
@@ -3977,7 +1255,7 @@ class OfflineMapAreaManager(object):
                                 self._gis.content.get(res[0])
                             )
                 else:
-                    layer0_obj = MapImageLayer(cached_layer.url, self._gis)
+                    layer0_obj = MapImageLayer(cached_layer["url"], self._gis)
 
                 # region snap logic
                 # Objective is to find the LoD that is close to the min scale specified. When scale falls between two
@@ -4017,7 +1295,7 @@ class OfflineMapAreaManager(object):
         if enable_updates:
             if feature_services is None:
                 feature_services = {}
-                for l in self._web_map.layers:
+                for l in self._map.content.layers:
                     if os.path.dirname(l["url"]) not in feature_services:
                         feature_services[os.path.dirname(l["url"])] = {
                             "url": os.path.dirname(l["url"]),
@@ -4147,7 +1425,6 @@ class OfflineMapAreaManager(object):
             refresh_rates = {}
         if refresh_schedule is None or str(refresh_schedule).lower() == "never":
             refresh_schedule = None
-            refresh_rates_cron = None
             map_area_refresh_params = {"type": "never"}
         elif refresh_schedule.lower() == "daily":
             if "hour" in refresh_rates:
@@ -4209,9 +1486,7 @@ class OfflineMapAreaManager(object):
         text["mapAreas"]["mapAreaRefreshParams"] = map_area_refresh_params
         update_items = {"clearEmptyFields": True, "text": json.dumps(text)}
         item.update(item_properties=update_items)
-        properties = item.properties
         _extent = item.properties["extent"]
-        _bookmark = None
         update_items = {
             "properties": {
                 "extent": _extent,
@@ -4221,7 +1496,7 @@ class OfflineMapAreaManager(object):
         }
         item.update(item_properties=update_items)
         try:
-            result = self._pm.create_map_area(map_item_id=item.id, future=False)
+            self._pm.create_map_area(map_item_id=item.id, future=False)
             return True
         except:
             return False
@@ -4230,7 +1505,7 @@ class OfflineMapAreaManager(object):
     def list(self):
         """
         Retrieves a list of all *Map Area* items for the
-        :class:`~arcgis.mapping.WebMap` object.
+        :class:`~arcgis.map.Map` object.
 
         .. note::
             *Map Area* items and the corresponding offline packages share a relationship
@@ -4243,10 +1518,10 @@ class OfflineMapAreaManager(object):
             # USAGE EXAMPLE: Listing Map Area Items
 
             >>> from arcgis.gis import GIS
-            >>> from arcgis.mapping import WebMap
+            >>> from arcgis.map import Map
 
             >>> wm_item = gis.content.search("*", "Web Map")[0]
-            >>> wm_obj = WebMap(wm_item)
+            >>> wm_obj = Map(wm_item)
 
             >>> all_map_areas = wm.offline_areas.list()
             >>> all_map_areas
@@ -4302,11 +1577,11 @@ class OfflineMapAreaManager(object):
                                          associated with all the map area items of the web map.
 
                                          .. note::
-                                             To get the list of ``Map Area`` items related to the *WebMap*
+                                             To get the list of ``Map Area`` items related to the *Map*
                                              object, call the
-                                             :meth:`~arcgis.mapping.OfflineMapAreaManager.list` method on
-                                             the :class:`~arcgis.mapping.OfflineMapAreaManager` for the
-                                             *WebMap*.
+                                             :meth:`~arcgis.layers.OfflineMapAreaManager.list` method on
+                                             the :class:`~arcgis.layers.OfflineMapAreaManager` for the
+                                             *Map*.
         ----------------------------     --------------------------------------------------------------------
         future                           Optional Boolean.
         ============================     ====================================================================
@@ -4378,61 +1653,17 @@ class OfflineMapAreaManager(object):
 
 
 ###########################################################################
-class WebScene(collections.OrderedDict):
-    """
-    The ``WebScene`` represents a web scene and provides access to its basemaps and operational layers as well
-    as functionality to visualize and interact with them.
-
-    If you would like more robust webscene authoring functionality,
-    consider using the :class:`~arcgis.widgets.MapView` class. You need to be using a
-    Jupyter environment for the MapView class to function properly, but you can
-    make copies of ``WebScenes``, add layers using a simple ``add_layer()`` call,
-    adjust the ``basemaps``, save to new ``webscenes``, and more.
-
-    """
-
-    def __init__(self, websceneitem):
-        """
-        Constructs a WebScene object given its item from ArcGIS Online or Portal.
-        """
-        if websceneitem.type.lower() != "web scene":
-            raise TypeError("item type must be web scene")
-        self.item = websceneitem
-        self._gis = websceneitem._gis
-        webscenedict = self.item.get_data()
-        collections.OrderedDict.__init__(self, webscenedict)
-
-    def _ipython_display_(self, **kwargs):
-        from arcgis.widgets import MapView
-
-        mapwidget = MapView(gis=self._gis, item=self.item)
-        mapwidget.mode = "3D"
-        mapwidget.hide_mode_switch = True
-        return mapwidget._ipython_display_(**kwargs)
-
-    def __repr__(self):
-        return (
-            "WebScene at "
-            + self.item._portal.url
-            + "/home/webscene/viewer.html?webscene="
-            + self.item.itemid
-        )
-
-    def __str__(self):
-        return json.dumps(self, default=_utils._date_handler)
-
-    def update(self):
-        # with _tempinput(self.__str__()) as tempfilename:
-        self.item.update({"text": self.__str__()})
-
-
-###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseVectorTileLayerManager class found in `arcgis.layers.EnterpriseVectorTileLayerManager` instead.",
+)
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
     """
@@ -4490,13 +1721,13 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.edit(service_dictionairy)
 
     # ----------------------------------------------------------------------
     def start(self):
         """This operation starts a service and loads the service's configuration."""
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
@@ -4507,7 +1738,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         operation will stop the respective servers, terminating all pods
         that run this service.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
@@ -4535,7 +1766,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
         """
         if provider in ["ArcObjects11", "DMaps"]:
-            vtl_service = _services.Service(self.url, self._gis)
+            vtl_service = _layers.Service(self.url, self._gis)
             return vtl_service.change_provider(provider)
         return False
 
@@ -4545,7 +1776,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         This operation deletes an individual service, stopping the service
         and removing all associated resources and configurations.
         """
-        vtl_service = _services.Service(self.url, self._gis)
+        vtl_service = _layers.Service(self.url, self._gis)
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------
@@ -4588,12 +1819,17 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayerManager class found in `arcgis.layers.VectorTileLayerManager` instead.",
+)
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
     A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
     applied to such Vector Tile Services.
-    A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
+    A :class:`~arcgis.layers.VectorTileLayer` offers access to layer content.
 
     .. note::
         Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
@@ -4673,7 +1909,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the tile layer item
@@ -4748,7 +1984,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -4916,7 +2152,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.layers import VectorTileLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS
@@ -4938,6 +2174,11 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the SymbolService class found in `arcgis.layers.SymbolService` instead.",
+)
 class SymbolService:
     """
     Symbol service is an ArcGIS Server utility service that provides access
@@ -5071,6 +2312,11 @@ class SymbolService:
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the VectorTileLayer class found in `arcgis.layers.VectorTileLayer` instead.",
+)
 class VectorTileLayer(arcgis.gis.Layer):
     """
     A Vector Tile Layer is a type of data layer used to access and display
@@ -5130,8 +2376,8 @@ class VectorTileLayer(arcgis.gis.Layer):
     @property
     def manager(self) -> VectorTileLayerManager:
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class or
-        :class:`~arcgis.mapping.EnterpriseVectorTileLayerManager` class
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.VectorTileLayerManager` class or
+        :class:`~arcgis.layers.EnterpriseVectorTileLayerManager` class
         which provides methods and properties for administering this service.
         """
         if self._gis._portal.is_arcgisonline:
@@ -5416,10 +2662,15 @@ class VectorTileLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the EnterpriseMapImageLayerManager class found in `arcgis.layers.EnterpriseMapImageLayerManager` instead.",
+)
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
+    A :class:`~arcgis.layers.MapImageLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/``
     """
@@ -5447,19 +2698,19 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
         :return: boolean
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.edit(service_dictionary)
 
     # ----------------------------------------------------------------------
     def start(self):
         """starts the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
         """stops the specific service"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.stop()
 
     # ----------------------------------------------------------------------
@@ -5476,22 +2727,27 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         :return: Boolean
 
         """
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.change_provider(provider)
 
     # ----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
-        mil_service = _services.Service(self.url, self._gis)
+        mil_service = _layers.Service(self.url, self._gis)
         return mil_service.delete()
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapImageLayerManager class found in `arcgis.layers.MapImageLayerManager` instead.",
+)
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
     The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
     or Cached Map Services.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    A :class:`~arcgis.layers.MapImageLayer` offers access to the Map Server endpoints
     that allow you to edit the tile service, update tiles, refresh, and more.
 
     To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
@@ -5604,7 +2860,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         .. code-block:: python
 
             # USAGE EXAMPLE
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
@@ -5691,7 +2947,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -5804,7 +3060,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -5860,7 +3116,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -5889,6 +3145,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the MapImageLayer class found in `arcgis.layers.MapImageLayer` instead.",
+)
 class MapImageLayer(arcgis.gis.Layer):
     """
     The ``MapImageLayer`` allows you to display and analyze data from sublayers defined in a map service,
@@ -5950,7 +3211,7 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             token = self._token or self._con.token
             url += "?token=" + token
 
@@ -5973,13 +3234,13 @@ class MapImageLayer(arcgis.gis.Layer):
                 if "subLayerIds" in lyr and lyr.subLayerIds is not None:  # Group Layer
                     lyr = arcgis.gis.Layer(self.url + "/" + str(lyr.id), self._gis)
                 else:
-                    lyr = arcgis.mapping._msl.MapServiceLayer(
+                    lyr = arcgis.layers._msl.MapServiceLayer(
                         self.url + "/" + str(lyr.id), self._gis
                     )
                 layers.append(lyr)
         if "tables" in self.properties and self.properties.tables:
             for lyr in self.properties.tables:
-                lyr = arcgis.mapping._msl.MapServiceLayer(
+                lyr = arcgis.layers._msl.MapServiceLayer(
                     self.url + "/" + str(lyr.id), self._gis, self
                 )
                 tables.append(lyr)
@@ -6008,8 +3269,8 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def manager(self):
         """
-        The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
-        for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
+        The ``manager`` property returns an instance of :class:`~arcgis.layers.MapImageLayerManager` class
+        for ArcGIS Online and :class:`~arcgis.layers.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
         which provides methods and properties for administering this service.
         """
         if self._admin is None:
@@ -6077,7 +3338,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -6375,7 +3636,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -6591,7 +3852,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -6850,7 +4111,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
             # USAGE EXAMPLE
 
-            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.layers import MapImageLayer
             >>> from arcgis.gis import GIS
 
             # connect to your GIS and get the web map item
@@ -6946,7 +4207,7 @@ class MapImageLayer(arcgis.gis.Layer):
         """
         The ``estimate_export_tiles_size`` method is an asynchronous task that
         allows estimation of the size of the tile package or the cache data
-        set that you download using the :attr:`~arcgis.mapping.MapImageLayer.export_tiles` operation. This
+        set that you download using the :attr:`~arcgis.layers.MapImageLayer.export_tiles` operation. This
         operation can also be used to estimate the tile count in a tile
         package and determine if it will exceed the ``maxExportTileCount``
         limit set by the administrator of the service. The result of this
@@ -7278,8 +4539,11 @@ class MapImageLayer(arcgis.gis.Layer):
 
 
 ###########################################################################
-
-
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="This class will be removed in a later version.",
+)
 class Events(object):
     @classmethod
     def _create_events(cls, enable=False):

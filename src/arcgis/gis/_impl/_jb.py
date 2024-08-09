@@ -71,9 +71,10 @@ class StatusJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self) -> datetime.datetime:
+    def elapse_time(self) -> datetime.datetime:
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that passed while the
+        :class:`~arcgis.gis.StatusJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time

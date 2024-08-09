@@ -71,9 +71,10 @@ class GPJob(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
-        Get the Ellapse Time for the Job
+        Get the amount of time that passed while the
+        :class:`~arcgis.geoprocessing.GPJob` ran.
         """
         if self._end_time:
             return self._end_time - self._start_time
@@ -867,9 +868,10 @@ class RAJob(GPJob):
     @property
     def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that passed while the
+        raster analytics job ran.
         """
-        return self._gpjob.ellapse_time
+        return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
     def result(self):
@@ -1008,9 +1010,11 @@ class OMJob(GPJob):
     @property
     def elapse_time(self):
         """
-        Returns the Ellapse Time for the Job
+        Returns the amount of time that passed while the ortho mapping job
+        ran.
         """
-        return self._gpjob.ellapse_time
+
+        return self._gpjob.elapse_time
 
     # ----------------------------------------------------------------------
     def result(self):

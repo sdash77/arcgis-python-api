@@ -78,6 +78,10 @@ extract_data
 --------------
 .. autofunction:: arcgis.features.analysis.extract_data
 
+find_centroids
+--------------
+.. autofunction:: arcgis.features.analysis.find_centroids
+
 find_existing_locations
 -----------------------
 .. autofunction:: arcgis.features.analysis.find_existing_locations
@@ -97,10 +101,6 @@ find_point_clusters
 find_similar_locations
 ----------------------
 .. autofunction:: arcgis.features.analysis.find_similar_locations
-
-find_centroids
---------------
-.. autofunction:: arcgis.features.analysis.find_centroids
 
 generate_tessellation
 ---------------------

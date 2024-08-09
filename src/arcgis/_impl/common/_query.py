@@ -109,7 +109,7 @@ def _common_query(
         format_3d_objects=format_3d_objects,
         time_reference_unknown_client=time_reference_unknown_client,
         query_3d=query_3d,
-        kwargs=kwargs,
+        **kwargs,
     )
 
     if not return_all_records or "outStatistics" in params:
@@ -362,7 +362,7 @@ def _query(layer, url, params, raw=False):
             ):
                 if "resultRecordCount" not in params:
                     # assign initial value after first query
-                    params["resultRecordCount"] = 2000
+                    params["resultRecordCount"] = layer.properties.maxRecordCount
                 if "resultOffset" in params:
                     # add the number we found to the offset so we don't have doubles
                     params["resultOffset"] = params["resultOffset"] + len(
@@ -471,7 +471,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeDouble": pd.Float64Dtype(),
             "esriFieldTypeFloat": pd.Float64Dtype(),
             "esriFieldTypeString": pd.StringDtype(),
-            "esriFieldTypeDate": object,
+            "esriFieldTypeDate": "<M8[ns]",
             "esriFieldTypeOID": pd.Int64Dtype(),
             "esriFieldTypeGeometry": object,
             "esriFieldTypeBlob": object,
@@ -480,7 +480,7 @@ def _query_df(layer, url, params, **kwargs):
             "esriFieldTypeGlobalID": pd.StringDtype(),
             "esriFieldTypeXML": object,
             "esriFieldTypeTimeOnly": pd.StringDtype(),
-            "esriFieldTypeDateOnly": object,
+            "esriFieldTypeDateOnly": "<M8[ns]",
             "esriFieldTypeTimestampOffset": object,
             "esriFieldTypeBigInteger": pd.Int64Dtype(),
         }
@@ -597,55 +597,54 @@ def _query_df(layer, url, params, **kwargs):
             df.spatial.renderer = layer.renderer
             df.spatial._meta.source = layer
 
-        return pd.DataFrame([], columns=columns)
+        return pd.DataFrame([], columns=columns).astype(columns)
     sr = None
     if "spatialReference" in result:
         sr = result["spatialReference"]
 
-    df = None
-    dtypes = None
-    names = None
-    dfields = []
     rows = [feature_to_row(row, sr) for row in result["features"]]
     if len(rows) == 0:
         return None
     df = pd.DataFrame.from_records(data=rows)
-    if "SHAPE" in df.columns:
-        df.loc[df.SHAPE.isna(), "SHAPE"] = None
-        df.spatial.set_geometry("SHAPE")
-    if "fields" in result:
-        dtypes = {}
-        names = []
-        fields = result["fields"]
-        for fld in fields:
-            if fld["type"] != "esriFieldTypeGeometry":
-                dtypes[fld["name"]] = _fld_lu[fld["type"]]
-                names.append(fld["name"])
-            if fld["type"] in [
-                "esriFieldTypeDate",
-                #
-                "esriFieldTypeDateOnly",
-                "esriFieldTypeTimestampOffset",
-            ]:
-                dfields.append(fld["name"])
-    if dtypes:
-        df = df.astype(dtypes)
-
     # set based on layer
     df.spatial.renderer = layer.renderer
     df.spatial._meta.source = layer.url
 
+    if "SHAPE" in df.columns:
+        df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        df.spatial.set_geometry("SHAPE")
+
+    # work with the fields and their data types
+    dfields = []
+    dtypes = {}
+    if "fields" in result:
+        fields = result["fields"]
+        for fld in fields:
+            if fld["type"] != "esriFieldTypeGeometry":
+                dtypes[fld["name"]] = _fld_lu[fld["type"]]
+            if fld["type"] in [
+                "esriFieldTypeDate",
+                "esriFieldTypeDateOnly",
+                "esriFieldTypeTimestampOffset",
+            ]:
+                dfields.append(fld["name"])
+
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:
-            try:
-                df[fld] = pd.to_datetime(
-                    df[fld] / 1000,
-                    errors="coerce",
-                    unit="s",
-                )
-            except Exception:
-                df[fld] = pd.to_datetime(
-                    df[fld],
-                    errors="coerce",
-                )
+            if not pd.api.types.is_datetime64_any_dtype(df[fld]):
+                try:
+                    df[fld] = pd.to_datetime(
+                        df[fld] / 1000,
+                        errors="coerce",
+                        unit="s",
+                    )
+                except Exception:
+                    df[fld] = pd.to_datetime(
+                        df[fld],
+                        errors="coerce",
+                    )
+
+    if dtypes:
+        df = df.astype(dtypes)
+
     return df

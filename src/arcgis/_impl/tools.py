@@ -9904,6 +9904,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -10734,7 +10741,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.3.3", current_version="2.3.1")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -12521,7 +12528,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -15694,7 +15704,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -16098,7 +16111,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -23161,14 +23177,14 @@ class _Tools(object):
     the gis.tools object
     """
 
-    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
+    # spatial analysis tools,  rasteranalysis tools, etc through the gis.tools object
     def __init__(self, gis):
         self._gis = gis
         self._geocoders = None
         self._geometry = None
         self._analysis = None
         self._raster_analysis = None
-        self._geoanalytics = None
+
         self._orthomapping = None
         self._realitymapping = None
         self._packaging = None
@@ -23207,7 +23223,7 @@ class _Tools(object):
                 )
             else:
                 svcurl = self._gis.properties["helperServices"]["symbols"]["url"]
-            from arcgis.mapping._types import SymbolService
+            from arcgis.layers._vtl._vector_tile_layers import SymbolService
 
             self._symbolservice = SymbolService(svcurl, self._gis)
             return self._symbolservice
@@ -23279,26 +23295,6 @@ class _Tools(object):
 
             self._raster_analysis = _RasterAnalysisTools(svcurl, self._gis)
             return self._raster_analysis
-        except KeyError:
-            return None
-
-    @property
-    @lru_cache(maxsize=255)
-    def geoanalytics(self):
-        """the portal's bigdata analytics tools, if available and configured"""
-        if self._geoanalytics is not None:
-            return self._geoanalytics
-        try:
-            try:
-                svcurl = self._gis.properties["helperServices"]["geoanalytics"]["url"]
-                if self._gis._is_hosted_nb_home:
-                    svcurl = self._validate_url(svcurl)
-            except Exception:
-                print("This GIS does not support geoanalytics.")
-                return None
-
-            self._geoanalytics = _GeoanalyticsTools(svcurl, self._gis)
-            return self._geoanalytics
         except KeyError:
             return None
 

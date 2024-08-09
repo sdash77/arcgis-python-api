@@ -244,4 +244,7 @@ class Logs(BasePortalAdmin):
         }
         if query_filter:
             params["filter"] = query_filter
-        return self._con.get(path=url, params=params)
+        try:
+            return self._con.post(path=url, params=params)
+        except:
+            return self._con.get(path=url, params=params)

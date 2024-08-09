@@ -14,7 +14,7 @@ from arcgis import gis
 from arcgis.gis._impl._content_manager import SharingLevel
 from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
-from arcgis.mapping import MapImageLayer
+from arcgis.layers import MapImageLayer
 from arcgis.geometry import *
 from arcgis.apps.survey123 import SurveyManager
 import copy
@@ -129,7 +129,7 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        if self._clone_mapping.get("Item IDs") is not None:
+        if self._clone_mapping["Item IDs"] != {}:
             raise Exception(
                 "The item_mapping parameter is not supported when cloning ArcGIS"
                 " Dashboards. Use item data to remap values and update item."
@@ -2107,6 +2107,25 @@ class _ItemDefinition(CloneNode):
         """Gets the data of the item"""
         return copy.deepcopy(self._data)
 
+    def _data_type_lu(self, data) -> str:
+        regex = re.compile(
+            r"^(?:http|ftp)s?://"  # http:// or https://
+            r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|"  # domain...
+            r"localhost|"  # localhost...
+            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # ...or ip
+            r"(?::\d+)?"  # optional port
+            r"(?:/?|[/?]\S+)$",
+            re.IGNORECASE,
+        )
+        try:
+            if os.path.isfile(data):
+                return "file"
+        except:
+            pass
+        if re.match(regex, data) is not None:
+            return "url"
+        return "text"
+
     def _add_new_item(self, item_properties, data=None):
         """Add the new item to the portal"""
         thumbnail = self.thumbnail
@@ -2118,16 +2137,34 @@ class _ItemDefinition(CloneNode):
         item_id = None
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
-        new_item = self.target.content.add(
-            item_properties=item_properties,
-            data=data,
-            thumbnail=thumbnail,
-            folder=self.folder,
-            owner=self.owner,
-            item_id=item_id,
-        )
+        if self.folder:
+            folder = self.target.content.folders.get(
+                folder=self.folder, owner=self.owner
+            )
+        else:
+            folder = self.target.content.folders.get()
+        if thumbnail:
+            item_properties["thumbnail"] = thumbnail
+
+        if data:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                    self._data_type_lu(data): data,
+                }
+            )
+        else:
+            job = folder.add(
+                **{
+                    "item_properties": item_properties,
+                    "item_id": item_id,
+                }
+            )
+        new_item = job.result()
+
         if self.metadata_xml:
-            new_item.metadata = self.metadata_xml
+            new_item["metadata"] = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -3150,6 +3187,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             new_service is not None
                             and "adminLayerInfo" in layer
                             and "viewLayerDefinition" in layer["adminLayerInfo"]
+                            and "table"
+                            in layer["adminLayerInfo"]["viewLayerDefinition"]
                         ):
                             layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                 "sourceServiceName"
@@ -4387,7 +4426,10 @@ class _DashboardDefinition(_TextItemDefinition):
                     app_json_text = ""
 
                 if app_json and "version" in app_json:
-                    if app_json["version"] >= 24:
+                    if (
+                        isinstance(app_json["version"], str)
+                        or app_json["version"] >= 24
+                    ):
                         app_json = self._swizzle_v24(self._clone_mapping)
                     else:
                         raise _ItemCreateException(
@@ -4545,7 +4587,7 @@ class _DashboardDefinition(_TextItemDefinition):
         :return: A list of webmap ids
         """
         if "version" in data:
-            if data["version"] >= 24:
+            if isinstance(data["version"], str) or data["version"] >= 24:
                 webmap_ids = _DashboardDefinition._get_webmap_ids_v24(data)
             else:
                 raise _ItemCreateException(
@@ -4580,7 +4622,7 @@ class _DashboardDefinition(_TextItemDefinition):
         :return: A list of layer ids
         """
         if "version" in data:
-            if data["version"] >= 24:
+            if isinstance(data["version"], str) or data["version"] >= 24:
                 layer_ids = _DashboardDefinition._get_layer_ids_v24(data)
             else:
                 raise _ItemCreateException(
@@ -4968,12 +5010,20 @@ class _ApplicationDefinition(_TextItemDefinition):
                         and self.target._portal.is_arcgisonline == False
                     ):
                         item_id = self.portal_item.itemid
-                    code_attachment = self.target.content.add(
-                        item_properties=code_attachment_properties,
-                        folder=self.folder,
-                        owner=self.owner,
-                        item_id=item_id,
+                    if self.folder:
+                        folder = self.target.content.folders.get(
+                            folder=self.folder, owner=self.owner
+                        )
+                    else:
+                        folder = self.target.content.folders.get()
+
+                    job = folder.add(
+                        **{
+                            "item_properties": item_properties,
+                            "item_id": item_id,
+                        }
                     )
+                    code_attachment = job.result()
 
                 # With Portal sometimes after sharing the application the url is reset.
                 # Check if the url is incorrect after sharing and set back to correct url.
@@ -5282,7 +5332,9 @@ class _FormDefinition(_ItemDefinition):
                         file.write(json.dumps(dict(new_item)))
 
                 elif path.lower() == "form.json":
-                    with open(os.path.join(zip_dir, path), "r") as file:
+                    with open(
+                        os.path.join(zip_dir, path), "r", encoding="utf8"
+                    ) as file:
                         form_json = file.read()
                         for key, value in clone_mapping["Item IDs"].items():
                             form_json = re.sub(
@@ -5294,9 +5346,15 @@ class _FormDefinition(_ItemDefinition):
                             )
                         for key, value in clone_mapping["Services"].items():
                             form_json = re.sub(
-                                key, value["url"], form_json, 0, re.IGNORECASE
+                                key,
+                                value["url"],
+                                form_json,
+                                0,
+                                re.IGNORECASE,
                             )
-                        with open(os.path.join(zip_dir, path), "w") as file:
+                        with open(
+                            os.path.join(zip_dir, path), "w", encoding="utf8"
+                        ) as file:
                             file.write(form_json)
                         for new_id in clone_mapping["Item IDs"].values():
                             new_flayer = target.content.get(new_id)
@@ -5305,7 +5363,10 @@ class _FormDefinition(_ItemDefinition):
                                 and new_flayer.type == "Feature Service"
                             ):
                                 with tempfile.NamedTemporaryFile(
-                                    mode="w+", suffix=".json", delete=False
+                                    mode="w+",
+                                    suffix=".json",
+                                    delete=False,
+                                    encoding="utf8",
                                 ) as tfile:
                                     json.dump(json.loads(form_json), tfile)
                                     tfile.close()
@@ -5427,7 +5488,8 @@ class _FormDefinition(_ItemDefinition):
 
             # Upload the zip to the item
             new_form = shutil.copy2(
-                form_zip, os.path.join(temp_dir, new_item["id"] + "-1" + ".zip")
+                form_zip,
+                os.path.join(temp_dir, new_item["id"] + "-1" + ".zip"),
             )
             new_item.update(data=new_form)
         except Exception as ex:

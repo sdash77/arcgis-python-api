@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 from collections.abc import Iterable
 
-from ._internals import register_dataframe_accessor, register_series_accessor
+from ._internals import register_dataframe_accessor
 from pandas.core.dtypes.common import infer_dtype_from_object
 from ._array import GeoType
 from ._io.fileops import (
@@ -56,7 +56,7 @@ def _is_geoenabled(df):
             return True
         else:
             return False
-    except:
+    except Exception:
         return False
 
 
@@ -1205,7 +1205,7 @@ class GeoAccessor(object):
         """
         from ._tools import _metadata
 
-        if not "metadata" in self._data.attrs and isinstance(
+        if "metadata" not in self._data.attrs and isinstance(
             source, _metadata._Metadata
         ):  # creates the attrs entry
             self._data.attrs["metadata"] = source
@@ -1353,10 +1353,6 @@ class GeoAccessor(object):
                 dy = ymax - ymin
                 width = min([max([100.0, dx]), 300])
                 height = min([max([100.0, dy]), 300])
-                try:
-                    scale_factor = max([dx, dy]) / max([width, height])
-                except ZeroDivisionError:
-                    scale_factor = 1
                 view_box = "{0} {1} {2} {3}".format(xmin, ymin, dx, dy)
                 transform = "matrix(1,0,0,-1,0,{0})".format(ymax + ymin)
                 return svg_top + (
@@ -1595,7 +1591,7 @@ class GeoAccessor(object):
                     cols = [str(c).lower() for c in self._data.columns.tolist()]
                     idx = cols.index("shape")
                     self.set_geometry(self._data.columns[idx])
-            except:
+            except Exception:
                 raise Exception("Spatial column not defined, please use `set_geometry`")
         return self._name
 
@@ -1732,7 +1728,7 @@ class GeoAccessor(object):
 
             # Vectorize predicate operations
             def find_intersects(a1, a2):
-                return a1.disjoint(a2) == False
+                return a1.disjoint(a2) is False
 
             def find_contains(a1, a2):
                 return a1.contains(a2)
@@ -1817,7 +1813,7 @@ class GeoAccessor(object):
             joined = joined.drop(["_key_left", "_key_right"], axis=1)
         try:
             joined.spatial.set_geometry(self.name)
-        except:
+        except Exception:
             raise Exception("Could not create spatially enabled dataframe.")
         joined.reset_index(drop=True, inplace=True)
         return joined
@@ -1826,604 +1822,19 @@ class GeoAccessor(object):
     def plot(self, map_widget=None, **kwargs):
         """
 
-        The ``plot`` draws the data on a web map. The user can describe in simple terms how to
+        The ``plot`` draws the data on a map. The user can describe in simple terms how to
         renderer spatial data using symbol.
 
-        .. note::
-            To make the process simpler, a palette
-            for which colors are drawn from can be used instead of explicit colors.
 
-
-        ======================  =========================================================
-        **Explicit Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        map_widget              optional ``WebMap`` object. This is the map to display
-                                the data on.
-        ----------------------  ---------------------------------------------------------
-        palette                 optional string/dict. Color mapping. Can also be listed
-                                as 'colors' or 'cmap'. For a simple renderer, just
-                                provide the string name of a colormap or a RGB + alpha
-                                int array. For a unique renderer, a list of colormaps can
-                                be provided. For heatmaps, a list of 3+ specific
-                                colorstops can be provided in the form of an array of RGB
-                                + alpha values or a list of colormaps, or the name of a
-                                single colormap can be provided.
-
-                                Accepts palettes exported from colorbrewer or imported
-                                from palettable as well. To get a list of built-in
-                                palettes, use the **display_colormaps** method.
-        ----------------------  ---------------------------------------------------------
-        renderer_type           optional string.  Determines the type of renderer to use
-                                for the provided dataset. The default is 's' which is for
-                                simple renderers.
-
-                                Allowed values:
-
-                                + 's' - is a simple renderer that uses one symbol only.
-                                + 'u' - unique renderer symbolizes features based on one
-                                        or more matching string attributes.
-                                + 'c' - A class breaks renderer symbolizes based on the
-                                        value of some numeric attribute.
-                                + 'h' - heatmap renders point data into a raster
-                                        visualization that emphasizes areas of higher
-                                        density or weighted values.
-        ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the type of symbol the user
-                                needs to create.  Valid inputs are: simple, picture,
-                                text, or carto.  The default is simple.
-        ----------------------  ---------------------------------------------------------
-        symbol_style            optional string. This is the symbology used by the
-                                geometry.  For example 's' for a Line geometry is a solid
-                                line. And '-' is a dash line.
-
-                                Allowed symbol types based on geometries:
-
-                                **Point Symbols**
-
-                                 + 'o' - Circle (default)
-                                 + '+' - Cross
-                                 + 'D' - Diamond
-                                 + 's' - Square
-                                 + 'x' - X
-
-                                 **Polyline Symbols**
-
-                                 + 's' - Solid (default)
-                                 + '-' - Dash
-                                 + '-.' - Dash Dot
-                                 + '-..' - Dash Dot Dot
-                                 + '.' - Dot
-                                 + '--' - Long Dash
-                                 + '--.' - Long Dash Dot
-                                 + 'n' - Null
-                                 + 's-' - Short Dash
-                                 + 's-.' - Short Dash Dot
-                                 + 's-..' - Short Dash Dot Dot
-                                 + 's.' - Short Dot
-
-                                 **Polygon Symbols**
-
-                                 + 's' - Solid Fill (default)
-                                 + '\' - Backward Diagonal
-                                 + '/' - Forward Diagonal
-                                 + '|' - Vertical Bar
-                                 + '-' - Horizontal Bar
-                                 + 'x' - Diagonal Cross
-                                 + '+' - Cross
-
-        ----------------------  ---------------------------------------------------------
-        col                     optional string/list. Field or fields used for heatmap,
-                                class breaks, or unique renderers.
-        ----------------------  ---------------------------------------------------------
-        alpha                   optional float.  This is a value between 0 and 1 with 1
-                                being the default value.  The alpha sets the transparency
-                                of the renderer when applicable.
-        ======================  =========================================================
-
-        **Render Syntax**
-
-        The render syntax allows for users to fully customize symbolizing the data.
-
-        **Simple Renderer**
-
-        A simple renderer is a renderer that uses one symbol only.
-
-        ======================  =========================================================
-        **Optional Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the type of symbol the user
-                                needs to create.  Valid inputs are: simple, picture, text,
-                                or carto.  The default is simple.
-        ----------------------  ---------------------------------------------------------
-        symbol_style            optional string. This is the symbology used by the
-                                geometry.  For example 's' for a Line geometry is a solid
-                                line. And '-' is a dash line.
-
-                                **Point Symbols**
-
-                                + 'o' - Circle (default)
-                                + '+' - Cross
-                                + 'D' - Diamond
-                                + 's' - Square
-                                + 'x' - X
-
-                                **Polyline Symbols**
-
-                                + 's' - Solid (default)
-                                + '-' - Dash
-                                + '-.' - Dash Dot
-                                + '-..' - Dash Dot Dot
-                                + '.' - Dot
-                                + '--' - Long Dash
-                                + '--.' - Long Dash Dot
-                                + 'n' - Null
-                                + 's-' - Short Dash
-                                + 's-.' - Short Dash Dot
-                                + 's-..' - Short Dash Dot Dot
-                                + 's.' - Short Dot
-
-                                **Polygon Symbols**
-
-                                + 's' - Solid Fill (default)
-                                + '\' - Backward Diagonal
-                                + '/' - Forward Diagonal
-                                + '|' - Vertical Bar
-                                + '-' - Horizontal Bar
-                                + 'x' - Diagonal Cross
-                                + '+' - Cross
-        ----------------------  ---------------------------------------------------------
-        description             Description of the renderer.
-        ----------------------  ---------------------------------------------------------
-        rotation_expression     A constant value or an expression that derives the angle
-                                of rotation based on a feature attribute value. When an
-                                attribute name is specified, it's enclosed in square
-                                brackets.
-        ----------------------  ---------------------------------------------------------
-        rotation_type           String value which controls the origin and direction of
-                                rotation on point features. If the rotationType is
-                                defined as arithmetic, the symbol is rotated from East in
-                                a counter-clockwise direction where East is the 0 degree
-                                axis. If the rotationType is defined as geographic, the
-                                symbol is rotated from North in a clockwise direction
-                                where North is the 0 degree axis.
-
-                                Must be one of the following values:
-
-                                + arithmetic
-                                + geographic
-
-        ----------------------  ---------------------------------------------------------
-        visual_variables        An array of objects used to set rendering properties.
-        ======================  =========================================================
-
-        **Heatmap Renderer**
-
-        The HeatmapRenderer renders point data into a raster visualization that emphasizes
-        areas of higher density or weighted values.
-
-        ======================  =========================================================
-        **Optional Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        blur_radius             The radius (in pixels) of the circle over which the
-                                majority of each point's value is spread.
-        ----------------------  ---------------------------------------------------------
-        field                   This is optional as this renderer can be created if no
-                                field is specified. Each feature gets the same
-                                value/importance/weight or with a field where each
-                                feature is weighted by the field's value.
-        ----------------------  ---------------------------------------------------------
-        max_intensity           The pixel intensity value which is assigned the final
-                                color in the color ramp.
-        ----------------------  ---------------------------------------------------------
-        min_intensity           The pixel intensity value which is assigned the initial
-                                color in the color ramp.
-        ----------------------  ---------------------------------------------------------
-        ratio                   A number between 0-1. Describes what portion along the
-                                gradient the colorStop is added.
-        ----------------------  ---------------------------------------------------------
-        show_none               Boolean. Determines the alpha value of the base color for
-                                the heatmap. Setting this to ``True`` covers an entire
-                                map with the base color of the heatmap. Default is
-                                ``False``.
-        ======================  =========================================================
-
-        **Unique Renderer**
-
-        This renderer symbolizes features based on one or more matching string attributes.
-
-        ======================  =========================================================
-        **Optional Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        background_fill_symbol  A symbol used for polygon features as a background if the
-                                renderer uses point symbols, e.g. for bivariate types &
-                                size rendering. Only applicable to polygon layers.
-                                PictureFillSymbols can also be used outside of the Map
-                                Viewer for Size and Predominance and Size renderers.
-        ----------------------  ---------------------------------------------------------
-        default_label           Default label for the default symbol used to draw
-                                unspecified values.
-        ----------------------  ---------------------------------------------------------
-        default_symbol          Symbol used when a value cannot be matched.
-        ----------------------  ---------------------------------------------------------
-        field1, field2, field3  Attribute field renderer uses to match values.
-        ----------------------  ---------------------------------------------------------
-        field_delimiter         String inserted between the values if multiple attribute
-                                fields are specified.
-        ----------------------  ---------------------------------------------------------
-        rotation_expression     A constant value or an expression that derives the angle
-                                of rotation based on a feature attribute value. When an
-                                attribute name is specified, it's enclosed in square
-                                brackets. Rotation is set using a visual variable of type
-                                rotation info with a specified field or value expression
-                                property.
-        ----------------------  ---------------------------------------------------------
-        rotation_type           String property which controls the origin and direction
-                                of rotation. If the rotation type is defined as
-                                arithmetic the symbol is rotated from East in a
-                                counter-clockwise direction where East is the 0 degree
-                                axis. If the rotation type is defined as geographic, the
-                                symbol is rotated from North in a clockwise direction
-                                where North is the 0 degree axis.
-                                Must be one of the following values:
-
-                                + arithmetic
-                                + geographic
-
-        ----------------------  ---------------------------------------------------------
-        arcade_expression       An Arcade expression evaluating to either a string or a
-                                number.
-        ----------------------  ---------------------------------------------------------
-        arcade_title            The title identifying and describing the associated
-                                Arcade expression as defined in the valueExpression
-                                property.
-        ----------------------  ---------------------------------------------------------
-        visual_variables        An array of objects used to set rendering properties.
-        ======================  =========================================================
-
-        **Class Breaks Renderer**
-
-        A class breaks renderer symbolizes based on the value of some numeric attribute.
-
-        ======================  =========================================================
-        **Optional Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        background_fill_symbol  A symbol used for polygon features as a background if the
-                                renderer uses point symbols, e.g. for bivariate types &
-                                size rendering. Only applicable to polygon layers.
-                                PictureFillSymbols can also be used outside of the Map
-                                Viewer for Size and Predominance and Size renderers.
-        ----------------------  ---------------------------------------------------------
-        default_label           Default label for the default symbol used to draw
-                                unspecified values.
-        ----------------------  ---------------------------------------------------------
-        default_symbol          Symbol used when a value cannot be matched.
-        ----------------------  ---------------------------------------------------------
-        method                  Determines the classification method that was used to
-                                generate class breaks.
-
-                                Must be one of the following values:
-
-                                + esriClassifyDefinedInterval
-                                + esriClassifyEqualInterval
-                                + esriClassifyGeometricalInterval
-                                + esriClassifyNaturalBreaks
-                                + esriClassifyQuantile
-                                + esriClassifyStandardDeviation
-                                + esriClassifyManual
-
-        ----------------------  ---------------------------------------------------------
-        field                   Attribute field used for renderer.
-        ----------------------  ---------------------------------------------------------
-        class_count             Number of classes that will be considered in the
-                                selected classification method for the class breaks.
-        ----------------------  ---------------------------------------------------------
-        min_value               The minimum numeric data value needed to begin class
-                                breaks.
-        ----------------------  ---------------------------------------------------------
-        normalization_field     Used when normalizationType is field. The string value
-                                indicating the attribute field by which the data value is
-                                normalized.
-        ----------------------  ---------------------------------------------------------
-        normalization_total     Used when normalizationType is percent-of-total, this
-                                number property contains the total of all data values.
-        ----------------------  ---------------------------------------------------------
-        normalization_type      Determine how the data was normalized.
-
-                                Must be one of the following values:
-
-                                + esriNormalizeByField
-                                + esriNormalizeByLog
-                                + esriNormalizeByPercentOfTotal
-        ----------------------  ---------------------------------------------------------
-        rotation_expression     A constant value or an expression that derives the angle
-                                of rotation based on a feature attribute value. When an
-                                attribute name is specified, it's enclosed in square
-                                brackets.
-        ----------------------  ---------------------------------------------------------
-        rotation_type           A string property which controls the origin and direction
-                                of rotation. If the rotation_type is defined as
-                                arithmetic, the symbol is rotated from East in a
-                                couter-clockwise direction where East is the 0 degree
-                                axis. If the rotationType is defined as geographic, the
-                                symbol is rotated from North in a clockwise direction
-                                where North is the 0 degree axis.
-
-                                Must be one of the following values:
-
-                                + arithmetic
-                                + geographic
-
-        ----------------------  ---------------------------------------------------------
-        arcade_expression       An Arcade expression evaluating to a number.
-        ----------------------  ---------------------------------------------------------
-        arcade_title            The title identifying and describing the associated
-                                Arcade expression as defined in the arcade_expression
-                                property.
-        ----------------------  ---------------------------------------------------------
-        visual_variables        An object used to set rendering options.
-        ======================  =========================================================
-
-
-
-        ** Symbol Syntax **
-
-        =======================  =========================================================
-        **Optional Argument**    **Description**
-        -----------------------  ---------------------------------------------------------
-        symbol_type              optional string. This is the type of symbol the user
-                                 needs to create.  Valid inputs are: simple, picture, text,
-                                 or carto.  The default is simple.
-        -----------------------  ---------------------------------------------------------
-        symbol_style             optional string. This is the symbology used by the
-                                 geometry.  For example 's' for a Line geometry is a solid
-                                 line. And '-' is a dash line.
-
-                                 **Point Symbols**
-
-                                 + 'o' - Circle (default)
-                                 + '+' - Cross
-                                 + 'D' - Diamond
-                                 + 's' - Square
-                                 + 'x' - X
-
-                                 **Polyline Symbols**
-
-                                 + 's' - Solid (default)
-                                 + '-' - Dash
-                                 + '-.' - Dash Dot
-                                 + '-..' - Dash Dot Dot
-                                 + '.' - Dot
-                                 + '--' - Long Dash
-                                 + '--.' - Long Dash Dot
-                                 + 'n' - Null
-                                 + 's-' - Short Dash
-                                 + 's-.' - Short Dash Dot
-                                 + 's-..' - Short Dash Dot Dot
-                                 + 's.' - Short Dot
-
-                                 **Polygon Symbols**
-
-                                 + 's' - Solid Fill (default)
-                                 + '\' - Backward Diagonal
-                                 + '/' - Forward Diagonal
-                                 + '|' - Vertical Bar
-                                 + '-' - Horizontal Bar
-                                 + 'x' - Diagonal Cross
-                                 + '+' - Cross
-        -----------------------  ---------------------------------------------------------
-        cmap                     optional string or list.  This is the color scheme a user
-                                 can provide if the exact color is not needed, or a user
-                                 can provide a list with the color defined as:
-                                 [red, green blue, alpha]. The values red, green, blue are
-                                 from 0-255 and alpha is a float value from 0 - 1.
-                                 The default value is 'jet' color scheme.
-        -----------------------  ---------------------------------------------------------
-        cstep                    optional integer.  If provided, its the color location on
-                                 the color scheme.
-        =======================  =========================================================
-
-        **Simple Symbols**
-
-        This is a list of optional parameters that can be given for point, line or
-        polygon geometries.
-
-        ====================  =========================================================
-        **Parameter**          **Description**
-        --------------------  ---------------------------------------------------------
-        marker_size           optional float.  Numeric size of the symbol given in
-                              points.
-        --------------------  ---------------------------------------------------------
-        marker_angle          optional float. Numeric value used to rotate the symbol.
-                              The symbol is rotated counter-clockwise. For example,
-                              The following, angle=-30, in will create a symbol rotated
-                              -30 degrees counter-clockwise; that is, 30 degrees
-                              clockwise.
-        --------------------  ---------------------------------------------------------
-        marker_xoffset        Numeric value indicating the offset on the x-axis in points.
-        --------------------  ---------------------------------------------------------
-        marker_yoffset        Numeric value indicating the offset on the y-axis in points.
-        --------------------  ---------------------------------------------------------
-        line_width            optional float. Numeric value indicating the width of the line in points
-        --------------------  ---------------------------------------------------------
-        outline_style         Optional string. For polygon point, and line geometries , a
-                              customized outline type can be provided.
-
-                              Allowed Styles:
-
-                              + 's' - Solid (default)
-                              + '-' - Dash
-                              + '-.' - Dash Dot
-                              + '-..' - Dash Dot Dot
-                              + '.' - Dot
-                              + '--' - Long Dash
-                              + '--.' - Long Dash Dot
-                              + 'n' - Null
-                              + 's-' - Short Dash
-                              + 's-.' - Short Dash Dot
-                              + 's-..' - Short Dash Dot Dot
-                              + 's.' - Short Dot
-        --------------------  ---------------------------------------------------------
-        outline_color         optional string or list.  This is the same color as the
-                              cmap property, but specifically applies to the outline_color.
-        ====================  =========================================================
-
-        **Picture Symbol**
-
-        This type of symbol only applies to Points, MultiPoints and Polygons.
-
-        ====================  =========================================================
-        **Parameter**          **Description**
-        --------------------  ---------------------------------------------------------
-        marker_angle          Numeric value that defines the number of degrees ranging
-                              from 0-360, that a marker symbol is rotated. The rotation
-                              is from East in a counter-clockwise direction where East
-                              is the 0 axis.
-        --------------------  ---------------------------------------------------------
-        marker_xoffset        Numeric value indicating the offset on the x-axis in points.
-        --------------------  ---------------------------------------------------------
-        marker_yoffset        Numeric value indicating the offset on the y-axis in points.
-        --------------------  ---------------------------------------------------------
-        height                Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
-        --------------------  ---------------------------------------------------------
-        width                 Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
-        --------------------  ---------------------------------------------------------
-        url                   String value indicating the URL of the image. The URL should be relative if working with static layers. A full URL should be used for map service dynamic layers. A relative URL can be dereferenced by accessing the map layer image resource or the feature layer image resource.
-        --------------------  ---------------------------------------------------------
-        image_data            String value indicating the base64 encoded data.
-        --------------------  ---------------------------------------------------------
-        xscale                Numeric value indicating the scale factor in x direction.
-        --------------------  ---------------------------------------------------------
-        yscale                Numeric value indicating the scale factor in y direction.
-        --------------------  ---------------------------------------------------------
-        outline_color         optional string or list.  This is the same color as the
-                              cmap property, but specifically applies to the outline_color.
-        --------------------  ---------------------------------------------------------
-        outline_style         Optional string. For polygon point, and line geometries , a
-                              customized outline type can be provided.
-
-                              Allowed Styles:
-
-                              + 's' - Solid (default)
-                              + '-' - Dash
-                              + '-.' - Dash Dot
-                              + '-..' - Dash Dot Dot
-                              + '.' - Dot
-                              + '--' - Long Dash
-                              + '--.' - Long Dash Dot
-                              + 'n' - Null
-                              + 's-' - Short Dash
-                              + 's-.' - Short Dash Dot
-                              + 's-..' - Short Dash Dot Dot
-                              + 's.' - Short Dot
-        --------------------  ---------------------------------------------------------
-        outline_color         optional string or list.  This is the same color as the
-                              cmap property, but specifically applies to the outline_color.
-        --------------------  ---------------------------------------------------------
-        line_width            optional float. Numeric value indicating the width of the line in points
-        ====================  =========================================================
-
-        **Text Symbol**
-
-        This type of symbol only applies to Points, MultiPoints and Polygons.
-
-        ====================  =========================================================
-        **Parameter**          **Description**
-        --------------------  ---------------------------------------------------------
-        font_decoration       The text decoration. Must be one of the following values:
-                              - line-through
-                              - underline
-                              - none
-        --------------------  ---------------------------------------------------------
-        font_family           Optional string. The font family.
-        --------------------  ---------------------------------------------------------
-        font_size             Optional float. The font size in points.
-        --------------------  ---------------------------------------------------------
-        font_style            Optional string. The text style.
-                              - italic
-                              - normal
-                              - oblique
-        --------------------  ---------------------------------------------------------
-        font_weight           Optional string. The text weight.
-                              Must be one of the following values:
-                              - bold
-                              - bolder
-                              - lighter
-                              - normal
-        --------------------  ---------------------------------------------------------
-        background_color      optional string/list. Background color is represented as
-                              a four-element array or string of a color map.
-        --------------------  ---------------------------------------------------------
-        halo_color            Optional string/list. Color of the halo around the text.
-                              The default is None.
-        --------------------  ---------------------------------------------------------
-        halo_size             Optional integer/float. The point size of a halo around
-                              the text symbol.
-        --------------------  ---------------------------------------------------------
-        horizontal_alignment  optional string. One of the following string values
-                              representing the horizontal alignment of the text.
-                              Must be one of the following values:
-                              - left
-                              - right
-                              - center
-                              - justify
-        --------------------  ---------------------------------------------------------
-        kerning               optional boolean. Boolean value indicating whether to
-                              adjust the spacing between characters in the text string.
-        --------------------  ---------------------------------------------------------
-        line_color            optional string/list. Outline color is represented as
-                              a four-element array or string of a color map.
-        --------------------  ---------------------------------------------------------
-        line_width            optional integer/float. Outline size.
-        --------------------  ---------------------------------------------------------
-        marker_angle          optional int. A numeric value that defines the number of
-                              degrees (0 to 360) that a text symbol is rotated. The
-                              rotation is from East in a counter-clockwise direction
-                              where East is the 0 axis.
-        --------------------  ---------------------------------------------------------
-        marker_xoffset        optional int/float.Numeric value indicating the offset
-                              on the x-axis in points.
-        --------------------  ---------------------------------------------------------
-        marker_yoffset        optional int/float.Numeric value indicating the offset
-                              on the x-axis in points.
-        --------------------  ---------------------------------------------------------
-        right_to_left         optional boolean. Set to true if using Hebrew or Arabic
-                              fonts.
-        --------------------  ---------------------------------------------------------
-        rotated               optional boolean. Boolean value indicating whether every
-                              character in the text string is rotated.
-        --------------------  ---------------------------------------------------------
-        text                  Required string.  Text Value to display next to geometry.
-        --------------------  ---------------------------------------------------------
-        vertical_alignment    Optional string. One of the following string values
-                              representing the vertical alignment of the text.
-                              Must be one of the following values:
-                              - top
-                              - bottom
-                              - middle
-                              - baseline
-        ====================  =========================================================
-
-        **Cartographic Symbol**
-
-        This type of symbol only applies to line geometries.
-
-        ====================  =========================================================
-        **Parameter**          **Description**
-        --------------------  ---------------------------------------------------------
-        line_width            optional float. Numeric value indicating the width of the line in points
-        --------------------  ---------------------------------------------------------
-        cap                   Optional string.  The cap style.
-        --------------------  ---------------------------------------------------------
-        join                  Optional string. The join style.
-        --------------------  ---------------------------------------------------------
-        miter_limit           Optional string. Size threshold for showing mitered line joins.
-        ====================  =========================================================
-
-        The kwargs parameter accepts all parameters of the create_symbol method and the
-        create_renderer method.
-
-        :return:
-            A ``MapView`` object with new drawings
+        ======================      =========================================================
+        **Explicit Argument**       **Description**
+        ----------------------      ---------------------------------------------------------
+        map_widget                  optional ``Map`` object. This is the map to display
+                                    the data on.
+        ----------------------      ---------------------------------------------------------
+        renderer                    optional renderer dataclass. This can be created from the
+                                    renderers module in the arcgis.map module.
+        ======================      =========================================================
 
         """
         from ._viz.mapping import plot
@@ -2432,29 +1843,11 @@ class GeoAccessor(object):
         def _plot_map_widget(mp_wdgt):
             plot(
                 df=self._data,
-                map_widget=mp_wdgt,
+                map=mp_wdgt,
                 name=kwargs.pop("name", "Feature Collection Layer"),
-                renderer_type=kwargs.pop("renderer_type", None),
-                symbol_type=kwargs.pop("symbol_type", None),
-                symbol_style=kwargs.pop("symbol_style", None),
-                col=kwargs.pop("col", None),
-                colors=kwargs.pop("cmap", None)
-                or kwargs.pop("colors", None)
-                or kwargs.pop("pallette", None)
-                or kwargs.pop("palette", "jet"),
-                alpha=kwargs.pop("alpha", 1),
+                renderer=kwargs.pop("renderer", None),
                 **kwargs,
             )
-
-        # small helper to address zoom level
-        def _adjust_zoom(mp_wdgt):
-            # if a single point, the extent will zoom to a scale so large it is almost irrelevant, so back out slightly
-            if mp_wdgt.zoom > 16:
-                mp_wdgt.zoom = 16
-
-            # if zooming to an extent, it will zoom one level too far, so back out one to make all data visible
-            else:
-                mp_wdgt.zoom = mp_wdgt.zoom - 1
 
         # if the map widget is explicitly defined
         if map_widget:
@@ -2491,9 +1884,6 @@ class GeoAccessor(object):
                 "xmax": self._data.spatial.full_extent[2],
                 "ymax": self._data.spatial.full_extent[3],
             }
-
-            # adjust the zoom level so the map displays the data as expected
-            map_widget.on_draw_end(_adjust_zoom, True)
 
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
@@ -2534,7 +1924,9 @@ class GeoAccessor(object):
         """
         from arcgis import env
         import copy
+        from arcgis.gis._impl._content_manager._import_data import _create_file
 
+        # Get the gis
         if gis is None:
             gis = env.active_gis
             if gis is None:
@@ -2545,17 +1937,15 @@ class GeoAccessor(object):
         user = gis._username
         if isinstance(feature_service, str):
             service = content.get(feature_service)
-            fs_id = feature_service
         else:
             service = feature_service
-            fs_id = feature_service.id
 
         if (
             gis.users.me.username != service.owner
             and "portal:admin:updateItems" not in self._gis.users.me.privileges
         ):
             raise AssertionError(
-                "You must own the service to insert data to it or have administrative privileges."
+                "You must own the service or have administrative privileges to insert data."
             )
         # Get the data related
         related_items = service.related_items(rel_type="Service2Data")
@@ -2565,7 +1955,7 @@ class GeoAccessor(object):
                 and "portal:admin:updateItems" not in self._gis.users.me.privileges
             ):
                 raise AssertionError(
-                    "You must own the service data to insert data to it or have administrative privileges."
+                    "You must own the service or have administrative privileges to insert data."
                 )
 
         origin_columns = self._data.columns.tolist()
@@ -2585,13 +1975,27 @@ class GeoAccessor(object):
                 raise ValueError(
                     "This service name is unavailable for Feature Service."
                 )
-        result = content.import_data(
+        if _is_geoenabled(self._data):
+            _HAS_ARCPY, _HAS_PYSHP = self._check_geometry_engine()
+            # layer
+            if not _HAS_ARCPY and not _HAS_PYSHP:
+                raise Exception(
+                    "Spatially enabled DataFrame's must have either pyshp or"
+                    + " arcpy available to use import_data"
+                )
+            file_type = "File Geodatabase" if _HAS_ARCPY else "Shapefile"
+        else:
+            # table
+            file_type = "CSV"
+
+        file = _create_file(
             self._data,
-            sanitize_columns=sanitize_columns,
+            file_type=file_type,
             service_name=service_name,
-            append=True,
-            service={"featureServiceId": fs_id, "layer": None},
+            sanitize_columns=sanitize_columns,
         )
+        flc_manager = features.FeatureLayerCollection.fromitem(service).manager
+        result = flc_manager.insert_layer(file)
         self._data.columns = origin_columns
         self._data.index = origin_index
         return result
@@ -2691,7 +2095,7 @@ class GeoAccessor(object):
             A String
 
         """
-        if location and not str(os.path.dirname(location)).lower() in [
+        if location and str(os.path.dirname(location)).lower() not in [
             "memory",
             "in_memory",
         ]:
@@ -2743,7 +2147,7 @@ class GeoAccessor(object):
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        if location and not str(os.path.dirname(location)).lower() in [
+        if location and str(os.path.dirname(location)).lower() not in [
             "memory",
             "in_memory",
         ]:
@@ -2967,7 +2371,7 @@ class GeoAccessor(object):
         """
         orig_df = df.copy()
         import arcgis
-        from arcgis.geocoding import get_geocoders, geocode, batch_geocode
+        from arcgis.geocoding import batch_geocode
         from arcgis.geometry import Geometry
 
         if geometry_column:
@@ -2976,7 +2380,7 @@ class GeoAccessor(object):
             if sr is None:
                 try:
                     valid_index = df[geometry_column].first_valid_index()
-                except:
+                except Exception:
                     raise ValueError(
                         "Column provided is all NULL, please provide a valid column"
                     )
@@ -3406,22 +2810,19 @@ class GeoAccessor(object):
         if "objectid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
-            if df[fs["objectIdFieldName"]].is_unique == False:
-                old_series = df[fs["objectIdFieldName"]].copy()
+            if df[fs["objectIdFieldName"]].is_unique is False:
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
 
         elif "fid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
-            if df[fs["objectIdFieldName"]].is_unique == False:
-                old_series = df[fs["objectIdFieldName"]].copy()
+            if df[fs["objectIdFieldName"]].is_unique is False:
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
 
         elif "oid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
-            if df[fs["objectIdFieldName"]].is_unique == False:
-                old_series = df[fs["objectIdFieldName"]].copy()
+            if df[fs["objectIdFieldName"]].is_unique is False:
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
 
         else:
@@ -3537,7 +2938,7 @@ class GeoAccessor(object):
                     lu = "esriFieldTypeString"
                     try:
                         length = max(dtype.categories.str.len())
-                    except:
+                    except Exception:
                         length = 254
                 elif dtype.categories.dtype.name.find("datetime") > -1:
                     lu = _look_up[dtype.categories.dtype]
@@ -3564,7 +2965,7 @@ class GeoAccessor(object):
                     if max_length == 0:
                         max_length = 256
                     column["length"] = max_length
-                except:
+                except Exception:
                     column["length"] = 256
             if column and isinstance(dtype, pd.CategoricalDtype):
                 fields.append(column)
@@ -3590,7 +2991,7 @@ class GeoAccessor(object):
         )
         for f in date_fields:
             # apply function to each column in date_fields
-            df[f] = pd.to_datetime(df[f]).apply(fn)
+            df[f] = pd.to_datetime(df[f]).apply(fn).astype("Int64")
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
@@ -3598,7 +2999,7 @@ class GeoAccessor(object):
                 del row[self.name]
             if geom and pd.notna(geom):
                 features.append({"geometry": dict(geom), "attributes": row})
-            elif pd.notna(geom) == False:
+            elif pd.notna(geom) is False:
                 features.append({"geometry": None, "attributes": row})
             else:
                 features.append({"geometry": geom, "attributes": row})
@@ -3615,14 +3016,14 @@ class GeoAccessor(object):
                 import arcpy
 
                 self._HASARCPY = True
-            except:
+            except ImportError:
                 self._HASARCPY = False
         if self._HASSHAPELY is None:
             try:
                 import shapely
 
                 self._HASSHAPELY = True
-            except:
+            except ImportError:
                 self._HASSHAPELY = False
         return self._HASARCPY, self._HASSHAPELY
 
@@ -3662,7 +3063,7 @@ class GeoAccessor(object):
         if HASARCPY:
             try:
                 sr = self.sr
-            except:
+            except Exception:
                 sr = None
             if sr and "wkid" in sr:
                 wkid = sr["wkid"]
@@ -3768,7 +3169,6 @@ class GeoAccessor(object):
             self.sanitize_column_names(inplace=True)
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
-        template = {"showLegend": True, "layers": []}
         if extent is None:
             ext = self.full_extent
             extent = {
@@ -3779,7 +3179,6 @@ class GeoAccessor(object):
                 "spatialReference": self.sr,
             }
         fs = self.__feature_set__
-        fields = []
         for fld in fs["fields"]:
             if fld["name"].lower() == fs["objectIdFieldName"].lower():
                 fld["editable"] = False
@@ -3883,7 +3282,7 @@ class GeoAccessor(object):
         }
         if global_id_field is not None:
             layer["layerDefinition"]["globalIdField"] = global_id_field
-        if not old_columns is None and not old_index is None:
+        if old_columns is not None and old_index is not None:
             self._data.columns = old_columns
             self._data.index = old_index
         return FeatureCollection(layer)
@@ -4100,7 +3499,8 @@ class GeoAccessor(object):
                 added_rows = added_rows.drop(columns=[column])
             # Renaming the new
             if column.endswith("_new"):
-                added_rows = added_rows.rename(columns={column: column.rstrip("_new")})
+                new_column_name = column[: -len("_new")]
+                added_rows = added_rows.rename(columns={column: new_column_name})
         diff["added_rows"] = added_rows
 
         # Finding deleted rows
@@ -4112,7 +3512,8 @@ class GeoAccessor(object):
             if column.endswith("_new"):
                 deleted_rows = deleted_rows.drop(columns=[column])
             # Renaming the old
-            deleted_rows = deleted_rows.rename(columns={column: column.rstrip("_old")})
+            new_column_name = column[: -len("_old")]
+            deleted_rows = deleted_rows.rename(columns={column: new_column_name})
         diff["deleted_rows"] = deleted_rows
 
         # Finding modified rows
@@ -4120,22 +3521,27 @@ class GeoAccessor(object):
             match_field
         ].to_list()
 
-        # Looking at the rows that are existing in both the old and new layers so that we can compare them
-        common_rows_new = new_df[new_df[match_field].isin(common_rows_match_field_list)]
-        common_rows_old = old_df[old_df[match_field].isin(common_rows_match_field_list)]
+        if len(common_rows_match_field_list) > 0:
+            # Looking at the rows that are existing in both the old and new layers so that we can compare them
+            common_rows_new = new_df[
+                new_df[match_field].isin(common_rows_match_field_list)
+            ]
+            common_rows_old = old_df[
+                old_df[match_field].isin(common_rows_match_field_list)
+            ]
 
-        # Compare common columns attributes
-        merged_common_rows = common_rows_new.merge(
-            common_rows_old,
-            on=None,
-            how="outer",
-            indicator=True,
-        )
+            # Compare common columns attributes
+            merged_common_rows = common_rows_new.merge(
+                common_rows_old,
+                on=None,
+                how="outer",
+                indicator=True,
+            )
 
-        modified_rows = merged_common_rows[
-            merged_common_rows["_merge"] == "left_only"
-        ].drop(columns=["_merge"])
-        diff["modified_rows"] = modified_rows
+            modified_rows = merged_common_rows[
+                merged_common_rows["_merge"] == "left_only"
+            ].drop(columns=["_merge"])
+            diff["modified_rows"] = modified_rows
 
         return diff
 
@@ -4158,10 +3564,10 @@ class GeoAccessor(object):
         data = ge[q].tolist()
         array = np.array(data)
         return (
-            float(array[:, 0][array[:, 0] != None].min()),
-            float(array[:, 1][array[:, 1] != None].min()),
-            float(array[:, 2][array[:, 2] != None].max()),
-            float(array[:, 3][array[:, 3] != None].max()),
+            float(array[:, 0][array[:, 0] is not None].min()),
+            float(array[:, 1][array[:, 1] is not None].min()),
+            float(array[:, 2][array[:, 2] is not None].max()),
+            float(array[:, 3][array[:, 3] is not None].max()),
         )
 
     # ----------------------------------------------------------------------
@@ -4208,11 +3614,19 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].geom.centroid.isnull()
+        columns = ["x", "y"]
+        if self.has_z:
+            columns.append("z")
+
         df = pd.DataFrame(
             self._data[~q][self.name].geom.centroid.tolist(),
-            columns=["x", "y"],
+            columns=columns,
         )
-        return df["x"].mean(), df["y"].mean()
+        if self.has_z == False:
+
+            return df["x"].mean(), df["y"].mean()
+        else:
+            return df["x"].mean(), df["y"].mean(), df["z"].mean()
 
     # ----------------------------------------------------------------------
     @property
@@ -4328,7 +3742,7 @@ class GeoAccessor(object):
 
         """
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
-        if _HASARCPY == False and _HASSHAPELY == False:
+        if _HASARCPY is False and _HASSHAPELY is False:
             return None
         if rebuild:
             self._kdtree = None
@@ -4439,7 +3853,6 @@ class GeoAccessor(object):
         """
         from ._tools import contains, crosses, disjoint
         from ._tools import equals, overlaps, touches
-        from ._tools import within
 
         _ops_allowed = {
             "contains": contains,
@@ -4452,7 +3865,7 @@ class GeoAccessor(object):
             "within": contains,
         }
 
-        if not op.lower() in _ops_allowed.keys():
+        if op.lower() not in _ops_allowed.keys():
             raise ValueError("Invalid `op`. Please use a proper operation.")
 
         if op.lower() in ["contains", "within"]:
@@ -4460,7 +3873,7 @@ class GeoAccessor(object):
             return fn(sdf=self._data, other=other, relation=relation)
         elif op.lower() in ["intersect"]:
             fn = _ops_allowed[op.lower()]
-            return fn(sdf=self._data, other=other) == False
+            return fn(sdf=self._data, other=other) is False
         else:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other)
@@ -4482,7 +3895,7 @@ class GeoAccessor(object):
             A Pandas Series (pd.Series)
         """
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
-        if _HASARCPY == False and _HASSHAPELY == False:
+        if _HASARCPY is False and _HASSHAPELY is False:
             return None
         radius = max(
             abs(self.full_extent[0] - self.full_extent[2]),
