@@ -284,7 +284,10 @@ class ServiceFactory(type):
                 )  # anonymous connection
                 server = ServicesDirectory(url=site_url)
         base_name = os.path.basename(url)
-        if base_name.isdigit():
+        if url.lower().find("sceneserver/layers") > -1:
+            base_name = "sceneserver"
+            hasLayer = True
+        elif base_name.isdigit():
             base_name = os.path.basename(url.replace("/" + base_name, ""))
             hasLayer = True
         if base_name.lower() == "mapserver":
