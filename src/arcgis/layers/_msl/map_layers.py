@@ -72,6 +72,7 @@ class MapFeatureLayer(Layer):
         self._attachments = None
         self._dynamic_layer = dynamic_layer
         self._time_filter = time_filter
+        self._storage = container
 
     # ----------------------------------------------------------------------
     @property
