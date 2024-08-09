@@ -186,7 +186,9 @@ def drop_empty_rows_and_keys(list_of_dicts):
     return list_of_dicts
 
 
-def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
+def _convert_csv_to_ner_json(
+    path, text_key="input", encoding="UTF-8", return_first=False
+):
     # New
     csv_data = pd.read_csv(path, encoding=encoding).dropna(axis=0, how="all")
     csv_data.dropna(how="all", axis=1, inplace=True)
@@ -225,6 +227,7 @@ def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
                     (match.start(), match.end())
                     for match in re.finditer(re.escape(val), i[text_key])
                 ]
+                slice_len = 1 if return_first else len(matches)
                 if temp_list:
                     overlapping_ids = any(
                         ranges_overlap([tl[0], tl[1]], [match[0], match[1]])
@@ -233,10 +236,13 @@ def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
                     )
                     if not overlapping_ids:
                         temp_list.extend(
-                            [[match[0], match[1], key] for match in matches]
+                            [[match[0], match[1], key] for match in matches[:slice_len]]
                         )
                 else:
-                    temp_list.extend([[match[0], match[1], key] for match in matches])
+                    temp_list.extend(
+                        [[match[0], match[1], key] for match in matches[:slice_len]]
+                    )
+
         z["labels"] = temp_list
         all_records.append(z)
 
@@ -335,7 +341,9 @@ class _NERData:
             tokens_collection.append(tmp_tokens_list)
         return unique_tags, tags_collection, tokens_collection
 
-    def prepare_data_for_transformer(self, ignore_tag_order=True, label2id=None):
+    def prepare_data_for_transformer(
+        self, ignore_tag_order=True, label2id=None, return_first=False
+    ):
         path = Path(self.path)
         if self.class_mapping:
             address_tag = self.class_mapping.get("address_tag")
@@ -370,7 +378,9 @@ class _NERData:
             if ignore_tag_order:
                 unique_tags = set({x.split("-")[-1] for x in unique_tags})
         elif self.dataset_type == "csv":
-            data_list = _convert_csv_to_ner_json(path, self.text_columns)
+            data_list = _convert_csv_to_ner_json(
+                path, self.text_columns, return_first=return_first
+            )
             unique_tags, tags_collection, tokens_collection = self._ner_json_process(
                 data_list
             )
