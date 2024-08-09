@@ -34,6 +34,8 @@ try:
         seq2seq_acc,
         calculate_bleu,
     )
+    from typing import Tuple, List, Union
+    from ._model_extension_text import TextModelExtension
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._arcgis_transformer import ModelBackbone, infer_model_type
     from .._utils.common import _get_emd_path
@@ -44,6 +46,7 @@ try:
         transformer_seq_length,
     )
     from transformers import logging
+    from arcgis.features import FeatureSet
     from .._utils.llm_utils import data_sanity_llm
     from ._llm import LLM
 except Exception as e:
@@ -60,6 +63,8 @@ class SequenceToSequence(ArcGISModel):
     """
     Creates a :class:`~arcgis.learn.text.SequenceToSequence` Object.
     Based on the Hugging Face transformers library
+
+    To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
 
     =====================   ===========================================
     **Parameter**            **Description**
@@ -147,6 +152,14 @@ class SequenceToSequence(ArcGISModel):
         else:
             self._logger.setLevel(logging.ERROR)
 
+        self.model_extension = False
+        self.inference_model = None
+        if kwargs.get("model_extension", False):
+            self.inference_model = kwargs.get("extensible_model", None)
+            assert self.inference_model is not None
+            self.inference_model = self.inference_model.model
+            self.model_extension = True
+
         if backbone.lower() == "llm":
             raise Exception(
                 f"{backbone} is not a valid backbone. Please select one of the following models"
@@ -182,7 +195,7 @@ class SequenceToSequence(ArcGISModel):
         self._mixed_precision = kwargs.get("mixed_precision", False)
         self._seq_len = kwargs.get("seq_len", transformer_seq_length)
         self.shap_values = None
-        if self._backbone != "llm":
+        if not self.model_extension and self._backbone != "llm":
             self._create_text_learner_object(
                 data,
                 backbone,
@@ -194,7 +207,7 @@ class SequenceToSequence(ArcGISModel):
             self.learn.model = self.learn.model.to(self._device)
             layer_groups = self.learn.model.get_layer_groups()
             self.learn.split(layer_groups)
-        # self._freeze()
+            # self._freeze()
 
     def _create_text_learner_object(
         self,
@@ -321,6 +334,12 @@ class SequenceToSequence(ArcGISModel):
         This method is not supported when the backbone is configured as llm/mistral.
 
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+
         try:
             self.learn.freeze()
         except:
@@ -334,6 +353,7 @@ class SequenceToSequence(ArcGISModel):
         Creates an SequenceToSequence model object from a Deep Learning
         Package(DLPK) or Esri Model Definition (EMD) file.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using this method.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -348,6 +368,11 @@ class SequenceToSequence(ArcGISModel):
 
         :return: :class:`~arcgis.learn.text.SequenceToSequence` Object
         """
+        # In this we need to take care of three different scenario for the processing.
+        # 1. Backward compatability
+        # 2. Support for LLM. For that we need to have seaprate processing block
+        # 3. Model extension. It will also have its own processing block
+
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
 
@@ -357,10 +382,31 @@ class SequenceToSequence(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        pretrained_model = emd["PretrainedModel"]
-        text_cols = emd["TextColumns"]
-        label_cols = emd["LabelColumns"]
-        seq_len = emd.get("SequenceLength", transformer_seq_length)
+        text_cols = emd.get("TextColumns", "")
+        label_cols = emd.get("LabelColumns", [])
+        extensible_model = TextModelExtension.from_model(
+            emd_path, task="text-classifier", **kwargs
+        )
+
+        if extensible_model.model_loaded:
+            data_is_none = False
+            if data is None:
+                data_is_none = True
+                data = TextDataObject(task="sequence_translation")
+                data._backbone = ""
+                data.create_empty_seq2seq_data(text_cols, label_cols)
+                data.emd, data.emd_path = emd, emd_path.parent
+
+            cls_object = cls(
+                data,
+                pretrained_path=str(emd_path),
+                model_extension=True,
+                extensible_model=extensible_model,
+            )
+            if data_is_none:
+                cls_object._data._is_empty = True
+            return cls_object
+
         backbone = emd["ModelParameters"].get("backbone", None)
         backup_backbone = backbone
 
@@ -393,14 +439,18 @@ class SequenceToSequence(ArcGISModel):
                 cls_object._data._is_empty = True
             return cls_object
 
-        mixed_precision = emd["MixedPrecisionTraining"]
         data_is_none = False
+        pretrained_model = emd["PretrainedModel"]
+        mixed_precision = emd.get("MixedPrecisionTraining", None)
+        seq_len = emd.get("SequenceLength", transformer_seq_length)
+
         if data is None:
             data_is_none = True
             data = TextDataObject(task="sequence_translation")
             data._backbone = pretrained_model
             data.create_empty_seq2seq_data(text_cols, label_cols)
             data.emd, data.emd_path = emd, emd_path.parent
+
         cls_object = cls(
             data,
             pretrained_model,
@@ -415,6 +465,8 @@ class SequenceToSequence(ArcGISModel):
 
     def load(self, name_or_path):
         """
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
         Loads a saved SequenceToSequence model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral.
@@ -426,6 +478,12 @@ class SequenceToSequence(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+
         if self._backbone != "llm":
             if "\\" in str(name_or_path) or "/" in str(name_or_path):
                 name_or_path = str(_get_emd_path(name_or_path))
@@ -494,7 +552,11 @@ class SequenceToSequence(ArcGISModel):
 
         :return: the qualified path at which the model is saved
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         from ..models._arcgis_model import _create_zip
 
         zip_files = kwargs.pop("zip_files", True)
@@ -579,6 +641,11 @@ class SequenceToSequence(ArcGISModel):
 
         :return: dataframe
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         if self._backbone == "llm":
             if not self._data._is_empty:
                 if not len(self._data._valid_df):
@@ -624,8 +691,15 @@ class SequenceToSequence(ArcGISModel):
 
         :return: a dictionary containing the metrics for classification model.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         try:
+
             self._check_requisites()
+
         except Exception as e:
             acc, bleu = self._data.emd.get("seq2seq_acc"), self._data.emd.get("bleu")
             if acc or bleu:
@@ -689,7 +763,7 @@ class SequenceToSequence(ArcGISModel):
         explain=False,
         explain_index=None,
         **kwargs,
-    ):
+    ) -> List[Tuple] | FeatureSet:
         """
         Predicts the translated outcome.
 
@@ -736,13 +810,37 @@ class SequenceToSequence(ArcGISModel):
                                 Default value is set to 10
         =====================   ===========================================
 
-        :return: list of tuples(input , predicted output strings).
+        :return: list of tuples(input , predicted output strings) or FeatureSet.
         """
 
         if isinstance(text_or_list, str):
             text_or_list = [text_or_list]
 
-        if self._backbone == "llm":
+        if self.model_extension:
+            # To make it more flexible. We will add the Featureset for further processing
+            feature_set = []
+            for i in text_or_list:
+                feature_set.append({"attributes": {"input_str": i}})
+
+            feature_set_final = FeatureSet.from_dict(
+                {
+                    "fields": [
+                        {"name": "input_str", "type": "esriFieldTypeString"},
+                    ],
+                    "geometryType": "",
+                    "features": feature_set,
+                }
+            )
+            results = self.inference_model.predict(feature_set_final)
+
+            if not isinstance(results, FeatureSet):
+                raise Exception(
+                    "The output should be a FeatureSet. Please refer https://developers.arcgis.com/python/api-reference/arcgis.features.toc.html#featureset"
+                )
+
+            return results
+
+        elif self._backbone == "llm":
             if batch_size > 16:
                 batch_size = 16
 
@@ -830,7 +928,8 @@ class SequenceToSequence(ArcGISModel):
                             with warnings.catch_warnings():
                                 warnings.simplefilter("always", UserWarning)
                                 warnings.warn(
-                                    f"Value of index {explain_index} should be less than/equal to {len(text_or_list) - 1}."
+                                    f"Value of index {explain_index} should be less than/equal to"
+                                    f" {len(text_or_list) - 1}."
                                 )
                     else:
                         exp_rows = 5 if len(text_or_list) > 5 else len(text_or_list)
@@ -906,6 +1005,11 @@ class SequenceToSequence(ArcGISModel):
         if self._backbone == "llm":
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."
+            )
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
             )
         self._check_requisites()
         import matplotlib.pyplot as plt
@@ -1060,6 +1164,12 @@ class SequenceToSequence(ArcGISModel):
         =====================   ===========================================
         """
 
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+
         if self._backbone != "llm":
             super().fit(
                 epochs=epochs,
@@ -1093,6 +1203,12 @@ class SequenceToSequence(ArcGISModel):
                                 The default value is 'True'.
         =====================   ===========================================
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+
         if self._backbone != "llm":
             return super().lr_find(allow_plot=allow_plot)
         else:
@@ -1107,6 +1223,12 @@ class SequenceToSequence(ArcGISModel):
         This method is not supported when the backbone is configured as llm/mistral.
 
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+
         if self._backbone != "llm":
             super().unfreeze()
         else:
