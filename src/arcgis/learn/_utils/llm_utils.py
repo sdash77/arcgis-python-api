@@ -211,7 +211,7 @@ def data_sanity_llm(data, **kwargs: Dict):
 
         if data:
             # sample records from the dataset
-            data.prepare_data_for_transformer()
+            data.prepare_data_for_transformer(return_first=True)
             data = data.get_data_object()
             base_set = set(data._label2id) - {"O"}
             tag_set = set()
