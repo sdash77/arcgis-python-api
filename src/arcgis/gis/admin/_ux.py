@@ -3026,18 +3026,10 @@ class UtilityServicesSettings:
         # Step 2: find the folder in Enterprise
         if folder:
             if isinstance(folder, str):
-                folder_item = self._gis.content.folders.get(
+                folder_item = self._gis.content.folders._get_or_create(
                     folder, self._gis.users.me.username
                 )
-                if folder_item:
-                    # folder exists, get name
-                    folder_name = folder_item.name
-                else:
-                    # folder does not exist, create it
-                    folder_item = self._gis.content.folders.create(
-                        folder, self._gis.users.me.username
-                    )
-                    folder_name = folder_item.name
+                folder_name = folder_item.name
             else:
                 # instance of folder object
                 folder_name = folder.name
