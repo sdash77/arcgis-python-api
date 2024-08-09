@@ -7,6 +7,7 @@ from arcgis.gis.admin import (
     ItemSettings,
     SecuritySettings,
     StockImage,
+    UtilityServicesSettings,
 )
 import tempfile
 import requests
@@ -240,6 +241,7 @@ class Test_HomePageSettingsClass(unittest.TestCase):
         assert reset_contact_email["show_email"] == contact_email["show_email"]
 
 
+@profiles.admin_enterprise_and_agol
 @integration_test
 class Test_MapSettingsClass(unittest.TestCase):
     """Tests Org Map Settings Class"""
@@ -335,6 +337,7 @@ class Test_MapSettingsClass(unittest.TestCase):
         ms.bing_map(bing_key=bing_config["key"], share_public=bing_config["public"])
 
 
+@profiles.admin_enterprise_and_agol
 @integration_test
 class Test_ItemSettingsClass(unittest.TestCase):
     """Tests Org Item Settings Class"""
@@ -367,6 +370,7 @@ class Test_ItemSettingsClass(unittest.TestCase):
         it_set.metadata_format = frmt
 
 
+@profiles.admin_enterprise_and_agol
 @integration_test
 class Test_SecuritySettingsClass(unittest.TestCase):
     """Tests Org Security Settings Class"""
@@ -555,6 +559,35 @@ class Test_SecuritySettingsClass(unittest.TestCase):
             self.skipTest("IDP not available for Enterprise")
         ss = self.gis.admin.ux.security_settings
         assert isinstance(ss.get_idp(), dict)
+
+
+@profiles.admin_enterprise
+@integration_test
+class TestUtilityServicesSettingsClass(unittest.TestCase):
+    """Tests Org Utility Services Settings Class"""
+
+    def test_class_calls(self):
+        uss = self.gis.admin.ux.utility_services_settings
+        assert isinstance(uss, UtilityServicesSettings)
+    
+    def test_add_reset(self):
+        enterprise_gis = self.gis
+        online_gis = GIS(profile="your_online_admin_profile", verify_cert=False, proxy=self.proxies)
+
+        uss = enterprise_gis.admin.ux.utility_services_settings
+        settings = uss.add_from_online(
+            ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network"],
+            online_gis,
+            "RoutingService"
+        )
+        assert settings
+
+        for service in ['analysis', 'asyncClosestFacility', 'asyncGeocode', 'asyncLocationAllocation', 'asyncODCostMatrix', 'asyncRoute', 'asyncServiceArea', 'asyncVRP', 'closestFacility', 'defaultElevationLayers', 'elevation', 'elevationSync', 'geoanalytics', 'geocode', 'geoenrichment', 'geometry', 'hydrology', 'odCostMatrix', 'orthoMapping', 'packaging', 'printTask', 'rasterAnalytics', 'rasterUtilities', 'route', 'routingServicesSource', 'routingUtilities', 'serviceArea', 'symbols', 'syncVRP', 'traffic', 'trafficData', 'workflowManager', 'asyncFleetRouting', 'snapToRoads']:
+            if service == 'snapToRoads' and enterprise_gis.version <= [2024,1]:
+                continue
+            assert service in enterprise_gis.properties["helperServices"]
+        
+        uss.reset_services(["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"])
 
 
 if __name__ == "__main__":
