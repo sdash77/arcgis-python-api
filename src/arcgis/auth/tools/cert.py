@@ -160,8 +160,8 @@ class TruststoreAdapter(HTTPAdapter):
         pool_block=DEFAULT_POOLBLOCK,
         ssl_context: truststore.SSLContext | ssl.SSLContext | None = None,
     ):
-        if ssl_context is None:
-            ssl_context = truststore.SSLContext()
+
+        ssl_context = ssl_context or truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.custom_context = ssl_context
 
         super().__init__(

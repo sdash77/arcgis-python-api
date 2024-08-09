@@ -1,10 +1,4 @@
-import sys
-
-from arcgis.gis import GIS
-import os
-import sys
 import unittest
-import pandas as pd
 from arcgis.gis import GIS
 from arcgis.layers._ogc import WMTSLayer
 from utils.decorators import integration_test

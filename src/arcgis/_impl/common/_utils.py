@@ -203,6 +203,7 @@ def _text_replace(text, replacements: dict[str, str]):
     Uses regex to replace all occurrences of keys in the
     replacements dictionary with their corresponding values
     in the text string.
+
     Inputs:
         text - string
         replacements - dictionary of key/value pairs

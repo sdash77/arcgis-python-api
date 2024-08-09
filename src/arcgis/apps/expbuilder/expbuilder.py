@@ -426,10 +426,9 @@ class WebExperience(object):
         # add to active gis and set properties
         if gis is None:
             folder = self._gis.content.folders.get()
-            item = folder.add(item_properties=props).result()
         else:
             folder = gis.content.folders.get()
-            item = folder.add(item_properties=props).result()
+        item = folder.add(item_properties=props).result()
 
         # assign to experience properties
         self._item = item

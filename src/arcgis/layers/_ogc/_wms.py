@@ -60,6 +60,7 @@ class WMSLayer(BaseOGC):
         if url[-1] == "/":
             url = url[:-1]
         self._url = url
+        self._con = gis._con
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._opacity = kwargs.pop("opacity", 1)
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
@@ -142,9 +143,9 @@ class WMSLayer(BaseOGC):
     def layers(self) -> list:
         """returns the layers of the WMS Layer"""
         try:
-            return self.properties.WMS_Capabilities.Capability.Layer.Layer
+            return self.properties["WMS_Capabilities"]["Capability"]["Layer"]["Layer"]
         except:
-            return self.properties.WMS_Capabilities.Capability.Layer
+            return self.properties["WMS_Capabilities"]["Capability"]["Layer"]
 
     # ----------------------------------------------------------------------
     def _capabilities_url(self, service_url: str, vendor_kwargs: dict = None) -> str:
@@ -235,7 +236,7 @@ class WMSLayer(BaseOGC):
             "title": self._title or "WMTS Layer",
             "url": self._url,
             "version": self._version,
-            "sublayers": [{"name": lyr.Name} for lyr in layers],
+            "sublayers": [{"name": lyr["Name"]} for lyr in layers],
             "minScale": self.scale[0],
             "maxScale": self.scale[1],
             "opacity": self.opacity,
@@ -249,7 +250,7 @@ class WMSLayer(BaseOGC):
         if not isinstance(layers, list):
             layers = [layers]
         new_layer["layers"] = [
-            {"name": subLyr.Name, "title": subLyr.Title} for subLyr in layers
+            {"name": subLyr["Name"], "title": subLyr["Title"]} for subLyr in layers
         ]
         new_layer["visibleLayers"] = []
         if new_layer["layers"]:
