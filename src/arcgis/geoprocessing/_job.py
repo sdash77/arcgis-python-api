@@ -1646,7 +1646,8 @@ class RMJob(GPJob):
                 mode = adjust_settings.pop("mode", None)
                 if "jobs" in mission_json:
                     mission_json["jobs"][item_name].update({"mode": mode})
-                mission_json["adjustSettings"].update(adjust_settings)
+                if "adjustSettings" in mission_json:
+                    mission_json["adjustSettings"].update(adjust_settings)
 
             properties = json.loads(resource["properties"])
 
