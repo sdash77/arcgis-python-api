@@ -224,6 +224,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             # Check if the first record is the path
             if os.path.exists(text_list[0]):
                 file_name = text_list
+
         # if there is a list of file name. Then recreate the text_list
         if len(file_name):
             text_list = {}
