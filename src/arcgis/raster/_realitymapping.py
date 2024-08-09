@@ -709,7 +709,7 @@ def compute_sensor_model(
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection on which to compute
                            the sensor model.
-                           The mission can be a RMRMMission object, an image service URL or portal Item or a datastore URI.
+                           The mission can be a RMMission object, an image service URL or portal Item or a datastore URI.
 
                            The mission must exist.
     ------------------     --------------------------------------------------------------------

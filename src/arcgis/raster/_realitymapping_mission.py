@@ -56,7 +56,7 @@ class RMMission:
         if isinstance(project, RMProject):
             self._project = project
         elif isinstance(project, Item):
-            if project.type == "Ortho Mapping Project":  # "Reality Mapping Project"
+            if project.type == "Reality Mapping Project":  # "Reality Mapping Project"
                 self._project = RMProject(project, gis=project._gis)
 
         self._project_item = project._project_item
