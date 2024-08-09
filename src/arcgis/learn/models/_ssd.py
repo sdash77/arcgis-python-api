@@ -677,6 +677,9 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
+            if "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
+
             data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to

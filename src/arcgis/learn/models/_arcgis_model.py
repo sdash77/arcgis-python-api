@@ -369,7 +369,9 @@ def _get_tail(model):
             return module_name, module
 
 
-def _get_ms_tail(tail, data, type_init="random"):
+def _get_ms_tail(tail, data, type_init="random", **kwargs):
+    bbone = kwargs.get("backbone", None)
+
     in_chanls = len(data._extract_bands)
     if tail.in_channels == in_chanls:
         return tail
@@ -397,8 +399,13 @@ def _get_ms_tail(tail, data, type_init="random"):
             / float(in_chanls)
         )
     for i, j in enumerate(data._extract_bands):
-        band = str(data._bands[j]).lower()
-        b = get_band_mapping(band)  # rgb_map.get(band, None)
+
+        if bbone is not None and "_hf_" in bbone.__module__:
+            b = j
+        else:
+            band = str(data._bands[j]).lower()
+            b = get_band_mapping(band)
+
         if b is not None and not type_init == "all_random":
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
@@ -442,7 +449,8 @@ def change_tail_transformer(model, data):
     return model
 
 
-def _change_tail(model, data, tail_weights_type=None):
+def _change_tail(model, data, tail_weights_type=None, **kwargs):
+
     tail_name, tail = _get_tail(model)
     if tail_weights_type is None:
         tail_weights_type = getattr(arcgis.env, "type_init_tail_parameters", "random")
@@ -456,7 +464,7 @@ def _change_tail(model, data, tail_weights_type=None):
         )
     if getattr(model, "_is_transformer", False):
         return change_tail_transformer(model, data)
-    new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type)
+    new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type, **kwargs)
     _set_tail(model, new_tail)
     return model
 
@@ -602,7 +610,7 @@ class ArcGISModel(object):
         else:
             self._is_multispectral = False
 
-        if self._is_multispectral or "hf:" in backbone:
+        if self._is_multispectral or "_hf_" in self._backbone.__module__:
 
             self._orig_backbone = self._backbone
 
@@ -619,6 +627,7 @@ class ArcGISModel(object):
                     self._orig_backbone(*args, **inkwargs),
                     data,
                     kwargs.get("tail_weights_type"),
+                    backbone=self._orig_backbone,
                 )
 
             if self._is_multispectral:

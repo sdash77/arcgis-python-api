@@ -153,10 +153,6 @@ def _download_from_hf(model_id: str, filename: str):
     url = hf_hub_url(hf_model_id, filename, revision=hf_revision)
     # return hf_hub_download(hf_model_id, filename, revision=hf_revision)
     cached_file = hf_hub_download(hf_model_id, filename, revision=hf_revision)
-    sys.stderr.write(
-        'Downloaded: "{}" pretrained weights to {}\n'.format(filename, cached_file)
-    )
-
     return cached_file
 
 

@@ -773,6 +773,8 @@ class FasterRCNN(ModelExtension):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
+            if "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
 
         data.resize_to = resize_to
         frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
