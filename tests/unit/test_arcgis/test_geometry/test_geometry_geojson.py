@@ -1,8 +1,7 @@
 #######################################################################
 import sys
 import unittest
-from utils.decorators import profiles, integration_test
-from utils._logging import enable_verbose_logging
+
 
 import arcgis
 
@@ -18,7 +17,7 @@ except:
     found = False
 
 
-@integration_test
+
 @unittest.skipIf(
     found == False, "Shapely is required to perform this test case."
 )
