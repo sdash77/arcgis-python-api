@@ -289,7 +289,7 @@ class ServicesDirectory(BaseServer):
         """
         import pandas as pd
 
-        pd.set_option("display.max_colwidth", -1)
+        pd.set_option("display.max_colwidth", None)
         data = []
         a_template = """<a href="%s?token=%s">URL Link</a>"""
         columns = ["Service Name", "Service URL"]

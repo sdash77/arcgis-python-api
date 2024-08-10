@@ -14,3 +14,7 @@ ________________________________
 publish_hosted_imagery_layer
 ____________________________
 .. autofunction:: arcgis.raster.utils.publish_hosted_imagery_layer
+
+get_stac_info
+____________________________
+.. autofunction:: arcgis.raster.utils.get_stac_info
