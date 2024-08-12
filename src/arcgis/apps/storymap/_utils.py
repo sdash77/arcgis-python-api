@@ -393,7 +393,21 @@ def save(
         story._item.resources.update(file=temp.name, file_name=draft)
 
     # get the story map version from endpoint
-    sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
+    try:
+        sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")[
+            "version"
+        ]
+    except:
+        # When behind firewall or using enterprise, the version is not available
+        sm_mapping = {
+            "[10, 3]": "22.49",  # Enterprise 11.1
+            "[2023, 2]": "23.32",  # Enterprise 11.2
+            "[2024, 1]": "24.12",  # Enterprise 11.3
+            "[2024, 2]": "24.36",  # Enterprise 11.4
+            "default": "24.12",
+        }
+        gis_version = str(story._gis.version)
+        sm_version = sm_mapping.get(gis_version, sm_mapping["default"])
     # Find type keywords to use based on whether to publish or not
     if isinstance(story, briefing.Briefing):
         briefing_keywords = ["alphabriefing", "storymapbriefing"]
