@@ -680,7 +680,14 @@ class FasterRCNN(ModelExtension):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = FasterRCNN.transformer_backbones()
-        return [*_resnet_family] + transformer_backbone + timm_backbones
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family]
+            + transformer_backbone
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):
@@ -766,6 +773,8 @@ class FasterRCNN(ModelExtension):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
+            if "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
 
         data.resize_to = resize_to
         frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)

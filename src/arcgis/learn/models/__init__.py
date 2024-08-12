@@ -41,3 +41,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._psetae import PSETAE
     from ._mmdet3d import MMDetection3D
     from ._sam_lora import SamLoRA
+    from ._climax import ClimaX

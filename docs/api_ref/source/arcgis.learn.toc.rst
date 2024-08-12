@@ -342,6 +342,13 @@ PSETAE
     :inherited-members:
     :undoc-members:
 
+ClimaX
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.ClimaX
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Unstructured Text Models
 ------------------------
 arcgis.learn.text module

@@ -369,7 +369,9 @@ def _get_tail(model):
             return module_name, module
 
 
-def _get_ms_tail(tail, data, type_init="random"):
+def _get_ms_tail(tail, data, type_init="random", **kwargs):
+    bbone = kwargs.get("backbone", None)
+
     in_chanls = len(data._extract_bands)
     if tail.in_channels == in_chanls:
         return tail
@@ -385,6 +387,8 @@ def _get_ms_tail(tail, data, type_init="random"):
         padding_mode=tail.padding_mode,
     )
     # referred from https://github.com/rwightman/pytorch-image-models/blob/7c67d6aca992f039eece0af5f7c29a43d48c00e4/timm/models/helpers.py#L143
+    if in_chanls == tail.weight.shape[1]:
+        return tail
     if in_chanls == 1:
         new_tail.weight.data = tail.weight.data.float().sum(dim=1, keepdim=True)
     else:
@@ -395,8 +399,13 @@ def _get_ms_tail(tail, data, type_init="random"):
             / float(in_chanls)
         )
     for i, j in enumerate(data._extract_bands):
-        band = str(data._bands[j]).lower()
-        b = get_band_mapping(band)  # rgb_map.get(band, None)
+
+        if bbone is not None and "_hf_" in bbone.__module__:
+            b = j
+        else:
+            band = str(data._bands[j]).lower()
+            b = get_band_mapping(band)
+
         if b is not None and not type_init == "all_random":
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
@@ -440,7 +449,8 @@ def change_tail_transformer(model, data):
     return model
 
 
-def _change_tail(model, data, tail_weights_type=None):
+def _change_tail(model, data, tail_weights_type=None, **kwargs):
+
     tail_name, tail = _get_tail(model)
     if tail_weights_type is None:
         tail_weights_type = getattr(arcgis.env, "type_init_tail_parameters", "random")
@@ -454,7 +464,7 @@ def _change_tail(model, data, tail_weights_type=None):
         )
     if getattr(model, "_is_transformer", False):
         return change_tail_transformer(model, data)
-    new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type)
+    new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type, **kwargs)
     _set_tail(model, new_tail)
     return model
 
@@ -555,6 +565,12 @@ def get_backbone_func(backbone, data, **kwargs):
             bckbn = backbone.split(":")[1]
             if hasattr(timm.models, bckbn):
                 backbone = getattr(timm.models, bckbn)
+        elif "hf:" in backbone:
+            bckbn = backbone.split(":")[1]
+            from . import _hf_weightutils as hfwu
+
+            if "resnet" in bckbn:
+                backbone = getattr(hfwu, bckbn)
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
@@ -593,9 +609,9 @@ class ArcGISModel(object):
             self._is_multispectral = getattr(data, "_is_multispectral")
         else:
             self._is_multispectral = False
-        if self._is_multispectral:
-            self._imagery_type = data._imagery_type
-            self._bands = data._bands
+
+        if self._is_multispectral or "_hf_" in self._backbone.__module__:
+
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -611,9 +627,13 @@ class ArcGISModel(object):
                     self._orig_backbone(*args, **inkwargs),
                     data,
                     kwargs.get("tail_weights_type"),
+                    backbone=self._orig_backbone,
                 )
 
-            backbone_wrapper._is_multispectral = True
+            if self._is_multispectral:
+                self._imagery_type = data._imagery_type
+                self._bands = data._bands
+                backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
 
         if not hasattr(data, "class_mapping") and hasattr(data, "classes"):
@@ -679,8 +699,11 @@ class ArcGISModel(object):
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
-        if type(backbone) is not str and "timm" in backbone.__module__:
-            backbone_name = "timm:" + backbone.__name__
+        if type(backbone) is not str:
+            if "timm" in backbone.__module__:
+                backbone_name = "timm:" + backbone.__name__
+            elif "_hf_" in backbone.__module__:
+                backbone_name = "hf:" + backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
 
     def _check_dataset_support(self, data):
@@ -1158,6 +1181,8 @@ class ArcGISModel(object):
             else:
                 if "timm" in self._backbone.__module__:
                     backbone = "timm:" + self._backbone.__name__
+                elif "_hf_" in self._backbone.__module__:
+                    backbone = "hf:" + self._backbone.__name__
                 else:
                     backbone = self._backbone.__name__
             if backbone == "backbone_wrapper":
