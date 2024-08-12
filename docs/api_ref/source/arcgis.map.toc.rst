@@ -46,8 +46,119 @@ OfflineMapAreaManager
     :members:
     :undoc-members:
 
+
+Working with 2D Maps
+--------------------
+
+Bookmarks
+^^^^^^^^^
+.. autoclass:: arcgis.map.Bookmarks
+    :members:
+    :undoc-members:
+
+Bookmark
+^^^^^^^^
+..autoclass:: arcgis.map.Bookmark
+    :members:
+    :undoc-members:
+
+Legend
+^^^^^^
+..autoclass:: arcgis.map.Legend
+    :members:
+    :undoc-members:
+
 LayerVisibility
---------------
+^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.map.LayerVisibility
     :members:
     :undoc-members:
+
+LayerList
+^^^^^^^^^
+..autoclass:: arcgis.map.LayerList
+    :members:
+    :undoc-members:
+
+TimeSlider
+^^^^^^^^^^
+..autoclass:: arcgis.map.TimeSlider
+    :members:
+    :undoc-members:
+
+BasemapManager
+^^^^^^^^^^^^^^
+..autoclass:: arcgis.map.BasemapManager
+    :members:
+    :undoc-members:
+
+MapContent
+^^^^^^^^^^
+..autoclass:: arcgis.map.MapContent
+    :members:
+    :undoc-members:
+
+
+Working with 3D Maps
+---------------------
+
+Legend
+^^^^^^
+..autoclass:: arcgis.scene.Legend
+    :members:
+    :undoc-members:
+
+LayerList
+^^^^^^^^^
+..autoclass:: arcgis.scene.LayerList
+    :members:
+    :undoc-members:
+
+TimeSlider
+^^^^^^^^^^
+..autoclass:: arcgis.scene.TimeSlider
+    :members:
+    :undoc-members:
+
+LayerVisibility
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.scene.LayerVisibility
+    :members:
+    :undoc-members:
+
+Environment
+^^^^^^^^^^^
+.. autoclass:: arcgis.scene.Environment
+    :members:
+    :undoc-members:
+
+BasemapManager
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.scene.BasemapManager
+    :members:
+    :undoc-members:
+
+SceneContent
+^^^^^^^^^^^^
+.. autoclass:: arcgis.scene.SceneContent
+    :members:
+    :undoc-members:
+
+Dataclasses
+-----------
+
+Popups
+^^^^^^
+.. automodule:: arcgis.popups
+
+Symbols
+^^^^^^^
+.. automodule:: arcgis.symbols
+
+Renderers
+^^^^^^^^^
+.. automodule:: arcgis.renderers
+
+Forms
+^^^^^
+.. automodule:: arcgis.forms
