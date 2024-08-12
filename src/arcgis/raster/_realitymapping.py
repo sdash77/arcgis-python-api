@@ -389,6 +389,8 @@ def _add_mission(
 
     if out_sr is None and project._spatial_reference is not None:
         out_sr = project._spatial_reference["spatialReference"]
+        if isinstance(out_sr, arcgis._impl.common._mixins.PropertyMap):
+            out_sr = dict(out_sr)
 
     output_collection = create_image_collection(
         image_collection=image_collection,
