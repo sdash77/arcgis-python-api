@@ -406,7 +406,7 @@ def save(
             "[2024, 2]": "24.36",  # Enterprise 11.4
             "default": "24.12",
         }
-        gis_version = str(story._gis.version)
+        gis_version = str(story._gis.version[:2])
         sm_version = sm_mapping.get(gis_version, sm_mapping["default"])
     # Find type keywords to use based on whether to publish or not
     if isinstance(story, briefing.Briefing):
