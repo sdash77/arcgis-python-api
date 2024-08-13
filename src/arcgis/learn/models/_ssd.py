@@ -552,8 +552,11 @@ class SingleShotDetector(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        transformer_backbone = SingleShotDetector.transformer_backbones()
 
+        transformer_backbone = SingleShotDetector.transformer_backbones()
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        hf_backbones = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return (
             [
                 *_resnet_family,
@@ -563,7 +566,7 @@ class SingleShotDetector(ArcGISModel):
             ]
             + transformer_backbone
             + timm_backbones
-        )
+        ) + hf_backbones
 
     @property
     def supported_datasets(self):
@@ -674,6 +677,9 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
+            if "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
+
             data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
@@ -987,6 +993,8 @@ class SingleShotDetector(ArcGISModel):
         _emd_template["ExtractBands"] = [0, 1, 2]
         if "timm" in self._backbone.__module__:
             bckbn_name = "timm:" + self._backbone.__name__
+        elif "_hf_" in self._backbone.__module__:
+            bckbn_name = "hf:" + self._backbone.__name__
         else:
             bckbn_name = self._backbone.__name__
         _emd_template["backbone"] = bckbn_name

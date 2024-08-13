@@ -459,15 +459,15 @@ class DeepLab(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        from ._hf_weightutils import hf_resnet_cfgs
+
         transformer_backbone = DeepLab.transformer_backbones()
+
         return (
-            [
-                *_resnet_family,
-                *_densenet_family,
-                *_vgg_family,
-            ]
-            + transformer_backbone
+            [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
+            + transformer_backbone
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         )
 
     @property
