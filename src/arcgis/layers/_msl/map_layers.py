@@ -1713,7 +1713,9 @@ class _MSILayerFactory(type):
             )
         elif "type" in props and props.type.lower() == "feature layer":
             time_filter = (
-                props.timeInfo.timeExtent if props.timeInfo is not None else None
+                props.timeInfo.timeExtent
+                if hasattr(props, "timeInfo") and props.timeInfo is not None
+                else None
             )
             return MapFeatureLayer(
                 url=url,
