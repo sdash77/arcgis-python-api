@@ -122,16 +122,16 @@ Dataclasses
 
 Popups
 ^^^^^^
-.. automodule:: arcgis.popups
+.. automodule:: arcgis.map.popups
 
 Symbols
 ^^^^^^^
-.. automodule:: arcgis.symbols
+.. automodule:: arcgis.map.symbols
 
 Renderers
 ^^^^^^^^^
-.. automodule:: arcgis.renderers
+.. automodule:: arcgis.map.renderers
 
 Forms
 ^^^^^
-.. automodule:: arcgis.forms
+.. automodule:: arcgis.map.forms
