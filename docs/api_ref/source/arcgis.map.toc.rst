@@ -30,13 +30,13 @@ SmartMappingManager
 
 PopupManager
 --------------
-.. autoclass:: arcgis.map.PopupManager
+.. autoclass:: arcgis.map.popups.PopupManager
     :members:
     :undoc-members:
 
 RendererManager
 --------------
-.. autoclass:: arcgis.map.RendererManager
+.. autoclass:: arcgis.map.renderers.RendererManager
     :members:
     :undoc-members:
 
@@ -62,6 +62,30 @@ Bookmark
     :members:
     :undoc-members:
 
+MapContent
+^^^^^^^^^^
+..autoclass:: arcgis.map.MapContent
+    :members:
+    :undoc-members:
+
+
+Working with 3D Maps
+---------------------
+
+Environment
+^^^^^^^^^^^
+.. autoclass:: arcgis.map.Environment
+    :members:
+    :undoc-members:
+
+SceneContent
+^^^^^^^^^^^^
+.. autoclass:: arcgis.map.SceneContent
+    :members:
+    :undoc-members:
+
+Common Classes
+--------------
 Legend
 ^^^^^^
 ..autoclass:: arcgis.map.Legend
@@ -92,57 +116,6 @@ BasemapManager
     :members:
     :undoc-members:
 
-MapContent
-^^^^^^^^^^
-..autoclass:: arcgis.map.MapContent
-    :members:
-    :undoc-members:
-
-
-Working with 3D Maps
----------------------
-
-Legend
-^^^^^^
-..autoclass:: arcgis.scene.Legend
-    :members:
-    :undoc-members:
-
-LayerList
-^^^^^^^^^
-..autoclass:: arcgis.scene.LayerList
-    :members:
-    :undoc-members:
-
-TimeSlider
-^^^^^^^^^^
-..autoclass:: arcgis.scene.TimeSlider
-    :members:
-    :undoc-members:
-
-LayerVisibility
-^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.scene.LayerVisibility
-    :members:
-    :undoc-members:
-
-Environment
-^^^^^^^^^^^
-.. autoclass:: arcgis.scene.Environment
-    :members:
-    :undoc-members:
-
-BasemapManager
-^^^^^^^^^^^^^^
-.. autoclass:: arcgis.scene.BasemapManager
-    :members:
-    :undoc-members:
-
-SceneContent
-^^^^^^^^^^^^
-.. autoclass:: arcgis.scene.SceneContent
-    :members:
-    :undoc-members:
 
 Dataclasses
 -----------
