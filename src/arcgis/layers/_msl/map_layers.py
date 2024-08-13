@@ -1697,7 +1697,7 @@ class _MSILayerFactory(type):
     def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
         props = dict(lyr.properties)
-        if "type" in props and props["type"].lower() == "table":
+        if props.get("type", "").lower() == "table":
             return MapTable(
                 url=url,
                 gis=gis,
