@@ -96,8 +96,9 @@ class ClassificationManager:
 
         .. note::
             The value of each key returned will vary by organization.
-            For a description of what each key means, see the ArcGIS/
-            Classification GitHub repository.
+            See the `Esri classification <https://github.com/Esri/classification>`_
+            repo for more detailed information regarding the classification
+            schema.
         """
         url: str = f"{self.url}/classificationSchema"
         params: dict = {
