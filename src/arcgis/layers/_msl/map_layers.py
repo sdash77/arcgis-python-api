@@ -1696,27 +1696,23 @@ class _MSILayerFactory(type):
 
     def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
-        props = lyr.properties
-        if "type" in props and props.type.lower() == "table":
+        props = dict(lyr.properties)
+        if "type" in props and props["type"].lower() == "table":
             return MapTable(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "raster layer":
+        elif "type" in props and props["type"].lower() == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "feature layer":
-            time_filter = (
-                props.timeInfo.timeExtent
-                if hasattr(props, "timeInfo") and props.timeInfo is not None
-                else None
-            )
+        elif "type" in props and props["type"].lower() == "feature layer":
+            time_filter = props.get("timeInfo", {}).get("timeExtent")
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
