@@ -86,3 +86,7 @@ tests/.coverage*
 
 # any dotenv files
 **/.env
+
+# separate packages
+/src/arcgis/map
+
