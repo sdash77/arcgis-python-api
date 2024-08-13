@@ -213,15 +213,15 @@ Utility Functions for Mapping
 -----------------------------
 export_to_html
 ^^^^^^^^^^
-.. autofunction:: arcgis.map.export_to_html
+.. autofunction:: arcgis.map.map_widget.export_to_html
 
 sync_navigation
 ^^^^^^^^^^^^^^^
-.. autofunction:: arcgis.map.sync_navigation
+.. autofunction:: arcgis.map.map_widget.sync_navigation
 
 print
 ^^^^^
-.. autofunction:: arcgis.map.print
+.. autofunction:: arcgis.map.map_widget.print
 
 SymbolService
 ^^^^^^^^^

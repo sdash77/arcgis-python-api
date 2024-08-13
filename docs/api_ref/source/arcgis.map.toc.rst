@@ -58,13 +58,13 @@ Bookmarks
 
 Bookmark
 ^^^^^^^^
-..autoclass:: arcgis.map.Bookmark
+.. autoclass:: arcgis.map.Bookmark
     :members:
     :undoc-members:
 
 MapContent
 ^^^^^^^^^^
-..autoclass:: arcgis.map.MapContent
+.. autoclass:: arcgis.map.MapContent
     :members:
     :undoc-members:
 
@@ -88,7 +88,7 @@ Common Classes
 --------------
 Legend
 ^^^^^^
-..autoclass:: arcgis.map.Legend
+.. autoclass:: arcgis.map.Legend
     :members:
     :undoc-members:
 
@@ -100,19 +100,19 @@ LayerVisibility
 
 LayerList
 ^^^^^^^^^
-..autoclass:: arcgis.map.LayerList
+.. autoclass:: arcgis.map.LayerList
     :members:
     :undoc-members:
 
 TimeSlider
 ^^^^^^^^^^
-..autoclass:: arcgis.map.TimeSlider
+.. autoclass:: arcgis.map.TimeSlider
     :members:
     :undoc-members:
 
 BasemapManager
 ^^^^^^^^^^^^^^
-..autoclass:: arcgis.map.BasemapManager
+.. autoclass:: arcgis.map.BasemapManager
     :members:
     :undoc-members:
 
