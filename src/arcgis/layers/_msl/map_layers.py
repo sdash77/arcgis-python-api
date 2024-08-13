@@ -1704,7 +1704,7 @@ class _MSILayerFactory(type):
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props["type"].lower() == "raster layer":
+        elif props.get("type", "").lower() == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
