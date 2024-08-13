@@ -6,6 +6,7 @@ from arcgis._impl.common._utils import (
     _date_handler,
     local_time_to_online,
     bytesto,
+    _text_replace,
 )
 
 
@@ -34,6 +35,12 @@ class TestUtilMethods(unittest.TestCase):
         assert "a" in new_params
         assert "b" in new_params
         assert add(**new_params) == 2
+
+    def test_text_replace(self):
+        text = "hi ho silver, figaro figaro figar0, 123465421235342"
+        repl_dict = {"silver": "gold", "figaro": "tra la la", "123": "abc"}
+        new_text = _text_replace(text, repl_dict)
+        assert new_text == "hi ho gold, tra la la tra la la figar0, abc46542abc5342"
 
 
 if __name__ == "__main__":
