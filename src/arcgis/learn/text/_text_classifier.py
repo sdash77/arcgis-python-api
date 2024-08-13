@@ -46,6 +46,9 @@ try:
     )
     from transformers import logging
     from .._utils.llm_utils import data_sanity_llm
+    from ._model_extension_text import TextModelExtension
+    from arcgis.features import FeatureSet, GeoAccessor
+    from typing import List, Tuple
 
     logging.get_logger("filelock").setLevel(logging.ERROR)
 except Exception as e:
@@ -77,6 +80,9 @@ warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 class TextClassifier(ArcGISModel):
     """
     Creates a :class:`~arcgis.learn.text.TextClassifier` Object.
+
+    To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -99,7 +105,7 @@ class TextClassifier(ArcGISModel):
                             on Text Classification Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=text-classification
 
-                            To learn more about mistral
+                            To learn more about mistral, kindly visit:
                             https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
     =====================   ===========================================
 
@@ -136,7 +142,7 @@ class TextClassifier(ArcGISModel):
     prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
                             LLM family.
 
-                            This parameter use to describe the task and guardrails for the task.
+                            This parameter outlines the task and its corresponding guardrails.
     ---------------------   -------------------------------------------
     examples                Optional dictionary. The dictionary's keys represent labels or classes, with the
                             corresponding values being lists of sentences belonging to each class.
@@ -171,6 +177,14 @@ class TextClassifier(ArcGISModel):
 
             _raise_fastai_import_error(import_exception=import_exception)
 
+        self.model_extension = False
+        self.inference_model = None
+        if kwargs.get("model_extension", False):
+            self.inference_model = kwargs.get("extensible_model", None)
+            assert self.inference_model is not None
+            self.inference_model = self.inference_model.model
+            self.model_extension = True
+
         if backbone.lower() == "llm":
             raise Exception(
                 f"{backbone} is not a valid backbone. Please select one of the following models"
@@ -189,11 +203,11 @@ class TextClassifier(ArcGISModel):
                 kwargs.update(llm_params)
                 backbone = "llm"
 
-        self.logger = logging.get_logger()
+        self._logger = logging.get_logger()
         if kwargs.get("verbose", None):
-            self.logger.setLevel(kwargs.get("verbose").upper())
+            self._logger.setLevel(kwargs.get("verbose").upper())
         else:
-            self.logger.setLevel(logging.ERROR)
+            self._logger.setLevel(logging.ERROR)
         if backbone == "llm":
             kwargs["task"] = "text-classifier"
             kwargs = data_sanity_llm(data, **kwargs)
@@ -226,6 +240,7 @@ class TextClassifier(ArcGISModel):
                 #     # since data hadnle is marked as empty. Try to sample it from the examples
                 #     self._l2id = list(self._llm.examples.keys())
         model_backbone = ModelBackbone(backbone)
+
         super().__init__(data, model_backbone if backbone != "llm" else backbone)
 
         self._emodel = None
@@ -236,7 +251,7 @@ class TextClassifier(ArcGISModel):
         self._mixed_precision = kwargs.get("mixed_precision", False)
         self._seq_len = kwargs.get("seq_len", transformer_seq_length)
         model_config = kwargs.get("model_config", None)
-        if self._backbone != "llm":
+        if self._backbone != "llm" and not self.model_extension:
             if data is None:
                 model = TextClassifier.from_pretrained(backbone, **kwargs)
                 self.learn = model.learn
@@ -250,7 +265,7 @@ class TextClassifier(ArcGISModel):
                     mixed_precision=self._mixed_precision,
                     seq_len=self._seq_len,
                 )
-
+                # print(self.learn)
                 self.learn.model = self.learn.model.to(self._device)
                 layer_groups = self.learn.model.get_layer_groups()
                 self.learn.split(layer_groups)
@@ -265,7 +280,7 @@ class TextClassifier(ArcGISModel):
         config=None,
     ):
         model_type = infer_model_type(backbone, transformer_architectures)
-        self.logger.info(f"Inferred Backbone: {model_type}")
+        self._logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
         if not config:
@@ -287,7 +302,7 @@ class TextClassifier(ArcGISModel):
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
 
         if data._is_empty or data._backbone != backbone:
-            self.logger.info("Creating DataBunch")
+            self._logger.info("Creating DataBunch")
             classes = None
             data._prepare_databunch(
                 tokenizer=tokenizer,
@@ -296,7 +311,7 @@ class TextClassifier(ArcGISModel):
                 pad_idx=pad_idx,
                 backbone=backbone,
                 classes=classes,
-                logger=self.logger,
+                logger=self._logger,
             )
 
         databunch = data.get_databunch()
@@ -344,7 +359,7 @@ class TextClassifier(ArcGISModel):
                     f" or choose a different transformer architectures from - {transformer_architectures}"
                 )
                 raise Exception(error_message)
-            self.logger.info("Converting model to 16 Bit Floating Point precision")
+            self._logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
     def __str__(self):
@@ -378,7 +393,7 @@ class TextClassifier(ArcGISModel):
                                 suitable for your dataset, kindly visit:-
                                 https://huggingface.co/transformers/pretrained_models.html
 
-                                To learn more about mistral
+                                To learn more about mistral, kindly visit:
                                 https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
         =====================   ===========================================
 
@@ -456,7 +471,11 @@ class TextClassifier(ArcGISModel):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         if self._backbone != "llm":
             super().fit(
                 epochs=epochs,
@@ -480,6 +499,11 @@ class TextClassifier(ArcGISModel):
         This method is not supported when the backbone is configured as llm/mistral.
 
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         if self._backbone == "llm":
             raise Exception(
                 f"This method is not supported when the backbone is configured as {self._submodel}."
@@ -503,6 +527,11 @@ class TextClassifier(ArcGISModel):
                                 The default value is 'True'.
         =====================   ===========================================
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         if self._backbone != "llm":
             return super().lr_find(allow_plot=allow_plot)
         else:
@@ -564,6 +593,7 @@ class TextClassifier(ArcGISModel):
         Creates an TextClassifier model object from a Deep Learning
         Package(DLPK) or Esri Model Definition (EMD) file.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using this method.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -584,18 +614,50 @@ class TextClassifier(ArcGISModel):
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
+
+        # To check if loading needs to be performed from the inference file
+        extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+
+        pretrained_model = emd.get("PretrainedModel", "")
+        text_cols = emd.get("TextColumns", "")
+        label_cols = emd.get("LabelColumns", [])
+        is_multilabel_problem = emd.get("IsMultilabelClassificationProblem", False)
+
+        try:
+            class_labels = list(emd["Label2Id"].keys())
+        except KeyError:
+            class_labels = emd["Label"]
+
+        if extensible_model.model_loaded:
+            # ToDo refactor this part
+            data_is_none = False
+            if data is None:
+                data_is_none = True
+                data = TextDataObject(task="classification")
+                data._backbone = pretrained_model
+                data.create_empty_object_for_classification(
+                    text_cols, label_cols, class_labels, is_multilabel_problem
+                )
+                data.emd, data.emd_path = emd, emd_path.parent
+
+            cls_object = cls(
+                data,
+                pretrained_model,
+                pretrained_path=str(emd_path),
+                model_extension=True,
+                extensible_model=extensible_model,
+            )
+            return cls_object
+
         # check if it is normal processing or it will need automated processing
         backbone = emd["ModelParameters"].get("backbone", None)
         backup_backbone = backbone
+
         if backbone in backbone_models_reverse_map:
             if backbone_models_reverse_map[backbone] == "llm":
                 backbone = "llm"
+
         if backbone == "llm":
-            pretrained_model = emd["PretrainedModel"]
-            text_cols = emd["TextColumns"]
-            label_cols = emd["LabelColumns"]
-            class_labels = emd["Label"]
-            is_multilabel_problem = emd["IsMultilabelClassificationProblem"]
             data_is_none = False
             if data is None:
                 data_is_none = True
@@ -622,10 +684,6 @@ class TextClassifier(ArcGISModel):
 
         pretrained_model = emd["PretrainedModel"]
         mixed_precision = emd.get("MixedPrecisionTraining", None)
-        text_cols = emd["TextColumns"]
-        label_cols = emd["LabelColumns"]
-        class_labels = list(emd["Label2Id"].keys())
-        is_multilabel_problem = emd["IsMultilabelClassificationProblem"]
         thresh = emd.get("Threshold")
         seq_len = emd.get("SequenceLength", transformer_seq_length)
 
@@ -638,6 +696,21 @@ class TextClassifier(ArcGISModel):
                 text_cols, label_cols, class_labels, is_multilabel_problem
             )
             data.emd, data.emd_path = emd, emd_path.parent
+
+        if extensible_model.model_loaded:
+            cls_object = cls(
+                data,
+                pretrained_model,
+                pretrained_path=str(emd_path),
+                mixed_precision=mixed_precision,
+                thresh=thresh,
+                seq_len=seq_len,
+                model_extension=True,
+                extensible_model=extensible_model,
+            )
+
+            return cls_object
+
         cls_object = cls(
             data,
             pretrained_model,
@@ -652,9 +725,11 @@ class TextClassifier(ArcGISModel):
 
     def load(self, name_or_path):
         """
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
         Loads a saved TextClassifier model from disk.
 
-        This method is not supported when the backbone is configured as llm/mistral.
+        This method is not supported when the backbone is configured as llm/mistral and model extension.
 
 
         =====================   ===========================================
@@ -664,6 +739,11 @@ class TextClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
+        if self.model_extension:
+            raise Exception(
+                "This method is not supported when using the model extensibility feature, as model extensibility only "
+                "supports inference."
+            )
         if self._backbone != "llm":
             if "\\" in str(name_or_path) or "/" in str(name_or_path):
                 name_or_path = str(_get_emd_path(name_or_path))
@@ -719,16 +799,26 @@ class TextClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
+        overwrite               Optional boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
-                                Boolean `zip_files` if True, it will create the Deep
+        ---------------------   -------------------------------------------
+        zip_files               Optional boolean `zip_files` if True, it will create the Deep
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
         :return: the qualified path at which the model is saved
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         from ..models._arcgis_model import _create_zip
 
         zip_files = kwargs.pop("zip_files", True)
@@ -818,6 +908,11 @@ class TextClassifier(ArcGISModel):
 
         :return: dataframe
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
+
         if self._backbone == "llm":
             if not self._data._is_empty:
                 if not len(self._data._valid_df):
@@ -859,6 +954,11 @@ class TextClassifier(ArcGISModel):
 
         :return: a floating point number depicting the accuracy of the classification model.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
+
         self._check_requisites()
         try:
             self._check_requisites()
@@ -868,13 +968,13 @@ class TextClassifier(ArcGISModel):
                 return acc
             else:
                 if self._backbone == "llm":
-                    self.logger.error(f"{e}")
+                    self._logger.error(f"{e}")
                 else:
-                    self.logger.error(f"Metric not found in the loaded model")
+                    self._logger.error(f"Metric not found in the loaded model")
 
         else:
             if not HAS_NUMPY:
-                self.logger.error("This function requires numpy.")
+                self._logger.error("This function requires numpy.")
                 return
             if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
@@ -892,7 +992,7 @@ class TextClassifier(ArcGISModel):
             return metric
 
     def _calculate_model_metric(self):
-        self.logger.info("Calculating Model Metrics")
+        self._logger.info("Calculating Model Metrics")
         validation_dataframe = self._data._valid_df
 
         if self.is_multilabel_problem:
@@ -949,7 +1049,7 @@ class TextClassifier(ArcGISModel):
         explain=False,
         explain_index=None,
         batch_size=64,
-    ):
+    ) -> List[Tuple] | FeatureSet:
         """
         Predicts the class label(s) for the input text
 
@@ -1045,6 +1145,32 @@ class TextClassifier(ArcGISModel):
             results = [(text, pred) for text, pred in zip(text_or_list, results)]
             return results
 
+        if self.model_extension:
+            if isinstance(text_or_list, str):
+                text_or_list = [text_or_list]
+            # To make it more flexible. We will add the Featureset for further processing
+            feature_set = []
+            for i in text_or_list:
+                feature_set.append({"attributes": {"input_str": i}})
+
+            feature_set_final = FeatureSet.from_dict(
+                {
+                    "fields": [
+                        {"name": "input_str", "type": "esriFieldTypeString"},
+                    ],
+                    "geometryType": "",
+                    "features": feature_set,
+                }
+            )
+            results = self.inference_model.predict(feature_set_final)
+
+            if not isinstance(results, FeatureSet):
+                raise Exception(
+                    "The output should be a FeatureSet. Please refer https://developers.arcgis.com/python/api-reference/arcgis.features.toc.html#featureset"
+                )
+
+            return results
+
         if explain:
             try:
                 import shap
@@ -1056,7 +1182,7 @@ class TextClassifier(ArcGISModel):
                 explain_index = None
 
         if self.is_multilabel_problem is False and thresh is not None:
-            self.logger.error(
+            self._logger.error(
                 "Passing a threshold value for non multi-label classification task "
                 "will not have any affect on the predicting the class label"
             )
@@ -1179,6 +1305,10 @@ class TextClassifier(ArcGISModel):
         """
         :return: precision, recall and f1 score for each label in the classification model.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         try:
             self._check_requisites()
         except Exception as e:
@@ -1187,7 +1317,7 @@ class TextClassifier(ArcGISModel):
                 metrics_per_label = json.loads(metrics_per_label)
                 return self._create_dataframe_from_dict(metrics_per_label)
             else:
-                self.logger.error("Metric not found in the loaded model")
+                self._logger.error("Metric not found in the loaded model")
         else:
             validation_dataframe = self._data._valid_df
             if self.is_multilabel_problem:
@@ -1281,6 +1411,10 @@ samples. Metrics are only being calculated for classes present in the validation
 
         :return: get misclassified records for this classification model.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         self._check_requisites()
         validation_dataframe = self._data._valid_df
         misclassified_records, text_col, label_col = (
@@ -1411,6 +1545,10 @@ samples. Metrics are only being calculated for classes present in the validation
 
 
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         if self._backbone != "llm":
             super().plot_losses()
         else:
@@ -1425,6 +1563,10 @@ samples. Metrics are only being calculated for classes present in the validation
         This method is not supported when the backbone is configured as llm/mistral.
 
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         if self._backbone != "llm":
             super().unfreeze()
         else:

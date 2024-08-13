@@ -1015,6 +1015,19 @@ def to_featureclass(
     fc_name = os.path.basename(location)
     df = geo._data.copy().convert_dtypes()
     old_idx = df.index
+    max_column_width = None
+    if location.lower().endswith(".shp") and sanitize_columns == False:
+        v = any([len(col) > 10 for col in df.columns.tolist()])
+        if v:
+            raise ValueError(
+                "The spatially enabled dataframe cannot have column names"
+                " greater than 10 characters when exporting to a shapefile."
+                " Please shorten the column lengths or set `sanatize_columns=True`"
+            )
+
+    elif location.lower().endswith(".shp") and sanitize_columns:
+        max_column_width: int = 10
+
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
@@ -1033,16 +1046,24 @@ def to_featureclass(
     # sanitize
     if sanitize_columns:
         # logic
-        _sanitize_column_names(df.spatial, inplace=True)
+        _sanitize_column_names(
+            df.spatial, inplace=True, max_column_width=max_column_width
+        )
 
     columns = df.columns.tolist()
     for col in columns[:]:
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
-    df[df.select_dtypes(np.number).columns.tolist()] = df[
-        df.select_dtypes(np.number).columns.tolist()
-    ].replace({pd.NA: None})
+    if location.lower().endswith(".shp"):
+
+        df[df.select_dtypes(include="number").columns.tolist()] = df[
+            df.select_dtypes(include="number").columns.tolist()
+        ].replace({pd.NA: 0})
+    else:
+        df[df.select_dtypes(include="number").columns.tolist()] = df[
+            df.select_dtypes(include="number").columns.tolist()
+        ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
@@ -1581,6 +1602,7 @@ def _sanitize_column_names(
     rename_duplicates=True,
     inplace=False,
     use_snake_case=True,
+    max_column_width: int | None = None,
 ):
     """
     Implementation for pd.DataFrame.spatial.sanitize_column_names()
@@ -1627,7 +1649,11 @@ def _sanitize_column_names(
     for ind, val in enumerate(new_col_names):
         if val == "":
             new_col_names[ind] = "column"
-
+    if isinstance(max_column_width, int):
+        new_col_names = [
+            col[:max_column_width] if len(col) > max_column_width else col
+            for col in new_col_names
+        ]
     # rename duplicates
     if rename_duplicates:
         for ind, val in enumerate(new_col_names):

@@ -41,7 +41,7 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
-from arcgis.geoprocessing._job import RAJob, OMJob
+from arcgis.geoprocessing._job import RAJob, OMJob, RMJob
 from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 
@@ -7775,26 +7775,33 @@ class _HydrologyTool:
 
 
 ###########################################################################
-class _OrthoMappingTools:
-    """Exposes the Orthmapping Geoprocessing tools"""
+class _OrthoRealityMappingTools(BaseAnalytics):
+    """Exposes the Orthmapping and Realitymapping Geoprocessing tools"""
 
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
     _return_item = None
+    _is_ortho = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
-        if url is None:
-            url = gis.properties.helperServices["orthoMapping"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
+        if "orthomapping" in self._url.lower():
+            self._is_ortho = True
+            if url is None:
+                url = gis.properties.helperServices["orthoMapping"]["url"]
+        else:
+            self._is_ortho = False
+            if url is None:
+                url = gis.properties.helperServices["realityMapping"]["url"]
 
     # ----------------------------------------------------------------------
     def _refresh(self):
@@ -8044,11 +8051,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_color_correction(
@@ -8166,12 +8179,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_control_points(
@@ -8264,12 +8283,17 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_seamlines(
@@ -8361,12 +8385,17 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_sensor_model(
@@ -8459,12 +8488,17 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def edit_control_points(
@@ -8535,12 +8569,17 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_dem(
@@ -8687,17 +8726,21 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        job._item_properties = True
-        item = None
-        if output_dem:
-            item = output_dem
-
-        omjob = OMJob(job, item=item)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            job._item_properties = True
+            item = None
+            if output_dem:
+                item = output_dem
+            final_job = OMJob(job, item=item)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_orthomosaic(
@@ -8816,17 +8859,24 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
-        job._item_properties = True
-        item = None
-        if output_ortho_image:
-            item = output_ortho_image
-
-        omjob = OMJob(job, item=item)
-        omjob._flight_details = flight_json_details
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            job._item_properties = True
+            item = None
+            if output_ortho_image:
+                item = output_ortho_image
+            final_job = OMJob(job, item=item)
+        else:
+            job._is_reality = True
+            item = None
+            if output_ortho_image:
+                item = output_ortho_image
+            final_job = RMJob(job, item=item)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_report(
@@ -8892,12 +8942,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
@@ -8927,11 +8983,17 @@ class _OrthoMappingTools:
                 image_collection=image_collection
             )
         job = tool(image_collection=image_collection, gis=gis, future=True)
-        job._is_ortho = True
-        omjob = OMJob(job)
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def match_control_points(
@@ -9008,12 +9070,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def query_camera_info(self, camera_query=None, gis=None, future=False, **kwargs):
@@ -9043,11 +9111,17 @@ class _OrthoMappingTools:
                 )
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
-        job._is_ortho = True
-        omjob = OMJob(job)
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def query_control_points(
@@ -9091,12 +9165,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
@@ -9135,12 +9215,413 @@ class _OrthoMappingTools:
         job = self._tbx.reset_image_collection(
             image_collection=image_collection, gis=gis, future=True
         )
-        job._is_ortho = True
-        omjob = OMJob(job)
-        omjob._flight_details = flight_json_details
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
-            return omjob
-        return omjob.result()
+            return final_job
+        return final_job.result()
+
+    # ----------------------------------------------------------------------
+    def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
+        """
+        The `query_exif_info` reads the Exif header metadata from single or
+        multiple images in shared data store. The Exif metadata is usually stored
+        in drone image files. Some common Exif metadata information are GPS
+        locations, camera model, focal length, and more.
+
+        =========================================================================   ===========================================================================
+        **Parameter**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_images                                                                Required String/list of Strings. The input images could be a single image path, list of image paths,
+                                                                                    or a folder path, or a list of folder paths. The image file paths can also be server data store path.
+                                                                                    Eg:
+                                                                                    - "\\servername\drone\imagefolder\image_file.jpg"
+                                                                                    - "/cloudStores/S3DataStore/yvwd13"
+                                                                                    - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
+                                                                                    - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
+                                                                                    - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :return: Dictionary
+
+        """
+        gis = self._gis
+        job = self._tbx.query_exif_info(input_images=input_images, gis=gis, future=True)
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = OMJob(job)
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        if future:
+            return final_job
+        return final_job.result()
+
+    # ----------------------------------------------------------------------
+    def reconstruct_surface(
+        self,
+        image_collection,
+        scenario="DRONE",
+        forward_overlap=None,
+        sideward_overlap=None,
+        quality="ULTRA",
+        area_of_interest="AUTO",
+        waterbody_features=None,
+        correction_feature=None,
+        reconstruct_options=None,
+        output_dsm_name=None,
+        output_true_ortho_name=None,
+        output_dsm_mesh_name=None,
+        output_point_cloud_name=None,
+        output_mesh_name=None,
+        output_dtm_name=None,
+        context=None,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
+    ):
+        """
+        The `reconstruct_surface` generates a digital surface model (DSM), true
+        orthos, 2.5D meshes, 3D meshes, and point clouds from adjusted imagery.
+
+        =========================================================================   ===========================================================================
+        **Parameter**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        mission                                                                     Required String/Item. The adjusted input image collection.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
+
+                                                                                    - DRONE: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
+                                                                                    - AERIAL_NADIR: The input imagery will be defined as having been acquired with large, photogrammetric camera systems.
+                                                                                    - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
+                                                                                    - SATELLITE: The input imagery will be defined as having been acquired with a satellite.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
+                                                                                    The default is 60.
+                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
+                                                                                    The default is 30.
+                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        quality                                                                     Optional String. Specifies the quality of the final product.
+
+                                                                                    - ULTRA - Input images will be used at their original (full) resolution.
+                                                                                    - HIGH - Input images will be downsampled two times.
+                                                                                    - MEDIUM - Input images will be downsampled four times.
+                                                                                    - LOW - Input images will be downsampled eight times.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer` or String. The area of interest that will
+                                                                                    be used to select images for processing. The area of interest can be computed automatically
+                                                                                    or defined using an input feature.
+                                                                                    If the value contains 3D geometries, the z-component will be ignored. If the value includes
+                                                                                    overlapping features, the union of these features will be computed.
+
+                                                                                    - NONE - All images will be used in processing.
+                                                                                    - AUTO - The processing extent will be calculated automatically. This is the default.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        waterbody_features                                                          Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of large water bodies.
+                                                                                    For the best results, use a 3D feature.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
+                                                                                    The value must be a 3D feature.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        reconstruction_options                                                      Optional dict or shared data path (this path must be accessible by the server).
+                                                                                    This specifies the values for the tool parameters. If this parameter is specified, the properties of
+                                                                                    the file or dictionary will set the default values for the remaining optional parameters.
+                                                                                    The list of keywords and an example of this JSON can be found here:
+                                                                                    `Reconstruct Surface tool <https://pro.arcgis.com/en/pro-app/latest/tool-reference/reality-mapping/reconstruct-surface.htm>`_
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_dsm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_true_ortho_name                                                      Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_dsm_mesh_name                                                        Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_point_cloud_name                                                     Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Context contains additional settings that affect task execution.
+
+                                                                                    context parameter overwrites values set through arcgis.env parameter
+
+                                                                                    This function has the following settings:
+
+                                                                                    - Extent (extent): A bounding box that defines the analysis area.
+
+                                                                                        Example:
+
+                                                                                            | {"extent": {"xmin": -122.68,
+                                                                                            | "ymin": 45.53,
+                                                                                            | "xmax": -122.45,
+                                                                                            | "ymax": 45.6,
+                                                                                            | "spatialReference": {"wkid": 4326}}}
+
+                                                                                    - Cell Size (cellSize): The output raster will have the resolution
+                                                                                    specified by cell size.
+
+                                                                                        Example:
+
+                                                                                            {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                                                                    - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                                                    Raster Processing (CPU) service instances.
+
+                                                                                        Example:
+
+                                                                                        Syntax example with a specified number of processing instances:
+
+                                                                                            {"parallelProcessingFactor": "2"}
+
+                                                                                        Syntax example with a specified percentage of total
+                                                                                        processing instances:
+
+                                                                                            {"parallelProcessingFactor": "60%"}
+
+                                                                                    - Output DSM product settings: controls
+                                                                                    the environment variables for creating the DSM product.
+
+                                                                                        Example:
+
+                                                                                        Syntax example with a specified number of processing instances:
+
+                                                                                            {"dsm": {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
+
+                                                                                    - Output True Ortho product settings: controls
+                                                                                    the environment variables for creating the DSM product.
+
+                                                                                        Example:
+
+                                                                                        Syntax example with a specified number of processing instances:
+
+                                                                                            {"true_ortho": {"outputType": "Mosaic", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :return: Named Tuple
+
+        """
+        task = "ReconstructSurface"
+        gis = self._gis
+
+        image_collection = self._set_image_collection_param(
+            image_collection=image_collection
+        )
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = json.loads(context_param["context"])
+
+        if scenario is not None:
+            scenario_allowed_values = self._tbx.choice_list.reconstruct_surface[
+                "scenario"
+            ]
+            if [element.lower() for element in scenario_allowed_values].count(
+                scenario.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "scenario can only be one of the following:"
+                    + str(scenario_allowed_values)
+                )
+            for element in scenario_allowed_values:
+                if scenario.lower() == element.lower():
+                    scenario = element
+
+        if quality is not None:
+            quality_allowed_values = self._tbx.choice_list.reconstruct_surface[
+                "quality"
+            ]
+            if [element.lower() for element in quality_allowed_values].count(
+                quality.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "quality can only be one of the following:"
+                    + str(quality_allowed_values)
+                )
+            for element in quality_allowed_values:
+                if quality.lower() == element.lower():
+                    quality = element
+
+        if reconstruct_options is not None:
+            if isinstance(reconstruct_options, str):
+                reconstruct_options = {"uri": reconstruct_options}
+
+        if not isinstance(area_of_interest, str) or (
+            isinstance(area_of_interest, str)
+            and area_of_interest.lower() not in ["auto", "none"]
+        ):
+            area_of_interest = self._feature_input(area_of_interest)
+        if waterbody_features is not None:
+            waterbody_features = self._feature_input(waterbody_features)
+        if correction_feature is not None:
+            correction_feature = self._feature_input(correction_feature)
+
+        folder = None
+        folderId = None
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder = folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+        output_products = {}
+        if scenario.lower() in ["aerial_nadir"]:
+            if forward_overlap is None:
+                forward_overlap = 60
+            if sideward_overlap is None:
+                sideward_overlap = 30
+
+        if output_dsm_name is not None:
+            (
+                output_dsm_raster,
+                output_dsm_service,
+            ) = self._set_output_raster(
+                output_name=output_dsm_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_products["dsm"] = json.loads(output_dsm_raster)
+
+        if output_dtm_name is not None:
+            (
+                output_dtm_raster,
+                output_dtm_service,
+            ) = self._set_output_raster(
+                output_name=output_dtm_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_products["dtm"] = json.loads(output_dtm_raster)
+
+        if output_true_ortho_name is not None:
+            (
+                output_true_ortho_raster,
+                output_true_ortho_service,
+            ) = self._set_output_raster(
+                output_name=output_true_ortho_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_products["true_ortho"] = json.loads(output_true_ortho_raster)
+
+        if output_dsm_mesh_name is not None:
+            if isinstance(output_dsm_mesh_name, str):
+                output_dsm_mesh_dict = {
+                    "itemProperties": {
+                        "name": output_dsm_mesh_name,
+                        "title": output_dsm_mesh_name,
+                    }
+                }
+            if folderId is not None:
+                output_dsm_mesh_dict["folderId"] = folderId
+            output_products["dsm_mesh"] = output_dsm_mesh_dict
+
+        if output_point_cloud_name is not None:
+            if isinstance(output_point_cloud_name, str):
+                output_point_cloud_dict = {
+                    "itemProperties": {
+                        "name": output_point_cloud_name,
+                        "title": output_point_cloud_name,
+                    }
+                }
+            if folderId is not None:
+                output_point_cloud_dict["folderId"] = folderId
+            output_products["point_cloud"] = output_point_cloud_dict
+
+        if output_mesh_name is not None:
+            if isinstance(output_mesh_name, str):
+                output_mesh_dict = {
+                    "itemProperties": {
+                        "name": output_mesh_name,
+                        "title": output_mesh_name,
+                    }
+                }
+            if folderId is not None:
+                output_mesh_dict["folderId"] = folderId
+            output_products["mesh"] = output_mesh_dict
+
+        for product in ["dsm", "true_ortho", "dtm"]:
+            if product in output_products and context and product in context:
+                output_products[product].update(context[product])
+
+        if context:
+            context = json.dumps(context)
+
+        job = self._tbx.reconstruct_surface(
+            image_collection=image_collection,
+            output_products=output_products,
+            scenario=scenario,
+            forward_overlap=forward_overlap,
+            sideward_overlap=sideward_overlap,
+            quality=quality,
+            area_of_interest=area_of_interest,
+            water_body=waterbody_features,
+            correction_feature=correction_feature,
+            reconstruct_options=reconstruct_options,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        items = {}
+        if output_dsm_name is not None:
+            items["dsm"] = json.loads(output_dsm_raster)
+        if output_true_ortho_name is not None:
+            items["true_ortho"] = json.loads(output_true_ortho_raster)
+        if output_dtm_name is not None:
+            items["dtm"] = json.loads(output_dtm_raster)
+        final_job = None
+        job._is_reality = True
+        final_job = RMJob(job, item=items)
+        final_job._flight_details = flight_json_details
+        if future:
+            return final_job
+        return final_job.result()
 
 
 ###########################################################################
@@ -9423,6 +9904,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder = folder["title"]
+            elif hasattr(folder, "properties") and hasattr(
+                folder, "_add_async_streaming"
+            ):
+                folder, folderId = (
+                    folder.properties["title"],
+                    folder.properties["id"],
+                )
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -12040,7 +12528,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -15213,7 +15704,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -15617,7 +16111,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     path_type_val = element
 
         if estimate:
-            output_polyline_name, output_polyline_service = self._output_name_dict(
+            (
+                output_polyline_name,
+                output_polyline_service,
+            ) = self._output_name_dict(
                 output_name=output_polyline_name,
                 task=task,
                 output_properties=kwargs,
@@ -22680,15 +23177,16 @@ class _Tools(object):
     the gis.tools object
     """
 
-    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
+    # spatial analysis tools,  rasteranalysis tools, etc through the gis.tools object
     def __init__(self, gis):
         self._gis = gis
         self._geocoders = None
         self._geometry = None
         self._analysis = None
         self._raster_analysis = None
-        self._geoanalytics = None
+
         self._orthomapping = None
+        self._realitymapping = None
         self._packaging = None
         self._symbolservice = None
         self._systemservice = None
@@ -22802,26 +23300,6 @@ class _Tools(object):
 
     @property
     @lru_cache(maxsize=255)
-    def geoanalytics(self):
-        """the portal's bigdata analytics tools, if available and configured"""
-        if self._geoanalytics is not None:
-            return self._geoanalytics
-        try:
-            try:
-                svcurl = self._gis.properties["helperServices"]["geoanalytics"]["url"]
-                if self._gis._is_hosted_nb_home:
-                    svcurl = self._validate_url(svcurl)
-            except Exception:
-                print("This GIS does not support geoanalytics.")
-                return None
-
-            self._geoanalytics = _GeoanalyticsTools(svcurl, self._gis)
-            return self._geoanalytics
-        except KeyError:
-            return None
-
-    @property
-    @lru_cache(maxsize=255)
     def featureanalysis(self):
         """the portal's spatial analysis tools, if available and configured"""
         if self._analysis is not None:
@@ -22883,7 +23361,34 @@ class _Tools(object):
                 else:
                     raise RuntimeError("This GIS does not support Ortho Mapping Tools.")
 
-            self._orthomapping = _OrthoMappingTools(svcurl, self._gis)
+            self._orthomapping = _OrthoRealityMappingTools(svcurl, self._gis)
             return self._orthomapping
+        except KeyError:
+            return None
+
+    @property
+    @lru_cache(maxsize=255)
+    def realitymapping(self):
+        """the portal's Reality Mapping tools, if available and configured"""
+        if self._analysis is not None:
+            return self._analysis
+        try:
+            try:
+                svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(svcurl)
+            except:
+                if self._gis._con.token is None:
+                    raise RuntimeError(
+                        "You need to be signed in to use Reality Mapping Tools."
+                    )
+                else:
+                    raise RuntimeError(
+                        "This GIS does not support Reality Mapping Tools."
+                    )
+                return None
+
+            self._realitymapping = _OrthoRealityMappingTools(svcurl, self._gis)
+            return self._realitymapping
         except KeyError:
             return None

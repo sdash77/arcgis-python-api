@@ -113,7 +113,7 @@ class Folder:
         self._session = gis._con._session
         self._properties = properties
         if self._properties:
-            self._name = self._properties.get("name", None)
+            self._name = self._properties.get("title", None)
             self._fid = self._properties.get("id", None)
 
     # ---------------------------------------------------------------------
@@ -372,8 +372,20 @@ class Folder:
             )
             return False
 
+    def _process_parameters(self, params: dict[str, Any]) -> dict:
+        """handles the requests parameters"""
+        for k, v in dict(params).items():
+            if isinstance(v, (dict, list, bool)):
+                params[k] = json.dumps(v)
+            elif v is None:
+                params[k] = json.dumps(None)
+
+            else:
+                params[k] = v
+        return params
+
     # ---------------------------------------------------------------------
-    def _chunk_file(io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
+    def _chunk_file(self, io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
         """chunks the file"""
         for chunk in chunk_by_file_size(
             fp=io, size=size, parameter_name="file", upload_format=True
@@ -588,6 +600,7 @@ class Folder:
         check_status: bool = False,
     ) -> _arcgis_gis.Item | dict:
         """performs the add workflow"""
+
         resp: requests.Response = self._session.post(
             url=url, data=params, files=file_list
         )
@@ -697,15 +710,25 @@ class Folder:
                 if not value is None
             }
             if "overwrite" in item_properties and item_properties["overwrite"] == True:
-
                 logger.warning(
                     "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
                 )
             item_properties.pop("overwrite", None)
+        if text is None and "text" in item_properties:
+            text: str = item_properties.pop("text")
         if not file:
             stream = False
         elif file and item_id:
             stream = True
+        if (
+            file
+            and isinstance(file, (io.StringIO, io.BytesIO))
+            and not "fileName" in item_properties
+        ):
+            raise ValueError(
+                "When providing a `StringIO` or `BytesIO` object a `file_name` must be given in the `ItemProperties` class."
+            )
+
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
@@ -765,6 +788,7 @@ class Folder:
                     file
                 )
                 params["async"] = True
+                params = self._process_parameters(params)
                 file_list["file"] = create_upload_tuple(
                     file, file_name=item_properties.pop("fileName", None)
                 )
@@ -790,6 +814,7 @@ class Folder:
                 if not isinstance(text, str):
                     text: str = json.dumps(text)
                 params["text"] = text
+                params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -812,6 +837,7 @@ class Folder:
                     )
                     #  perform basic upload.
                     params["multipart"] = False
+                    params = self._process_parameters(params)
                     future = tp.submit(
                         self._add_async_text,
                         **{
@@ -830,7 +856,7 @@ class Folder:
                     params["fileName"] = params.get(
                         "fileName", None
                     ) or os.path.basename(file)
-
+                    params = self._process_parameters(params)
                     future = tp.submit(
                         self._add_async_large_files,
                         **{
@@ -845,6 +871,7 @@ class Folder:
             elif file is None and text is None and url and data_url is None:
                 params["async"] = False
                 params["url"] = url
+                params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -859,6 +886,7 @@ class Folder:
             elif file is None and text is None and url is None and data_url:
                 params["async"] = True
                 params["dataUrl"] = data_url
+                params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -919,6 +947,14 @@ class Folders:
         resp: requests.Response = self._session.get(url=url, params=params)
         resp.raise_for_status()
         return resp.json()
+
+    # ---------------------------------------------------------------------
+    def _get_or_create(self, folder: str, owner: str | None = None) -> Folder:
+        """gets or creates a folder"""
+        fldr: Folder = self.get(folder=folder, owner=owner)
+        if fldr is None:
+            fldr = self.create(folder=folder, owner=owner)
+        return fldr
 
     # ----------------------------------------------------------------------
     def get(

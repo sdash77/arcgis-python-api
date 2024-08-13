@@ -1843,7 +1843,7 @@ class GeoAccessor(object):
         def _plot_map_widget(mp_wdgt):
             plot(
                 df=self._data,
-                map_widget=mp_wdgt,
+                map=mp_wdgt,
                 name=kwargs.pop("name", "Feature Collection Layer"),
                 renderer=kwargs.pop("renderer", None),
                 **kwargs,
@@ -1924,7 +1924,9 @@ class GeoAccessor(object):
         """
         from arcgis import env
         import copy
+        from arcgis.gis._impl._content_manager._import_data import _create_file
 
+        # Get the gis
         if gis is None:
             gis = env.active_gis
             if gis is None:
@@ -1935,17 +1937,15 @@ class GeoAccessor(object):
         user = gis._username
         if isinstance(feature_service, str):
             service = content.get(feature_service)
-            fs_id = feature_service
         else:
             service = feature_service
-            fs_id = feature_service.id
 
         if (
             gis.users.me.username != service.owner
             and "portal:admin:updateItems" not in self._gis.users.me.privileges
         ):
             raise AssertionError(
-                "You must own the service to insert data to it or have administrative privileges."
+                "You must own the service or have administrative privileges to insert data."
             )
         # Get the data related
         related_items = service.related_items(rel_type="Service2Data")
@@ -1955,7 +1955,7 @@ class GeoAccessor(object):
                 and "portal:admin:updateItems" not in self._gis.users.me.privileges
             ):
                 raise AssertionError(
-                    "You must own the service data to insert data to it or have administrative privileges."
+                    "You must own the service or have administrative privileges to insert data."
                 )
 
         origin_columns = self._data.columns.tolist()
@@ -1975,13 +1975,27 @@ class GeoAccessor(object):
                 raise ValueError(
                     "This service name is unavailable for Feature Service."
                 )
-        result = content.import_data(
+        if _is_geoenabled(self._data):
+            _HAS_ARCPY, _HAS_PYSHP = self._check_geometry_engine()
+            # layer
+            if not _HAS_ARCPY and not _HAS_PYSHP:
+                raise Exception(
+                    "Spatially enabled DataFrame's must have either pyshp or"
+                    + " arcpy available to use import_data"
+                )
+            file_type = "File Geodatabase" if _HAS_ARCPY else "Shapefile"
+        else:
+            # table
+            file_type = "CSV"
+
+        file = _create_file(
             self._data,
-            sanitize_columns=sanitize_columns,
+            file_type=file_type,
             service_name=service_name,
-            append=True,
-            service={"featureServiceId": fs_id, "layer": None},
+            sanitize_columns=sanitize_columns,
         )
+        flc_manager = features.FeatureLayerCollection.fromitem(service).manager
+        result = flc_manager.insert_layer(file)
         self._data.columns = origin_columns
         self._data.index = origin_index
         return result
@@ -3600,11 +3614,19 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].geom.centroid.isnull()
+        columns = ["x", "y"]
+        if self.has_z:
+            columns.append("z")
+
         df = pd.DataFrame(
             self._data[~q][self.name].geom.centroid.tolist(),
-            columns=["x", "y"],
+            columns=columns,
         )
-        return df["x"].mean(), df["y"].mean()
+        if self.has_z == False:
+
+            return df["x"].mean(), df["y"].mean()
+        else:
+            return df["x"].mean(), df["y"].mean(), df["z"].mean()
 
     # ----------------------------------------------------------------------
     @property
