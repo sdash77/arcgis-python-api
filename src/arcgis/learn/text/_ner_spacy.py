@@ -368,7 +368,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         path = Path(path)
         self._emd_template = {}
         self._emd_template["ModelConfiguration"] = "_ner"
-        self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template["ModelFile"] = str(Path(path).name)
         self._emd_template["ModelName"] = type(self).__name__
         self._emd_template["Labels"] = self.model.get_pipe("ner").labels
@@ -473,8 +472,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         self.model.to_disk(self.model_dir)
         emd_path = self._create_emd(self.model_dir, compute_metrics=compute_metrics)
-        with open(self.model_dir / self._emd_template["InferenceFunction"], "w") as f:
-            f.write(self._code)
 
         if save_html:
             if self._is_empty:

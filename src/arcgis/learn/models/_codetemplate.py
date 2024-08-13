@@ -1532,7 +1532,10 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
+        numforecasts = getattr(self.child_image_classifier, "numforecasts", None)
+        kwargs["output_info"]["bandCount"] = (
+            numforecasts if numforecasts else self.json_info.get("n_channel", 3)
+        )
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 
@@ -1544,7 +1547,8 @@ class ArcGISSuperResolution:
         #raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+        smooth = getattr(self.child_image_classifier, "smoothing", 'True')
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth") and (smooth == 'True'):
             xx = self.child_image_classifier.updatePixelsSmooth( tlc, shape, props, **pixelBlocks).astype(props["pixelType"], copy=False)
             pixelBlocks["output_pixels"] = xx
         else:

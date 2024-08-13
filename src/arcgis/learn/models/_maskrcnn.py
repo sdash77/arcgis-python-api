@@ -562,7 +562,14 @@ class MaskRCNN(ArcGISModel):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = MaskRCNN.transformer_backbones()
-        return [*_resnet_family] + transformer_backbone + timm_backbones
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family]
+            + transformer_backbone
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):
