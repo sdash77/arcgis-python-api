@@ -1711,7 +1711,7 @@ class _MSILayerFactory(type):
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props["type"].lower() == "feature layer":
+        elif props.get("type", "").lower() == "feature layer":
             time_filter = props.get("timeInfo", {}).get("timeExtent")
             return MapFeatureLayer(
                 url=url,
