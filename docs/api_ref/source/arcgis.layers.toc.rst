@@ -211,6 +211,7 @@ WMTSLayer
 
 Utility Functions for Mapping
 -----------------------------
+
 export_to_html
 ^^^^^^^^^^
 .. autofunction:: arcgis.map.map_widget.export_to_html
