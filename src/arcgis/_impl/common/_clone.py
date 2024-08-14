@@ -3096,6 +3096,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         service_item = job.result()
                         if service_item is None:
                             raise RuntimeError("already exists")
+                        self.created_items.append(service_item)
                         new_item = service_item.publish(publish_parameters=pub_params)
                         if new_item is None:
                             raise Exception("already exists")
@@ -3116,6 +3117,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             )
 
                             service_item = job.result()
+                            self.created_items.append(service_item)
                             new_item = service_item.publish(
                                 publish_parameters=pub_params
                             )
