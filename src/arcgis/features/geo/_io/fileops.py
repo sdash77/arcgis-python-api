@@ -1015,6 +1015,7 @@ def to_featureclass(
     fc_name = os.path.basename(location)
     df = geo._data.copy().convert_dtypes()
     old_idx = df.index
+    max_column_width = None
     if location.lower().endswith(".shp") and sanitize_columns == False:
         v = any([len(col) > 10 for col in df.columns.tolist()])
         if v:

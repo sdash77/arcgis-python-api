@@ -53,6 +53,7 @@ class MapFeatureLayer(Layer):
         gis: _gis.GIS | None = None,
         container: MapImageLayer | None = None,
         dynamic_layer: dict | None = None,
+        time_filter: _dt.datetime | list[_dt.datetime] | list[str] | None = None,
     ):
         """
         Constructs a map feature layer given a feature layer URL
@@ -70,7 +71,8 @@ class MapFeatureLayer(Layer):
 
         self._attachments = None
         self._dynamic_layer = dynamic_layer
-        self._time_filter = None
+        self._time_filter = time_filter
+        self._storage = container
 
     # ----------------------------------------------------------------------
     @property
@@ -1694,27 +1696,30 @@ class _MSILayerFactory(type):
 
     def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
-        props = lyr.properties
-        if "type" in props and props.type.lower() == "table":
+        props = dict(lyr.properties)
+        ltype = props.get("type", "").lower()
+        if ltype == "table":
             return MapTable(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "raster layer":
+        if ltype == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "feature layer":
+        if ltype == "feature layer":
+            time_filter = props.get("timeInfo", {}).get("timeExtent")
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
+                time_filter=time_filter,
             )
         return lyr
 

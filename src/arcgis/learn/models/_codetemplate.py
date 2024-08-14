@@ -12,7 +12,7 @@ def get_available_device(max_memory=0.8):
     select available device based on the memory utilization status of the device
     :param max_memory: the maximum memory utilization ratio that is considered available
     :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
-    return 0 
+    return 0
     """
     try:
         import GPUtil
@@ -160,12 +160,26 @@ class ArcGISObjectDetector:
                     "name": "test_time_augmentation",
                     "dataType": "string",
                     "required": False,
-                    "value": "False"
-                    if "test_time_augmentation" not in self.json_info
-                    else str(self.json_info["test_time_augmentation"]),
+                    "value": (
+                        "False"
+                        if "test_time_augmentation" not in self.json_info
+                        else str(self.json_info["test_time_augmentation"])
+                    ),
                     "displayName": "Perform test time augmentation while predicting",
                     "description": "If True, will merge predictions from flipped and rotated images.",
-                }
+                },
+                {
+                    "name": "tta_scales",
+                    "dataType": "string",
+                    "required": False,
+                    "value": (
+                        "1"
+                        if "tta_scales" not in self.json_info
+                        else str(self.json_info["tta_scales"])
+                    ),
+                    "displayName": "Perform test time augmentation while predicting using different scales",
+                    "description": "provide different scales separated by comma e.g. 0.9,1,1.1",
+                },
             ]
         )
         return parameter_info
@@ -183,6 +197,7 @@ class ArcGISObjectDetector:
             "y",
             "yes",
         ]
+        self.tta_scales = scalars.get("tta_scales", 1)
         self.nms_overlap = float(scalars.get("nms_overlap", 0.1))
         return configuration
 
@@ -199,7 +214,10 @@ class ArcGISObjectDetector:
         raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks["raster_pixels"] = raster_pixels
 
-        polygon_list, scores, classes = self.tta_detect_objects(**pixelBlocks)
+        scales = self.tta_scales.split(",")
+        polygon_list, scores, classes = self.tta_scale_detect_objects(
+            scales, **pixelBlocks
+        )
 
         features["features"] = []
         for i in range(len(polygon_list)):
@@ -220,6 +238,106 @@ class ArcGISObjectDetector:
 
         return {"output_vectors": json.dumps(features)}
 
+    def tta_scale_detect_objects(self, scales, **pixelBlocks):
+        import cv2, torch
+
+        allboxes = torch.empty(0, 4)
+        allclasses = []
+        allscores = torch.empty(0)
+        boxes_list, scores_list, labels_list = [], [], []
+
+        tile_size = pixelBlocks["raster_pixels"].shape[1]
+        pad = self.child_object_detector.padding
+
+        for scale in scales:
+            scale = float(scale)
+            input_image = pixelBlocks["raster_pixels"]
+            raster_pixels = np.moveaxis(input_image, 0, -1)
+            if scale <= 1:
+                padding_scale = 1 - scale
+                resize_tytx = round(raster_pixels.shape[0] * scale)
+                extra_padding_tytx = round(raster_pixels.shape[0] * padding_scale) // 2
+                resized_image = cv2.resize(
+                    raster_pixels,
+                    (resize_tytx, resize_tytx),
+                    interpolation=cv2.INTER_CUBIC,
+                )
+                border_img = cv2.copyMakeBorder(
+                    resized_image,
+                    extra_padding_tytx,
+                    extra_padding_tytx,
+                    extra_padding_tytx,
+                    extra_padding_tytx,
+                    borderType=cv2.BORDER_CONSTANT,
+                    value=[0, 0, 0, 0],
+                )
+            else:
+                padding_scale = scale - 1
+                resize_tytx = round(raster_pixels.shape[0] * scale)
+                original_width = raster_pixels.shape[0]
+                extra_padding_tytx = round(resize_tytx - original_width) // 2
+                resized_image = cv2.resize(
+                    raster_pixels,
+                    (resize_tytx, resize_tytx),
+                    interpolation=cv2.INTER_CUBIC,
+                )
+                scaled_width = resized_image.shape[0]
+                bottom_coords = extra_padding_tytx + original_width
+                border_img = resized_image[
+                    extra_padding_tytx:bottom_coords, extra_padding_tytx:bottom_coords
+                ]
+
+            raster_pixels = np.moveaxis(border_img, -1, 0)
+            pixelBlocks_updated = {}
+            pixelBlocks_updated["raster_pixels"] = raster_pixels
+            polygon_list, scores, classes = self.tta_detect_objects(
+                **pixelBlocks_updated
+            )
+
+            updated_tta_polygons = []
+            if scale <= 1:
+                for polygons in polygon_list:
+                    updated_tta_polygons.append((polygons - extra_padding_tytx) / scale)
+            else:
+                for polygons in polygon_list:
+                    updated_tta_polygons.append(
+                        (polygons + extra_padding_tytx) * original_width / resize_tytx
+                    )
+
+            bboxes = self.get_img_bbox(tile_size, updated_tta_polygons, scores, classes)
+            if bboxes is not None:
+                allboxes = torch.cat([allboxes, (bboxes.data[0] + 1) / 2.0])
+                allclasses = allclasses + bboxes.data[1].tolist()
+                allscores = np.concatenate([allscores, torch.tensor(scores) * 0.01])
+
+                boxes_list.append((bboxes.data[0] + 1) / 2.0)
+                scores_list.append(torch.tensor(scores) * 0.01)
+                labels_list.append(bboxes.data[1].tolist())
+
+        try:
+            from ensemble_boxes import weighted_boxes_fusion
+
+            iou_thr = self.nms_overlap
+            skip_box_thr = 0.0001
+
+            boxes, scores, labels = weighted_boxes_fusion(
+                boxes_list,
+                scores_list,
+                labels_list,
+                iou_thr=iou_thr,
+                skip_box_thr=skip_box_thr,
+            )
+        except:
+            import warnings
+
+            warnings.warn("Unable to perform weighted boxes fusion... use NMS")
+            boxes, scores, labels = np.array(allboxes), allscores, np.array(allclasses)
+
+        bboxes = boxes * tile_size - pad
+        polygons = self.convert_bounding_boxes_to_coord_list(bboxes)
+
+        return polygons, np.array(scores * 100).astype(float), labels.astype(int)
+
     def tta_detect_objects(self, **pixelBlocks):
         import torch
         from fastai.vision.transform import dihedral_affine, rotate
@@ -230,7 +348,7 @@ class ArcGISObjectDetector:
         tile_size = input_image.shape[1]
         pad = self.child_object_detector.padding
 
-        allboxes = torch.empty(0,4)
+        allboxes = torch.empty(0, 4)
         allclasses = []
         allscores = torch.empty(0)
 
@@ -258,7 +376,7 @@ class ArcGISObjectDetector:
                 if k == 5 or k == 6:
                     fixed_img_bboxes = rotate(fixed_img_bboxes, 180)
 
-                allboxes = torch.cat([allboxes, (fixed_img_bboxes.data[0]+1) / 2.0])
+                allboxes = torch.cat([allboxes, (fixed_img_bboxes.data[0] + 1) / 2.0])
                 allclasses = allclasses + fixed_img_bboxes.data[1].tolist()
                 allscores = np.concatenate([allscores, torch.tensor(scores) * 0.01])
 
@@ -399,6 +517,7 @@ class ArcGISObjectDetector:
                 keep_classes.append(classes[idx])
 
         return keep_polygon, keep_scores, keep_classes
+
 
 
 '''
@@ -1413,7 +1532,10 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
+        numforecasts = getattr(self.child_image_classifier, "numforecasts", None)
+        kwargs["output_info"]["bandCount"] = (
+            numforecasts if numforecasts else self.json_info.get("n_channel", 3)
+        )
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 
@@ -1425,7 +1547,8 @@ class ArcGISSuperResolution:
         #raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        if hasattr(self.child_image_classifier, "updatePixelsSmooth"):
+        smooth = getattr(self.child_image_classifier, "smoothing", 'True')
+        if hasattr(self.child_image_classifier, "updatePixelsSmooth") and (smooth == 'True'):
             xx = self.child_image_classifier.updatePixelsSmooth( tlc, shape, props, **pixelBlocks).astype(props["pixelType"], copy=False)
             pixelBlocks["output_pixels"] = xx
         else:

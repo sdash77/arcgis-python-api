@@ -1490,6 +1490,22 @@ def prepare_data(
                             number of subprocesses to use for data loading on the
                             Windows operating system. ``0`` means that the data will
                             be loaded in the main process.
+    ---------------------   -------------------------------------------
+    forecast_timesteps      Required int. Default set to 1. How far the
+                            model should forecast into the future. A forecast timestep
+                            is the interval at which predictions are made, For example,
+                            If we have 8-hourly data point and we want to make a 8 hr,
+                            16 hr, 24 hr forecast, forecast timesteps is set to 1, 2, 3
+                            respectively and so on. In case of hourly and monthly data
+                            point, for forecasts of 1, 2, 3 hr/month, forecast timestep
+                            is set to 1, 2, 3 respectively and so on. Applicable only
+                            for climaX model architecuture.
+    ---------------------   -------------------------------------------
+    hrs_each_step           Optional int. Default set to 1 (hrs). Number of hours in
+                            which data is collected, for example, if you have 8-hourly,
+                            hourly, montly, daily then, hrs_each_step is to be set to
+                            8, 1, 720 (30 days * 24), 24 hrs respectively. Applicable
+                            only for climaX model architecuture.
     =====================   ===========================================
 
     :return:
@@ -1617,9 +1633,20 @@ def prepare_data(
         ):
             dataset_type = "WNet_cGAN"
         elif not has_esri_files:
-            raise Exception(
-                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
-            )
+            try:
+                varlst = [i for i in os.listdir(path) if i not in ["DATA", "models"]]
+                dim_name = [i for i in os.walk(os.path.join(path, varlst[0]))][0][1][0]
+                emd_file = os.path.join(
+                    path, varlst[0], dim_name, "esri_model_definition.emd"
+                )
+                with open(emd_file) as f:
+                    emd = json.load(f)
+                if emd.get("IsMultidimensional"):
+                    dataset_type = "ClimaX"
+            except:
+                raise Exception(
+                    "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
+                )
 
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
@@ -2975,6 +3002,18 @@ def prepare_data(
             **kwargs,
         )
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "ClimaX":
+        from ._data_utils.climax_data import prepare_climax_data
+
+        data = prepare_climax_data(
+            path,
+            batch_size,
+            val_split_pct,
+            working_dir,
+            **kwargs,
+        )
         return data
 
     elif dataset_type == "WNet_cGAN":

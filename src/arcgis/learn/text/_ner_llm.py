@@ -39,7 +39,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             )
             examples = [np.array(list(i[1].keys())) for i in kwargs.get("examples", [])]
         else:
-            data.prepare_data_for_transformer()
+            data.prepare_data_for_transformer(return_first=True)
             data = data.get_data_object()
             data._is_empty = False
             self._l2id = list(data._unique_tags - {"O"})
@@ -105,7 +105,9 @@ class _LlmEntityRecognizer(ArcGISModel):
     @classmethod
     def from_model(cls, data, backbone, emd_json):
         emd_json["task"] = "ner"
-        return cls(data, "llm", **emd_json)
+        cls_obj = cls(data, "llm", **emd_json)
+        cls_obj._l2id = emd_json["Labels"]
+        return cls_obj
 
     def _save_df_to_html(self, path):
         if getattr(self._data, "_is_empty", False):
@@ -222,6 +224,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             # Check if the first record is the path
             if os.path.exists(text_list[0]):
                 file_name = text_list
+
         # if there is a list of file name. Then recreate the text_list
         if len(file_name):
             text_list = {}

@@ -759,7 +759,9 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -767,7 +769,9 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import (
+                        PortalAdminManager,
+                    )
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -787,7 +791,9 @@ class GIS(object):
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -823,7 +829,9 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                        from arcgis.gis.kubernetes._admin.kadmin import (
+                            KubernetesAdmin,
+                        )
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -846,7 +854,9 @@ class GIS(object):
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -13379,10 +13389,10 @@ class Item(dict):
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
-                            lyr_url = svc.url + "/layers/" + str(lyr.id)
+                            lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Service(lyr_url, self._gis)
                         else:
-                            lyr_url = svc.url + "/" + str(lyr.id)
+                            lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:

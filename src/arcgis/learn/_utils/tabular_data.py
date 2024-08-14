@@ -1533,10 +1533,10 @@ class TabularDataObject(object):
             index_field,
             **kwargs,
         )
-        measurer = np.vectorize(len)
-        col_length = dict(
-            zip(dataframe, measurer(dataframe.values.astype(str)).max(axis=0))
-        )
+
+        # Vectorize consumes a lot of memory. Refer bug 11894. Alternative is to use applymap as below.
+        col_length = dataframe.astype(str).applymap(len).max(axis=0)
+
         unique_values = {}
         for i in dataframe.columns:
             if i != "SHAPE":
