@@ -368,6 +368,8 @@ class AveragePrecision(Callback):
         self.model = model
         self.n_classes = n_classes
         self.mode_3d = mode_3d
+        if mode_3d:
+            self.model.learn._epoch_metrics = []
 
     def on_epoch_begin(self, **kwargs):
         self.tps, self.clas, self.p_scores = [], [], []
@@ -399,6 +401,9 @@ class AveragePrecision(Callback):
         aps = compute_ap_score(
             self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes, self.mode_3d
         )
+        if self.mode_3d:
+            class_aps = dict(zip(self.model._data.classes, aps))
+            self.model.learn._epoch_metrics.append(class_aps)
         aps = torch.mean(torch.tensor(aps))
         return add_metrics(last_metrics, aps)
 
