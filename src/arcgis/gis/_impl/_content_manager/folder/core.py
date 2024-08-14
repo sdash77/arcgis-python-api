@@ -7,6 +7,7 @@ import logging
 import requests
 import concurrent.futures
 from functools import lru_cache
+from types import NoneType
 from typing import Any, Iterator
 from ._exceptions import FolderException
 from ._util import (
@@ -17,9 +18,11 @@ from ._util import (
     chunk_by_file_size,
     create_upload_tuple,
     status,
+    _process_parameters,
 )
 from arcgis.auth.tools import LazyLoader
 from ..._dataclasses import ItemProperties, ItemTypeEnum
+from ...._impl._util import is_valid_item_id
 from arcgis.auth import EsriSession
 
 _arcgis_gis = LazyLoader("arcgis.gis")
@@ -106,10 +109,7 @@ class Folder:
     ) -> None:
         self._folder = folder
         self._gis = gis
-        if owner is None:
-            self._owner = gis.users.me.username
-        else:
-            self._owner = owner
+        self._owner = owner or gis.users.me.username
         self._session = gis._con._session
         self._properties = properties
         if self._properties:
@@ -372,18 +372,6 @@ class Folder:
             )
             return False
 
-    def _process_parameters(self, params: dict[str, Any]) -> dict:
-        """handles the requests parameters"""
-        for k, v in dict(params).items():
-            if isinstance(v, (dict, list, bool)):
-                params[k] = json.dumps(v)
-            elif v is None:
-                params[k] = json.dumps(None)
-
-            else:
-                params[k] = v
-        return params
-
     # ---------------------------------------------------------------------
     def _chunk_file(self, io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
         """chunks the file"""
@@ -616,7 +604,7 @@ class Folder:
     # ---------------------------------------------------------------------
     def add(
         self,
-        item_properties: ItemProperties,
+        item_properties: ItemProperties | dict,
         file: str | None = None,
         text: str | None = None,
         url: str | None = None,
@@ -703,34 +691,28 @@ class Folder:
 
             >>> new_flyr_item = new_shp_item.publish()
         """
-        if isinstance(item_properties, ItemProperties):
-            item_properties: dict = {
-                key: value
-                for key, value in item_properties.to_dict().items()
-                if not value is None
-            }
-            if "overwrite" in item_properties and item_properties["overwrite"] == True:
-                logger.warning(
-                    "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
-                )
-            item_properties.pop("overwrite", None)
-        if text is None and "text" in item_properties:
-            text: str = item_properties.pop("text")
-        if not file:
-            stream = False
-        elif file and item_id:
-            stream = True
+        item_properties: dict = dict(item_properties)
+        # remove None values
+        item_properties = {
+            key: value for key, value in item_properties.items() if not value is None
+        }
+        if item_properties.pop("overwrite", False):
+            logger.warning(
+                "The property `overwrite` is not supported and will be ignored."
+            )
+        text: str = text or item_properties.pop("text", None)
+        stream: bool = bool(file and item_id)
         if (
             file
             and isinstance(file, (io.StringIO, io.BytesIO))
-            and not "fileName" in item_properties
+            and not item_properties.get("fileName")
         ):
             raise ValueError(
-                "When providing a `StringIO` or `BytesIO` object a `file_name` must be given in the `ItemProperties` class."
+                "When providing a `StringIO` or `BytesIO` object, `fileName` must be given in the `ItemProperties` class."
             )
 
-        upload_size: int = None
-        thumbnail: str = item_properties.pop("thumbnail", None)
+        upload_size: int | None = None
+        thumbnail: str | None = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
         file_list: dict[str, Any] = {}
         owner: str | None = None
@@ -738,19 +720,18 @@ class Folder:
             "f": "json",
             "async": True,
         }
-        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+        if is_valid_item_id(item_id):
             params["itemIdToCreate"] = item_id
+
         if thumbnail and isinstance(thumbnail, tuple):
             fn, thumbnail = thumbnail
             file_list["thumbnail"] = create_upload_tuple(thumbnail, file_name=fn)
-
         elif thumbnail and os.path.isfile(thumbnail):
             file_list["thumbnail"] = create_upload_tuple(thumbnail)
 
         if metadata:
-            file_list["metadata"] = create_upload_tuple(
-                item_properties.pop("metadata", None)
-            )
+            file_list["metadata"] = create_upload_tuple(metadata)
+
         for k in list(item_properties.keys()):
             try:
                 if isinstance(item_properties[k], str) and os.path.isfile(
@@ -761,7 +742,6 @@ class Folder:
                 ...
         params.update(item_properties)
 
-        folder: str = self._folder_id
         if self._owner:
             owner = self._owner
         elif owner and hasattr(owner, "username"):
@@ -771,12 +751,12 @@ class Folder:
         elif isinstance(owner, str) == False:
             raise ValueError("Owner must be a string or User object.")
 
-        if folder and folder != "Root Folder":
-            curl: str = (
-                f"{self._gis._portal.resturl}content/users/{owner}/{folder}/addItem"
-            )
-        else:
-            curl: str = f"{self._gis._portal.resturl}content/users/{owner}/addItem"
+        folder: str = self._folder_id
+        is_root_folder: bool = folder == "Root Folder"
+        curl: str = (
+            f"{self._gis._portal.resturl}content/users/{owner if is_root_folder else f'{owner}/{folder}'}/addItem"
+        )
+
         max_workers: int = 1
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tp:
             if stream == True and file:
@@ -784,11 +764,9 @@ class Folder:
                 logger.info("Adding Item by parts using streaming.")
 
                 params["multipart"] = True
-                params["fileName"] = params.get("fileName", None) or os.path.basename(
-                    file
-                )
+                params["fileName"] = params.get("fileName") or os.path.basename(file)
                 params["async"] = True
-                params = self._process_parameters(params)
+                params = _process_parameters(params)
                 file_list["file"] = create_upload_tuple(
                     file, file_name=item_properties.pop("fileName", None)
                 )
@@ -803,7 +781,7 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif (text and file is None and url is None and data_url is None) or (
+            if (text and file is None and url is None and data_url is None) or (
                 text is None
                 and file is None
                 and url is None
@@ -814,7 +792,7 @@ class Folder:
                 if not isinstance(text, str):
                     text: str = json.dumps(text)
                 params["text"] = text
-                params = self._process_parameters(params)
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -826,7 +804,7 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif file and text is None and url is None and data_url is None:
+            if file and text is None and url is None and data_url is None:
                 #  file workflow
                 params["async"] = True
                 file_list["file"] = create_upload_tuple(file)
@@ -837,7 +815,7 @@ class Folder:
                     )
                     #  perform basic upload.
                     params["multipart"] = False
-                    params = self._process_parameters(params)
+                    params = _process_parameters(params)
                     future = tp.submit(
                         self._add_async_text,
                         **{
@@ -856,7 +834,7 @@ class Folder:
                     params["fileName"] = params.get(
                         "fileName", None
                     ) or os.path.basename(file)
-                    params = self._process_parameters(params)
+                    params = _process_parameters(params)
                     future = tp.submit(
                         self._add_async_large_files,
                         **{
@@ -868,7 +846,7 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
-            elif (file is None and text is None and url and data_url is None) or (
+            if (file is None and text is None and url and data_url is None) or (
                 file is None and text is None and url is None and data_url is None
             ):
                 params["async"] = False
@@ -876,7 +854,7 @@ class Folder:
                     params["url"] = url
                 else:
                     logger.warning("Creating an empty item.")
-                params = self._process_parameters(params)
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -888,10 +866,10 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            elif file is None and text is None and url is None and data_url:
+            if file is None and text is None and url is None and data_url:
                 params["async"] = True
                 params["dataUrl"] = data_url
-                params = self._process_parameters(params)
+                params = _process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
                     **{
@@ -935,6 +913,17 @@ class Folders:
     # ---------------------------------------------------------------------
     def __repr__(self) -> str:
         return self.__str__()
+
+    @property
+    def root(self) -> Folder:
+        """
+        Gets the root :class:`~arcgis.gis._impl._content_manager.Folder` owned
+        by the current logged-in :class:`~arcgis.gis.User`.
+
+        :returns:
+            :class:`~arcgis.gis._impl._content_manager.Folder` object.
+        """
+        return self.get()
 
     @property
     @lru_cache(maxsize=255)

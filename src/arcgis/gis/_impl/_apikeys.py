@@ -299,7 +299,7 @@ class APIKeyManager(object):
             >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
         """
-        folder = self._gis.content.folders.get()
+        folder = self._gis.content.folders.root
         job = folder.add(
             {
                 "title": title,
@@ -309,11 +309,10 @@ class APIKeyManager(object):
             }
         )
         api_item = job.result()
-        if privileges is None:
-            privileges = [
-                "premium:user:geocode:temporary",
-                "portal:apikey:basemaps",
-            ]
+        privileges = privileges or [
+            "premium:user:geocode:temporary",
+            "portal:apikey:basemaps",
+        ]
         result = api_item.register(
             app_type="apikey",
             redirect_uris=redirect_uris,
