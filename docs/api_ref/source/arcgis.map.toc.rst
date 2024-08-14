@@ -121,15 +121,21 @@ Dataclasses
 Popups
 ^^^^^^
 .. automodule:: arcgis.map.popups
+    :members:
 
 Symbols
 ^^^^^^^
 .. automodule:: arcgis.map.symbols
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Renderers
 ^^^^^^^^^
 .. automodule:: arcgis.map.renderers
+    :members:
 
 Forms
 ^^^^^
 .. automodule:: arcgis.map.forms
+    :members:
