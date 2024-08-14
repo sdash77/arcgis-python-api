@@ -1705,14 +1705,14 @@ class _MSILayerFactory(type):
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif ltype == "raster layer":
+        if ltype == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif ltype == "feature layer":
+        if ltype == "feature layer":
             time_filter = props.get("timeInfo", {}).get("timeExtent")
             return MapFeatureLayer(
                 url=url,
