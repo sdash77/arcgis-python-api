@@ -306,8 +306,7 @@ class APIKeyManager(object):
                 "type": "API Key",
                 "tags": tags,
                 "description": description or "",
-            },
-            allow_empty_content=True,
+            }
         )
         api_item = job.result()
         if privileges is None:

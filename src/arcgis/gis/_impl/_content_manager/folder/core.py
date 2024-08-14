@@ -623,7 +623,6 @@ class Folder:
         data_url: str | None = None,
         item_id: str | None = None,
         stream: bool = True,
-        allow_empty_content: bool = False,
     ) -> concurrent.futures.Future:
         """
         Adds an :class:`~arcgis.gis.Item` to the current folder.
@@ -674,10 +673,6 @@ class Folder:
                             during the `add` operation.
 
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
-        ----------------    --------------------------------------------------------------------
-        allow_empty_content Optional boolean. Default is False. If True, an empty item can be added.
-
-                            This can be useful for creating items that will be registered with a service later, such as API Keys.
         ===============     ====================================================================
 
         :returns:
@@ -873,15 +868,14 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
-            elif (
-                file is None
-                and text is None
-                and (url or allow_empty_content)
-                and (data_url is None or allow_empty_content)
+            elif (file is None and text is None and url and data_url is None) or (
+                file is None and text is None and url is None and data_url is None
             ):
                 params["async"] = False
                 if url:
                     params["url"] = url
+                else:
+                    logger.warning("Creating an empty item.")
                 params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
@@ -909,11 +903,6 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            else:
-                raise ValueError(
-                    "A single value of `file`, `text`, `url`, or `data_url` must be provided to add content to the WebGIS."
-                )
-        return
 
 
 ###########################################################################
