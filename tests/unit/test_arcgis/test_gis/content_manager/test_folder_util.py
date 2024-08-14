@@ -7,7 +7,7 @@ class TestFolderUtil(unittest.TestCase):
     """Tests for gis content_manager folder utils"""
 
     def test_create_upload_tuple_bytes_io(self):
-        """Tests the create_upload_tuple method"""
+        """Tests the create_upload_tuple method with BytesIO input and file_name"""
         random_bytes = uuid.uuid4().bytes
         random_filename = f"{uuid.uuid4().hex}.txt"
         upload_tuple = folder_util.create_upload_tuple(io.BytesIO(random_bytes), file_name=random_filename)
@@ -16,7 +16,7 @@ class TestFolderUtil(unittest.TestCase):
         self.assertEqual(upload_tuple[1].read(), random_bytes)
 
     def test_create_upload_tuple_string_io(self):
-        """Tests the create_upload_tuple method"""
+        """Tests the create_upload_tuple method with StringIO input and file_name"""
         random_string = uuid.uuid4().hex
         random_filename = f"{uuid.uuid4().hex}.txt"
         upload_tuple = folder_util.create_upload_tuple(io.StringIO(random_string), file_name=random_filename)
@@ -25,19 +25,19 @@ class TestFolderUtil(unittest.TestCase):
         self.assertEqual(upload_tuple[1].read(), random_string)
     
     def test_create_upload_tuple_string_io_raises_no_filename(self):
-        """Tests the create_upload_tuple method"""
+        """Tests the create_upload_tuple method raises ValueError if no file_name is provided"""
         with self.assertRaises(ValueError):
             random_string = uuid.uuid4().hex
             folder_util.create_upload_tuple(io.StringIO(random_string))
 
     def test_create_upload_tuple_raises_file_not_found(self):
-        """Tests the create_upload_tuple method"""
+        """Tests the create_upload_tuple method raises FileNotFoundError if file_name does not exist on filesystem"""
         with self.assertRaises(ValueError):
             random_filename = f"{uuid.uuid4().hex}.txt"
             folder_util.create_upload_tuple(random_filename)
     
     def test_process_parameters_no_change(self):
-        """Tests the process_parameters method"""
+        """Tests the process_parameters method happy path with flat dict, no changes"""
         parameters = {
             "a": "b",
             "c": "d",
@@ -59,6 +59,18 @@ class TestFolderUtil(unittest.TestCase):
         self.assertEqual(processed_parameters, {
             "a": "b",
             "c": '{"d": "e", "f": "g"}',
+        })
+    
+    def test_process_parameters_handles_none(self):
+        """Tests the process_parameters method handles None values"""
+        parameters = {
+            "a": "b",
+            "c": None
+        }
+        processed_parameters = folder_util._process_parameters(parameters)
+        self.assertEqual(processed_parameters, {
+            "a": "b",
+            "c": "null"
         })
 
 if __name__ == "__main__":
