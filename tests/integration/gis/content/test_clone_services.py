@@ -14,7 +14,7 @@ QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "clone_services")
 @from_to_profiles.all_except_k8s
 class TestCloneServices(unittest.TestCase):
 
-    @unittest.skip("Skipping test")
+    # @unittest.skip("Skipping test")
     def test_default_cloning(self):
         created_items = []
         try:
@@ -62,7 +62,7 @@ class TestCloneServices(unittest.TestCase):
                 item.delete()
             raise ex
 
-    @unittest.skip("Skipping test")
+    # @unittest.skip("Skipping test")
     def test_export_cloning(self):
         created_items = []
         try:
@@ -112,7 +112,7 @@ class TestCloneServices(unittest.TestCase):
                 item.delete()
             raise ex
 
-    @unittest.skip("Skipping test")
+    # @unittest.skip("Skipping test")
     def test_read_only_cloning(self):
         # covers export and normal
         created_items = []
@@ -191,7 +191,7 @@ class TestCloneServices(unittest.TestCase):
 @from_to_profiles.all_except_k8s
 class TestCloneEditorTracking(unittest.TestCase):
 
-    @unittest.skip("Skipping test")
+    # @unittest.skip("Skipping test")
     def test_standard_editor(self):
         created_items = []
         try:
