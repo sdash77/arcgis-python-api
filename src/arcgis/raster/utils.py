@@ -394,11 +394,11 @@ def get_stac_info(stac_url, verbose=True):
         print(stac_info)
 
         # Example 2: Fetching essential information from a STAC Collection (Landsat C2-L2 collection on Planetary Computer)
-        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-8-c2-l2", verbose=False)
+        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2", verbose=False)
         print(stac_info)
 
         # Example 3: Fetching detailed information from a STAC Item (NAIP data on Planetary Computer)
-        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-8-c2-l2/items/LC08_L1TP_047027_20200818_20200823_02_T1")
+        stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/wa_m_4712125_sw_10_060_20191029_20191217")
         print(stac_info)
 
         # Example 4: Fetching essential information from an ItemCollection (NAIP data on Earth Search)
