@@ -30,6 +30,7 @@ Contents:
    arcgis.apps
    arcgis.learn.toc
    arcgis.auth
+   arcgis.datapipelines
 
 Indices and tables
 ==================
