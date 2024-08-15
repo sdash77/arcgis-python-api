@@ -1879,7 +1879,7 @@ class Survey:
             for lyr in list(self._ssi.layers + self._ssi.tables):
                 wm.content.add(
                     lyr,
-                    options = {"title": f"{self._si.title} - {lyr.properties.name}"},
+                    options={"title": f"{self._si.title} - {lyr.properties.name}"},
                 )
             wm_properties = {
                 "title": self._si.title,
