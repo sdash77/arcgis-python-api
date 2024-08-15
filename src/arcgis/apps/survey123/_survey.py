@@ -1877,9 +1877,9 @@ class Survey:
             arcgismapping = _imports.get_arcgis_map_mod(True)
             wm = arcgismapping.Map()
             for lyr in list(self._ssi.layers + self._ssi.tables):
-                wm.add_layer(
+                wm.content.add(
                     lyr,
-                    {"title": f"{self._si.title} - {lyr.properties.name}"},
+                    options = {"title": f"{self._si.title} - {lyr.properties.name}"},
                 )
             wm_properties = {
                 "title": self._si.title,
