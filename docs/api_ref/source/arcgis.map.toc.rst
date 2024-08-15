@@ -119,23 +119,46 @@ Dataclasses
 -----------
 
 Popups
-^^^^^^
-.. automodule:: arcgis.map.popups
-    :members:
+------
 
-Symbols
-^^^^^^^
-.. automodule:: arcgis.map.symbols
+ArcadeReturnType
+^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.map.popups.ArcadeReturnType
     :members:
     :undoc-members:
-    :show-inheritance:
+    
+DateFormat
+^^^^^^^^^^
+.. autoclass:: arcgis.map.popups.DateFormat
+    :members:
+    :undoc-members:
+    
+FieldInfo
+^^^^^^^^^
+.. autoclass:: arcgis.map.popups.FieldInfo
+    :members:
+    :undoc-members:
+
+Symbols
+-------
+Anchor
+^^^^^^
+.. autoclass:: arcgis.map.symbols.Anchor
+    :members:
+    :undoc-members:
 
 Renderers
-^^^^^^^^^
-.. automodule:: arcgis.map.renderers
+---------
+AttributeColorInfo
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.map.renderers.AttributeColorInfo
     :members:
+    :undoc-members:
 
 Forms
-^^^^^
-.. automodule:: arcgis.map.forms
+-----
+CodedValue
+^^^^^^^^^^
+.. autoclass:: arcgis.map.forms.CodedValue
     :members:
+    :undoc-members:
