@@ -25,7 +25,7 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-class RTDeterV2Config:
+class RTDetrV2Config:
 
     try:
         import torch
@@ -33,7 +33,7 @@ class RTDeterV2Config:
         pass
 
     def get_model(self, data, backbone=None, **kwargs):
-        from arcgis.learn.models._rtdeter_utils import RTDETR, RTDETRCriterionv2
+        from arcgis.learn.models._rtdetr_utils import RTDETR, RTDETRCriterionv2
         from arcgis.learn.models._detr_object_detection.deformable_detr import (
             PostProcess,
         )
@@ -152,10 +152,10 @@ class RTDeterV2Config:
         return post_processed_pred
 
 
-class RTDeterV2(ModelExtension):
+class RTDetrV2(ModelExtension):
     """
     Model architecture from https://arxiv.org/pdf/2407.17140.
-    Creates a ``RTDeterV2`` object detection model,
+    Creates a ``RTDetrV2`` object detection model,
     based on https://github.com/lyuwenyu/RT-DETR/tree/main.
 
     =============================   =============================================
@@ -168,14 +168,14 @@ class RTDeterV2(ModelExtension):
                                     model used for feature extraction, which
                                     is `resnet50` by default.
                                     Supported backbones: ResNet family and specified Timm
-                                    models(experimental support) from :func:`~arcgis.learn.RTDeterV2.backbones`.
+                                    models(experimental support) from :func:`~arcgis.learn.RTDetrV2.backbones`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
     =============================   =============================================
 
     :return:
-        :class:`~arcgis.learn.RTDeterV2` Object
+        :class:`~arcgis.learn.RTDetrV2` Object
 
     """
 
@@ -187,7 +187,7 @@ class RTDeterV2(ModelExtension):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, RTDeterV2Config, backbone, pretrained_path, **kwargs)
+        super().__init__(data, RTDetrV2Config, backbone, pretrained_path, **kwargs)
 
         # self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
@@ -233,12 +233,12 @@ class RTDeterV2(ModelExtension):
     @property
     def supported_backbones(self):
         """Supported list of backbones for this model."""
-        return RTDeterV2._supported_backbones()
+        return RTDetrV2._supported_backbones()
 
     @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
-        return RTDeterV2._supported_backbones()
+        return RTDetrV2._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
@@ -247,7 +247,7 @@ class RTDeterV2(ModelExtension):
     @property
     def supported_datasets(self):
         """Supported dataset types for this model."""
-        return RTDeterV2._supported_datasets()
+        return RTDetrV2._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
@@ -256,7 +256,7 @@ class RTDeterV2(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``RTDeterV2`` object from an Esri Model Definition (EMD) file.
+        Creates a ``RTDetrV2`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -271,7 +271,7 @@ class RTDeterV2(ModelExtension):
         =====================   ===========================================
 
         :return:
-            :class:`~arcgis.learn.RTDeterV2` Object
+            :class:`~arcgis.learn.RTDetrV2` Object
         """
         emd_path = _get_emd_path(emd_path)
 

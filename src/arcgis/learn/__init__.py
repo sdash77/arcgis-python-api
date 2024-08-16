@@ -62,7 +62,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         PSETAE,
         MMDetection3D,
         SamLoRA,
-        RTDeterV2,
+        RTDetrV2,
         ClimaX,
     )
 
