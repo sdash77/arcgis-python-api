@@ -775,8 +775,8 @@ def compute_sensor_model(
 
                                {
                                "computeCandidate": False,
-                               "maxoverlap": 0.6,
-                               "maxloss": 0.05,
+                               "maxOverlap": 0.6,
+                               "maxLoss": 0.05,
                                }
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1444,7 +1444,7 @@ def compute_seamlines(
                                {"minRegionSize": 100,
                                "pixelSize": "",
                                "blendType": "Both",
-                               "blendWidth": null,
+                               "blendWidth": None,
                                "blendUnit": "Pixels",
                                "requestSizeType": "Pixels",
                                "requestSize": 1000,
