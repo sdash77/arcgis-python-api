@@ -170,6 +170,8 @@ def load_checkpoint_custom(filename, map_location=None, logger=None):
     ckpt = CheckpointLoader.load_checkpoint(filename, map_location, logger)
     if "model" in ckpt.keys():
         ckpt = ckpt["model"]
+    if "ema" in ckpt.keys():
+        ckpt = ckpt["ema"]["module"]
     return ckpt
 
 
