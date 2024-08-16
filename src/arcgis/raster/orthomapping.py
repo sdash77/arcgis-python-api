@@ -748,27 +748,27 @@ def compute_sensor_model(
                            The possible keys for the context dictionary are:
 
                            - parallelProcessingFactor : The specified number or percentage of processes will be used for the analysis. The default value is "50%".
-                           
+
                            - computeCandidate : Indicates whether Compute Mosaic Candidates will run inside the service task. Default value is False.
-                           
+
                            - maxOverlap : Specifies the maximum area overlap for running the Compute Mosaic Candidates tool inside the task. The default value is 0.6 .
-                           
+
                            - maxLoss : Specifies the maximum area loss allowed for running the Compute Mosaic Candidates tool inside the task. The default value is 0.05 .
-                           
+
                            - initPointResolution : Specifies the initial tie point resolution for running the Compute Camera Model tool inside the task. The default value is 8.0 .
-                           
+
                            - maxResidual : Specifies the maximum residual for running the Compute Block Adjustment and Compute Camera Model tools inside the task. The default value is 5.0 .
-                           
+
                            - adjustOptions : Specifies the adjustment options for running the Compute Block Adjustment tool inside the task. The default value is empty.
-                           
+
                            - pointSimilarity : Specifies the similarity for running the Compute Tie Points tool inside the task. The default value is MEDIUM.
-                           
+
                            - pointDensity : Specifies the point density for running the Compute Tie Points tool inside the task. The default value is MEDIUM.
-                           
+
                            - pointDistribution : Specifies the point distribution for running the Compute Tie Points tool inside the task. The default value is RANDOM.
-                           
+
                            - polygonMask : Specifies the input mask for running the Compute Tie Points tool inside the task. Default value is empty.
-                           
+
                            - regenTiepoints : Indicates whether Compute Tie Points will rerun inside the service task if tie points feature class exists. The default value is True.
 
                            Example:
@@ -1864,53 +1864,53 @@ def generate_orthomosaic(
     context                                Optional dictionary. Context contains additional environment settings that affect output
                                            image. The supported environment settings for this tool are:
 
-                                           The possible key for the context dictionary are: 
-                                           
+                                           The possible key for the context dictionary are:
+
                                            - parallelProcessingFactor : The specified number or percentage of processes will be used for the analysis. The default value is 50%.
-                                           
+
                                            - orthoMosaicAsOvr : Determines whether to apply the generated orthomosaic image as overview of input image collection. The default value is False.
-                                           
+
                                            - clippingGeometry : Specifies the extent or clippinggeometry parameter for the Clip raster function. It is used for setting the extent of the output orthomosaic image.The default value is empty.
-                                           
+
                                            - cellSize : The output raster will have the resolution specified by cell size. The cellSize is specified using the MAXOF , MINOF , or number. The default value is MAXOF.
-                                           
+
                                            - resamplingMethod : Choose which resampling method to use when creating the raster dataset for download.
                                              Available resampling types include: NEARESTNEIGHBOR , BILINEAR , CUBIC , MAJORITY , BILINEAR_PLUS , BILINEAR_GAUSSBLUR , BILINEAR_GAUSSBLUR_PLUS , AVERAGE , MINIMUM , MAXIMUM , VECTOR_AVERAGE . The default value is NEARESTNEIGHBOR .
-                                           
+
                                            - outSR : The output raster will be projected into the output spatial reference.
-                                           
+
                                            - seamlinesMethod : Specifies the computation method for running the Build Seamlines tool inside the task. The default value is DISPARITY.
-                                           
+
                                            - minRegionSize : Any seamline polygons smaller than this specified threshold will be removed in the seamline result.
-                                           
+
                                            - pixelSize : Generates seamlines for raster datasets that fall within the specified spatial resolution size.
-                                           
+
                                            - blendType : Determine how to blend one image into another (Both , Inside , or Outside ) over the seamlines. Inside blends pixels inside the seamline, while Outside blends outside the seamline. Both will blend pixels on either side of the seamline.
-                                           
+
                                            - blendWidth : Specifies how many pixels will be blended relative to the seamline. Blending (feathering) occurs along a seamline between pixels of overlapping images.
-                                           
+
                                            - blendUnit : Specifies the unit of measurement for blendWidth . Pixels measures using the number of pixels, and Ground measures using the same units as the image collection.
-                                           
+
                                            - requestSizeType : Sets the units for requestSize . Pixels modifies requestSize based on the pixel size. This resamples the closest image based on the raster pixel size. Pixel scaling factor modifiers requestSize by specifying a scaling factor. This operation resamples the closest image by multiplying the raster pixel size with the pixel size factor.
-                                           
+
                                            - requestSize : Specifies the number of columns and rows for resampling. Though the maximum value is 5,000, this value can increase or decreased based on the complexity of your raster data. A greater image resolution provides more detail in the raster dataset but increases the processing time.
-                                           
+
                                            - minThinnessRatio : Defines how thin a polygon can be before its considered a sliver. This is based on a scale from 0 to 1.0, where a value of 0.0 represents a polygon that's almost a straight line, and a value of 1.0 represents a polygon that's a circle.
-                                           
+
                                            - maxSliverSize : Defines how large a Sliver can be before its considered a polygon. This uses the same scale as minThinnessRatio .
-                                           
+
                                            - skipX and skipY : Specifies the X skip factor and the Y skip factor for running the Build Pyramids And Statistics tool inside the task as part of color correction workflow. The default values are both 1.
-                                           
+
                                            - overwriteStats : Specifies the Skip Existing parameter for running the Build Pyramids And Statistics tool inside the task as part of color correction workflow. The default value isFalse , and statistics will not be recalculated if they exist.
-                                           
+
                                            - colorCorrectionMethod : Specifies the balance method for running the Color Balance Mosaic Dataset tool inside the task. The default value is DODGING .
-                                           
+
                                            - dodgingSurface : Specifies the color surface type for running the Color Balance Mosaic Dataset tool inside the task. The default value is SINGLE_COLOR .
-                                           
+
                                            - targetImage : Specifies the target raster for running the Color Balance Mosaic Dataset tool inside the task. The default value is empty.
-                                           
+
                                            - applyColorCorrection : Indicates whether or not to apply color correction to the image collection. The default value is True .
-                                           
+
                                            Example:
 
                                                | {
