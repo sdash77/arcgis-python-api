@@ -92,7 +92,12 @@ def _create_file(df, file_type, **kwargs):
 
         # Writes the df to file as features
         sanitize_columns = kwargs.pop("sanitize_columns", True)
-        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
+        df.spatial.to_featureclass(
+            location=location,
+            sanitize_columns=sanitize_columns,
+            has_m=kwargs.get("has_m", False),
+            has_z=kwargs.get("has_z", False),
+        )
 
         # zip it
         file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
@@ -146,7 +151,8 @@ def _create_items(gis, file, file_type, **kwargs):
         )["publishParameters"]
 
     new_item = file_item.publish(
-        publish_parameters=publish_parameters, item_id=kwargs.pop("item_id", None)
+        publish_parameters=publish_parameters,
+        item_id=kwargs.pop("item_id", None),
     )
     return file_item, new_item
 

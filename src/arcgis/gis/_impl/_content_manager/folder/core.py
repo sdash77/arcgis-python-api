@@ -617,7 +617,7 @@ class Folder:
     def add(
         self,
         item_properties: ItemProperties,
-        file: str = None,
+        file: str | None = None,
         text: str | None = None,
         url: str | None = None,
         data_url: str | None = None,
@@ -733,7 +733,7 @@ class Folder:
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
         file_list: dict[str, Any] = {}
-        owner: str = None
+        owner: str | None = None
         params: dict[str, Any] = {
             "f": "json",
             "async": True,
@@ -868,9 +868,14 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
-            elif file is None and text is None and url and data_url is None:
+            elif (file is None and text is None and url and data_url is None) or (
+                file is None and text is None and url is None and data_url is None
+            ):
                 params["async"] = False
-                params["url"] = url
+                if url:
+                    params["url"] = url
+                else:
+                    logger.warning("Creating an empty item.")
                 params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
@@ -898,11 +903,6 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            else:
-                raise ValueError(
-                    "A single value of `file`, `text`, `url`, or `data_url` must be provided to add content to the WebGIS."
-                )
-        return
 
 
 ###########################################################################
