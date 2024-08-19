@@ -2,7 +2,6 @@ import unittest
 import os
 import random
 import string
-
 from utils.decorators import integration_test, from_to_profiles
 
 from integration.config import QALAB_ROOT_PATH
@@ -54,13 +53,9 @@ class TestCloneServices(unittest.TestCase):
                 where="1=1", return_count_only=True
             ) == layer_item.layers[0].query(where="1=1", return_count_only=True)
 
-            for item in created_items:
-                assert item.delete()
-
-        except Exception as ex:
+        finally:
             for item in created_items:
                 item.delete()
-            raise ex
 
     # @unittest.skip("Skipping test")
     def test_export_cloning(self):
@@ -104,13 +99,9 @@ class TestCloneServices(unittest.TestCase):
                 where="1=1", return_count_only=True
             ) == layer_item.layers[0].query(where="1=1", return_count_only=True)
 
-            for item in created_items:
-                assert item.delete()
-
-        except Exception as ex:
+        finally:
             for item in created_items:
                 item.delete()
-            raise ex
 
     # @unittest.skip("Skipping test")
     def test_read_only_cloning(self):
@@ -178,13 +169,9 @@ class TestCloneServices(unittest.TestCase):
                     == False
                 )
 
-            for item in created_items:
-                assert item.delete()
-
-        except Exception as ex:
+        finally:
             for item in created_items:
                 item.delete()
-            raise ex
 
 
 @integration_test
@@ -253,13 +240,9 @@ class TestCloneEditorTracking(unittest.TestCase):
                 == og_creator
             )
 
-            for item in created_items:
-                assert item.delete()
-
-        except Exception as ex:
+        finally:
             for item in created_items:
                 item.delete()
-            raise ex
 
     # @unittest.skip("Skipping test")
     def test_export_editor(self):
@@ -326,13 +309,9 @@ class TestCloneEditorTracking(unittest.TestCase):
                 == og_creator
             )
 
-            for item in created_items:
-                assert item.delete()
-
-        except Exception as ex:
+        finally:
             for item in created_items:
                 item.delete()
-            raise ex
 
 
 if __name__ == "__main__":
