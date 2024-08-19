@@ -8681,6 +8681,10 @@ class ContentManager(object):
                                   editor tracking fields will maintain the current values from the
                                   source organization instead of automatically updating the values
                                   to the new org/user. Default is False.
+
+                                  .. note::
+                                      `export_service` must be False in order for this to work if
+                                      the target GIS is on ArcGIS Online.
         =====================     ====================================================================
 
         **keyword arguments**

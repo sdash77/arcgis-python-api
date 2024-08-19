@@ -301,13 +301,14 @@ class TestCloneEditorTracking(unittest.TestCase):
             cloned_edit_field = cloned_export_layer.layers[0].properties[
                 "editFieldsInfo"
             ]["creatorField"]
-            assert (
-                cloned_export_layer.layers[0]
-                .query(where="1=1")
-                .features[0]
-                .get_value(cloned_edit_field)
-                == og_creator
-            )
+            if target._is_agol == False:
+                assert (
+                    cloned_export_layer.layers[0]
+                    .query(where="1=1")
+                    .features[0]
+                    .get_value(cloned_edit_field)
+                    == og_creator
+                )
 
         finally:
             for item in created_items:
