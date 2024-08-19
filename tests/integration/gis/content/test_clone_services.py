@@ -5,6 +5,7 @@ import string
 from utils.decorators import integration_test, from_to_profiles
 
 from integration.config import QALAB_ROOT_PATH
+
 # QALAB_ROOT_PATH = "/Volumes/pydata/v109/geosaurus"
 QA_LABS_FOLDER = os.path.join(QALAB_ROOT_PATH, "clone_services")
 
