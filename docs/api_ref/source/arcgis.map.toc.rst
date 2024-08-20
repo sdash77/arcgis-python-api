@@ -99,13 +99,13 @@ SmartMappingManager
 
 PopupManager
 --------------
-.. autoclass:: arcgis.map.popups.PopupManager
+.. autopydantic_model:: arcgis.map.popups.PopupManager
     :members:
     :undoc-members:
 
 RendererManager
 --------------
-.. autoclass:: arcgis.map.renderers.RendererManager
+.. autopydantic_model:: arcgis.map.renderers.RendererManager
     :members:
     :undoc-members:
 
@@ -123,1057 +123,711 @@ Popups
 
 ArcadeReturnType
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.ArcadeReturnType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.ArcadeReturnType
+
 AssociationType
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.AssociationType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.AssociationType
+
 AttachmentDisplayType
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.AttachmentDisplayType
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.popups.AttachmentDisplayType
 
 DateFormat
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.DateFormat
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.DateFormat
+
 FieldInfo
 ^^^^^^^^^
-.. autoclass:: arcgis.map.popups.FieldInfo
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.popups.FieldInfo
 
 Format
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.Format
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.Format
+
 LayerOptions
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.LayerOptions
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.LayerOptions
+
 MediaInfo
 ^^^^^^^^^
-.. autoclass:: arcgis.map.popups.MediaInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.MediaInfo
+
 MediaType
 ^^^^^^^^^
-.. autoclass:: arcgis.map.popups.MediaType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.MediaType
+
 Order
 ^^^^^
-.. autoclass:: arcgis.map.popups.Order
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.Order
+
 OrderByField
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.OrderByField
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.OrderByField
+
 PopupElementAttachments
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementAttachments
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupElementAttachments
+
 PopupElementExpression
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementExpression
-    :members:
-    :undoc-members:
-    
-    
+.. autopydantic_model:: arcgis.map.popups.PopupElementExpression
+
 PopupElementFields
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementFields
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.popups.PopupElementFields
 
 PopupElementRelationship
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementRelationship
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupElementRelationship
+
 PopupElementText
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementText
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupElementText
+
 PopupElementUtilityNetworkAssociations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupElementUtilityNetworkAssociations
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupElementUtilityNetworkAssociations
+
 PopupExpressionInfo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupExpressionInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupExpressionInfo
+
 PopupInfo
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupInfo
+
 PopupManager
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.PopupManager
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.PopupManager
+
 RelatedRecordsInfo
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.RelatedRecordsInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.popups.RelatedRecordsInfo
+
 StringFieldOption
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.popups.StringFieldOption
-    :members:
-    :undoc-members:
 
 Value
 ^^^^^
-.. autoclass:: arcgis.map.popups.Value
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.popups.Value
 
 Symbols
 -------
 Anchor
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Anchor
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Anchor
 
 Border
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Border
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Border
+
 Callout
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.Callout
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Callout
+
 CimSymbolReference
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.CimSymbolReference
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.CimSymbolReference
+
 Decoration
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.Decoration
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Decoration
 
 ExtrudeSymbol3DLayer
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.ExtrudeSymbol3DLayer
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.ExtrudeSymbol3DLayer
 
 FillSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.FillSymbol3DLayer
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.FillSymbol3DLayer
 
 Font
 ^^^^
-.. autoclass:: arcgis.map.symbols.Font
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Font
+
 Halo
 ^^^^
-.. autoclass:: arcgis.map.symbols.Halo
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.Halo
+
 HorizontalAlignment
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.HorizontalAlignment
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.HorizontalAlignment
+
 IconSymbol3DLayer
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.IconSymbol3DLayer
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.IconSymbol3DLayer
 
 IconSymbol3DLayerResource
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.IconSymbol3DLayerResource
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.IconSymbol3DLayerResource
+
 Join
 ^^^^
-.. autoclass:: arcgis.map.symbols.Join
-    :members:
-    :undoc-members:
-     
+.. autopydantic_model:: arcgis.map.symbols.Join
+
 LineCap
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.LineCap
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.LineCap
+
 Marker
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Marker
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Marker
+
 Pattern
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.Pattern
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Pattern
 
 Style
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Style
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Style
 
 LineSymbol3D
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.LineSymbol3D
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.LineSymbol3D
 
 LineSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.LineSymbol3DLayer
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.LineSymbol3DLayer
 
 Marker
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Marker
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Marker
 
 MarkerPlacement
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.MarkerPlacement
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.MarkerPlacement
 
 MarkerStyle
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.MarkerStyle
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.MarkerStyle
+
 Material
 ^^^^^^^^
-.. autoclass:: arcgis.map.symbols.Material
-    :members:
-    :undoc-members:    
-        
+.. autopydantic_model:: arcgis.map.symbols.Material
+
 MeshSymbol3D
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.MeshSymbol3D
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.MeshSymbol3D
+
 ObjectSymbol3DLayer
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.ObjectSymbol3DLayer
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.ObjectSymbol3DLayer
+
 ObjectSymbol3DLayerResource
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.ObjectSymbol3DLayerResource
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.ObjectSymbol3DLayerResource
+
 Outline
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.Outline
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.Outline
+
 PathCap
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.PathCap
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.PathCap
+
 PathSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PathSymbol3DLayer
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.PathSymbol3DLayer
 
 Pattern
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.Pattern
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.Pattern
 
 PictureFillSymbolsEsriPFS
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PictureFillSymbolsEsriPFS
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.PictureFillSymbolsEsriPFS
 
 PictureMarkerSymbolEsriPMS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PictureMarkerSymbolEsriPMS
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.symbols.PictureMarkerSymbolEsriPMS
 
 Placement
 ^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.Placement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Placement
+
 PointSymbol3D
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PointSymbol3D
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.PointSymbol3D
+
 PolygonStyle
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PolygonStyle
-    :members:
-    :undoc-members:    
-    
+.. autopydantic_model:: arcgis.map.symbols.PolygonStyle
+
 PolygonSymbol3D
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.PolygonSymbol3D
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.PolygonSymbol3D
+
 Primitive
 ^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.Primitive
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.Primitive
+
 Profile
 ^^^^^^^
-.. autoclass:: arcgis.map.symbols.Profile
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.Profile
+
 ProfileRotation
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.ProfileRotation
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.ProfileRotation
+
 SimpleFillSymbolEsriSFS
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleFillSymbolEsriSFS
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleFillSymbolEsriSFS
+
 SimpleFillSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleFillSymbolStyle
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleFillSymbolStyle
+
 SimpleLineSymbolEsriSLS
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleLineSymbolEsriSLS
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleLineSymbolEsriSLS
+
 SimpleLineSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleLineSymbolStyle
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleLineSymbolStyle
+
 SimpleMarkerSymbolEsriSMS
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleMarkerSymbolEsriSMS
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleMarkerSymbolEsriSMS
+
 SimpleMarkerSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SimpleMarkerSymbolStyle
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SimpleMarkerSymbolStyle
+
 SketchEdges
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SketchEdges
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SketchEdges
+
 SolidEdges
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.SolidEdges
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.SolidEdges
+
 Style
 ^^^^^
-.. autoclass:: arcgis.map.symbols.Style
-    :members:
-    :undoc-members: 
-    
+.. autopydantic_model:: arcgis.map.symbols.Style
+
 StyleOrigin
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.StyleOrigin
-    :members:
-    :undoc-members: 
+.. autopydantic_model:: arcgis.map.symbols.StyleOrigin
 
 TextBackground
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextBackground
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextBackground
+
 TextDecoration
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextDecoration
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextDecoration
+
 TextFont
 ^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextFont
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextFont
+
 TextStyle
 ^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextStyle
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextStyle
+
 TextSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextSymbol3DLayer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextSymbol3DLayer
+
 TextSymbolEsriTS
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextSymbolEsriTS
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextSymbolEsriTS
+
 TextWeight
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.TextWeight
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.TextWeight
+
 VerticalAlignment
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.VerticalAlignment
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.VerticalAlignment
+
 VerticalOffset
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.VerticalOffset
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.VerticalOffset
+
 WaterbodySize
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.WaterbodySize
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.WaterbodySize
+
 WaterSymbol3DLayer
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.WaterSymbol3DLayer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.WaterSymbol3DLayer
+
 WaveStrength
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.symbols.WaveStrength
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.WaveStrength
+
 Weight
 ^^^^^^
-.. autoclass:: arcgis.map.symbols.Weight
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.symbols.Weight
+
 Renderers
 ---------
 AttributeColorInfo
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AttributeColorInfo
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.AttributeColorInfo
 
 AuthoringInfo
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AuthoringInfo
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.AuthoringInfo
 
 AuthoringInfoClassBreakInfo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AuthoringInfoClassBreakInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.AuthoringInfoClassBreakInfo
+
 AuthoringInfoField
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AuthoringInfoField
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.AuthoringInfoField
+
 AuthoringInfoStatistics
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AuthoringInfoStatistics
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.AuthoringInfoStatistics
+
 AuthoringInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.AuthoringInfoVisualVariable
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.AuthoringInfoVisualVariable
+
 ClassBreakInfo
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ClassBreakInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ClassBreakInfo
+
 ClassBreaksRenderer
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ClassBreaksRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ClassBreaksRenderer
+
 ClassificationMethod
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ClassificationMethod
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ClassificationMethod
+
 ColorInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ColorInfoVisualVariable
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ColorInfoVisualVariable
+
 ColorRamp
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ColorRamp
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ColorRamp
+
 ColorRampType
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ColorRampType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ColorRampType
+
 ColorStop
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ColorStop
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ColorStop
+
 DictionaryRenderer
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.DictionaryRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.DictionaryRenderer
+
 DotDensityRenderer
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.DotDensityRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.DotDensityRenderer
+
 ExpressionInfo
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.ExpressionInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.ExpressionInfo
+
 FlowRenderer
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.FlowRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.FlowRenderer
+
 FlowRepresentation
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.FlowRepresentation
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.FlowRepresentation
+
 FlowTheme
 ^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.FlowTheme
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.FlowTheme
+
 Focus
 ^^^^^
-.. autoclass:: arcgis.map.renderers.Focus
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.Focus
+
 HeatmapColorStop
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.HeatmapColorStop
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.HeatmapColorStop
+
 HeatmapRenderer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.HeatmapRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.HeatmapRenderer
+
 InputOutputUnit
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.InputOutputUnit
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.InputOutputUnit
+
 LegendOptions
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.LegendOptions
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.LegendOptions
+
 LegendOrder
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.LegendOrder
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.LegendOrder
 
 NormalizationType
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.NormalizationType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.NormalizationType
+
 OthersThresholdColorInfo
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.OthersThresholdColorInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.OthersThresholdColorInfo
+
 PieChartRenderer
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.PieChartRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.PieChartRenderer
+
 PredominanceRenderer
 ^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.PredominanceRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.PredominanceRenderer
+
 RampAlgorithm
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RampAlgorithm
+.. autopydantic_model:: arcgis.map.renderers.RampAlgorithm
     :members:
     :undoc-members:
     
 RatioStyle
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RatioStyle
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.RatioStyle
+
 RendererManager
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RendererManager
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.RendererManager
+
 RendererType
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RendererType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.RendererType
+
 RotationInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RotationInfoVisualVariable
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.RotationInfoVisualVariable
+
 RotationType
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.RotationType
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.RotationType
 
 SimpleRenderer
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.SimpleRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.SimpleRenderer
+
 Size
 ^^^^
-.. autoclass:: arcgis.map.renderers.Size
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.Size
+
 SizInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.SizInfoVisualVariable
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.SizInfoVisualVariable
+
 SizeStop
 ^^^^^^^^
-.. autoclass:: arcgis.map.renderers.SizeStop
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.SizeStop
+
 StandardDeviationInterval
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.StandardDeviationInterval
+.. autopydantic_model:: arcgis.map.renderers.StandardDeviationInterval
     :members:
     :undoc-members:
     
 StretchRenderer
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.StretchRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.StretchRenderer
+
 StretchType
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.StretchType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.StretchType
+
 TemporalRenderer
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.TemporalRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.TemporalRenderer
+
 Theme
 ^^^^^
-.. autoclass:: arcgis.map.renderers.Theme
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.Theme
+
 TimeUnits
 ^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.TimeUnits
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.TimeUnits
 
 TrailCap
 ^^^^^^^^
-.. autoclass:: arcgis.map.renderers.TrailCap
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.TrailCap
+
 TransparencyInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.TransparencyInfoVisualVariable
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.TransparencyInfoVisualVariable
+
 TransparencyStop
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.TransparencyStop
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.TransparencyStop
+
 UniqueValueClass
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UniqueValueClass
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.UniqueValueClass
 
 UniqueValueGroup
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UniqueValueGroup
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.UniqueValueGroup
+
 UniqueValueInfo
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UniqueValueInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.UniqueValueInfo
+
 UniqueValueRenderer
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UniqueValueRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.UniqueValueRenderer
+
 UniqueValueSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UniqueValueSymbolStyle
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.renderers.UniqueValueSymbolStyle
 
 UnivariateTheme
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.UnivariateTheme
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.UnivariateTheme
+
 VectorFieldRenderer
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.VectorFieldRenderer
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.VectorFieldRenderer
+
 VectorFieldStyle
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.VectorFieldStyle
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.VectorFieldStyle
+
 VisualVariableType
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.VisualVariableType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.renderers.VisualVariableType
+
 Forms
 -----
 CodedValue
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.CodedValue
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.CodedValue
+
 FormAttachmentElement
 ^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormAttachmentElement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormAttachmentElement
+
 FormAttachmentInput
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormAttachmentInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormAttachmentInput
+
 FormAudioInput
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormAudioInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormAudioInput
+
 FormBarcodeScannerInput
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormBarcodeScannerInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormBarcodeScannerInput
+
 FormComboBoxInput
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormComboBoxInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormComboBoxInput
+
 FormDatePickerInput
 ^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormDatePickerInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormDatePickerInput
+
 FormDatetimePickerInput
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormDatetimePickerInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormDatetimePickerInput
+
 FormDocumentInput
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormDocumentInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormDocumentInput
+
 FormExpressionInfo
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormExpressionInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormExpressionInfo
+
 FormFieldElement
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormFieldElement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormFieldElement
+
 FormGroupElement
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormGroupElement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormGroupElement
+
 FormImageInput
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormImageInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormImageInput
+
 FormInfo
 ^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormInfo
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormInfo
+
 FormRadioButtonInput
 ^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormRadioButtonInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormRadioButtonInput
+
 FormRelationshipElement
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormRelationshipElement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormRelationshipElement
+
 FormSignatureInput
 ^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormSignatureInput
+.. autopydantic_model:: arcgis.map.forms.FormSignatureInput
     :members:
     :undoc-members:
     
 FormSwitchInput
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormSwitchInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormSwitchInput
+
 FormTextAreaInput
 ^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormTextAreaInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormTextAreaInput
+
 FormTextBoxInput
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormTextBoxInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormTextBoxInput
+
 FormTextElement
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormTextElement
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormTextElement
+
 FormTimeInput
 ^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormTimeInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormTimeInput
+
 FormTimestampOffsetPickerInput
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormTimestampOffsetPickerInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormTimestampOffsetPickerInput
+
 FormVideoInput
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.FormVideoInput
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.FormVideoInput
+
 InheritedDomain
 ^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.InheritedDomain
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.InheritedDomain
+
 InitialState
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.InitialState
-    :members:
-    :undoc-members:
-       
+.. autopydantic_model:: arcgis.map.forms.InitialState
+
 Order
 ^^^^^
-.. autoclass:: arcgis.map.forms.Order
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.Order
+
 OrderByField
 ^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.OrderByField
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.OrderByField
+
 RangeDomain
 ^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.RangeDomain
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.RangeDomain
+
 ReturnType
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.ReturnType
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.ReturnType
+
 TextFormat
 ^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.TextFormat
-    :members:
-    :undoc-members:
-    
+.. autopydantic_model:: arcgis.map.forms.TextFormat
+
 TimeResolution
 ^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.TimeResolution
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.forms.TimeResolution
 
 UniqueCodedValue
 ^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.forms.UniqueCodedValue
-    :members:
-    :undoc-members:
+.. autopydantic_model:: arcgis.map.forms.UniqueCodedValue
