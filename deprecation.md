@@ -45,6 +45,7 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `ContentManager.create_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `gis.content.folders.create` instead.
 - `ContentManager.delete_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Folder.delete()` instead.
 - `ContentManager.rename_folder` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Folder.rename()` instead.
+- `ContentManager.dependency_manager` - deprecated in **2.4.0** will be removed in a future release.
 - `Item.share` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.shared_with` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
