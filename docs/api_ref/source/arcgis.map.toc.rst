@@ -123,19 +123,31 @@ Popups
 
 ArcadeReturnType
 ^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.ArcadeReturnType
+.. autoclass:: arcgis.map.popups.ArcadeReturnType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 AssociationType
 ^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.AssociationType
+.. autoclass:: arcgis.map.popups.AssociationType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 AttachmentDisplayType
 ^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.AttachmentDisplayType
+.. autoclass:: arcgis.map.popups.AttachmentDisplayType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 DateFormat
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.DateFormat
+.. autoclass:: arcgis.map.popups.DateFormat
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 FieldInfo
 ^^^^^^^^^
@@ -155,11 +167,17 @@ MediaInfo
 
 MediaType
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.MediaType
+.. autoclass:: arcgis.map.popups.MediaType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Order
 ^^^^^
-.. autopydantic_model:: arcgis.map.popups.Order
+.. autoclass:: arcgis.map.popups.Order
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 OrderByField
 ^^^^^^^^^^^^
@@ -176,6 +194,10 @@ PopupElementExpression
 PopupElementFields
 ^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.PopupElementFields
+
+PopupElementMedia
+^^^^^^^^^^^^^^^^^
+.. autopydantic_model:: arcgis.map.popups.PopupElementMedia
 
 PopupElementRelationship
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -197,17 +219,16 @@ PopupInfo
 ^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.PopupInfo
 
-PopupManager
-^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.PopupManager
-
 RelatedRecordsInfo
 ^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.RelatedRecordsInfo
 
 StringFieldOption
 ^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.popups.StringFieldOption
+.. autoclass:: arcgis.map.popups.StringFieldOption
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Value
 ^^^^^
@@ -584,9 +605,7 @@ PredominanceRenderer
 RampAlgorithm
 ^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.RampAlgorithm
-    :members:
-    :undoc-members:
-    
+
 RatioStyle
 ^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.RatioStyle
@@ -628,7 +647,14 @@ StandardDeviationInterval
 .. autopydantic_model:: arcgis.map.renderers.StandardDeviationInterval
     :members:
     :undoc-members:
-    
+
+StatisticType
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.map.renderers.StatisticType
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 StretchRenderer
 ^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.StretchRenderer
