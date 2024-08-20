@@ -99,13 +99,13 @@ SmartMappingManager
 
 PopupManager
 --------------
-.. autopydantic_model:: arcgis.map.popups.PopupManager
+.. autoclass:: arcgis.map.popups.PopupManager
     :members:
     :undoc-members:
 
 RendererManager
 --------------
-.. autopydantic_model:: arcgis.map.renderers.RendererManager
+.. autoclass:: arcgis.map.renderers.RendererManager
     :members:
     :undoc-members:
 
