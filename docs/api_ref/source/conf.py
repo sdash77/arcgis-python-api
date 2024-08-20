@@ -99,6 +99,10 @@ autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
 
+# Hide model fields in the documentation
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_show_field_members = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
