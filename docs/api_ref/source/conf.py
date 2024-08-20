@@ -95,13 +95,11 @@ extensions = [
 
 autodoc_pydantic_model_show_json = True
 autodoc_pydantic_settings_show_json = False
-autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_show_config_summary = False  # Hides model_config
 autodoc_pydantic_model_show_validator_summary = False
 autodoc_pydantic_model_show_validator_members = False
-
-# Hide model fields in the documentation
-autodoc_pydantic_model_show_field_summary = False
-autodoc_pydantic_model_show_field_members = False
+autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
+autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
