@@ -617,7 +617,7 @@ class Folder:
     def add(
         self,
         item_properties: ItemProperties,
-        file: str = None,
+        file: str | None = None,
         text: str | None = None,
         url: str | None = None,
         data_url: str | None = None,
@@ -710,7 +710,6 @@ class Folder:
                 if not value is None
             }
             if "overwrite" in item_properties and item_properties["overwrite"] == True:
-
                 logger.warning(
                     "The property `overwrite` in Enterprise and ArcGIS Online is not supported and will be ignored."
                 )
@@ -721,11 +720,20 @@ class Folder:
             stream = False
         elif file and item_id:
             stream = True
+        if (
+            file
+            and isinstance(file, (io.StringIO, io.BytesIO))
+            and not "fileName" in item_properties
+        ):
+            raise ValueError(
+                "When providing a `StringIO` or `BytesIO` object a `file_name` must be given in the `ItemProperties` class."
+            )
+
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
         file_list: dict[str, Any] = {}
-        owner: str = None
+        owner: str | None = None
         params: dict[str, Any] = {
             "f": "json",
             "async": True,
@@ -860,9 +868,14 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
-            elif file is None and text is None and url and data_url is None:
+            elif (file is None and text is None and url and data_url is None) or (
+                file is None and text is None and url is None and data_url is None
+            ):
                 params["async"] = False
-                params["url"] = url
+                if url:
+                    params["url"] = url
+                else:
+                    logger.warning("Creating an empty item.")
                 params = self._process_parameters(params)
                 future = tp.submit(
                     self._add_async_text,
@@ -890,11 +903,6 @@ class Folder:
                 )
                 tp.shutdown(wait=True)
                 return future
-            else:
-                raise ValueError(
-                    "A single value of `file`, `text`, `url`, or `data_url` must be provided to add content to the WebGIS."
-                )
-        return
 
 
 ###########################################################################
@@ -939,6 +947,14 @@ class Folders:
         resp: requests.Response = self._session.get(url=url, params=params)
         resp.raise_for_status()
         return resp.json()
+
+    # ---------------------------------------------------------------------
+    def _get_or_create(self, folder: str, owner: str | None = None) -> Folder:
+        """gets or creates a folder"""
+        fldr: Folder = self.get(folder=folder, owner=owner)
+        if fldr is None:
+            fldr = self.create(folder=folder, owner=owner)
+        return fldr
 
     # ----------------------------------------------------------------------
     def get(

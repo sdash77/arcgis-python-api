@@ -401,8 +401,12 @@ class FeatureClassifier(ArcGISModel):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
+        from ._hf_weightutils import hf_resnet_cfgs
+
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones + transformer_backbones
+            timm_backbones
+            + transformer_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         )
 
     @property
@@ -1959,7 +1963,7 @@ class FeatureClassifier(ArcGISModel):
         from tensorflow.keras.losses import CategoricalCrossentropy
         from tensorflow.keras.models import Model
         from tensorflow.keras import applications
-        from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.optimizers.legacy import Adam
         from fastai.basics import defaults
         from .._utils.image_classification import TF_IC_get_head_output
 

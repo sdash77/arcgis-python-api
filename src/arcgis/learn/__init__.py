@@ -62,6 +62,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         PSETAE,
         MMDetection3D,
         SamLoRA,
+        RTDetrV2,
+        ClimaX,
     )
 
     from ._object_tracker import ObjectTracker

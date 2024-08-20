@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
+from functools import wraps
 
 try:
     from fastai.vision import flatten_model
@@ -13,6 +14,7 @@ try:
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
     from ._transformer_backbone import swin_config
+    from ._arcgis_model import _change_tail
 
     HAS_FASTAI = True
 
@@ -29,6 +31,7 @@ class CustomHED:
         import torch
         from torchvision import models
         from arcgis.learn.models import _hed_utils as hed
+
     except:
         pass
 
@@ -37,6 +40,9 @@ class CustomHED:
         In this fuction you have to define your model with following two arguments!
 
         """
+        from arcgis.learn.models._arcgis_model import _change_tail
+        from functools import wraps
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
 
         if backbone is None:
@@ -45,6 +51,35 @@ class CustomHED:
             from arcgis.learn.models._arcgis_model import get_backbone_func
 
             self._backbone = get_backbone_func(backbone, data, is_fpn=True)
+
+        if hasattr(data, "_is_multispectral"):  # multispectral support
+            self._is_multispectral = getattr(data, "_is_multispectral")
+        else:
+            self._is_multispectral = False
+        if self._is_multispectral or "hf:" in backbone:
+
+            self._orig_backbone = self._backbone
+
+            @wraps(self._orig_backbone)
+            def backbone_wrapper(*args, **inkwargs):
+                if "pretrained_backbone" in kwargs:
+                    pretrained_backbone = kwargs["pretrained_backbone"]
+                    assert type(pretrained_backbone) == bool
+                    if len(args) > 0:
+                        args = tuple([pretrained_backbone, *args[1:]])
+                    else:
+                        inkwargs["pretrained"] = pretrained_backbone
+                return _change_tail(
+                    self._orig_backbone(*args, **inkwargs),
+                    data,
+                    kwargs.get("tail_weights_type"),
+                )
+
+            if self._is_multispectral:
+                self._imagery_type = data._imagery_type
+                self._bands = data._bands
+                backbone_wrapper._is_multispectral = True
+            self._backbone = backbone_wrapper
 
         model = self.hed._HEDModel(
             self._backbone, data.chip_size, pretrained=pretrained_backbone
@@ -215,7 +250,14 @@ class HEDEdgeDetector(ModelExtension):
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
-        return [*_resnet_family, *_vgg_family] + transformer_backbone + timm_backbones
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family, *_vgg_family]
+            + transformer_backbone
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):

@@ -817,7 +817,7 @@ class ImageryLayer(Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": type(self).__name__, "url": url}
@@ -9038,7 +9038,7 @@ class Raster:
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        band_ids_or_names     Required list. The index number or names of the bands to return as
+        band_ids_or_names     Required list. The index number (uses one-based indexing) or names of the bands to return as
                               Raster objects. If not specified, all bands will be extracted.
         =================     ====================================================================
 
@@ -9050,7 +9050,7 @@ class Raster:
             # Usage Example: Generates the raster pertaining to the first band
 
             raster1 = Raster(r"./data/Amberg.tif")
-            raster1.get_raster_bands(band_ids_or_names=[0])
+            raster1.get_raster_bands(band_ids_or_names=[1])
 
         """
         return self._engine_obj.get_raster_bands(band_ids_or_names)

@@ -27,7 +27,7 @@ class TestAudioContent(unittest.TestCase):
         if os.path.isfile(file):
             aud = Audio(file)
             print("Node Order Before Adding Audio:")
-            print(story.nodes)
+            print(story.content_list)
             print("------------------------------------")
             # Add audio at a certain position
             audio = story.add(aud, position=2)
@@ -35,11 +35,11 @@ class TestAudioContent(unittest.TestCase):
 
             # See node order after audio was added
             print("Node Order After Adding Audio:")
-            print(story.nodes)
+            print(story.content_list)
 
             assert audio
             assert separator
-            assert story.nodes
+            assert isinstance(story.content_list, list) and len(story.content_list) > 0
 
         item = gis.content.get(story._itemid)
         assert item.delete()

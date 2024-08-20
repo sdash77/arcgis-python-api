@@ -53,6 +53,7 @@ class MapFeatureLayer(Layer):
         gis: _gis.GIS | None = None,
         container: MapImageLayer | None = None,
         dynamic_layer: dict | None = None,
+        time_filter: _dt.datetime | list[_dt.datetime] | list[str] | None = None,
     ):
         """
         Constructs a map feature layer given a feature layer URL
@@ -70,7 +71,8 @@ class MapFeatureLayer(Layer):
 
         self._attachments = None
         self._dynamic_layer = dynamic_layer
-        self._time_filter = None
+        self._time_filter = time_filter
+        self._storage = container
 
     # ----------------------------------------------------------------------
     @property
@@ -91,7 +93,7 @@ class MapFeatureLayer(Layer):
     @property
     def _lyr_json(self) -> dict:
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -115,7 +117,6 @@ class MapFeatureLayer(Layer):
             and self.properties["supportsQueryAttachments"]
             and self._attachments is None
         ):
-
             self._attachments = _features.managers.AttachmentManager(self)
         return self._attachments
 
@@ -189,7 +190,6 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     @renderer.setter
     def renderer(self, value: dict | None):
-
         if isinstance(value, (dict, PropertyMap)):
             self._renderer = dict(value)
         elif value is None:
@@ -1261,7 +1261,7 @@ class MapRasterLayer(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         if "lods" in self.container.properties:
@@ -1353,7 +1353,7 @@ class MapTable(MapFeatureLayer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             url += "?token=" + self._token
 
         lyr_dict = {"type": "FeatureLayer", "url": url}
@@ -1688,7 +1688,7 @@ class _MSILayerFactory(type):
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.layers._types.MapTable
+        >> arcgis.layers.MapTable
 
         print(s_layer.properties.name)
         >> 'pipe_properties'
@@ -1696,27 +1696,30 @@ class _MSILayerFactory(type):
 
     def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
-        props = lyr.properties
-        if "type" in props and props.type.lower() == "table":
+        props = dict(lyr.properties)
+        ltype = props.get("type", "").lower()
+        if ltype == "table":
             return MapTable(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "raster layer":
+        if ltype == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
             )
-        elif "type" in props and props.type.lower() == "feature layer":
+        if ltype == "feature layer":
+            time_filter = props.get("timeInfo", {}).get("timeExtent")
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
                 container=container,
                 dynamic_layer=dynamic_layer,
+                time_filter=time_filter,
             )
         return lyr
 
@@ -1743,7 +1746,7 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
-        >> arcgis.layers._types.MapTable
+        >> arcgis.layers.MapTable
 
         print(ms_layer.properties.name)
         >> 'pipe_properties'
@@ -2319,7 +2322,7 @@ class MapImageLayer(_gis.Layer):
     @property
     def _lyr_json(self):
         url = self.url
-        if self._token is not None:  # causing geoanalytics Invalid URL error
+        if self._token is not None:
             token = self._token or self._con.token
             url += "?token=" + token
 
@@ -2371,7 +2374,9 @@ class MapImageLayer(_gis.Layer):
         return mystring
 
     @property
-    def manager(self) -> MapImageLayerManager | EnterpriseMapImageLayerManager:
+    def manager(
+        self,
+    ) -> MapImageLayerManager | EnterpriseMapImageLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.layers.MapImageLayerManager` class
         for ArcGIS Online and :class:`~arcgis.layers.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
@@ -3294,7 +3299,10 @@ class MapImageLayer(_gis.Layer):
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 resp: requests.Response = self._session.post(
-                    url=url, data=params, out_folder=save_folder, file_name=save_file
+                    url=url,
+                    data=params,
+                    out_folder=save_folder,
+                    file_name=save_file,
                 )
                 resp.raise_for_status()
                 return resp.json()
@@ -3306,7 +3314,10 @@ class MapImageLayer(_gis.Layer):
                 return resp.json()
         elif f == "kmz":
             resp: requests.Response = self._session.post(
-                url=url, data=params, out_folder=save_folder, file_name=save_file
+                url=url,
+                data=params,
+                out_folder=save_folder,
+                file_name=save_file,
             )
             resp.raise_for_status()
             return resp.json()

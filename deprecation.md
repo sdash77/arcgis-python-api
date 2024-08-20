@@ -6,11 +6,25 @@ The ArcGIS API for Python occasionally deprecates functionalities, scheduling th
 
 These classes, functions, and modules in the ArcGIS API for Python are deprecated and may cause compatibility issues in future versions:
 
+### `arcgis.gis` Module 
+
+- `arcgis.gis.UserManager.create` - the `level` parameter is depreacted at **2.4.0** and will be removed from the method signature in a future release. 
+
 ### `arcgis.apps` Module 
 
 - `arcgis.apps.dashboard` - entire module deprecated at version **2.1.0**.  This sub-module maybe removed at a future major release (example: 2.x to 3.x). 
 - `WebExperience.clone` - deprecated in **2.3.0** will be removed in **2.4.2**. Pass in the Web Experience item to `gis.content.clone_items()` instead.
 - `StoryMap.get` - deprecated in **2.2.0** will be removed in **2.4.2**. `get` method has been deprecated, use `content_list` property instead.
+- `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
+- `StoryMap.cover_date` - deprecated in **2.4.0** removed in future major release. Use the `date` property in the Cover class.
+- `StoryMap.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
+- `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
+- `Swipe.properties` - deprecated in **2.4.0** removed in future major release. Use the `content` property instead.
+- `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
+- `MapAction` - deprecated in **2.4.0** removed in future major release. Use the `MediaAction` class instead.
+- `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
 
 
 ### `arcgis.learn` Module
@@ -38,6 +52,23 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 ## Deprecation Removals
 
 Several classes, functions, and methods have been completely removed from the ArcGIS API for Python. This means your code relying on them will no longer function properly. For a smooth transition, consult the API documentation to find alternative approaches and update your code accordingly.
+
+### `arcgis.geoanalytics` Module 
+
+**The entire geoanalytics module has been deprecated on enterprise and removed at ArcGIS Enterprise 11.4.  If you need the geoanalytics modules, please use version 2.3.x or prior.**
+
+- `analyze_patterns` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `data_enrichment` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `find_locations` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `manage_data` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `summarize_data` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `use_proximity` module removed in **2.4.0**. All functions within this module have been removed. Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.get_datastores` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.define_output_datastore` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+- `arcgis.geoanalytics.is_supported` was removed in **2.4.0**.  Use version 2.3.x if this functionality is still needed.
+
+
+
 ### `arcgis.mapping` Module
 - `WebMap` - removed in **2.4.0**. Use `arcgis.map.Map` instead.
 - `WebScene` - removed in **2.4.0**. Use `arcgis.map.Scene` instead.
@@ -72,6 +103,8 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `OGCCollection` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCCollection` class instead.
 - `OGCFeatureService` - removed in **2.4.0** removed in **2.4.2**. Use the `arcgis.layers.OGCFeatureService` class instead.
 
+### `arcgis.geocoding` Module
+- `suggest` - The **distance** parameter is deprecated and removed at **2.4.0**.  The parameter is no longer supported. Please use the `search_extent` parameter instead to control the search area.
 
 ### `arcgis.widgets` Module
 - `MapView` - removed in **2.4.0**. Use either `arcgis.map.Map` or `arcgis.map.Scene` instead.
@@ -115,18 +148,6 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `UtilityNetworkManager.query_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
 - `UtilityNetworkManager.apply_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
 
-### `arcgis.apps` Module
-
-- `StoryMap.nodes` - deprecated in **2.2.0** removed in **2.4.0**. The `nodes` property has been deprecated, use `content_list` property instead.
-- `StoryMap.cover_date` - deprecated in **2.4.0** removed in future major release. Use the `date` property in the Cover class.
-- `StoryMap.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
-- `StoryMap.navigation` - deprecated in **2.4.0** removed in future major release. Use the Navigation class.
-- `Briefing.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
-- `Collection.cover` - deprecated in **2.4.0** removed in future major release. Use the Cover class.
-- `Swipe.properties` - deprecated in **2.4.0** removed in future major release. Use the `content` property instead.
-- `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
-- `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
-
-#### `arcgis.gis` Module
+### `arcgis.gis` Module
 
 - `Group.invite_by_email` - deprecated in **1.5.1** removed in **2.4.0**.  Use `Group.invite` instead.
