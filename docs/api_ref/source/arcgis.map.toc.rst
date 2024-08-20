@@ -238,7 +238,10 @@ Symbols
 -------
 Anchor
 ^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Anchor
+.. autoclass:: arcgis.map.symbols.Anchor
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Border
 ^^^^^^
@@ -254,10 +257,13 @@ CimSymbolReference
 
 Decoration
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Decoration
+.. autoclass:: arcgis.map.symbols.Decoration
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 ExtrudeSymbol3DLayer
-^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.symbols.ExtrudeSymbol3DLayer
 
 FillSymbol3DLayer
@@ -274,7 +280,10 @@ Halo
 
 HorizontalAlignment
 ^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.HorizontalAlignment
+.. autoclass:: arcgis.map.symbols.HorizontalAlignment
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 IconSymbol3DLayer
 ^^^^^^
@@ -286,11 +295,17 @@ IconSymbol3DLayerResource
 
 Join
 ^^^^
-.. autopydantic_model:: arcgis.map.symbols.Join
+.. autoclass:: arcgis.map.symbols.Join
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 LineCap
 ^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.LineCap
+.. autoclass:: arcgis.map.symbols.LineCap
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Marker
 ^^^^^^
@@ -302,7 +317,10 @@ Pattern
 
 Style
 ^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Style
+.. autoclass:: arcgis.map.symbols.Style
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 LineSymbol3D
 ^^^^^^^^^^^^
@@ -318,11 +336,17 @@ Marker
 
 MarkerPlacement
 ^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.MarkerPlacement
+.. autoclass:: arcgis.map.symbols.MarkerPlacement
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 MarkerStyle
 ^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.MarkerStyle
+.. autoclass:: arcgis.map.symbols.MarkerStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Material
 ^^^^^^^^
@@ -346,7 +370,10 @@ Outline
 
 PathCap
 ^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.PathCap
+.. autoclass:: arcgis.map.symbols.PathCap
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 PathSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
@@ -366,7 +393,10 @@ PictureMarkerSymbolEsriPMS
 
 Placement
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Placement
+.. autoclass:: arcgis.map.symbols.Placement
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 PointSymbol3D
 ^^^^^^^^^^^^^
@@ -382,15 +412,24 @@ PolygonSymbol3D
 
 Primitive
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Primitive
+.. autoclass:: arcgis.map.symbols.Primitive
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Profile
 ^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Profile
+.. autoclass:: arcgis.map.symbols.Profile
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 ProfileRotation
 ^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.ProfileRotation
+.. autoclass:: arcgis.map.symbols.ProfileRotation
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 SimpleFillSymbolEsriSFS
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,7 +437,10 @@ SimpleFillSymbolEsriSFS
 
 SimpleFillSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.SimpleFillSymbolStyle
+.. autoclass:: arcgis.map.symbols.SimpleFillSymbolStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 SimpleLineSymbolEsriSLS
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -406,7 +448,10 @@ SimpleLineSymbolEsriSLS
 
 SimpleLineSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.SimpleLineSymbolStyle
+.. autoclass:: arcgis.map.symbols.SimpleLineSymbolStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 SimpleMarkerSymbolEsriSMS
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -414,7 +459,10 @@ SimpleMarkerSymbolEsriSMS
 
 SimpleMarkerSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.SimpleMarkerSymbolStyle
+.. autoclass:: arcgis.map.symbols.SimpleMarkerSymbolStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 SketchEdges
 ^^^^^^^^^^^
@@ -426,7 +474,10 @@ SolidEdges
 
 Style
 ^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Style
+.. autoclass:: arcgis.map.symbols.Style
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 StyleOrigin
 ^^^^^^^^^^^
@@ -438,7 +489,10 @@ TextBackground
 
 TextDecoration
 ^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.TextDecoration
+.. autoclass:: arcgis.map.symbols.TextDecoration
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TextFont
 ^^^^^^^^
@@ -446,7 +500,10 @@ TextFont
 
 TextStyle
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.TextStyle
+.. autoclass:: arcgis.map.symbols.TextStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TextSymbol3DLayer
 ^^^^^^^^^^^^^^^^^
@@ -458,11 +515,17 @@ TextSymbolEsriTS
 
 TextWeight
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.TextWeight
+.. autoclass:: arcgis.map.symbols.TextWeight
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 VerticalAlignment
 ^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.VerticalAlignment
+.. autoclass::o arcgis.map.symbols.VerticalAlignment
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 VerticalOffset
 ^^^^^^^^^^^^^^
@@ -470,7 +533,10 @@ VerticalOffset
 
 WaterbodySize
 ^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.WaterbodySize
+.. autoclass:: arcgis.map.symbols.WaterbodySize
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 WaterSymbol3DLayer
 ^^^^^^^^^^^^^^^^^^
@@ -478,11 +544,17 @@ WaterSymbol3DLayer
 
 WaveStrength
 ^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.WaveStrength
+.. autoclass:: arcgis.map.symbols.WaveStrength
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Weight
 ^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Weight
+.. autoclass:: arcgis.map.symbols.Weight
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Renderers
 ---------
