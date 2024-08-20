@@ -223,6 +223,13 @@ RelatedRecordsInfo
 ^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.RelatedRecordsInfo
 
+StatisticType
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.map.popups.StatisticType
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 StringFieldOption
 ^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.map.popups.StringFieldOption
@@ -592,7 +599,10 @@ ClassBreaksRenderer
 
 ClassificationMethod
 ^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.ClassificationMethod
+.. autoclass:: arcgis.map.renderers.ClassificationMethod
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 ColorInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^
@@ -604,7 +614,10 @@ ColorRamp
 
 ColorRampType
 ^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.ColorRampType
+.. autoclass:: arcgis.map.renderers.ColorRampType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 ColorStop
 ^^^^^^^^^^^^^^^^^^
@@ -636,7 +649,10 @@ FlowTheme
 
 Focus
 ^^^^^
-.. autopydantic_model:: arcgis.map.renderers.Focus
+.. autoclass:: arcgis.map.renderers.Focus
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 HeatmapColorStop
 ^^^^^^^^^^^^^^^^
@@ -648,7 +664,10 @@ HeatmapRenderer
 
 InputOutputUnit
 ^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.InputOutputUnit
+.. autoclass:: arcgis.map.renderers.InputOutputUnit
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 LegendOptions
 ^^^^^^^^^^^^^
@@ -656,11 +675,17 @@ LegendOptions
 
 LegendOrder
 ^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.LegendOrder
+.. autoclass:: arcgis.map.renderers.LegendOrder
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 NormalizationType
 ^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.NormalizationType
+.. autoclass:: arcgis.map.renderers.NormalizationType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 OthersThresholdColorInfo
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -676,19 +701,24 @@ PredominanceRenderer
 
 RampAlgorithm
 ^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.RampAlgorithm
+.. autoclass:: arcgis.map.renderers.RampAlgorithm
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 RatioStyle
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.RatioStyle
-
-RendererManager
-^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.RendererManager
+.. autoclass:: arcgis.map.renderers.RatioStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 RendererType
 ^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.RendererType
+.. autoclass:: arcgis.map.renderers.RendererType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 RotationInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -696,7 +726,10 @@ RotationInfoVisualVariable
 
 RotationType
 ^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.RotationType
+.. autoclass:: arcgis.map.renderers.RotationType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 SimpleRenderer
 ^^^^^^^^^^^^^^
@@ -716,13 +749,7 @@ SizeStop
 
 StandardDeviationInterval
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.StandardDeviationInterval
-    :members:
-    :undoc-members:
-
-StatisticType
-^^^^^^^^^^^^^
-.. autoclass:: arcgis.map.renderers.StatisticType
+.. autoclass:: arcgis.map.renderers.StandardDeviationInterval
     :members:
     :undoc-members:
     :show-inheritance:
@@ -733,7 +760,10 @@ StretchRenderer
 
 StretchType
 ^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.StretchType
+.. autoclass:: arcgis.map.renderers.StretchType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TemporalRenderer
 ^^^^^^^^^^^^^^^^
@@ -741,15 +771,24 @@ TemporalRenderer
 
 Theme
 ^^^^^
-.. autopydantic_model:: arcgis.map.renderers.Theme
+.. autoclass:: arcgis.map.renderers.Theme
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TimeUnits
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.TimeUnits
+.. autoclass:: arcgis.map.renderers.TimeUnits
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TrailCap
 ^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.TrailCap
+.. autoclass:: arcgis.map.renderers.TrailCap
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TransparencyInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -775,13 +814,16 @@ UniqueValueRenderer
 ^^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.UniqueValueRenderer
 
-UniqueValueSymbolStyle
+UnivariateSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.UniqueValueSymbolStyle
+.. autopydantic_model:: arcgis.map.renderers.UnivariateSymbolStyle
 
 UnivariateTheme
 ^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.UnivariateTheme
+.. autoclass:: arcgis.map.renderers.UnivariateTheme
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 VectorFieldRenderer
 ^^^^^^^^^^^^^^^^^^^
@@ -789,11 +831,17 @@ VectorFieldRenderer
 
 VectorFieldStyle
 ^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.VectorFieldStyle
+.. autoclass:: arcgis.map.renderers.VectorFieldStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 VisualVariableType
 ^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.VisualVariableType
+.. autoclass:: arcgis.map.renderers.VisualVariableType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Forms
 -----
