@@ -207,6 +207,7 @@ RelatedRecordsInfo
 
 StringFieldOption
 ^^^^^^^^^^^^^^^^^
+.. autopydantic_model:: arcgis.map.popups.StringFieldOption
 
 Value
 ^^^^^
