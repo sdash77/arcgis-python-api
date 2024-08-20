@@ -912,8 +912,6 @@ FormRelationshipElement
 FormSignatureInput
 ^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.forms.FormSignatureInput
-    :members:
-    :undoc-members:
     
 FormSwitchInput
 ^^^^^^^^^^^^^^^
@@ -949,11 +947,17 @@ InheritedDomain
 
 InitialState
 ^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.forms.InitialState
+.. autoclass:: arcgis.map.forms.InitialState
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Order
 ^^^^^
-.. autopydantic_model:: arcgis.map.forms.Order
+.. autoclass:: arcgis.map.forms.Order
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 OrderByField
 ^^^^^^^^^^^^
@@ -965,15 +969,24 @@ RangeDomain
 
 ReturnType
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.forms.ReturnType
+.. autoclass:: arcgis.map.forms.ReturnType
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TextFormat
 ^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.forms.TextFormat
+.. autoclass:: arcgis.map.forms.TextFormat
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 TimeResolution
 ^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.forms.TimeResolution
+.. autoclass:: arcgis.map.forms.TimeResolution
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 UniqueCodedValue
 ^^^^^^^^^^^^^^^^
