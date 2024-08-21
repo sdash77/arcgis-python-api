@@ -640,7 +640,10 @@ FlowRenderer
 
 FlowRepresentation
 ^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.FlowRepresentation
+.. autoclass:: arcgis.map.renderers.FlowRepresentation
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 FlowTheme
 ^^^^^^^^^
