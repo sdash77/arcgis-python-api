@@ -154,7 +154,7 @@ FieldInfo
 .. autopydantic_model:: arcgis.map.popups.FieldInfo
 
 Format
-^^^^^^^^^^^^^^^^
+^^^^^^
 .. autopydantic_model:: arcgis.map.popups.Format
 
 LayerOptions
@@ -208,15 +208,15 @@ PopupElementText
 .. autopydantic_model:: arcgis.map.popups.PopupElementText
 
 PopupElementUtilityNetworkAssociations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.PopupElementUtilityNetworkAssociations
 
 PopupExpressionInfo
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.PopupExpressionInfo
 
 PopupInfo
-^^^^^^^^^^^^^^^^
+^^^^^^^^^
 .. autopydantic_model:: arcgis.map.popups.PopupInfo
 
 RelatedRecordsInfo
@@ -608,18 +608,18 @@ ColorInfoVisualVariable
 .. autopydantic_model:: arcgis.map.renderers.ColorInfoVisualVariable
 
 ColorRamp
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.ColorRamp
 
 ColorRampType
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 .. autoclass:: arcgis.map.renderers.ColorRampType
     :members:
     :undoc-members:
     :show-inheritance:
 
 ColorStop
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.ColorStop
 
 DictionaryRenderer
@@ -631,7 +631,7 @@ DotDensityRenderer
 .. autopydantic_model:: arcgis.map.renderers.DotDensityRenderer
 
 ExpressionInfo
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.renderers.ExpressionInfo
 
 FlowRenderer
