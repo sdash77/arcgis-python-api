@@ -388,9 +388,9 @@ class AutoML(object):
         Fits the AutoML model.
         """
         if getattr(self._data, "_is_not_empty", True):
-            if isinstance(self._all_labels[0], int):
+            if isinstance(self._all_labels.iloc[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
-            elif isinstance(self._all_labels[0], float):
+            elif isinstance(self._all_labels.iloc[0], float):
                 self._all_labels = self._all_labels.astype(np.float64)  #
             if self._sensitive_variables:
                 sensitive_features = self._all_data_df[
