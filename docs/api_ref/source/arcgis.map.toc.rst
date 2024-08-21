@@ -293,7 +293,7 @@ HorizontalAlignment
     :show-inheritance:
 
 IconSymbol3DLayer
-^^^^^^
+^^^^^^^^^^^^^^^^^
 .. autopydantic_model:: arcgis.map.symbols.IconSymbol3DLayer
 
 IconSymbol3DLayerResource
@@ -313,10 +313,6 @@ LineCap
     :members:
     :undoc-members:
     :show-inheritance:
-
-Marker
-^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.Marker
 
 Pattern
 ^^^^^^^
@@ -411,7 +407,10 @@ PointSymbol3D
 
 PolygonStyle
 ^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.symbols.PolygonStyle
+.. autoclass:: arcgis.map.symbols.PolygonStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 PolygonSymbol3D
 ^^^^^^^^^^^^^^^
@@ -645,7 +644,10 @@ FlowRepresentation
 
 FlowTheme
 ^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.FlowTheme
+.. autoclass:: arcgis.map.renderers.FlowTheme
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Focus
 ^^^^^
@@ -816,7 +818,10 @@ UniqueValueRenderer
 
 UnivariateSymbolStyle
 ^^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.UnivariateSymbolStyle
+.. autoclass:: arcgis.map.renderers.UnivariateSymbolStyle
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 UnivariateTheme
 ^^^^^^^^^^^^^^^
