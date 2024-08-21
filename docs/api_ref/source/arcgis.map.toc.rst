@@ -741,9 +741,9 @@ Size
 ^^^^
 .. autopydantic_model:: arcgis.map.renderers.Size
 
-SizInfoVisualVariable
+SizeInfoVisualVariable
 ^^^^^^^^^^^^^^^^^^^^^
-.. autopydantic_model:: arcgis.map.renderers.SizInfoVisualVariable
+.. autopydantic_model:: arcgis.map.renderers.SizeInfoVisualVariable
 
 SizeStop
 ^^^^^^^^
