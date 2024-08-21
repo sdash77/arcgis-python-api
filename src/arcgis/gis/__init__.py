@@ -17866,9 +17866,9 @@ class Item(dict):
                             ids in the `item_mapping` dictionary exist correspond to valid,
                             accessible items item in the GIS, and that all original/replacement
                             item pairs are of matching type. If `True`, the function will not
-                            check and replace all instances of the `item_mapping` keys with their
-                            corresponding values in the item's data. Default is `False`, is
-                            strongly recommended to remain `False` unless the user has a
+                            check and replace all instances of the `item_mapping` keys with 
+                            their corresponding values in the item's data. Default is `False`, 
+                            is strongly recommended to remain `False` unless the user has a
                             specific reason to circumvent item id validation.
         ===============     ====================================================================
 
