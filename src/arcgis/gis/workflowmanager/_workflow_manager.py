@@ -3370,6 +3370,25 @@ class Job(object):
         :return:
             :class:`~arcgis.gis.workflowmanager.JobExecution`
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will run the current active steps, if no param is given
+            run_execution = job.run()
+
+            print(f'Result = { run_execution.result() }\n')
+            print(f'Status = { run_execution.status } \n')
+            print(f'Elapsed Time = { run_execution.elapse_time }')
+            print(f'Messages: \n')
+            for m in run_execution.messages:
+                print(f'{m.message} \n')
+
         """
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.RUN)
@@ -3421,6 +3440,25 @@ class Job(object):
         :return:
             :class:`~arcgis.gis.workflowmanager.JobExecution`
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will stop the current active steps, if no param is given
+            stop_execution = job.stop()
+
+            print(f'Result = { stop_execution.result() }\n')
+            print(f'Status = { stop_execution.status } \n')
+            print(f'Elapsed Time = { stop_execution.elapse_time }')
+            print(f'Messages: \n')
+            for m in stop_execution.messages:
+                print(f'{m.message} \n')
+
         """
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.STOP)
@@ -3469,6 +3507,25 @@ class Job(object):
 
         :return:
             :class:`~arcgis.gis.workflowmanager.JobExecution`
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Updating a step assignment
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            job = wm.jobs.get('job_id')
+
+            # Will finish the current active steps, if no param is given
+            finish_execution = job.finish()
+
+            print(f'Result = { finish_execution.result() }\n')
+            print(f'Status = { finish_execution.status } \n')
+            print(f'Elapsed Time = { finish_execution.elapse_time }')
+            print(f'Messages: \n')
+            for m in finish_execution.messages:
+                print(f'{m.message} \n')
 
         """
         # Create a JobExecution object
