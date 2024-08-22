@@ -61,7 +61,7 @@ class WorkflowManagerSetup:
                 self.workflow_item_id = self.workflow_manager_admin.create_item(
                     self.item_name
                 )
-                print('Finished creating workflow item, starting tests')
+                print("Finished creating workflow item, starting tests")
                 self.workflow_item = self._gis.content.get(self.workflow_item_id)
                 self.workflow_manager = WorkflowManager(self.workflow_item)
             except Exception as testException:

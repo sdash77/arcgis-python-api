@@ -7,7 +7,11 @@ from pprint import pprint
 import arcgis.gis.workflowmanager._workflow_manager
 from arcgis.geometry import Geometry
 from . import workflowmanager_setup
-from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin, MessageType
+from arcgis.gis.workflowmanager import (
+    WorkflowManager,
+    WorkflowManagerAdmin,
+    MessageType,
+)
 from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
@@ -17,7 +21,6 @@ from utils.decorators import integration_test
 ###########################################################################
 # @unittest.SkipTest
 @integration_test
-
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -3664,13 +3667,17 @@ class TestWorkflowManager(unittest.TestCase):
         job_exec = job.run()
 
         while not job_exec.done():
-            print(f'Status = {job_exec.status}')
-            print(f'{job_exec.messages}')
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
             time.sleep(5)
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
-        self.assertEqual(MessageType.STEPINFOREQUIRED, job_exec.result().msg_type, "last message should be stepinforequired.")
+        self.assertEqual(
+            MessageType.STEPINFOREQUIRED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
         self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
@@ -3686,13 +3693,17 @@ class TestWorkflowManager(unittest.TestCase):
         job_exec = job.stop()
 
         while not job_exec.done():
-            print(f'Status = {job_exec.status}')
-            print(f'{job_exec.messages}')
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
             time.sleep(5)
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
-        self.assertEqual(MessageType.STEPPAUSED, job_exec.result().msg_type, "last message should be stepinforequired.")
+        self.assertEqual(
+            MessageType.STEPPAUSED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
         self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
@@ -3708,13 +3719,17 @@ class TestWorkflowManager(unittest.TestCase):
         job_exec = job.finish()
 
         while not job_exec.done():
-            print(f'Status = {job_exec.status}')
-            print(f'{job_exec.messages}')
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
             time.sleep(5)
 
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
-        self.assertEqual(MessageType.STEPFINISHED, job_exec.result().msg_type, "last message should be stepinforequired.")
+        self.assertEqual(
+            MessageType.STEPFINISHED,
+            job_exec.result().msg_type,
+            "last message should be stepinforequired.",
+        )
         self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
@@ -3726,7 +3741,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         job = self.connection.workflow_manager.jobs.get(job_id)
         # Auto Step ID
-        job.set_current_step('eed77c14-83bf-37f2-022c-601cb6c75e1a')
+        job.set_current_step("eed77c14-83bf-37f2-022c-601cb6c75e1a")
         job.run().result()
         job.stop().result()
         job.finish().result()
@@ -3735,13 +3750,21 @@ class TestWorkflowManager(unittest.TestCase):
         job_exec = job.run()
 
         while not job_exec.done():
-            print(f'Status = {job_exec.status}')
-            print(f'{job_exec.messages}')
+            print(f"Status = {job_exec.status}")
+            print(f"{job_exec.messages}")
             time.sleep(5)
         time.sleep(5)
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
-        self.assertEqual(sum(1 for m in job_exec.messages if m.msg_type == MessageType.STEPINFOREQUIRED), 4, "Multiple steps should be active")
+        self.assertEqual(
+            sum(
+                1
+                for m in job_exec.messages
+                if m.msg_type == MessageType.STEPINFOREQUIRED
+            ),
+            4,
+            "Multiple steps should be active",
+        )
         self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
         self.assertTrue(job_exec.messages, "Incorrect return type")
 

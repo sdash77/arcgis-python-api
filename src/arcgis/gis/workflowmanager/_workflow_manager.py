@@ -3353,6 +3353,7 @@ class Job(object):
             if v is not None and not k.startswith("_")
         }
         return return_obj
+
     # For now, requiring passing the WorkflowManager as we don't flow it down,
     # but we need a singleton NotificationManager / connection
 
@@ -3415,7 +3416,7 @@ class Job(object):
         if "error" in return_obj:
             self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj['success'] is False:
+        elif "success" in return_obj and return_obj["success"] is False:
             self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
@@ -3486,7 +3487,7 @@ class Job(object):
         if "error" in return_obj:
             self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj['success'] is False:
+        elif "success" in return_obj and return_obj["success"] is False:
             self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
@@ -3554,7 +3555,7 @@ class Job(object):
         if "error" in return_obj:
             self.notification_manager.unsubscribe([self.job_id])
             self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj['success'] is False:
+        elif "success" in return_obj and return_obj["success"] is False:
             self.notification_manager.unsubscribe([self.job_id])
             raise Exception(return_obj["stepResponses"])
 
@@ -3607,19 +3608,37 @@ class JobExecution:
         self._execution_type = execution_type
 
     def _callback(self, msg: Notification):
-        if 'jobId' in msg.message and msg.message['jobId'] == self._job.job_id and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]:
+        if (
+            "jobId" in msg.message
+            and msg.message["jobId"] == self._job.job_id
+            and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]
+        ):
             self._messages.append(msg)
             # TODO Need to consider cancelling GP case (https://devtopia.esri.com/WebGIS/workflow-manager/issues/7844)
             if self._execution_type is ExecutionType.RUN:
-                if msg.msg_type in [MessageType.STEPFINISHED, MessageType.STEPSTOPPED, MessageType.STEPERROR, MessageType.STEPINFOREQUIRED]:
+                if msg.msg_type in [
+                    MessageType.STEPFINISHED,
+                    MessageType.STEPSTOPPED,
+                    MessageType.STEPERROR,
+                    MessageType.STEPINFOREQUIRED,
+                ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
             elif self._execution_type is ExecutionType.STOP:
-                if msg.msg_type in [MessageType.STEPPAUSED, MessageType.STEPSTOPPED, MessageType.STEPERROR, MessageType.STEPCANCELLED]:
+                if msg.msg_type in [
+                    MessageType.STEPPAUSED,
+                    MessageType.STEPSTOPPED,
+                    MessageType.STEPERROR,
+                    MessageType.STEPCANCELLED,
+                ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
             elif self._execution_type is ExecutionType.FINISH:
-                if msg.msg_type in [MessageType.STEPSTARTED, MessageType.STEPERROR, MessageType.STEPFINISHED ]:
+                if msg.msg_type in [
+                    MessageType.STEPSTARTED,
+                    MessageType.STEPERROR,
+                    MessageType.STEPFINISHED,
+                ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
 
@@ -3659,7 +3678,7 @@ class JobExecution:
         if self._event.wait(delay):
             return self._messages[-1]
         else:
-            raise TimeoutError('Timeout waiting for result')
+            raise TimeoutError("Timeout waiting for result")
 
     @property
     def elapse_time(self):
@@ -4217,10 +4236,10 @@ class WebsocketConnection:
         try:
             self.subscribe_callback(msg)
         except Exception as e:
-            print('-------------------------------')
-            print('Error when receiving')
+            print("-------------------------------")
+            print("Error when receiving")
             print(e)
-            print('-------------------------------')
+            print("-------------------------------")
 
     def connect(self, url):
         _open_event = threading.Event()
@@ -4229,15 +4248,15 @@ class WebsocketConnection:
             _open_event.set()
 
         # TODO Set all headers / ssl options
-        self.ws = websocket.WebSocketApp(url,
-                                         on_open=on_open,
-                                         on_message=self.__on_message__)
+        self.ws = websocket.WebSocketApp(
+            url, on_open=on_open, on_message=self.__on_message__
+        )
         self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
         self.thread.start()
         if _open_event.wait(self.timeout):
-            print('Connected')
+            print("Connected")
         else:
-            raise TimeoutError('Error waiting for connection open event')
+            raise TimeoutError("Error waiting for connection open event")
 
     def send(self, msg):
         # print(f'Sending {msg}')
@@ -4279,12 +4298,13 @@ class NotificationManager:
         self.subscribed_jobs = {}
 
         # need baseAddress/ server address, orgid, and workflow item id
-        base = self.server_url.replace('http://', 'ws://').replace('https://', 'wss://')
+        base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
         ws_address = f"{base}/{self.org_id}/{self.workflow_item_id}/notificationWs"
         self.websocket_url = self._generate_url(ws_address)
 
         # print(f'For help with websocket messages, you can reference '
-              # f'https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/')
+        # f'https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/')
+
     @property
     def _wmx_server_url(self):
         """locates the WMX server"""
@@ -4338,12 +4358,12 @@ class NotificationManager:
 
     def _subscriber(self, message):
         message_dict = json.loads(message)
-        if 'msgType' in message_dict.keys():
+        if "msgType" in message_dict.keys():
             msg = Notification(message_dict)
 
             try:
-                if 'jobId' in msg.message:
-                    job_id = msg.message['jobId']
+                if "jobId" in msg.message:
+                    job_id = msg.message["jobId"]
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
                         callback(msg)
@@ -4388,7 +4408,11 @@ class NotificationManager:
         try:
             ids = job_ids
             if self.websocket_connection is None:
-                subscribe_obj = {'msgType': 'subscribe', 'jobIds': ids, 'token': self._token_generator()}
+                subscribe_obj = {
+                    "msgType": "subscribe",
+                    "jobIds": ids,
+                    "token": self._token_generator(),
+                }
 
                 ws = WebsocketConnection(self._subscriber)
                 ws.connect(self.websocket_url)
@@ -4396,7 +4420,11 @@ class NotificationManager:
                 ws.disconnect()
             else:
                 ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
-                subscribe_obj = {'msgType': 'subscribe', 'jobIds': ids, 'token': self._token_generator()}
+                subscribe_obj = {
+                    "msgType": "subscribe",
+                    "jobIds": ids,
+                    "token": self._token_generator(),
+                }
                 if len(ids) > 0:
                     self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
                 else:
@@ -4406,7 +4434,7 @@ class NotificationManager:
             for jid in ids:
                 self.subscribed_jobs[jid] = callback
         except Exception as e:
-            print(f'Error when trying to subscribe: {e}')
+            print(f"Error when trying to subscribe: {e}")
 
     def unsubscribe(self, job_ids: list):
         """
@@ -4427,13 +4455,17 @@ class NotificationManager:
         """
         try:
             if self.websocket_connection is not None:
-                unsubscribe_obj = {'msgType': 'unsubscribe', 'jobIds': job_ids, 'token': self._token_generator()}
+                unsubscribe_obj = {
+                    "msgType": "unsubscribe",
+                    "jobIds": job_ids,
+                    "token": self._token_generator(),
+                }
                 self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
                 for jid in job_ids:
                     self.subscribed_jobs.pop(jid)
         except Exception as e:
-            print(f'Error when trying to unsubscribe: {e}')
+            print(f"Error when trying to unsubscribe: {e}")
 
 
 class Notification:
@@ -4447,10 +4479,11 @@ class Notification:
     init_data           data object representing relevant properties of a notification
     ===============     ====================================================================
     """
+
     def __init__(self, init_data):
-        self.message = init_data['message']
-        self.timestamp = init_data['timestamp']
-        self.msg_type = MessageType(init_data['msgType'].upper())
+        self.message = init_data["message"]
+        self.timestamp = init_data["timestamp"]
+        self.msg_type = MessageType(init_data["msgType"].upper())
 
     def __repr__(self):
         return f"{self.timestamp}: {self.msg_type} - {self.message}"
@@ -4462,27 +4495,28 @@ class MessageType(str, Enum):
 
     This enum class represents the list of all possible message types when sending or receiving messages.
     """
-    CREATED = 'CREATED'
-    ERROR = 'ERROR'
-    JOBSTATE = 'JOBSTATE'
-    JOBUPDATED = 'JOBUPDATED'
-    JOBCOMMENTUPDATED = 'JOBCOMMENTUPDATED'
-    JOBATTACHMENTUPDATED = 'JOBATTACHMENTUPDATED'
-    JOBLOCATIONUPDATED = 'JOBLOCATIONUPDATED'
-    STEPSTARTED = 'STEPSTARTED'
-    STEPPROGRESS = 'STEPPROGRESS'
-    STEPCANCELLED = 'STEPCANCELLED'
-    STEPPAUSED = 'STEPPAUSED'
-    STEPSTOPPING = 'STEPSTOPPING'
-    STEPSTOPPED = 'STEPSTOPPED'
-    STEPWARNINGSTOPPED = 'STEPWARNINGSTOPPED'
-    STEPFINISHED = 'STEPFINISHED'
-    STEPREASSIGNED = 'STEPREASSIGNED'
-    STEPHELD = 'STEPHELD'
-    STEPHOLDRELEASED = 'STEPHOLDRELEASED'
-    STEPERROR = 'STEPERROR'
-    STEPINFOREQUIRED = 'STEPINFOREQUIRED'
-    STEPINFORMATION = 'STEPINFORMATION'
+
+    CREATED = "CREATED"
+    ERROR = "ERROR"
+    JOBSTATE = "JOBSTATE"
+    JOBUPDATED = "JOBUPDATED"
+    JOBCOMMENTUPDATED = "JOBCOMMENTUPDATED"
+    JOBATTACHMENTUPDATED = "JOBATTACHMENTUPDATED"
+    JOBLOCATIONUPDATED = "JOBLOCATIONUPDATED"
+    STEPSTARTED = "STEPSTARTED"
+    STEPPROGRESS = "STEPPROGRESS"
+    STEPCANCELLED = "STEPCANCELLED"
+    STEPPAUSED = "STEPPAUSED"
+    STEPSTOPPING = "STEPSTOPPING"
+    STEPSTOPPED = "STEPSTOPPED"
+    STEPWARNINGSTOPPED = "STEPWARNINGSTOPPED"
+    STEPFINISHED = "STEPFINISHED"
+    STEPREASSIGNED = "STEPREASSIGNED"
+    STEPHELD = "STEPHELD"
+    STEPHOLDRELEASED = "STEPHOLDRELEASED"
+    STEPERROR = "STEPERROR"
+    STEPINFOREQUIRED = "STEPINFOREQUIRED"
+    STEPINFORMATION = "STEPINFORMATION"
 
 
 class ExecutionType(str, Enum):
@@ -4491,7 +4525,7 @@ class ExecutionType(str, Enum):
 
     This enum class represents the possible step execution types to be run with websocket messaging.
     """
-    RUN = 'RUN',
-    STOP = 'STOP',
-    FINISH = 'FINISH'
 
+    RUN = ("RUN",)
+    STOP = ("STOP",)
+    FINISH = "FINISH"
