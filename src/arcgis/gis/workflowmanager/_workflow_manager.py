@@ -3383,12 +3383,12 @@ class Job(object):
             # Will run the current active steps, if no param is given
             run_execution = job.run()
 
-            print(f'Result = { run_execution.result() }\n')
-            print(f'Status = { run_execution.status } \n')
+            print(f'Result = { run_execution.result() }')
+            print(f'Status = { run_execution.status }')
             print(f'Elapsed Time = { run_execution.elapse_time }')
-            print(f'Messages: \n')
+            print(f'Messages:')
             for m in run_execution.messages:
-                print(f'{m.message} \n')
+                print(m.message)
 
         """
         # Create a JobExecution object
@@ -3453,12 +3453,12 @@ class Job(object):
             # Will stop the current active steps, if no param is given
             stop_execution = job.stop()
 
-            print(f'Result = { stop_execution.result() }\n')
-            print(f'Status = { stop_execution.status } \n')
+            print(f'Result = { stop_execution.result() }')
+            print(f'Status = { stop_execution.status }')
             print(f'Elapsed Time = { stop_execution.elapse_time }')
-            print(f'Messages: \n')
+            print(f'Messages: ')
             for m in stop_execution.messages:
-                print(f'{m.message} \n')
+                print(m.message)
 
         """
         # Create a JobExecution object
@@ -3521,12 +3521,12 @@ class Job(object):
             # Will finish the current active steps, if no param is given
             finish_execution = job.finish()
 
-            print(f'Result = { finish_execution.result() }\n')
-            print(f'Status = { finish_execution.status } \n')
+            print(f'Result = { finish_execution.result() }')
+            print(f'Status = { finish_execution.status }')
             print(f'Elapsed Time = { finish_execution.elapse_time }')
-            print(f'Messages: \n')
+            print(f'Messages: ')
             for m in finish_execution.messages:
-                print(f'{m.message} \n')
+                print(m.message)
 
         """
         # Create a JobExecution object
@@ -4489,7 +4489,7 @@ class Notification:
         return f"{self.timestamp}: {self.msg_type} - {self.message}"
 
 
-class MessageType(str, Enum):
+class MessageType(Enum):
     """
     The Workflow Manager Message Types
 
