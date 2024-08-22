@@ -1724,6 +1724,10 @@ def enrich(
                 elif isinstance(value, Geometry) or "geometry" in value:
                     if isinstance(value, Polyline) or isinstance(value, Polygon):
                         value = value.true_centroid
+                        if value is None:
+                            raise ValueError(
+                                "Arcpy or shapely are needed to use polyline geometries. "
+                            )
                     elif "geometry" in value:
                         value = value["geometry"]
 
@@ -1731,6 +1735,10 @@ def enrich(
                     if "rings" in value:
                         polygon = Polygon(value)
                         value = polygon.true_centroid
+                        if value is None:
+                            raise ValueError(
+                                "Arcpy or shapely are needed to use polygon geometries. "
+                            )
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])

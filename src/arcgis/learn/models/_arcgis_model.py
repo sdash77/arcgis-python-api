@@ -610,7 +610,7 @@ class ArcGISModel(object):
         else:
             self._is_multispectral = False
 
-        if self._is_multispectral or "_hf_" in self._backbone.__module__:
+        if self._is_multispectral:
 
             self._orig_backbone = self._backbone
 

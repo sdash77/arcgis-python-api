@@ -8607,6 +8607,8 @@ class ContentManager(object):
         group_mapping: Optional[dict[str, str]] = None,
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
+        export_service: bool = False,
+        preserve_editing_info: bool = False,
         **kwargs,
     ):
         """
@@ -8665,6 +8667,24 @@ class ContentManager(object):
         preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS
                                   Online, the clone item will attempt to keep the same item ids for the
                                   items if available.  ArcGIS Enterprise must be 10.9+.
+        ---------------------     --------------------------------------------------------------------
+        export_service            Optional Boolean.  When True, a feature layer cloned over will be
+                                  exported to a File GeoDatabase that is then published in the new
+                                  organization. In order for this to work, user must be the owner of
+                                  the item, have admin privileges, or have export enabled on the
+                                  service. Default is False.
+
+                                  .. note::
+                                      This parameter is currently not usable with views.
+        ---------------------     --------------------------------------------------------------------
+        preserve_editing_info     Optional Boolean.  When True, a feature layer being cloned with
+                                  editor tracking fields will maintain the current values from the
+                                  source organization instead of automatically updating the values
+                                  to the new org/user. Default is False.
+
+                                  .. note::
+                                      `export_service` must be False in order for this to work if
+                                      the target GIS is on ArcGIS Online.
         =====================     ====================================================================
 
         **keyword arguments**
@@ -8723,6 +8743,8 @@ class ContentManager(object):
             group_mapping,
             owner_name,
             preserve_item_id=preserve_item_id,
+            export_service=export_service,
+            preserve_editing_info=preserve_editing_info,
             from_dash=kwargs.pop("from_dash", False),
             wab_code_attach=kwargs.pop("copy_code_attachment", True),
         )
@@ -17866,9 +17888,9 @@ class Item(dict):
                             ids in the `item_mapping` dictionary exist correspond to valid,
                             accessible items item in the GIS, and that all original/replacement
                             item pairs are of matching type. If `True`, the function will not
-                            check and replace all instances of the `item_mapping` keys with their
-                            corresponding values in the item's data. Default is `False`, is
-                            strongly recommended to remain `False` unless the user has a
+                            check and replace all instances of the `item_mapping` keys with
+                            their corresponding values in the item's data. Default is `False`,
+                            is strongly recommended to remain `False` unless the user has a
                             specific reason to circumvent item id validation.
         ===============     ====================================================================
 
