@@ -3372,7 +3372,7 @@ class Job(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a step assignment
+            # USAGE EXAMPLE: Run the current active steps
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)
@@ -3442,7 +3442,7 @@ class Job(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a step assignment
+            # USAGE EXAMPLE: Stop the current active steps
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)
@@ -3510,7 +3510,7 @@ class Job(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a step assignment
+            # USAGE EXAMPLE: Finish the current active steps
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)
