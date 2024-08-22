@@ -79,3 +79,27 @@ WMRole
 .. autoclass:: arcgis.gis.workflowmanager.WMRole
     :members:
     :show-inheritance:
+
+NotificationManager
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.NotificationManager
+    :members:
+    :show-inheritance:
+
+Notification
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.Notification
+    :members:
+    :show-inheritance:
+
+MessageType
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.MessageType
+    :members:
+    :show-inheritance:
+
+ExecutionType
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.ExecutionTypes
+    :members:
+    :show-inheritance:
