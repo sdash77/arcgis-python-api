@@ -831,7 +831,9 @@ class SequenceToSequence(ArcGISModel):
                     "features": feature_set,
                 }
             )
-            results = self.inference_model.predict(feature_set_final)
+            results = self.inference_model.predict(
+                feature_set_final, **{"input_field": "input_str"}
+            )
 
             if not isinstance(results, FeatureSet):
                 raise Exception(
