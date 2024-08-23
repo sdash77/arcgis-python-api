@@ -1,4 +1,5 @@
 import os.path
+import tempfile
 import time
 import unittest
 import arcgis.geometry.filters
@@ -45,7 +46,7 @@ class TestOfflineExtraction(unittest.TestCase):
             cls.service_urls["FeatureServer"], cls.gis
         )
         cls.vms = cls.parcel_fabric_flc.versions
-        cls.output_gdb_path = os.path.join(os.getcwd(), "layers", "offline_utils", "replica_geodatabases")
+        cls.output_gdb_path = tempfile.TemporaryDirectory()
 
     def test_replica_response_has_download_path_async_wait(self):
         """Creates a replica with a specific extent that contains four parcels. Ensure the response is correct"""
@@ -95,7 +96,7 @@ class TestOfflineExtraction(unittest.TestCase):
             "sync_model": "perReplica",
             "data_format": "sqlite",
             "replica_options": {"syncDataOptions": 2308},
-            "out_path": cls.output_gdb_path,
+            "out_path": cls.output_gdb_path.name,
             "sync_direction": "bidirectional",
         }
         return replica_options
@@ -112,9 +113,5 @@ class TestOfflineExtraction(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        d = cls.output_gdb_path
-        offline_gdbs = [os.path.join(d, f) for f in os.listdir(d)]
-        for f in offline_gdbs:
-            if f.endswith(".geodatabase"):
-                os.remove(f)
+        cls.output_gdb_path.cleanup()
         replica_helpers.cleanup_replica_items(cls.parcel_fabric_flc)
