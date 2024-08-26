@@ -604,7 +604,7 @@ class Folder:
     # ---------------------------------------------------------------------
     def add(
         self,
-        item_properties: ItemProperties | dict,
+        item_properties: ItemProperties,
         file: str | None = None,
         text: str | None = None,
         url: str | None = None,
