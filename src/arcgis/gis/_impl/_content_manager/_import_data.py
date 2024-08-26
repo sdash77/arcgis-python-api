@@ -63,7 +63,9 @@ def _create_file(df, file_type, **kwargs):
     # Pop out kwargs, establish params to be used throughout
     # generate random service name if not provided
     service_name = kwargs.get("service_name") or "a" + uuid4().hex[:5]
-    temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+    temp_dir = os.path.join(
+        tempfile.gettempdir(), f"{service_name}{uuid.uuid4().hex[:3]}"
+    )
     name = "%s%s.%s" % (
         random.choice(string.ascii_lowercase),
         uuid4().hex[:5],
@@ -164,7 +166,7 @@ def _create_items(gis, file, file_type, **kwargs):
         if service_name is None:
             service_name = file_item["name"]
         #  ensure unique service name
-        service_name = _find_service_name(service_name, "featureService")
+        service_name = _find_service_name(gis, service_name, "featureService")
         publish_parameters["name"] = service_name
         publish_parameters["locationType"] = None
     else:
@@ -175,7 +177,7 @@ def _create_items(gis, file, file_type, **kwargs):
         if service_name is None:
             service_name = publish_parameters["name"]
         #  get a unique service name
-        service_name = _find_service_name(service_name, "featureService")
+        service_name = _find_service_name(gis, service_name, "featureService")
         publish_parameters["name"] = service_name
 
     new_item = file_item.publish(
