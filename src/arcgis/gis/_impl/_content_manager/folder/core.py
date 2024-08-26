@@ -915,17 +915,6 @@ class Folders:
         return self.__str__()
 
     @property
-    def root(self) -> Folder:
-        """
-        Gets the root :class:`~arcgis.gis._impl._content_manager.Folder` owned
-        by the current logged-in :class:`~arcgis.gis.User`.
-
-        :returns:
-            :class:`~arcgis.gis._impl._content_manager.Folder` object.
-        """
-        return self.get()
-
-    @property
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
