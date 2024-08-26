@@ -1,3 +1,4 @@
+import uuid
 import random
 from uuid import uuid4
 import string
@@ -62,7 +63,9 @@ def _create_file(df, file_type, **kwargs):
     # Pop out kwargs, establish params to be used throughout
     # generate random service name if not provided
     service_name = kwargs.get("service_name") or "a" + uuid4().hex[:5]
-    temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+    temp_dir = os.path.join(
+        tempfile.gettempdir(), f"{service_name}{uuid.uuid4().hex[:3]}"
+    )
     name = "%s%s.%s" % (
         random.choice(string.ascii_lowercase),
         uuid4().hex[:5],
@@ -114,10 +117,26 @@ def _create_file(df, file_type, **kwargs):
     return file
 
 
+def _find_service_name(
+    gis: "GIS", name: str, service_type: str = "featureService"
+) -> str:
+    i: int = 1
+    while gis.content.is_service_name_available(name, service_type) == False:
+        name = f"{name}{i}"
+        if gis.content.is_service_name_available(name, "featureService"):
+            break
+
+        i += 1
+        if i > 10:
+            name = f"{name}{uuid.uuid4().hex[:3]}"
+    return name
+
+
 def _create_items(gis, file, file_type, **kwargs):
     """
     Create the file item and publish.
     """
+    service_name = kwargs.pop("service_name", None)
     title = kwargs.pop("title", os.path.basename(file))
     tags = kwargs.pop("tags", file_type)
     folder = kwargs.pop("folder", None)
@@ -142,13 +161,24 @@ def _create_items(gis, file, file_type, **kwargs):
         publish_parameters = gis.content.analyze(item=file_item, file_type="csv")[
             "publishParameters"
         ]
-        publish_parameters["name"] = file_item["name"]
+        #  For the CSV case, to keep with legacy code, set the
+        #  name to the file name.
+        if service_name is None:
+            service_name = file_item["name"]
+        #  ensure unique service name
+        service_name = _find_service_name(gis, service_name, "featureService")
+        publish_parameters["name"] = service_name
         publish_parameters["locationType"] = None
     else:
         # start creating publish params from new file item
         publish_parameters = gis.content.analyze(
             item=file_item, file_type=file_type.lower()
         )["publishParameters"]
+        if service_name is None:
+            service_name = publish_parameters["name"]
+        #  get a unique service name
+        service_name = _find_service_name(gis, service_name, "featureService")
+        publish_parameters["name"] = service_name
 
     new_item = file_item.publish(
         publish_parameters=publish_parameters,

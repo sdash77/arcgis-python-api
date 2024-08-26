@@ -70,10 +70,10 @@ class ClimaX(ArcGISModel):
     decoder_depth           Optional int. Depth of decoder.
                             Default: 2
     ---------------------   -------------------------------------------
-    drop_path               Optional int. stochastic depth or randomly
+    drop_path               Optional float. stochastic depth or randomly
                             drops entire layers. Default: 0.1
     ---------------------   -------------------------------------------
-    drop_rate               Optional int. randomly drops neurons.
+    drop_rate               Optional float. randomly drops neurons.
                             Default: 0.1
     ---------------------   -------------------------------------------
     parallel_patch_embed    Optional bol. parallel embdedding of patches.
@@ -219,7 +219,11 @@ class ClimaX(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["Export Tiles"]
+        return ["Export_Tiles"]
+
+    @staticmethod
+    def _supported_backbones():
+        return ["5.625deg", "1.40625deg"]
 
     def show_results(self, rows=5, variable="", **kwargs):
         """
