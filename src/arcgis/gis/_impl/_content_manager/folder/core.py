@@ -708,7 +708,7 @@ class Folder:
             and not item_properties.get("fileName")
         ):
             raise ValueError(
-                "When providing a `StringIO` or `BytesIO` object, `fileName` must be given in the `ItemProperties` class."
+                "When providing a `StringIO` or `BytesIO` object, `file_name` must be given in the `ItemProperties` class."
             )
 
         upload_size: int | None = None
