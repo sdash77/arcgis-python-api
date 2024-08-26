@@ -178,6 +178,42 @@ class NotebookJob(Job):
         else:
             return f"<{self._task_name} job {self._jobid}>"
 
+    @property
+    def _job_status(self) -> dict[str, Any]:
+        """returns the job status"""
+        url: str = f"{self._url}"
+        params: dict = {
+            "f": "json",
+        }
+        resp: requests.Response = self._gis.session.get(url, params=params)
+        data: dict = resp.json()
+        return data
+
+    # ----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :return: boolean
+        """
+        return self._job_status.get("status", None) in [
+            "PROCESSING",
+            "PARTIAL",
+        ]
+
+    # ----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :return: boolean
+        """
+        return self._job_status.get("status", None) in [
+            "COMPLETED",
+            "CANCELLED",
+        ]
+
+    # ----------------------------------------------------------------------
     def cancel(self) -> bool:
         """cancels the current job"""
         url: str = f"{self._url}/cancel"

@@ -1219,12 +1219,20 @@ class GIS(object):
                 from arcgis.gis.nb import NotebookServer
 
                 res = self._portal.con.post("portals/self/servers", {"f": "json"})
+                servers: list[NotebookServer] = []
+                for server in res["servers"]:
+                    if server["serverFunction"].lower() == "notebookserver":
+                        try:
+                            nbss = NotebookServer(server["adminUrl"] + "/admin", self)
+                            if nbss.properties == {}:
+                                nbss = NotebookServer(server["url"] + "/admin", self)
+                            servers.append(nbss)
+                        except:
+                            nbss = NotebookServer(server["url"] + "/admin", self)
 
-                return [
-                    NotebookServer(server["adminUrl"] + "/admin", self)
-                    for server in res["servers"]
-                    if server["serverFunction"].lower() == "notebookserver"
-                ]
+                            servers.append(nbss)
+                return servers
+
             except Exception:
                 return []
         return []
