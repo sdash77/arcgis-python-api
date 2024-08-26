@@ -561,7 +561,7 @@ class Folder:
             itemid=itemid,
         )
         status_code: str | None = status_msg.get("status")
-        while status_code in ["processing"]:
+        while status_code in ["processing", "partial"]:
             time.sleep(i)
             if i >= 10:
                 i = 10
