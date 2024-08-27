@@ -1214,28 +1214,11 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        else:
-            try:
-                from arcgis.gis.nb import NotebookServer
+        elif self._portal.is_arcgisonline == False and (
+            hasattr(self, "admin") and getattr(self, "admin")
+        ):
+            return self.admin.servers.get(function="NotebookServer")
 
-                res = self._portal.con.post("portals/self/servers", {"f": "json"})
-                servers: list[NotebookServer] = []
-                for server in res["servers"]:
-                    if server["serverFunction"].lower() != "notebookserver":
-                        continue
-                    try:
-                        nbss = NotebookServer(server["adminUrl"] + "/admin", self)
-                        if nbss.properties == {}:
-                            nbss = NotebookServer(server["url"] + "/admin", self)
-                        servers.append(nbss)
-                    except:
-                        nbss = NotebookServer(server["url"] + "/admin", self)
-
-                        servers.append(nbss)
-                return servers
-
-            except Exception:
-                return []
         return []
 
     @property
