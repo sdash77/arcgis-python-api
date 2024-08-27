@@ -179,8 +179,8 @@ class NotebookJob(Job):
             return f"<{self._task_name} job {self._jobid}>"
 
     @property
-    def _job_status(self) -> dict[str, Any]:
-        """returns the job status"""
+    def _job_description(self) -> dict[str, Any]:
+        """returns the job status payload"""
         url: str = f"{self._url}"
         params: dict = {
             "f": "json",
@@ -196,7 +196,7 @@ class NotebookJob(Job):
 
         :return: boolean
         """
-        return self._job_status.get("status") in [
+        return self._job_description.get("status") in [
             "PROCESSING",
             "PARTIAL",
         ]
@@ -208,7 +208,7 @@ class NotebookJob(Job):
 
         :return: boolean
         """
-        return self._job_status.get("status") in [
+        return self._job_description.get("status") in [
             "COMPLETED",
             "CANCELLED",
         ]
