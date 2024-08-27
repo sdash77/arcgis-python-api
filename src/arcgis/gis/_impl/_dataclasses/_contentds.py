@@ -229,6 +229,10 @@ class ItemProperties:
     def __repr__(self):
         return self.__str__()
 
+    def __iter__(self):
+        for key, value in self.to_dict().items():
+            yield key, value
+
     def __post_init__(self):
         self._dict_data = {
             "title": self.title,
