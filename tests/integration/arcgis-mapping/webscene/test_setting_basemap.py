@@ -29,10 +29,9 @@ class TestAddLayersToMap(unittest.TestCase):
             self.wm.basemap.basemap["baseMapLayers"][0]["layerType"]
             == "VectorTileLayer"
         )
-        self.wm.basemap.basemap_title(
-            self.wm.basemap.basemap["baseMapLayers"][0]["title"]
-        )
-        assert self.wm.basemap.basemap["title"] == layer.properties.name.replace(
+        self.wm.basemap.title = layer.properties.name
+        
+        assert self.wm.basemap.title == layer.properties.name.replace(
             "_", " "
         )
 
@@ -57,11 +56,15 @@ class TestAddLayersToMap(unittest.TestCase):
 
     def test_different_sr(self):
         """Test adding a basemap with a different spatial reference than original."""
+        current_basemap_sr = self.wm._gis.content.get(
+            self.wm.basemap.basemap["id"]
+            ).get_data()["spatialReference"]["wkid"]
+        
         self.wm.basemap.basemap = self.gis.content.get(
             "e67de4be72b349fd8f8ca114bac82a8c"
         )
-        assert self.wm
 
+        assert self.wm.extent["spatialReference"]["wkid"] != current_basemap_sr
 
 if __name__ == "__main__":
-    unittest.main()
+     unittest.main()
