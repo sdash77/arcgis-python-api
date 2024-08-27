@@ -926,6 +926,8 @@ class ArcGISModel(object):
         if self._backbone == "llm":
             return ["accuracy"]
         metrics = ["valid_loss"]
+        if getattr(self, "_is_mmtransformer", False):
+            return metrics
         for m in self.learn.metrics:
             if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
                 metrics.append(m.func.__name__)
@@ -1048,8 +1050,6 @@ class ArcGISModel(object):
             kwargs.pop("callbacks", None)
             monitored_names = self.available_metrics
 
-            if getattr(self, "_is_mmtransformer", False):
-                monitored_names = ["valid_loss"]
             if monitor not in monitored_names:
                 raise Exception(f"`monitor` must be set to one from {monitored_names}")
             self.monitor = monitor
