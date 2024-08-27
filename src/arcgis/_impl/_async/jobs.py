@@ -208,7 +208,7 @@ class NotebookJob(Job):
 
         :return: boolean
         """
-        return self._job_status.get("status", None) in [
+        return self._job_status.get("status") in [
             "COMPLETED",
             "CANCELLED",
         ]
