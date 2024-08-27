@@ -67,4 +67,4 @@ class TestAddLayersToMap(unittest.TestCase):
         assert self.wm.extent["spatialReference"]["wkid"] != current_basemap_sr
 
 if __name__ == "__main__":
-     unittest.main()
+    unittest.main()
