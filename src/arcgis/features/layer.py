@@ -415,6 +415,10 @@ class FeatureLayer(Layer):
         :return:
             The Feature Layer Collection where the layer is stored
         """
+        if self._storage is None:
+            self._storage = FeatureLayerCollection(
+                url=os.path.dirname(self.url), gis=self._gis
+            )
         return self._storage
 
     @container.setter
@@ -2502,6 +2506,7 @@ class FeatureLayer(Layer):
         skip_inserts: Optional[bool] = None,
         upsert_matching_field: Optional[str] = None,
         upload_id: Optional[str] = None,
+        layer_mappings: Optional[list[dict[str, int]]] = None,
         *,
         return_messages: Optional[bool] = None,
         future: bool = False,
@@ -2595,6 +2600,10 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
+        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+
+                                    Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
+        ------------------------   --------------------------------------------------------------------
         return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
                                    not be returned.  This alters the output to be a tuple consisting of
@@ -2659,6 +2668,7 @@ class FeatureLayer(Layer):
             "appendItemId": item_id,
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
+            "layerMappings": layer_mappings,
         }
         if (
             self._gis
@@ -3747,12 +3757,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional list of fields to be included in the returned result set.
                                             This list is a comma-delimited list of field names. You can also specify
-                                            the wildcard "*" as the value of this parameter. In this case, the query
-                                            results include all the field values.
-
-                                            .. note::
-                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
-                                                as True, do not specify this parameter in order to avoid errors.
+                                            the wildcard "*" as the value of this parameter to return all
+                                            fields in the result.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -3918,8 +3924,13 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if where is None:
-            where = "1=1"
+        if not where:
+            if geometry_filter:
+                where = None
+            elif result_offset:
+                where = "1=1"
+            else:
+                where = "1=1"
         return _query._common_query(
             layer=self,
             is_layer=True,

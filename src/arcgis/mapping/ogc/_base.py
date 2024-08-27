@@ -1,8 +1,14 @@
 import uuid
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._deprecate import deprecated
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the BaseOGC class found in `arcgis.layers.BaseOGC` instead.",
+)
 class BaseOGC(object):
     """
 
@@ -172,6 +178,11 @@ class BaseOGC(object):
 
 
 ###########################################################################
+@deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    details="Use the BaseOpenData class found in `arcgis.layers.BaseOpenData` instead.",
+)
 class BaseOpenData(BaseOGC):
     """
 

@@ -2,15 +2,19 @@ from pathlib import Path
 import json
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
+from functools import wraps
 
 try:
     from fastai.vision import flatten_model
     import torch
+    import fastai
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
     from ._timm_utils import filter_timm_models
     from ._hed_utils import DDPCallback
+    from ._transformer_backbone import swin_config
+    from ._arcgis_model import _change_tail
 
     HAS_FASTAI = True
 
@@ -27,6 +31,7 @@ class CustomHED:
         import torch
         from torchvision import models
         from arcgis.learn.models import _hed_utils as hed
+
     except:
         pass
 
@@ -35,23 +40,46 @@ class CustomHED:
         In this fuction you have to define your model with following two arguments!
 
         """
+        from arcgis.learn.models._arcgis_model import _change_tail
+        from functools import wraps
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
 
         if backbone is None:
             self._backbone = self.models.vgg19
-        elif type(backbone) is str:
-            if hasattr(self.models, backbone):
-                self._backbone = getattr(self.models, backbone)
-            elif hasattr(self.models.detection, backbone):
-                self._backbone = getattr(self.models.detection, backbone)
-            elif "timm:" in backbone:
-                import timm
-
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    self._backbone = getattr(timm.models, bckbn)
         else:
-            self._backbone = backbone
+            from arcgis.learn.models._arcgis_model import get_backbone_func
+
+            self._backbone = get_backbone_func(backbone, data, is_fpn=True)
+
+        if hasattr(data, "_is_multispectral"):  # multispectral support
+            self._is_multispectral = getattr(data, "_is_multispectral")
+        else:
+            self._is_multispectral = False
+        if self._is_multispectral or "hf:" in backbone:
+
+            self._orig_backbone = self._backbone
+
+            @wraps(self._orig_backbone)
+            def backbone_wrapper(*args, **inkwargs):
+                if "pretrained_backbone" in kwargs:
+                    pretrained_backbone = kwargs["pretrained_backbone"]
+                    assert type(pretrained_backbone) == bool
+                    if len(args) > 0:
+                        args = tuple([pretrained_backbone, *args[1:]])
+                    else:
+                        inkwargs["pretrained"] = pretrained_backbone
+                return _change_tail(
+                    self._orig_backbone(*args, **inkwargs),
+                    data,
+                    kwargs.get("tail_weights_type"),
+                )
+
+            if self._is_multispectral:
+                self._imagery_type = data._imagery_type
+                self._bands = data._bands
+                backbone_wrapper._is_multispectral = True
+            self._backbone = backbone_wrapper
 
         model = self.hed._HEDModel(
             self._backbone, data.chip_size, pretrained=pretrained_backbone
@@ -149,10 +177,19 @@ class HEDEdgeDetector(ModelExtension):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
+        layers = flatten_model(self.learn.model.backbone)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
         count = 0
         count_strided_conv = 0
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+        for idx, i in enumerate(layers[start_idx:]):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
 
             for p in i.parameters():
@@ -190,6 +227,11 @@ class HEDEdgeDetector(ModelExtension):
         return HEDEdgeDetector._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(swin_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -207,7 +249,15 @@ class HEDEdgeDetector(ModelExtension):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, *_vgg_family] + timm_backbones
+        transformer_backbone = HEDEdgeDetector.transformer_backbones()
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family, *_vgg_family]
+            + transformer_backbone
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):

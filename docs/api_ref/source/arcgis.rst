@@ -25,9 +25,6 @@ arcgis.notebook module
 arcgis.schematics module
 -----------------
 
-arcgis.geoanalytics module
--------------------
-
 arcgis.geocoding module
 -----------------
 
@@ -40,7 +37,10 @@ arcgis.geoenrichment module
 arcgis.geoprocessing module
 -----------------
 
-arcgis.mapping module
+arcgis.layers module
+-----------------
+
+arcgis.map module
 -----------------
 
 arcgis.apps module

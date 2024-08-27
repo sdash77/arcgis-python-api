@@ -1,5 +1,4 @@
 from os import environ, name as os_name
-import sys
 from parameterized import parameterized, parameterized_class
 from unittest import SkipTest
 from .timeout_decorator import (
@@ -7,17 +6,19 @@ from .timeout_decorator import (
     timeout_class as _timeout_class,
 )
 from .classproperty import classproperty
+from ._common import environ_key_to_bool
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
+from threading import TIMEOUT_MAX
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
-NO_TIMEOUT = environ.get("ARCGIS_TEST_NO_TIMEOUT", "").lower() in ("true", "1", "y", "yes")
+NO_TIMEOUT = environ_key_to_bool("ARCGIS_TEST_NO_TIMEOUT")
 
-DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else sys.maxsize
-EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else sys.maxsize
-MAXIMUM_TIMEOUT_SECONDS = 600 if not NO_TIMEOUT else sys.maxsize
+DEFAULT_TIMEOUT_SECONDS = 60 if not NO_TIMEOUT else TIMEOUT_MAX
+EXTENDED_TIMEOUT_SECONDS = 300 if not NO_TIMEOUT else TIMEOUT_MAX
+MAXIMUM_TIMEOUT_SECONDS = 600 if not NO_TIMEOUT else TIMEOUT_MAX
 
 
 def timeout(seconds):
@@ -83,14 +84,25 @@ class credentials:
     If multiple credentials are injected, the test will be run once for each credential.
     """
 
+    _avworld_username = "creator2"
+    _avworld_username_with_domain = rf"avworld\{_avworld_username}"
+    _avworld_password = "portalaccount1"
+    _standard_enterprise_url = environ.get(
+        "STANDARD_ENTERPRISE_URL",
+        "https://pythonapitest.dev.geocloud.com/portal",
+    )
+    _standard_enterprise_username = environ.get(
+        "STANDARD_ENTERPRISE_USERNAME", "arcgis_python"
+    )
+    _standard_enterprise_password = environ.get(
+        "STANDARD_ENTERPRISE_PASSWORD", "amazing_arcgis_123"
+    )
+
     _enterprise_credential_parameters = (
         "enterprise",
-        environ.get(
-            "STANDARD_ENTERPRISE_URL",
-            "https://pythonapi.playground.esri.com/portal",
-        ),
-        environ.get("STANDARD_ENTERPRISE_USERNAME", "esri_requests"),
-        environ.get("STANDARD_ENTERPRISE_PASSWORD", "portalaccount1"),
+        _standard_enterprise_url,
+        _standard_enterprise_username,
+        _standard_enterprise_password,
     )
     _enterprise_pki_credential_parameters = (
         "enterprise_pki",
@@ -128,8 +140,8 @@ class credentials:
     _enterprise_iwa_credential_parameters = (
         "enterprise_iwa",
         environ.get("ENTERPRISE_IWA_URL", "https://rqawiniwa02pt.ags.esri.com/gis"),
-        environ.get("ENTERPRISE_IWA_USERNAME", r"avworld\creator2"),
-        environ.get("ENTERPRISE_IWA_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_IWA_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_IWA_PASSWORD", _avworld_password),
     )
     _enterprise_multi_iwa_credential_parameters = (
         "enterprise_multi_iwa",
@@ -137,8 +149,20 @@ class credentials:
             "ENTERPRISE_MULTI_IWA_URL",
             "https://rqawinmiwa05pt.ags.esri.com/gis",
         ),
-        environ.get("ENTERPRISE_MULTI_IWA_USERNAME", r"avworld\creator2"),
-        environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", "portalaccount1"),
+        environ.get("ENTERPRISE_MULTI_IWA_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_MULTI_IWA_PASSWORD", _avworld_password),
+    )
+    _enterprise_kerberos_credential_parameters = (
+        "enterprise_kerberos",
+        environ.get("ENTERPRISE_KERBEROS_URL", "https://rqawinkb08pt.ags.esri.com/gis"),
+        environ.get("ENTERPRISE_KERBEROS_USERNAME", _avworld_username_with_domain),
+        environ.get("ENTERPRISE_KERBEROS_PASSWORD", _avworld_password),
+    )
+    _enterprise_ldap_credential_parameters = (
+        "enterprise_ldap",
+        environ.get("ENTERPRISE_LDAP_URL", "https://rqalnxldap02pt.esri.com/gis"),
+        environ.get("ENTERPRISE_LDAP_USERNAME", _avworld_username),
+        environ.get("ENTERPRISE_LDAP_PASSWORD", _avworld_password),
     )
     _agol_credential_parameters = (
         "agol",
@@ -152,7 +176,18 @@ class credentials:
         None,
         environ.get(
             "AGOL_API_KEY",
-            "AAPKddd59ccb5147417c89cc5a933c60cf51nGh5AkuWMHell2cLvgIjjRmrMRGLBqlKvpAnOPN6sHIOpc-SDkAuqTzW3vEvLkOP",
+            "AAPKed706a70151045f3a51b1917d84757610pwOA7fIeA6M3kLOR0_kBLPRMfwnympI0ql7knab8d6sTEJyRRKAzQBGqgP6XSDj",
+        ),
+    )
+    _enterprise_oauth_credential_parameters = (
+        "enterprise_oauth",
+        _standard_enterprise_url,
+        _standard_enterprise_username,
+        _standard_enterprise_password,
+        None,
+        environ.get("ENTERPRISE_OAUTH_CLIENT_ID", "SUNKY9CZtx6bSGvH"),
+        environ.get(
+            "ENTERPRISE_OAUTH_CLIENT_SECRET", "e600165a5aa5476c8c879fc6bb3b17a7"
         ),
     )
 
@@ -164,6 +199,8 @@ class credentials:
             "username",
             "password",
             "cert",
+            "client_id",
+            "client_secret",
         )
         """Returns a parameterized class for the credentials parameters from provided args"""
         return parameterized_class(
@@ -187,6 +224,27 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
+        )
+    
+    @classproperty
+    def enterprise_iwa(cls):
+        """Run tests for iwa and multi-iwa enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_iwa_credential_parameters,
+        )
+
+    @classproperty
+    def enterprise_kerberos(cls):
+        """Run tests for kerberos enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_kerberos_credential_parameters
+        )
+
+    @classproperty
+    def enterprise_ldap(cls):
+        """Run tests for ldap enterprise credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_ldap_credential_parameters
         )
 
     @classproperty
@@ -228,6 +286,13 @@ class credentials:
         )
 
     @classproperty
+    def enterprise_oauth(cls):
+        """Run tests for enterprise oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._enterprise_oauth_credential_parameters
+        )
+
+    @classproperty
     def enterprise_pki(cls):
         """Run tests for enterprise credentials"""
         return cls._get_credentials_parameterized_class(
@@ -250,6 +315,7 @@ class profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
+    _agol_anonymous_profile_parameters = ("agol_anonymous", "your_anonymous_online_profile")
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_devext_profile_parameters = ("devext", "your_dev_online_profile")
     _agol_admin_profile_parameters = (
@@ -268,6 +334,10 @@ class profiles:
     _k8s_admin_profile_parameters = (
         "k8s_admin",
         "your_kubernetes_admin_profile",
+    )
+    _utility_network_profile_parameters = (
+        "utility_network",
+        "your_utility_network_profile",
     )
 
     def _get_profile_parameterized_class(*args):
@@ -300,6 +370,13 @@ class profiles:
         )
 
     # region decorators
+    @classproperty
+    def anonymous_agol(cls):
+        """Run tests for agol anonymous profile"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_anonymous_profile_parameters
+        )
+
     @classproperty
     def admin_agol(cls):
         """Run tests for agol admin profile"""
@@ -368,6 +445,7 @@ class profiles:
             cls._k8s_profile_parameters,
         )
 
+    @classproperty
     def admin_all(cls):
         """Run tests for all 3 admin profiles (agol, enterprise, k8s)"""
         return cls._get_profile_parameterized_class(
@@ -376,6 +454,12 @@ class profiles:
             cls._k8s_admin_profile_parameters,
         )
 
+    @classproperty
+    def utility_network(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._utility_network_profile_parameters
+        )
     # endregion
 
 
@@ -402,7 +486,7 @@ class from_to_profiles:
     _agol_to_enterprise_params = {
         "description": "agol_to_enterprise",
         "from_profile": "your_online_admin_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
     _agol_to_k8s_params = {
         "description": "agol_to_k8s",
@@ -411,18 +495,18 @@ class from_to_profiles:
     }
     _enterprise_to_agol_params = {
         "description": "enterprise_to_agol",
-        "from_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
         "to_profile": "your_online_admin_profile",
     }
     # TODO Andrew: add another profile if you want these to go to different enterprises
     _enterprise_to_enterprise_params = {
         "description": "enterprise_to_enterprise",
-        "from_profile": "your_enterprise_admin_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
     _enterprise_to_k8s_params = {
         "description": "enterprise_to_k8s",
-        "from_profile": "your_enterprise_admin_profile",
+        "from_profile": "your_ent_admin_profile",
         "to_profile": "your_kubernetes_profile",
     }
     _k8s_to_agol_params = {
@@ -433,7 +517,7 @@ class from_to_profiles:
     _k8s_to_enterprise_params = {
         "description": "k8s_to_enterprise",
         "from_profile": "your_kubernetes_profile",
-        "to_profile": "your_enterprise_admin_profile",
+        "to_profile": "your_ent_admin_profile",
     }
 
     def _get_multi_profile_parameterized_class(*args):

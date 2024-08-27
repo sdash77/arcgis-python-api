@@ -786,12 +786,6 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
             else:
                 model_with_underscore = [
                     "CascadeRCNN",
@@ -837,12 +831,6 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
             backbone = getattr(self, model)._backbone.__name__
         else:
             if not self._model_stats()[model]["is_mm"]:
@@ -853,12 +841,6 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
             else:
                 model_with_underscore = [
                     "CascadeRCNN",
@@ -904,12 +886,6 @@ class AutoDL:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
                 except:
                     estimated_batch_size = (2, 2)
-                callbacks = [
-                    self._train_callback(
-                        getattr(self, model).learn,
-                        self._tiles_required // self._data.batch_size,
-                    )
-                ]
 
         if self.verbose:
             log_msg = "{date}: {network} initialized with {bk} backbone".format(
@@ -942,6 +918,15 @@ class AutoDL:
             print(log_msg)
             self._logger_dict.append(log_msg)
 
+        if (self._tiles_required // estimated_batch_size[0]) > 0:
+            callbacks = [
+                self._train_callback(
+                    getattr(self, model).learn,
+                    self._tiles_required // estimated_batch_size[0],
+                )
+            ]
+        else:
+            callbacks = [self._train_callback(getattr(self, model).learn, 1)]
         lr_val = getattr(self, model).lr_find(allow_plot=False)
         if self.verbose:
             log_msg = "{date}: Best learning rate for {network} with the selected data is {lr}".format(

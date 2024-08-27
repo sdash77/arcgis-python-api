@@ -14,8 +14,9 @@ from arcgis.gis import Group, User
 from arcgis.gis.clone._ux import UXCloner
 import requests
 
-_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_basemap_definitions = LazyLoader("arcgis.layers._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
+_cm = LazyLoader("arcgis.gis._impl._content_manager")
 
 _log = logging.getLogger(__name__)
 
@@ -675,7 +676,7 @@ class UX(object):
             folder = self._gis.content.folders.get()
             im_item = folder.add(item_props, file=logo).result()
             # share to everyone
-            im_item.sharing.sharing_level = "EVERYONE"
+            im_item.sharing.sharing_level = _cm.SharingLevel.EVERYONE.value
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
         elif logo == "":
@@ -747,6 +748,15 @@ class UX(object):
         make edits to the org's default map settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def utility_services_settings(self):
+        """
+        Get an instance of the :class:`~arcgis.gis.admin.UtilityServices` class
+        to make edits to the org's utility services such as print, routing, etc.
+        """
+        return UtilityServicesSettings(gis=self._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -2963,3 +2973,292 @@ class SecuritySettings(object):
             return self._gis._con.post(url, {"f": "json"})
         else:
             return None
+
+
+##############################################################################
+class UtilityServicesSettings:
+    """Helper class that can be called off of UX class using the 'utility_services_settings' property.
+    Edit org utility service settings such as print service, geoenrichment service, etc.
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._portal_resources = gis.admin.resources
+
+    # ----------------------------------------------------------------------
+    def add_from_online(self, services: list[str], gis: _gis.GIS, folder=None):
+        """
+        Set the Enterprise routing service to that of an ArcGIS Online routing service.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        services                List of services to configure using the given
+                                ArcGIS Online credentials.
+
+                                The list can be any combination of these values:
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Orthomapping Elevation", "Network", "Traffic Data"]
+        ------------------      ---------------------------------------
+        gis                     The GIS object that is connected to your
+                                ArcGIS Online organization where the routing
+                                service will come from.
+        ------------------      ---------------------------------------
+        folder                  Optional, the folder in the Enterprise Org
+                                where the routing services will be added.
+                                Can be a string representing the name of the
+                                folder or a folder object.
+                                If folder cannot be found, a new one is created.
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+
+        # Step 1: Check the inputs
+        if self._gis._is_agol:
+            raise ValueError("This operation is only available in ArcGIS Enterprise.")
+        if not gis._is_agol:
+            raise ValueError(
+                "The GIS object provided must be connected to an ArcGIS Online organization."
+            )
+        # Step 2: find the folder in Enterprise
+        if folder:
+            if isinstance(folder, str):
+                folder_item = self._gis.content.folders._get_or_create(
+                    folder, self._gis.users.me.username
+                )
+                folder_name = folder_item.name
+            else:
+                # instance of folder object
+                folder_name = folder.name
+        else:
+            folder_name = None
+
+        # Step 3: Get the routing service from Online
+        helper_services = {
+            "Elevation": ["elevation"],
+            "Geocode": ["geocode"],
+            "GeoEnrichment": ["geoenrichment"],
+            "Hydrology": ["hydrology"],
+            "Network": [
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "asyncFleetRouting",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
+                "snapToRoads",
+            ],
+            "Traffic Data": ["trafficData"],
+            "Orthomapping Elevation": ["orthomappingElevation"],
+        }
+        # Service type mapping
+        svc_types = {
+            "GPServer": "Geoprocessing Service",
+            "MapServer": "Map Service",
+            "NAServer": "Network Analysis Service",
+            "GeoenrichmentServer": "Geoenrichment Service",
+            "GeocodeServer": "Geocoding Service",
+        }
+
+        # Get the self call from AGOL
+        agol_helper_svcs = gis.properties["helperServices"]
+
+        # Create service proxy items
+        username = gis._username
+        password = gis._password
+        proxy_urls = {}  # store proxy urls for AGOL services
+        for svc in services:  # replace with config utilityServices
+            for helper_svc in helper_services[svc]:
+                if helper_svc == "geocode":
+                    url = agol_helper_svcs[helper_svc][0]["url"]
+                else:
+                    try:
+                        url = agol_helper_svcs[helper_svc]["url"]
+                    except:
+                        # Not all services available on AGOL at the moment
+                        continue
+                svc_type = "".join(set(url.split("/")).intersection(set(svc_types)))
+
+                item_props = {
+                    "url": url,
+                    "serviceUsername": username,
+                    "servicePassword": password,
+                    "tags": ", ".join(["Tool", "Service", "ArcGIS Server"]),
+                    "title": f"AGO {helper_svc} ({username})",
+                    "type": svc_types.get(svc_type, ""),
+                }
+                # Add item
+                search_result = self._gis.content.search(
+                    item_props["title"],  # False +ve. pylint:disable=no-member
+                    item_type=item_props["type"],
+                )
+                this_item = next(
+                    (x for x in search_result if x.title == item_props["title"]), ""
+                )
+                if not this_item:
+                    if helper_svc == "orthomappingElevation":
+                        svc_item_url = item_props["url"]
+                    else:
+                        try:
+                            svc_item = self._gis.content.add(
+                                item_props, folder=folder_name
+                            )
+                            # convert from private URL to a public URL for the proxy item
+                            svc_item_url = svc_item.url.replace(
+                                ":7443/arcgis/",
+                                f"/{self._gis.properties.customBaseUrl}/",
+                            )
+                            # pylint: enable=no-member
+                            svc_item.protect(enable=True)
+                            svc_item.sharing.sharing_level = _cm.SharingLevel.ORG.value
+                        except:
+                            # if proxy item fails, continue
+                            continue
+                    if helper_svc == "geocode":
+                        # Set batch geocoder properties
+                        geocoders = [
+                            dict(val)
+                            for val in self._gis.properties.helperServices.geocode
+                        ]  # pylint:disable=no-member
+                        geocoder = dict(geocoders[0])
+                        geocoder["url"] = svc_item_url
+                        geocoder["name"] = "Esri World Batch Geocoder"
+                        geocoder["isEsriBatchGeocoder"] = True
+                        geocoder["zoomScale"] = 10000
+                        geocoder["batch"] = True
+                        geocoder["singleLineFieldName"] = "SingleLine"
+                        geocoder["placeholder"] = "Find address or place"
+                        geocoders.append(geocoder)
+                        proxy_urls[helper_svc + "Service"] = geocoders
+                    elif helper_svc == "route":
+                        proxy_urls[helper_svc + "ServiceLayer"] = {"url": svc_item_url}
+                    else:
+                        proxy_urls[helper_svc + "Service"] = {"url": svc_item_url}
+        proxy_urls["elevationSyncService"] = agol_helper_svcs["elevationSync"]
+        # Update portal properties
+        if "Network" in services:  # replace with config utilityServices
+            agol_user_info = self._gis.users.me
+            proxy_urls["routingServicesSource"] = {
+                "sourceName": "ArcGISOnline",
+                "agoUsername": username,
+                "firstName": agol_user_info.get("firstName", "Unknown"),
+                "lastName": agol_user_info.get("lastName", "Unknown"),
+            }
+        return self._gis.update_properties(proxy_urls)
+
+    def reset_services(self, services: list[str]):
+        """
+        Rest the specified services from the utility services settings to their default.
+
+        ==================      =======================================
+        **Parameter**            **Description**
+        ------------------      ---------------------------------------
+        services                List of sources to remove from the utility
+                                services settings.
+
+                                The list can be any combination of these values:
+                                ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"]
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        helper_services = {
+            "Elevation": ["elevation"],
+            "Geocode": ["geocode"],
+            "GeoEnrichment": ["geoenrichment"],
+            "Hydrology": ["hydrology"],
+            "Network": [
+                "asyncClosestFacility",
+                "asyncLocationAllocation",
+                "asyncODCostMatrix",
+                "asyncRoute",
+                "asyncVRP",
+                "asyncServiceArea",
+                "asyncFleetRouting",
+                "route",
+                "routingUtilities",
+                "serviceArea",
+                "closestFacility",
+                "syncVRP",
+                "traffic",
+                "odCostMatrix",
+                "snapToRoads",
+                "routingServicesSource",
+            ],
+            "Orthomapping Elevation": ["orthomappingElevation"],
+        }
+
+        current_services = self._gis.properties.get("helperServices", {})
+
+        for service in services:
+            if service not in helper_services:
+                continue
+
+            for helper_svc in helper_services[service]:
+                if helper_svc not in current_services:
+                    continue
+
+                # Handling the full_url extraction based on the structure of current_services
+                full_url = None
+                if helper_svc != "orthomappingElevation":
+                    service_info = current_services[helper_svc]
+                if isinstance(service_info, list):
+                    # Assuming we are interested in the first URL in the list
+                    full_url = service_info[0].get("url")
+                else:
+                    full_url = service_info.get("url")
+
+                if helper_svc == "routingServicesSource":
+                    self._gis.update_properties(
+                        {helper_svc: "", "clearEmptyFields": True}
+                    )
+                    continue
+
+                if full_url:
+                    try:
+                        segments = full_url.split("/")
+                        item_id = segments[segments.index("servers") + 1]
+                        item = self._gis.content.get(item_id)
+                        if item:
+                            item.protect(enable=False)
+                            item.delete()
+                    except (ValueError, IndexError) as e:
+                        print(f"Error processing URL for {helper_svc}: {e}")
+
+                if helper_svc == "geocode":
+                    geocode_service_config = [
+                        {
+                            "westLon": "Xmin",
+                            "southLat": "Ymin",
+                            "name": "ArcGIS World Geocoding Service",
+                            "batch": False,
+                            "placefinding": True,
+                            "northLat": "Ymax",
+                            "eastLon": "Xmax",
+                            "suggest": True,
+                            "url": "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer",
+                        }
+                    ]
+                    self._gis.update_properties(
+                        {helper_svc + "Service": geocode_service_config}
+                    )
+                elif helper_svc == "route":
+                    self._gis.update_properties(
+                        {helper_svc + "ServiceLayer": "", "clearEmptyFields": True}
+                    )
+                else:
+                    self._gis.update_properties(
+                        {helper_svc + "Service": "", "clearEmptyFields": True}
+                    )
+        return True

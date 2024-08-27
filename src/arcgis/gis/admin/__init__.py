@@ -30,6 +30,7 @@ from ._ux import (
     ItemSettings,
     SecuritySettings,
     StockImage,
+    UtilityServicesSettings,
 )
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
@@ -45,5 +46,6 @@ from ._dsmgr import (
     DataStoreMetric,
 )
 from ._partnercollab import PartneredCollabManager, PartneredCollaboration
+from ._classification import ClassificationManager
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]

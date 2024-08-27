@@ -229,6 +229,10 @@ class ItemProperties:
     def __repr__(self):
         return self.__str__()
 
+    def __iter__(self):
+        for key, value in self.to_dict().items():
+            yield key, value
+
     def __post_init__(self):
         self._dict_data = {
             "title": self.title,
@@ -257,6 +261,7 @@ class ItemProperties:
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
             "extension": self.extension or None,
+            "fileName": self.file_name or None,
         }
 
     def to_dict(self):
@@ -288,6 +293,7 @@ class ItemProperties:
             "text": self.text or None,
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
+            "fileName": self.file_name or None,
         }
 
     @classmethod

@@ -4,6 +4,7 @@ import warnings
 from ._model_extension import ModelExtension
 
 try:
+    import fastai
     from fastai.vision import flatten_model, ImageList
     from fastai.vision import imagenet_stats
     import torch
@@ -22,6 +23,7 @@ try:
     from torch.jit.annotations import List, Dict
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
+    from ._transformer_backbone import vit_config
 
     HAS_FASTAI = True
 
@@ -69,20 +71,19 @@ class MyFasterRCNN:
 
         if backbone is None:
             backbone = self.torchvision.models.resnet50
-
-        elif type(backbone) is str:
-            if hasattr(self.torchvision.models, backbone):
-                backbone = getattr(self.torchvision.models, backbone)
-            elif hasattr(self.torchvision.models.detection, backbone):
-                backbone = getattr(self.torchvision.models.detection, backbone)
-            elif "timm:" in backbone:
-                import timm
-
-                bckbn = backbone.split(":")[1]
-                if hasattr(timm.models, bckbn):
-                    backbone = getattr(timm.models, bckbn)
         else:
-            backbone = backbone
+            from arcgis.learn.models._arcgis_model import get_backbone_func
+            from arcgis.learn.models._transformer_backbone import (
+                transformer_backbone_downstream,
+            )
+
+            backbone = get_backbone_func(
+                backbone, data, is_fpn=True, chip_size=data.chip_size * 1.5
+            )
+            is_transformer = False
+            if backbone.__name__ in transformer_backbone_downstream:
+                is_transformer = True
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
         assert type(pretrained_backbone) == bool
         if backbone.__name__ == "resnet50" and "timm" not in backbone.__module__:
@@ -144,6 +145,8 @@ class MyFasterRCNN:
                     backbone_small.out_channels = _get_feature_size(
                         backbone, backbone_cut
                     )[-1][1]
+                elif is_transformer:
+                    backbone_small = backbone_small[0]
                 else:
                     backbone_small.out_channels = (
                         self.fastai.callbacks.hooks.num_features_model(
@@ -626,11 +629,26 @@ class FasterRCNN(ModelExtension):
             param.requires_grad = True
 
     def _freeze(self):
-        "Freezes the pretrained backbone."
-        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+        if hasattr(self.learn.model.backbone, "backbone"):
+            backbone = self.learn.model.backbone.backbone
+        elif hasattr(self.learn.model.backbone, "body"):
+            backbone = self.learn.model.backbone.body
+        else:
+            backbone = self.learn.model.backbone
+        layers = flatten_model(backbone)
+        idx = len(layers)
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
                 continue
-            for p in i.parameters():
+            for p in layer.parameters():
                 p.requires_grad = False
         return idx
 
@@ -648,6 +666,11 @@ class FasterRCNN(ModelExtension):
         return FasterRCNN._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        transformer_backbone = list(vit_config.keys())
+        return transformer_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return FasterRCNN._supported_backbones()
@@ -656,7 +679,15 @@ class FasterRCNN(ModelExtension):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        transformer_backbone = FasterRCNN.transformer_backbones()
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        return (
+            [*_resnet_family]
+            + transformer_backbone
+            + timm_backbones
+            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        )
 
     @property
     def supported_datasets(self):
@@ -742,6 +773,8 @@ class FasterRCNN(ModelExtension):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
+            if "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
 
         data.resize_to = resize_to
         frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)

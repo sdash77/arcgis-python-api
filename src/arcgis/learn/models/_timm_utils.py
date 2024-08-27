@@ -24,8 +24,12 @@ try:
     from timm.models.hub import (
         has_hf_hub,
         load_state_dict_from_hf,
+        hf_split,
+        hf_hub_url,
+        # _download_from_hf,
         load_state_dict_from_url,
     )
+    from huggingface_hub import hf_hub_download
     from timm.models.helpers import (
         adapt_input_conv,
         build_model_with_cfg,
@@ -39,6 +43,10 @@ try:
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
+
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 # same function with modification fastai.vision.learner._test_cnn
@@ -133,6 +141,31 @@ hosted_weights = {
 }
 
 
+# def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
+#     assert has_hf_hub(True)
+#     cached_file = _download_from_hf(model_id, filename)
+#     state_dict = torch.load(cached_file, map_location="cpu")
+#     return state_dict
+
+
+def _download_from_hf(model_id: str, filename: str):
+    hf_model_id, hf_revision = hf_split(model_id)
+    url = hf_hub_url(hf_model_id, filename, revision=hf_revision)
+    # return hf_hub_download(hf_model_id, filename, revision=hf_revision)
+    cached_file = hf_hub_download(hf_model_id, filename, revision=hf_revision)
+    return cached_file
+
+
+def load_state_dict_from_hf(model_id: str, filename: str = "pytorch_model.bin"):
+    assert has_hf_hub(True)
+    cached_file = _download_from_hf(model_id, filename)
+    state_dict = torch.load(cached_file, map_location="cpu")
+    return state_dict
+
+
+timm.models.hub.load_state_dict_from_hf = load_state_dict_from_hf
+
+
 # same function with modification timm.models.helpers.load_pretrained
 def load_timm_bckbn_pretrained(
     model,
@@ -180,7 +213,11 @@ def load_timm_bckbn_pretrained(
 
     elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
         _logger.info(f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})")
-        state_dict = load_state_dict_from_hf(hf_hub_id)
+        hf_filename = default_cfg.get("filename", None)
+        if hf_filename is not None:
+            state_dict = load_state_dict_from_hf(hf_hub_id, hf_filename)
+        else:
+            state_dict = load_state_dict_from_hf(hf_hub_id)
     else:
         _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
         state_dict = load_state_dict_from_url(
@@ -711,6 +748,7 @@ def checkpoint_filter_fn_swin(state_dict, model):
                 # last temp_module will be tensor
                 temp_module = temp_module.__getattr__(attr)
             if v.shape == temp_module.shape:
+                out_dict[k] = v
                 continue
             if "index" in model_attr[-1]:
                 v = temp_module
