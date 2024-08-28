@@ -668,7 +668,9 @@ class ArcGISModel(object):
                 if data._estimate_batch:
                     try:
                         data._estimate_batch = False
-                        batch_size = estimate_batch_size(self, mode="none")
+                        batch_size = estimate_batch_size(
+                            self, mode="none", verbose="False"
+                        )
                         self._data.train_dl.batch_size = (
                             batch_size.recommended_batchsize
                         )
