@@ -384,28 +384,30 @@ class SequenceToSequence(ArcGISModel):
 
         text_cols = emd.get("TextColumns", "")
         label_cols = emd.get("LabelColumns", [])
-        extensible_model = TextModelExtension.from_model(
-            emd_path, task="text-classifier", **kwargs
-        )
 
-        if extensible_model.model_loaded:
-            data_is_none = False
-            if data is None:
-                data_is_none = True
-                data = TextDataObject(task="sequence_translation")
-                data._backbone = ""
-                data.create_empty_seq2seq_data(text_cols, label_cols)
-                data.emd, data.emd_path = emd, emd_path.parent
-
-            cls_object = cls(
-                data,
-                pretrained_path=str(emd_path),
-                model_extension=True,
-                extensible_model=extensible_model,
+        if "InferenceFunction" in emd:
+            extensible_model = TextModelExtension.from_model(
+                emd_path, task="text-classifier", **kwargs
             )
-            if data_is_none:
-                cls_object._data._is_empty = True
-            return cls_object
+
+            if extensible_model.model_loaded:
+                data_is_none = False
+                if data is None:
+                    data_is_none = True
+                    data = TextDataObject(task="sequence_translation")
+                    data._backbone = ""
+                    data.create_empty_seq2seq_data(text_cols, label_cols)
+                    data.emd, data.emd_path = emd, emd_path.parent
+
+                cls_object = cls(
+                    data,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
+                )
+                if data_is_none:
+                    cls_object._data._is_empty = True
+                return cls_object
 
         backbone = emd["ModelParameters"].get("backbone", None)
         backup_backbone = backbone
@@ -808,6 +810,11 @@ class SequenceToSequence(ArcGISModel):
         min_length              Optional integer.
                                 The minimum length of the sequence to be generated.
                                 Default value is set to 10
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                input field name in the feature set. Supported
+                                in model extension
+                                Deafult value: input_str
         =====================   ===========================================
 
         :return: list of tuples(input , predicted output strings) or FeatureSet.
@@ -819,20 +826,21 @@ class SequenceToSequence(ArcGISModel):
         if self.model_extension:
             # To make it more flexible. We will add the Featureset for further processing
             feature_set = []
+            input_field = kwargs.get("input_field", "input_str")
             for i in text_or_list:
-                feature_set.append({"attributes": {"input_str": i}})
+                feature_set.append({"attributes": {input_field: i}})
 
             feature_set_final = FeatureSet.from_dict(
                 {
                     "fields": [
-                        {"name": "input_str", "type": "esriFieldTypeString"},
+                        {"name": input_field, "type": "esriFieldTypeString"},
                     ],
                     "geometryType": "",
                     "features": feature_set,
                 }
             )
             results = self.inference_model.predict(
-                feature_set_final, **{"input_field": "input_str"}
+                feature_set_final, **{"input_field": input_field}
             )
 
             if not isinstance(results, FeatureSet):
