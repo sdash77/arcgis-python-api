@@ -2679,7 +2679,7 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
-        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `True`.
         --------------------     --------------------------------------------------------------------
         visible_fields           Optional list[str] or None. A list of visible fields to display.
         --------------------     --------------------------------------------------------------------
