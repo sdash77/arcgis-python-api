@@ -147,6 +147,7 @@ Several classes, functions, and methods have been completely removed from the Ar
 
 - `UtilityNetworkManager.query_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
 - `UtilityNetworkManager.apply_overrides` - deprecated in **2.1.0** removed in **2.4.0**. 
+- `FeatureLayerCollectionManager.create_view` - `preserve_layer_ids` is default True at **2.4.0**.
 
 ### `arcgis.gis` Module
 
