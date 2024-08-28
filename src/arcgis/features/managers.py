@@ -2617,7 +2617,7 @@ class FeatureLayerCollectionManager(_GISResource):
         snippet: str | None = None,
         overwrite: bool | None = None,
         set_item_id: str | None = None,
-        preserve_layer_ids: bool = False,
+        preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
     ):
