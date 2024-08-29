@@ -74,7 +74,13 @@ class TestServiceFactory(unittest.TestCase):
         _type, _ = _layer_type_from_url(url)
         self.assertEqual(_type.__name__, 'GeoJSONLayer')
         self.assertIsInstance(_, LambdaType)
-    
+
+    def test_layer_type_from_url_geojson_file_query_string(self):
+        url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson?query=1'
+        _type, _ = _layer_type_from_url(url)
+        self.assertEqual(_type.__name__, 'GeoJSONLayer')
+        self.assertIsInstance(_, LambdaType)
+
     def test_layer_type_from_url_globe_server(self):
         url = 'https://enterprise-arcgis.agency.gov/arcgis/rest/services/Globe/GlobeServer'
         _type, _ = _layer_type_from_url(url)
