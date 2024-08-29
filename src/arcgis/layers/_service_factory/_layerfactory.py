@@ -211,15 +211,17 @@ def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
 
 def _layer_type_from_url(url: str):
     """Returns a tuple of the layer type and a lambda to create the layer"""
-    base_name = os.path.basename(url)
+    parsed_url = urlparse(url)
+    base_name = os.path.basename(parsed_url.path)
     hasLayer = False
-    if url.lower().find("sceneserver/layers") > -1:
+    if parsed_url.path.lower().find("sceneserver/layers") > -1:
         # special case for scene layers
         base_name = "sceneserver"
         hasLayer = True
     elif base_name.isdigit():
         # special case for services with a layer index
-        base_name = os.path.basename(url.replace("/" + base_name, ""))
+        # use the part before the index as the base name
+        base_name = os.path.basename(os.path.dirname(parsed_url.path))
         hasLayer = True
     base_name_lower = base_name.lower()
 
@@ -275,7 +277,7 @@ def _layer_type_from_url(url: str):
         return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
     if base_name_lower == "data":
         return DataServiceLayer, lambda url, gis: DataServiceLayer(url=url, gis=gis)
-    if base_name_lower == "wmts":
+    if base_name_lower.startswith("wmts"):
         from .._ogc import WMTSLayer
 
         return WMTSLayer, lambda url, gis: WMTSLayer(url=url, gis=gis)
@@ -330,7 +332,6 @@ class ServiceFactory(type):
             url = url_or_item
         else:
             raise ValueError("A URL to the service or an arcgis.Item is required.")
-        parsed_url = urlparse(url)
 
         _, layer_lambda = _layer_type_from_url(url)
         # GeoData is a legacy edge case that needs a Connection instead of GIS
@@ -342,6 +343,7 @@ class ServiceFactory(type):
             elif isinstance(server, GIS):
                 ...
             else:
+                parsed_url = urlparse(url)
                 try:
                     site_url = "{scheme}://{nl}/{wa}".format(
                         scheme=parsed_url.scheme,
