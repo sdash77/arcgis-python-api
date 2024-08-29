@@ -204,39 +204,39 @@ class FeatureServiceLayer(Layer, metaclass=_FeatureServiceLayerFactory):
         super(SceneLayer, self).__init__(url, gis)
 
 
-def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
-    url: str = f"{gis.resturl}content/items/{itemid}"
-    return gis.session.get(url, params={"f": "json"}).json(), url
-
-
-def _get_url_for_item(item_url: str, item_props: dict):
-    if item_props["type"] not in [
-        "KML",
-        "KML Collection",
-        "CSV",
-        "GeoJSON",
-        "GeoJson",
-    ]:
-        raise ValueError(
-            "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
-        )
-    if not item_url.endswith("/data"):
-        item_url = item_url + "/data"
-    return item_url
-
-
-def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
-    props: dict
-    item_url: str
-    props, item_url = _item_properties(item.id, gis=gis)
-    return _get_url_for_item(item_url, props)
-
-
 class ServiceFactory(type):
     """
     Generates a Service object for a given url and
     item configuration
     """
+
+    @staticmethod
+    def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
+        url: str = f"{gis.resturl}content/items/{itemid}"
+        return gis.session.get(url, params={"f": "json"}).json(), url
+
+    @staticmethod
+    def _get_url_for_item(item_url: str, item_props: dict):
+        if item_props["type"] not in [
+            "KML",
+            "KML Collection",
+            "CSV",
+            "GeoJSON",
+            "GeoJson",
+        ]:
+            raise ValueError(
+                "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
+            )
+        if not item_url.endswith("/data"):
+            item_url = item_url + "/data"
+        return item_url
+
+    @staticmethod
+    def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
+        props: dict
+        item_url: str
+        props, item_url = ServiceFactory._item_properties(item.id, gis=gis)
+        return ServiceFactory._get_url_for_item(item_url, props)
 
     @staticmethod
     def _layer_type_from_url(url: str):
@@ -349,7 +349,7 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = _get_url_from_item(url_or_item, gis=server)
+            url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
             url = url_or_item
         else:
