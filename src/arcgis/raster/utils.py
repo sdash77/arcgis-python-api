@@ -385,6 +385,13 @@ def get_stac_info(stac_url, verbose=True):
                                              (The default is True)
     ====================================     ====================================================================
 
+    .. note::
+        This helper method assists users in gathering STAC information,
+        which can then be used to better understand what to pass or query when using the following methods:
+            - :meth:`~arcgis.raster.Raster.from_stac_item`
+            - :meth:`~arcgis.raster.RasterCollection.from_stac_api`
+            - :meth:`~arcgis.raster.RasterCollection.from_stac_catalog`
+
     :return: Dictionary containing the parsed information from the STAC URL.
 
     .. code-block:: python
