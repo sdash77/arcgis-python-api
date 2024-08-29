@@ -8891,7 +8891,7 @@ class Raster:
         =================     ====================================================================
 
         .. tip::
-            The :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
             which can then be used to create Raster objects with this method.
 
         :return: A :class:`~arcgis.raster.Raster` object
@@ -13442,9 +13442,9 @@ class RasterCollection:
         =================     ====================================================================
 
         .. tip::
-        :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
-        enabling effective querying of STAC APIs and Collections. This information can then be used to create
-        RasterCollection objects with this method.
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            enabling effective querying of STAC APIs and Collections. This information can then be used to create
+            RasterCollection objects with this method.
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
 
@@ -13838,7 +13838,7 @@ class RasterCollection:
         =================     ====================================================================
 
         .. tip::
-            The :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
             which can then be used to create RasterCollection objects with this method.
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
