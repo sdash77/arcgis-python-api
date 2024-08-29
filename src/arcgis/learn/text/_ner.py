@@ -598,16 +598,17 @@ class EntityRecognizer:
             emd_json = json.load(f)
         backbone = emd_json.get("ModelType", "spacy").lower()
 
-        extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
-        if extensible_model.model_loaded:
-            cls_object = cls(
-                data,
-                backbone,
-                pretrained_path=str(emd_path),
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-            return cls_object
+        if "InferenceFunction" in emd_json:
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+            if extensible_model.model_loaded:
+                cls_object = cls(
+                    data,
+                    backbone,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
+                )
+                return cls_object
 
         backup_backbone = backbone
         if backbone in backbone_models_reverse_map:
@@ -653,7 +654,7 @@ class EntityRecognizer:
         return clas_object
 
     def extract_entities(
-        self, text_list, drop=True, batch_size=4, show_progress=True
+        self, text_list, drop=True, batch_size=4, show_progress=True, **kwargs
     ) -> pd.DataFrame | FeatureSet:
         """
         Extracts the entities from [documents in the mentioned path or text_list].
@@ -682,6 +683,16 @@ class EntityRecognizer:
         show_progress           optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
+        =====================   ===========================================
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                input field name in the feature set. Supported
+                                in model extension
+                                Deafult value: input_str
         =====================   ===========================================
 
         :return: Pandas DataFrame
@@ -729,19 +740,22 @@ class EntityRecognizer:
                     text_list = [text_list]
             # To make it more flexible. We will add the Featureset for further processing
             feature_set = []
+            input_field = kwargs.get("input_field", "input_str")
             for i in text_list:
-                feature_set.append({"attributes": {"input_str": i}})
+                feature_set.append({"attributes": {input_field: i}})
 
             feature_set_final = FeatureSet.from_dict(
                 {
                     "fields": [
-                        {"name": "input_str", "type": "esriFieldTypeString"},
+                        {"name": input_field, "type": "esriFieldTypeString"},
                     ],
                     "geometryType": "",
                     "features": feature_set,
                 }
             )
-            results = self.inference_model.predict(feature_set_final)
+            results = self.inference_model.predict(
+                feature_set_final, **{"input_field": input_field}
+            )
             if not isinstance(results, FeatureSet):
                 raise Exception(
                     "The output should be a FeatureSet. Please refer https://developers.arcgis.com/python/api-reference/arcgis.features.toc.html#featureset"

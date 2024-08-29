@@ -90,7 +90,16 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
     "sphinx_rtd_theme",
+    'sphinxcontrib.autodoc_pydantic'
 ]
+
+autodoc_pydantic_model_show_json = True
+autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_model_show_config_summary = False  # Hides model_config
+autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
+autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

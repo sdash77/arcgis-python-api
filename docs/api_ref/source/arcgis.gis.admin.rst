@@ -100,6 +100,13 @@ CategoryManager
     :members:
     :undoc-members:
     :show-inheritance:
+    
+ClassificationManager
+---------------------
+.. autoclass:: arcgis.gis.admin.ClassificationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 CollaborationManager
 --------------------

@@ -182,7 +182,8 @@ class FeatureClassifier(ArcGISModel):
             data = adapt_fastai_databunch(data)
 
         self._free_memory()
-        backbone = complete_transformer_backbone_name(backbone, data.chip_size)
+        if str(type(backbone)) != "<class 'function'>":
+            backbone = complete_transformer_backbone_name(backbone, data.chip_size)
         self._check_dataset_support(data)
 
         self._backend = backend

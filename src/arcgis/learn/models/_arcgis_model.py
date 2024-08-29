@@ -610,7 +610,7 @@ class ArcGISModel(object):
         else:
             self._is_multispectral = False
 
-        if self._is_multispectral or "_hf_" in self._backbone.__module__:
+        if self._is_multispectral:
 
             self._orig_backbone = self._backbone
 
@@ -668,7 +668,9 @@ class ArcGISModel(object):
                 if data._estimate_batch:
                     try:
                         data._estimate_batch = False
-                        batch_size = estimate_batch_size(self, mode="none")
+                        batch_size = estimate_batch_size(
+                            self, mode="none", verbose="False"
+                        )
                         self._data.train_dl.batch_size = (
                             batch_size.recommended_batchsize
                         )
@@ -926,6 +928,8 @@ class ArcGISModel(object):
         if self._backbone == "llm":
             return ["accuracy"]
         metrics = ["valid_loss"]
+        if getattr(self, "_is_mmtransformer", False):
+            return metrics
         for m in self.learn.metrics:
             if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
                 metrics.append(m.func.__name__)
@@ -1048,8 +1052,6 @@ class ArcGISModel(object):
             kwargs.pop("callbacks", None)
             monitored_names = self.available_metrics
 
-            if getattr(self, "_is_mmtransformer", False):
-                monitored_names = ["valid_loss"]
             if monitor not in monitored_names:
                 raise Exception(f"`monitor` must be set to one from {monitored_names}")
             self.monitor = monitor

@@ -3,9 +3,7 @@ import os
 import json
 import tempfile
 
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10280\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_issue_10280\tests")
-
+from arcgis.gis import GIS
 
 #######################################################################
 import unittest
@@ -123,7 +121,6 @@ _item_classification: dict = {
     "lastEditedUser": "PAPIadmin",
     "lastEditedDate": 1721654431371,
 }
-from arcgis.gis import GIS
 
 
 @profiles.enterprise
@@ -177,7 +174,7 @@ class TestPortalitemClassification(unittest.TestCase):
             assert c.delete()  #  should be True
 
             fp = self.fp
-            with open(fp, 'w') as writer:
+            with open(fp, "w") as writer:
                 writer.write(json.dumps(_schema))
             assert c.add(fp)
             assert c.schema
