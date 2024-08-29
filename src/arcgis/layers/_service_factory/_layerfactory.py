@@ -275,6 +275,10 @@ def _layer_type_from_url(url: str):
         return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
     if base_name_lower == "data":
         return DataServiceLayer, lambda url, gis: DataServiceLayer(url=url, gis=gis)
+    if base_name_lower == "wmts":
+        from .._ogc import WMTSLayer
+
+        return WMTSLayer, lambda url, gis: WMTSLayer(url=url, gis=gis)
     # GlobeServer and MobileServer use generic Layer
     # Fall back to Layer for all other services
     return Layer, lambda url, gis: Layer(url=url, gis=gis)

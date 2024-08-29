@@ -129,6 +129,12 @@ class TestServiceFactory(unittest.TestCase):
         self.assertEqual(_type.__name__, 'VectorTileLayer')
         self.assertIsInstance(_, LambdaType)
     
+    def test_layer_type_from_url_wmts(self):
+        url = 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer/WMTS'
+        _type, _ = _layer_type_from_url(url)
+        self.assertEqual(_type.__name__, 'WMTSLayer')
+        self.assertIsInstance(_, LambdaType)
+
     def test_layer_type_from_url_falls_back_to_layer(self):
         url = 'https://enterprise-arcgis.myorg.com/abcdefghijklmnop'
         _type, _ = _layer_type_from_url(url)
