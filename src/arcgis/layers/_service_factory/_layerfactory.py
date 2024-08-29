@@ -213,74 +213,84 @@ def _layer_type_from_url(url: str):
     """Returns a tuple of the layer type and a lambda to create the layer"""
     parsed_url = urlparse(url)
     base_name = os.path.basename(parsed_url.path)
-    hasLayer = False
-    if parsed_url.path.lower().find("sceneserver/layers") > -1:
+    has_layer = False
+
+    if "sceneserver/layers" in parsed_url.path.lower():
         # special case for scene layers
         base_name = "sceneserver"
-        hasLayer = True
+        has_layer = True
     elif base_name.isdigit():
         # special case for services with a layer index
         # use the part before the index as the base name
         base_name = os.path.basename(os.path.dirname(parsed_url.path))
-        hasLayer = True
+        has_layer = True
+
     base_name_lower = base_name.lower()
 
-    if base_name_lower == "mapserver":
-        if hasLayer:
-            return MapServiceLayer, lambda url, gis: MapServiceLayer(url=url, gis=gis)
-        return MapImageLayer, lambda url, gis: MapImageLayer(url=url, gis=gis)
-    if base_name_lower == "featureserver":
-        if hasLayer:
-            return FeatureServiceLayer, lambda url, gis: FeatureServiceLayer(
+    layer_mapping = {
+        "data": (DataServiceLayer, lambda url, gis: DataServiceLayer(url=url, gis=gis)),
+        "featureserver": (
+            FeatureServiceLayer if has_layer else FeatureLayerCollection,
+            lambda url, gis: (
+                FeatureServiceLayer if has_layer else FeatureLayerCollection
+            )(url=url, gis=gis),
+        ),
+        "geocodeserver": (Geocoder, lambda url, gis: Geocoder(location=url, gis=gis)),
+        "geodataserver": (
+            GeoData,
+            lambda url, connection: GeoData(url=url, connection=connection),
+        ),
+        "geometryserver": (
+            GeometryService,
+            lambda url, gis: GeometryService(url=url, gis=gis),
+        ),
+        "gpserver": (
+            "GeoprocessingToolbox",
+            lambda url, gis: _import_toolbox(url, gis),
+        ),
+        "imageserver": (ImageryLayer, lambda url, gis: ImageryLayer(url=url, gis=gis)),
+        "mapserver": (
+            MapServiceLayer if has_layer else MapImageLayer,
+            lambda url, gis: (MapServiceLayer if has_layer else MapImageLayer)(
                 url=url, gis=gis
-            )
-        return FeatureLayerCollection, lambda url, gis: FeatureLayerCollection(
-            url=url, gis=gis
-        )
-    if base_name_lower == "imageserver":
-        return ImageryLayer, lambda url, gis: ImageryLayer(url=url, gis=gis)
-    if base_name_lower == "gpserver":
-        from arcgis.geoprocessing import (
-            import_toolbox as _import_toolbox,
-        )
+            ),
+        ),
+        "naserver": (NetworkDataset, lambda url, gis: NetworkDataset(url=url, gis=gis)),
+        "sceneserver": (SceneLayer, lambda url, gis: SceneLayer(url=url, gis=gis)),
+        "schematicsserver": (
+            SchematicLayers,
+            lambda url, gis: SchematicLayers(url=url, gis=gis),
+        ),
+        "vectortileserver": (
+            VectorTileLayer,
+            lambda url, gis: VectorTileLayer(url=url, gis=gis),
+        ),
+    }
 
-        return "GeoprocessingToolbox", lambda url, gis: _import_toolbox(url, gis)
-    if base_name_lower == "geometryserver":
-        return GeometryService, lambda url, gis: GeometryService(url=url, gis=gis)
-    if base_name_lower == "geocodeserver":
-        return Geocoder, lambda url, gis: Geocoder(location=url, gis=gis)
-    if base_name_lower == "geodataserver":
-        return GeoData, lambda url, connection: GeoData(url=url, connection=connection)
-    if base_name_lower == "naserver":
-        return NetworkDataset, lambda url, gis: NetworkDataset(url=url, gis=gis)
-    if base_name_lower == "sceneserver":
-        return SceneLayer, lambda url, gis: SceneLayer(url=url, gis=gis)
-    if base_name_lower == "schematicsserver":
-        return SchematicLayers, lambda url, gis: SchematicLayers(url=url, gis=gis)
-    if base_name_lower == "vectortileserver":
-        return VectorTileLayer, lambda url, gis: VectorTileLayer(url=url, gis=gis)
-    if base_name.find(".geojson") > -1:
+    if base_name_lower in layer_mapping:
+        return layer_mapping[base_name_lower]
+
+    if base_name_lower == "ogcfeatureserver":
+        from .._ogc import OGCFeatureService
+
+        return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
+    if base_name_lower.endswith(".geojson"):
         from .._ogc import GeoJSONLayer
 
         return GeoJSONLayer, lambda url, gis: GeoJSONLayer(url=url, gis=gis)
-    if base_name.find(".csv") > -1:
+    if base_name_lower.endswith(".csv"):
         from .._ogc import CSVLayer
 
         return CSVLayer, lambda url, gis: CSVLayer(url_or_item=url, gis=gis)
-    if base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
+    if base_name_lower.endswith(".kml") or base_name_lower.endswith(".kmz"):
         from .._ogc import KMLLayer
 
         return KMLLayer, lambda url, gis: KMLLayer(url=url, gis=gis)
-    if base_name_lower == "ogcfeatureserver":
-        from .._ogc._service import OGCFeatureService
-
-        return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
-    if base_name_lower == "data":
-        return DataServiceLayer, lambda url, gis: DataServiceLayer(url=url, gis=gis)
     if base_name_lower.startswith("wmts"):
         from .._ogc import WMTSLayer
 
         return WMTSLayer, lambda url, gis: WMTSLayer(url=url, gis=gis)
+
     # GlobeServer and MobileServer use generic Layer
     # Fall back to Layer for all other services
     return Layer, lambda url, gis: Layer(url=url, gis=gis)
