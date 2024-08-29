@@ -228,7 +228,7 @@ class ServiceFactory(type):
                 "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
             )
         if not item_url.endswith("/data"):
-            item_url = item_url + "/data"
+            item_url = f"{item_url}/data"
         return item_url
 
     @staticmethod
