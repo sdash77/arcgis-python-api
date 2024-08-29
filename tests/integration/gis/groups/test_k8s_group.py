@@ -1,7 +1,6 @@
 import os
 import unittest
 import unittest.mock
-from unittest.mock import MagicMock
 import uuid
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import (
@@ -13,7 +12,6 @@ from arcgis.gis import (
     GroupMigrationManager,
     UserManager,
 )
-from arcgis.gis import ProfileManager
 from arcgis.gis import (
     GIS,
     Item,
@@ -24,9 +22,10 @@ from arcgis.gis import (
 )
 from arcgis.gis._impl._jb import StatusJob
 from integration.config import QALAB_ROOT_PATH
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
-profiles = ["your_kubernetes_profile"]
+
+# profiles = ["your_kubernetes_profile"]
 # ['your_online_profile', 'your_enterprise_profile', 'your_kubernetes_profile']  # profile names go here
 dest_profile = "your_dest_ent_profile"
 VERIFY_CERT = False  # Boolean T/F
@@ -63,278 +62,7 @@ except:
     fp = QALAB_ROOT_PATH + r"\group_manager_data\parkinglots.zip"
 
 
-###########################################################################
-# @unittest.skip('verified')
-@integration_test
-class TestGroupImportExport(unittest.TestCase):
-    """Tests the Group Import/Export Methods on a Group Object"""
-
-    # ----------------------------------------------------------------------
-    def test_group_export_async(self):
-        """tests exporting the group items to an epk"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-            for i in gis.content.search("erasemedata123"):
-                assert i.delete()
-            pitem = gis.content.add(
-                {
-                    "title": "erasemedata123",
-                    "tags": ["a", "b", "c"],
-                    'type': "Shapefile",
-                },
-                data=fp,
-            )
-            # pitem = item.publish()
-            for grp in gis.groups.search("export_test_group"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group", tags="a,b,c"
-            )
-            isinstance(pitem, Item)
-            gm = pitem.sharing.groups
-            gm.add(new_group)
-
-            epk_file = new_group.migration.create(
-                items=[pitem], future=True
-            )  # SHould Return an StatusJob
-            assert isinstance(epk_file, StatusJob)
-            assert epk_file.result()
-            assert isinstance(epk_file.result(), Item)
-            assert epk_file.result().delete()
-            assert pitem.delete()
-
-    # ----------------------------------------------------------------------
-    def test_group_export_sync(self):
-        """tests exporting the group items to an epk"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-            for i in gis.content.search("erasemedata123"):
-                assert i.delete()
-            pitem = gis.content.add(
-                {
-                    "title": "erasemedata123",
-                    "tags": ["a", "b", "c"],
-                    'type': "Shapefile",
-                },
-                data=fp,
-            )
-            # pitem = item.publish()
-            for grp in gis.groups.search("export_test_group"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group", tags="a,b,c"
-            )
-            isinstance(pitem, Item)
-            gm = pitem.sharing.groups
-            gm.add(new_group)
-
-            epk_file = new_group.migration.create(
-                items=[pitem], future=False
-            )  # SHould Return an Item
-            assert isinstance(epk_file, Item)
-            assert epk_file.delete()
-            assert pitem.delete()
-
-
-###########################################################################
-# @unittest.skip('verified')
-@integration_test
-class TestImport2Group(unittest.TestCase):
-    """tests the import methods"""
-
-    def test_group_import_two_gis_objects(self):
-        """tests importing the group items from an epk"""
-        for profile in profiles:
-            gis = GIS(
-                profile=profile,
-                verify_cert=False,
-                trust_env=True,
-                proxy=detect_proxy(),
-            )
-
-            for i in gis.content.search("erasemedata123"):
-                assert i.delete()
-            pitem = gis.content.add(
-                {
-                    "title": "erasemedata123",
-                    "tags": ["a", "b", "c"],
-                    'type': "Shapefile",
-                },
-                data=fp,
-            )
-            for grp in gis.groups.search("export_test_group"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group", tags="a,b,c"
-            )
-            isinstance(pitem, Item)
-            gm = pitem.sharing.groups
-            gm.add(new_group)
-            epk_file = new_group.migration.create(
-                items=[pitem], future=False
-            )  # SHould Return an Item
-            export_package_file = epk_file.download()
-            assert isinstance(epk_file, Item)
-            assert pitem.delete()
-
-            # export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
-            gis_dest = GIS(
-                profile="your_dest_ent_profile",
-                verify_cert=False,
-                trust_env=True,
-                set_active=False,
-                proxy=detect_proxy(),
-            )
-            grps = gis_dest.groups.search("new_group1_dest")
-            if len(grps) > 0:
-                [grp.delete() for grp in grps]
-            group_dest = gis_dest.groups.create(
-                "new_group1_dest", tags="migration"
-            )
-
-            import uuid
-
-            [
-                i.delete()
-                for i in gis_dest.content.search(
-                    f"test_import owner:{gis_dest.users.me.username}"
-                )
-            ]
-            new_item = gis_dest.content.add(
-                {
-                    "title": f"test_import_{uuid.uuid4().hex[:6]}",
-                    "type": "Export Package",
-                    "typeKeywords": ["a", "b", "c"],
-                    "tags": ["atag", "btag", "ctag"],
-                },
-                data=export_package_file,
-            )
-            gm = new_item.sharing.groups
-            gm.add(group_dest)
-
-            m = group_dest.migration
-            print("inspecting")
-            inspection = m.inspect(new_item)
-            print("inspecting done")
-            assert isinstance(m, GroupMigrationManager)
-            print("loading")
-            res = m.load(new_item)
-
-            assert res
-            assert isinstance(res, StatusJob)
-            assert isinstance(res.result(), dict)
-            assert all([i.delete() for i in res.result()["itemsImported"]])
-            print("loading done")
-            print("clean up")
-            # [i.delete() for i in group_dest.content()]
-            group_dest.delete()
-            new_group.delete()
-
-    # ----------------------------------------------------------------------
-    def test_group_import(self):
-        """tests importing the group items from an epk"""
-        for profile in profiles:
-            gis = GIS(profile=profile, trust_env=True, verify_cert=False)
-            for i in gis.content.search("erasemedata123"):
-                assert i.delete()
-            pitem = gis.content.add(
-                {
-                    "title": "erasemedata123",
-                    "tags": ["a", "b", "c"],
-                    'type': "Shapefile",
-                },
-                data=fp,
-            )
-            for grp in gis.groups.search("export_test_group"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group", tags="a,b,c"
-            )
-            isinstance(pitem, Item)
-            gm = pitem.sharing.groups
-            gm.add(new_group)
-            epk_file = new_group.migration.create(
-                items=[pitem], future=False
-            )  # SHould Return an Item
-            assert isinstance(epk_file, Item)
-            assert pitem.delete()
-            m = new_group.migration
-            assert isinstance(m, GroupMigrationManager)
-            res = m.load(epk_file)
-            assert res
-            assert isinstance(res, StatusJob)
-            assert isinstance(res.result(), dict)
-            assert all([i.delete() for i in res.result()["itemsImported"]])
-            new_group.delete()
-
-    # ----------------------------------------------------------------------
-    def test_inspect_package(self):
-        """
-        tests the `inspect` package call on Portal
-        """
-        for profile in profiles:
-            ##
-            ## SETUP EXPORT
-            ##
-            gis = GIS(profile=profile, trust_env=True, verify_cert=False)
-            for i in gis.content.search("erasemedata123"):
-                assert i.delete()
-
-            pitem = gis.content.add(
-                {
-                    "title": "erasemedata123",
-                    "tags": ["a", "b", "c"],
-                    "type": "Shapefile",
-                },
-                data=fp,
-            )
-            for grp in gis.groups.search("export_test_group"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group", tags="a,b,c"
-            )
-            gm = pitem.sharing.groups
-            gm.add(new_group)
-            epk_file = new_group.migration.create(
-                items=[pitem], future=False
-            )  # SHould Return an Item
-            assert isinstance(epk_file, Item)
-            assert pitem.delete()
-            new_group.delete()
-
-            ##
-            ## BEGIN PREVIEW TEST
-            ##
-
-            for grp in gis.groups.search("export_test_group2342"):
-                assert grp.delete()
-            new_group = gis.groups.create(
-                title="export_test_group2342", tags="a,b,c"
-            )
-            gm = epk_file.sharing.groups
-            gm.add(new_group)
-
-            m = new_group.migration
-            assert isinstance(m, GroupMigrationManager)
-            res = m.inspect(epk_file)
-            assert res
-            assert isinstance(res, dict)
-            ##
-            ## CLEAN UP
-            ##
-            assert new_group.delete()
-            ##
-            ## NEED TRY/EXCEPT HERE BECAUSE PRERELEASE (10.8.1)
-            ## HAS BUG ON DELETING PREVIEWED ITEMS
-            ##
-            try:
-                epk_file.delete()
-            except:
-                pass
-
-
-###########################################################################
-# @unittest.skip('verified')
+@profiles.all
 @integration_test
 class TestGroup(unittest.TestCase):
     """
