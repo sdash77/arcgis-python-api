@@ -209,10 +209,104 @@ def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
     return gis.session.get(url, params={"f": "json"}).json(), url
 
 
+def _layer_type_from_url(url: str):
+    """Returns a tuple of the layer type and a lambda to create the layer"""
+    base_name = os.path.basename(url)
+    hasLayer = False
+    if url.lower().find("sceneserver/layers") > -1:
+        # special case for scene layers
+        base_name = "sceneserver"
+        hasLayer = True
+    elif base_name.isdigit():
+        # special case for services with a layer index
+        base_name = os.path.basename(url.replace("/" + base_name, ""))
+        hasLayer = True
+    base_name_lower = base_name.lower()
+
+    if base_name_lower == "mapserver":
+        if hasLayer:
+            return MapServiceLayer, lambda url, gis: MapServiceLayer(url=url, gis=gis)
+        return MapImageLayer, lambda url, gis: MapImageLayer(url=url, gis=gis)
+    if base_name_lower == "featureserver":
+        if hasLayer:
+            return FeatureServiceLayer, lambda url, gis: FeatureServiceLayer(
+                url=url, gis=gis
+            )
+        return FeatureLayerCollection, lambda url, gis: FeatureLayerCollection(
+            url=url, gis=gis
+        )
+    if base_name_lower == "imageserver":
+        return ImageryLayer, lambda url, gis: ImageryLayer(url=url, gis=gis)
+    if base_name_lower == "gpserver":
+        from arcgis.geoprocessing import (
+            import_toolbox as _import_toolbox,
+        )
+
+        return "GeoprocessingToolbox", lambda url, gis: _import_toolbox(url, gis)
+    if base_name_lower == "geometryserver":
+        return GeometryService, lambda url, gis: GeometryService(url=url, gis=gis)
+    if base_name_lower == "geocodeserver":
+        return Geocoder, lambda url, gis: Geocoder(location=url, gis=gis)
+    if base_name_lower == "geodataserver":
+        return GeoData, lambda url, connection: GeoData(url=url, connection=connection)
+    if base_name_lower == "naserver":
+        return NetworkDataset, lambda url, gis: NetworkDataset(url=url, gis=gis)
+    if base_name_lower == "sceneserver":
+        return SceneLayer, lambda url, gis: SceneLayer(url=url, gis=gis)
+    if base_name_lower == "schematicsserver":
+        return SchematicLayers, lambda url, gis: SchematicLayers(url=url, gis=gis)
+    if base_name_lower == "vectortileserver":
+        return VectorTileLayer, lambda url, gis: VectorTileLayer(url=url, gis=gis)
+    if base_name.find(".geojson") > -1:
+        from .._ogc import GeoJSONLayer
+
+        return GeoJSONLayer, lambda url, gis: GeoJSONLayer(url=url, gis=gis)
+    if base_name.find(".csv") > -1:
+        from .._ogc import CSVLayer
+
+        return CSVLayer, lambda url, gis: CSVLayer(url_or_item=url, gis=gis)
+    if base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
+        from .._ogc import KMLLayer
+
+        return KMLLayer, lambda url, gis: KMLLayer(url=url, gis=gis)
+    if base_name_lower == "ogcfeatureserver":
+        from .._ogc._service import OGCFeatureService
+
+        return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
+    if base_name_lower == "data":
+        return DataServiceLayer, lambda url, gis: DataServiceLayer(url=url, gis=gis)
+    # GlobeServer and MobileServer use generic Layer
+    # Fall back to Layer for all other services
+    return Layer, lambda url, gis: Layer(url=url, gis=gis)
+
+
+def _get_url_for_item(item_url: str, item_props: dict):
+    if item_props["type"] not in [
+        "KML",
+        "KML Collection",
+        "CSV",
+        "GeoJSON",
+        "GeoJson",
+    ]:
+        raise ValueError(
+            "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
+        )
+    if not item_url.endswith("/data"):
+        item_url = item_url + "/data"
+    return item_url
+
+
+def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
+    props: dict
+    item_url: str
+    props, item_url = _item_properties(item.id, gis=gis)
+    return _get_url_for_item(item_url, props)
+
+
 class ServiceFactory(type):
     """
-    Generates a geometry object from a given set of
-    JSON (dictionary or iterable)
+    Generates a Service object for a given url and
+    item configuration
     """
 
     def __call__(
@@ -225,131 +319,43 @@ class ServiceFactory(type):
         from ...gis.server import ServicesDirectory
 
         url: str
-
-        if server is None:
-
-            server = _arcgis.env.active_gis
-        hasLayer = False
+        server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = url_or_item.url
-            if url in [None, ""]:
-                props: dict
-                item_url: str
-                props, item_url = _item_properties(url_or_item.id, gis=server)
-                if props["type"] in [
-                    "KML",
-                    "KML Collection",
-                    "CSV",
-                    "GeoJSON",
-                    "GeoJson",
-                ]:
-                    if item_url.endswith("/data") == False:
-
-                        url = item_url + "/data"
-                    else:
-                        url = item_url
-                else:
-                    raise Exception("Invalid item type")
-
+            url = _get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
             url = url_or_item
         else:
-
             raise ValueError("A URL to the service or an arcgis.Item is required.")
+        parsed_url = urlparse(url)
 
-        if isinstance(server, Connection) or hasattr(server, "token"):
-            connection = server
-
-        elif isinstance(server, (ServicesDirectory)):
-            connection = server._con
-        elif isinstance(server, GIS):
-            ...
-        else:
-            try:
-                parsed = urlparse(url)
-                site_url = "{scheme}://{nl}/{wa}".format(
-                    scheme=parsed.scheme,
-                    nl=parsed.netloc,
-                    wa=parsed.path[1:].split("/")[0],
-                )
-                connection = Connection(baseurl=site_url)  # anonymous connection
-                server = ServicesDirectory(url=site_url)
-            except:
-                parsed = urlparse(url)
-                site_url = "https://{nl}/rest/services".format(
-                    scheme=parsed.scheme, nl=parsed.netloc
-                )
-                connection = Connection(
-                    baseurl=site_url, all_ssl=parsed.scheme == "https"
-                )  # anonymous connection
-                server = ServicesDirectory(url=site_url)
-        base_name = os.path.basename(url)
-        if url.lower().find("sceneserver/layers") > -1:
-            base_name = "sceneserver"
-            hasLayer = True
-        elif base_name.isdigit():
-            base_name = os.path.basename(url.replace("/" + base_name, ""))
-            hasLayer = True
-        if base_name.lower() == "mapserver":
-            if hasLayer:
-                return MapServiceLayer(url=url, gis=server)
+        _, layer_lambda = _layer_type_from_url(url)
+        # GeoData is a legacy edge case that needs a Connection instead of GIS
+        if _ == GeoData:
+            if isinstance(server, Connection) or hasattr(server, "token"):
+                connection = server
+            elif isinstance(server, (ServicesDirectory)):
+                connection = server._con
+            elif isinstance(server, GIS):
+                ...
             else:
-                return MapImageLayer(url=url, gis=server)
-        elif base_name.lower() == "featureserver":
-            if hasLayer:
-                return FeatureServiceLayer(url=url, gis=server)
-            else:
-                return FeatureLayerCollection(url=url, gis=server)
-        elif base_name.lower() == "imageserver":
-            return ImageryLayer(url=url, gis=server)
-        elif base_name.lower() == "gpserver":
-            from arcgis.geoprocessing import (
-                import_toolbox as _import_toolbox,
-            )
-
-            res = _import_toolbox(url, server)
-            return res
-        elif base_name.lower() == "geometryserver":
-            return GeometryService(url=url, gis=server)
-        elif base_name.lower() == "mobileserver":
-            return Layer(url=url, gis=server)
-        elif base_name.lower() == "geocodeserver":
-            return Geocoder(location=url, gis=server)
-        elif base_name.lower() == "globeserver":
-            if hasLayer:
-                return Layer(url=url, gis=server)
-            return Layer(url=url, gis=server)
-        elif base_name.lower() == "geodataserver":
-            return GeoData(url=url, connection=connection)
-        elif base_name.lower() == "naserver":
-            return NetworkDataset(url=url, gis=server)
-        elif base_name.lower() == "sceneserver":
-            return SceneLayer(url=url, gis=server)
-        elif base_name.lower() == "schematicsserver":
-            return SchematicLayers(url=url, gis=server)
-        elif base_name.lower() == "vectortileserver":
-            return VectorTileLayer(url=url, gis=server)
-        elif base_name.find(".geojson") > -1:
-            from .._ogc import GeoJSONLayer
-
-            return GeoJSONLayer(url=url, gis=server)
-        elif base_name.find(".csv") > -1:
-            from .._ogc import CSVLayer
-
-            return CSVLayer(url_or_item=url, gis=server)
-        elif base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
-            from .._ogc import KMLLayer
-
-            return KMLLayer(url=url, gis=server)
-        elif base_name.lower() == "ogcfeatureserver":
-            from .._ogc._service import OGCFeatureService
-
-            return OGCFeatureService(url, gis=server)
-        elif base_name.lower() == "data":
-            return DataServiceLayer(url=url, gis=server)
-        else:
-            return Layer(url=url, gis=server)
-        return type.__call__(cls, url, server, initialize)
+                try:
+                    site_url = "{scheme}://{nl}/{wa}".format(
+                        scheme=parsed_url.scheme,
+                        nl=parsed_url.netloc,
+                        wa=parsed_url.path[1:].split("/")[0],
+                    )
+                    connection = Connection(baseurl=site_url)  # anonymous connection
+                    server = ServicesDirectory(url=site_url)
+                except:
+                    site_url = "https://{nl}/rest/services".format(
+                        scheme=parsed_url.scheme, nl=parsed_url.netloc
+                    )
+                    connection = Connection(
+                        baseurl=site_url, all_ssl=parsed_url.scheme == "https"
+                    )  # anonymous connection
+                    server = ServicesDirectory(url=site_url)
+            return layer_lambda(url, connection)
+        return layer_lambda(url, server)
 
 
 ###########################################################################
