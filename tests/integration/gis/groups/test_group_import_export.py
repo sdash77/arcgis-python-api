@@ -112,9 +112,9 @@ class TestGroupImport(unittest.TestCase):
 
     def tearDown(self):
         if self.pitem:
-            assert self.pitem.delete()
+            assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete()
+            assert self.new_group.delete(permanent=True)
 
     def test_group_import_to_different_gis(self):
         """tests importing the group items from an epk"""
