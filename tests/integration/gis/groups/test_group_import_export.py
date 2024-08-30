@@ -143,7 +143,7 @@ class TestGroupImport(unittest.TestCase):
             tags=["integration_testing"],
         )
         new_item = self.folder.add(item_properties, file=self.export_package_file).result()
-        isinstance(new_item, Item)
+        assert isinstance(new_item, Item)
 
         # add item to group
         new_item.sharing.groups.add(group_dest)
