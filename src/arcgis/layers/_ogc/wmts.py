@@ -197,6 +197,8 @@ class WMTSLayer(BaseOGC):
         elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (dict)):
             layer = properties["Capabilities"]["Contents"]["Layer"]
             tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"]
+            if isinstance(tile_matrix, (list, tuple)):
+                tile_matrix = tile_matrix[0]
         else:
             raise ValueError("Could not parse the results properly.")
 
