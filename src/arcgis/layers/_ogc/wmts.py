@@ -79,7 +79,7 @@ class WMTSLayer(BaseOGC):
             version=self._version,
             vendor_kwargs={"token": self._con.token} if self._add_token else None,
         )
-        resp: requests.Response = self._session.get(url=url, version=self._version)
+        resp: requests.Response = self._session.get(url=url)
         resp.raise_for_status()
         text = resp.text
         text_lower = text.lower()
