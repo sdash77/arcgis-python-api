@@ -370,8 +370,7 @@ def _get_tail(model):
 
 
 def _get_ms_tail(tail, data, type_init="random", **kwargs):
-    bbone = kwargs.get("backbone", None)
-
+    backbone = kwargs.get("backbone", None)
     in_chanls = len(data._extract_bands)
     if tail.in_channels == in_chanls:
         return tail
@@ -387,8 +386,6 @@ def _get_ms_tail(tail, data, type_init="random", **kwargs):
         padding_mode=tail.padding_mode,
     )
     # referred from https://github.com/rwightman/pytorch-image-models/blob/7c67d6aca992f039eece0af5f7c29a43d48c00e4/timm/models/helpers.py#L143
-    if in_chanls == tail.weight.shape[1]:
-        return tail
     if in_chanls == 1:
         new_tail.weight.data = tail.weight.data.float().sum(dim=1, keepdim=True)
     else:
@@ -399,9 +396,15 @@ def _get_ms_tail(tail, data, type_init="random", **kwargs):
             / float(in_chanls)
         )
     for i, j in enumerate(data._extract_bands):
-
-        if bbone is not None and "_hf_" in bbone.__module__:
-            b = j
+        if (
+            backbone is not None
+            and not isinstance(backbone, str)
+            and "_hf_" in backbone.__module__
+        ):
+            if j < tail.in_channels:
+                b = j
+            else:
+                b = None
         else:
             band = str(data._bands[j]).lower()
             b = get_band_mapping(band)
@@ -610,7 +613,9 @@ class ArcGISModel(object):
         else:
             self._is_multispectral = False
 
-        if self._is_multispectral:
+        if self._is_multispectral or (
+            not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
+        ):
 
             self._orig_backbone = self._backbone
 
