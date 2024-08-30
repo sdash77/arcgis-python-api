@@ -127,8 +127,7 @@ class TestGroupImport(unittest.TestCase):
 
         # delete old test group in to_gis
         group_search_result = self.to_gis.groups.search("new_group1_dest")
-        if len(group_search_result) > 0:
-            [group.delete() for group in group_search_result]
+        [group.delete() for group in group_search_result]
 
         # create group in to_gis
         group_dest = self.to_gis.groups.create(
