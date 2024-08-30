@@ -162,7 +162,7 @@ class TestGroupImport(unittest.TestCase):
     def test_group_import_to_same_gis(self):
         """tests importing the group items from an epk"""
 
-        if not self.from_gis == self.to_gis:
+        if not self.from_gis.url == self.to_gis.url:
             self.skipTest("testing export and import to same gis")
 
         res = self.new_group.migration.load(self.epk_item, overwrite=True)
