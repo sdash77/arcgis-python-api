@@ -38,11 +38,11 @@ class TestGroupExport(unittest.TestCase):
 
     def tearDown(self):
         if self.pitem:
-            assert self.pitem.delete()
+            assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete()
+            assert self.new_group.delete(permanent=True)
         if self.epk_item:
-            assert self.epk_item.delete()
+            assert self.epk_item.delete(permanent=True)
 
     def test_group_export_async(self):
         """tests exporting the group items to an epk asynchronously"""
