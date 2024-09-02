@@ -53,12 +53,16 @@ def get_mmlab_cfg(**kwargs):
 
 
 def load_mmlab_checkpoint(model, checkpoint):
+    logging.disable(logging.WARNING)
+
     CheckpointLoader._schemes["https://"] = partial(
         load_from_http, model_dir=None, progress=True
     )
     CheckpointLoader._schemes["http://"] = CheckpointLoader._schemes["https://"]
     CheckpointLoader._schemes["https://"].__name__ = "load_from_http"
     load_checkpoint(model, checkpoint, "cpu", False, logging.getLogger())
+
+    logging.disable(0)
 
 
 def set_detctor_parms(data, cfg):

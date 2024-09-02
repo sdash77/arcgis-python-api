@@ -791,7 +791,7 @@ class ArcGISModel(object):
         self._device = torch.device("cpu")
         self._data = data
 
-    def lr_find(self, allow_plot=True):
+    def lr_find(self, allow_plot=True, **kwargs):
         """
         Runs the Learning Rate Finder. Helps in choosing the
         optimum learning rate for training the model.
@@ -809,6 +809,8 @@ class ArcGISModel(object):
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
+        start_lr = kwargs.get("start_lr", 1e-07)
+        end_lr = kwargs.get("end_lr", 10)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
@@ -816,7 +818,7 @@ class ArcGISModel(object):
                 self.learn.metrics = []
                 # ddp training
                 if getattr(self, "_multigpu_training", False):
-                    self.learn.lr_find()
+                    self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
                     distrib_barrier()
                     # remove tmp.pth created during lr_find in parent process
                     if not int(os.environ.get("RANK", 0)):
@@ -828,7 +830,7 @@ class ArcGISModel(object):
                         prefix="arcgisTemp_"
                     ) as _tempfolder:
                         self.learn.path = Path(_tempfolder)
-                        self.learn.lr_find()
+                        self.learn.lr_find(start_lr=start_lr, end_lr=end_lr)
             except Exception as e:
                 # if some error comes in lr_find
                 raise e

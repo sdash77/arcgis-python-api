@@ -8,9 +8,11 @@ import torch.nn.functional as F
 from collections import OrderedDict
 import torch.nn.init as init
 from arcgis.learn.models._detr_object_detection.deformable_detr import (
+    PostProcess,
     get_world_size,
     is_dist_avail_and_initialized,
 )
+from arcgis.learn.models._detr_object_detection.matcher import HungarianMatcher
 from arcgis.learn._utils.coco_detection_utils import (
     box_cxcywh_to_xyxy,
     box_xyxy_to_cxcywh,
@@ -20,23 +22,7 @@ from arcgis.learn._utils.coco_detection_utils import (
 import torchvision
 import torch.distributed
 from torchvision.ops.misc import FrozenBatchNorm2d
-
-
-ResNet_cfg = {
-    18: [2, 2, 2, 2],
-    34: [3, 4, 6, 3],
-    50: [3, 4, 6, 3],
-    101: [3, 4, 23, 3],
-    152: [3, 8, 36, 3],
-}
-
-
-donwload_url = {
-    18: "https://github.com/lyuwenyu/storage/releases/download/v0.1/ResNet18_vd_pretrained_from_paddle.pth",
-    34: "https://github.com/lyuwenyu/storage/releases/download/v0.1/ResNet34_vd_pretrained_from_paddle.pth",
-    50: "https://github.com/lyuwenyu/storage/releases/download/v0.1/ResNet50_vd_ssld_v2_pretrained_from_paddle.pth",
-    101: "https://github.com/lyuwenyu/storage/releases/download/v0.1/ResNet101_vd_ssld_pretrained_from_paddle.pth",
-}
+from ._mmlab_utils import load_mmlab_checkpoint
 
 
 def get_activation(act, inplace=True):
@@ -195,6 +181,26 @@ class Blocks(nn.Module):
         return out
 
 
+backbone_cfg = dict(
+    resnet18=dict(
+        depth=18,
+        block_nums=[2, 2, 2, 2],
+    ),
+    resnet34=dict(
+        depth=34,
+        block_nums=[3, 4, 6, 3],
+    ),
+    resnet50=dict(
+        depth=50,
+        block_nums=[3, 4, 6, 3],
+    ),
+    resnet101=dict(
+        depth=101,
+        block_nums=[3, 4, 23, 3],
+    ),
+)
+
+
 class PResNet(nn.Module):
     def __init__(
         self,
@@ -203,11 +209,9 @@ class PResNet(nn.Module):
         num_stages=4,
         return_idx=[0, 1, 2, 3],
         act="relu",
-        pretrained=False,
+        block_nums=[2, 2, 2, 2],
     ):
         super().__init__()
-
-        block_nums = ResNet_cfg[depth]
         ch_in = 64
         if variant in ["c", "d"]:
             conv_def = [
@@ -252,27 +256,6 @@ class PResNet(nn.Module):
         self.return_idx = return_idx
         self.out_channels = [_out_channels[_i] for _i in return_idx]
         self.out_strides = [_out_strides[_i] for _i in return_idx]
-
-        self._freeze_norm(self)
-
-        if pretrained:
-            if isinstance(pretrained, bool) or "http" in pretrained:
-                state = torch.hub.load_state_dict_from_url(
-                    donwload_url[depth], map_location="cpu"
-                )
-            else:
-                state = torch.load(pretrained, map_location="cpu")
-            self.load_state_dict(state)
-
-    def _freeze_norm(self, m: nn.Module):
-        if isinstance(m, nn.BatchNorm2d):
-            m = FrozenBatchNorm2d(m.num_features)
-        else:
-            for name, child in m.named_children():
-                _child = self._freeze_norm(child)
-                if _child is not child:
-                    setattr(m, name, _child)
-        return m
 
     def forward(self, x):
         conv1 = self.conv1(x)
@@ -411,6 +394,14 @@ class TransformerEncoder(nn.Module):
             output = self.norm(output)
 
         return output
+
+
+encoder_cfg = dict(
+    resnet18=dict(in_channels=[128, 256, 512], expansion=0.5),
+    resnet34=dict(in_channels=[128, 256, 512], expansion=0.5),
+    resnet50=dict(),
+    resnet101=dict(hidden_dim=384, dim_feedforward=2048),
+)
 
 
 class HybridEncoder(nn.Module):
@@ -1140,6 +1131,18 @@ class TransformerDecoder(nn.Module):
         return torch.stack(dec_out_bboxes), torch.stack(dec_out_logits)
 
 
+decoder_cfg = dict(
+    resnet18=dict(
+        num_layers=3,
+    ),
+    resnet34=dict(
+        num_layers=4,
+    ),
+    resnet50=dict(),
+    resnet101=dict(feat_channels=[384, 384, 384]),
+)
+
+
 class RTDETRTransformerv2(nn.Module):
     __share__ = ["num_classes", "eval_spatial_size"]
 
@@ -1148,10 +1151,10 @@ class RTDETRTransformerv2(nn.Module):
         num_classes=80,
         hidden_dim=256,
         num_queries=300,
-        feat_channels=[512, 1024, 2048],
+        feat_channels=[256, 256, 256],
         feat_strides=[8, 16, 32],
         num_levels=3,
-        num_points=4,
+        num_points=[4, 4, 4],
         nhead=8,
         num_layers=6,
         dim_feedforward=1024,
@@ -1542,26 +1545,6 @@ class RTDETRTransformerv2(nn.Module):
         ]
 
 
-class RTDETR(nn.Module):
-
-    def __init__(self, data, **kwargs):
-        super().__init__()
-        self.backbone = PResNet(depth=50, return_idx=[1, 2, 3])
-        self.encoder = HybridEncoder()
-        self.decoder = RTDETRTransformerv2(
-            num_classes=data.c,
-            feat_channels=[256, 256, 256],
-            num_points=[4, 4, 4],
-        )
-
-    def forward(self, x, targets=None):
-        x = self.backbone(x)
-        x = self.encoder(x)
-        x = self.decoder(x, targets)
-
-        return x
-
-
 class RTDETRCriterionv2(nn.Module):
     """This class computes the loss for DETR.
     The process happens in two steps:
@@ -1578,12 +1561,12 @@ class RTDETRCriterionv2(nn.Module):
 
     def __init__(
         self,
-        matcher,
-        weight_dict,
-        losses,
-        alpha=0.2,
+        num_classes,
+        matcher=None,
+        weight_dict=None,
+        losses=None,
+        alpha=0.75,
         gamma=2.0,
-        num_classes=80,
         boxes_weight_format=None,
         share_matched_indices=False,
     ):
@@ -1598,8 +1581,21 @@ class RTDETRCriterionv2(nn.Module):
         """
         super().__init__()
         self.num_classes = num_classes
+        if matcher is None:
+            matcher = HungarianMatcher(cost_class=2, cost_bbox=5, cost_giou=2)
         self.matcher = matcher
+        if weight_dict is None:
+            weight_dict = {
+                "loss_vfl": 1,
+                "loss_bbox": 5,
+                "loss_giou": 2,
+            }
         self.weight_dict = weight_dict
+        if losses is None:
+            losses = [
+                "vfl",
+                "boxes",
+            ]
         self.losses = losses
         self.boxes_weight_format = boxes_weight_format
         self.share_matched_indices = share_matched_indices
@@ -1878,3 +1874,40 @@ class RTDETRCriterionv2(nn.Module):
                 )
 
         return dn_match_indices
+
+
+checkpoint_url = dict(
+    resnet18="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r18vd_120e_coco.pth",
+    resnet34="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r34vd_120e_coco_ema.pth",
+    resnet50="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r50vd_6x_coco_ema.pth",
+    resnet101="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r101vd_6x_coco_from_paddle.pth",
+)
+
+
+class RTDETR(nn.Module):
+
+    def __init__(self, data, backbone, **kwargs):
+        super().__init__()
+        eval_spatial_size = [int(data.chip_size * kwargs.get("scale_factor", 1))] * 2
+        self.backbone = PResNet(return_idx=[1, 2, 3], **backbone_cfg[backbone])
+        self.encoder = HybridEncoder(
+            eval_spatial_size=eval_spatial_size, **encoder_cfg[backbone]
+        )
+        self.decoder = RTDETRTransformerv2(
+            num_classes=data.c,
+            eval_spatial_size=eval_spatial_size,
+            **decoder_cfg[backbone],
+        )
+        self.postprocessors = PostProcess()
+        self.criterion = RTDETRCriterionv2(num_classes=data.c)
+        if kwargs.get("pretrained_backbone", False):
+            load_mmlab_checkpoint(self, checkpoint_url[backbone])
+
+    def forward(self, x, targets=None):
+        x = self.backbone(x)
+        x = self.encoder(x)
+        x = self.decoder(x, targets)
+        # append target to calculate loss
+        x["targets"] = targets
+
+        return x
