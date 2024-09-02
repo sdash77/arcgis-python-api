@@ -24,6 +24,29 @@ from mmseg.models.backbones.unet import InterpConv
 # register InterpConv module in mmengine to resolve the Unet error
 try:
     MMengine_Models.register_module("InterpConv", module=InterpConv)
+    from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2dPack
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        super(ModulatedDeformConv2dPack, self)._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
+
+    ModulatedDeformConv2dPack._load_from_state_dict = _load_from_state_dict
 except:
     pass
 
