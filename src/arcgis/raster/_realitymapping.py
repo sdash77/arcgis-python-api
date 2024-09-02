@@ -137,6 +137,106 @@ def _update_flight_info(
         raise RuntimeError("Error updating the flight resource")
 
 
+def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
+    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings["locationAccuracy"] = "MEDIUM"
+    adjust_settings["pointSimilarity"] = "MEDIUM"
+    adjust_settings["pointDensity"] = "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
+    adjust_settings["pointDistribution"] = "RANDOM"
+    if sensor_type.lower() == "aerialdigital":
+        adjust_settings["fullFrameMatch"] = False
+
+    return adjust_settings
+
+
+def _compute_block_adjustment_params(sensor_type, properties_dict):
+    """
+    sensor_type can be one of "Drone", "Satellite", "AerialScanned" or "AerialDigital".
+    """
+    adjust_settings = properties_dict["adjustSettings"]
+    
+    if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialdigital":
+        adjust_settings["initPointResolution"] = 8
+        adjust_settings["locationAccuracy"] = "LOW" if sensor_type.lower() == "aerialdigital" else "HIGH"
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["p"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["principalPoint"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["k"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["focalLength"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["cameraCalibration"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["fixImageLocationForHighAccuracyGPS"] = False
+        adjust_settings["transformationType"] = "Frame"
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        if sensor_type.lower() == "drone":
+            adjust_settings["estimateOPK"] = False
+            adjust_settings["rollingShutter"] = False
+            adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "aerialscanned":
+        _compute_primary_tie_points_gen_params(sensor_type, adjust_settings)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["cameraCalibration"] = False
+        adjust_settings["p"] = False
+        adjust_settings["principalPoint"] = False
+        adjust_settings["k"] = False
+        adjust_settings["focalLength"] = False
+        adjust_settings["transformationType"] = "Frame"
+        adjust_settings["accuracyX"] = "#"
+        adjust_settings["accuracyY"] = "#"
+        adjust_settings["accuracyZ"] = "#"
+        adjust_settings["accuracyXY"] = "#"
+        adjust_settings["accuracyXYZ"] = "#"
+        adjust_settings["accuracyOmega"] = "#"
+        adjust_settings["accuracyPhi"] = "#"
+        adjust_settings["accuracyKappa"] = "#"
+        adjust_settings["computeAntennaOffset"] = False
+        adjust_settings["computeShift"] = False
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "satellite":
+        _compute_primary_tie_points_gen_params(sensor_type, adjust_settings)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["transformationType"] = "RPC"
+        adjust_settings["generateTiePoints"] = True
+
+    adjust_settings["adjustTiePoints"] = False
+    adjust_settings["maskPolygons"] = ""
+
+    # return properties_dict
+
+# TODO: check how these keys are added (what level of nesting)
+def _construct_compute_gcp_params(properties_dict):
+    _compute_primary_tie_points_gen_params(properties_dict)
+    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings["pointSimilarity"] = "HIGH"
+    adjust_settings["referenceImage"] = ""
+    adjust_settings["correctGeoid"] = False
+    adjust_settings["elevationSource"] = ""
+
+
+def _construct_analyze_tie_points_params(properties_dict):
+    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings["minOverlapArea"] = float(0.2)
+    adjust_settings["maxOverlapArea"] = float(0.2)
+    adjust_settings["maskPolygons"] = ""
+
+
+def _construct_recompute_tie_points_params(properties_dict):
+    _compute_primary_tie_points_gen_params(properties_dict)
+    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings["maskPolygons"] = ""
+    # TODO: check if this key name is correct
+    adjust_settings["controlPoints"] = ""
+
+
+def _initialize(sensor_type, scenario_type):
+    properties_dict = {"template": {"adjustSettings": {}}}
+    _compute_block_adjustment_params(sensor_type, properties_dict)
+    _construct_compute_gcp_params(properties_dict)
+    _construct_analyze_tie_points_params(properties_dict)
+    _construct_recompute_tie_points_params(properties_dict)
+
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
