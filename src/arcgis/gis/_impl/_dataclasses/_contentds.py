@@ -221,6 +221,7 @@ class ItemProperties:
     extension: str | None = None
     overwrite: bool | None = None
     file_name: str | None = None
+    classification: dict | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -262,6 +263,7 @@ class ItemProperties:
             "text": self.text or None,
             "extension": self.extension or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
 
     def to_dict(self):
@@ -294,6 +296,7 @@ class ItemProperties:
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
 
     @classmethod
@@ -316,6 +319,7 @@ class ItemProperties:
             service_proxy=item.proxyFilter,
             industries=item.industries,
             categories=item.categories,
+            classification=getattr(item, "classification", None),
         )
 
 
