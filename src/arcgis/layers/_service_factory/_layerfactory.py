@@ -355,7 +355,7 @@ class ServiceFactory(type):
 ###########################################################################
 class Service(object, metaclass=ServiceFactory):
     """
-    The *Service* class allows users to pass a *url* string or an 
+    The *Service* class allows users to pass a *url* string or an
     :class:`~arcgis.gis.Item`, along with an optional :class:`~arcgis.gis.GIS`
     connection or specific :class:`~arcgis.gis.server.Server` object to return
     an instance of the specific ArcGIS API for Python object the service
@@ -364,7 +364,7 @@ class Service(object, metaclass=ServiceFactory):
     ===================     ====================================================
     **Parameter**           **Description**
     -------------------     ----------------------------------------------------
-    url_or_item             Required String. Internet endpoint for the service 
+    url_or_item             Required String. Internet endpoint for the service
                             to initialize as a Python object.
     -------------------     ----------------------------------------------------
     server                  Optional :class:`~arcgis.gis.server.Server` or
@@ -372,35 +372,35 @@ class Service(object, metaclass=ServiceFactory):
     -------------------     ----------------------------------------------------
     initialize              Optional Boolean. Default is *False*.
     ===================     ====================================================
-    
+
     :returns:
         An object representing the service type of the input value.
-        
+
     .. code-block::
-    
+
         # Usage Example: Directly from a url
         >>> from arcgis.gis import GIS
         >>> from arcgis.layers import Service
-        
+
         >>> gis = GIS(profile="your_online_profile")
-        
+
         >>> fs_url = "https://services7.arcgis.com/<org_id>/arcgis/rest/services/ancient_places/FeatureServer"
-        
+
         >>> flc = Service(
                     url_or_item=fs_url
                 )
         >>> flc
         <FeatureLayerCollection url:"https://services7.arcgis.com/<org_id>/arcgis/rest/services/ancient_places/FeatureServer">
-        
+
         >>> type(flc)
         arcgis.features.layer.FeatureLayerCollection
-        
+
         # Usage Example #2: From an item
         >>> org_item = gis.content.get("_item_id_")
-        
+
         >>> org_item.type
         Vector Tile Service
-        
+
         >>> vts = Service(
                     url_or_item=org_item
                   )
