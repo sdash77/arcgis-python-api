@@ -369,8 +369,6 @@ class Service(object, metaclass=ServiceFactory):
     -------------------     ----------------------------------------------------
     server                  Optional :class:`~arcgis.gis.server.Server` or
                             :class:`~arcgis.gis.GIS` object.
-    -------------------     ----------------------------------------------------
-    initialize              Optional Boolean. Default is *False*.
     ===================     ====================================================
 
     :returns:
