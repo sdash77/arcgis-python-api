@@ -398,16 +398,21 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones
-            + transformer_backbones
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+            timm_backbones + transformer_backbones + torchgeo_backbone
         )
 
     @property
@@ -655,6 +660,7 @@ class FeatureClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
         chip_size = emd["ImageWidth"]
 
         try:
@@ -711,6 +717,8 @@ class FeatureClassifier(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.device = _get_device()
 
