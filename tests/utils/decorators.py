@@ -461,6 +461,15 @@ class profiles:
         return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
 
     @classproperty
+    def admin_enterprise_and_k8s(cls):
+        """Run tests for enterprise admin and kubernetes admin profile"""
+
+        return cls._get_profile_parameterized_class(
+            cls._k8s_admin_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+        )
+
+    @classproperty
     def all(cls):
         """Run tests for all 3 profiles (agol, enterprise, k8s)"""
         return cls._get_profile_parameterized_class(
@@ -515,7 +524,7 @@ class from_to_profiles:
     _agol_to_k8s_params = {
         "description": "agol_to_k8s",
         "from_profile": "your_online_admin_profile",
-        "to_profile": "your_kubernetes_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
     _enterprise_to_agol_params = {
         "description": "enterprise_to_agol",
@@ -531,17 +540,22 @@ class from_to_profiles:
     _enterprise_to_k8s_params = {
         "description": "enterprise_to_k8s",
         "from_profile": "your_ent_admin_profile",
-        "to_profile": "your_kubernetes_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
     _k8s_to_agol_params = {
         "description": "k8s_to_agol",
-        "from_profile": "your_kubernetes_profile",
+        "from_profile": "your_kubernetes_admin_profile",
         "to_profile": "your_online_admin_profile",
     }
     _k8s_to_enterprise_params = {
         "description": "k8s_to_enterprise",
-        "from_profile": "your_kubernetes_profile",
+        "from_profile": "your_kubernetes_admin_profile",
         "to_profile": "your_ent_admin_profile",
+    }
+    _k8s_to_k8s_params = {
+        "description": "k8s_to_k8s",
+        "from_profile": "your_kubernetes_admin_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
 
     def _get_multi_profile_parameterized_class(*args):
@@ -632,6 +646,16 @@ class from_to_profiles:
             cls._agol_to_enterprise_params,
             cls._enterprise_to_agol_params,
             cls._enterprise_to_enterprise_params,
+        )
+
+    @classproperty
+    def all_except_agol(cls):
+        """Run tests for all from-to profiles, except agol"""
+        return cls._get_multi_profile_parameterized_class(
+            cls._enterprise_to_k8s_params,
+            cls._enterprise_to_enterprise_params,
+            cls._k8s_to_enterprise_params,
+            cls._k8s_to_k8s_params,
         )
 
     # endregion
