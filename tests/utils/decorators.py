@@ -179,6 +179,15 @@ class credentials:
             "AAPKed706a70151045f3a51b1917d84757610pwOA7fIeA6M3kLOR0_kBLPRMfwnympI0ql7knab8d6sTEJyRRKAzQBGqgP6XSDj",
         ),
     )
+    _agol_oauth_credential_parameters = (
+        "agol_oauth",
+        environ.get("STANDARD_AGOL_URL", "https://www.arcgis.com"),
+        environ.get("STANDARD_AGOL_USERNAME", "esri_requests"),
+        environ.get("STANDARD_AGOL_PASSWORD", "portalaccount1"),
+        None,
+        environ.get("AGOL_OAUTH_CLIENT_ID", "FONLvbtoFNAFZBTm"),
+        environ.get("AGOL_OAUTH_CLIENT_SECRET", "26bcc585a3b44862980abe390e85b06a"),
+    )
     _enterprise_oauth_credential_parameters = (
         "enterprise_oauth",
         _standard_enterprise_url,
@@ -290,6 +299,21 @@ class credentials:
         """Run tests for enterprise oauth credentials"""
         return cls._get_credentials_parameterized_class(
             cls._enterprise_oauth_credential_parameters
+        )
+    
+    @classproperty
+    def agol_oauth(cls):
+        """Run tests for agol oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._agol_oauth_credential_parameters
+        )
+    
+    @classproperty
+    def all_oauth(cls):
+        """Run tests for all oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._agol_oauth_credential_parameters,
+            cls._enterprise_oauth_credential_parameters,
         )
 
     @classproperty

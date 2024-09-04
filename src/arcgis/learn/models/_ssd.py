@@ -544,6 +544,13 @@ class SingleShotDetector(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
@@ -554,9 +561,8 @@ class SingleShotDetector(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
 
-        hf_backbones = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return (
             [
                 *_resnet_family,
@@ -566,7 +572,8 @@ class SingleShotDetector(ArcGISModel):
             ]
             + transformer_backbone
             + timm_backbones
-        ) + hf_backbones
+            + torchgeo_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -677,7 +684,7 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
-            if "hf:" in backbone:
+            if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
             data = get_multispectral_data_params_from_emd(data, emd)

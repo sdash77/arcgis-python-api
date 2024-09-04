@@ -197,7 +197,7 @@ class ArcGISObjectDetector:
             "y",
             "yes",
         ]
-        self.tta_scales = scalars.get("tta_scales", 1)
+        self.tta_scales = scalars.get("tta_scales", "1")
         self.nms_overlap = float(scalars.get("nms_overlap", 0.1))
         return configuration
 
