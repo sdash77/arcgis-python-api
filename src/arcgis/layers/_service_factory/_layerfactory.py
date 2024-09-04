@@ -368,7 +368,8 @@ class ServiceFactory(type):
                         scheme=parsed_url.scheme, nl=parsed_url.netloc
                     )
                     connection = Connection(
-                        baseurl=site_url, all_ssl=parsed_url.scheme == "https"
+                        baseurl=site_url,
+                        all_ssl=parsed_url.scheme == "https",
                     )  # anonymous connection
                     server = ServicesDirectory(url=site_url)
             return cls._get_layer_instance(url, server, connection)
@@ -388,7 +389,9 @@ class Service(object, metaclass=ServiceFactory):
        item - Portal or AGOL Item class
     """
 
-    def __init__(self, url, item=None, server=None):
-        if iterable is None:
-            iterable = ()
-        super(Layer, self).__init__(url, item, server)
+    def __init__(
+        self,
+        url_or_item: _arcgis.gis.Item | str = None,
+        server=None,
+        initialize=False,
+    ): ...
