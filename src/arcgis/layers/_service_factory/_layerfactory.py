@@ -29,6 +29,7 @@ from arcgis.layers._scenelyrs import SceneLayer
 from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
 import requests
+from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
 
@@ -240,7 +241,7 @@ class ServiceFactory(type):
 
     @staticmethod
     def _layer_type_from_url(url: str):
-        """Returns a tuple of the layer type and a lambda to create the layer"""
+        """Returns the layer type (or tuple[str, function], for some edge-cases)"""
         parsed_url = urlparse(url)
         base_name = os.path.basename(parsed_url.path)
         has_layer = False
@@ -258,55 +259,20 @@ class ServiceFactory(type):
         base_name_lower = base_name.lower()
 
         layer_mapping = {
-            "data": (
-                DataServiceLayer,
-                lambda url, gis: DataServiceLayer(url=url, gis=gis),
-            ),
+            "data": DataServiceLayer,
             "featureserver": (
-                FeatureServiceLayer if has_layer else FeatureLayerCollection,
-                lambda url, gis: (
-                    FeatureServiceLayer if has_layer else FeatureLayerCollection
-                )(url=url, gis=gis),
+                FeatureServiceLayer if has_layer else FeatureLayerCollection
             ),
-            "geocodeserver": (
-                Geocoder,
-                lambda url, gis: Geocoder(location=url, gis=gis),
-            ),
-            "geodataserver": (
-                GeoData,
-                lambda url, connection: GeoData(url=url, connection=connection),
-            ),
-            "geometryserver": (
-                GeometryService,
-                lambda url, gis: GeometryService(url=url, gis=gis),
-            ),
-            "gpserver": (
-                "GeoprocessingToolbox",
-                lambda url, gis: _import_toolbox(url, gis),
-            ),
-            "imageserver": (
-                ImageryLayer,
-                lambda url, gis: ImageryLayer(url=url, gis=gis),
-            ),
-            "mapserver": (
-                MapServiceLayer if has_layer else MapImageLayer,
-                lambda url, gis: (MapServiceLayer if has_layer else MapImageLayer)(
-                    url=url, gis=gis
-                ),
-            ),
-            "naserver": (
-                NetworkDataset,
-                lambda url, gis: NetworkDataset(url=url, gis=gis),
-            ),
-            "sceneserver": (SceneLayer, lambda url, gis: SceneLayer(url=url, gis=gis)),
-            "schematicsserver": (
-                SchematicLayers,
-                lambda url, gis: SchematicLayers(url=url, gis=gis),
-            ),
-            "vectortileserver": (
-                VectorTileLayer,
-                lambda url, gis: VectorTileLayer(url=url, gis=gis),
-            ),
+            "geocodeserver": Geocoder,
+            "geodataserver": GeoData,
+            "geometryserver": GeometryService,
+            "gpserver": ("GeoprocessingToolbox", _import_toolbox),
+            "imageserver": ImageryLayer,
+            "mapserver": MapServiceLayer if has_layer else MapImageLayer,
+            "naserver": NetworkDataset,
+            "sceneserver": SceneLayer,
+            "schematicsserver": SchematicLayers,
+            "vectortileserver": VectorTileLayer,
         }
 
         if base_name_lower in layer_mapping:
@@ -315,27 +281,49 @@ class ServiceFactory(type):
         if base_name_lower == "ogcfeatureserver":
             from .._ogc import OGCFeatureService
 
-            return OGCFeatureService, lambda url, gis: OGCFeatureService(url, gis=gis)
+            return OGCFeatureService
         if base_name_lower.endswith(".geojson"):
             from .._ogc import GeoJSONLayer
 
-            return GeoJSONLayer, lambda url, gis: GeoJSONLayer(url=url, gis=gis)
+            return GeoJSONLayer
         if base_name_lower.endswith(".csv"):
             from .._ogc import CSVLayer
 
-            return CSVLayer, lambda url, gis: CSVLayer(url_or_item=url, gis=gis)
+            return CSVLayer
         if base_name_lower.endswith(".kml") or base_name_lower.endswith(".kmz"):
             from .._ogc import KMLLayer
 
-            return KMLLayer, lambda url, gis: KMLLayer(url=url, gis=gis)
+            return KMLLayer
         if base_name_lower.startswith("wmts"):
             from .._ogc import WMTSLayer
 
-            return WMTSLayer, lambda url, gis: WMTSLayer(url=url, gis=gis)
+            return WMTSLayer
 
         # GlobeServer and MobileServer use generic Layer
         # Fall back to Layer for all other services
-        return Layer, lambda url, gis: Layer(url=url, gis=gis)
+        return Layer
+
+    @staticmethod
+    def _get_layer_instance(layer_type, url, server, connection=None):
+        """
+        Handles nuanced differences in initializer signature
+        between layer types and returns an instance of the Layer from type
+
+        Most Layers can be initialized using the `url` and `gis` parameters,
+        but some require a `connection` parameter, or `url_or_item`
+        """
+        if layer_type == GeoData:
+            return layer_type(url=url, connection=connection)
+        if layer_type.__name__ == "CSVLayer":
+            return layer_type(url_or_item=url, gis=server)
+        if isinstance(layer_type, tuple):
+            type_hint, _func = layer_type
+            if not isinstance(_func, LambdaType):
+                raise ValueError(
+                    f"Instance function must be a function to instantiate {type_hint}"
+                )
+            return _func(url, server)
+        return layer_type(url=url, gis=server)
 
     def __call__(
         cls,
@@ -355,9 +343,10 @@ class ServiceFactory(type):
         else:
             raise ValueError("A URL to the service or an arcgis.Item is required.")
 
-        _, layer_lambda = cls._layer_type_from_url(url)
+        layer_type = cls._layer_type_from_url(url)
         # GeoData is a legacy edge case that needs a Connection instead of GIS
-        if _ == GeoData:
+        # This workflow is deprecated and will be removed in a future release
+        if layer_type == GeoData:
             if isinstance(server, Connection) or hasattr(server, "token"):
                 connection = server
             elif isinstance(server, (ServicesDirectory)):
@@ -382,8 +371,8 @@ class ServiceFactory(type):
                         baseurl=site_url, all_ssl=parsed_url.scheme == "https"
                     )  # anonymous connection
                     server = ServicesDirectory(url=site_url)
-            return layer_lambda(url, connection)
-        return layer_lambda(url, server)
+            return cls._get_layer_instance(url, server, connection)
+        return cls._get_layer_instance(url, server)
 
 
 ###########################################################################
