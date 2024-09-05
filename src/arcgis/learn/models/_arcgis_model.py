@@ -453,6 +453,8 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
+    if hasattr(model, "backbone") and getattr(model.backbone, "_is_prithvi", False):
+        return model
 
     tail_name, tail = _get_tail(model)
     if tail_weights_type is None:
