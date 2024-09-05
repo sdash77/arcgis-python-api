@@ -372,8 +372,8 @@ class ServiceFactory(type):
                         all_ssl=parsed_url.scheme == "https",
                     )  # anonymous connection
                     server = ServicesDirectory(url=site_url)
-            return cls._get_layer_instance(url, server, connection)
-        return cls._get_layer_instance(url, server)
+            return cls._get_layer_instance(layer_type, url, server, connection)
+        return cls._get_layer_instance(layer_type, url, server)
 
 
 ###########################################################################
