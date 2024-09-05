@@ -135,7 +135,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             out = model.learn.model(
                                 input_data[0][0],
                                 input_data[0][1],
-                                torch.stack(input_data[0][2]),
                             )
                         else:
                             out = model.learn.model(*input_data[0])
@@ -221,7 +220,7 @@ def estimate_batch_size(model, mode="train", **kwargs):
                         )
                     else:
                         nonemodel = getattr(ag.learn, model.__class__.__name__)(
-                            model._data
+                            model._data, backbone=model._backbone
                         )
 
                     if nonemodel.__class__.__name__ in object_detection_models:
@@ -236,7 +235,6 @@ def estimate_batch_size(model, mode="train", **kwargs):
                             out = nonemodel.learn.model(
                                 input_data[0][0],
                                 input_data[0][1],
-                                torch.stack(input_data[0][2]),
                             )
                         else:
                             out = nonemodel.learn.model(*input_data[0])

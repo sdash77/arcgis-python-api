@@ -615,9 +615,6 @@ class TextClassifier(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        # To check if loading needs to be performed from the inference file
-        extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
-
         pretrained_model = emd.get("PretrainedModel", "")
         text_cols = emd.get("TextColumns", "")
         label_cols = emd.get("LabelColumns", [])
@@ -627,27 +624,29 @@ class TextClassifier(ArcGISModel):
             class_labels = list(emd["Label2Id"].keys())
         except KeyError:
             class_labels = emd["Label"]
+        if "InferenceFunction" in emd:
+            # To check if loading needs to be performed from the inference file
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+            if extensible_model.model_loaded:
+                # ToDo refactor this part
+                data_is_none = False
+                if data is None:
+                    data_is_none = True
+                    data = TextDataObject(task="classification")
+                    data._backbone = pretrained_model
+                    data.create_empty_object_for_classification(
+                        text_cols, label_cols, class_labels, is_multilabel_problem
+                    )
+                    data.emd, data.emd_path = emd, emd_path.parent
 
-        if extensible_model.model_loaded:
-            # ToDo refactor this part
-            data_is_none = False
-            if data is None:
-                data_is_none = True
-                data = TextDataObject(task="classification")
-                data._backbone = pretrained_model
-                data.create_empty_object_for_classification(
-                    text_cols, label_cols, class_labels, is_multilabel_problem
+                cls_object = cls(
+                    data,
+                    pretrained_model,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
                 )
-                data.emd, data.emd_path = emd, emd_path.parent
-
-            cls_object = cls(
-                data,
-                pretrained_model,
-                pretrained_path=str(emd_path),
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-            return cls_object
+                return cls_object
 
         # check if it is normal processing or it will need automated processing
         backbone = emd["ModelParameters"].get("backbone", None)
@@ -696,20 +695,6 @@ class TextClassifier(ArcGISModel):
                 text_cols, label_cols, class_labels, is_multilabel_problem
             )
             data.emd, data.emd_path = emd, emd_path.parent
-
-        if extensible_model.model_loaded:
-            cls_object = cls(
-                data,
-                pretrained_model,
-                pretrained_path=str(emd_path),
-                mixed_precision=mixed_precision,
-                thresh=thresh,
-                seq_len=seq_len,
-                model_extension=True,
-                extensible_model=extensible_model,
-            )
-
-            return cls_object
 
         cls_object = cls(
             data,
@@ -1049,6 +1034,7 @@ class TextClassifier(ArcGISModel):
         explain=False,
         explain_index=None,
         batch_size=64,
+        **kwargs,
     ) -> List[Tuple] | FeatureSet:
         """
         Predicts the class label(s) for the input text
@@ -1088,6 +1074,16 @@ class TextClassifier(ArcGISModel):
                                 Try reducing the batch size in case of out of
                                 memory errors.
                                 Default value : 64
+        =====================   ===========================================
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                input field name in the feature set. Supported
+                                in model extension
+                                Deafult value: input_str
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.
@@ -1149,21 +1145,22 @@ class TextClassifier(ArcGISModel):
             if isinstance(text_or_list, str):
                 text_or_list = [text_or_list]
             # To make it more flexible. We will add the Featureset for further processing
+            input_field = kwargs.get("input_field", "input_str")
             feature_set = []
             for i in text_or_list:
-                feature_set.append({"attributes": {"input_str": i}})
+                feature_set.append({"attributes": {input_field: i}})
 
             feature_set_final = FeatureSet.from_dict(
                 {
                     "fields": [
-                        {"name": "input_str", "type": "esriFieldTypeString"},
+                        {"name": input_field, "type": "esriFieldTypeString"},
                     ],
                     "geometryType": "",
                     "features": feature_set,
                 }
             )
             results = self.inference_model.predict(
-                feature_set_final, **{"input_field": "input_str"}
+                feature_set_final, **{"input_field": input_field}
             )
 
             if not isinstance(results, FeatureSet):
