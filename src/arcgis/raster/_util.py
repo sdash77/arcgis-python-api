@@ -2035,6 +2035,9 @@ def _parse_feature_collection(data, verbose):
             }
             info["features"].append(feature_info)
         info["links"] = data.get("links", [])
+        info["miscellaneous"] = {
+            key: val for key, val in feature.items() if key not in feature_info
+        }
     else:
         info["features"] = [
             {
