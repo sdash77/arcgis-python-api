@@ -610,7 +610,7 @@ class TestUtilityServicesSettingsClass(unittest.TestCase):
         )
         assert settings
 
-        for service in ['analysis', 'asyncClosestFacility', 'asyncGeocode', 'asyncLocationAllocation', 'asyncODCostMatrix', 'asyncRoute', 'asyncServiceArea', 'asyncVRP', 'closestFacility', 'defaultElevationLayers', 'elevation', 'elevationSync', 'geoanalytics', 'geocode', 'geoenrichment', 'geometry', 'hydrology', 'odCostMatrix', 'orthoMapping', 'packaging', 'printTask', 'rasterAnalytics', 'rasterUtilities', 'route', 'routingServicesSource', 'routingUtilities', 'serviceArea', 'symbols', 'syncVRP', 'traffic', 'workflowManager', 'asyncFleetRouting', 'snapToRoads']:
+        for service in ['analysis', 'asyncClosestFacility', 'asyncGeocode', 'asyncLocationAllocation', 'asyncODCostMatrix', 'asyncRoute', 'asyncServiceArea', 'asyncVRP', 'closestFacility', 'defaultElevationLayers', 'elevation', 'elevationSync', 'geoanalytics', 'geocode', 'geoenrichment', 'geometry', 'hydrology', 'odCostMatrix', 'orthoMapping', 'packaging', 'printTask', 'rasterAnalytics', 'rasterUtilities', 'route', 'routingServicesSource', 'routingUtilities', 'serviceArea', 'symbols', 'syncVRP', 'traffic', 'trafficData', 'workflowManager', 'asyncFleetRouting', 'snapToRoads']:
             if service == 'snapToRoads' and enterprise_gis.version <= [2024,1]:
                 continue
             assert service in enterprise_gis.properties["helperServices"]
