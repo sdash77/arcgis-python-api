@@ -137,8 +137,41 @@ def _update_flight_info(
         raise RuntimeError("Error updating the flight resource")
 
 
+def _construct_point_cloud_gen_params():
+    params = {}
+    params["minAngle"] = 5.0
+    params["maxAngle"] = 90.0
+    params["minOverlap"] = 0.5
+    params["maxOmegaPhiDif"] = 8.0
+    params["maxGSDDif"] = 2.0
+    # these are PointCloudGeneration specific
+    params["method"] = "ETM"
+    params["maxObjectSize"] = "NaN"
+    params["DSMGroundSpacing"] = "NaN"
+    params["numOfImagePairs"] = 4
+    params["adjQualityThreshold"] = 0.2
+
+    return params
+
+
+def _add_default_compression_params(props_dict):
+    if "compression" not in props_dict:
+        props_dict["compression"] = "NONE"
+    if "compressionQuality" not in props_dict:
+        props_dict["compressionQuality"] = 75
+    if "lERCMaxError" not in props_dict:
+        props_dict["lERCMaxError"] = float(0)
+
+
+def _add_default_cellsize_params(props_dict, is_dem):
+    if "cellsizeFactor" not in props_dict:
+        props_dict["cellsizeFactor"] = 5 if is_dem else 1
+    if "useCellsizeFactor" not in props_dict:
+        props_dict["useCellsizeFactor"] = True
+
+
 def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
-    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings = properties_dict["template"]["adjustSettings"]
     adjust_settings["locationAccuracy"] = "MEDIUM"
     adjust_settings["pointSimilarity"] = "MEDIUM"
     adjust_settings["pointDensity"] = "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
@@ -153,11 +186,11 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
     """
     sensor_type can be one of "Drone", "Satellite", "AerialScanned" or "AerialDigital".
     """
-    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings = properties_dict["template"]["adjustSettings"]
     
-    if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialdigital":
+    if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialscanned":
         adjust_settings["initPointResolution"] = 8
-        adjust_settings["locationAccuracy"] = "LOW" if sensor_type.lower() == "aerialdigital" else "HIGH"
+        adjust_settings["locationAccuracy"] = "LOW" if sensor_type.lower() == "aerialscanned" else "HIGH"
         adjust_settings["maxResidual"] = float(5)
         adjust_settings["p"] = True if sensor_type.lower() == "drone" else False
         adjust_settings["principalPoint"] = True if sensor_type.lower() == "drone" else False
@@ -172,7 +205,7 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
             adjust_settings["estimateOPK"] = False
             adjust_settings["rollingShutter"] = False
             adjust_settings["processAsRigCamera"] = False
-    elif sensor_type.lower() == "aerialscanned":
+    elif sensor_type.lower() == "aerialdigital":
         _compute_primary_tie_points_gen_params(sensor_type, adjust_settings)
         adjust_settings["maxResidual"] = float(5)
         adjust_settings["cameraCalibration"] = False
@@ -181,14 +214,8 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
         adjust_settings["k"] = False
         adjust_settings["focalLength"] = False
         adjust_settings["transformationType"] = "Frame"
-        adjust_settings["accuracyX"] = "#"
-        adjust_settings["accuracyY"] = "#"
-        adjust_settings["accuracyZ"] = "#"
-        adjust_settings["accuracyXY"] = "#"
-        adjust_settings["accuracyXYZ"] = "#"
-        adjust_settings["accuracyOmega"] = "#"
-        adjust_settings["accuracyPhi"] = "#"
-        adjust_settings["accuracyKappa"] = "#"
+        for key in ["aPrioriAccuracyX", "aPrioriAccuracyY", "aPrioriAccuracyZ", "aPrioriAccuracyXY", "aPrioriAccuracyXYZ", "aPrioriAccuracyOmega", "aPrioriAccuracyPhi", "aPrioriAccuracyKappa"]:
+            adjust_settings[key] = "#"
         adjust_settings["computeAntennaOffset"] = False
         adjust_settings["computeShift"] = False
         adjust_settings["computeImagePosteriorStd"] = True
@@ -203,12 +230,10 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
     adjust_settings["adjustTiePoints"] = False
     adjust_settings["maskPolygons"] = ""
 
-    # return properties_dict
 
-# TODO: check how these keys are added (what level of nesting)
-def _construct_compute_gcp_params(properties_dict):
-    _compute_primary_tie_points_gen_params(properties_dict)
-    adjust_settings = properties_dict["adjustSettings"]
+def _construct_compute_gcp_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
     adjust_settings["pointSimilarity"] = "HIGH"
     adjust_settings["referenceImage"] = ""
     adjust_settings["correctGeoid"] = False
@@ -216,30 +241,151 @@ def _construct_compute_gcp_params(properties_dict):
 
 
 def _construct_analyze_tie_points_params(properties_dict):
-    adjust_settings = properties_dict["adjustSettings"]
+    adjust_settings = properties_dict["template"]["adjustSettings"]
     adjust_settings["minOverlapArea"] = float(0.2)
-    adjust_settings["maxOverlapArea"] = float(0.2)
+    adjust_settings["maxOverlapLevel"] = float(2)
     adjust_settings["maskPolygons"] = ""
 
 
-def _construct_recompute_tie_points_params(properties_dict):
-    _compute_primary_tie_points_gen_params(properties_dict)
-    adjust_settings = properties_dict["adjustSettings"]
+def _construct_recompute_tie_points_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
     adjust_settings["maskPolygons"] = ""
-    # TODO: check if this key name is correct
-    adjust_settings["controlPoints"] = ""
+    adjust_settings["controlPointsUpdateMode"] = ""
+
+
+def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
+    key = "trueortho" if is_ortho else key
+    props = {key: {}}
+    props[key]["outputType"] = "TILED"
+    props[key]["format"] = "TIFF"
+    _add_default_compression_params(props[key])
+    props[key]["resampling"] = "BILINEAR"
+    props[key]["noDataValue"] = "NaN"
+    props[key]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+    properties_dict["template"]["processingSettings"][key] = props
+
+
+def _construct_dem_params(properties_dict, key_name, dtm=True, add_pc_gen_params=False, backward_compatible=True, is_rm=False):
+    props = {key_name: {}}
+    props[key_name]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props[key_name], True)
+    props[key_name]["format"] = "CRF"
+    _add_default_compression_params(props[key_name])
+    props[key_name]["interpolationMethod"] = "IDW" if is_rm else "TRIANGULATION"
+    props[key_name]["smoothingMethod"] = "GAUSS5x5"
+    props[key_name]["fillDEM"] = ""
+    props[key_name]["extent"] = ""
+    props[key_name]["mask"] = ""
+    props[key_name]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+    props[key_name]["groundDetectionMethod"] = "Standard"
+    props[key_name]["reuseGround"] = False
+    props[key_name]["classifyLowNoise"] = True
+    props[key_name]["reuseLowNoise"] = False
+    props[key_name]["lowNoise"] = 0.25
+    props[key_name]["classifyHighNoise"] = True
+    props[key_name]["reuseHighNoise"] = False
+    props[key_name]["highNoise"] = 100.0
+
+    if add_pc_gen_params:
+        props[key_name]["pointCloud"]["pointCloudSourceType"] = "STD"
+        props[key_name]["pointCloud"]["pointCloudGenParams"] = _construct_point_cloud_gen_params()
+    properties_dict["template"]["processingSettings"][key_name] = props
+
+
+def _construct_interpolation_dict(properties_dict, key_name, is_rm):
+    method = "IDW" if is_rm else "TRIANGULATION"
+    properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {}
+    # when the key_name is "dsm" and is_rm is True, we don't need to set the interpolation method
+    if not (key_name == "dsm" and is_rm):
+        properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {"method": method}
+
+
+def _construct_mesh_params(properties_dict, is_dsm_mesh, textured=True):
+    props = {}
+    props["format"] = "SLPK"
+    if textured:
+        props["textureFormat"] = "JPG & DDS"
+    if is_dsm_mesh:
+        # props["cellsize"] = "NaN"
+        # _add_default_cellsize_params(props, is_dem=False)
+        properties_dict["template"]["processingSettings"]["dsmMesh"] = props
+    else:
+        properties_dict["template"]["processingSettings"]["3dMesh"] = props
+
+
+def _construct_general_settings(properties_dict, quality, auto_cellsize):
+    general_settings = {}
+    general_settings["quality"] = quality
+    general_settings["cellsize"] = "NaN"
+    _add_default_cellsize_params(general_settings, False)
+    general_settings["autoCellsize"] = auto_cellsize
+    properties_dict["template"]["processingSettings"]["generalReconSettings"] = general_settings
+
+
+def _construct_advanced_settings(properties_dict):
+    advanced_settings = {}
+    advanced_settings["productBoundary"] = ""
+    advanced_settings["correctionFeatures"] = ""
+    advanced_settings["waterbodyFeatures"] = ""
+    advanced_settings["processingFolder"] = ""
+    advanced_settings["exportBinaryMaskImageForNonInterpolatedPixels"] = False
+    advanced_settings["exportDistanceMapToNextNonInterpolatedPixels"] = False
+    advanced_settings["exportMapWithStereoModelCountOfFinalPoint"] = False
+    properties_dict["template"]["processingSettings"]["advancedReconSettings"] = advanced_settings
 
 
 def _initialize(sensor_type, scenario_type):
-    properties_dict = {"template": {"adjustSettings": {}}}
+    properties_dict = {
+        "projectVersion": 1,
+        "template": {
+            "processingSettings": {}, 
+            "adjustSettings": {}
+            }
+        }
+    
+    raster_type = "Raster Dataset"
+    if sensor_type.lower() == "drone":
+        raster_type = "UAV/UAS"
+    elif sensor_type.lower() == "satellite":
+        raster_type = "Satellite"
+    elif sensor_type.lower() == "aerialdigital":
+        raster_type = "Frame"
+    elif sensor_type.lower() == "aerialscannned":
+        raster_type = "AerialScanned"
+    else:
+        raise RuntimeError("Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'")
+    
+    properties_dict["rasterType"] = raster_type
+
+    quality = "HIGH"
+    if sensor_type.lower() == "satellite" or \
+    (sensor_type.lower() == "aerialdigital" and (scenario_type.lower() == "aerial_nadir" or scenario_type.lower() == "aerial_oblique")):
+        quality = "ULTRA"
+
     _compute_block_adjustment_params(sensor_type, properties_dict)
-    _construct_compute_gcp_params(properties_dict)
+    _construct_compute_gcp_params(sensor_type, properties_dict)
     _construct_analyze_tie_points_params(properties_dict)
-    _construct_recompute_tie_points_params(properties_dict)
+    _construct_recompute_tie_points_params(sensor_type, properties_dict)
+    _construct_dsm_or_dsm_orthomosaic_params(properties_dict)
+    _construct_dem_params(properties_dict, key_name="dtm", dtm=True, add_pc_gen_params=False, backward_compatible=False, is_rm=True)
+    _construct_interpolation_dict(properties_dict, key_name="dsm", is_rm=True)
+    _construct_interpolation_dict(properties_dict, key_name="dtm", is_rm=True)
+    _construct_mesh_params(properties_dict, is_dsm_mesh=True)
+    _construct_mesh_params(properties_dict, is_dsm_mesh=False)
+    _construct_general_settings(properties_dict, quality, True)
+    _construct_advanced_settings(properties_dict)
+    
+    if "flights" not in properties_dict:
+        properties_dict["flights"] = [{"oid": 0}]
+    return properties_dict
+
 
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
+    sensor_type: str = "Drone",
+    scenario_type: str = "Drone",
     *,
     gis: Optional[GIS] = None,
     **kwargs,
@@ -291,6 +437,7 @@ def _create_project(
         )
     folder = folder_dict["title"]
     folderId = folder_dict["id"]
+    item_data = _initialize(sensor_type, scenario_type)
 
     item_properties = {
         "title": name,
@@ -302,6 +449,8 @@ def _create_project(
 
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
+    props = item.properties
+    item.update(item_properties=props, data=json.dumps(item_data))
     return item
 
 
@@ -2117,7 +2266,7 @@ def reconstruct_surface(
 
                                                                                     Syntax example with a specified number of processing instances:
 
-                                                                                        {"dsm": {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
+                                                                                        {key: {"outputType": "Tiled", "compression": "JPEG 75", "resamplingMethod": "NEAREST", "cellSize": 10, "noData": 0}}
 
                                                                                 - Output True Ortho product settings: controls
                                                                                 the environment variables for creating the DSM product.
