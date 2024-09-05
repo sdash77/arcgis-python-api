@@ -391,7 +391,7 @@ class Service(object, metaclass=ServiceFactory):
 
     def __init__(
         self,
-        url_or_item: _arcgis.gis.Item | str = None,
+        url_or_item: _arcgis.gis.Item | str | None = None,
         server=None,
         initialize=False,
     ) -> None: ...
