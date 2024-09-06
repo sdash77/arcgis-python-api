@@ -154,6 +154,47 @@ def _construct_point_cloud_gen_params():
     return params
 
 
+def _construct_seamline_generation_params(properties_dict):
+    props = {}
+    props["method"] = "VORONOI"
+    props["sortMethod"] = "NORTH_WEST"
+    props["sortAttribute"] = ""
+    props["sortBaseValue"] = ""
+    props["sortViewPointX"] = "NaN"
+    props["sortViewPointY"] = "NaN"
+    props["sortAscending"] = True
+    props["cellsize"] = "NaN"
+    props["minRegionSize"] = 100
+    props["blendWidthUnits"] = "PIXELS"
+    props["blendWidth"] = float(10)
+    props["blendType"] = "BOTH"
+    props["requestSizeType"] = "PIXELS"
+    props["requestSize"] = 1000
+    props["minThinnessRatio"] = float(0.5)
+    props["maxSliverSize"] = 20
+    properties_dict["template"]["processingSettings"]["ortho"]["seamline"] = props
+
+
+def _construct_color_balancing_params(properties_dict):
+    props = {}
+    props["method"] = "DODGING"
+    props["surfaceType"] = "SECOND_ORDER"
+    props["targetRaster"] = ""
+    props["recalculateStats"] = True
+    props["numberOfRowsToSkip"] = 10
+    props["numberOfColumnsToSkip"] = 10
+    props["inputDEM"] = ""
+    props["zFactor"] = float(1)
+    props["zOffset"] = float(0)
+    props["applyGeoid"] = True
+    props["inputSolutionPoints"] = ""
+    props["targetRasterOID"] = ""
+    props["refineEstimationByCorrelation"] = True
+    props["reduceCloudInfluence"] = False
+    props["reduceShadowInfluence"] = False
+    properties_dict["template"]["processingSettings"]["ortho"]["colorBalance"] = props
+
+
 def _add_default_compression_params(props_dict):
     if "compression" not in props_dict:
         props_dict["compression"] = "NONE"
