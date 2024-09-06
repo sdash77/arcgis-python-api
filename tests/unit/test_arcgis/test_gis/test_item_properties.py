@@ -6,7 +6,6 @@ class TestItemProperties(unittest.TestCase):
         ip = ItemProperties(
             item_type=ItemTypeEnum.WEB_MAP,
             title="ItemPropertiesWebMap",
-            text=data,
             properties='super awesome',
         )
         ip_dict = ip.to_dict()
@@ -17,7 +16,6 @@ class TestItemProperties(unittest.TestCase):
         ip = ItemProperties(
             item_type=ItemTypeEnum.WEB_MAP,
             title="ItemPropertiesWebMap",
-            text=data,
             properties={
                 'abc': 1234,
             },
