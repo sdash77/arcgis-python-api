@@ -13,7 +13,7 @@ class TestItemProperties(unittest.TestCase):
         assert ip_dict
         assert isinstance(ip_dict.get('properties'), str)
 
-    def test_properties_dict(self):
+    def test_to_dict_properties_dict(self):
         ip = ItemProperties(
             item_type=ItemTypeEnum.WEB_MAP,
             title="ItemPropertiesWebMap",
@@ -22,7 +22,9 @@ class TestItemProperties(unittest.TestCase):
                 'abc': 1234,
             },
         )
-        assert isinstance(ip.to_dict()['properties'], str)
+         ip_dict = ip.to_dict()
+        assert ip_dict
+        assert isinstance(ip_dict.get('properties'), str)
 
 if __name__ == '__main__':
     unittest.main()
