@@ -211,8 +211,8 @@ def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
 
 class ServiceFactory(type):
     """
-    Generates a geometry object from a given set of
-    JSON (dictionary or iterable)
+    Generates a layer object from a given set of
+    JSON (dictionary or iterable) or url.
     """
 
     def __call__(
@@ -355,14 +355,55 @@ class ServiceFactory(type):
 ###########################################################################
 class Service(object, metaclass=ServiceFactory):
     """
-    The Layer class allows users to pass a url, connection or other object
-    to the class and get back properties and functions specifically related
-    to the service.
+    The *Service* class allows users to pass a *url* string or an
+    :class:`~arcgis.gis.Item`, along with an optional :class:`~arcgis.gis.GIS`
+    connection or specific :class:`~arcgis.gis.server.Server` object to return
+    an instance of the specific ArcGIS API for Python object the service
+    represents.
 
-    Inputs:
-       url - internet address to the service
-       server - Server class
-       item - Portal or AGOL Item class
+    ===================     ====================================================
+    **Parameter**           **Description**
+    -------------------     ----------------------------------------------------
+    url_or_item             Required String. Internet endpoint for the service
+                            to initialize as a Python object.
+    -------------------     ----------------------------------------------------
+    server                  Optional :class:`~arcgis.gis.server.Server` or
+                            :class:`~arcgis.gis.GIS` object.
+    ===================     ====================================================
+
+    :returns:
+        An object representing the service type of the input value.
+
+    .. code-block::
+
+        # Usage Example: Directly from a url
+        >>> from arcgis.gis import GIS
+        >>> from arcgis.layers import Service
+
+        >>> gis = GIS(profile="your_online_profile")
+
+        >>> fs_url = "https://services7.arcgis.com/<org_id>/arcgis/rest/services/ancient_places/FeatureServer"
+
+        >>> flc = Service(
+                    url_or_item=fs_url
+                )
+        >>> flc
+        <FeatureLayerCollection url:"https://services7.arcgis.com/<org_id>/arcgis/rest/services/ancient_places/FeatureServer">
+
+        >>> type(flc)
+        arcgis.features.layer.FeatureLayerCollection
+
+        # Usage Example #2: From an item
+        >>> org_item = gis.content.get("_item_id_")
+
+        >>> org_item.type
+        Vector Tile Service
+
+        >>> vts = Service(
+                    url_or_item=org_item
+                  )
+        >>> vts
+        <VectorTileLayer url:"https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services/Custom_Basemap_SXT/VectorTileServer">
     """
 
     def __init__(self, url, item=None, server=None):
