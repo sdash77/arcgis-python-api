@@ -52,7 +52,7 @@ data = {
 }
 
 
-class TestItemPropertiesNoCall(unittest.TestCase):
+class TestItemProperties(unittest.TestCase):
     def test_properties_str(self):
         ip = ItemProperties(
             item_type=ItemTypeEnum.WEB_MAP,
