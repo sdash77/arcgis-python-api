@@ -8620,7 +8620,7 @@ def speckle(
     reduction filtering algorithms are provided through this function. For more
     information including required and optional parameters for each filter and
     the default parameter values, see
-    `Speckle function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm>`_
+    `Speckle function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/speckle-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8629,7 +8629,7 @@ def speckle(
     --------------------------------     --------------------------------------------------------------------
     raster                                  Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    filter_type                             Optional string, one of "Lee", "EnhancedLee" "Frost", "Kaun". Default is "Lee".
+    filter_type                             Optional string, one of "Lee", "EnhancedLee" "Frost", "Kaun", "GammaMAP", "RefinedLee". Default is "Lee".
     --------------------------------     --------------------------------------------------------------------
     filter_size                             Optional string, kernel size. One of "3x3", "5x5", "7x7", "9x9", "11x11". Default is "3x3".
     --------------------------------     --------------------------------------------------------------------
@@ -8651,7 +8651,14 @@ def speckle(
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    filter_types = {"Lee": 0, "EnhancedLee": 1, "Frost": 2, "Kuan": 3}
+    filter_types = {
+        "Lee": 0,
+        "EnhancedLee": 1,
+        "Frost": 2,
+        "Kuan": 3,
+        "GammaMAP": 4,
+        "RefinedLee": 5,
+    }
 
     filter_sizes = {"3x3": 0, "5x5": 1, "7x7": 2, "9x9": 3, "11x11": 4}
 

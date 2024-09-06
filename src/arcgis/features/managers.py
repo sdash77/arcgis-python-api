@@ -2617,7 +2617,7 @@ class FeatureLayerCollectionManager(_GISResource):
         snippet: str | None = None,
         overwrite: bool | None = None,
         set_item_id: str | None = None,
-        preserve_layer_ids: bool = False,
+        preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
     ):
@@ -2679,7 +2679,7 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
-        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `True`.
         --------------------     --------------------------------------------------------------------
         visible_fields           Optional list[str] or None. A list of visible fields to display.
         --------------------     --------------------------------------------------------------------
