@@ -52,11 +52,35 @@ data = {
 }
 
 
+class TestItemPropertiesNoCall(unittest.TestCase):
+    def test_properties_str(self):
+        ip = ItemProperties(
+            item_type=ItemTypeEnum.WEB_MAP,
+            title="ItemPropertiesWebMap",
+            text=data,
+            properties='super awesome',
+        )
+        assert isinstance(ip.to_dict()['properties'], str)
+
+    def test_properties_dict(self):
+        ip = ItemProperties(
+            item_type=ItemTypeEnum.WEB_MAP,
+            title="ItemPropertiesWebMap",
+            text=data,
+            properties={
+                'abc': 1234,
+            },
+        )
+        assert isinstance(ip.to_dict()['properties'], str)
+
+
 @integration_test
 class TestItemProperties(unittest.TestCase):
     def test_add_item(self):
         ip = ItemProperties(
-            item_type=ItemTypeEnum.WEB_MAP, title="ItemPropertiesWebMap", text=data
+            item_type=ItemTypeEnum.WEB_MAP,
+            title="ItemPropertiesWebMap",
+            text=data,
         )
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
@@ -84,26 +108,34 @@ class TestItemProperties(unittest.TestCase):
 
     def test_from_item(self):
         original_ip = ItemProperties(
-            item_type=ItemTypeEnum.WEB_MAP, title="ItemPropertiesWebMap", text=data
+            item_type=ItemTypeEnum.WEB_MAP,
+            title="ItemPropertiesWebMap",
+            text=data,
         )
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
             content = gis.content
             isinstance(content, ContentManager)
-            item = content.add(item_properties=original_ip.to_dict(), text=data)
+            item = content.add(
+                item_properties=original_ip.to_dict(), text=data
+            )
             ip = ItemProperties.fromitem(item)
             assert item.update(ip.to_dict())
             assert item.delete()
 
     def test_update_item(self):
         original_ip = ItemProperties(
-            item_type=ItemTypeEnum.WEB_MAP, title="ItemPropertiesWebMap", text=data
+            item_type=ItemTypeEnum.WEB_MAP,
+            title="ItemPropertiesWebMap",
+            text=data,
         )
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
             content = gis.content
             isinstance(content, ContentManager)
-            item = content.add(item_properties=original_ip.to_dict(), text=data)
+            item = content.add(
+                item_properties=original_ip.to_dict(), text=data
+            )
             ip = ItemProperties.fromitem(item)
             assert item.update(ip.to_dict())
             ip.title = "CHanged the Title"
