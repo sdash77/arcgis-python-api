@@ -364,7 +364,7 @@ def publish_hosted_imagery_layer(
         )
 
 
-def get_stac_info(stac_url, verbose=True):
+def get_stac_info(stac_url, verbose=False):
     """
     Retrieves information from a `STAC (SpatioTemporal Asset Catalog) <https://stacspec.org/en>`__ URL.
 
@@ -382,7 +382,7 @@ def get_stac_info(stac_url, verbose=True):
     ------------------------------------     --------------------------------------------------------------------
     verbose                                  Optional boolean. If set to True, detailed information is returned.
                                              If set to False, only essential information is returned.
-                                             (The default is True)
+                                             (The default is False)
     ====================================     ====================================================================
 
     .. note::
@@ -404,12 +404,12 @@ def get_stac_info(stac_url, verbose=True):
         stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2", verbose=False)
         print(stac_info)
 
-        # Example 3: Fetching detailed information from a STAC Item (NAIP data on Planetary Computer)
+        # Example 3: Fetching essential information from a STAC Item (NAIP data on Planetary Computer)
         stac_info = get_stac_info("https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/wa_m_4712125_sw_10_060_20191029_20191217")
         print(stac_info)
 
-        # Example 4: Fetching essential information from an ItemCollection (NAIP data on Earth Search)
-        stac_info = get_stac_info("https://earth-search.aws.element84.com/v1/collections/naip/items", verbose=False)
+        # Example 4: Fetching detailed information from an ItemCollection (NAIP data on Earth Search)
+        stac_info = get_stac_info("https://earth-search.aws.element84.com/v1/collections/naip/items", verbose=True)
         print(stac_info)
     """
     info = {}
@@ -450,6 +450,9 @@ def get_stac_info(stac_url, verbose=True):
                                 collection_info["queryables"] = queryables
                             info["collections"].append(collection_info)
                         info["links"] = collections_data.get("links", [])
+                        info["miscellaneous"] = {
+                            key: val for key, val in data.items() if key not in info
+                        }
                     else:
                         info["collections"] = [
                             collection["id"] for collection in collections
@@ -460,6 +463,9 @@ def get_stac_info(stac_url, verbose=True):
                 else:
                     info["collections"] = []
                     info["links"] = [link["href"] for link in data.get("links", [])]
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
             elif "extent" in data:
                 # It's a STAC Collection
                 info["type"] = "Collection"
@@ -478,6 +484,9 @@ def get_stac_info(stac_url, verbose=True):
                     query_response = requests.get(queryables_url)
                     if query_response.status_code == 200:
                         info["queryables"] = query_response.json()
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
                 else:
                     info["item_assets"] = list(data.get("item_assets", {}).keys())
                     info["assets"] = list(data.get("assets", {}).keys())
@@ -502,6 +511,9 @@ def get_stac_info(stac_url, verbose=True):
                     info["properties"] = data.get("properties", {})
                     info["assets"] = data.get("assets", {})
                     info["links"] = data.get("links", [])
+                    info["miscellaneous"] = {
+                        key: val for key, val in data.items() if key not in info
+                    }
                 else:
                     info["properties"] = list(data.get("properties", {}).keys())
                     info["assets"] = list(data.get("assets", {}).keys())
