@@ -172,14 +172,13 @@ def _add_default_cellsize_params(props_dict, is_dem):
 
 def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
     adjust_settings = properties_dict["template"]["adjustSettings"]
-    adjust_settings["locationAccuracy"] = "MEDIUM"
+    if "locationAccuracy" not in adjust_settings:
+        adjust_settings["locationAccuracy"] = "MEDIUM"
     adjust_settings["pointSimilarity"] = "MEDIUM"
     adjust_settings["pointDensity"] = "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
     adjust_settings["pointDistribution"] = "RANDOM"
     if sensor_type.lower() == "aerialdigital":
         adjust_settings["fullFrameMatch"] = False
-
-    return adjust_settings
 
 
 def _compute_block_adjustment_params(sensor_type, properties_dict):
@@ -206,7 +205,7 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
             adjust_settings["rollingShutter"] = False
             adjust_settings["processAsRigCamera"] = False
     elif sensor_type.lower() == "aerialdigital":
-        _compute_primary_tie_points_gen_params(sensor_type, adjust_settings)
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
         adjust_settings["maxResidual"] = float(5)
         adjust_settings["cameraCalibration"] = False
         adjust_settings["p"] = False
@@ -215,14 +214,14 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
         adjust_settings["focalLength"] = False
         adjust_settings["transformationType"] = "Frame"
         for key in ["aPrioriAccuracyX", "aPrioriAccuracyY", "aPrioriAccuracyZ", "aPrioriAccuracyXY", "aPrioriAccuracyXYZ", "aPrioriAccuracyOmega", "aPrioriAccuracyPhi", "aPrioriAccuracyKappa"]:
-            adjust_settings[key] = "#"
+            adjust_settings[key] = "NaN"
         adjust_settings["computeAntennaOffset"] = False
         adjust_settings["computeShift"] = False
         adjust_settings["computeImagePosteriorStd"] = True
         adjust_settings["computeSolutionPointPosteriorStd"] = False
         adjust_settings["processAsRigCamera"] = False
     elif sensor_type.lower() == "satellite":
-        _compute_primary_tie_points_gen_params(sensor_type, adjust_settings)
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
         adjust_settings["maxResidual"] = float(5)
         adjust_settings["transformationType"] = "RPC"
         adjust_settings["generateTiePoints"] = True
@@ -255,7 +254,7 @@ def _construct_recompute_tie_points_params(sensor_type, properties_dict):
 
 
 def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
-    key = "trueortho" if is_ortho else key
+    key = "trueortho" if is_ortho else "dsm"
     props = {key: {}}
     props[key]["outputType"] = "TILED"
     props[key]["format"] = "TIFF"
@@ -263,7 +262,36 @@ def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
     props[key]["resampling"] = "BILINEAR"
     props[key]["noDataValue"] = "NaN"
     props[key]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
-    properties_dict["template"]["processingSettings"][key] = props
+    
+    if key == "trueortho":
+        properties_dict["template"]["processingSettings"][key] = props[key]
+    else:
+        properties_dict["template"]["processingSettings"][key] = props
+
+
+def _construct_orthomosaic_generation_params(properties_dict, is_rm):
+    props = {"ortho": {}}
+
+    if is_rm:
+        properties_dict["template"]["processingSettings"]["ortho"] = {}
+        return
+
+    props["ortho"]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props["ortho"], is_dem=False)
+    props["ortho"]["format"] = "CRF"
+    _add_default_compression_params(props["ortho"])
+    props["ortho"]["resampling"] = "BILINEAR"
+    props["ortho"]["noDataValue"] = "NaN"
+    props["ortho"]["zFactor"] = float(1)
+    props["ortho"]["zOffset"] = float(0)
+    props["ortho"]["applyGeoid"] = False
+    props["ortho"]["DEMMode"] = "RefDEM"
+    props["ortho"]["selectedDEMProduct"] = "UseProductDEM"
+    props["ortho"]["extent"] = ""
+    props["ortho"]["mask"] = ""
+    props["ortho"]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+    props["ortho"]["collectionOrthorectificationDEM"] = ""
+    properties_dict["template"]["processingSettings"]["ortho"] = props
 
 
 def _construct_dem_params(properties_dict, key_name, dtm=True, add_pc_gen_params=False, backward_compatible=True, is_rm=False):
@@ -364,10 +392,12 @@ def _initialize(sensor_type, scenario_type):
         quality = "ULTRA"
 
     _compute_block_adjustment_params(sensor_type, properties_dict)
-    _construct_compute_gcp_params(sensor_type, properties_dict)
-    _construct_analyze_tie_points_params(properties_dict)
-    _construct_recompute_tie_points_params(sensor_type, properties_dict)
+    # _construct_compute_gcp_params(sensor_type, properties_dict)
+    # _construct_analyze_tie_points_params(properties_dict)
+    # _construct_recompute_tie_points_params(sensor_type, properties_dict)
+    _construct_orthomosaic_generation_params(properties_dict, is_rm=True)
     _construct_dsm_or_dsm_orthomosaic_params(properties_dict)
+    _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=True)
     _construct_dem_params(properties_dict, key_name="dtm", dtm=True, add_pc_gen_params=False, backward_compatible=False, is_rm=True)
     _construct_interpolation_dict(properties_dict, key_name="dsm", is_rm=True)
     _construct_interpolation_dict(properties_dict, key_name="dtm", is_rm=True)
@@ -422,6 +452,22 @@ def _create_project(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+
+    if sensor_type.lower() not in ["drone", "satellite", "aerialdigital", "aerialscanned"]:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+    if scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in ["aerial_nadir", "aerial_oblique"]:
+        raise RuntimeError(
+            "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if sensor_type.lower() == "satellite":
+        scenario_type = ""
+
     folder = None
     folderId = None
 
@@ -2380,11 +2426,11 @@ class RMProject:
     _spatial_reference = None
 
     def __init__(
-        self, project=None, definition=None, *, gis: Optional[GIS] = None, **kwargs
+        self, project=None, definition=None, sensor_type="Drone", scenario_type="Drone", *, gis: Optional[GIS] = None, **kwargs
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition)
+                project = _create_project(name=project, definition=definition, sensor_type=sensor_type, scenario_type=scenario_type)
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
