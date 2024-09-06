@@ -22,7 +22,7 @@ class TestItemProperties(unittest.TestCase):
                 'abc': 1234,
             },
         )
-         ip_dict = ip.to_dict()
+        ip_dict = ip.to_dict()
         assert ip_dict
         assert isinstance(ip_dict.get('properties'), str)
 
