@@ -1740,9 +1740,7 @@ class _DeepCloner:
                 preserve_item_id=self._preserve_item_id,
             )
         elif item["type"] == "Web Experience":
-            from arcgis._impl.common._itemdef._expbuilder import (
-                _WebExperience,
-            )
+            from arcgis._impl.common._itemdef._expbuilder import _WebExperience
 
             return _WebExperience(
                 target=self.target,
@@ -3042,7 +3040,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
-                if name is None:
+                if not name or not isinstance(name, str):
                     name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub("\W+", "_", name)
@@ -6530,13 +6528,10 @@ class _ItemCreateException(Exception):
 def _get_feature_service_related_item(service_url, source):
     try:
         service = FeatureLayerCollection(service_url, source)
+        item_id = service.properties.get("serviceItemId")
+        return source.content.get(item_id) if item_id else None
     except Exception:
-        return
-
-    if "serviceItemId" in service.properties and service.properties["serviceItemId"]:
-        item_id = service.properties["serviceItemId"]
-        return source.content.get(item_id)
-    return
+        return None
 
 
 def _compare_service(new_item, original_item, currentVersion):
