@@ -1,6 +1,4 @@
 import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 
 from arcgis.geometry import (
@@ -12,8 +10,16 @@ from arcgis.geometry import (
     Envelope,
 )
 
+try:
+    import arcpy
+
+    SKIP_ARCPY = False
+except ImportError:
+    SKIP_ARCPY = True
+
 
 ###########################################################################
+@unittest.skipIf(SKIP_ARCPY == True, "Skip because arcpy is not present")
 class TestPointGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -163,6 +169,7 @@ class TestPointGeometry(unittest.TestCase):
 
 
 ###########################################################################
+@unittest.skipIf(SKIP_ARCPY == True, "Skip because arcpy is not present")
 class TestMultiPointGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -313,6 +320,7 @@ class TestMultiPointGeometry(unittest.TestCase):
 
 
 ###########################################################################
+@unittest.skipIf(SKIP_ARCPY == True, "Skip because arcpy is not present")
 class TestPolylineGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -475,6 +483,7 @@ class TestPolylineGeometry(unittest.TestCase):
 
 
 ###########################################################################
+@unittest.skipIf(SKIP_ARCPY == True, "Skip because arcpy is not present")
 class TestPolygonGeometry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
