@@ -188,6 +188,7 @@ class TestGroupImport(unittest.TestCase):
                     else:
                         for import_item in folder.list("*"):
                             import_item.delete(permanent=True)
+                        folder.delete()
                 if folder.name == "exports":
                     for exp_item in folder.list(
                         item_type=ItemTypeEnum.EXPORT_PACKAGE.value
