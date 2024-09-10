@@ -15137,7 +15137,7 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            # applicable to online if recycle bin is enabled
             if permanent:
                 rsupport = self._gis.properties.recycleBinSupported
                 renabled = (

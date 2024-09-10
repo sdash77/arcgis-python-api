@@ -40,7 +40,7 @@ class TestGroupExport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
         if self.epk_item:
             assert self.epk_item.delete(permanent=True)
 
@@ -114,7 +114,7 @@ class TestGroupImport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
 
     def test_group_import_to_different_gis(self):
         """tests importing the group items from an epk"""
