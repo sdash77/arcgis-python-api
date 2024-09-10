@@ -167,6 +167,32 @@ class TestGroupImport(unittest.TestCase):
         res = self.new_group.migration.load(self.epk_item, overwrite=True)
         assert isinstance(res, StatusJob)
         assert isinstance(res.result(), dict)    
-
+    
+    @classmethod
+    def tearDownClass(cls):
+        from_list = list(cls.from_gis.content.folders.list())
+        for folder in from_list:
+            if folder.name.startswith("imports_") and len(list(folder.list("*"))) == 0:
+                folder.delete()
+            if folder.name == "exports":
+                for exp_item in folder.list(
+                    item_type=ItemTypeEnum.EXPORT_PACKAGE.value
+                ):
+                    exp_item.delete(permanent=True)
+        if not cls.from_gis == cls.to_gis:
+            to_list = list(cls.to_gis.content.folders.list())
+            for folder in to_list:
+                if folder.name.startswith("imports_"):
+                    if len(list(folder.list("*"))) == 0:
+                        folder.delete()
+                    else:
+                        for import_item in folder.list("*"):
+                            import_item.delete(permanent=True)
+                if folder.name == "exports":
+                    for exp_item in folder.list(
+                        item_type=ItemTypeEnum.EXPORT_PACKAGE.value
+                    ):
+                        exp_item.delete(permanent=True)
+                    
 if __name__ == "__main__":
     unittest.main()
