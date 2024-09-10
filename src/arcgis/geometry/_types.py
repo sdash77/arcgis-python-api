@@ -172,35 +172,6 @@ class BaseGeometry(dict):
         self._HASARCPY, self._HASSHAPELY = _check_geometry_engine()
         return self._HASARCPY, self._HASSHAPELY
 
-    '''def __setattr__(self, key, value):
-        """Sets the attribute"""
-        if key in self._class_attributes:
-            super(BaseGeometry, self).__setattr__(key, value)
-        else:
-            self[key] = value
-            self._ao = None
-
-    def __setitem__(self, key, value):
-        dict.__setitem__(self, key, value)
-        self._ao = None
-
-    def __getattribute__(self, name):
-        return super(Geometry, self).__getattribute__(name)
-
-    def __getattr__(self, name):
-        try:
-            if name in self._class_attributes:
-                return super(BaseGeometry, self).__getattribute__(name)
-            return self.__getitem__(name)
-        except KeyError:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'"
-                % (type(self).__name__, name)
-            )
-
-    def __getitem__(self, k):
-        return dict.__getitem__(self, k)'''
-
 
 class GeometryFactory(type):
     """
