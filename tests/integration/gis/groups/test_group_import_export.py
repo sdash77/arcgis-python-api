@@ -166,8 +166,7 @@ class TestGroupImport(unittest.TestCase):
 
         res = self.new_group.migration.load(self.epk_item, overwrite=True)
         assert isinstance(res, StatusJob)
-        assert isinstance(res.result(), dict)
-
+        assert isinstance(res.result(), dict)    
 
 if __name__ == "__main__":
     unittest.main()

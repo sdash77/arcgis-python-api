@@ -344,8 +344,8 @@ class Folder:
             "f": "json",
         }
         if permanent:
-            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
-            rsupport = self._gis.properties.recycleBinSupported
+            # applicable to online if recycle bin is enabled
+            rsupport = self._gis.properties.get("recycleBinSupported", False)
             renabled = (
                 self._gis.properties.recycleBinEnabled
                 if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")

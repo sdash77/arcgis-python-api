@@ -15139,7 +15139,7 @@ class Item(dict):
         else:
             # applicable to online if recycle bin is enabled
             if permanent:
-                rsupport = self._gis.properties.recycleBinSupported
+                rsupport = self._gis.properties.get("recycleBinSupported", False)
                 renabled = (
                     self._gis.properties.recycleBinEnabled
                     if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
