@@ -206,6 +206,8 @@ class GeometryFactory(type):
                 geom = _esri_dumps(_wkt_loads(iterable))
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
+            elif iterable:
+                return _esri_dumps(_wkt_loads(iterable))
         return {}
 
     @staticmethod
@@ -289,7 +291,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
-            iterable = ()
+            iterable = {}
+        self.update(iterable)
+        self.update(kwargs)
         self._properties = iterable
         super(Geometry, self).__init__(iterable, **kwargs)
 
@@ -303,8 +307,20 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     def __setattr__(self, key, value):
         """Sets the attribute"""
+        if key in [
+            "spatialReference",
+            "x",
+            "y",
+            "m",
+            "z",
+            "rings",
+            "paths",
+            "points",
+        ]:
+            self._properties[key] = value
         if key in self._class_attributes:
             super(Geometry, self).__setattr__(key, value)
+
         elif key in self._properties:
             self._properties[key] = value
         else:
@@ -313,6 +329,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     def __setitem__(self, key, value):
         if key in self._properties:
+            self._properties[key] = value
+        if key in [
+            "spatialReference",
+            "x",
+            "y",
+            "m",
+            "z",
+            "rings",
+            "paths",
+            "points",
+        ]:
             self._properties[key] = value
         dict.__setitem__(self, key, value)
         self._ao = None
@@ -1229,8 +1256,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     ptY.append(part[1])
             return min(ptX), min(ptY), max(ptX), max(ptY)
         elif isinstance(self, MultiPoint):
-            ptX = [pt["x"] for pt in self["points"]]
-            ptY = [pt["y"] for pt in self["points"]]
+            ptX = [pt[0] for pt in self["points"]]
+            ptY = [pt[1] for pt in self["points"]]
             return min(ptX), min(ptY), max(ptX), max(ptY)
         elif isinstance(self, Point):
             return self["x"], self["y"], self["x"], self["y"]
@@ -1685,6 +1712,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.SpatialReference` object
         """
+        if getattr(self, "spatialReference", None) is None:
+            return None
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
             v = getattr(self.polygon.as_arcpy, "spatialReference", None)
@@ -3070,14 +3099,16 @@ class MultiPoint(Geometry):
         if iterable is None:
             iterable = ()
         super(MultiPoint, self).__init__(iterable)
+        self.update(iterable)
         self.update(kwargs)
+
         self._properties = iterable
 
     @property
     def __geo_interface__(self) -> dict:
         """returns the EsriJSON as GeoJSON"""
         return {
-            "type": "Multipoint",
+            "type": "MultiPoint",
             "coordinates": [tuple(pt) for pt in self["points"]],
         }
 
@@ -3194,12 +3225,13 @@ class Point(Geometry):
     _properties = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, **kwargs):
         """Constructor"""
         super(Point, self)
         if iterable is None:
             iterable = {}
         self.update(iterable)
+        self.update(kwargs)
         self._properties = iterable
 
     # ----------------------------------------------------------------------
@@ -3332,9 +3364,10 @@ class Polygon(Geometry):
     _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = ()
-        super(Polygon, self).__init__(iterable)
+        self.update(iterable)
         self.update(kwargs)
         self._properties = iterable
 
@@ -3478,9 +3511,11 @@ class Polyline(Geometry):
     _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = {}
-        super(Polyline, self).__init__(iterable)
+
+        self.update(iterable)
         self.update(kwargs)
         self._properties = iterable
 
@@ -3642,9 +3677,11 @@ class Envelope(Geometry):
     _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = ()
-        super(Envelope, self).__init__(iterable)
+
+        self.update(iterable)
         self.update(kwargs)
         self._properties = iterable
 
