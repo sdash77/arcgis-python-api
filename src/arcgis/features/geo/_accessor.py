@@ -1924,7 +1924,9 @@ class GeoAccessor(object):
         """
         from arcgis import env
         import copy
-        from arcgis.gis._impl._content_manager._import_data import _create_file
+        from arcgis.gis._impl._content_manager._import_data import (
+            _create_file,
+        )
 
         # Get the gis
         if gis is None:
@@ -3041,7 +3043,7 @@ class GeoAccessor(object):
         """
         if self.name:
             data = [
-                getattr(g, "spatialReference", None) or g["spatialReference"]
+                g.spatial_reference
                 for g in self._data[self.name]
                 if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
             ]
@@ -3623,7 +3625,6 @@ class GeoAccessor(object):
             columns=columns,
         )
         if self.has_z == False:
-
             return df["x"].mean(), df["y"].mean()
         else:
             return df["x"].mean(), df["y"].mean(), df["z"].mean()
