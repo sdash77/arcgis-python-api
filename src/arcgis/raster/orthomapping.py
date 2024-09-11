@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _set_context
+from ._util import _initialize_project
 import string as _string
 import random as _random
 
@@ -172,6 +172,8 @@ def _update_flight_info(
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
+    sensor_type: str = "Drone",
+    scenario_type: str = "Drone",
     *,
     gis: Optional[GIS] = None,
     **kwargs,
@@ -208,6 +210,22 @@ def _create_project(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+
+    if sensor_type.lower() not in ["drone", "satellite", "aerialdigital", "aerialscanned"]:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+    if scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in ["aerial_nadir", "aerial_oblique"]:
+        raise RuntimeError(
+            "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if sensor_type.lower() == "satellite":
+        scenario_type = ""
+
     folder = None
     folderId = None
 
@@ -223,6 +241,7 @@ def _create_project(
         )
     folder = folder_dict["title"]
     folderId = folder_dict["id"]
+    item_data = _initialize_project(sensor_type, scenario_type, is_rm=False)
 
     item_properties = {
         "title": name,
@@ -235,6 +254,8 @@ def _create_project(
     item_properties["text"] = json.dumps(definition)
     folder = gis.content.folders.get(folder)
     item = folder.add(item_properties).result()
+    props = item.properties
+    item.update(item_properties=props, data=json.dumps(item_data))
     return item
 
 
@@ -2447,13 +2468,15 @@ class Project:
         self,
         project=None,
         definition=None,
+        sensor_type="Drone",
+        scenario_type="Drone",
         *,
         gis: Optional[GIS] = None,
         **kwargs,
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition)
+                project = _create_project(name=project, definition=definition, sensor_type=sensor_type, scenario_type=scenario_type)
             except:
                 raise RuntimeError("Creation of orthomapping project failed.")
 
