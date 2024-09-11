@@ -3409,22 +3409,23 @@ class Job(object):
         if step_ids is not None:
             post_obj["stepIds"] = step_ids
 
-        return_obj = json.loads(
-            self._gis._con.post(
-                url,
-                post_obj,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
             )
-        )
-        # If it fails, unsubscribe then throw
-        if "error" in return_obj:
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
             self.notification_manager.unsubscribe([self.job_id])
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj["success"] is False:
-            self.notification_manager.unsubscribe([self.job_id])
-            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3488,23 +3489,24 @@ class Job(object):
         if step_ids is not None:
             post_obj["stepIds"] = step_ids
 
-        return_obj = json.loads(
-            self._gis._con.post(
-                url,
-                post_obj,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
             )
-        )
 
-        # If it fails, unsubscribe then throw
-        if "error" in return_obj:
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
             self.notification_manager.unsubscribe([self.job_id])
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj["success"] is False:
-            self.notification_manager.unsubscribe([self.job_id])
-            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3565,23 +3567,24 @@ class Job(object):
         if step_ids is not None:
             post_obj["stepIds"] = step_ids
 
-        return_obj = json.loads(
-            self._gis._con.post(
-                url,
-                post_obj,
-                post_json=True,
-                try_json=False,
-                json_encode=False,
+        try:
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    post_obj,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
             )
-        )
 
-        # If it fails, unsubscribe then throw
-        if "error" in return_obj:
+            # If it fails, unsubscribe then throw
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            elif "success" in return_obj and return_obj["success"] is False:
+                raise Exception(return_obj["stepResponses"])
+        except:
             self.notification_manager.unsubscribe([self.job_id])
-            self._gis._con._handle_json_error(return_obj["error"], 0)
-        elif "success" in return_obj and return_obj["success"] is False:
-            self.notification_manager.unsubscribe([self.job_id])
-            raise Exception(return_obj["stepResponses"])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3594,6 +3597,9 @@ class JobExecution:
     operation of an executing step. The status of the step execution can then be queried by the class properties,
     status, result, elapse_time and messages. This class is not intended for users to call directly.
 
+    See :attr:`~arcgis.gis.workflowmanager.Job.run`, :attr:`~arcgis.gis.workflowmanager.Job.stop` or
+    :attr:`~arcgis.gis.workflowmanager.Job.finish` for examples.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -3602,22 +3608,6 @@ class JobExecution:
     execution_type      Required :class:`~arcgis.gis.workflowmanager.ExecutionType`. The execution type
     ===============     ====================================================================
 
-    .. code-block:: python
-
-        # USAGE EXAMPLE: Running a step using a Job Execution object
-
-        # create a WorkflowManager object from the workflow item
-        wm = WorkflowManager(wf_item)
-
-        job = wm.jobs.get('job_id')
-        job_execution = job.run()
-        type(job_execution)
-        >> arcgis.gis.workflowmanager.JobExecution
-
-        print(f'Result = {job_execution.result()}\n')
-        print(f'Status = {job_execution.status} \n')
-        print(f'Time elapsed {job_execution.elapse_time}')
-        print(f'Messages {job_execution.messages}')
     """
 
     _start_time = None
@@ -3690,15 +3680,21 @@ class JobExecution:
         """
         return ExecutionStatus.COMPLETE if self._event.is_set() else ExecutionStatus.RUNNING
 
-    def result(self, delay: Optional[int] = 300):
+    def result(self, timeout: Optional[int] = 300):
         """
         Returns the last :class:`~arcgis.gis.workflowmanager.Notification` message received at the end of the execution
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        timeout             Optional integer. The timeout argument specifies a timeout for the operation in seconds.
+        ===============     ====================================================================
 
         :return:
             string
 
         """
-        if self._event.wait(delay):
+        if self._event.wait(timeout):
             return self._messages[-1]
         else:
             raise TimeoutError("Timeout waiting for result")
@@ -3735,7 +3731,7 @@ class JobExecution:
         return not self.running()
 
     def __repr__(self):
-        return f"Job execution for job {self._job.job_id}"
+        return f"Job execution for job {self._job.job_id}. This job is currently {'' if self.running() else 'not'} running"
 
 
 class WMRole(object):
@@ -4259,10 +4255,9 @@ class WebsocketConnection:
         try:
             self.subscribe_callback(msg)
         except Exception as e:
-            print("-------------------------------")
-            print("Error when receiving")
-            print(e)
-            print("-------------------------------")
+            raise RuntimeError(
+                f"Error when processing a incoming message: {e}"
+            )
 
     def connect(self, url):
         _open_event = threading.Event()
@@ -4282,7 +4277,6 @@ class WebsocketConnection:
             raise TimeoutError("Error waiting for connection open event")
 
     def send(self, msg):
-        # print(f'Sending {msg}')
         self.ws.send(msg)
 
     def send_and_wait(self, msg):
@@ -4324,9 +4318,6 @@ class NotificationManager:
         base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
         ws_address = f"{base}/{self.org_id}/{self.workflow_item_id}/notificationWs"
         self.websocket_url = self._generate_url(ws_address)
-
-        # print(f'For help with websocket messages, you can reference '
-        # f'https://developers.arcgis.com/workflow-manager/api-reference/web-sockets/')
 
     @property
     def _wmx_server_url(self):
