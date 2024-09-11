@@ -86,9 +86,22 @@ Notification
     :members:
     :show-inheritance:
 
+JobExecution
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.JobExecution
+    :members:
+    :show-inheritance:
+
 MessageType
 --------------
 .. autoclass:: arcgis.gis.workflowmanager.MessageType
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ExecutionStatus
+--------------
+.. autoclass:: arcgis.gis.workflowmanager.ExecutionStatus
     :members:
     :undoc-members:
     :show-inheritance:

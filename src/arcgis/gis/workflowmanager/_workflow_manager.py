@@ -3354,12 +3354,18 @@ class Job(object):
         }
         return return_obj
 
-    # For now, requiring passing the WorkflowManager as we don't flow it down,
-    # but we need a singleton NotificationManager / connection
-
     def run(self, step_ids: Optional[list] = None):
         """
         Starts running the current step(s). Running a step marks it as finished, if the step is set to proceed to next.
+
+        The step will not be started under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
 
         ================    ===================================================================
         **Argument**        **Description**
@@ -3380,8 +3386,8 @@ class Job(object):
 
             job = wm.jobs.get('job_id')
 
-            # Will run the current active steps, if no param is given
-            run_execution = job.run()
+            # Will run the current active steps, if no param is given, i.e job.run()
+            run_execution = job.run(step_ids=['stepid'])
 
             print(f'Result = { run_execution.result() }')
             print(f'Status = { run_execution.status }')
@@ -3426,10 +3432,19 @@ class Job(object):
 
     def stop(self, step_ids: Optional[list] = None):
         """
-        Stops the current step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
+        Stops the current running step(s). The step(s) can be Run again or Finish can be used to complete it. In case of
         GP step and question step, the processing of the step is cancelled. In case of manual and open app step,
         the step is paused. The step can be forced to stop by a user not assigned to the step with the
         jobForceStop privilege.
+
+        The step will not be stopped under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
 
         ================    ===================================================================
         **Argument**        **Description**
@@ -3499,6 +3514,15 @@ class Job(object):
         """
         Finishes the current step(s).
 
+        The step will not be finished under the following conditions:
+
+        - Not assigned to the current user
+        - No active step is defined
+        - The job is closed
+        - A step that cannot be skipped and has not been started or has been cancelled, will not be finished
+        - A step cannot be set current if the job is running.
+        - A step that has one or more holds will not run nor finish.
+
         ================    ===================================================================
         **Argument**        **Description**
         ----------------    -------------------------------------------------------------------
@@ -3566,10 +3590,9 @@ class Job(object):
 
 class JobExecution:
     """
-    Represents a connection to a Workflow Manager instance or item.
-
-    Users create, update, delete workflow diagrams, job templates and jobs
-    or the various other properties with a workflow item.
+    Represents a single step executing in a workflow manager job.  The `JobExecution` class allows for the asynchronous
+    operation of an executing step. The status of the step execution can then be queried by the class properties,
+    status, result, elapse_time and messages. This class is not intended for users to call directly.
 
     ===============     ====================================================================
     **Parameter**        **Description**
@@ -3587,7 +3610,7 @@ class JobExecution:
         wm = WorkflowManager(wf_item)
 
         job = wm.jobs.get('job_id')
-        job_execution = job.run(wm)
+        job_execution = job.run()
         type(job_execution)
         >> arcgis.gis.workflowmanager.JobExecution
 
@@ -3665,7 +3688,7 @@ class JobExecution:
             string
 
         """
-        return "Complete" if self._event.is_set() else "Running"
+        return ExecutionStatus.COMPLETE if self._event.is_set() else ExecutionStatus.RUNNING
 
     def result(self, delay: Optional[int] = 300):
         """
@@ -4519,7 +4542,7 @@ class MessageType(Enum):
     STEPINFORMATION = "STEPINFORMATION"
 
 
-class ExecutionType(str, Enum):
+class ExecutionType(Enum):
     """
     The Workflow Manager Execution Types
 
@@ -4529,3 +4552,14 @@ class ExecutionType(str, Enum):
     RUN = ("RUN",)
     STOP = ("STOP",)
     FINISH = "FINISH"
+
+
+class ExecutionStatus(Enum):
+    """
+    The Workflow Manager Execution Statuses
+
+    This enum class represents the possible step execution statuses.
+    """
+
+    RUNNING = "RUNNING"
+    COMPLETE = "COMPLETE"

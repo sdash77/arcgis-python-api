@@ -17,4 +17,6 @@ from ._workflow_manager import LookUpTable
 from ._workflow_manager import Template
 from ._workflow_manager import NotificationManager
 from ._workflow_manager import Notification
+from ._workflow_manager import JobExecution
 from ._workflow_manager import MessageType
+from ._workflow_manager import ExecutionStatus
