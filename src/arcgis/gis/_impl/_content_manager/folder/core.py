@@ -701,7 +701,7 @@ class Folder:
                 "The property `overwrite` is not supported and will be ignored."
             )
         text: str = text or item_properties.pop("text", None)
-        stream: bool = bool(file and item_id)
+
         if (
             file
             and isinstance(file, (io.StringIO, io.BytesIO))
@@ -807,7 +807,9 @@ class Folder:
             if file and text is None and url is None and data_url is None:
                 #  file workflow
                 params["async"] = True
-                file_list["file"] = create_upload_tuple(file)
+                file_list["file"] = create_upload_tuple(
+                    file, file_name=item_properties.get("file_name", None)
+                )
                 upload_size = calculate_upload_size(file)
                 if upload_size <= 5242880:  # 5mb
                     logger.info(
