@@ -394,8 +394,10 @@ class Folder:
         parts_url: str = url.replace("/addItem", "/addPart")
         ftuple: tuple = file_list.pop("file")
         params.pop("async", None)
+        params_updated: dict = {k: (None, v) for k, v in params.items()}
+        file_list.update(params_updated)
         resp: requests.Response = self._session.post(
-            url=url, data=params, files=file_list
+            url=url, files=file_list
         )  # Gets the initial Item
         data: dict[str, Any] = resp.json()
         itemid = data.get("id", None) or data.get("itemId", None)
@@ -455,7 +457,14 @@ class Folder:
             resp.raise_for_status()
             res: dict[str, Any] = resp.json()
             if "success" in res and res["success"]:
-                return self._process_item_status(itemid=itemid)
+                item: _arcgis_gis.Item = self._process_item_status(itemid=itemid)
+                if "classification" in params:
+                    item.update(
+                        {
+                            "classification": params["classification"],
+                        }
+                    )
+                return item
         raise FolderException(str(r.text))
 
     # ---------------------------------------------------------------------
