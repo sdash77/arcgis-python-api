@@ -226,9 +226,7 @@ class ServiceFactory(type):
             "GeoJson",
         ] and not item_url.endswith("/data"):
             item_url = f"{item_url}/data"
-            return item_url
-        else:
-            return item_props['url']
+        return item_url
 
     @staticmethod
     def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
@@ -335,7 +333,9 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = cls._get_url_from_item(url_or_item, gis=server)
+            url = url_or_item.url
+            if url in [None, ""]:
+                url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
             url = url_or_item
         else:
