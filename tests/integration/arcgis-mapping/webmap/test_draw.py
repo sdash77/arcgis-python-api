@@ -38,10 +38,14 @@ class TestDrawOnMap(unittest.TestCase):
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
+        fc = self.wm.content.layers[0]
+        assert fc.properties.layers
+        fc_lyr = fc.properties["layers"][0]
+        assert "featureSet" in list(fc_lyr.keys())
         assert (
             self.wm.content.layers[
                 0
-            ].properties.layerDefinition.drawingInfo.renderer.symbol.style
+            ].properties.layers[0].layerDefinition.drawingInfo.renderer.symbol.style
             == "esriSMSDiamond"
         )
 
@@ -66,6 +70,7 @@ class TestDrawOnMap(unittest.TestCase):
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
+        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].style == "esriSLSSolid"
 
     def test_polygon(self):
         """Test drawing a polygon"""
@@ -94,6 +99,8 @@ class TestDrawOnMap(unittest.TestCase):
         assert self.wm.content.layers
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureCollection)
+        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].outline.style == "esriSLSSolid"
+        assert self.wm.content.layers[0].properties["layers"][0]["layerDefinition"]["drawingInfo"]["renderer"]["symbol"].style == "esriSFSSolid"
 
 
 if __name__ == "__main__":

@@ -8890,6 +8890,10 @@ class Raster:
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
 
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            which can then be used to create Raster objects with this method.
+
         :return: A :class:`~arcgis.raster.Raster` object
 
         .. code-block:: python
@@ -13437,6 +13441,11 @@ class RasterCollection:
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            enabling effective querying of STAC APIs and Collections. This information can then be used to create
+            RasterCollection objects with this method.
+
         :return: A :class:`~arcgis.raster.RasterCollection` object
 
         .. code-block:: python
@@ -13827,6 +13836,10 @@ class RasterCollection:
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
+
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            which can then be used to create RasterCollection objects with this method.
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
 

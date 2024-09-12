@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 from arcgis.auth.tools._lazy import LazyLoader
 
 from typing import Any
@@ -209,7 +210,7 @@ class ItemProperties:
     access_information: str | None = None
     license_info: str | None = None
     culture: str | None = None
-    properties: dict | None = None
+    properties: dict | str | None = None
     app_categories: list[str] | None = None
     industries: list[str] | None = None
     listing_properties: dict | None = None
@@ -221,6 +222,7 @@ class ItemProperties:
     extension: str | None = None
     overwrite: bool | None = None
     file_name: str | None = None
+    classification: dict | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -228,6 +230,10 @@ class ItemProperties:
 
     def __repr__(self):
         return self.__str__()
+
+    def __iter__(self):
+        for key, value in self.to_dict().items():
+            yield key, value
 
     def __post_init__(self):
         self._dict_data = {
@@ -247,7 +253,6 @@ class ItemProperties:
             "accessInformation": self.access_information,
             "licenseInfo": self.license_info,
             "culture": self.culture,
-            "properties": self.properties,
             "appCategories": ",".join(self.app_categories or []),
             "industries": ",".join(self.industries or []),
             "listingProperties": self.listing_properties,
@@ -258,10 +263,17 @@ class ItemProperties:
             "text": self.text or None,
             "extension": self.extension or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
+        if isinstance(self.properties, dict):
+            self._dict_data["properties"] = json.dumps(self.properties)
+        elif isinstance(self.properties, str):
+            self._dict_data["properties"] = self.properties
+        else:
+            self._dict_data["properties"] = None
 
     def to_dict(self):
-        return {
+        data: dict[str, Any] = {
             "title": self.title,
             "type": _parse_enum(self.item_type),
             "tags": ",".join(self.tags or []),
@@ -278,7 +290,6 @@ class ItemProperties:
             "accessInformation": self.access_information,
             "licenseInfo": self.license_info,
             "culture": self.culture,
-            "properties": self.properties,
             "appCategories": ",".join(self.app_categories or []),
             "industries": ",".join(self.industries or []),
             "listingProperties": self.listing_properties,
@@ -290,7 +301,13 @@ class ItemProperties:
             "extension": self.extension or None,
             "overwrite": self.overwrite or None,
             "fileName": self.file_name or None,
+            "classification": self.classification or None,
         }
+        if isinstance(self.properties, dict):
+            data["properties"] = json.dumps(self.properties)
+        elif isinstance(self.properties, str):
+            data["properties"] = self.properties
+        return data
 
     @classmethod
     def fromitem(cls, item: arcgis.gis.Item) -> ItemProperties:
@@ -312,6 +329,7 @@ class ItemProperties:
             service_proxy=item.proxyFilter,
             industries=item.industries,
             categories=item.categories,
+            classification=getattr(item, "classification", None),
         )
 
 

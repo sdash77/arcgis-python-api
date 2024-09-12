@@ -33,32 +33,11 @@ class RTDetrV2Config:
         pass
 
     def get_model(self, data, backbone=None, **kwargs):
-        from arcgis.learn.models._rtdetr_utils import RTDETR, RTDETRCriterionv2
-        from arcgis.learn.models._detr_object_detection.deformable_detr import (
-            PostProcess,
-        )
-
-        self.model = RTDETR(data, backbone=backbone)
-        self.postprocessors = PostProcess()
-
-        from arcgis.learn.models._detr_object_detection.matcher import HungarianMatcher
-
-        matcher = HungarianMatcher(cost_class=2, cost_bbox=5, cost_giou=2)
-        weight_dict = {
-            "loss_vfl": 1,
-            "loss_bbox": 5,
-            "loss_giou": 2,
-        }
-        losses = [
-            "vfl",
-            "boxes",
-        ]
-        self.criterion = RTDETRCriterionv2(
-            matcher, weight_dict, losses, num_classes=data.c
-        ).to(data.device)
+        from arcgis.learn.models._rtdetr_utils import RTDETR
 
         # for resizing img during training
-        self.scale_factor = 1.5
+        self.scale_factor = kwargs.get("scale_factor", 1)
+        self.model = RTDETR(data, backbone, **kwargs)
         # default model parameters
         self.thres = 0.2
 
@@ -89,10 +68,9 @@ class RTDetrV2Config:
             target["labels"] = label
             target_list.append(target)
         input_list = [self.resize_input_batch(model_input_batch), target_list]
-        # return model_input and model_target
         return (
             input_list,
-            target_list,
+            model_target_batch,
         )
 
     def resize_input_batch(self, input):
@@ -115,11 +93,8 @@ class RTDetrV2Config:
         return self.resize_input_batch(xb)
 
     def loss(self, model_output, *model_target):
-        loss_dict = self.criterion(model_output, model_target)
-        weight_dict = self.criterion.weight_dict
-        losses = sum(
-            loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict
-        )
+        loss_dict = self.model.criterion(model_output, model_output["targets"])
+        losses = sum(loss_dict.values())
         return losses
 
     def post_process(
@@ -127,7 +102,7 @@ class RTDetrV2Config:
     ):
         post_processed_pred = []
         pred_logits = pred["pred_logits"]
-        results = self.postprocessors(
+        results = self.model.postprocessors(
             pred,
             (self.torch.ones((pred_logits.shape[0], 2)) * chip_size).to(
                 pred_logits.device
@@ -179,36 +154,32 @@ class RTDetrV2(ModelExtension):
 
     """
 
-    def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
+    def __init__(self, data, backbone="resnet18", pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception(
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
+        super().__init__(
+            data,
+            RTDetrV2Config,
+            backbone,
+            pretrained_path,
+            **kwargs,
+        )
 
-        super().__init__(data, RTDetrV2Config, backbone, pretrained_path, **kwargs)
-
-        # self.learn.metrics = [AveragePrecision(self, data.c - 1)]
+        self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
-        from arcgis.learn.models._mmlab_utils import load_mmlab_checkpoint
-
-        checkpoint = "https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r50vd_6x_coco_ema.pth"
-        load_mmlab_checkpoint(self.learn.model, checkpoint)
 
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
 
     def _freeze(self):
-        if hasattr(self.learn.model.backbone, "backbone"):
-            backbone = self.learn.model.backbone.backbone
-        elif hasattr(self.learn.model.backbone, "body"):
-            backbone = self.learn.model.backbone.body
-        else:
-            backbone = self.learn.model.backbone
+        backbone = self.learn.model.backbone
         layers = flatten_model(backbone)
         idx = len(layers)
         start_idx = 0
@@ -226,6 +197,23 @@ class RTDetrV2(ModelExtension):
                 p.requires_grad = False
         return idx
 
+    def lr_find(self, allow_plot=True):
+        """
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
+        """
+        lr = super().lr_find(start_lr=1e-5, end_lr=3e-4)
+        return lr
+
     @staticmethod
     def _available_metrics():
         return ["valid_loss", "average_precision"]
@@ -242,7 +230,7 @@ class RTDetrV2(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        return [*_resnet_family][:-1]
 
     @property
     def supported_datasets(self):
@@ -330,13 +318,13 @@ class RTDetrV2(ModelExtension):
             data.dataset_type = dataset_type
 
         data.resize_to = resize_to
-        frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
+        rtdetr = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
 
         if not data_passed:
-            frcnn.learn.data.single_ds.classes = frcnn._data.classes
-            frcnn.learn.data.single_ds.y.classes = frcnn._data.classes
+            rtdetr.learn.data.single_ds.classes = rtdetr._data.classes
+            rtdetr.learn.data.single_ds.y.classes = rtdetr._data.classes
 
-        return frcnn
+        return rtdetr
 
     def predict(
         self,
@@ -446,7 +434,7 @@ class RTDetrV2(ModelExtension):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

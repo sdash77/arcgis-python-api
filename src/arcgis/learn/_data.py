@@ -1623,6 +1623,12 @@ def prepare_data(
             else:
                 stats = eas
             dataset_type = stats["MetaDataMode"]
+            if dataset_type == "RCNN_Masks":
+                emdfile = path / "esri_model_definition.emd"
+                with open(emdfile) as f:
+                    emdstats = json.load(f)
+                if emdstats.get("IsMultidimensional", False):
+                    dataset_type = "PSETAE"
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
         elif _check_esri_files(path / "A") and _check_esri_files(path / "B"):
@@ -1641,8 +1647,13 @@ def prepare_data(
                 )
                 with open(emd_file) as f:
                     emd = json.load(f)
-                if emd.get("IsMultidimensional"):
+                if (
+                    emd.get("IsMultidimensional", False)
+                    and emd.get("MetaDataMode") == "Export_Tiles"
+                ):
                     dataset_type = "ClimaX"
+                else:
+                    dataset_type = "PSETAE"
             except:
                 raise Exception(
                     "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."

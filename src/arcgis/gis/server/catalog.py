@@ -333,7 +333,7 @@ class ServicesDirectory(BaseServer):
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
                     return _layers.Service(
-                        url="%s/%s/%s" % (self._url, s["name"], s["type"]),
+                        url_or_item="%s/%s/%s" % (self._url, s["name"], s["type"]),
                         server=self._con,
                     )
                 del s
@@ -400,7 +400,7 @@ class ServicesDirectory(BaseServer):
                 try:
                     services.append(
                         _layers.Service(
-                            url="%s/%s/%s" % (self._url, s["name"], s["type"]),
+                            url_or_item="%s/%s/%s" % (self._url, s["name"], s["type"]),
                             server=self._con,
                         )
                     )

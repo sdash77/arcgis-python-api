@@ -3,6 +3,12 @@ arcgis.layers module
 
 .. automodule:: arcgis.layers
 
+Service
+-------
+.. autoclass:: arcgis.layers._service_factory.Service
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Working with 3D Maps
 --------------------
