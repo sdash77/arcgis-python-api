@@ -5,6 +5,7 @@ from arcgis.apps.hub.sites import SiteManager, Site
 from collections import OrderedDict
 from datetime import datetime
 import json
+import warnings
 
 
 def _lazy_property(fn):
@@ -223,33 +224,15 @@ class Initiative(OrderedDict):
 
             >> True
         """
-        if self.item is not None:
-            # Fetch initiative site
-            _site = self._gis.hub.sites.get(self.site_id)
-            Site.delete(_site)
-            # Fetch and delete Initiative Collaboration group if exists
-            try:
-                _collab_group = self._gis.groups.get(self.collab_group_id)
-                _collab_group.protected = False
-                _collab_group.delete()
-            except:
-                pass
-            # Fetch Content Group and delete
-            try:
-                _content_group = self._gis.groups.get(self.content_group_id)
-                _content_group.protected = False
-                _content_group.delete()
-            except:
-                pass
-            # Fetch Followers Group and delete
-            try:
-                _followers_group = self._gis.groups.get(self.followers_group_id)
-                _followers_group.protected = False
-                _followers_group.delete()
-            except:
-                pass
-            # Delete initiative
-            return self.item.delete()
+        warnings.warn(
+            "Initiatives will be deprecated in a future version of the Python API. Please use the Site object instead."
+        )
+
+        # Checking if item of correct type has been passed
+        if "hubSite" not in self.item.typeKeywords:
+            raise Exception("Incorrect item type. Site object needed for deletion.")
+        else:
+            Site.delete(self)
 
     def reassign_to(self, target_owner: str):
         """
@@ -516,168 +499,174 @@ class InitiativeManager(object):
             initiative1.item
         """
 
-        # Define initiative
-        if description is None:
-            description = "Create your own initiative by combining existing applications with a custom site."
-        _snippet = "Create your own initiative by combining existing applications with a custom site. Use this initiative to form teams around a problem and invite your community to participate."
-        _item_dict = {
-            "type": "Hub Initiative",
-            "snippet": _snippet,
-            "typekeywords": "Hub, hubInitiative, OpenData",
-            "title": title,
-            "description": description,
-            "licenseInfo": "CC-BY-SA",
-            "culture": "{{culture}}",
-            "properties": {},
-        }
-
-        # Defining content, collaboration and followers groups
-        _content_group_title = title + " Content"
-        _content_group_dict = {
-            "title": _content_group_title,
-            "tags": [
-                "Hub Group",
-                "Hub Content Group",
-                "Hub Site Group",
-                "Hub Initiative Group",
-            ],
-            "access": "public",
-        }
-        _collab_group_title = title + " Core Team"
-        _collab_group_dict = {
-            "title": _collab_group_title,
-            "tags": [
-                "Hub Group",
-                "Hub Initiative Group",
-                "Hub Site Group",
-                "Hub Core Team Group",
-                "Hub Team Group",
-            ],
-            "access": "org",
-            "capabilities": "updateitemcontrol",
-            "membershipAccess": "collaboration",
-            "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to hub-groups.",
-        }
-        _followers_group_title = title + " Followers"
-        _followers_group_dict = {
-            "title": _followers_group_title,
-            "tags": [
-                "Hub Group",
-                "Hub Initiative Group",
-                " Hub Initiative Followers Group",
-            ],
-            "access": "public",
-        }
-
-        # Create groups
-        content_group = self._gis.groups.create_from_dict(_content_group_dict)
-        # Protect groups from accidental deletion
-        content_group.protected = True
-        # Adding it to _item_dict
-        _item_dict["properties"]["contentGroupId"] = content_group.id
-        if self._gis.users.me.role == "org_admin":
-            collab_group = self._gis.groups.create_from_dict(_collab_group_dict)
-            collab_group.protected = True
-            _item_dict["properties"]["collaborationGroupId"] = collab_group.id
-        if self._hub._hub_enabled:
-            followers_group = self._gis.groups.create_from_dict(_followers_group_dict)
-            followers_group.protected = True
-            _item_dict["properties"]["followersGroupId"] = followers_group.id
-
-        # Create initiative and share it with collaboration group if exists
-        folder = self._gis.content.folders.get()
-
-        item = folder.add(_item_dict).result()
-        try:
-            item.sharing.groups.add(collab_group)
-        except:
-            pass
-
-        # Create initiative site and set initiative properties
-        _initiative = Initiative(self._gis, item)
-        # If it is a brand new initiative, create new site
-        if site is None:
-            site = _initiative.sites.add(title=title)
-        # else clone existing site
-        else:
-            site = _initiative.sites.clone(site, pages=True, title=title)
-        item.update(
-            item_properties={
-                "url": site.url,
-                "culture": self._gis.properties.user.culture,
-            }
+        warnings.warn(
+            "`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property."
         )
-        _initiative.site_url = site.item.url
-        item.properties["site_id"] = site.itemid
 
-        # update initiative data
-        _item_data = {
-            "assets": [
-                {
-                    "id": "bannerImage",
-                    "properties": {
-                        "type": "resource",
-                        "fileName": "detail-image.jpg",
-                        "mimeType": "image/jepg",
-                    },
-                    "license": {"type": "none"},
-                    "display": {"position": {"x": "center", "y": "center"}},
-                },
-                {
-                    "id": "iconDark",
-                    "properties": {
-                        "type": "resource",
-                        "fileName": "icon-dark.png",
-                        "mimeType": "image/png",
-                    },
-                    "license": {"type": "none"},
-                },
-                {
-                    "id": "iconLight",
-                    "properties": {
-                        "type": "resource",
-                        "fileName": "icon-light.png",
-                        "mimeType": "image/png",
-                    },
-                    "license": {"type": "none"},
-                },
-            ],
-            "steps": [
-                {
-                    "id": "informTools",
-                    "title": "Inform the Public",
-                    "description": "Share data about your initiative with the public so people can easily find, download and use your data in different formats.",
-                    "templateIds": [],
-                    "itemIds": [site.itemid],
-                },
-                {
-                    "id": "listenTools",
-                    "title": "Listen to the Public",
-                    "description": "Create ways to gather citizen feedback to help inform your city officials.",
-                    "templateIds": [],
-                    "itemIds": [],
-                },
-                {
-                    "id": "monitorTools",
-                    "title": "Monitor Progress",
-                    "description": "Establish performance measures that incorporate the publics perspective.",
-                    "templateIds": [],
-                    "itemIds": [],
-                },
-            ],
-            "indicators": [],
-            "values": {
-                "bannerImage": {
-                    "source": "bannerImage",
-                    "display": {"position": {"x": "center", "y": "center"}},
-                },
-            },
-        }
-        _data = json.dumps(_item_data)
-        item.update(item_properties={"text": _data})
-        return Initiative(self._gis, item)
+        return self._hub.sites.add(title=title)
 
-    def clone(self, initiative, origin_hub=None, title=None):
+        # # Define initiative
+        # if description is None:
+        #     description = "Create your own initiative by combining existing applications with a custom site."
+        # _snippet = "Create your own initiative by combining existing applications with a custom site. Use this initiative to form teams around a problem and invite your community to participate."
+        # _item_dict = {
+        #     "type": "Hub Initiative",
+        #     "snippet": _snippet,
+        #     "typekeywords": "Hub, hubInitiative, OpenData",
+        #     "title": title,
+        #     "description": description,
+        #     "licenseInfo": "CC-BY-SA",
+        #     "culture": "{{culture}}",
+        #     "properties": {},
+        # }
+
+        # # Defining content, collaboration and followers groups
+        # _content_group_title = title + " Content"
+        # _content_group_dict = {
+        #     "title": _content_group_title,
+        #     "tags": [
+        #         "Hub Group",
+        #         "Hub Content Group",
+        #         "Hub Site Group",
+        #         "Hub Initiative Group",
+        #     ],
+        #     "access": "public",
+        # }
+        # _collab_group_title = title + " Core Team"
+        # _collab_group_dict = {
+        #     "title": _collab_group_title,
+        #     "tags": [
+        #         "Hub Group",
+        #         "Hub Initiative Group",
+        #         "Hub Site Group",
+        #         "Hub Core Team Group",
+        #         "Hub Team Group",
+        #     ],
+        #     "access": "org",
+        #     "capabilities": "updateitemcontrol",
+        #     "membershipAccess": "collaboration",
+        #     "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to hub-groups.",
+        # }
+        # _followers_group_title = title + " Followers"
+        # _followers_group_dict = {
+        #     "title": _followers_group_title,
+        #     "tags": [
+        #         "Hub Group",
+        #         "Hub Initiative Group",
+        #         "Hub Initiative Followers Group",
+        #     ],
+        #     "access": "public",
+        # }
+
+        # # Create groups
+        # content_group = self._gis.groups.create_from_dict(_content_group_dict)
+        # # Protect groups from accidental deletion
+        # content_group.protected = True
+        # # Adding it to _item_dict
+        # _item_dict["properties"]["contentGroupId"] = content_group.id
+        # if self._gis.users.me.role == "org_admin":
+        #     collab_group = self._gis.groups.create_from_dict(_collab_group_dict)
+        #     collab_group.protected = True
+        #     _item_dict["properties"]["collaborationGroupId"] = collab_group.id
+        # if self._hub._hub_enabled:
+        #     followers_group = self._gis.groups.create_from_dict(_followers_group_dict)
+        #     followers_group.protected = True
+        #     _item_dict["properties"]["followersGroupId"] = followers_group.id
+
+        # # Create initiative and share it with collaboration group if exists
+        # folder = self._gis.content.folders.get()
+
+        # item = folder.add(_item_dict).result()
+        # try:
+        #     item.sharing.groups.add(collab_group)
+        # except:
+        #     pass
+
+        # # Create initiative site and set initiative properties
+        # _initiative = Initiative(self._gis, item)
+        # # If it is a brand new initiative, create new site
+        # if site is None:
+        #     site = _initiative.sites.add(title=title)
+        # # else clone existing site
+        # else:
+        #     site = _initiative.sites.clone(site, pages=True, title=title)
+        # item.update(
+        #     item_properties={
+        #         "url": site.url,
+        #         "culture": self._gis.properties.user.culture,
+        #     }
+        # )
+        # _initiative.site_url = site.item.url
+        # item.properties["site_id"] = site.itemid
+
+        # # update initiative data
+        # _item_data = {
+        #     "assets": [
+        #         {
+        #             "id": "bannerImage",
+        #             "properties": {
+        #                 "type": "resource",
+        #                 "fileName": "detail-image.jpg",
+        #                 "mimeType": "image/jepg",
+        #             },
+        #             "license": {"type": "none"},
+        #             "display": {"position": {"x": "center", "y": "center"}},
+        #         },
+        #         {
+        #             "id": "iconDark",
+        #             "properties": {
+        #                 "type": "resource",
+        #                 "fileName": "icon-dark.png",
+        #                 "mimeType": "image/png",
+        #             },
+        #             "license": {"type": "none"},
+        #         },
+        #         {
+        #             "id": "iconLight",
+        #             "properties": {
+        #                 "type": "resource",
+        #                 "fileName": "icon-light.png",
+        #                 "mimeType": "image/png",
+        #             },
+        #             "license": {"type": "none"},
+        #         },
+        #     ],
+        #     "steps": [
+        #         {
+        #             "id": "informTools",
+        #             "title": "Inform the Public",
+        #             "description": "Share data about your initiative with the public so people can easily find, download and use your data in different formats.",
+        #             "templateIds": [],
+        #             "itemIds": [site.itemid],
+        #         },
+        #         {
+        #             "id": "listenTools",
+        #             "title": "Listen to the Public",
+        #             "description": "Create ways to gather citizen feedback to help inform your city officials.",
+        #             "templateIds": [],
+        #             "itemIds": [],
+        #         },
+        #         {
+        #             "id": "monitorTools",
+        #             "title": "Monitor Progress",
+        #             "description": "Establish performance measures that incorporate the publics perspective.",
+        #             "templateIds": [],
+        #             "itemIds": [],
+        #         },
+        #     ],
+        #     "indicators": [],
+        #     "values": {
+        #         "bannerImage": {
+        #             "source": "bannerImage",
+        #             "display": {"position": {"x": "center", "y": "center"}},
+        #         },
+        #     },
+        # }
+        # _data = json.dumps(_item_data)
+        # item.update(item_properties={"text": _data})
+        # return Initiative(self._gis, item)
+
+    def clone(self, initiative, title=None):
         """
         Clone allows for the creation of an initiative that is derived from the current initiative.
 
@@ -688,10 +677,7 @@ class InitiativeManager(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        initiative          Required :class:`~arcgis.apps.hub.initiatives.Initiative` object of initiative to be cloned.
-        ---------------     --------------------------------------------------------------------
-        origin_hub          Optional :class:`~arcgis.apps.hub.hub.Hub` object. Required only for cross-org clones where the
-                            initiative being cloned is not an item with public access.
+        initiative          Required :class:`~arcgis.apps.hub.sites.Site` object of site to be cloned.
         ---------------     --------------------------------------------------------------------
         title               Optional String.
         ===============     ====================================================================
@@ -722,38 +708,49 @@ class InitiativeManager(object):
         """
         from datetime import timezone
 
+        warnings.warn(
+            "`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property."
+        )
+
         now = datetime.now(timezone.utc)
         # Checking if item of correct type has been passed
-        if "hubInitiative" not in initiative.item.typeKeywords:
-            raise Exception("Incorrect item type. Initiative item needed for cloning.")
-        # Checking if initiative or site needs to be cloned
-        if self._hub and origin_hub:
-            if not self._hub._hub_enabled and not origin_hub._hub_enabled:
-                raise Exception(
-                    "For Hub Basic organizations, please clone the site instead of initiative."
-                )
-        # New title
-        if title is None:
-            title = initiative.title + "-copy-%s" % int(now.timestamp() * 1000)
-        # If cloning within same org
-        if origin_hub is None:
-            origin_hub = self._hub
-        # Fetch site (checking if origin_hub is correct or if initiative is public)
-        try:
-            site = origin_hub.sites.get(initiative.site_id)
-        except:
-            raise Exception(
-                "Please provide origin_hub of the initiative object, if the initiative is not publicly shared."
-            )
-        # Create new initiative if destination hub is premium
-        if self._hub._hub_enabled:
-            # new initiative
-            new_initiative = self._hub.initiatives.add(title=title, site=site)
-            return new_initiative
+        if "hubSite" not in initiative.item.typeKeywords:
+            raise Exception("Incorrect item type. Site item needed for cloning.")
         else:
-            # Create new site if destination hub is basic/enterprise
+            site = initiative
+            # New title
+            if title is None:
+                title = site.title + "-copy-%s" % int(now.timestamp() * 1000)
             new_site = self._hub.sites.clone(site, pages=True, title=title)
             return new_site
+        # # Checking if initiative or site needs to be cloned
+        # if self._hub and origin_hub:
+        #     if not self._hub._hub_enabled and not origin_hub._hub_enabled:
+        #         raise Exception(
+        #             "For Hub Basic organizations, please clone the site instead of initiative."
+        #         )
+        # # New title
+        # if title is None:
+        #     title = initiative.title + "-copy-%s" % int(now.timestamp() * 1000)
+        # # If cloning within same org
+        # if origin_hub is None:
+        #     origin_hub = self._hub
+        # # Fetch site (checking if origin_hub is correct or if initiative is public)
+        # try:
+        #     site = origin_hub.sites.get(initiative.site_id)
+        # except:
+        #     raise Exception(
+        #         "Please provide origin_hub of the initiative object, if the initiative is not publicly shared."
+        #     )
+        # # Create new initiative if destination hub is premium
+        # if self._hub._hub_enabled:
+        #     # new initiative
+        #     new_initiative = self._hub.initiatives.add(title=title, site=site)
+        #     return new_initiative
+        # else:
+        #     # Create new site if destination hub is basic/enterprise
+        #     new_site = self._hub.sites.clone(site, pages=True, title=title)
+        #     return new_site
 
     def get(self, initiative_id: str) -> str:
         """
