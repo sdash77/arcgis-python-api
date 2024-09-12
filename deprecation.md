@@ -25,6 +25,7 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
 - `MapAction` - deprecated in **2.4.0** removed in future major release. Use the `MediaAction` class instead.
 - `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
+- `Hub.initiatives` - deprecated in **2.4.0** removed in a future release. Use `Hub.sites` instead.
 
 
 ### `arcgis.learn` Module
