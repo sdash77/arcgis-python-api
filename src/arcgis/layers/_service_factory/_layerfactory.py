@@ -218,19 +218,17 @@ class ServiceFactory(type):
 
     @staticmethod
     def _get_url_for_item(item_url: str, item_props: dict):
-        if item_props["type"] not in [
+        if item_props["type"] in [
             "KML",
             "KML Collection",
             "CSV",
             "GeoJSON",
             "GeoJson",
-        ]:
-            raise ValueError(
-                "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
-            )
-        if not item_url.endswith("/data"):
+        ] and not item_url.endswith("/data"):
             item_url = f"{item_url}/data"
-        return item_url
+            return item_url
+        else:
+            return item_props['url']
 
     @staticmethod
     def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
