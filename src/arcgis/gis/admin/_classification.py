@@ -139,8 +139,14 @@ class ClassificationManager:
         resp: requests.Response = self.session.post(url, data=params)
         resp.raise_for_status()
         data: dict = resp.json()
-        if "error" in data:
+        if (
+            "error" in data
+            and data["error"].get("message", "")
+            != "Resource does not exist or is inaccessible."
+        ):
             raise Exception(data)
+        else:
+            return True  # schema isn't set.
         self._properties = None
         return data.get("success", False)
 
