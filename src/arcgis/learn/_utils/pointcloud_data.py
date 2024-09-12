@@ -2708,14 +2708,12 @@ def compute_precision_recall(self):
     valid_dl = self._data.valid_dl
     model = self.learn.model.eval()
 
-    false_positives = [0] * self._data.c
-    true_positives = [0] * self._data.c
-    false_negatives = [0] * self._data.c
-    class_count = [0] * self._data.c
+    false_positives = np.zeros(self._data.c)
+    true_positives = np.zeros(self._data.c)
+    false_negatives = np.zeros(self._data.c)
+    class_count = np.zeros(self._data.c)
 
-    all_y = []
-    all_pred = []
-    for x_in, y_in in iter(valid_dl):
+    for x_in, y_in in progress_bar(valid_dl, display=True):
         if not getattr(self, "_is_ModelInputDict", False):
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
@@ -2733,24 +2731,35 @@ def compute_precision_recall(self):
                 .view(batch, self.sample_point_num)
                 .contiguous()
                 .cpu()
-                .numpy()
+                .reshape(-1)
             )  ## batch, self.sample_point_num
         else:
-            y_in = y_in.cpu().numpy()
+            y_in = y_in.cpu().reshape(-1)
         with torch.no_grad():
-            preds = model(x_in).detach().cpu().numpy()
-        predicted_labels = preds.argmax(axis=-1)
-        all_y.append(y_in.reshape(-1))
-        all_pred.append(predicted_labels.reshape(-1))
+            preds = model(x_in).detach().cpu()
+        predicted_labels = preds.argmax(axis=-1).reshape(-1)
 
-    all_y = np.concatenate(all_y)
-    all_pred = np.concatenate(all_pred)
-
-    for i in range(len(all_y)):
-        class_count[all_y[i]] += 1
-        false_positives[all_pred[i]] += int(all_y[i] != all_pred[i])
-        true_positives[all_pred[i]] += int(all_y[i] == all_pred[i])
-        false_negatives[all_y[i]] += int(all_y[i] != all_pred[i])
+        class_count += (
+            y_in.float().histc(self._data.c, min=0, max=self._data.c - 1).numpy()
+        )
+        false_positives += (
+            predicted_labels[predicted_labels != y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
+        true_positives += (
+            predicted_labels[predicted_labels == y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
+        false_negatives += (
+            y_in[predicted_labels != y_in]
+            .float()
+            .histc(self._data.c, min=0, max=self._data.c - 1)
+            .numpy()
+        )
 
     precision, recall, f_1 = calculate_metrics(
         false_positives, true_positives, false_negatives
@@ -2761,22 +2770,7 @@ def compute_precision_recall(self):
         inverse_class2idx = self._data.idx2class
     else:
         inverse_class2idx = {v: k for k, v in self._data.class2idx.items()}
-    class_mapping = self._data.class_mapping
-    # columns = [f'{inverse_class2idx[cval]} ({class_mapping[inverse_class2idx[cval]]})' for cval in range(self._data.c)]
-    # # check whether the class mapping was specified by user.
-    # for x, c in class_mapping.items():
-    #     x = int(x)
-    #     try:
-    #         c = int(c)
-    #         if x != c:
-    #             none_cm = False
-    #         else:
-    #             none_cm = True
-    #     except ValueError:
-    #         none_cm = False
 
-    # if none_cm:
-    #     columns = [f'{inverse_class2idx[cval]}' for cval in range(self._data.c)]
     columns = [f"{inverse_class2idx[cval]}" for cval in range(self._data.c)]
     columns = [f"{self._data.class_mapping[int(cval)]}" for cval in columns]
     df = pd.DataFrame(data, columns=columns, index=index)
