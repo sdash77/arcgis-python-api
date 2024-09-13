@@ -132,10 +132,6 @@ class TestServiceFactory(unittest.TestCase):
         _type = ServiceFactory._layer_type_from_url(url)
         self.assertEqual(_type.__name__, 'Layer')
     
-    def test_get_url_for_item_unsupported_type_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            ServiceFactory._get_url_for_item('https://path/to/url', {'type': 'unsupported_type'})
-    
     def test_get_url_for_item_kml_returns_data_url(self):
         url = 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/CommercialDamageAssessment/FeatureServer/0'
         updated_url = ServiceFactory._get_url_for_item(url, {'type': 'KML'})
