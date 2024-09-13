@@ -1562,12 +1562,6 @@ class ArcGISSuperResolution:
 
 """
 
-
-climax_prf = super_resolution.replace(
-    "ArcGISSuperResolution", "ArcGISImageTSClassifier"
-)
-
-
 image_translation_prf = """
 import arcpy
 import numpy as np

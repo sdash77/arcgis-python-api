@@ -268,7 +268,7 @@ class SuperResolution(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return ["SR3", "SR3_UViT", *_resnet_family]
+        return ["SR3", *_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
