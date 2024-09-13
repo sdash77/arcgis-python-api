@@ -224,7 +224,9 @@ class Initiative(OrderedDict):
 
             >> True
         """
-        warnings.warn("Initiatives will be deprecated in a future version of the Python API. Please use the Site object instead.")
+        warnings.warn(
+            "Initiatives will be deprecated in a future version of the Python API. Please use the Site object instead."
+        )
 
         # Checking if item of correct type has been passed
         if "hubSite" not in self.item.typeKeywords:
@@ -496,7 +498,9 @@ class InitiativeManager(object):
             initiative1.item
         """
 
-        warnings.warn("`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property.")
+        warnings.warn(
+            "`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property."
+        )
 
         return self._hub.sites.add(title=title)
 
@@ -542,7 +546,9 @@ class InitiativeManager(object):
         """
         from datetime import timezone
 
-        warnings.warn("`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property.")
+        warnings.warn(
+            "`initiatives` will be deprecated in a future version of the Python API. Please use the `sites` property."
+        )
 
         now = datetime.now(timezone.utc)
         # Checking if item of correct type has been passed
