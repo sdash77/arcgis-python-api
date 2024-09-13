@@ -342,6 +342,8 @@ TimeSeriesModel
     :inherited-members:
     :undoc-members:
 
+Raster Time Series Models
+------------------------
 PSETAE
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.PSETAE

@@ -1,4 +1,4 @@
-from ._codetemplate import super_resolution
+from ._codetemplate import climax_prf
 import json
 import traceback
 import numpy as np
@@ -114,7 +114,7 @@ class ClimaX(ArcGISModel):
         self._slice_lr = False
         if pretrained_path is not None:
             self.load(pretrained_path)
-        self._code = super_resolution
+        self._code = climax_prf
 
         def __str__(self):
             return self.__repr__()
@@ -128,12 +128,12 @@ class ClimaX(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_climax"
         _emd_template["Kwargs"] = self.kwargs
         if save_inference_file:
-            _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
+            _emd_template["InferenceFunction"] = "ArcGISImageTSClassifier.py"
         else:
             _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
+                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTSClassifier.py"
             )
-        _emd_template["ModelType"] = "SuperResolution"
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["n_channel"] = self._data._n_channels
         _emd_template["train_valid_years"] = (
             self._data._trainperiod,
