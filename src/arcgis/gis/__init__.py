@@ -16206,11 +16206,12 @@ class Item(dict):
             # Publishing a Hosted Table Example
 
             >>> csv_item = gis.content.get('<csv item id>')
-            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
-            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
             >>> published_item = csv_item.publish(publish_parameters)
+
 
         .. code-block:: python
 
