@@ -133,7 +133,7 @@ class ClimaX(ArcGISModel):
             _emd_template["InferenceFunction"] = (
                 "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
             )
-        _emd_template["ModelType"] = "SuperResolution"
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["n_channel"] = self._data._n_channels
         _emd_template["train_valid_years"] = (
             self._data._trainperiod,
