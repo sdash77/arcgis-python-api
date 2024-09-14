@@ -194,6 +194,7 @@ class TestGroupImport(unittest.TestCase):
                         item_type=ItemTypeEnum.EXPORT_PACKAGE.value
                     ):
                         exp_item.delete(permanent=True)
+                    folder.delete()
                     
 if __name__ == "__main__":
     unittest.main()
