@@ -170,19 +170,10 @@ class TestGroupImport(unittest.TestCase):
     
     @classmethod
     def tearDownClass(cls):
-        from_list = list(cls.from_gis.content.folders.list())
-        for folder in from_list:
-            if folder.name.startswith("imports_") and len(list(folder.list("*"))) == 0:
-                folder.delete()
-            if folder.name == "exports":
-                for exp_item in folder.list(
-                    item_type=ItemTypeEnum.EXPORT_PACKAGE.value
-                ):
-                    exp_item.delete(permanent=True)
-        if not cls.from_gis == cls.to_gis:
-            to_list = list(cls.to_gis.content.folders.list())
-            for folder in to_list:
-                if folder.name.startswith("imports_"):
+        for gis in [cls.from_gis, cls.to_gis]:
+            folder_list = list(gis.content.folders.list())
+            for folder in folder_list:
+                if folder.name.startswith("imports_") or folder.name.startswith("exports"):
                     if len(list(folder.list("*"))) == 0:
                         folder.delete()
                     else:
@@ -195,6 +186,6 @@ class TestGroupImport(unittest.TestCase):
                     ):
                         exp_item.delete(permanent=True)
                     folder.delete()
-                    
+
 if __name__ == "__main__":
     unittest.main()
