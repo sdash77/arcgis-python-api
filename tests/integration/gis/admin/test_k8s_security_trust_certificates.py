@@ -5,18 +5,9 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
 from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    root.addHandler(handler)
-    
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 @profiles.admin_k8s
 @integration_test
