@@ -1152,7 +1152,7 @@ class SingleShotDetector(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
