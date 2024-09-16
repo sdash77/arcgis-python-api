@@ -121,15 +121,18 @@ def _find_service_name(
     gis: "GIS", name: str, service_type: str = "featureService"
 ) -> str:
     i: int = 1
-    while gis.content.is_service_name_available(name, service_type) == False:
-        name = f"{name}{i}"
-        if gis.content.is_service_name_available(name, "featureService"):
+    if name == "data":
+        name = "mydata"
+    new_name: str = name
+    while gis.content.is_service_name_available(new_name, service_type) == False:
+        new_name = f"{name}{i}"
+        if gis.content.is_service_name_available(new_name, "featureService"):
             break
 
         i += 1
         if i > 10:
-            name = f"{name}{uuid.uuid4().hex[:3]}"
-    return name
+            new_name = f"{name}{uuid.uuid4().hex[:3]}"
+    return new_name
 
 
 def _create_items(gis, file, file_type, **kwargs):
