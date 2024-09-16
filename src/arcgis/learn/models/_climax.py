@@ -234,13 +234,12 @@ class ClimaX(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         total_sample_size       Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         variable_no             Optional int. variable count to be displayed
         =====================   ===========================================
-        **kwargs**
 
         """
         show_results(self, rows, variable, **kwargs)

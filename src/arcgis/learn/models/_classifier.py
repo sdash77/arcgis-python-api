@@ -349,9 +349,13 @@ class FeatureClassifier(ArcGISModel):
         return ["valid_loss", "accuracy"]
 
     @property
-    def supported_backbones(self):
-        """Supported list of backbones for this model."""
-        return FeatureClassifier._supported_backbones()
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
+        return FeatureClassifier._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]
 
     @staticmethod
     def transformer_backbones():
@@ -416,13 +420,9 @@ class FeatureClassifier(ArcGISModel):
         )
 
     @property
-    def supported_datasets(self):
-        """Supported dataset types for this model."""
-        return FeatureClassifier._supported_datasets()
-
-    @staticmethod
-    def _supported_datasets():
-        return ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]
+    def supported_backbones(self):
+        """Supported list of backbones for this model."""
+        return FeatureClassifier._supported_backbones()
 
     def show_results(self, rows=5, **kwargs):
         """
