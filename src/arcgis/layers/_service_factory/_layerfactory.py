@@ -218,17 +218,13 @@ class ServiceFactory(type):
 
     @staticmethod
     def _get_url_for_item(item_url: str, item_props: dict):
-        if item_props["type"] not in [
+        if item_props["type"] in [
             "KML",
             "KML Collection",
             "CSV",
             "GeoJSON",
             "GeoJson",
-        ]:
-            raise ValueError(
-                "Item type not supported, must be KML, KML Collection, CSV, or GeoJSON"
-            )
-        if not item_url.endswith("/data"):
+        ] and not item_url.endswith("/data"):
             item_url = f"{item_url}/data"
         return item_url
 
@@ -314,7 +310,7 @@ class ServiceFactory(type):
         """
         if layer_type == GeoData:
             return layer_type(url=url, connection=connection)
-        if layer_type.__name__ == "CSVLayer":
+        if isinstance(layer_type, _arcgis.layers._ogc._csv.CSVLayer):
             return layer_type(url_or_item=url, gis=server)
         if isinstance(layer_type, tuple):
             type_hint, _func = layer_type
@@ -337,7 +333,9 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = cls._get_url_from_item(url_or_item, gis=server)
+            url = url_or_item.url
+            if url in [None, ""]:
+                url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
             url = url_or_item
         else:

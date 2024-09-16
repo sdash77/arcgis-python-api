@@ -1217,7 +1217,22 @@ class GIS(object):
         elif self._portal.is_arcgisonline == False and (
             hasattr(self, "admin") and getattr(self, "admin")
         ):
-            return self.admin.servers.get(function="NotebookServer")
+            from arcgis.gis.nb import NotebookServer
+
+            notebooks: list[NotebookServer] = []
+            res = self.servers
+            for server in res["servers"]:
+                if server["serverFunction"].lower() == "notebookserver":
+                    try:
+                        nbs = NotebookServer(server["adminUrl"] + "/admin", self)
+                        nbs.properties
+                        notebooks.append(nbs)
+                    except Exception as ex:
+                        _log.warning(ex)
+                        nbs = NotebookServer(server["url"] + "/admin", self)
+                        nbs.properties
+                        notebooks.append(nbs)
+            return notebooks
 
         return []
 
@@ -3906,7 +3921,6 @@ class UserManager(object):
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
-
                 if user_type is None:
                     if (
                         self.user_settings
@@ -16192,11 +16206,12 @@ class Item(dict):
             # Publishing a Hosted Table Example
 
             >>> csv_item = gis.content.get('<csv item id>')
-            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
-            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
             >>> published_item = csv_item.publish(publish_parameters)
+
 
         .. code-block:: python
 
