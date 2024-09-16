@@ -273,8 +273,8 @@ class GroupCloner(BaseCloneGroup):
             auto_join=group.autoJoin,
             display_settings=display_settings,
             leaving_disallowed=group.leavingDisallowed,
-            membership_access=getattr(group, "membershipAccess", None),
-            hidden_members=getattr(group, "hiddenMembers", None),
+            membership_access=group.pop("membershipAccess", None),
+            hidden_members=group.pop("hiddenMembers", None),
             autojoin=group.autoJoin,
         )
         return group
