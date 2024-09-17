@@ -29,6 +29,7 @@ from arcgis.layers._scenelyrs import SceneLayer
 from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
 import requests
+from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
 
@@ -204,16 +205,121 @@ class FeatureServiceLayer(Layer, metaclass=_FeatureServiceLayerFactory):
         super(SceneLayer, self).__init__(url, gis)
 
 
-def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
-    url: str = f"{gis.resturl}content/items/{itemid}"
-    return gis.session.get(url, params={"f": "json"}).json(), url
-
-
 class ServiceFactory(type):
     """
     Generates a layer object from a given set of
     JSON (dictionary or iterable) or url.
     """
+
+    @staticmethod
+    def _item_properties(itemid: str, gis: "GIS") -> tuple[dict, str]:
+        url: str = f"{gis.resturl}content/items/{itemid}"
+        return gis.session.get(url, params={"f": "json"}).json(), url
+
+    @staticmethod
+    def _get_url_for_item(item_url: str, item_props: dict):
+        if item_props["type"] in [
+            "KML",
+            "KML Collection",
+            "CSV",
+            "GeoJSON",
+            "GeoJson",
+        ] and not item_url.endswith("/data"):
+            item_url = f"{item_url}/data"
+        return item_url
+
+    @staticmethod
+    def _get_url_from_item(item: _arcgis.gis.Item, gis: _arcgis.gis.GIS) -> str:
+        props: dict
+        item_url: str
+        props, item_url = ServiceFactory._item_properties(item.id, gis=gis)
+        return ServiceFactory._get_url_for_item(item_url, props)
+
+    @staticmethod
+    def _layer_type_from_url(url: str):
+        """Returns the layer type (or tuple[str, function], for some edge-cases)"""
+        parsed_url = urlparse(url)
+        base_name = os.path.basename(parsed_url.path)
+        has_layer = False
+
+        if "sceneserver/layers" in parsed_url.path.lower():
+            # special case for scene layers
+            base_name = "sceneserver"
+            has_layer = True
+        elif base_name.isdigit():
+            # special case for services with a layer index
+            # use the part before the index as the base name
+            base_name = os.path.basename(os.path.dirname(parsed_url.path))
+            has_layer = True
+
+        base_name_lower = base_name.lower()
+
+        layer_mapping = {
+            "data": DataServiceLayer,
+            "featureserver": (
+                FeatureServiceLayer if has_layer else FeatureLayerCollection
+            ),
+            "geocodeserver": Geocoder,
+            "geodataserver": GeoData,
+            "geometryserver": GeometryService,
+            "gpserver": ("GeoprocessingToolbox", _import_toolbox),
+            "imageserver": ImageryLayer,
+            "mapserver": MapServiceLayer if has_layer else MapImageLayer,
+            "naserver": NetworkDataset,
+            "sceneserver": SceneLayer,
+            "schematicsserver": SchematicLayers,
+            "vectortileserver": VectorTileLayer,
+        }
+
+        if base_name_lower in layer_mapping:
+            return layer_mapping[base_name_lower]
+
+        if base_name_lower == "ogcfeatureserver":
+            from .._ogc import OGCFeatureService
+
+            return OGCFeatureService
+        if base_name_lower.endswith(".geojson"):
+            from .._ogc import GeoJSONLayer
+
+            return GeoJSONLayer
+        if base_name_lower.endswith(".csv"):
+            from .._ogc import CSVLayer
+
+            return CSVLayer
+        if base_name_lower.endswith(".kml") or base_name_lower.endswith(".kmz"):
+            from .._ogc import KMLLayer
+
+            return KMLLayer
+        if base_name_lower.startswith("wmts"):
+            from .._ogc import WMTSLayer
+
+            return WMTSLayer
+
+        # GlobeServer and MobileServer use generic Layer
+        # Fall back to Layer for all other services
+        return Layer
+
+    @staticmethod
+    def _get_layer_instance(layer_type, url, server, connection=None):
+        """
+        Handles nuanced differences in initializer signature
+        between layer types and returns an instance of the Layer from type
+
+        Most Layers can be initialized using the `url` and `gis` parameters,
+        but some require a `connection` parameter, or `url_or_item`
+        """
+        if layer_type == GeoData:
+            return layer_type(url=url, connection=connection)
+        if isinstance(layer_type, _arcgis.layers._ogc._csv.CSVLayer):
+            return layer_type(url_or_item=url, gis=server)
+        if isinstance(layer_type, tuple):
+            type_hint, _func = layer_type
+            if not isinstance(_func, LambdaType):
+                raise ValueError(
+                    f"Instance function must be a function to instantiate {type_hint}"
+                )
+            return _func(url, server)
+        return layer_type(url=url, gis=server)
 
     def __call__(
         cls,
@@ -225,131 +331,47 @@ class ServiceFactory(type):
         from ...gis.server import ServicesDirectory
 
         url: str
-
-        if server is None:
-
-            server = _arcgis.env.active_gis
-        hasLayer = False
+        server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
             url = url_or_item.url
             if url in [None, ""]:
-                props: dict
-                item_url: str
-                props, item_url = _item_properties(url_or_item.id, gis=server)
-                if props["type"] in [
-                    "KML",
-                    "KML Collection",
-                    "CSV",
-                    "GeoJSON",
-                    "GeoJson",
-                ]:
-                    if item_url.endswith("/data") == False:
-
-                        url = item_url + "/data"
-                    else:
-                        url = item_url
-                else:
-                    raise Exception("Invalid item type")
-
+                url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
             url = url_or_item
         else:
-
             raise ValueError("A URL to the service or an arcgis.Item is required.")
 
-        if isinstance(server, Connection) or hasattr(server, "token"):
-            connection = server
-
-        elif isinstance(server, (ServicesDirectory)):
-            connection = server._con
-        elif isinstance(server, GIS):
-            ...
-        else:
-            try:
-                parsed = urlparse(url)
-                site_url = "{scheme}://{nl}/{wa}".format(
-                    scheme=parsed.scheme,
-                    nl=parsed.netloc,
-                    wa=parsed.path[1:].split("/")[0],
-                )
-                connection = Connection(baseurl=site_url)  # anonymous connection
-                server = ServicesDirectory(url=site_url)
-            except:
-                parsed = urlparse(url)
-                site_url = "https://{nl}/rest/services".format(
-                    scheme=parsed.scheme, nl=parsed.netloc
-                )
-                connection = Connection(
-                    baseurl=site_url, all_ssl=parsed.scheme == "https"
-                )  # anonymous connection
-                server = ServicesDirectory(url=site_url)
-        base_name = os.path.basename(url)
-        if url.lower().find("sceneserver/layers") > -1:
-            base_name = "sceneserver"
-            hasLayer = True
-        elif base_name.isdigit():
-            base_name = os.path.basename(url.replace("/" + base_name, ""))
-            hasLayer = True
-        if base_name.lower() == "mapserver":
-            if hasLayer:
-                return MapServiceLayer(url=url, gis=server)
+        layer_type = cls._layer_type_from_url(url)
+        # GeoData is a legacy edge case that needs a Connection instead of GIS
+        # This workflow is deprecated and will be removed in a future release
+        if layer_type == GeoData:
+            if isinstance(server, Connection) or hasattr(server, "token"):
+                connection = server
+            elif isinstance(server, (ServicesDirectory)):
+                connection = server._con
+            elif isinstance(server, GIS):
+                ...
             else:
-                return MapImageLayer(url=url, gis=server)
-        elif base_name.lower() == "featureserver":
-            if hasLayer:
-                return FeatureServiceLayer(url=url, gis=server)
-            else:
-                return FeatureLayerCollection(url=url, gis=server)
-        elif base_name.lower() == "imageserver":
-            return ImageryLayer(url=url, gis=server)
-        elif base_name.lower() == "gpserver":
-            from arcgis.geoprocessing import (
-                import_toolbox as _import_toolbox,
-            )
-
-            res = _import_toolbox(url, server)
-            return res
-        elif base_name.lower() == "geometryserver":
-            return GeometryService(url=url, gis=server)
-        elif base_name.lower() == "mobileserver":
-            return Layer(url=url, gis=server)
-        elif base_name.lower() == "geocodeserver":
-            return Geocoder(location=url, gis=server)
-        elif base_name.lower() == "globeserver":
-            if hasLayer:
-                return Layer(url=url, gis=server)
-            return Layer(url=url, gis=server)
-        elif base_name.lower() == "geodataserver":
-            return GeoData(url=url, connection=connection)
-        elif base_name.lower() == "naserver":
-            return NetworkDataset(url=url, gis=server)
-        elif base_name.lower() == "sceneserver":
-            return SceneLayer(url=url, gis=server)
-        elif base_name.lower() == "schematicsserver":
-            return SchematicLayers(url=url, gis=server)
-        elif base_name.lower() == "vectortileserver":
-            return VectorTileLayer(url=url, gis=server)
-        elif base_name.find(".geojson") > -1:
-            from .._ogc import GeoJSONLayer
-
-            return GeoJSONLayer(url=url, gis=server)
-        elif base_name.find(".csv") > -1:
-            from .._ogc import CSVLayer
-
-            return CSVLayer(url_or_item=url, gis=server)
-        elif base_name.find(".kml") > -1 or base_name.find(".kmz") > -1:
-            from .._ogc import KMLLayer
-
-            return KMLLayer(url=url, gis=server)
-        elif base_name.lower() == "ogcfeatureserver":
-            from .._ogc._service import OGCFeatureService
-
-            return OGCFeatureService(url, gis=server)
-        elif base_name.lower() == "data":
-            return DataServiceLayer(url=url, gis=server)
-        else:
-            return Layer(url=url, gis=server)
-        return type.__call__(cls, url, server, initialize)
+                parsed_url = urlparse(url)
+                try:
+                    site_url = "{scheme}://{nl}/{wa}".format(
+                        scheme=parsed_url.scheme,
+                        nl=parsed_url.netloc,
+                        wa=parsed_url.path[1:].split("/")[0],
+                    )
+                    connection = Connection(baseurl=site_url)  # anonymous connection
+                    server = ServicesDirectory(url=site_url)
+                except:
+                    site_url = "https://{nl}/rest/services".format(
+                        scheme=parsed_url.scheme, nl=parsed_url.netloc
+                    )
+                    connection = Connection(
+                        baseurl=site_url,
+                        all_ssl=parsed_url.scheme == "https",
+                    )  # anonymous connection
+                    server = ServicesDirectory(url=site_url)
+            return cls._get_layer_instance(layer_type, url, server, connection)
+        return cls._get_layer_instance(layer_type, url, server)
 
 
 ###########################################################################
@@ -406,7 +428,9 @@ class Service(object, metaclass=ServiceFactory):
         <VectorTileLayer url:"https://tiles.arcgis.com/tiles/<org_id>/arcgis/rest/services/Custom_Basemap_SXT/VectorTileServer">
     """
 
-    def __init__(self, url, item=None, server=None):
-        if iterable is None:
-            iterable = ()
-        super(Layer, self).__init__(url, item, server)
+    def __init__(
+        self,
+        url_or_item: _arcgis.gis.Item | str | None = None,
+        server=None,
+        initialize=False,
+    ) -> None: ...

@@ -1290,7 +1290,7 @@ def prepare_data(
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
-                            its string label.
+                            its string label. Not supported for MaskRCNN model.
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train
                             the model. Images are cropped to the specified chip_size.
