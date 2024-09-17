@@ -188,7 +188,8 @@ class GroupCloner(BaseCloneGroup):
             thumbnail: str = self._get_thumbnail(
                 group=group, save_folder=group_thumbnail_folder
             )
-            if getattr(group, "membershipAccess", None) != "collaboration":
+            membership_access = group.pop("membershipAccess", None)
+            if membership_access != "collaboration":
                 group_settings: dict[str, Any] = {
                     "title": group.title,
                     "tags": tags,
@@ -202,8 +203,8 @@ class GroupCloner(BaseCloneGroup):
                     "auto_join": group.autoJoin,
                     "display_settings": display_settings,
                     "leaving_disallowed": group.leavingDisallowed,
-                    "membership_access": getattr(group, "membershipAccess", None),
-                    "hidden_members": getattr(group, "hiddenMembers", None),
+                    "membership_access": membership_access,
+                    "hidden_members": group.pop("hiddenMembers", None),
                     "autojoin": group.autoJoin,
                 }
                 group_defs.append(group_settings)
