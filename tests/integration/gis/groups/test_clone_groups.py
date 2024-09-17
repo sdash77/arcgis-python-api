@@ -9,7 +9,8 @@ from utils._logging import enable_verbose_logging
 enable_verbose_logging()
 
 
-@from_to_profiles.all_except_k8s
+#@from_to_profiles.all_except_k8s
+@from_to_profiles.all
 @integration_test
 class TestCloneGroups(unittest.TestCase):
     @classmethod
@@ -20,8 +21,13 @@ class TestCloneGroups(unittest.TestCase):
             gmgr.create(title=f"group_{uuid.uuid4().hex[:4]}", tags="tags"),
             gmgr.create(title=f"group_{uuid.uuid4().hex[:4]}", tags="tags"),
         ]
+    
+    def setUp(self):
+        print(f"\n{'=' * 80}\nFrom: {self.from_gis} -> \n  To:{self.to_gis}\n{'=' * 80}\n")
 
     def test_clone_groups(self):
+        if self.from_gis == self.to_gis and self.from_gis.users.me == self.to_gis.users.me:
+            self.skipTest("Clone groups empty if same GIS as same user.")
         groups = self.to_gis.groups.clone(self.source_groups)
         assert len(groups) == len(self.source_groups)
         [g.result().delete() for g in groups]
