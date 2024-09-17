@@ -6,8 +6,12 @@ from typing import Optional, Callable
 import urllib.parse
 from enum import Enum
 
+import ssl
 import threading
 import websocket
+import logging
+
+logger = logging.getLogger("WorkflowManager")
 
 from arcgis.geometry import Geometry
 import arcgis.gis
@@ -4112,9 +4116,10 @@ class WebsocketConnection:
     msgEvent: (str, threading.Event) = None
     msgs = []
 
-    def __init__(self, subscribe_callback: Callable, timeout: int):
+    def __init__(self, subscribe_callback: Callable, headers: dict, timeout: int):
         self.timeout = timeout
         self.subscribe_callback = subscribe_callback
+        self.headers = headers
 
     def __on_message__(self, app, msg):
         if self.msgEvent:
@@ -4125,24 +4130,34 @@ class WebsocketConnection:
         try:
             self.subscribe_callback(msg)
         except Exception as e:
-            raise RuntimeError(
-                f"Error when processing a incoming message: {e}"
-            )
+            logger.error(f"Error when processing a incoming message: {e}")
 
     def connect(self, url):
         _open_event = threading.Event()
+        # SSL context configuration
+        ssl_opts = {
+            "cert_reqs": ssl.CERT_NONE,  # Ignoring SSL certificate verification
+            "check_hostname": False,  # Not checking the server's hostname
+        }
+
+        def start_websocket():
+            self.ws.run_forever(sslopt=ssl_opts)
 
         def on_open(ws: websocket.WebSocket):
             _open_event.set()
 
-        # TODO Set all headers / ssl options
         self.ws = websocket.WebSocketApp(
-            url, on_open=on_open, on_message=self.__on_message__
+            url,
+            header=self.headers,
+            on_open=on_open,
+            on_message=self.__on_message__
         )
-        self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
+
+        # self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
+        self.thread = threading.Thread(target=start_websocket, daemon=True)
         self.thread.start()
         if _open_event.wait(self.timeout):
-            print("Connected")
+            logger.debug("Connected")
         else:
             raise TimeoutError("Error waiting for connection open event")
 
@@ -4209,14 +4224,14 @@ class NotificationManager:
                         callback = self.subscribed_jobs[job_id]
                         callback(msg)
         except Exception as e:
-            print(e)
+            logger.error(e)
 
     def connect(self):
         """
         Establishes a websocket connection to the workflow manager server.
         """
         if self.websocket_connection is None:
-            self.websocket_connection = WebsocketConnection(self._subscriber, timeout=30)
+            self.websocket_connection = WebsocketConnection(self._subscriber, self._gis.session.headers, timeout=30)
             self.websocket_connection.connect(self.websocket_url)
 
     def disconnect(self):
@@ -4255,7 +4270,7 @@ class NotificationManager:
                     "token": self._token_generator(),
                 }
 
-                ws = WebsocketConnection(self._subscriber, timeout=30)
+                ws = WebsocketConnection(self._subscriber, self._gis.session.headers, timeout=30)
                 ws.connect(self.websocket_url)
                 ws.send_and_wait(json.dumps(subscribe_obj))
                 ws.disconnect()
@@ -4275,7 +4290,7 @@ class NotificationManager:
             for jid in ids:
                 self.subscribed_jobs[jid] = callback
         except Exception as e:
-            print(f"Error when trying to subscribe: {e}")
+            logger.error(f"Error when trying to subscribe: {e}")
 
     def unsubscribe(self, job_ids: list):
         """
@@ -4306,7 +4321,7 @@ class NotificationManager:
                 for jid in job_ids:
                     self.subscribed_jobs.pop(jid)
         except Exception as e:
-            print(f"Error when trying to unsubscribe: {e}")
+            logger.error(f"Error when trying to unsubscribe: {e}")
 
 
 class Notification:
