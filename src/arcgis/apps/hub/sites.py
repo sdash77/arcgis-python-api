@@ -996,9 +996,9 @@ class SiteManager(object):
 
             # Domain manipulation
             if self._gis.url[-5:] == "/home":
-                domain = "https://" + self._gis.url[8:-5] + "apps/sites/#/" + subdomain
+                domain = "https://" + self._gis.url[8:-5] + "/apps/sites/#/" + subdomain
             else:
-                domain = "https://" + self._gis.url[8:] + "apps/sites/#/" + subdomain
+                domain = "https://" + self._gis.url[8:] + "/apps/sites/#/" + subdomain
 
             # Check if site subdomain exists
             if self._gis.content.search(
@@ -1171,9 +1171,9 @@ class SiteManager(object):
 
             # Domain manipulation
             if self._gis.url[-5:] == "/home":
-                domain = "https://" + self._gis.url[8:-5] + "apps/sites/#/" + subdomain
+                domain = "https://" + self._gis.url[8:-5] + "/apps/sites/#/" + subdomain
             else:
-                domain = "https://" + self._gis.url[8:] + "apps/sites/#/" + subdomain
+                domain = "https://" + self._gis.url[8:] + "/apps/sites/#/" + subdomain
 
         # Group creation
         site_groups = self._create_groups(title, subdomain)
