@@ -852,6 +852,9 @@ def compute_sensor_model(
             # context_new.update((k, adj_dict[k]) for k in adj_dict)
             # context = context_new
             # update project item adjust settings
+        elif context is None:
+            context = dict(project_adj_settings)
+            _nestify_context(context)
 
         project_adj_settings.update({"mode": mode})
         flight_json_details = {
