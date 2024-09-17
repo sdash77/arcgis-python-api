@@ -359,17 +359,20 @@ class JobManager:
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                The Workflow Manager Item
+    ---------------     --------------------------------------------------------------------
+    workflow_manager    The :class:`~arcgis.gis.workflowmanager.WorkflowManager` object
     ===============     ====================================================================
 
     """
 
-    def __init__(self, item, notification_manager=None):
+    def __init__(self, item, workflow_manager):
         """initializer"""
         if item is None:
             raise ValueError("Item cannot be None")
-        self.notification_manager = notification_manager
+        self._workflow_manager = workflow_manager
         self._item = item
-        _initialize(self, item._gis)
+        self._gis = self._item._gis
+        _initialize(self, self._item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -676,7 +679,7 @@ class JobManager:
             job_dict = self._gis._con.get(
                 url, {"extProps": get_ext_props, "holds": get_holds}
             )
-            return Job(job_dict, self._gis, self._url, self.notification_manager)
+            return Job(job_dict, self._gis, self._url, self._workflow_manager)
         except:
             self._handle_error(sys.exc_info())
 
@@ -1021,7 +1024,7 @@ class WorkflowManager:
         _initialize(self, item._gis)
         _check_license(item._gis)
 
-        self.job_manager = JobManager(item, self.notification_manager)
+        self.job_manager = JobManager(item, self)
         self.saved_searches_manager = SavedSearchesManager(item)
 
     def _handle_error(self, info):
@@ -1089,9 +1092,9 @@ class WorkflowManager:
         return self.job_manager
 
     @property
-    def notification_manager(self):
+    def _notification_manager(self):
         if not self._nm:
-            self._nm = NotificationManager(self._item)
+            self._nm = NotificationManager(self._item, self)
             self._nm.connect()
 
         return self._nm
@@ -2727,7 +2730,7 @@ class Job(object):
     _camelCase_to_underscore = _camelCase_to_underscore
     _underscore_to_camelcase = _underscore_to_camelcase
 
-    def __init__(self, init_data, gis=None, url=None, notification_manager=None):
+    def __init__(self, init_data, gis=None, url=None, workflow_manager=None):
         self.job_status = None
         self.notes = None
         self.diagram_id = None
@@ -2759,7 +2762,7 @@ class Job(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
-        self.notification_manager = notification_manager
+        self._workflow_manager = workflow_manager
 
     def post(self):
         post_dict = {
@@ -3400,7 +3403,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.RUN)
         # Subscribe to this job
-        self.notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3425,7 +3428,7 @@ class Job(object):
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
         except:
-            self.notification_manager.unsubscribe([self.job_id])
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3480,7 +3483,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.STOP)
         # Subscribe to this job
-        self.notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3506,7 +3509,7 @@ class Job(object):
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
         except:
-            self.notification_manager.unsubscribe([self.job_id])
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3558,7 +3561,7 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.FINISH)
         # Subscribe to this job
-        self.notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3584,7 +3587,7 @@ class Job(object):
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
         except:
-            self.notification_manager.unsubscribe([self.job_id])
+            self._workflow_manager._notification_manager.unsubscribe([self.job_id])
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -4242,8 +4245,8 @@ class WebsocketConnection:
     msgEvent: (str, threading.Event) = None
     msgs = []
 
-    def __init__(self, subscribe_callback: Callable):
-        self.timeout = 30
+    def __init__(self, subscribe_callback: Callable, timeout: int):
+        self.timeout = timeout
         self.subscribe_callback = subscribe_callback
 
     def __on_message__(self, app, msg):
@@ -4307,12 +4310,12 @@ class NotificationManager:
 
     """
 
-    def __init__(self, item: arcgis.gis.Item):
+    def __init__(self, item: arcgis.gis.Item, workflow_manager: WorkflowManager):
         _initialize(self, item._gis)
-        _check_license(item._gis)
         self.workflow_item_id = item.id
         self.websocket_connection = None
         self.subscribed_jobs = {}
+        self._workflow = workflow_manager
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
@@ -4371,25 +4374,25 @@ class NotificationManager:
         return f"{url}?token={token}"
 
     def _subscriber(self, message):
-        message_dict = json.loads(message)
-        if "msgType" in message_dict.keys():
-            msg = Notification(message_dict)
+        try:
+            message_dict = json.loads(message)
+            if "msgType" in message_dict.keys():
+                msg = Notification(message_dict)
 
-            try:
                 if "jobId" in msg.message:
                     job_id = msg.message["jobId"]
                     if job_id in self.subscribed_jobs.keys():
                         callback = self.subscribed_jobs[job_id]
                         callback(msg)
-            except Exception as e:
-                print(e)
+        except Exception as e:
+            print(e)
 
     def connect(self):
         """
         Establishes a websocket connection to the workflow manager server.
         """
         if self.websocket_connection is None:
-            self.websocket_connection = WebsocketConnection(self._subscriber)
+            self.websocket_connection = WebsocketConnection(self._subscriber, timeout=30)
             self.websocket_connection.connect(self.websocket_url)
 
     def disconnect(self):
@@ -4428,7 +4431,7 @@ class NotificationManager:
                     "token": self._token_generator(),
                 }
 
-                ws = WebsocketConnection(self._subscriber)
+                ws = WebsocketConnection(self._subscriber, timeout=30)
                 ws.connect(self.websocket_url)
                 ws.send_and_wait(json.dumps(subscribe_obj))
                 ws.disconnect()
