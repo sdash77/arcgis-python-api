@@ -21,7 +21,7 @@ class TestCloneGroups(unittest.TestCase):
         ]
 
     def test_clone_groups(self):
-        if self.from_gis == self.to_gis and self.from_gis.users.me == self.to_gis.users.me:
+        if self.from_gis.url == self.to_gis.url and self.from_gis.users.me == self.to_gis.users.me:
             self.skipTest("Clone groups empty if same GIS as same user.")
         groups = self.to_gis.groups.clone(self.source_groups)
         assert len(groups) == len(self.source_groups)
