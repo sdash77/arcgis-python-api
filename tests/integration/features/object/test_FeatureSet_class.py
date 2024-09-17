@@ -339,7 +339,7 @@ class Test_Feature_class(unittest.TestCase):
                 else:  # Polygon
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
                     # create the simple renderer dataclass
-                    simple_renderer = arcgismapping.SimpleRenderer(
+                    simple_renderer = arcgismapping.renderers.SimpleRenderer(
                         symbol=arcgismapping.symbols.SimpleMarkerSymbolEsriSMS(
                             style=arcgismapping.symbols.SimpleMarkerSymbolStyle.esriSMSCircle,
                             color=[255, 0, 0, 255],
