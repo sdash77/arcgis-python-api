@@ -2640,3 +2640,66 @@ def _initialize_project(sensor_type, scenario_type, is_rm):
     if "flights" not in properties_dict:
         properties_dict["flights"] = [{"oid": 0}]
     return properties_dict
+
+
+def _flatten_adjust_settings(adjust_options_list):
+    flat = {}
+    mapping = {
+        "CalibrateF": "focalLength",
+        "CalibrateK": "k",
+        "CalibrateP": "p",
+        "CalibratePP": "principalPoint",
+        "CameraCalibration": "cameraCalibration",
+        "EstimateOPK": "estimateOPK",
+        "ComputeImagePosteriorStd": "computeImagePosteriorStd",
+        "ComputeSolutionPointPosteriorStd": "computeSolutionPointPosteriorStd",
+        "rollingshutter": "rollingShutter",
+        "rigCamera": "processAsRigCamera",
+        "AdjustTiepoints": "adjustTiePoints",
+    }
+
+    for ele in adjust_options_list:
+        key, value = ele.split(" ")
+        match value:
+            case "0":
+                value = False
+            case "1":
+                value = True
+            case _:
+                value = value
+ 
+        flat[mapping[key]] = value
+
+    return flat
+
+
+def _nestify_context(context):
+    adjust_options_list = []
+    mapping = {
+        "focalLength": "CalibrateF",
+        "k": "CalibrateK",
+        "p": "CalibrateP",
+        "principalPoint": "CalibratePP",
+        "cameraCalibration": "CameraCalibration",
+        "estimateOPK": "EstimateOPK",
+        "computeImagePosteriorStd": "ComputeImagePosteriorStd",
+        "computeSolutionPointPosteriorStd": "ComputeSolutionPointPosteriorStd",
+        "rollingShutter": "rollingshutter",
+        "processAsRigCamera": "rigCamera",
+        "adjustTiePoints": "AdjustTiepoints",
+    }
+
+    for key in mapping:
+        if key in context:
+            value = context.pop(key)
+            match value:
+                case False:
+                    value = "0"
+                case True:
+                    value = "1"
+                case _:
+                    value = value
+            
+            adjust_options_list.append(f"{mapping[key]} {value}")
+
+    context["adjustOptions"] = adjust_options_list

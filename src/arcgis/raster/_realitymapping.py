@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _initialize_project
+from ._util import _initialize_project, _flatten_adjust_settings, _nestify_context
 import string as _string
 import random as _random
 
@@ -792,31 +792,73 @@ def compute_sensor_model(
     if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
+        project = mission._project
+        project_adj_settings = project.get_settings()["template"]["adjustSettings"]
+        keys_to_pop = ["parallelProcessingFactor"]
+        # adj_keys = [
+        #     "computeCandidate",
+        #     "maxOverlap",
+        #     "maxLoss",
+        #     "maxResidual",
+        #     "initPointResolution",
+        #     "k",
+        #     "p",
+        #     "principalPoint",
+        #     "focalLength",
+        # ]
+        # get the keys that are common between the project adjust settings and adj_keys list
+        # adj_dict = {
+        #     k.lower(): v for k, v in project_adj_settings.items() if k in adj_keys
+        # }
+        # adj_dict = project_adj_settings
 
-        adj_dict = {}
         if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-            adj_keys = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "maxResidual",
-                "initPointResolution",
-                "k",
-                "p",
-                "principalPoint",
-                "focalLength",
-            ]
-            adj_dict = {
-                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            }
-            adj_dict.update({"locationAccuracy": location_accuracy})
-        adj_dict.update({"mode": mode})
+            # context_new = {k: v for k, v in context.items()}
+            adjust_options = context.pop("adjustOptions", [])
+            adjust_options = _flatten_adjust_settings(adjust_options)
+            # context is flattened
+            context.update(adjust_options)
+            # update adj dict with all the params from context
+            project_adj_settings.update(context)
+            # pop the keys that are not relevant to the adj settings
+            for key in keys_to_pop:
+                project_adj_settings.pop(key, None)
+            # update context with default values from project_adj_settings if they are not present in context
+            context.update(project_adj_settings)
+            _nestify_context(context)
+            # adj_dict = {
+            #     k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+            # }
+            # update the adj_dict with the context_new values if they are passed in
+            # else use the default values we set from the project adjust settings
+            # adj_dict.update((k, context_new[k]) for k in set(context_new).intersection(adj_dict))
+
+            if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
+                project_adj_settings.update({"locationAccuracy": location_accuracy})
+            if "computeCandidate" in context:
+                project_adj_settings.update({"computeCandidate": context["computeCandidate"]})
+            if "maxOverlap" in context:
+                project_adj_settings.update({"maxOverlap": context["maxOverlap"]})
+            if "maxLoss" in context:
+                project_adj_settings.update({"maxLoss": context["maxLoss"]})
+            if "pointSimilarity" in context:
+                project_adj_settings.update({"pointSimilarity": context["pointSimilarity"]})
+            if "pointDensity" in context:
+                project_adj_settings.update({"pointDensity": context["pointDensity"]})
+            if "pointDistribution" in context:
+                project_adj_settings.update({"pointDistribution": context["pointDistribution"]})
+            # missing_keys = set(adj_dict).difference(context_new)
+            # context_new.update((k, adj_dict[k]) for k in missing_keys)
+            # context_new.update((k, adj_dict[k]) for k in adj_dict)
+            # context = context_new
+            # update project item adjust settings
+
+        project_adj_settings.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": "adjustment",
-            "adjust_settings": adj_dict,
+            "adjust_settings": project_adj_settings,
         }
 
     return gis._tools.realitymapping.compute_sensor_model(
@@ -2240,6 +2282,15 @@ class RMProject:
         """
         deleted = self._folder.delete()
         return deleted
+
+    def get_settings(self):
+         return self._project_item.get_data()
+
+    def set_settings(self, properties_dict):
+        item = self._project_item
+        props = item.properties
+        updated_item = item.update(item_properties=props, data=properties_dict)
+        return updated_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
