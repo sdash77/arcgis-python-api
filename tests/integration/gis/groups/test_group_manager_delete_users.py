@@ -25,7 +25,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
         )
         gm = gis.groups
 
-        isinstance(gm, GroupManager)
+        assert isinstance(gm, GroupManager)
         group = gm.create(title=group1_name, tags="tags,integration_test")
         group2 = gm.create(title=group2_name, tags="tags,integration_test")
 
@@ -34,7 +34,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
         group.update_users_roles(managers=[user])
         group.reassign_to(user)
         group.remove_users(usernames=[gis.users.me])
-        isinstance(user, User)
+        assert isinstance(user, User)
 
         assert user.delete(reassign_to=gis.users.me)
 
@@ -60,7 +60,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
         )
         gm = gis.groups
 
-        isinstance(gm, GroupManager)
+        assert isinstance(gm, GroupManager)
         group = gm.create(title=group1_name, tags="tags,integration_test")
         group2 = gm.create(title=group2_name, tags="tags,integration_test")
 
@@ -69,7 +69,7 @@ class TestUserDeleteWithGroups(unittest.TestCase):
         group.update_users_roles(managers=[user])
         group.reassign_to(user)
         group.remove_users(usernames=[gis.users.me])
-        isinstance(user, User)
+        assert isinstance(user, User)
         
         assert user.delete(reassign_to=gis.users.me)
         
