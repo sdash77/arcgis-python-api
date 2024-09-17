@@ -71,6 +71,7 @@ class TestAdminManager(unittest.TestCase):
             assert isinstance(self.admin.site, Site)
             assert isinstance(self.admin.system, System)
             assert isinstance(self.admin.webhooks, WebhookManager)
+            assert isinstance(self.admin.info, dict_or_insensitive)
 
     def test_set_ux_program(self):
         """
