@@ -38,14 +38,66 @@ def _check_license(gis):
             )
 
 
-def _initialize(instance, gis):
+def _initialize(instance, gis, is_admin=False):
     instance._gis = gis
     if instance._gis.users.me is None:
         raise ValueError("An authenticated `GIS` is required.")
 
-    instance._url = instance._wmx_server_url[0]
+    instance._url = _wmx_server_url(instance, is_admin)[0]
     if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
+
+def _wmx_server_url(instance, is_admin):
+    """locates the WMX server"""
+    baseurl = instance._gis._portal.resturl
+
+    # Set org_id
+    info_result = instance._gis.properties
+    instance.is_enterprise = info_result["isPortal"]
+
+    if instance.is_enterprise:
+        instance.org_id = "workflow"
+        res = instance._gis.servers
+        for s in res["servers"]:
+            server_functions = [
+                x.strip() for x in s.get("serverFunction", "").lower().split(",")
+            ]
+            if "workflowmanager" in server_functions:
+                instance.server_url = instance._url = s.get("url", None)
+                instance._url = s.get("url", None)
+                instance._private_url = s.get("adminUrl", None)
+                if instance._url is None:
+                    raise RuntimeError("Cannot find a WorkflowManager Server")
+                if is_admin:
+                    instance._url += f"/{instance.org_id}"
+                    instance._private_url += f"/{instance.org_id}"
+                else:
+                    instance._url += f"/{instance.org_id}/{instance._item.id}"
+                    instance._private_url += f"/{instance.org_id}/{instance._item.id}"
+                return instance._url, instance._private_url
+        raise RuntimeError(
+            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+            "Administrator to ensure Workflow Manager Server is properly configured."
+        )
+    # is Arcgis Online
+    else:
+        instance.org_id = info_result["id"]
+
+        helper_services = info_result["helperServices"]
+        if helper_services is None:
+            raise RuntimeError("Cannot find helper functions")
+
+        instance.server_url = instance._url = helper_services["workflowManager"]["url"]
+        if instance._url is None:
+            raise RuntimeError("Cannot get Workflow Manager url")
+
+        if is_admin:
+            instance._url += f"/{instance.org_id}"
+            instance._private_url += f"/{instance.org_id}"
+        else:
+            instance._url += f"/{instance.org_id}/{instance._item.id}"
+            instance._private_url += f"/{instance.org_id}/{instance._item.id}"
+        return instance._url, instance._private_url
 
 
 class WorkflowManagerAdmin:
@@ -60,54 +112,8 @@ class WorkflowManagerAdmin:
     """
 
     def __init__(self, gis):
-        _initialize(self, gis)
+        _initialize(self, gis, is_admin=True)
         _check_license(gis)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}"
-                    self._private_url += f"/{self.org_id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}"
-            self._private_url = f"/{self.org_id}"
-            return self._url, self._private_url
-
-        return None
 
     def create_item(self, name: str) -> tuple:
         """
@@ -370,53 +376,6 @@ class JobManager:
         error_class = info[0]
         error_text = info[1]
         raise Exception(error_text)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper services")
-
-            wm_service = helper_services["workflowManager"]
-            self._url = wm_service["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
 
     def close(self, job_ids: list):
         """
@@ -1021,52 +980,6 @@ class WorkflowManager:
         error_class = info[0]
         error_text = info[1]
         raise Exception(error_text)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
 
     @property
     def jobs(self):
@@ -2425,52 +2338,6 @@ class SavedSearchesManager:
         error_class = info[0]
         error_text = info[1]
         raise Exception(error_text)
-
-    @property
-    def _wmx_server_url(self):
-        """locates the WMX server"""
-        baseurl = self._gis._portal.resturl
-
-        # Set org_id
-        info_result = self._gis.properties
-        self.is_enterprise = info_result["isPortal"]
-
-        if self.is_enterprise:
-            self.org_id = "workflow"
-            res = self._gis.servers
-            for s in res["servers"]:
-                server_functions = [
-                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
-                ]
-                if "workflowmanager" in server_functions:
-                    self._url = s.get("url", None)
-                    self._private_url = s.get("adminUrl", None)
-                    if self._url is None:
-                        raise RuntimeError("Cannot find a WorkflowManager Server")
-                    self._url += f"/{self.org_id}/{self._item.id}"
-                    self._private_url += f"/{self.org_id}/{self._item.id}"
-                    return self._url, self._private_url
-            raise RuntimeError(
-                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-                "Administrator to ensure Workflow Manager Server is properly configured."
-            )
-        # is Arcgis Online
-        else:
-            self.org_id = info_result["id"]
-
-            helper_services = info_result["helperServices"]
-            if helper_services is None:
-                raise RuntimeError("Cannot find helper functions")
-
-            self._url = helper_services["workflowManager"]["url"]
-            if self._url is None:
-                raise RuntimeError("Cannot get Workflow Manager url")
-
-            self._url += f"/{self.org_id}/{self._item.id}"
-            self._private_url = f"/{self.org_id}/{self._item.id}"
-            return self._url, self._private_url
-
-        return None
 
     def create(
         self,
