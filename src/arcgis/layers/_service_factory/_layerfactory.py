@@ -310,7 +310,7 @@ class ServiceFactory(type):
         """
         if layer_type == GeoData:
             return layer_type(url=url, connection=connection)
-        if layer_type.__name__ == "CSVLayer":
+        if isinstance(layer_type, _arcgis.layers._ogc._csv.CSVLayer):
             return layer_type(url_or_item=url, gis=server)
         if isinstance(layer_type, tuple):
             type_hint, _func = layer_type

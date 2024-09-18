@@ -10305,6 +10305,33 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
+    def reassign_to(self, target_owner: Union[str, User]):
+        """
+        The ``reassign_to`` method reassigns this group from its current owner to another owner.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_owner      Required string or User.  The username of the new group owner.
+        ================  ========================================================
+
+        :return:
+            A boolean indicating success (True) or failure (False).
+        """
+        params = {"f": "json"}
+        if isinstance(target_owner, User):
+            params["targetUsername"] = target_owner.username
+        else:
+            params["targetUsername"] = target_owner
+        res = self._gis._con.post(
+            "community/groups/" + self.groupid + "/reassign", params
+        )
+        if res:
+            self._hydrated = False
+            self._hydrate()
+            return res.get("success")
+        return False
+
     def remove_users(self, usernames: Union[list[str], str]):
         """
         The ``remove_users`` method is used to remove users from this group.
@@ -16206,11 +16233,12 @@ class Item(dict):
             # Publishing a Hosted Table Example
 
             >>> csv_item = gis.content.get('<csv item id>')
-            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
-            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
             >>> published_item = csv_item.publish(publish_parameters)
+
 
         .. code-block:: python
 
