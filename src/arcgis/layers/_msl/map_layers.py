@@ -64,6 +64,8 @@ class MapFeatureLayer(Layer):
         """
         if gis is None:
             gis: _gis.GIS = arcgis.env.active_gis
+            if gis is None:
+                gis = arcgis.gis.GIS()
         self._session = gis.session
         if str(url).lower().endswith("/"):
             url = url[:-1]

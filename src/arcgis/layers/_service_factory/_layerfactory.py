@@ -319,6 +319,8 @@ class ServiceFactory(type):
                     f"Instance function must be a function to instantiate {type_hint}"
                 )
             return _func(url, server)
+        elif layer_type == _arcgis.geocoding._functions.Geocoder:
+            return layer_type(location=url, gis=server)
         return layer_type(url=url, gis=server)
 
     def __call__(
