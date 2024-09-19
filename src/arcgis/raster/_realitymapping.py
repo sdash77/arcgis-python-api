@@ -733,7 +733,7 @@ def compute_sensor_model(
                            Possible values for location_accuracy are:
 
                            - 'VeryHigh'    : Imagery was collected with a high-accuracy, differential GPS, such as RTK or PPK. This option will hold image locations fixed during block adjustment
-                           
+
                            - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
                            - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
