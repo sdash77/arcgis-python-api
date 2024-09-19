@@ -328,7 +328,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             self._ao = None
 
     def __setitem__(self, key, value):
-        if key in self._properties:
+        if self._properties is None:
+            self._properties = {}
+        if self._properties and key in self._properties:
             self._properties[key] = value
         if key in [
             "spatialReference",
