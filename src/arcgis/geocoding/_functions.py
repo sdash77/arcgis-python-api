@@ -1611,7 +1611,10 @@ def geocode_from_items(
         del gcs
     elif isinstance(geocode_service_url, Geocoder):
         geocode_service_url = geocode_service_url.url
-        kwargs["geocode_service_url"] = geocode_service_url.url
+        if hasattr(geocode_service_url, "url"):
+            kwargs["geocode_service_url"] = geocode_service_url.url
+        elif isinstance(geocode_service_url, str):
+            kwargs["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service_url, str) == False:
         raise ValueError("Invalid geocoder service given.")
     if geocode_service_url is None:
