@@ -140,7 +140,10 @@ class SharingGroupManager:
                 import time
 
                 time.sleep(1)
-                return group.id in [g.id for g in self.list()]
+                if isinstance(group, str):
+                    return group in [g.id for g in self.list()]
+                else:
+                    return group.id in [g.id for g in self.list()]
             elif "error" in resp:
                 raise Exception(resp)
             elif "results" in resp and "error" in resp["results"][0]:
