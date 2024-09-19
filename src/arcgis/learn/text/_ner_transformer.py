@@ -806,7 +806,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         else:
             return data_list, df_columns
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 

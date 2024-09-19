@@ -147,6 +147,7 @@ class BaseGeometry(dict):
     _typ = None
     _HASARCPY = None
     _HASSHAPELY = None
+    _properties = None
     _class_attributes = {
         "_ao",
         "_type",
@@ -154,12 +155,14 @@ class BaseGeometry(dict):
         "_HASARCPY",
         "_HASSHAPELY",
         "_ipython_canary_method_should_not_exist_",
+        "_properties",
     }
 
     def __init__(self, iterable=None):
         if iterable is None:
             iterable = {}
         self.update(iterable)
+        self._properties = iterable
 
     def is_valid(self):
         return _is_valid(self)
@@ -168,41 +171,6 @@ class BaseGeometry(dict):
     def _check_geometry_engine(self):
         self._HASARCPY, self._HASSHAPELY = _check_geometry_engine()
         return self._HASARCPY, self._HASSHAPELY
-
-    def __setattr__(self, key, value):
-        """sets the attribute"""
-        if key in self._class_attributes:
-            super(BaseGeometry, self).__setattr__(key, value)
-        else:
-            self[key] = value
-            self._ao = None
-
-    def __setattribute__(self, key, value):
-        if key in self._class_attributes:
-            super(BaseGeometry, self).__setattr__(key, value)
-        else:
-            self[key] = value
-            self._ao = None
-
-    def __setitem__(self, key, value):
-        dict.__setitem__(self, key, value)
-        self._ao = None
-
-    def __getattribute__(self, name):
-        return super(BaseGeometry, self).__getattribute__(name)
-
-    def __getattr__(self, name):
-        try:
-            if name in self._class_attributes:
-                return super(BaseGeometry, self).__getattr__(name)
-            return self.__getitem__(name)
-        except Exception as ex:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
-            )
-
-    def __getitem__(self, k):
-        return dict.__getitem__(self, k)
 
 
 class GeometryFactory(type):
@@ -238,6 +206,8 @@ class GeometryFactory(type):
                 geom = _esri_dumps(_wkt_loads(iterable))
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
+            elif iterable:
+                return _esri_dumps(_wkt_loads(iterable))
         return {}
 
     @staticmethod
@@ -256,7 +226,7 @@ class GeometryFactory(type):
         if iterable is None:
             iterable = {}
 
-        if iterable:
+        if iterable or not iterable is None:
             # WKB
             if isinstance(iterable, (bytearray, bytes)):
                 iterable = GeometryFactory._from_wkb(iterable)
@@ -321,8 +291,80 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
-            iterable = ()
+            iterable = {}
+        self.update(iterable)
+        self.update(kwargs)
+        self._properties = iterable
         super(Geometry, self).__init__(iterable, **kwargs)
+
+    def is_valid(self):
+        return _is_valid(self)
+
+    @lru_cache(maxsize=10)
+    def _check_geometry_engine(self):
+        self._HASARCPY, self._HASSHAPELY = _check_geometry_engine()
+        return self._HASARCPY, self._HASSHAPELY
+
+    def __setattr__(self, key, value):
+        """Sets the attribute"""
+        if key in [
+            "spatialReference",
+            "x",
+            "y",
+            "m",
+            "z",
+            "rings",
+            "paths",
+            "points",
+        ]:
+            self._properties[key] = value
+        if key in self._class_attributes:
+            super(Geometry, self).__setattr__(key, value)
+
+        elif key in self._properties:
+            self._properties[key] = value
+        else:
+            self[key] = value
+            self._ao = None
+
+    def __setitem__(self, key, value):
+        if self._properties is None:
+            self._properties = {}
+        if self._properties and key in self._properties:
+            self._properties[key] = value
+        if key in [
+            "spatialReference",
+            "x",
+            "y",
+            "m",
+            "z",
+            "rings",
+            "paths",
+            "points",
+        ]:
+            self._properties[key] = value
+        dict.__setitem__(self, key, value)
+        self._ao = None
+
+    def __getattribute__(self, name):
+        return super(Geometry, self).__getattribute__(name)
+
+    def __getattr__(self, name):
+        try:
+            if name in self._properties:
+                return self._properties[name]
+            if name in self._class_attributes:
+                return super(Geometry, self).__getattribute__(name)
+            return self.__getitem__(name)
+        except KeyError:
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+            )
+
+    def __getitem__(self, k):
+        if k in self._properties:
+            return self._properties[k]
+        return self.__getattribute__(k)
 
     @property
     def __geo_interface__(self):
@@ -537,7 +579,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         if self._ao is not None or not _HASARCPY:
             return self._ao
         if isinstance(self, (Point, MultiPoint, Polygon, Polyline)):
-            self._ao = arcpy.AsShape(json.dumps(dict(self)), True)
+            self._ao = arcpy.AsShape(json.dumps(dict(self._properties)), True)
         elif isinstance(self, SpatialReference):
             if "wkid" in self:
                 self._ao = arcpy.SpatialReference(self["wkid"])
@@ -724,7 +766,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         from .affine import skew
 
-        s = skew(geom=copy.deepcopy(self), x_angle=x_angle, y_angle=y_angle)
+        g = Geometry(copy.deepcopy(self._properties))
+        s = skew(geom=g, x_angle=x_angle, y_angle=y_angle)
         if inplace:
             self.update(s)
         return s
@@ -750,7 +793,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         from .affine import rotate
 
-        r = rotate(copy.deepcopy(self), theta)
+        r = rotate(Geometry(copy.deepcopy(self._properties)), theta)
         if inplace:
             self.update(r)
         return r
@@ -788,11 +831,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         """
         from .affine import scale
-        import copy
 
-        g = copy.copy(self)
+        g = Geometry(copy.deepcopy(self._properties))
         s = scale(g, *(x_scale, y_scale))
         if inplace:
+            self._properties.update(s)
             self.update(s)
         return s
 
@@ -833,8 +876,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         """
         from .affine import translate
 
-        t = translate(copy.deepcopy(self), x_offset, y_offset)
+        g = Geometry(copy.deepcopy(self._properties))
+        t = translate(g, x_offset, y_offset)
         if inplace:
+            self._properties.update(t)
             self.update(t)
         return t
 
@@ -1213,8 +1258,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                     ptY.append(part[1])
             return min(ptX), min(ptY), max(ptX), max(ptY)
         elif isinstance(self, MultiPoint):
-            ptX = [pt["x"] for pt in self["points"]]
-            ptY = [pt["y"] for pt in self["points"]]
+            ptX = [pt[0] for pt in self["points"]]
+            ptY = [pt[1] for pt in self["points"]]
             return min(ptX), min(ptY), max(ptX), max(ptY)
         elif isinstance(self, Point):
             return self["x"], self["y"], self["x"], self["y"]
@@ -1313,7 +1358,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         elif "z" in self:
             return True
         elif self.as_arcpy:
-            return self.as_arcpy.has_z
+            return getattr(self.as_arcpy, "has_z", False)
         elif self.as_shapely:
             return self.as_shapely.has_z
 
@@ -1334,8 +1379,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         elif "m" in self:
             return True
         elif self.as_arcpy:
-            return self.as_arcpy.has_m
-        return self.get("hasM", False) | self.get("m", False)
+            return getattr(self.as_arcpy, "has_m", False)
+        return self.get("hasM", False) or self.get("m", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1669,6 +1714,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         :return: A :class:`~arcgis.geometry.SpatialReference` object
         """
+        if getattr(self, "spatialReference", None) is None:
+            return None
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
             v = getattr(self.polygon.as_arcpy, "spatialReference", None)
@@ -2054,7 +2101,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.crosses(second_geometry=second_geometry)
         elif HASSHAPELY:
-
             return self.as_shapely.crosses(other=second_geometry.as_shapely)
         return None
 
@@ -2128,7 +2174,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
-        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+        if HASARCPY and isinstance(self, (Polygon, Polyline, MultiPoint)):
             return Geometry(
                 self.as_arcpy.densify(
                     method=method, distance=distance, deviation=deviation
@@ -3049,18 +3095,22 @@ class MultiPoint(Geometry):
 
     _typ = "Multipoint"
     _type = "Multipoint"
+    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
         super(MultiPoint, self).__init__(iterable)
+        self.update(iterable)
         self.update(kwargs)
+
+        self._properties = iterable
 
     @property
     def __geo_interface__(self) -> dict:
         """returns the EsriJSON as GeoJSON"""
         return {
-            "type": "Multipoint",
+            "type": "MultiPoint",
             "coordinates": [tuple(pt) for pt in self["points"]],
         }
 
@@ -3174,14 +3224,17 @@ class Point(Geometry):
 
     _typ = "Point"
     _type = "Point"
+    _properties = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, **kwargs):
         """Constructor"""
         super(Point, self)
         if iterable is None:
             iterable = {}
         self.update(iterable)
+        self.update(kwargs)
+        self._properties = iterable
 
     # ----------------------------------------------------------------------
     @property
@@ -3310,12 +3363,15 @@ class Polygon(Geometry):
 
     _typ = "Polygon"
     _type = "Polygon"
+    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = ()
-        super(Polygon, self).__init__(iterable)
+        self.update(iterable)
         self.update(kwargs)
+        self._properties = iterable
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
@@ -3454,12 +3510,16 @@ class Polyline(Geometry):
 
     _typ = "Polyline"
     _type = "Polyline"
+    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = {}
-        super(Polyline, self).__init__(iterable)
+
+        self.update(iterable)
         self.update(kwargs)
+        self._properties = iterable
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor: float = 1, stroke_color: Optional[str] = None):
@@ -3519,29 +3579,11 @@ class Polyline(Geometry):
         elif "z" in self:
             return True
         elif self.as_arcpy:
-            return self.as_arcpy.has_z
+            return getattr(self.as_arcpy, "has_z", False)
         elif self.as_shapely:
             return self.as_shapely.has_z
 
         return False
-
-    # ----------------------------------------------------------------------
-    @property
-    def has_m(self):
-        """
-        The ``has_m`` method determines if the geometry has a `M` value.
-
-        :return:
-            A boolean indicating yes (True), or no (False)
-
-        """
-        if "hasM" in self:
-            return self.get("hasM", False)
-        elif "m" in self:
-            return True
-        elif self.as_arcpy:
-            return self.as_arcpy.has_m
-        return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
     def __hash__(self):
@@ -3634,12 +3676,16 @@ class Envelope(Geometry):
 
     _typ = "Envelope"
     _type = "Envelope"
+    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
+        super()
         if iterable is None:
             iterable = ()
-        super(Envelope, self).__init__(iterable)
+
+        self.update(iterable)
         self.update(kwargs)
+        self._properties = iterable
 
     # ----------------------------------------------------------------------
     @property
@@ -3857,6 +3903,7 @@ class SpatialReference(BaseGeometry):
 
     _typ = "SpatialReference"
     _type = "SpatialReference"
+    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
         super(SpatialReference, self)
@@ -3876,6 +3923,7 @@ class SpatialReference(BaseGeometry):
             self.update(iterable)
         if len(kwargs) > 0:
             self.update(kwargs)
+        self._properties = iterable
 
     # ----------------------------------------------------------------------
     @property

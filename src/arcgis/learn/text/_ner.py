@@ -767,7 +767,7 @@ class EntityRecognizer:
             text_list, drop=drop, batch_size=batch_size, show_progress=show_progress
         )
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, rows=5, ds_type="valid"):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 
@@ -775,6 +775,9 @@ class EntityRecognizer:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
+        ---------------------   -------------------------------------------
+        rows                    Optional integer, defaults to 5.
+                                Number of rows to print.
         =====================   ===========================================
 
         :return: Pandas DataFrame
@@ -784,7 +787,7 @@ class EntityRecognizer:
                 f"This method is not supported when using the model extensibility feature, as model extensibility "
                 f"only supports inference."
             )
-        return self._model.show_results(ds_type=ds_type)
+        return self._model.show_results(ds_type=ds_type, rows=rows)
 
     def precision_score(self):
         """
