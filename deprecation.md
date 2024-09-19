@@ -148,6 +148,10 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `path_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
 - `path_distance_back_link` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead..
 - `path_distance_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation.
+- `Raster.cmap` - removed in **2.4.0**. Use `arcgis.raster.functions.colormap` to apply colormap on the Raster object before adding it to map.
+- `Raster.vmin` - removed in **2.4.0**. Use `arcgis.raster.functions.stretch` to apply colormap on the Raster object before adding it to map.
+- `Raster.vmax` - removed in **2.4.0**. Use `arcgis.raster.functions.stretch` to apply colormap on the Raster object before adding it to map.
+- `Raster.opacity` - removed in **2.4.0**. Please set the opacity in `options` parameter in the add method of the map widget.
 
 ### `arcgis.features` Module
 
