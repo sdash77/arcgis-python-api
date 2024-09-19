@@ -8107,11 +8107,20 @@ class Raster:
                                              :class:`~arcgis.map.Map` widget, what matplotlib colormap
                                              to apply to the raster. See :meth:`arcgis.layers.symbol.display_colormaps`
                                              for a list of compatible values.
+
+                                             **Deprecated**
+
+                                             Please use arcgis.raster.functions.colormap to apply colormap
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
                                              :class:`~arcgis.map.Map` widget, what opacity to apply. 0
                                              is completely transparent, 1 is completely opaque.
                                              Default: 1
+
+                                             **Deprecated**
+
+                                             Please set the opacity in options parameter in the add method of the map widget.
+                                             {"opacity":0.7}
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
@@ -8149,10 +8158,9 @@ class Raster:
         map.content.add(raster)
 
         # Overlay a 1-channel .gdb file with the "Orange Red" colormap at 85% opacity
-        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces",
-                        cmap = "OrRd",
-                        opacity = 0.85)
-        map.content.add(raster)
+        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces")
+        rendered_raster = colormap(raster, colorramp="Orange-Red (Continuous)")
+        map.content.add(rendered_raster, options={"opacity": 0.85})
 
         # Overlay a local .jpg file by manually specifying its extent
         raster = Raster("./data/newark_nj_1922.jpg",
@@ -8221,10 +8229,6 @@ class Raster:
 
         if extent:
             self.extent = extent
-        if cmap:
-            self.cmap = cmap
-        if opacity:
-            self.opacity = opacity
 
     # def __iter__(self):
     #    return(self._engine_obj.__iter__())
@@ -8277,24 +8281,6 @@ class Raster:
     @extent.setter
     def extent(self, value: dict):
         self._engine_obj.extent = value
-
-    _opacity = 1
-
-    @property
-    def opacity(self):
-        """
-        Get/Set what opacity to apply when displaying the raster in a
-        :class:`~arcgis.map.Map` widget.
-
-        .. note::
-            0 is completely transparent, 1 is completely opaque. The default value of ``opacity`` is 1.
-
-        """
-        return self._opacity
-
-    @opacity.setter
-    def opacity(self, value: float):
-        self._opacity = value
 
     @property
     def pixel_type(self):
