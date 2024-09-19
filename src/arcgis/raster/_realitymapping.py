@@ -835,23 +835,17 @@ def compute_sensor_model(
 
             if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
                 project_adj_settings.update({"locationAccuracy": location_accuracy})
-            if "computeCandidate" in context:
-                project_adj_settings.update({"computeCandidate": context["computeCandidate"]})
-            if "maxOverlap" in context:
-                project_adj_settings.update({"maxOverlap": context["maxOverlap"]})
-            if "maxLoss" in context:
-                project_adj_settings.update({"maxLoss": context["maxLoss"]})
-            if "pointSimilarity" in context:
-                project_adj_settings.update({"pointSimilarity": context["pointSimilarity"]})
-            if "pointDensity" in context:
-                project_adj_settings.update({"pointDensity": context["pointDensity"]})
-            if "pointDistribution" in context:
-                project_adj_settings.update({"pointDistribution": context["pointDistribution"]})
+            keys_to_check = [
+                "computeCandidate", "maxOverlap", "maxLoss",
+                "pointSimilarity", "pointDensity", "pointDistribution"
+            ]
+            for key in keys_to_check:
+                if key in context:
+                    project_adj_settings.update({key: context[key]})
             # missing_keys = set(adj_dict).difference(context_new)
             # context_new.update((k, adj_dict[k]) for k in missing_keys)
             # context_new.update((k, adj_dict[k]) for k in adj_dict)
             # context = context_new
-            # update project item adjust settings
         elif context is None:
             context = dict(project_adj_settings)
             _nestify_context(context)

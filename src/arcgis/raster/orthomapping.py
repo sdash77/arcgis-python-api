@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _initialize_project
+from ._util import _initialize_project, _flatten_adjust_settings, _nestify_context
 import string as _string
 import random as _random
 
@@ -817,31 +817,64 @@ def compute_sensor_model(
         mission = image_collection
         image_collection = image_collection.image_collection
         update_flight_json = True
+        project = mission._project
+        project_adj_settings = project.get_settings()["template"]["adjustSettings"]
+        keys_to_pop = ["parallelProcessingFactor"]
 
-        adj_dict = {}
+        # adj_dict = {}
         if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-            adj_keys = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "maxResidual",
-                "initPointResolution",
-                "k",
-                "p",
-                "principalPoint",
-                "focalLength",
+            # context_new = {k.lower(): v for k, v in context.items()}
+            # adj_keys = [
+            #     "computeCandidate",
+            #     "maxOverlap",
+            #     "maxLoss",
+            #     "maxResidual",
+            #     "initPointResolution",
+            #     "k",
+            #     "p",
+            #     "principalPoint",
+            #     "focalLength",
+            # ]
+            # adj_dict = {
+            #     k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+            # }
+            adjust_options = context.pop("adjustOptions", [])
+            adjust_options = _flatten_adjust_settings(adjust_options)
+            # context is flattened
+            context.update(adjust_options)
+            # update adj dict with all the params from context
+            project_adj_settings.update(context)
+            # pop the keys that are not relevant to the adj settings
+            for key in keys_to_pop:
+                project_adj_settings.pop(key, None)
+            # update context with default values from project_adj_settings if they are not present in context
+            context.update(project_adj_settings)
+            _nestify_context(context)
+            
+            if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
+                project_adj_settings.update({"locationAccuracy": location_accuracy})
+            keys_to_check = [
+                "computeCandidate", "maxOverlap", "maxLoss",
+                "pointSimilarity", "pointDensity", "pointDistribution"
             ]
-            adj_dict = {
-                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            }
-            adj_dict.update({"locationAccuracy": location_accuracy})
-        adj_dict.update({"mode": mode})
+            for key in keys_to_check:
+                if key in context:
+                    project_adj_settings.update({key: context[key]})
+
+        elif context is None:
+            context = dict(project_adj_settings)
+            _nestify_context(context)
+
+        #     adj_dict.update({"locationAccuracy": location_accuracy})
+        # adj_dict.update({"mode": mode})
+        project_adj_settings.update({"mode": mode})
+
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": "adjustment",
-            "adjust_settings": adj_dict,
+            # "adjust_settings": adj_dict,
+            "adjust_settings": project_adj_settings,
         }
 
     return gis._tools.orthomapping.compute_sensor_model(
