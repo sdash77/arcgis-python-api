@@ -347,6 +347,13 @@ class UnetClassifier(ArcGISModel):
         return UnetClassifier._supported_backbones()
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return UnetClassifier._supported_backbones()
@@ -365,7 +372,9 @@ class UnetClassifier(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family] + timm_backbones
+        torchgeo_backbone = UnetClassifier.torchgeo_backbones()
+
+        return [*_resnet_family] + timm_backbones + torchgeo_backbone
 
     @property
     def supported_datasets(self):
@@ -428,6 +437,8 @@ class UnetClassifier(ArcGISModel):
 
         model_params = emd["ModelParameters"]
 
+        backbone = emd["ModelParameters"]["backbone"]
+
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
             color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
@@ -446,6 +457,9 @@ class UnetClassifier(ArcGISModel):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
+
             data = get_multispectral_data_params_from_emd(data, emd)
 
             data.emd_path = emd_path

@@ -1,6 +1,6 @@
 import os
 import json
-
+import random
 import numpy as np
 import pandas as pd
 from copy import deepcopy
@@ -39,7 +39,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             )
             examples = [np.array(list(i[1].keys())) for i in kwargs.get("examples", [])]
         else:
-            data.prepare_data_for_transformer()
+            data.prepare_data_for_transformer(return_first=True)
             data = data.get_data_object()
             data._is_empty = False
             self._l2id = list(data._unique_tags - {"O"})
@@ -105,7 +105,9 @@ class _LlmEntityRecognizer(ArcGISModel):
     @classmethod
     def from_model(cls, data, backbone, emd_json):
         emd_json["task"] = "ner"
-        return cls(data, "llm", **emd_json)
+        cls_obj = cls(data, "llm", **emd_json)
+        cls_obj._l2id = emd_json["Labels"]
+        return cls_obj
 
     def _save_df_to_html(self, path):
         if getattr(self._data, "_is_empty", False):
@@ -222,6 +224,7 @@ class _LlmEntityRecognizer(ArcGISModel):
             # Check if the first record is the path
             if os.path.exists(text_list[0]):
                 file_name = text_list
+
         # if there is a list of file name. Then recreate the text_list
         if len(file_name):
             text_list = {}
@@ -358,13 +361,17 @@ class _LlmEntityRecognizer(ArcGISModel):
     def recall_score(self):
         return self._calculate_model_metrics()["recall_score"]
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         if self._data._is_empty:
             raise Exception("Data object is empty or supplied as None")
         else:
             valid_token = deepcopy(self._data._valid_tokens)
+            # sample the records
+            random_index = random.sample(range(0, len(valid_token)), rows)
             # Convert valid token to sentences
-            valid_sentence = [" ".join(x) for x in valid_token]
+            valid_sentence = [
+                " ".join(x) for idx, x in enumerate(valid_token) if idx in random_index
+            ]
             validation_response = self.extract_entities(valid_sentence)
             # validation_response.insert(0, "TEXT", value=valid_sentence)
             if "Filename" in validation_response.columns:

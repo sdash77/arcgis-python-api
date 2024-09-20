@@ -64,7 +64,8 @@ class TestAddLayersToMap(unittest.TestCase):
         """Test adding a vector tile layer"""
         # add layer
         layer = VectorTileLayer(
-            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer"
+            "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer",
+            gis=self.gis,
         )
         assert layer
         self.wm.content.add(
@@ -147,7 +148,8 @@ class TestAddLayersToMap(unittest.TestCase):
 
     def test_map_raster_layer(self):
         layer = MapRasterLayer(
-            "https://tiles.arcgis.com/tiles/ULBqC49IEeIR01GF/arcgis/rest/services/BH250-12_PPL/MapServer?cacheKey=82b29e822a144763"
+            "https://tiles.arcgis.com/tiles/ULBqC49IEeIR01GF/arcgis/rest/services/BH250-12_PPL/MapServer?cacheKey=82b29e822a144763",
+            gis=self.gis,
         )
         assert layer
 
@@ -161,7 +163,8 @@ class TestAddLayersToMap(unittest.TestCase):
     def test_imagery_layer(self):
         """Test adding an imagery layer"""
         layer = ImageryLayer(
-            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer",
+            gis=self.gis,
         )
         assert layer
 
@@ -210,10 +213,10 @@ class TestAddLayersToMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureLayer)
         assert (
-                self.wm._webscene.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["type"]
-                == "heatmap"
+            self.wm._webscene.operational_layers[
+                0
+            ].layer_definition.drawing_info.dict()["renderer"]["type"]
+            == "heatmap"
         )
 
 
