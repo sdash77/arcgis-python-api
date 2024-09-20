@@ -7832,6 +7832,18 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         return self._gptbx
 
     # ----------------------------------------------------------------------
+    @property
+    def _current_version(self):
+        current_version = None
+        if self._is_ortho:
+            if "currentVersion" in self._gis._tools.orthomapping.properties.keys():
+                current_version = self._gis._tools.orthomapping.properties["currentVersion"]
+        else:
+            if "currentVersion" in self._gis._tools.realitymapping.properties.keys():
+                current_version = self._gis._tools.realitymapping.properties["currentVersion"]
+        return current_version
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
 
