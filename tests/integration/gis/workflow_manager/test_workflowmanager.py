@@ -11,16 +11,18 @@ from arcgis.gis.workflowmanager import (
     WorkflowManager,
     WorkflowManagerAdmin,
     MessageType,
+    ExecutionStatus,
+    NotificationManager,
+    Notification,
+    JobExecution,
 )
 from arcgis.gis import GIS
 from tests.integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
-from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
-@integration_test
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 
@@ -3678,7 +3680,9 @@ class TestWorkflowManager(unittest.TestCase):
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
-        self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
+        self.assertEqual(
+            ExecutionStatus.COMPLETE, job_exec.status, "Incorrect return type"
+        )
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
     def test_stop_step_returns_successfully(self):
@@ -3767,6 +3771,86 @@ class TestWorkflowManager(unittest.TestCase):
         )
         self.assertTrue("Complete" in job_exec.status, "Incorrect return type")
         self.assertTrue(job_exec.messages, "Incorrect return type")
+
+    # endregion
+
+    # region Notification Manager
+    def test_connect_notification_manager_returns_successfully(self):
+        # Arrange
+        nm = NotificationManager(
+            self.connection.workflow_item, self.connection.workflow_manager
+        )
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
+
+    def test_subscribe_to_job_catalogs_messages_successfully(self):
+        # Arrange
+        msgs = []
+        nm = NotificationManager(
+            self.connection.workflow_item, self.connection.workflow_manager
+        )
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        job_id = self.create_job()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+
+        def test_callback(notification: Notification):
+            msgs.append(notification)
+
+        nm.subscribe([job_id], test_callback)
+
+        # add a comment get some messages:
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs), "Messages were added when subscribed")
+        self.assertEqual(
+            msgs[0].msg_type,
+            MessageType.JOBCOMMENTUPDATED,
+            "Messages were added when subscribed",
+        )
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
+
+    def test_unsubscribe_to_job_catalogs_messages_successfully(self):
+        # Arrange
+        msgs = []
+        nm = NotificationManager(
+            self.connection.workflow_item, self.connection.workflow_manager
+        )
+        nm.connect()
+
+        self.assertTrue(nm.is_connected, "Notification Manager did not connect.")
+
+        job_id = self.create_job()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+
+        def test_callback(notification: Notification):
+            msgs.append(notification)
+
+        nm.subscribe([job_id], test_callback)
+
+        # add a comment get some messages:
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs) < 2, "Messages were added when subscribed")
+        self.assertEqual(
+            msgs[0].msg_type,
+            MessageType.JOBCOMMENTUPDATED,
+            "Messages were added when subscribed",
+        )
+
+        nm.unsubscribe([job_id])
+
+        job.add_comment("Hello World")
+        self.assertTrue(len(msgs) < 2, "Messages were not added when unsubscribed")
+
+        nm.disconnect()
+        self.assertFalse(nm.is_connected, "Notification Manager did not connect.")
 
     # endregion
 
