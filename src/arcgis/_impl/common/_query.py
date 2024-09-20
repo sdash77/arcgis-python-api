@@ -325,107 +325,121 @@ def _create_parameters(
 
 
 def _query(layer, url, params, raw=False):
-    """returns results of query"""
-    result = {}
+    """Returns results of the query for the provided layer and URL."""
     try:
-        # Layer query call
+        # Perform the initial query
         result = layer._con.post(url, params, token=layer._token)
+        return _process_query_result(result, params, raw, layer, url)
+    except Exception as query_exception:
+        return _handle_query_exception(query_exception, layer, url, params, raw)
 
-        # Figure out what to return
-        if "error" in result:
-            raise ValueError(result)
-        elif "returnCountOnly" in params and _is_true(params["returnCountOnly"]):
-            # returns an int
-            return result["count"]
-        elif "returnIdsOnly" in params and _is_true(params["returnIdsOnly"]):
-            # returns a dict with keys: 'objectIdFieldName' and 'objectIds'
-            return result
-        elif "returnExtentOnly" in params and _is_true(params["returnExtentOnly"]):
-            # returns extent dictionary with key: 'extent'
-            return result
-        elif _is_true(raw):
-            return result
-        elif "resultRecordCount" in params and params["resultRecordCount"] == len(
-            result["features"]
-        ):
-            return arcgis_features.FeatureSet.from_dict(result)
-        else:
-            # we have features to return
-            features = result["features"]
 
-        # If none of the ifs above worked then keep going to find more features
-        # Make sure we have all features
-        if "exceededTransferLimit" in result:
-            while (
-                "exceededTransferLimit" in result
-                and result["exceededTransferLimit"] == True
-            ):
-                if "resultRecordCount" not in params:
-                    # assign initial value after first query
-                    params["resultRecordCount"] = layer.properties.maxRecordCount
-                if "resultOffset" in params:
-                    # add the number we found to the offset so we don't have doubles
-                    params["resultOffset"] = params["resultOffset"] + len(
-                        result["features"]
-                    )
-                else:
-                    # initial offset after first query (result record count set by user or up above)
-                    params["resultOffset"] = params["resultRecordCount"]
+def _process_query_result(result, params, raw, layer, url):
+    """Processes the query result based on the parameters and handles pagination."""
+    # Handle errors in the result
+    if "error" in result:
+        raise ValueError(result)
 
-                result = layer._con.post(path=url, postdata=params, token=layer._token)
-                # add new features to the list
-                features = features + result["features"]
-        # assign complete list
-        result["features"] = features
-    except Exception as queryException:
-        error_list = [
-            "Error performing query operation",
-            "HTTP Error 504: GATEWAY_TIMEOUT",
-        ]
-        if (
-            isinstance(queryException.args[0], str)
-            and queryException.args[0].lower().find("invalid token") > -1
-        ):
-            params.pop("token", None)
-            return _query(layer, url, params, raw=False)
-        elif any(ele in queryException.__str__() for ele in error_list):
-            # half the max record count
-            max_record = (
-                int(params["resultRecordCount"])
-                if "resultRecordCount" in params
-                else 1000
-            )
-            offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-            # reduce this number to 125 if you still sees 500/504 error
-            if max_record < 250:
-                # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                raise queryException
-            else:
-                max_rec = int((max_record + 1) / 2)
-                i = 0
-                result = None
-                while max_rec * i < max_record:
-                    params["resultRecordCount"] = (
-                        max_rec
-                        if max_rec * (i + 1) <= max_record
-                        else (max_record - max_rec * i)
-                    )
-                    params["resultOffset"] = offset + max_rec * i
-                    try:
-                        records = _query(layer, url, params, raw=True)
-                        if result:
-                            for feature in records["features"]:
-                                result["features"].append(feature)
-                        else:
-                            result = records
-                        i += 1
-                    except Exception as queryException2:
-                        raise queryException2
+    # Determine the type of result to return
+    if _is_true(params.get("returnCountOnly")):
+        return result["count"]
+    elif _is_true(params.get("returnIdsOnly")) or _is_true(params.get("returnExtentOnly")):
+        return result
+    elif _is_true(raw):
+        return result
 
-        else:
-            raise queryException
+    # Handle features and exceeded transfer limit
+    features = result.get("features", [])
+    if _needs_more_features(result, params, features):
+        features = _fetch_all_features(layer, url, params, features, result)
 
+    result["features"] = features
     return arcgis_features.FeatureSet.from_dict(result)
+
+
+def _needs_more_features(result, params, features):
+    """Checks if more features need to be fetched."""
+    return result.get("exceededTransferLimit") or (
+        params.get("resultRecordCount") != len(features)
+    )
+
+
+def _fetch_all_features(layer, url, params, features, result):
+    """Fetches all features by handling pagination."""
+    original_record_count = params.get("resultRecordCount")
+    original_offset = params.get("resultOffset", 0)
+
+    while result.get("exceededTransferLimit") is True:
+        if original_record_count is not None:
+            remaining_record_count = original_record_count - len(features)
+            if remaining_record_count <= 0:
+                break
+            params["resultRecordCount"] = remaining_record_count
+
+        params["resultOffset"] = len(features) + original_offset
+        result = layer._con.post(path=url, postdata=params, token=layer._token)
+        features += result.get("features", [])
+    
+    return features
+
+
+def _handle_query_exception(query_exception, layer, url, params, raw):
+    """Handles exceptions raised during the query process."""
+    error_messages = [
+        "Error performing query operation",
+        "HTTP Error 504: GATEWAY_TIMEOUT",
+    ]
+
+    if _is_invalid_token_error(query_exception):
+        params.pop("token", None)
+        return _query(layer, url, params, raw)
+
+    if _is_known_error(query_exception, error_messages):
+        return _retry_query_with_fewer_records(layer, url, params, raw)
+
+    raise query_exception
+
+
+def _is_invalid_token_error(exception):
+    """Checks if the exception is due to an invalid token."""
+    return (
+        isinstance(exception.args[0], str) and
+        "invalid token" in exception.args[0].lower()
+    )
+
+
+def _is_known_error(exception, error_messages):
+    """Checks if the exception contains a known error message."""
+    return any(msg in str(exception) for msg in error_messages)
+
+
+def _retry_query_with_fewer_records(layer, url, params, raw):
+    """Retries the query with a reduced result record count."""
+    max_record = params.get("resultRecordCount", 1000)
+    offset = params.get("resultOffset", 0)
+
+    if max_record < 250:
+        raise Exception("Max record count too low; query still failing.")
+
+    result = None
+    max_rec = (max_record + 1) // 2  # Halve the record count
+    i = 0
+
+    while max_rec * i < max_record:
+        params["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
+        params["resultOffset"] = offset + max_rec * i
+
+        try:
+            records = _query(layer, url, params, raw=True)
+            if result:
+                result["features"].extend(records["features"])
+            else:
+                result = records
+            i += 1
+        except Exception as retry_exception:
+            raise retry_exception
+
+    return result
 
 
 def _is_true(x):
@@ -504,75 +518,17 @@ def _query_df(layer, url, params, **kwargs):
                 geom["spatialReference"] = sr
             attribs["SHAPE"] = Geometry(geom)
         return attribs
-
     try:
+        # Perform the initial query
         result = layer._con.post(url, params, token=layer._token)
-        features = result["features"]
-        if "exceededTransferLimit" in result:
-            while (
-                "exceededTransferLimit" in result
-                and result["exceededTransferLimit"] == True
-            ):
-                if "resultRecordCount" not in params:
-                    # assign initial value after first query
-                    params["resultRecordCount"] = 2000
-                if "resultOffset" in params:
-                    params["resultOffset"] = params["resultOffset"] + len(
-                        result["features"]
-                    )
-                else:
-                    # initial offset after first query (result record count set by user or up above)
-                    params["resultOffset"] = params["resultRecordCount"]
+        # Handle features and exceeded transfer limit
+        features = result.get("features", [])
+        if _needs_more_features(result, params, features):
+            features = _fetch_all_features(layer, url, params, features, result)
 
-                result = layer._con.post(path=url, postdata=params, token=layer._token)
-                # add new features to the list
-                features = features + result["features"]
-        # assign complete list
         result["features"] = features
-    except Exception as queryException:
-        error_list = [
-            "Error performing query operation",
-            "HTTP Error 504: GATEWAY_TIMEOUT",
-        ]
-        if queryException.args[0].lower().find("invalid token") > -1:
-            params.pop("token", None)
-            return _query_df(layer, url, params, raw=False)
-        if any(ele in queryException.__str__() for ele in error_list):
-            # half the max record count
-            max_record = (
-                int(params["resultRecordCount"])
-                if "resultRecordCount" in params
-                else 1000
-            )
-            offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-            # reduce this number to 125 if you still sees 500/504 error
-            if max_record < 250:
-                # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                raise queryException
-            else:
-                max_rec = int((max_record + 1) / 2)
-                i = 0
-                result = None
-                while max_rec * i < max_record:
-                    params["resultRecordCount"] = (
-                        max_rec
-                        if max_rec * (i + 1) <= max_record
-                        else (max_record - max_rec * i)
-                    )
-                    params["resultOffset"] = offset + max_rec * i
-                    try:
-                        records = _query(layer, url, params, raw=True)
-                        if result is not None:
-                            for feature in records["features"]:
-                                result["features"].append(feature)
-                        else:
-                            result = records
-                        i += 1
-                    except Exception as queryException2:
-                        raise queryException2
-
-        else:
-            raise queryException
+    except Exception as query_exception:
+        return _handle_query_exception(query_exception, layer, url, params, False)
 
     if len(result["features"]) == 0:
         # create columns even if empty dataframe
