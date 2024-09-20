@@ -1857,6 +1857,7 @@ class ImageryLayer(Layer):
         newlyr._spatial_filter = self._spatial_filter
         newlyr._temporal_filter = self._temporal_filter
         newlyr._filtered = self._filtered
+        newlyr._rendering_rule_from_item = self._rendering_rule_from_item
 
         return newlyr
 
@@ -5703,6 +5704,9 @@ class ImageryLayer(Layer):
                 raise RuntimeError("You need to be signed in to a GIS to create Items")
         else:
             from .analytics import is_supported, generate_raster, _save_ra
+
+            if self._rendering_rule_from_item:
+                self._fnra = None
 
             if self._fnra is None:
                 from .functions import identity
