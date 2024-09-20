@@ -148,10 +148,22 @@ class CSVLayer(BaseOpenData):
         """
 
         if self._renderer is None:
-            from arcgis.layers import generate_renderer
-
-            sr = generate_renderer(geometry_type="point")
-            self._renderer = dict(sr)
+            symbol = {
+                "type": "esriSMS",
+                "color": [226, 29, 145, 158],
+                "angle": 0,
+                "xoffset": 0,
+                "yoffset": 0,
+                "size": 12,
+                "style": "esriSMSCircle",
+                "outline": {
+                    "type": "esriSLS",
+                    "color": [0, 0, 0, 255],
+                    "width": 0.75,
+                    "style": "esriSLSSolid",
+                },
+            }
+            self._renderer = {"type": "simple", "symbol": symbol}
         return self._renderer
 
     # ----------------------------------------------------------------------
@@ -261,7 +273,7 @@ class CSVLayer(BaseOpenData):
             "layerDefinition": {
                 "fields": self.fields,
                 "objectIDField": "__OBJECTID",
-                "drawingInfo": {"renderer": self.renderer._json()},
+                "drawingInfo": {"renderer": self.renderer},
             },
             "id": self._id,
             "title": self.title,

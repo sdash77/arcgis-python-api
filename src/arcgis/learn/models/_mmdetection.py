@@ -4,6 +4,7 @@ import warnings
 from ._model_extension import ModelExtension
 
 try:
+    import fastai
     from fastai.vision import flatten_model, ImageList
     from fastai.vision import imagenet_stats
     import torch
@@ -52,6 +53,10 @@ class MMDetection(ModelExtension):
             model=model,
             model_weight=model_weight,
         )
+        if model in self.supported_transformer_models:
+            self._is_mmtransformer = True
+        else:
+            self._is_mmtransformer = False
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -64,7 +69,12 @@ class MMDetection(ModelExtension):
     def _freeze(self):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
-            if isinstance(i, (torch.nn.BatchNorm2d)):
+            if (
+                isinstance(i, (torch.nn.BatchNorm2d))
+                or isinstance(i, (fastai.torch_core.ParameterModule))
+                or isinstance(i, (torch.nn.BatchNorm1d))
+                or isinstance(i, (torch.nn.LayerNorm))
+            ):
                 continue
             for p in i.parameters():
                 p.requires_grad = False
@@ -94,6 +104,7 @@ class MMDetection(ModelExtension):
         "cascade_rpn",
         "dcn",
         "detectors",
+        "dino",
         "double_heads",
         "dynamic_rcnn",
         "empirical_attention",
@@ -114,6 +125,11 @@ class MMDetection(ModelExtension):
     ]
     """
     List of models supported by this class.
+    """
+
+    supported_transformer_models = ["dino"]
+    """
+    List of transformer models supported by this class.
     """
 
     @classmethod
@@ -304,7 +320,7 @@ class MMDetection(ModelExtension):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

@@ -27,10 +27,9 @@ from utils.decorators import profiles, integration_test
 
 
 @profiles.admin_enterprise_and_agol
-# @integration_test
+@integration_test
 class TestAdminManager(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         if self.gis._is_agol:
             self.admin = AGOLAdminManager(gis=self.gis)
         else:
@@ -72,6 +71,7 @@ class TestAdminManager(unittest.TestCase):
             assert isinstance(self.admin.site, Site)
             assert isinstance(self.admin.system, System)
             assert isinstance(self.admin.webhooks, WebhookManager)
+            assert isinstance(self.admin.info, dict_or_insensitive)
 
     def test_set_ux_program(self):
         """

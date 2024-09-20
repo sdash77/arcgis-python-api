@@ -49,10 +49,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriPFS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriPFS"
         )
 
     def test_create_picture_marker_symbol(self):
@@ -82,10 +82,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriPMS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriPMS"
         )
 
     def test_create_simple_fill_symbol(self):
@@ -120,10 +120,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriSFS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriSFS"
         )
 
     def test_create_simple_line_symbol(self):
@@ -153,10 +153,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriSLS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriSLS"
         )
 
     def test_create_simple_marker_symbol(self):
@@ -193,10 +193,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriSMS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriSMS"
         )
 
     def test_create_text_symbol(self):
@@ -234,10 +234,10 @@ class TestSymbols(unittest.TestCase):
         assert m.content.layers
         assert len(m.content.layers) == 1
         assert (
-                m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
-                    "renderer"
-                ]["symbol"]["type"]
-                == "esriTS"
+            m._webmap.operational_layers[0].layer_definition.drawing_info.dict()[
+                "renderer"
+            ]["symbol"]["type"]
+            == "esriTS"
         )
 
 

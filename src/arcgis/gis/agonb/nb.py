@@ -19,6 +19,7 @@ class AGOLNotebookManager:
     _runtimes = None
     _snapshot = None
     _nbm = None
+    _services = None
 
     def __init__(self, url: str, gis: GIS):
         self._url = url
@@ -36,6 +37,16 @@ class AGOLNotebookManager:
                 url=f"{self._url}/system/containers", gis=self._gis
             )
         return self._container
+
+    @property
+    def services(self):
+        """returns the service manager."""
+        if self._services is None:
+            from arcgis.gis.nb._services import NBServicesManager
+
+            url = self._url + "/services"
+            self._services = NBServicesManager(url, self._gis, nbs=self)
+        return self._services
 
     @property
     def instance_preferences(self) -> InstancePreference:

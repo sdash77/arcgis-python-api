@@ -745,12 +745,38 @@ def compute_sensor_model(
                            for block adjustment. The supported configurable parameters are for compute mosaic dataset
                            candidates after the adjustment.
 
+                           The possible keys for the context dictionary are:
+
+                           - parallelProcessingFactor : The specified number or percentage of processes will be used for the analysis. The default value is "50%".
+
+                           - computeCandidate : Indicates whether Compute Mosaic Candidates will run inside the service task. Default value is False.
+
+                           - maxOverlap : Specifies the maximum area overlap for running the Compute Mosaic Candidates tool inside the task. The default value is 0.6 .
+
+                           - maxLoss : Specifies the maximum area loss allowed for running the Compute Mosaic Candidates tool inside the task. The default value is 0.05 .
+
+                           - initPointResolution : Specifies the initial tie point resolution for running the Compute Camera Model tool inside the task. The default value is 8.0 .
+
+                           - maxResidual : Specifies the maximum residual for running the Compute Block Adjustment and Compute Camera Model tools inside the task. The default value is 5.0 .
+
+                           - adjustOptions : Specifies the adjustment options for running the Compute Block Adjustment tool inside the task. The default value is empty.
+
+                           - pointSimilarity : Specifies the similarity for running the Compute Tie Points tool inside the task. The default value is MEDIUM.
+
+                           - pointDensity : Specifies the point density for running the Compute Tie Points tool inside the task. The default value is MEDIUM.
+
+                           - pointDistribution : Specifies the point distribution for running the Compute Tie Points tool inside the task. The default value is RANDOM.
+
+                           - polygonMask : Specifies the input mask for running the Compute Tie Points tool inside the task. Default value is empty.
+
+                           - regenTiepoints : Indicates whether Compute Tie Points will rerun inside the service task if tie points feature class exists. The default value is True.
+
                            Example:
 
                                {
                                "computeCandidate": False,
-                               "maxoverlap": 0.6,
-                               "maxloss": 0.05,
+                               "maxOverlap": 0.6,
+                               "maxLoss": 0.05,
                                }
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -806,35 +832,6 @@ def compute_sensor_model(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    mode_allowed_values = ["Full","Quick","Refine"]
-    if [element.lower() for element in mode_allowed_values].count(mode.lower()) <= 0 :
-        raise RuntimeError("mode can only be one of the following: "+ str(mode_allowed_values))
-    for element in mode_allowed_values:
-        if mode.lower() == element.lower():
-            params['mode'] = element
-
-    location_accuracy_allowed_values = ['High', 'Medium', 'Low', 'VeryLow']
-    if [element.lower() for element in location_accuracy_allowed_values].count(location_accuracy.lower()) <= 0 :
-        raise RuntimeError('location_accuracy can only be one of the following: '+ str(location_accuracy_allowed_values))
-    for element in location_accuracy_allowed_values:
-        if location_accuracy.lower() == element.lower():
-            params['locationAccuracy'] = element
-
-    _set_context(params, context)
-
-    task = 'ComputeSensorModel'
-    job_values = _execute_task(gis, task, params)
-    
-    return job_values["result"]["url"]
-    """
 
 
 ###################################################################################################
@@ -899,30 +896,6 @@ def alter_processing_states(
         future=future,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-        
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    newStatesAllowedValues = ['blockadjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection', 'adjust_index', 'imagetype']
-
-    for key in new_states:
-        if not key in newStatesAllowedValues:
-            raise RuntimeError('new_states can only be one of the following: ' + str(newStatesAllowedValues))
-
-    params['newStates'] = json.dumps(new_states)
-    task = 'AlterProcessingStates'
-    job_values = _execute_task(gis, task, params)
-    if "processingStates" in job_values:
-        if isinstance(job_values["processingStates"], dict):
-            return job_values["processingStates"]
-        elif isinstance(job_values["processingStates"], str):
-            processing_states = job_values['processingStates'].replace("'",'"')
-            processing_states=json.loads( processing_states.replace('u"','"'))
-            return processing_states
- """
 
 
 ###################################################################################################
@@ -965,95 +938,6 @@ def get_processing_states(
     return gis._tools.orthomapping.get_processing_states(
         image_collection=image_collection, future=future, **kwargs
     )
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    task = 'GetProcessingStates'
-    job_values = _execute_task(gis, task, params)
-    return job_values["processingStates"]
-    """
-
-
-"""
-###################################################################################################
-## Append control points
-###################################################################################################
-def append_control_points(image_collection, control_points, gis = None):
-    '''
-    Append additional ground control point sets to the image collection's control points. 
-    A complete ground control point (GCP) set should have one ground control point 
-    and multiple (more than 3) tie points.
-
-    See http://desktop.arcgis.com/en/arcmap/10.3/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm#ESRI_SECTION1_6676F2BB9A6B453E9EE1E00B42C4A5C1
-    for more information about preparing control points and tie points for orthomapping
-
-    Parameters
-    ----------
-    image_collection    :   Required, the input image collection on which to compute
-                            the sensor model.
-
-                            The image_collection can be a portal Item or an image service URL
-                            
-                            The image_collection must exist.
-
-    control_points      :   Required, a list of control point objects.
-
-                            A control point object is a dictionary with key-value
-                            pairs as described below:
-
-                            The schema of control points follows the schema 
-                            of the mosaic dataset control point table. The following are
-                            required when defining control points:
-                            - The control points must contain a Point geometry object 
-
-                            - There must be one attribute set, describing the attributes of the control point. 
-
-                              The control point attributes is a dictionary that must contain the following 
-                              key-value pairs:
-
-                              -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
-
-                              -- pointID (int) - The ID of the point within the control point table
-
-                              -- type (int)    - The type of the control point as determined by its numeric value
-                                                 1: Tie Point 
-                                                 2: Ground Control Point.
-                                                 3: Check Point
-
-                              -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                            Example:
-           
-                                {"geometry": {
-                                    "x":-118.15,"y":33.80,"z":10.0,
-                                    "spatialReference":{"wkid":4326}},  
-                                    "attributes": {
-                                       "imageID": 22,
-                                       "pointID": 2, 
-                                       "type": 2,
-                                       "status": 1, 
-                                     },
-                                <more points>
-                                }
-
-    '''
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(params, image_collection)
-
-    params['controlPoints'] = json.dumps(control_points)
-    task = 'AppendControlPoints'
-    _execute_task(gis, task, None)
-    return
-"""
 
 
 ###################################################################################################
@@ -1212,38 +1096,6 @@ def match_control_points(
         **kwargs,
     )
 
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    params['inputControlPoints'] = json.dumps(control_points)
-
-    similarity_allowed_values = ['Low', 'Medium', 'High']
-    if [element.lower() for element in similarity_allowed_values].count(similarity.lower()) <= 0 :
-        raise RuntimeError('similarity can only be one of the following: '+str(similarity_allowed_values))
-    for element in similarity_allowed_values:
-        if similarity.lower() == element.lower():
-            params['similarity'] = element
-
-    _set_context(params, context)
-
-    task = 'MatchControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    if job_values["result"] is not None:
-        gptool_url = gis.properties.helperServices.orthoMapping.url
-        gptool = arcgis.gis._GISResource(gptool_url, gis)
-        result = gptool._con.post(job_values["result"]["url"],{},token=gptool._token)
-    else:
-        return job_values["result"]
-
-    return result
-    """
-
 
 ###################################################################################################
 ## Color Correction
@@ -1384,48 +1236,6 @@ def color_correction(
         **kwargs,
     )
 
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis,params, image_collection)
-
-    color_correction_allowed_values = ['Dodging', 'Histogram', 'Standard_Deviation']
-    if [element.lower() for element in color_correction_allowed_values].count(color_correction_method.lower()) <= 0 :
-        raise RuntimeError('color_correction_method can only be one of the following: '+str(color_correction_allowed_values))
-    for element in color_correction_allowed_values:
-        if color_correction_method.lower() == element.lower():
-            params['colorCorrectionMethod'] = element
-
-    dodging_surface_type_allowed_values = ['Single_Color', 'Color_Grid', 'First_Order','Second_Order','Third_Order']
-    if [element.lower() for element in dodging_surface_type_allowed_values].count(dodging_surface_type.lower()) <= 0 :
-        raise RuntimeError('dodging_surface_type can only be one of the following:  '+str(dodging_surface_type_allowed_values))
-    for element in dodging_surface_type_allowed_values:
-        if dodging_surface_type.lower() == element.lower():
-            params['dodgingSurface'] = element
-
-    if target_image is not None:
-        if isinstance(target_image, str):
-            if 'http:' in target_image or 'https:' in target_image:
-                params['targetImage'] = json.dumps({ 'url' : target_image })
-            else:
-                params['targetImage'] = json.dumps({ 'uri' : target_image })
-        elif isinstance(target_image, Item):
-                params['targetImage'] = json.dumps({ "itemId" : target_image.itemid })
-        else:
-            raise TypeError("target_image should be a string (url or uri) or Item")
-    
-    _set_context(params, context)        
-    
-    task = 'ComputeColorCorrection'
-    job_values = _execute_task(gis, task, params)
-
-
-    return job_values["result"]["url"]
-
-    """
-
 
 ###################################################################################################
 ## Compute Control Points
@@ -1550,39 +1360,6 @@ def compute_control_points(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis, params, image_collection)
-
-    if reference_image is not None:
-        if isinstance(reference_image, str):
-            if 'http:' in reference_image or 'https' in reference_image:
-                params['referenceImage'] = json.dumps({ 'url' : reference_image })
-            else:
-                params['referenceImage'] = json.dumps({ 'uri' : reference_image })
-        elif isinstance(reference_image, Item):
-                params['referenceImage'] = json.dumps({ "itemId" : reference_image.itemid })
-        else:
-            raise TypeError("reference_image should be a string (url or uri) or Item")
-
-
-    image_location_accuracy_allowed_values = ['Low', 'Medium', 'High']
-    if [element.lower() for element in image_location_accuracy_allowed_values].count(image_location_accuracy.lower()) <= 0 :
-        raise RuntimeError('location_accuracy can only be one of the following:' +str(image_location_accuracy_allowed_values))
-    for element in image_location_accuracy_allowed_values:
-        if image_location_accuracy.lower() == element.lower():
-            params["imageLocationAccuracy"]=element
-
-    _set_context(params, context)  
-
-    task = 'ComputeControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]
-    """
-
 
 ###################################################################################################
 ## Compute Seamlines
@@ -1632,13 +1409,42 @@ def compute_seamlines(
                              This method can avoid seamlines cutting through buildings.
     ------------------     --------------------------------------------------------------------
     context                Optional dictionary. Context contains additional settings that allows users to customize
-                           the seamlines generation. 
+                           the seamlines generation.
+                           
+                           The possible keys for the context dictionary are:
+
+                           - parallelProcessingFactor : The specified number or percentage of processes will be used for the analysis.
+                           
+                           - computeCandidate : Indicates whether “Compute Mosaic Candidates” will run inside the service task. Default value is False.
+                           
+                           - maxOverlap : Defines the Maximum Area Overlap for running Compute Mosaic Candidates tool inside the task. Default value is 0.6.
+                            
+                           - maxLoss : It is Maximum Area Loss Allowed for running Compute Mosaic Candidates tool inside the task. Default value is 0.05.
+                           
+                           - minRegionSize : Any seamline polygons smaller than this specified threshold will be removed in the seamline result.
+                            
+                           - pixelSize : Generates seamlines for raster datasets that fall within the specified spatial resolution size.
+                           
+                           - blendType : Determine how to blend one image into another (Both , Inside , or Outside ) over the seamlines. Inside blends pixels inside the seamline, while Outside blends outside the seamline. Both will blend pixels on either side of the seamline.
+                           
+                           - blendWidth : Specifies how many pixels will be blended relative to the seamline. Blending (feathering) occurs along a seamline between pixels of overlapping images.
+                           
+                           - blendUnit : Specifies the unit of measurement for blendWidth . Pixels measures using the number of pixels, and Ground measures using the same units as the image collection.
+                           
+                           - requestSizeType : Sets the units for requestSize . Pixels modifies requestSize based on the pixel size. This resamples the closest image based on the raster pixel size. Pixel scaling factor modifiers requestSize by specifying a scaling factor. This operation resamples the closest image by multiplying the raster pixel size with the pixel size factor.
+                           
+                           - requestSize : Specifies the number of columns and rows for resampling. Though the maximum value is 5,000, this value can increase or decreased based on the complexity of your raster data. A greater image resolution provides more detail in the raster dataset but increases the processing time.
+                           
+                           - minThinnessRatio : Defines how thin a polygon can be before its considered a sliver. This is based on a scale from 0 to 1.0, where a value of 0.0 represents a polygon that's almost a straight line, and a value of 1.0 represents a polygon that's a circle.
+                           
+                           - maxSliverSize : Defines how large a Sliver can be before its considered a polygon. This uses the same scale as minThinnessRatio .
+                           
                            Example:
 
                                {"minRegionSize": 100,
                                "pixelSize": "",
                                "blendType": "Both",
-                               "blendWidth": null,
+                               "blendWidth": None,
                                "blendUnit": "Pixels",
                                "requestSizeType": "Pixels",
                                "requestSize": 1000,
@@ -1683,32 +1489,6 @@ def compute_seamlines(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis, params, image_collection)
-
-    contextAllowedValues= {"minRegionSize", "pixelSize", "blendType", "blendWidth", 
-                           "blendUnit", "requestSizeType", "requestSize", 
-                           "minThinnessRatio", "maxSilverSize"
-                           }
-
-    seamlines_method_allowed_values = ['VORONOI', 'DISPARITY','GEOMETRY', 'RADIOMETRY', 'EDGE_DETECTION']
-    if [element.lower() for element in seamlines_method_allowed_values].count(seamlines_method.lower()) <= 0 :
-        raise RuntimeError('seamlines_method can only be one of the following: '+str(seamlines_method_allowed_values))
-    for element in seamlines_method_allowed_values:
-        if seamlines_method.lower() == element.lower():
-            params["seamlinesMethod"]=element
-
-    _set_context(params, context)
-
-    task = 'ComputeSeamlines'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]["url"]
-    """
 
 
 ###################################################################################################
@@ -1839,21 +1619,6 @@ def edit_control_points(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    params['inputControlPoints'] = json.dumps(control_points)
-
-    task = 'EditControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]["url"]
-    """
 
 
 ###################################################################################################
@@ -2127,84 +1892,6 @@ def generate_dem(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    task = 'GenerateDEM'
-
-    contextAllowedValues= ["maxObjectSize", "groundSpacing", "minAngle", "maxAngle", "minOverlap", "maxOmegaPhiDif", 
-                            "maxGSDDif", "numImagePairs", "adjQualityThreshold", "method", "smoothingMethod", "applyToOrtho"]
-    params = {}
-    folder = None
-    folderId = None
-    _set_image_collection_param(gis, params, image_collection)
-
-    if isinstance(out_dem, Item):
-        params["outputDEM"] = json.dumps({"itemId": out_dem.itemid})
-    elif isinstance(out_dem, str):
-        if ("/") in out_dem or ("\\") in out_dem:
-            if 'http:' in out_dem or 'https:' in out_dem:
-                params['outputDEM'] = json.dumps({ 'url' : out_dem })
-            else:
-                params['outputDEM'] = json.dumps({ 'uri' : out_dem })
-        else:
-            result = gis.content.search("title:"+str(out_dem), item_type = "Imagery Layer")
-            out_dem_result = None
-            for element in result:
-                if str(out_dem) == element.title:
-                    out_dem_result = element
-            if out_dem_result is not None:
-                params["outputDEM"]= json.dumps({"itemId": out_dem_result.itemid})
-            else:
-                doesnotexist = gis.content.is_service_name_available(out_dem, "Image Service") 
-                if doesnotexist:
-                    if kwargs is not None:
-                        if "folder" in kwargs:
-                            folder = kwargs["folder"]
-                    if folder is not None:
-                        if isinstance(folder, dict):
-                            if "id" in folder:
-                                folderId = folder["id"]
-                                folder=folder["title"]
-                        else:
-                            owner = gis.properties.user.username
-                            folderId = gis._portal.get_folder_id(owner, folder)
-                        if folderId is None:
-                            folder_dict = gis.content.create_folder(folder, owner)
-                            folder = folder_dict["title"]
-                            folderId = folder_dict["id"]
-                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}, "itemProperties": {"folderId" : folderId}})
-                    else:
-                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}})
-              
-
-
-    params['cellSize'] = cell_size
-
-    surface_type_allowed_values = ['DTM', 'DSM']
-    if [element.lower() for element in surface_type_allowed_values].count(surface_type.lower()) <= 0 :
-        raise RuntimeError('surface_type can only be one of the following: '+str(surface_type_allowed_values))
-    for element in surface_type_allowed_values:
-        if surface_type.lower() == element.lower():
-            params["surfaceType"]=element
-
-    if matching_method is not None:
-        matching_method_allowed_values = ['ETM', 'SGM', 'MVM']
-        if [element.lower() for element in matching_method_allowed_values].count(matching_method.lower()) <= 0 :
-            raise RuntimeError('matching_method can only be one of the following: '+str(matching_method_allowed_values))
-        for element in matching_method_allowed_values:
-            if matching_method.lower() == element.lower():
-                params["matchingMethod"]=element
-
-    _set_context(params, context)  
-    
-    job_values = _execute_task(gis, task, params)
-
-    output_service= gis.content.get(job_values["result"]["itemId"])
-
-    return  output_service 
-    """
-
 
 ###################################################################################################
 ## Generate orthomosaic
@@ -2258,21 +1945,52 @@ def generate_orthomosaic(
     context                                Optional dictionary. Context contains additional environment settings that affect output
                                            image. The supported environment settings for this tool are:
 
-                                           1. Output Spatial Reference (outSR)-the output features will
-                                              be projected into the output spatial reference.
+                                           The possible key for the context dictionary are:
 
-                                           2. Extent (extent) - extent that would clip or expand the output image
+                                           - parallelProcessingFactor : The specified number or percentage of processes will be used for the analysis. The default value is 50%.
 
-                                           3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
+                                           - orthoMosaicAsOvr : Determines whether to apply the generated orthomosaic image as overview of input image collection. The default value is False.
 
-                                           4. Compute Seamlines (seamlinesMethod) - Default.
+                                           - clippingGeometry : Specifies the extent or clippinggeometry parameter for the Clip raster function. It is used for setting the extent of the output orthomosaic image.The default value is empty.
 
-                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
-                                              interest defined by the geometry.
+                                           - cellSize : The output raster will have the resolution specified by cell size. The cellSize is specified using the MAXOF , MINOF , or number. The default value is MAXOF.
 
-                                           6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
+                                           - resamplingMethod : Choose which resampling method to use when creating the raster dataset for download.
+                                             Available resampling types include: NEARESTNEIGHBOR , BILINEAR , CUBIC , MAJORITY , BILINEAR_PLUS , BILINEAR_GAUSSBLUR , BILINEAR_GAUSSBLUR_PLUS , AVERAGE , MINIMUM , MAXIMUM , VECTOR_AVERAGE . The default value is NEARESTNEIGHBOR .
 
-                                           7. Compute Color Correction (colorcorrectionMethod) — Default.
+                                           - outSR : The output raster will be projected into the output spatial reference.
+
+                                           - seamlinesMethod : Specifies the computation method for running the Build Seamlines tool inside the task. The default value is DISPARITY.
+
+                                           - minRegionSize : Any seamline polygons smaller than this specified threshold will be removed in the seamline result.
+
+                                           - pixelSize : Generates seamlines for raster datasets that fall within the specified spatial resolution size.
+
+                                           - blendType : Determine how to blend one image into another (Both , Inside , or Outside ) over the seamlines. Inside blends pixels inside the seamline, while Outside blends outside the seamline. Both will blend pixels on either side of the seamline.
+
+                                           - blendWidth : Specifies how many pixels will be blended relative to the seamline. Blending (feathering) occurs along a seamline between pixels of overlapping images.
+
+                                           - blendUnit : Specifies the unit of measurement for blendWidth . Pixels measures using the number of pixels, and Ground measures using the same units as the image collection.
+
+                                           - requestSizeType : Sets the units for requestSize . Pixels modifies requestSize based on the pixel size. This resamples the closest image based on the raster pixel size. Pixel scaling factor modifiers requestSize by specifying a scaling factor. This operation resamples the closest image by multiplying the raster pixel size with the pixel size factor.
+
+                                           - requestSize : Specifies the number of columns and rows for resampling. Though the maximum value is 5,000, this value can increase or decreased based on the complexity of your raster data. A greater image resolution provides more detail in the raster dataset but increases the processing time.
+
+                                           - minThinnessRatio : Defines how thin a polygon can be before its considered a sliver. This is based on a scale from 0 to 1.0, where a value of 0.0 represents a polygon that's almost a straight line, and a value of 1.0 represents a polygon that's a circle.
+
+                                           - maxSliverSize : Defines how large a Sliver can be before its considered a polygon. This uses the same scale as minThinnessRatio .
+
+                                           - skipX and skipY : Specifies the X skip factor and the Y skip factor for running the Build Pyramids And Statistics tool inside the task as part of color correction workflow. The default values are both 1.
+
+                                           - overwriteStats : Specifies the Skip Existing parameter for running the Build Pyramids And Statistics tool inside the task as part of color correction workflow. The default value isFalse , and statistics will not be recalculated if they exist.
+
+                                           - colorCorrectionMethod : Specifies the balance method for running the Color Balance Mosaic Dataset tool inside the task. The default value is DODGING .
+
+                                           - dodgingSurface : Specifies the color surface type for running the Color Balance Mosaic Dataset tool inside the task. The default value is SINGLE_COLOR .
+
+                                           - targetImage : Specifies the target raster for running the Color Balance Mosaic Dataset tool inside the task. The default value is empty.
+
+                                           - applyColorCorrection : Indicates whether or not to apply color correction to the image collection. The default value is True .
 
                                            Example:
 
@@ -2442,74 +2160,6 @@ def generate_orthomosaic(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    task = 'GenerateOrthomosaic'
-
-    params = {}
-    folder = None
-    folderId = None
-    _set_image_collection_param(gis, params, image_collection)
-        
-    if isinstance(out_ortho, Item):
-        params["outputOrthoImage"] = json.dumps({"itemId": out_ortho.itemid})
-    elif isinstance(out_ortho, str):
-        if ("/") in out_ortho or ("\\") in out_ortho:
-            if 'http:' in out_ortho or 'https:' in out_ortho:
-                params['outputOrthoImage'] = json.dumps({ 'url' : out_ortho })
-            else:
-                params['outputOrthoImage'] = json.dumps({ 'uri' : out_ortho })
-        else:
-            result = gis.content.search("title:"+str(out_ortho), item_type = "Imagery Layer")
-            out_ortho_result = None
-            for element in result:
-                if str(out_ortho) == element.title:
-                    out_ortho_result = element
-            if out_ortho_result is not None:
-                params["outputOrthoImage"]= json.dumps({"itemId": out_ortho_result.itemid})
-            else:
-                doesnotexist = gis.content.is_service_name_available(out_ortho, "Image Service") 
-                if doesnotexist:
-                    if kwargs is not None:
-                        if "folder" in kwargs:
-                            folder = kwargs["folder"]
-                    if folder is not None:
-                        if isinstance(folder, dict):
-                            if "id" in folder:
-                                folderId = folder["id"]
-                                folder=folder["title"]
-                        else:
-                            owner = gis.properties.user.username
-                            folderId = gis._portal.get_folder_id(owner, folder)
-                        if folderId is None:
-                            folder_dict = gis.content.create_folder(folder, owner)
-                            folder = folder_dict["title"]
-                            folderId = folder_dict["id"]
-                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}, "itemProperties": {"folderId" : folderId}})
-                    else:
-                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}})
-            
-
-    if regen_seamlines is not None:
-        if not isinstance(regen_seamlines, bool):
-            raise TypeError("The 'regen_seamlines' parameter must be a boolean")
-        params['regenSeamlines'] = regen_seamlines
-
-    if recompute_color_correction is not None:
-        if not isinstance(recompute_color_correction, bool):
-            raise TypeError("The 'recompute_color_correction' parameter must be a boolean")
-        params['recomputeColorCorrection'] = recompute_color_correction    
-
-    _set_context(params, context)   
-    
-    job_values = _execute_task(gis, task, params)
-
-    output_service= gis.content.get(job_values["result"]["itemId"])
-
-    return  output_service 
-    """
-
 
 ###################################################################################################
 ## Generate report
@@ -2571,25 +2221,6 @@ def generate_report(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    report_format_allowed_values = ['PDF', 'HTML']
-    if [element.lower() for element in report_format_allowed_values].count(report_format.lower()) <= 0 :
-        raise RuntimeError('report_format can only be one of the following: '+ str(report_format_allowed_values))
-    for element in report_format_allowed_values:
-        if report_format.lower() == element.lower():
-            params["reportFormat"]=element
-
-    task = 'GenerateReport'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["outReport"]["url"]
-    """
 
 
 ###################################################################################################
@@ -2642,27 +2273,6 @@ def query_camera_info(
     return gis._tools.orthomapping.query_camera_info(
         camera_query=camera_query, future=future, **kwargs
     )
-
-    """
-    import pandas as pd
-    import numpy as np
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    if camera_query is not None:
-        if not isinstance(camera_query, str):
-            raise TypeError("The 'camera_query' parameter must be a string")
-        params['query'] = camera_query
-   
-    task = 'QueryCameraInfo'
-    job_values = _execute_task(gis, task, params)
-    pd.set_option('display.max_rows', None)
-    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
-    return df
-
-    """
 
 
 ###################################################################################################
@@ -2729,31 +2339,6 @@ def query_control_points(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    if not isinstance(query, str):
-        raise TypeError("The 'query' parameter must be a string")
-
-    params['where'] = query
-
-    task = 'QueryControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    if job_values["outControlPoints"] is not None:
-        gptool_url = gis.properties.helperServices.orthoMapping.url
-        gptool = arcgis.gis._GISResource(gptool_url, gis)
-        result = gptool._con.post(job_values["outControlPoints"]["url"],{},token=gptool._token)
-    else:
-        return job_values["outControlPoints"]
-
-    return result
-    """
-
 
 ###################################################################################################
 ## Reset image collection
@@ -2810,17 +2395,6 @@ def reset_image_collection(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    task = 'ResetImageCollection'
-    job_values = _execute_task(gis, task, params)
-    return job_values["result"]
-    """
 
 
 def compute_spatial_reference_factory_code(latitude: float, longitude: float):
@@ -2871,6 +2445,46 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     factory_code = srid + zone - 1
 
     return factory_code
+
+
+###################################################################################################
+## Query Exif Info
+###################################################################################################
+def query_exif_info(
+    input_images, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
+    """
+    The `query_exif_info` reads the Exif header metadata from single or
+    multiple images in shared data store. The Exif metadata is usually stored
+    in drone image files. Some common Exif metadata information are GPS
+    locations, camera model, focal length, and more.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
+                           or a folder path, or a list of folder paths. The image file paths can also be server data store path.
+
+                           Eg:
+
+                           - "\\servername\drone\imagefolder\image_file.jpg"
+                           - "/cloudStores/S3DataStore/yvwd13"
+                           - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
+                           - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
+                           - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        A dictionary object
+
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.query_exif_info(
+        input_images=input_images, future=future, **kwargs
+    )
 
 
 class Project:

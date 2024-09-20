@@ -1,4 +1,4 @@
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS, Item, ItemProperties, ItemTypeEnum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from datetime import datetime
@@ -279,13 +279,17 @@ class PageManager(object):
         if self._gis._portal.is_arcgisonline:
             # Set item details
             item_type = "Hub Page"
-            typekeywords = "Hub, hubPage, JavaScript, Map, Mapping Site, Online Map, OpenData, selfConfigured, Web Map"
+            typekeywords = [
+                "Hub, hubPage, JavaScript, Map, Mapping Site, Online Map, OpenData, selfConfigured, Web Map"
+            ]
             description = "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Hub application. To make changes to this site, please visit https://hub.arcgis.com/overview/edit"
             image_card_url = "https://cloud.githubusercontent.com/assets/7389593/20107607/1d2c3844-a5a7-11e6-9ec0-9e389033ccd8.jpg"
         # For Enterprise Sites
         else:
             item_type = "Site Page"
-            typekeywords = "Hub, hubPage, JavaScript, Map, Mapping Site, Online Map, OpenData, selfConfigured, Web Map"
+            typekeywords = [
+                "Hub, hubPage, JavaScript, Map, Mapping Site, Online Map, OpenData, selfConfigured, Web Map"
+            ]
             description = (
                 "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Enterprise Sites application. To make changes to this site, please visit"
                 + self._gis.url
@@ -303,8 +307,16 @@ class PageManager(object):
             "description": description,
             "culture": self._gis.properties.user.culture,
         }
+
+        item_props = ItemProperties(
+            title=title,
+            item_type=ItemTypeEnum.HUB_PAGE,
+            type_keywords=typekeywords,
+            culture=self._gis.properties.user.culture,
+        )
+
         folder = self._gis.content.folders.get()
-        item = folder.add(_item_dict).result()
+        item = folder.add(item_properties=item_props).result()
 
         # share page with content and core team groups
         if collab_group:

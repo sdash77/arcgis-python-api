@@ -1,9 +1,11 @@
 from __future__ import annotations
 import io
+import json
 import os
 import requests
 import mimetypes
 from functools import lru_cache
+from types import NoneType
 from typing import Optional, Any, Iterator, Tuple, Union
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
@@ -137,29 +139,36 @@ def guess_mimetype(extension: str) -> str:
 
 
 # -------------------------------------------------------------------------
-def create_upload_tuple(file: str, **kwargs) -> tuple:
-    """Creates the tuple used in uploading a file"""
-    if isinstance(file, (io.StringIO, io.BytesIO)) and "file_name" in kwargs:
+def create_upload_tuple(file: str | io.StringIO | io.BytesIO, **kwargs) -> tuple:
+    """
+    Creates the tuple used for uploading a file
+
+    Returns a tuple of the file name, no-param lambda returning a file stream, and mimetype.
+    """
+    if isinstance(file, (io.StringIO, io.BytesIO)):
+        if not "file_name" in kwargs:
+            raise ValueError(
+                "The `file_name` is required when using io.BytesIO or io.StringIO."
+            )
+        file_name = kwargs.pop("file_name")
+        _, ext = os.path.splitext(file_name)
         return (
-            kwargs.pop("file_name"),
+            file_name,
             file,
-            None,
+            guess_mimetype(ext),
         )
-    elif isinstance(file, (io.StringIO, io.BytesIO)) and not "file_name" in kwargs:
-        raise ValueError(
-            "The `file_name` is required when using io.BytesIO or io.StringIO."
-        )
-    elif isinstance(file, str):
+    if isinstance(file, str) and os.path.exists(file):
         _, ext = os.path.splitext(file)
         return (
             os.path.basename(file),
+            # TODO @jtroe @achapkowski, consider using a lambda here
+            # to open the file when needed, instead of opening it here.
             open(file, "rb"),
             guess_mimetype(ext),
         )
-    else:
-        raise ValueError(
-            "Could not parse the file, ensure it exists and is of type string."
-        )
+    raise ValueError(
+        "Could not parse the file, ensure it exists and is of type string."
+    )
 
 
 # -------------------------------------------------------------------------
@@ -264,3 +273,13 @@ def _get_folder_name(
     if len(result) > 0:
         return result[0]
     return None
+
+
+def _process_parameters(params: dict[str, Any]) -> dict:
+    """handles the requests parameters"""
+    for k, v in dict(params).items():
+        if isinstance(v, (dict, list, bool, NoneType)):
+            params[k] = json.dumps(v)
+        else:
+            params[k] = v
+    return params

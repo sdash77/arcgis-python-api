@@ -374,7 +374,10 @@ class MaskRCNN(ArcGISModel):
                 grid_anchors, model.rpn.anchor_generator
             )
         else:
-            if "timm" in self._backbone.__module__:
+            if (
+                "timm" in self._backbone.__module__
+                or "_hf_" in self._backbone.__module__
+            ):
                 backbone_cut = timm_config(self._backbone)["cut"]
                 backbone_fpn = create_body(
                     self._backbone, pretrained_backbone, backbone_cut
@@ -417,7 +420,7 @@ class MaskRCNN(ArcGISModel):
                     ),
                 )
             if self._is_multispectral:
-                backbone_fpn = _change_tail(backbone_fpn, data)
+                backbone_fpn = _change_tail(backbone_fpn, data, backbone=self._backbone)
                 model = models.detection.MaskRCNN(
                     backbone_fpn,
                     91,
@@ -553,6 +556,13 @@ class MaskRCNN(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return MaskRCNN._supported_backbones()
@@ -562,7 +572,14 @@ class MaskRCNN(ArcGISModel):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = MaskRCNN.transformer_backbones()
-        return [*_resnet_family] + transformer_backbone + timm_backbones
+        torchgeo_backbone = MaskRCNN.torchgeo_backbones()
+
+        return (
+            [*_resnet_family]
+            + transformer_backbone
+            + timm_backbones
+            + torchgeo_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -603,6 +620,7 @@ class MaskRCNN(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
         maskrcnn_kwargs = emd.get("MaskRCNNkwargs", {})
 
         try:
@@ -625,6 +643,8 @@ class MaskRCNN(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
 
         return cls(

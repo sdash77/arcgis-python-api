@@ -8,6 +8,25 @@ from arcgis.auth.tools import LazyLoader
 _layers = LazyLoader("arcgis.layers")
 
 
+class SceneJob(_GISResource):
+    """Represents a single Scene layer job"""
+
+    def __init__(self, url: str, gis: "GIS", manager: "SceneLayerManager") -> None:
+        self.url: str = url
+        self.gis = gis
+        self.manager: SceneLayerManager = manager
+
+    @property
+    def properties(self) -> dict:
+        """returns the job's properties"""
+        return self.gis._con.get(
+            self.url,
+            {
+                "f": json,
+            },
+        )
+
+
 class SceneLayerManager(_GISResource):
     """
     The ``SceneLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted scene layers.
@@ -21,11 +40,8 @@ class SceneLayerManager(_GISResource):
         self._sl = scene_lyr
         # Scene Layers published from Scene Layer Package are read only.
         if "layers" in self.properties:
-            self._source_type = (
-                "Feature Service"
-                if "updateEnabled" in self.properties.layers[0]
-                else "Scene Layer Package"
-            )
+            self._source_type = "Feature Service"
+
         else:
             # No layers are present so we will not have cache
             self._source_type = "Scene Layer Package"
@@ -266,7 +282,17 @@ class SceneLayerManager(_GISResource):
             params = {"f": "json", "layers": layers}
             resp: requests.Response = self._session.post(url=url, data=params)
             resp.raise_for_status()
-            return resp.json()
+            data: dict = resp.json()
+            if "error" in data or ("success" in data and data["success"] == False):
+                raise Exception(data)
+
+            if "jobId" in data:
+                job_url = f"{self.url}/jobs/{data.get('jobId')}"
+            elif "jobUrl" in data:
+                job_url = f'{self.url}/jobs/{data.get("jobUrl")}'
+            else:
+                raise Exception(f"Job ID not returned: {data}")
+            return SceneJob(url=job_url, gis=self._gis, manager=self)
         return None
 
     # ----------------------------------------------------------------------
@@ -676,7 +702,7 @@ class Object3DLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -787,7 +813,7 @@ class IntegratedMeshLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1019,7 +1045,7 @@ class VoxelLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.VoxelLayer
+        >> arcgis.layers.VoxelLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1131,7 +1157,7 @@ class Point3DLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.Point3DLayer
+        >> arcgis.layers.Point3DLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1184,8 +1210,9 @@ class Point3DLayer(Layer):
         """
         if self._admin is None:
             if self._gis._portal.is_arcgisonline:
+                url = self._url.split("/layers")[0]
                 rd = {"/rest/services/": "/rest/admin/services/"}
-                adminURL = self._str_replace(self._url, rd)
+                adminURL = self._str_replace(url, rd)
                 if adminURL.split("/")[-1].isdigit():
                     adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
                 self._admin = SceneLayerManager(adminURL, self._gis, self)
@@ -1243,7 +1270,7 @@ class PointCloudLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1354,7 +1381,7 @@ class BuildingLayer(Layer):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.BuildingLayer
+        >> arcgis.layers.BuildingLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1461,7 +1488,7 @@ class _SceneLayerFactory(type):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
@@ -1520,7 +1547,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
 
         type(s_layer)
-        >> arcgis.layers._types.PointCloudLayer
+        >> arcgis.layers.PointCloudLayer
 
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'

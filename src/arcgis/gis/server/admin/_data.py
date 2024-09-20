@@ -538,6 +538,8 @@ class DataStoreManager(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
+    ## TODO MAKE a add_object_store for new cloud object stores.
+    ##
     def add(self, item: dict) -> Datastore:
         """
         Registers a new data item with the data store.
@@ -654,7 +656,12 @@ class DataStoreManager(BaseServer):
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
-                d = ServicesDirectory(url=sd_url, portal_connection=self._con)
+                d = ServicesDirectory(
+                    url=sd_url,
+                    portal_connection=self._con,
+                    verify_cert=False,
+                    trust_env=True,
+                )
                 d._con = self._con
 
             try:
@@ -669,6 +676,64 @@ class DataStoreManager(BaseServer):
                 )
                 up.delete(item_id=upload_res[1]["item"]["itemID"])
                 return res
+        return None
+
+    # ----------------------------------------------------------------------
+    def add_object_store(
+        self,
+        name: str,
+        conn_str: str,
+        object_store: str,
+        provider: str,
+        folder: Optional[str] = None,
+    ) -> Datastore:
+        """
+        Object-store data item represents a connection to a Amazon or Microsoft Azure store.
+
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The name of the cloud store.
+        ---------------     --------------------------------------------------------------------
+        conn_str            Required string. The connection information for the cloud storage
+                            product.
+        ---------------     --------------------------------------------------------------------
+        object_store        Required string. This is the amazon bucket path or Azuze path.
+        ---------------     --------------------------------------------------------------------
+        provider            Required string. Values must be amazon or azure.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. For some Azure cloud stores, an optional folder
+                            can be specified.
+        ===============     ====================================================================
+
+
+        :return:
+            :class:`~arcgis.gis.server.Datastore` object or None
+
+        """
+        item = {
+            "path": "/cloudStores/%s" % name,
+            "type": "objectStore",
+            "provider": provider,
+            "info": {
+                "isManaged": True,
+                "systemManaged": False,
+                "isManagedData": True,
+                "category": "storage",
+                "factory": "objectStore",
+                "purpose": ["feature-tile", "scene"],
+            },
+            "connectionString": conn_str,
+            "objectStore": object_store,
+        }
+        if folder is not None:
+            item["info"]["folder"] = folder
+        res = self._register_data_item(item=item)
+        if res["status"] == "success" or res["status"] == "exists":
+            return Datastore(self, "/cloudStores/" + name)
+        else:
+            return None
         return None
 
     # ----------------------------------------------------------------------

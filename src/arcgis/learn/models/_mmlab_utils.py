@@ -24,6 +24,29 @@ from mmseg.models.backbones.unet import InterpConv
 # register InterpConv module in mmengine to resolve the Unet error
 try:
     MMengine_Models.register_module("InterpConv", module=InterpConv)
+    from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2dPack
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        super(ModulatedDeformConv2dPack, self)._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
+
+    ModulatedDeformConv2dPack._load_from_state_dict = _load_from_state_dict
 except:
     pass
 
@@ -53,12 +76,16 @@ def get_mmlab_cfg(**kwargs):
 
 
 def load_mmlab_checkpoint(model, checkpoint):
+    logging.disable(logging.WARNING)
+
     CheckpointLoader._schemes["https://"] = partial(
         load_from_http, model_dir=None, progress=True
     )
     CheckpointLoader._schemes["http://"] = CheckpointLoader._schemes["https://"]
     CheckpointLoader._schemes["https://"].__name__ = "load_from_http"
     load_checkpoint(model, checkpoint, "cpu", False, logging.getLogger())
+
+    logging.disable(0)
 
 
 def set_detctor_parms(data, cfg):
@@ -179,6 +206,7 @@ def prepare_mmbatch(batch_shape, **kwargs):
     metas_dict["pad_shape"] = batch_shape[1:3]
     metas_dict["img_shape"] = batch_shape[1:3]
     metas_dict["ori_shape"] = batch_shape[1:3]
+    metas_dict["batch_input_shape"] = batch_shape[1:3]
     metas_dict["scale_factor"] = scale_factor
     model_type = kwargs.get("model_type")
 
