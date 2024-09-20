@@ -286,7 +286,7 @@ class TestMapSettingsClass(unittest.TestCase):
         """test the basemap gallery property of MapSettings class"""
         ms = self.gis.admin.ux.map_settings
         bsmap_gall_group = ms.basemap_gallery_group
-        assert isinstance(bsmap_gall_group, (Group, type(None)))
+        assert isinstance(bsmap_gall_group, (Group, str))
 
         # test set basemap gallery group
         groups = self.gis.groups.search()
@@ -299,7 +299,7 @@ class TestMapSettingsClass(unittest.TestCase):
         assert ms.basemap_gallery_group.id == group.id
 
         # set back basemap gallery group
-        ms.basemap_gallery_group = bsmap_gall_group.id if bsmap_gall_group else bsmap_gall_group
+        ms.basemap_gallery_group = None if isinstance(bsmap_gall_group, str) else bsmap_gall_group
 
     def test_map_viewer(self):
         """test the map viewer property of MapSettings class"""
@@ -323,13 +323,13 @@ class TestMapSettingsClass(unittest.TestCase):
         # get config apps group
         ms = self.gis.admin.ux.map_settings
         config_apps_group = ms.config_apps_group
-        assert isinstance(config_apps_group, (Group, type(None)))
+        assert isinstance(config_apps_group, (Group, str))
 
         # set config apps group
         ms.config_apps_group = group.id
         assert isinstance(ms.config_apps_group, Group)
         assert ms.config_apps_group.id == group.id
-        ms.config_apps_group = config_apps_group
+        ms.config_apps_group = None if isinstance(config_apps_group, str) else config_apps_group
 
     def test_analysis_group_layer(self):
         """test the analysis group layer property of MapSettings class"""
@@ -601,6 +601,9 @@ class TestUtilityServicesSettingsClass(unittest.TestCase):
     def test_add_reset(self):
         enterprise_gis = self.gis
         online_gis = GIS(profile="your_online_admin_profile", verify_cert=False, proxy=self.proxies)
+
+        if enterprise_gis.version < [2024, 2]:
+            self.skipTest("The add_from_online() method will be available in ArcGIS Enterprise 11.4")
 
         uss = enterprise_gis.admin.ux.utility_services_settings
         settings = uss.add_from_online(
