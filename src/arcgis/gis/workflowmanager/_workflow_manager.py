@@ -56,6 +56,7 @@ def _initialize(instance, gis, is_admin=False):
     if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
+
 def _wmx_server_url(instance, is_admin):
     """locates the WMX server"""
     baseurl = instance._gis._portal.resturl
@@ -3274,7 +3275,9 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.RUN)
         # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3354,7 +3357,9 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.STOP)
         # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3432,7 +3437,9 @@ class Job(object):
         # Create a JobExecution object
         je = JobExecution(self, ExecutionType.FINISH)
         # Subscribe to this job
-        self._workflow_manager._notification_manager.subscribe([self.job_id], je._callback)
+        self._workflow_manager._notification_manager.subscribe(
+            [self.job_id], je._callback
+        )
 
         # Call the action endpoint
         url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
@@ -3552,7 +3559,11 @@ class JobExecution:
             string
 
         """
-        return ExecutionStatus.COMPLETE if self._event.is_set() else ExecutionStatus.RUNNING
+        return (
+            ExecutionStatus.COMPLETE
+            if self._event.is_set()
+            else ExecutionStatus.RUNNING
+        )
 
     def result(self, timeout: Optional[int] = 300):
         """
@@ -4116,11 +4127,14 @@ class WebsocketConnection:
     msgEvent: (str, threading.Event) = None
     msgs = []
 
-    def __init__(self, subscribe_callback: Callable, headers: dict, token, timeout: int):
+    def __init__(
+        self, subscribe_callback: Callable, headers: dict, token, timeout: int
+    ):
         self.timeout = timeout
         self.subscribe_callback = subscribe_callback
         self.headers = headers
-        self.headers['Authorization'] = f'Bearer {token}'
+        self.headers["Authorization"] = f"Token {token}"
+
     def __on_message__(self, app, msg):
         if self.msgEvent:
             self.msgEvent[1].set()
@@ -4134,26 +4148,17 @@ class WebsocketConnection:
 
     def connect(self, url):
         _open_event = threading.Event()
-        # SSL context configuration
-        # ssl_opts = {
-        #     "cert_reqs": ssl.CERT_NONE,  # Ignoring SSL certificate verification
-        #     "check_hostname": False,  # Not checking the server's hostname
-        # }
 
         def start_websocket():
-            # self.ws.run_forever(sslopt=ssl_opts)
             self.ws.run_forever()
 
         def on_open(ws: websocket.WebSocket):
             _open_event.set()
 
         self.ws = websocket.WebSocketApp(
-            url,
-            on_open=on_open,
-            on_message=self.__on_message__
+            url, on_open=on_open, on_message=self.__on_message__
         )
 
-        # self.thread = threading.Thread(target=self.ws.run_forever, daemon=True)
         self.thread = threading.Thread(target=start_websocket, daemon=True)
         self.thread.start()
         if _open_event.wait(self.timeout):
@@ -4199,6 +4204,7 @@ class NotificationManager:
         self.websocket_connection = None
         self.subscribed_jobs = {}
         self._workflow = workflow_manager
+        self._connected = False
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
@@ -4211,6 +4217,10 @@ class NotificationManager:
     def _generate_url(self, url):
         token = self._token_generator()
         return f"{url}?token={token}"
+
+    @property
+    def is_connected(self):
+        return self._connected
 
     def _subscriber(self, message):
         try:
@@ -4231,8 +4241,14 @@ class NotificationManager:
         Establishes a websocket connection to the workflow manager server.
         """
         if self.websocket_connection is None:
-            self.websocket_connection = WebsocketConnection(self._subscriber, self._gis.session.headers, self._gis._con.token, timeout=30)
+            self.websocket_connection = WebsocketConnection(
+                self._subscriber,
+                self._gis.session.headers,
+                self._gis._con.token,
+                timeout=30,
+            )
             self.websocket_connection.connect(self.websocket_url)
+            self._connected = True
 
     def disconnect(self):
         """
@@ -4240,6 +4256,7 @@ class NotificationManager:
         """
         if self.websocket_connection is not None:
             self.websocket_connection.disconnect()
+            self._connected = False
 
     def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
         """
@@ -4270,7 +4287,12 @@ class NotificationManager:
                     "token": self._token_generator(),
                 }
 
-                ws = WebsocketConnection(self._subscriber, self._gis.session.headers, self._gis._con.token, timeout=30)
+                ws = WebsocketConnection(
+                    self._subscriber,
+                    self._gis.session.headers,
+                    self._gis._con.token,
+                    timeout=30,
+                )
                 ws.connect(self.websocket_url)
                 ws.send_and_wait(json.dumps(subscribe_obj))
                 ws.disconnect()
