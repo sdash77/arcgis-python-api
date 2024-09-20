@@ -253,7 +253,7 @@ class GeometryFactory(type):
             elif "xmin" in iterable:
                 cls = Envelope
             elif "wkid" in iterable or "wkt" in iterable:
-                return SpatialReference(iterable=iterable)
+                cls = SpatialReference
             elif isinstance(iterable, list):
                 return Point(
                     {
@@ -3858,7 +3858,7 @@ class Envelope(Geometry):
 
 
 ########################################################################
-class SpatialReference(BaseGeometry):
+class SpatialReference(Geometry):
     """
     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
@@ -4000,10 +4000,3 @@ class SpatialReference(BaseGeometry):
     def __getstate__(self):
         """pickle support"""
         return dict(self)
-
-    # ----------------------------------------------------------------------
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(f"'SpatialReference' object has no attribute '{name}'")
