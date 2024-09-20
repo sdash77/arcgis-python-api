@@ -4116,11 +4116,11 @@ class WebsocketConnection:
     msgEvent: (str, threading.Event) = None
     msgs = []
 
-    def __init__(self, subscribe_callback: Callable, headers: dict, timeout: int):
+    def __init__(self, subscribe_callback: Callable, headers: dict, token, timeout: int):
         self.timeout = timeout
         self.subscribe_callback = subscribe_callback
         self.headers = headers
-
+        self.headers['Authorization'] = f'Bearer {token}'
     def __on_message__(self, app, msg):
         if self.msgEvent:
             self.msgEvent[1].set()
@@ -4135,20 +4135,20 @@ class WebsocketConnection:
     def connect(self, url):
         _open_event = threading.Event()
         # SSL context configuration
-        ssl_opts = {
-            "cert_reqs": ssl.CERT_NONE,  # Ignoring SSL certificate verification
-            "check_hostname": False,  # Not checking the server's hostname
-        }
+        # ssl_opts = {
+        #     "cert_reqs": ssl.CERT_NONE,  # Ignoring SSL certificate verification
+        #     "check_hostname": False,  # Not checking the server's hostname
+        # }
 
         def start_websocket():
-            self.ws.run_forever(sslopt=ssl_opts)
+            # self.ws.run_forever(sslopt=ssl_opts)
+            self.ws.run_forever()
 
         def on_open(ws: websocket.WebSocket):
             _open_event.set()
 
         self.ws = websocket.WebSocketApp(
             url,
-            header=self.headers,
             on_open=on_open,
             on_message=self.__on_message__
         )
@@ -4231,7 +4231,7 @@ class NotificationManager:
         Establishes a websocket connection to the workflow manager server.
         """
         if self.websocket_connection is None:
-            self.websocket_connection = WebsocketConnection(self._subscriber, self._gis.session.headers, timeout=30)
+            self.websocket_connection = WebsocketConnection(self._subscriber, self._gis.session.headers, self._gis._con.token, timeout=30)
             self.websocket_connection.connect(self.websocket_url)
 
     def disconnect(self):
@@ -4270,7 +4270,7 @@ class NotificationManager:
                     "token": self._token_generator(),
                 }
 
-                ws = WebsocketConnection(self._subscriber, self._gis.session.headers, timeout=30)
+                ws = WebsocketConnection(self._subscriber, self._gis.session.headers, self._gis._con.token, timeout=30)
                 ws.connect(self.websocket_url)
                 ws.send_and_wait(json.dumps(subscribe_obj))
                 ws.disconnect()
