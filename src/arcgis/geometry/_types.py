@@ -4000,3 +4000,10 @@ class SpatialReference(BaseGeometry):
     def __getstate__(self):
         """pickle support"""
         return dict(self)
+
+    # ----------------------------------------------------------------------
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'SpatialReference' object has no attribute '{name}'")
