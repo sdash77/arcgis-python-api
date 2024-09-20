@@ -2267,7 +2267,7 @@ def suggest(
                                         sugggested candidates based on their proximity to the location.
                                         The *search_extent* parameter specifies the radial distance from
                                         the location in meters. The priority of candidates within this
-                                        radius is boosted relative to those outside the radius. 
+                                        radius is boosted relative to those outside the radius.
                                         This is useful in mobile applications where a user
                                         wants to search for places in the vicinity of their
                                         current GPS location. It is also useful for web
