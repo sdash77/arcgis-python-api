@@ -188,14 +188,23 @@ def _create_project(
         raise RuntimeError(
             "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
         )
-    if scenario_type and scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
-        raise RuntimeError(
-            "Invalid scenario type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
-        )
-    if sensor_type and sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in [
+    if scenario_type and scenario_type.lower() not in [
+        "drone",
         "aerial_nadir",
         "aerial_oblique",
     ]:
+        raise RuntimeError(
+            "Invalid scenario type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
+        )
+    if (
+        sensor_type
+        and sensor_type.lower() == "aerialdigital"
+        and scenario_type.lower()
+        not in [
+            "aerial_nadir",
+            "aerial_oblique",
+        ]
+    ):
         raise RuntimeError(
             "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
         )
@@ -810,8 +819,14 @@ def compute_sensor_model(
         try:
             project = mission._project
             project_adj_settings = project.settings
-            if isinstance(project_adj_settings, dict) and ("template" in project_adj_settings.keys()) and "adjustSettings" in project_adj_settings["template"].keys():
-                project_adj_settings = project_adj_settings["template"]["adjustSettings"]
+            if (
+                isinstance(project_adj_settings, dict)
+                and ("template" in project_adj_settings.keys())
+                and "adjustSettings" in project_adj_settings["template"].keys()
+            ):
+                project_adj_settings = project_adj_settings["template"][
+                    "adjustSettings"
+                ]
             keys_to_pop = ["parallelProcessingFactor"]
 
             if isinstance(context, dict):
@@ -854,11 +869,13 @@ def compute_sensor_model(
                     "focalLength",
                 ]
                 adj_dict = {
-                    k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+                    k: context_new[k.lower()]
+                    for k in adj_keys
+                    if k.lower() in context_new
                 }
                 adj_dict.update({"locationAccuracy": location_accuracy})
                 settings = adj_dict
-        
+
         settings.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
