@@ -147,6 +147,10 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
         parsed = parse_url(url=r.url)
         server_url = assemble_url(parsed)
         token_url: str = None
+        if "verify" in args:
+            verify = args["verify"]
+        else:
+            verify = self._verify_cert
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
         elif r.text.lower().find("token required") > -1:
@@ -155,7 +159,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
                 params={"f": "json"},
                 auth=self,
                 headers={"referer": self._referer},
-                verify=self._verify_cert,
+                verify=verify,
                 proxies=self._proxy,
             ).json()
             self._server_log[parsed.netloc] = resp["authInfo"]["tokenServicesUrl"]
@@ -181,7 +185,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
                 params=postdata,
                 auth=self,
                 headers={"referer": self._referer},
-                verify=self._verify_cert,
+                verify=verify,
                 proxies=self._proxy,
             ).json()
             token_str = resp["token"]

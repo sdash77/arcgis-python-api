@@ -35,15 +35,15 @@ class TestRendererProperty(unittest.TestCase):
         lyr = item.layers[0]
         wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [0, 255, 0, 100]
-        wm.add_layer(lyr)
-        assert list(wm.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
+        wm.content.add(lyr)
+        assert list(wm.content.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
 
     def test_plot_webmap(self):
         item = self.gis.content.search("*", "Feature Layer", outside_org=True)[0]
         lyr = item.layers[0]
         wm = arcgismapping.Map()
         lyr.renderer.symbol.color = [255, 0, 0, 100]
-        wm.add_layer(lyr)
+        wm.content.add(lyr)
         assert list(
             wm.content.layers[
                 0
