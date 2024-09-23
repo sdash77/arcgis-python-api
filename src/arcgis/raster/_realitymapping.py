@@ -795,25 +795,8 @@ def compute_sensor_model(
         project = mission._project
         project_adj_settings = project.get_settings()["template"]["adjustSettings"]
         keys_to_pop = ["parallelProcessingFactor"]
-        # adj_keys = [
-        #     "computeCandidate",
-        #     "maxOverlap",
-        #     "maxLoss",
-        #     "maxResidual",
-        #     "initPointResolution",
-        #     "k",
-        #     "p",
-        #     "principalPoint",
-        #     "focalLength",
-        # ]
-        # get the keys that are common between the project adjust settings and adj_keys list
-        # adj_dict = {
-        #     k.lower(): v for k, v in project_adj_settings.items() if k in adj_keys
-        # }
-        # adj_dict = project_adj_settings
 
         if isinstance(context, dict):
-            # context_new = {k: v for k, v in context.items()}
             adjust_options = context.pop("adjustOptions", [])
             adjust_options = _flatten_adjust_settings(adjust_options)
             # context is flattened
@@ -826,12 +809,6 @@ def compute_sensor_model(
             # update context with default values from project_adj_settings if they are not present in context
             context.update(project_adj_settings)
             _nestify_context(context)
-            # adj_dict = {
-            #     k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            # }
-            # update the adj_dict with the context_new values if they are passed in
-            # else use the default values we set from the project adjust settings
-            # adj_dict.update((k, context_new[k]) for k in set(context_new).intersection(adj_dict))
 
             if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
                 project_adj_settings.update({"locationAccuracy": location_accuracy})
@@ -842,10 +819,6 @@ def compute_sensor_model(
             for key in keys_to_check:
                 if key in context:
                     project_adj_settings.update({key: context[key]})
-            # missing_keys = set(adj_dict).difference(context_new)
-            # context_new.update((k, adj_dict[k]) for k in missing_keys)
-            # context_new.update((k, adj_dict[k]) for k in adj_dict)
-            # context = context_new
         elif context is None:
             context = dict(project_adj_settings)
             _nestify_context(context)
