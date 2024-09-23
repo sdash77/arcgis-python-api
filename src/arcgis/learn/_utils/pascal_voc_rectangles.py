@@ -244,6 +244,11 @@ def show_batch_pascal_voc_rectangles(
         e = Exception(f"could not find {type_data_loader} in data.")
         raise (e)
 
+    assert (
+        len(data_loader) != 0
+    ), f"""Your dataloader is empty, can't display the images.
+            Use a smaller batch size (batch size={data_loader.batch_size} for {len(data_loader.dataset)} elements)."""
+
     rgb_bands = kwargs.get("rgb_bands", self._symbology_rgb_bands)
     nodata = kwargs.get("nodata", 0)
     imsize = kwargs.get("imsize", 5)

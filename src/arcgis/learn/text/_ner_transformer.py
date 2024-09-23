@@ -368,11 +368,11 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
             _raise_fastai_import_error(import_exception=import_exception)
 
-        self.logger = logging.get_logger()
+        self._logger = logging.get_logger()
         if kwargs.get("verbose", None):
-            self.logger.setLevel(kwargs.get("verbose").upper())
+            self._logger.setLevel(kwargs.get("verbose").upper())
         else:
-            self.logger.setLevel(logging.ERROR)
+            self._logger.setLevel(logging.ERROR)
 
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
@@ -423,7 +423,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         config=None,
     ):
         model_type = infer_model_type(backbone, transformer_architectures)
-        self.logger.info(f"Inferred Backbone: {model_type}")
+        self._logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
         if not config:
             config = AutoConfig.from_pretrained(pretrained_model_name)
@@ -431,13 +431,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
             pretrained_model_name, config=config, use_fast=False
         )
         if data._is_empty or data._backbone != backbone:
-            self.logger.info("Creating DataBunch")
+            self._logger.info("Creating DataBunch")
             data._prepare_databunch(
                 tokenizer=transformer_tokenizer,
                 model_type=model_type,
                 seq_len=seq_len,
                 backbone=backbone,
-                logger=self.logger,
+                logger=self._logger,
             )
 
         databunch = data.get_databunch()
@@ -486,7 +486,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                     f" or choose a different transformer architectures from - {transformer_architectures}"
                 )
                 raise Exception(error_message)
-            self.logger.info("Converting model to 16 Bit Floating Point precision")
+            self._logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
         if databunch.is_empty:
@@ -694,7 +694,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                             text_list.append(f.read())
                         file_names.append(item_name)
                     except Exception as e:
-                        self.logger.exception(e)
+                        self._logger.exception(e)
                         skipped_docs.append(item_name)
             if len(skipped_docs):
                 print(
@@ -706,7 +706,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
             self.learn.model._config.id2label,
         )
         model_type = self.learn.model._transformer_architecture
-        self.logger.info(
+        self._logger.info(
             f"Generating Inference using - {model_type} transformer model."
         )
         for i in progress_bar(
@@ -806,7 +806,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         else:
             return data_list, df_columns
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, ds_type="valid", rows=5):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 
@@ -874,7 +874,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
             if metrics:
                 return json.loads(metrics).get(metric_type)
             else:
-                self.logger.error("Metric not found in the loaded model")
+                self._logger.error("Metric not found in the loaded model")
         else:
             if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
@@ -907,7 +907,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 per_label_metrics = json.loads(metrics).get("metrics_per_label", {})
                 return self._create_dataframe_from_dict(per_label_metrics)
             else:
-                self.logger.error("Metric not found in the loaded model")
+                self._logger.error("Metric not found in the loaded model")
         else:
             databunch = self._data.get_databunch()
             (
@@ -961,7 +961,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         import matplotlib.pyplot as plt
 
         if not hasattr(self.learn, "recorder"):  # return none if the recorder is empty
-            self.logger.error(
+            self._logger.error(
                 "Model needs to be trained first. Please call `model.fit()` to train the model."
                 " Then call this method to plot/return the loss curve."
             )

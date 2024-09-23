@@ -1,7 +1,0 @@
-{
-    "utility_network": {
-        "url": "https://utilitynetwork.esri.com/portal",
-        "username": "python_api_team",
-        "password": "python_api_team.109"
-    }
-}

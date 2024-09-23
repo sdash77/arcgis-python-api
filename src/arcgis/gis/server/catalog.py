@@ -10,6 +10,7 @@ from arcgis.gis._impl._profile import ServerProfileManager
 from arcgis.auth.tools import LazyLoader
 
 _layers = LazyLoader("arcgis.layers")
+_layer_factory = LazyLoader("arcgis.gis.server._service._layerfactory")
 _log = logging.getLogger()
 
 
@@ -289,7 +290,7 @@ class ServicesDirectory(BaseServer):
         """
         import pandas as pd
 
-        pd.set_option("display.max_colwidth", -1)
+        pd.set_option("display.max_colwidth", None)
         data = []
         a_template = """<a href="%s?token=%s">URL Link</a>"""
         columns = ["Service Name", "Service URL"]
@@ -330,12 +331,20 @@ class ServicesDirectory(BaseServer):
         elif not folder.lower() in [f.lower() for f in self.folders]:
             raise ValueError(f"The folder: {folder} does not exist.")
         if "services" in res:
+            # from arcgis.gis.server._adminfactory import (
+            # Service as AdminServerService,
+            # )
+
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
-                    return _layers.Service(
-                        url="%s/%s/%s" % (self._url, s["name"], s["type"]),
-                        server=self._con,
-                    )
+                    try:
+                        from arcgis.layers import Service
+
+                        url = "%s/%s/%s" % (self._url, s["name"], s["type"])
+                        return Service(url_or_item=url, server=self._con)
+
+                    except Exception as ex:
+                        raise Exception(ex)
                 del s
         return None
 
@@ -400,7 +409,7 @@ class ServicesDirectory(BaseServer):
                 try:
                     services.append(
                         _layers.Service(
-                            url="%s/%s/%s" % (self._url, s["name"], s["type"]),
+                            url_or_item="%s/%s/%s" % (self._url, s["name"], s["type"]),
                             server=self._con,
                         )
                     )

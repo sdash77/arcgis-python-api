@@ -12,6 +12,28 @@ __all__ = ["ClassificationManager"]
 
 
 class ClassificationManager:
+    """
+    This class provides properties for getting information about the
+    classification schema and methods for managing it.  This class is not
+    meant to be initialized directly, but is accessed by using the
+    :attr:`~arcgis.gis.admin.PortalAdminManager.classification` property on the
+    ArcGIS Enterprise admin object.
+
+    .. note::
+        ArcGIS Enterprise only.
+
+    .. code-block:: python
+
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> classification_mgr = gis.admin.classification
+        >>> classification_mgr
+
+        Classification Manager @ <enterprise_url>/portal/sharing/rest/portals/self/classification
+
+    """
+
     url: str
     gis: GIS
     session: EsriSession
@@ -36,6 +58,25 @@ class ClassificationManager:
     # ---------------------------------------------------------------------
     @property
     def properties(self) -> dict[str, Any]:
+        """
+        Returns a Python dictionary with 2 keys whose values indicate the
+        specific version of the classification schema and whether the
+        organization has a scheme defined.
+
+        * *grammarVersion*
+        * *hasClassificationSchema*
+
+        .. code-block:: python
+
+            # Example Usage:
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> classify_mgr = gis.admin.classification
+            >>> classify_mgr.properties
+
+            {'grammarVersion': '2.0', 'hasClassificationSchema': True}
+        """
         if self._properties is None:
             params = {
                 "f": "json",
@@ -46,6 +87,19 @@ class ClassificationManager:
     # ---------------------------------------------------------------------
     @property
     def schema(self) -> dict | None:
+        """
+        Property that returns a Python dictionary representation of the defined
+        classification schema of the organization.
+
+        :returns:
+            Dictionary representation of the classification schema.
+
+        .. note::
+            The value of each key returned will vary by organization.
+            See the `Esri classification <https://github.com/Esri/classification>`_
+            repo for more detailed information regarding the classification
+            schema.
+        """
         url: str = f"{self.url}/classificationSchema"
         params: dict = {
             "f": "json",
@@ -56,7 +110,24 @@ class ClassificationManager:
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
-        """Deletes the current schema defined on the organization"""
+        """
+        Operation to remove the currently defined classification schema of the
+        organization.
+
+        :returns:
+            Boolean value indicating the success or failure of the operation.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.GIS import GIS
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> classify_mgr = gis.admin.classification
+            >>> classify_mgr.delete()
+
+            True
+        """
         if self.schema == {
             "classificationSchema": []
         }:  #  no schema set, so nothing to clear out
@@ -68,8 +139,14 @@ class ClassificationManager:
         resp: requests.Response = self.session.post(url, data=params)
         resp.raise_for_status()
         data: dict = resp.json()
-        if "error" in data:
+        if (
+            "error" in data
+            and data["error"].get("message", "")
+            != "Resource does not exist or is inaccessible."
+        ):
             raise Exception(data)
+        else:
+            return True  # schema isn't set.
         self._properties = None
         return data.get("success", False)
 
@@ -77,6 +154,36 @@ class ClassificationManager:
     def add(self, schema_file: str) -> bool:
         """
         Adds a schema definition from a file to the current enterprise
+
+        .. note::
+            For detailed instructions on creating a classification schema, as
+            well as example schemas, visit the ArcGIS/Classification GitHub
+            repository.
+
+        =================     ==================================================
+        **Parameter**         **Description**
+        =================     ==================================================
+        schema_file           Required string. Pathway to a text file containing
+                              the JSON schema that defines the configuration
+                              options of the classification schema for the ArcGIS
+                              Enterprise organization.
+        =================     ==================================================
+
+        :returns:
+            Boolean value indicating success or failure of the operation.
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> from arcgis.GIS import GIS
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> classify_mgr = gis.admin.classification
+            >>> classify_file_path = r"/path/on/system"
+
+            >>> classify_mgr.add(schema_file=classify_file_path)
+
+            True
         """
         url: str = f"{self.url}/assignClassificationSchema"
         params: dict = {
@@ -101,7 +208,21 @@ class ClassificationManager:
 
     # ---------------------------------------------------------------------
     def validate_schema_file(self, schema_file: str) -> bool:
-        """Validates the schema file to be set on the enterprise system."""
+        """
+        Operation that determines whether the schema defined in a file adheres
+        to the classification grammar included in the Portal for ArcGIS
+        component of the ArcGIS Enterprise deployment.
+
+        =================     ==================================================
+        **Parameter**         **Description**
+        =================     ==================================================
+        schema_file           Required string. Path to a text file containing
+                              the JSON schema to validate.
+        =================     ==================================================
+
+        :returns:
+           Boolean value indication success or failure of the operation.
+        """
         url: str = f"{self.url}/validateClassificationSchema"
         params: dict = {
             "f": "json",
@@ -127,15 +248,18 @@ class ClassificationManager:
         classification_schema: str | None = None,
     ) -> bool:
         """
-        Validates a classification that would be given to an Item
+        Operation that would verify whether the classification that would be
+        given to an :class:`~arcgis.gis.Item` is in the correct format.
 
         =======================    =============================================================
-        **Parameter**               **Description**
+        **Parameter**              **Description**
         -----------------------    -------------------------------------------------------------
-        classification             Optional dict. The classification paylaod for a given item as a dictionary.
+        classification             Optional dict. The classification payload for a given item.
         -----------------------    -------------------------------------------------------------
-        classification_schema      Optional str. The classification paylaod represented as a file.
+        classification_schema      Optional str. The classification payload represented as a
+                                   file on the system.
         =======================    =============================================================
+
 
         """
         url: str = f"{self.url}/validateClassification"

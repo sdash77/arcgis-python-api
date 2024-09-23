@@ -2020,6 +2020,35 @@ def _find_stac_asset_href(assets, asset_info):
     return None
 
 
+def _parse_feature_collection(data, verbose):
+    info = {"type": "FeatureCollection", "title": data.get("title")}
+    if verbose:
+        info["features"] = []
+        for feature in data.get("features", []):
+            feature_info = {
+                "id": feature["id"],
+                "geometry": feature.get("geometry", {}),
+                "bbox": feature.get("bbox", []),
+                "assets": feature.get("assets", {}),
+            }
+            feature_info["miscellaneous"] = {
+                key: val for key, val in feature.items() if key not in feature_info
+            }
+            info["features"].append(feature_info)
+        info["links"] = data.get("links", [])
+    else:
+        info["features"] = [
+            {
+                "id": feature["id"],
+                "bbox": feature.get("bbox", []),
+                "assets": list(feature.get("assets", {}).keys()),
+            }
+            for feature in data.get("features", [])
+        ]
+        info["links"] = [link["href"] for link in data.get("links", [])]
+    return info
+
+
 def _lookup_datastore(datastore_type, gis=None):
     """
 

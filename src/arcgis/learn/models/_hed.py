@@ -29,6 +29,7 @@ class CustomHED:
         import torch
         from torchvision import models
         from arcgis.learn.models import _hed_utils as hed
+
     except:
         pass
 
@@ -37,6 +38,7 @@ class CustomHED:
         In this fuction you have to define your model with following two arguments!
 
         """
+
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
 
         if backbone is None:
@@ -45,6 +47,11 @@ class CustomHED:
             from arcgis.learn.models._arcgis_model import get_backbone_func
 
             self._backbone = get_backbone_func(backbone, data, is_fpn=True)
+
+        if hasattr(data, "_is_multispectral"):  # multispectral support
+            self._is_multispectral = getattr(data, "_is_multispectral")
+        else:
+            self._is_multispectral = False
 
         model = self.hed._HEDModel(
             self._backbone, data.chip_size, pretrained=pretrained_backbone
@@ -197,6 +204,13 @@ class HEDEdgeDetector(ModelExtension):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -215,7 +229,14 @@ class HEDEdgeDetector(ModelExtension):
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = HEDEdgeDetector.transformer_backbones()
-        return [*_resnet_family, *_vgg_family] + transformer_backbone + timm_backbones
+        torchgeo_backbone = HEDEdgeDetector.torchgeo_backbones()
+
+        return (
+            [*_resnet_family, *_vgg_family]
+            + transformer_backbone
+            + timm_backbones
+            + torchgeo_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -279,6 +300,8 @@ class HEDEdgeDetector(ModelExtension):
             data.classes = ["background"]
             for k, v in class_mapping.items():
                 data.classes.append(v)
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = emd["DatasetType"]
 

@@ -5,7 +5,7 @@ import unittest
 from utils.decorators import integration_test, profiles
 
 
-@profiles.agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestSaveAndUpdateMap(unittest.TestCase):
     def test_save_and_update(self):
@@ -20,9 +20,10 @@ class TestSaveAndUpdateMap(unittest.TestCase):
             {
                 "title": "Map Unit Test Save Map",
                 "snippet": "Test saving the webmap, adding a layer, and then updating it.",
-                "tags": ["python", "webmap"],
+                "tags": ["python", "web_map"],
             }
         )
+
         assert new_item
         assert isinstance(new_item, Item)
 
@@ -39,10 +40,13 @@ class TestSaveAndUpdateMap(unittest.TestCase):
         assert len(new_wm.content.layers) == 1
 
         # update the map
-        assert new_wm.update()
+        assert new_wm.update(
+            item_properties={"tags": new_wm.item.tags + ["updated_tag"]}
+        )
+        assert len(new_wm.item.tags) == 3
 
         # delete the item
-        new_item.delete()
+        new_item.delete(permanent=True)
 
 
 if __name__ == "__main__":

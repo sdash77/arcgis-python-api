@@ -885,16 +885,14 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if content:
-            content._add_to_story(
-                story=self,
-                caption=caption,
-                alt_text=alt_text,
-                display=display,
-            )
-        else:
+        if not content:
             content = Content.Separator(story=self, node_id=node_id)
-            content._add_separator(story=self)
+        content._add_to_story(
+            story=self,
+            caption=caption,
+            alt_text=alt_text,
+            display=display,
+        )
 
         # Add to story children
         utils._add_child(self, node_id=node_id, position=position)

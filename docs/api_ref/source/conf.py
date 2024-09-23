@@ -15,15 +15,14 @@
 
 import sys
 import os
-import shlex
 import sphinx_rtd_theme
+from datetime import datetime
 
 # -----------------------------------------------------------------------
 # Edit this for each new release
 # -----------------------------------------------------------------------
 
-# Bump year if it is out of date
-copyright = "2016-2023, Esri"
+copyright = f"2016-{datetime.now().year}, Esri"
 
 # Bump both versions. The short X.Y version.
 version = "2.4.0"
@@ -90,7 +89,17 @@ sys.path.insert(0, os.path.abspath("../../../src"))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
+    "sphinx_rtd_theme",
+    'sphinxcontrib.autodoc_pydantic'
 ]
+
+autodoc_pydantic_model_show_json = True
+autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_model_show_config_summary = False  # Hides model_config
+autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_field_summary = False   # Hides fields, potentially computed fields
+autodoc_pydantic_model_show_field_members = False   # Hides detailed field information
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -202,7 +211,7 @@ html_favicon = "favicon.ico"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_context = {"css_files": ["_static/theme_overrides.css"]}
+# html_context = {"css_files": []}
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -348,41 +357,19 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 # -- Options for lower left corner -----------------------------------------
-try:
-    html_context
-except NameError:
-    html_context = dict()
+html_context = html_context if 'html_context' in globals() else {}
 html_context["display_lower_left"] = True
 
-if "REPO_NAME" in os.environ:
-    REPO_NAME = os.environ["REPO_NAME"]
-else:
-    REPO_NAME = "arcgis"
-
-# SET CURRENT_LANGUAGE
-if "current_language" in os.environ:
-    # get the current_language env var set by buildDocs.sh
-    current_language = os.environ["current_language"]
-else:
-    # the user is probably doing `make html`
-    # set this build's current language to english
-    current_language = "en"
+REPO_NAME = os.environ.get("REPO_NAME", "arcgis")
 
 # tell the theme which language to we're currently building
-html_context["current_language"] = current_language
+html_context["current_language"] = os.environ.get("current_language", "en")
 
 # tell the theme which version we're currently on ('current_version' affects
 # the lower-left rtd menu and 'version' affects the logo-area version)
 html_context["current_version"] = version
 html_context["version"] = version
-
-# POPULATE LINKS TO OTHER VERSIONS - Manually bump this for every release!
-html_context["versions"] = list()
-
-for iter_version in versions:
-    # html_context['versions'].append((version, '/' + REPO_NAME + '/' + current_language + '/' + version + '/'))
-    # html_context['versions'].append((version, '/' + version + '/'))
-    html_context["versions"].append((iter_version, iter_version + "/"))
+html_context["versions"] = [(version, f"{version}/") for version in versions]
 
 # -- To be used later when need arises --
 # POPULATE LINKS TO OTHER LANGUAGES

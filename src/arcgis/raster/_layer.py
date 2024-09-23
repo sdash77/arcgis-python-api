@@ -1857,6 +1857,7 @@ class ImageryLayer(Layer):
         newlyr._spatial_filter = self._spatial_filter
         newlyr._temporal_filter = self._temporal_filter
         newlyr._filtered = self._filtered
+        newlyr._rendering_rule_from_item = self._rendering_rule_from_item
 
         return newlyr
 
@@ -5704,6 +5705,9 @@ class ImageryLayer(Layer):
         else:
             from .analytics import is_supported, generate_raster, _save_ra
 
+            if self._rendering_rule_from_item:
+                self._fnra = None
+
             if self._fnra is None:
                 from .functions import identity
 
@@ -8107,11 +8111,20 @@ class Raster:
                                              :class:`~arcgis.map.Map` widget, what matplotlib colormap
                                              to apply to the raster. See :meth:`arcgis.layers.symbol.display_colormaps`
                                              for a list of compatible values.
+
+                                             **Deprecated**
+
+                                             Please use arcgis.raster.functions.colormap to apply colormap
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
                                              :class:`~arcgis.map.Map` widget, what opacity to apply. 0
                                              is completely transparent, 1 is completely opaque.
                                              Default: 1
+
+                                             **Deprecated**
+
+                                             Please set the opacity in options parameter in the add method of the map widget.
+                                             {"opacity":0.7}
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
@@ -8149,10 +8162,9 @@ class Raster:
         map.content.add(raster)
 
         # Overlay a 1-channel .gdb file with the "Orange Red" colormap at 85% opacity
-        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces",
-                        cmap = "OrRd",
-                        opacity = 0.85)
-        map.content.add(raster)
+        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces")
+        rendered_raster = colormap(raster, colorramp="Orange-Red (Continuous)")
+        map.content.add(rendered_raster, options={"opacity": 0.85})
 
         # Overlay a local .jpg file by manually specifying its extent
         raster = Raster("./data/newark_nj_1922.jpg",
@@ -8221,10 +8233,6 @@ class Raster:
 
         if extent:
             self.extent = extent
-        if cmap:
-            self.cmap = cmap
-        if opacity:
-            self.opacity = opacity
 
     # def __iter__(self):
     #    return(self._engine_obj.__iter__())
@@ -8277,93 +8285,6 @@ class Raster:
     @extent.setter
     def extent(self, value: dict):
         self._engine_obj.extent = value
-
-    _cmap = None
-
-    @property
-    def cmap(self):
-        """
-        Get/Set what matplotlib colormap to apply to the raster (when displaying a 1 band raster
-        in a :class:`~arcgis.widgets.Map` widget).
-
-        .. note::
-            The ``cmap`` value must be a string. See :attr:`arcgis.layers.symbol.display_colormaps`
-            for a list of compatible values.
-        """
-        return self._cmap
-
-    @cmap.setter
-    def cmap(self, value: str):
-        if isinstance(value, str):
-            self._cmap = value
-        else:
-            raise Exception("`cmap` must be of type `str`")
-
-    _vmin = None
-
-    @property
-    def vmin(self):
-        """
-        When displaying a 1 band raster with the ``cmap`` argument specified
-        on a Map, ``vmin`` and ``vmax`` define the data range that the colormap covers.
-        The ``vmin`` property is the lower end of that range.
-        """
-        if self._vmin is None:
-            self._vmin = self._attempt_infer_vmin()
-        return self._vmin
-
-    @vmin.setter
-    def vmin(self, value: int):
-        self._vmin = value
-
-    def _attempt_infer_vmin(self):
-        # only tested against _ArcpyRaster engines..
-        try:
-            return self._engine_obj._raster.minimum
-        except Exception:
-            return None
-
-    _vmax = None
-
-    @property
-    def vmax(self):
-        """
-        When displaying a 1 band raster with the ``cmap`` argument specified
-        on a Map, ``vmin`` and ``vmax`` define the data range that the colormap covers.
-        The ``vmax`` property is the upper end of that range.
-        """
-        if self._vmax is None:
-            self._vmax = self._attempt_infer_vmax()
-        return self._vmax
-
-    @vmax.setter
-    def vmax(self, value):
-        self._vmax = value
-
-    def _attempt_infer_vmax(self):
-        # only tested against _ArcpyRaster engines..
-        try:
-            return self._engine_obj._raster.maximum
-        except Exception:
-            return None
-
-    _opacity = 1
-
-    @property
-    def opacity(self):
-        """
-        Get/Set what opacity to apply when displaying the raster in a
-        :class:`~arcgis.map.Map` widget.
-
-        .. note::
-            0 is completely transparent, 1 is completely opaque. The default value of ``opacity`` is 1.
-
-        """
-        return self._opacity
-
-    @opacity.setter
-    def opacity(self, value: float):
-        self._opacity = value
 
     @property
     def pixel_type(self):
@@ -8889,6 +8810,10 @@ class Raster:
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
+
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            which can then be used to create Raster objects with this method.
 
         :return: A :class:`~arcgis.raster.Raster` object
 
@@ -13437,6 +13362,11 @@ class RasterCollection:
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            enabling effective querying of STAC APIs and Collections. This information can then be used to create
+            RasterCollection objects with this method.
+
         :return: A :class:`~arcgis.raster.RasterCollection` object
 
         .. code-block:: python
@@ -13827,6 +13757,10 @@ class RasterCollection:
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
+
+        .. tip::
+            :meth:`~arcgis.raster.utils.get_stac_info` method can be used beforehand to gather necessary STAC information,
+            which can then be used to create RasterCollection objects with this method.
 
         :return: A :class:`~arcgis.raster.RasterCollection` object
 

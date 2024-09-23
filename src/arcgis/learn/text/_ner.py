@@ -1,3 +1,4 @@
+import os
 import json
 import traceback
 import logging
@@ -9,6 +10,7 @@ from ._llm import LLM
 try:
     from ._ner_spacy import _SpacyEntityRecognizer
     from .._utils._ner_utils import spaCyNERDatabunch
+    from arcgis.features import FeatureSet
 
     warnings.filterwarnings("ignore", category=UserWarning)
     HAS_SPACY = True
@@ -23,6 +25,7 @@ try:
     )
     from .._utils.text_data import TextDataObject
     from .._utils.common import _get_emd_path
+    from ._model_extension_text import TextModelExtension
     from transformers import AutoConfig
 
     HAS_TRANSFORMERS = True
@@ -65,6 +68,8 @@ class EntityRecognizer:
     """
     Creates an entity recognition model to extract text entities from unstructured text documents.
 
+    To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
@@ -91,7 +96,7 @@ class EntityRecognizer:
                             on Named Entity Recognition Task, kindly visit:-
                             https://huggingface.co/models?pipeline_tag=token-classification
 
-                            To learn more about mistral
+                            To learn more about mistral, kindly visit:
                             https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
 
     =====================   ===========================================
@@ -127,7 +132,7 @@ class EntityRecognizer:
     prompt                  Optional String. This parameter is applicable if the selected model backbone is from the
                             LLM family.
 
-                            This parameter use to describe the task and guardrails for the task.
+                            This parameter outlines the task and its corresponding guardrails.
     ---------------------   -------------------------------------------
     examples                Optional List. The list comprises tuple(s) where the first element denotes the text for
                             entity extraction, while the second element is a dictionary used for mapping named entities.
@@ -148,6 +153,17 @@ class EntityRecognizer:
     supported_backbones = ["spacy"] + _TransformerEntityRecognizer.supported_backbones
 
     def __init__(self, data=None, lang="en", backbone="spacy", **kwargs):
+
+        self.model_extension = False
+        self.inference_model = None
+
+        if kwargs.get("model_extension", False):
+            self.inference_model = kwargs.get("extensible_model", None)
+            assert self.inference_model is not None
+            self.inference_model = self.inference_model.model
+            self.model_extension = True
+            return
+
         if backbone in backbone_models_reverse_map:
             if backbone_models_reverse_map[backbone] == "llm":
                 backup_backbone = backbone
@@ -227,6 +243,11 @@ class EntityRecognizer:
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
 
         if self.backbone == "llm":
             return ["precision_score", "recall_score", "f1_score"]
@@ -278,6 +299,11 @@ class EntityRecognizer:
                                 The default value is 'True'.
         =====================   ===========================================
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.lr_find(allow_plot=allow_plot)
 
     def unfreeze(self):
@@ -286,6 +312,11 @@ class EntityRecognizer:
 
         This method is not supported when the backbone is configured as llm/mistral.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         self._model.unfreeze()
 
     def freeze(self):
@@ -294,6 +325,11 @@ class EntityRecognizer:
 
         This method is not supported when the backbone is configured as llm/mistral.
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         self._model.freeze()
 
     def fit(
@@ -372,7 +408,11 @@ class EntityRecognizer:
                                         Not applicable for models with spaCy backbone
         =====================   ===========================================
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         self._model.fit(
             epochs=epochs,
             lr=lr,
@@ -409,19 +449,31 @@ class EntityRecognizer:
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False
                                 Not applicable for models with `spaCy` backbone.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
+        overwrite               Optional boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
-                                Boolean `zip_files` if True, it will create the Deep
+        ---------------------   -------------------------------------------
+        zip_files               Optional boolean `zip_files` if True, it will create the Deep
                                 Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.save(name_or_path=name_or_path, **kwargs)
 
     def load(self, name_or_path):
         """
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
+
         Loads a saved EntityRecognizer model from disk.
 
         This method is not supported when the backbone is configured as llm/mistral.
@@ -433,7 +485,11 @@ class EntityRecognizer:
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         self._model.load(name_or_path=name_or_path)
         self.entities = self._model.entities
 
@@ -445,6 +501,7 @@ class EntityRecognizer:
 
         This method is not supported when the backbone is configured as llm/mistral.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using `from_model`.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -520,6 +577,9 @@ class EntityRecognizer:
         Creates an EntityRecognizer model object from a Deep Learning
         Package(DLPK) or Esri Model Definition (EMD) file.
 
+        To load a custom DLPK using the model extensibility support, instantiate an object of the class using this
+        method.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -532,12 +592,23 @@ class EntityRecognizer:
         =====================   ===========================================
         :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
-
         data_obj = None
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd_json = json.load(f)
         backbone = emd_json.get("ModelType", "spacy").lower()
+
+        if "InferenceFunction" in emd_json:
+            extensible_model = TextModelExtension.from_model(emd_path, **kwargs)
+            if extensible_model.model_loaded:
+                cls_object = cls(
+                    data,
+                    backbone,
+                    pretrained_path=str(emd_path),
+                    model_extension=True,
+                    extensible_model=extensible_model,
+                )
+                return cls_object
 
         backup_backbone = backbone
         if backbone in backbone_models_reverse_map:
@@ -582,7 +653,9 @@ class EntityRecognizer:
 
         return clas_object
 
-    def extract_entities(self, text_list, drop=True, batch_size=4, show_progress=True):
+    def extract_entities(
+        self, text_list, drop=True, batch_size=4, show_progress=True, **kwargs
+    ) -> pd.DataFrame | FeatureSet:
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -611,15 +684,90 @@ class EntityRecognizer:
                                 progress bar depicting the items processed so far.
                                 Applicable only when a list of text is passed
         =====================   ===========================================
+        **kwargs**
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        input_field             Optional string.
+                                input field name in the feature set. Supported
+                                in model extension
+                                Deafult value: input_str
+        =====================   ===========================================
 
         :return: Pandas DataFrame
         """
+        file_name = []
+        if self.model_extension:
+            if isinstance(text_list, str):
+                if os.path.isdir(text_list):
+                    path = text_list
+                    text_list, skipped_docs = [], []
+                    item_names = os.listdir(path)
+                    for item_name in item_names:
+                        try:
+                            with open(
+                                f"{path}/{item_name}",
+                                "r",
+                                encoding="utf-16",
+                                errors="ignore",
+                            ) as f:
+                                text_list.append(f.read())
+                            file_name.append(item_name)
+                        except:
+                            try:
+                                with open(
+                                    f"{path}/{item_name}",
+                                    "r",
+                                    encoding="utf-8",
+                                    errors="ignore",
+                                ) as f:
+                                    text_list.append(f.read())
+                                file_name.append(item_name)
+                            except Exception as e:
+                                self.logger.exception(e)
+                                skipped_docs.append(item_name)
+                    if len(skipped_docs):
+                        print(
+                            "Unable to read the following documents ",
+                            ", ".join(skipped_docs),
+                        )
+                    if not len(file_name):
+                        raise Exception(
+                            "Unable to read any of the document from the folder."
+                        )
+                else:
+                    text_list = [text_list]
+            # To make it more flexible. We will add the Featureset for further processing
+            feature_set = []
+            input_field = kwargs.get("input_field", "input_str")
+            for i in text_list:
+                feature_set.append({"attributes": {input_field: i}})
+
+            feature_set_final = FeatureSet.from_dict(
+                {
+                    "fields": [
+                        {"name": input_field, "type": "esriFieldTypeString"},
+                    ],
+                    "geometryType": "",
+                    "features": feature_set,
+                }
+            )
+            results = self.inference_model.predict(
+                feature_set_final, **{"input_field": input_field}
+            )
+            if not isinstance(results, FeatureSet):
+                raise Exception(
+                    "The output should be a FeatureSet. Please refer https://developers.arcgis.com/python/api-reference/arcgis.features.toc.html#featureset"
+                )
+
+            return results
 
         return self._model.extract_entities(
             text_list, drop=drop, batch_size=batch_size, show_progress=show_progress
         )
 
-    def show_results(self, ds_type="valid"):
+    def show_results(self, rows=5, ds_type="valid"):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 
@@ -627,29 +775,50 @@ class EntityRecognizer:
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
+        ---------------------   -------------------------------------------
+        rows                    Optional integer, defaults to 5.
+                                Number of rows to print.
         =====================   ===========================================
 
         :return: Pandas DataFrame
         """
-
-        return self._model.show_results(ds_type=ds_type)
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
+        return self._model.show_results(ds_type=ds_type, rows=rows)
 
     def precision_score(self):
         """
         Calculate precision score of the trained model
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.precision_score()
 
     def recall_score(self):
         """
         Calculate recall score of the trained model
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility only supports inference."
+            )
         return self._model.recall_score()
 
     def f1_score(self):
         """
         Calculate F1 score of the trained model
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.f1_score()
 
     def metrics_per_label(self):
@@ -657,6 +826,11 @@ class EntityRecognizer:
         Calculate precision, recall & F1 scores per labels/entities
         for which the model was trained on
         """
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.metrics_per_label()
 
     def plot_losses(self, show=True):
@@ -676,5 +850,9 @@ class EntityRecognizer:
 
         :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
-
+        if self.model_extension:
+            raise Exception(
+                f"This method is not supported when using the model extensibility feature, as model extensibility "
+                f"only supports inference."
+            )
         return self._model.plot_losses(show=show)

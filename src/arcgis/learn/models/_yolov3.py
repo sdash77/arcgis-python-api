@@ -279,8 +279,10 @@ class YOLOv3(ArcGISModel):
     @property
     def _model_metrics(self):
         if getattr(self._data, "_is_coco", "") == True:
-            return {"accuracy": {"IoU": 0.50, "AP": 0.558}}
-        return {"accuracy": self.average_precision_score(show_progress=True)}
+            return {"average_precision_score": {"IoU": 0.50, "AP": 0.558}}
+        return {
+            "average_precision_score": self.average_precision_score(show_progress=True)
+        }
 
     def _analyze_pred(
         self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None
@@ -703,7 +705,7 @@ class YOLOv3(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

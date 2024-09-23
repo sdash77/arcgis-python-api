@@ -8,6 +8,7 @@ import os
 import json
 import time
 import logging
+import uuid
 import tempfile
 import collections
 import concurrent.futures
@@ -2248,6 +2249,24 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    def _perform_insert(self, layer_definition, table=False):
+        # Add new layer to definition
+        if table:
+            self.add_to_definition({"tables": [dict(layer_definition)]})
+            for table in self.properties.tables:
+                if table["name"] == layer_definition["name"]:
+                    fl_index = table["id"]
+                    break
+        else:
+            self.add_to_definition({"layers": [dict(layer_definition)]})
+            # Find the index at which the layer was added
+            for layer in self.properties.layers:
+                if layer["name"] == layer_definition["name"]:
+                    fl_index = layer["id"]
+                    break
+        return fl_index
+
+    # ----------------------------------------------------------------------
     def insert_layer(self, data_path: str, name: str = None):
         """
         This method will create a feature layer or table and insert it into the existing feature service.
@@ -2265,8 +2284,6 @@ class FeatureLayerCollectionManager(_GISResource):
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
-
-        from ..gis._impl._content_manager._import_data import _perform_insert
 
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
@@ -2288,8 +2305,6 @@ class FeatureLayerCollectionManager(_GISResource):
                 )
 
         # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
-        data_path = data_path.replace(" ", "_")
-        data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
             name = re.sub(r"\.", "_", name)
@@ -2321,65 +2336,71 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # Add to the same folder as the service
         folder_id = orig_item.ownerFolder
-        if folder_id is not None:
-            folder_name = self._gis.content.get_folder(folder_id)
-        else:
-            folder_name = None
-
-        # Add the file as an item to portal
-        if folder_name:
-            folder = self._gis.content.folders.get(
-                folder_name, self._gis.users.me.username
-            )
+        if folder_id:
+            folder = self._gis.content.folders.get(folder_id)
         else:
             folder = self._gis.content.folders.get()
-        file_item = folder.add(
-            item_properties={
-                "type": file_type,
-                "title": name,
-                "tags": "inserted",
-            },
-            file=data_path,
-        )
+
+        try:
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                },
+                file=data_path,
+            ).result()
+        except Exception as e:
+            if "Item with this filename already exists" not in str(e):
+                raise e
+            # rename the file item if it already exists with unique id appended
+            file_item = folder.add(
+                item_properties={
+                    "type": file_type,
+                    "title": name,
+                    "tags": "inserted",
+                    "fileName": os.path.splitext(data_path)[0]
+                    + "_"
+                    + str(uuid.uuid4())[0:5]
+                    + ".zip",
+                },
+                file=data_path,
+            ).result()
 
         # Analyze the file to get publish parameters
-        if file_type == "CSV" or file_type == "Excel":
-            publish_parameters = self._gis.content.analyze(item=file_item)[
-                "publishParameters"
-            ]
-            source_info = publish_parameters
-        else:
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": "Query"},
-                "targetSR": {"wkid": 102100, "latestWkid": 3857},
-            }
-            source_info = None
+        analyze_ft = file_type.lower().replace(" ", "")
+        publish_parameters = self._gis.content.analyze(
+            item=file_item, file_type=analyze_ft
+        )["publishParameters"]
 
-        # Publish the item
-        new_item = file_item.publish(publish_parameters=publish_parameters)
+        # Get the layer info which will be used to append the data
+        if file_type == "CSV" or file_type == "Excel":
+            lyr_info = publish_parameters["layerInfo"]
+        else:
+            lyr_info = publish_parameters["layers"][0]
 
         try:
             # Insert layer or table
-            if len(new_item.layers) > 0:
-                publish_parameters = new_item.layers[0].properties
-                index = _perform_insert(self, publish_parameters)
+            if file_type == "File Geodatabase":
+                upload_format = "filegdb"
+            else:
+                upload_format = file_type.lower()
+            if lyr_info["type"] == "Feature Layer":
+                index = self._perform_insert(lyr_info)
                 if (
                     file_type == "File Geodatabase"
                     and "filegdb"
                     in orig_item.layers[index].properties.supportedAppendFormats
                 ) or file_type != "File Geodatabase":
                     # Workflow for all file types and file geo databases that support append
-                    ItemDependency(orig_item).add("itemid", file_item.id)
                     orig_item.layers[index].append(
                         item_id=file_item.id,
-                        upload_format="filegdb",
+                        upload_format=upload_format,
+                        source_table_name=lyr_info["name"],
                     )
                 elif file_type == "File Geodatabase":
                     # When filegdb not supported through append, use edit features
+                    new_item = file_item.publish(publish_parameters=publish_parameters)
                     layer = new_item.layers[0]
                     features = layer.query().features
                     if self._gis._is_agol or (
@@ -2395,23 +2416,21 @@ class FeatureLayerCollectionManager(_GISResource):
                         )
                     else:
                         orig_item.layers[index].edit_features(adds=features)
-            elif len(new_item.tables) > 0:
-                publish_parameters = new_item.tables[0].properties
-                index = _perform_insert(self, publish_parameters)
-                ItemDependency(orig_item).add("itemid", file_item.id)
+                    new_item.delete()
+            elif lyr_info["type"] == "Table":
+                index = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
-                    upload_format=file_type,
-                    source_info=source_info,
+                    upload_format=upload_format,
+                    source_info=lyr_info,
                 )
 
             # Add relationship between service and data
             orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
             # Remove newly published item since inserted into service
-            new_item.delete()
         except Exception as e:
             # Remove newly published item since inserted into service
-            new_item.delete()
+            self._gis.content.delete_items([file_item], permanent=True)
             raise e
         return orig_item
 
@@ -2598,7 +2617,7 @@ class FeatureLayerCollectionManager(_GISResource):
         snippet: str | None = None,
         overwrite: bool | None = None,
         set_item_id: str | None = None,
-        preserve_layer_ids: bool = False,
+        preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
     ):
@@ -2660,7 +2679,7 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
-        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `True`.
         --------------------     --------------------------------------------------------------------
         visible_fields           Optional list[str] or None. A list of visible fields to display.
         --------------------     --------------------------------------------------------------------
@@ -3299,7 +3318,6 @@ class FeatureLayerCollectionManager(_GISResource):
             not isinstance(data_file, str)
             or not os.path.exists(data_file)
             or not os.path.isfile(data_file)
-            or os.stat(data_file).st_size > int(2.5e7)
         ):
             raise ValueError(
                 "The data file provided does not exist or could not be accessed."

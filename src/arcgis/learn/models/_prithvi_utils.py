@@ -97,6 +97,7 @@ class PrithviBackbone(VisionTransformer):
             mlp_ratio=4,
             embed_layer=PatchEmbed3d,
         )
+        self._is_prithvi = True
         self.__delattr__("head")
         if pretrained:
             load_mmlab_checkpoint(self, pretrained_path)

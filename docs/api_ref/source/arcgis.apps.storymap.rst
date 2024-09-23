@@ -137,6 +137,41 @@ Collection
    :members:
    :undoc-members:
    :show-inheritance:
+
+Navigation
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.Navigation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Cover
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.Cover
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CollectionNavigation
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.CollectionNavigation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Separator
+-----------------
+.. autoclass:: arcgis.apps.storymap.story_content.Separator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BriefingSlide
+-----------------
+.. autoclass:: arcgis.apps.storymap.BriefingSlide
+   :members:
+   :undoc-members:
+   :show-inheritance:
    
 Enumerations
 ------------
@@ -171,6 +206,13 @@ SlideLayout
 SlideSubLayout
 ^^^^^^^^^^^^^^
 .. autoclass:: arcgis.apps.storymap.story_content.SlideSubLayout
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Language
+^^^^^^^^
+.. autoclass:: arcgis.apps.storymap.story_content.Language
    :members:
    :undoc-members:
    :show-inheritance:

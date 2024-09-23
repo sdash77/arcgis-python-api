@@ -416,7 +416,9 @@ class RetinaNet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {"accuracy": self.average_precision_score(show_progress=True)}
+        return {
+            "average_precision_score": self.average_precision_score(show_progress=True)
+        }
 
     def _analyze_pred(
         self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None
@@ -627,7 +629,7 @@ class RetinaNet(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
