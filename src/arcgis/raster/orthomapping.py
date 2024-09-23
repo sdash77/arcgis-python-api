@@ -877,6 +877,8 @@ def compute_sensor_model(
             "adjust_settings": project_adj_settings,
         }
 
+    print(f"context: {context}")
+
     return gis._tools.orthomapping.compute_sensor_model(
         image_collection=image_collection,
         mode=mode,
@@ -1789,12 +1791,19 @@ def generate_dem(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+    print(f"context before: {context}")
 
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
         update_flight_json = True
+        project = mission._project
+        project_dem_settings = project.get_settings()["template"]["processingSettings"][surface_type.lower()]
+        project_pc_settings = project_dem_settings["pointCloud"]
+        project_interpolation_settings = project_dem_settings["interpolation"]
 
+        print(f"pc_settings before: {project_pc_settings}")
+        print(f"int_settings before: {project_interpolation_settings}")
         if kwargs is not None:
             if "folder" in kwargs:
                 folder = kwargs["folder"]
@@ -1807,51 +1816,65 @@ def generate_dem(
 
         dem_dict = {}
         if isinstance(context, dict):
-            context_new = {k.lower(): v for k, v in context.items()}
-
-            point_cloud_keys = [
-                "maxObjectSize",
-                "groundSpacing",
-                "minAngle",
-                "maxAngle",
-                "minOverlap",
-                "maxOmegaPhiDif",
-                "maxGSDDif",
-                "numImagePairs",
-                "adjQualityThreshold",
-            ]
-            point_cloud_dict = {
-                "pointCloud": {
-                    k: context_new[k.lower()]
-                    for k in point_cloud_keys
-                    if k.lower() in context_new
-                }
-            }
-            point_cloud_dict["pointCloud"].update({"method": matching_method})
-            interpolation_keys = [
-                "pixelSize",
-                "pixelSizeUnit",
-                "method",
-                "smoothingMethod",
-            ]
+            # point_cloud_keys = [
+            #     "maxObjectSize",
+            #     "groundSpacing",
+            #     "minAngle",
+            #     "maxAngle",
+            #     "minOverlap",
+            #     "maxOmegaPhiDif",
+            #     "maxGSDDif",
+            #     "numImagePairs",
+            #     "adjQualityThreshold",
+            # ]
             interpolation_dict = {
-                "interpolation": {
-                    k: context_new[k.lower()]
-                    for k in interpolation_keys
-                    if k.lower() in context_new
-                }
+                k: context[k]
+                for k in project_interpolation_settings.keys()
+                if k in context
             }
+            # update the default with user-provided context settings
+            project_interpolation_settings.update(interpolation_dict)
+            # update the context with the default settings if not provided
+            context.update(project_interpolation_settings)
+            context.pop("method", None)
 
-            apply_to_ortho = context_new.get("applytoortho", False)
+            if "groundSpacing" in point_cloud_dict:
+                point_cloud_dict["DSMGroundSpacing"] = point_cloud_dict.pop("groundSpacing", "NaN")
+            point_cloud_dict = {
+                k: context[k]
+                for k in project_pc_settings.keys()
+                if k in context
+            }
+            # update the default with user-provided context settings
+            project_pc_settings.update(point_cloud_dict)
+            # update the context with the default settings if not provided
+            context.update(project_pc_settings)
+            # add the matching method at the end because we don't want to include it in the context
+            if matching_method is not None:
+                project_pc_settings.update({"method": matching_method})
+            # interpolation_keys = [
+            #     "pixelSize",
+            #     "pixelSizeUnit",
+            #     "method",
+            #     "smoothingMethod",
+            # ]
+            apply_to_ortho = context.get("applytoortho", False)
             dem_dict = {"applyToOrtho": apply_to_ortho}
-            dem_dict.update(point_cloud_dict)
-            dem_dict.update(interpolation_dict)
+            dem_dict.update({"pointCloud": project_pc_settings})
+            dem_dict.update({"interpolation": project_interpolation_settings})
+
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": surface_type.lower(),
             "processing_states": dem_dict,
         }
+
+    print(f"pc settings: {project_pc_settings}")
+    print(f"int settings: {project_interpolation_settings}")
+    print(f"context after: {context}")
+    print(f"dem_dict: {dem_dict}")
+    return
 
     return gis._tools.orthomapping.generate_dem(
         image_collection=image_collection,
@@ -2582,6 +2605,15 @@ class Project:
         """
         deleted = self._folder.delete()
         return deleted
+    
+    def get_settings(self):
+         return self._project_item.get_data()
+
+    def set_settings(self, properties_dict):
+        item = self._project_item
+        props = item.properties
+        updated_item = item.update(item_properties=props, data=properties_dict)
+        return updated_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
