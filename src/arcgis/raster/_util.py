@@ -959,10 +959,7 @@ class _ImageryUploaderAGOL:
         self.single_primary_file = (
             False
             if self.raster_type != "Raster Dataset"
-            or (
-                len(self.file_list) > 1
-                and any(item["is_dir"] for item in self.file_list)
-            )
+            or (any(item["is_dir"] and not item["is_crf"] for item in self.file_list))
             else True
         )
         for i, d in enumerate(file_list):
@@ -1237,6 +1234,7 @@ def _upload_imagery_agol(
             if os.path.isdir(file):
                 all_files = False
                 file_dict["is_dir"] = True
+                file_dict["is_crf"] = True if file.endswith(".crf") else False
                 file_dict["basename_len"] = len(os.path.dirname(file))
                 if not ".gdb" in file:
                     file_dict["files_list"] = [
