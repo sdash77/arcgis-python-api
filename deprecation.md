@@ -50,6 +50,8 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Item.share` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.shared_with` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
+- `overwrite` item_property on `Folder.add` is deprecated and will be removed at **2.4.2**.  Use `item.update` to update the source file for an `Item` instead.
+
 
 ### `arcgis.mapping` Module
 

@@ -705,9 +705,9 @@ class Folder:
         item_properties = {
             key: value for key, value in item_properties.items() if not value is None
         }
-        if item_properties.pop("overwrite", False):
+        if item_properties.get("overwrite", False):
             logger.warning(
-                "The property `overwrite` is not supported and will be ignored."
+                "The property `overwrite` is deprecated and support will be removed two releases after 2.4.0."
             )
         text: str = text or item_properties.pop("text", None)
 
