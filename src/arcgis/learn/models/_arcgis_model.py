@@ -1640,6 +1640,16 @@ class ArcGISModel(object):
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
                         )
+                if self._backend == "pytorch" and _framework == "onnx":
+                    supported_models = ["RTDetrV2"]
+                    if type(self).__name__ in supported_models:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            onnx_paths = self._save_pytorch_onnx(name)
+                    else:
+                        raise Exception(
+                            "This pytorch model cannot be saved in onnx format"
+                        )
                 if self._backbone != "llm":
                     if isinstance(self.learn.model, DistributedDataParallel):
                         if not int(os.environ.get("RANK", 0)):
@@ -1724,6 +1734,13 @@ class ArcGISModel(object):
                     "sm": tflite_paths[1],
                 }
                 _emd_template["TFLite"] = _script_save_params
+
+        if framework.lower() == "onnx":
+            if len(onnx_paths) != 0:
+                _script_save_params = {
+                    "INFER": onnx_paths[0],
+                }
+                _emd_template["ONNX"] = _script_save_params
 
         # TODO: merge all
         if framework.lower() == "torchscript":
@@ -1976,6 +1993,9 @@ class ArcGISModel(object):
         return traced_model
 
     def _save_pytorch_torchscript(self, name):
+        pass
+
+    def _save_pytorch_onnx(self, name):
         pass
 
     def _get_post_processed_model(self, input_normalization=True):

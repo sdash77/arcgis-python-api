@@ -25,6 +25,86 @@ from torchvision.ops.misc import FrozenBatchNorm2d
 from ._mmlab_utils import load_mmlab_checkpoint
 
 
+def mod(a, b):
+    out = a - a // b * b
+    return out
+
+
+class RTDETRPostProcessor(nn.Module):
+    __share__ = [
+        "num_classes",
+        "use_focal_loss",
+        "num_top_queries",
+        "remap_mscoco_category",
+    ]
+
+    def __init__(
+        self,
+        num_classes=80,
+        use_focal_loss=True,
+        num_top_queries=100,
+        remap_mscoco_category=False,
+    ) -> None:
+        super().__init__()
+        self.use_focal_loss = use_focal_loss
+        self.num_top_queries = num_top_queries
+        self.num_classes = int(num_classes)
+        self.remap_mscoco_category = remap_mscoco_category
+        self.deploy_mode = False
+
+    # def forward(self, outputs, orig_target_sizes):
+    def forward(self, outputs, orig_target_sizes: torch.Tensor):
+        logits, boxes = outputs["pred_logits"], outputs["pred_boxes"]
+        # orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
+
+        bbox_pred = torchvision.ops.box_convert(boxes, in_fmt="cxcywh", out_fmt="xyxy")
+        bbox_pred *= orig_target_sizes.repeat(1, 2).unsqueeze(1)
+
+        if self.use_focal_loss:
+            scores = F.sigmoid(logits)
+            scores, index = torch.topk(scores.flatten(1), self.num_top_queries, dim=-1)
+            # TODO for older tensorrt
+            # labels = index % self.num_classes
+            labels = mod(index, self.num_classes)
+            index = index // self.num_classes
+            boxes = bbox_pred.gather(
+                dim=1, index=index.unsqueeze(-1).repeat(1, 1, bbox_pred.shape[-1])
+            )
+
+        else:
+            scores = F.softmax(logits)[:, :, :-1]
+            scores, labels = scores.max(dim=-1)
+            if scores.shape[1] > self.num_top_queries:
+                scores, index = torch.topk(scores, self.num_top_queries, dim=-1)
+                labels = torch.gather(labels, dim=1, index=index)
+                boxes = torch.gather(
+                    boxes, dim=1, index=index.unsqueeze(-1).tile(1, 1, boxes.shape[-1])
+                )
+
+        if self.deploy_mode:
+            return labels, boxes, scores
+
+    def deploy(
+        self,
+    ):
+        self.eval()
+        self.deploy_mode = True
+        return self
+
+
+class RTDetrDeployWrapper(nn.Module):
+    def __init__(self, model, postprocessor) -> None:
+        super().__init__()
+        self.model = model
+        self.model.deploy()
+        self.postprocessor = postprocessor.deploy()
+
+    def forward(self, images, orig_target_sizes):
+        outputs = self.model(images)
+        outputs = self.postprocessor(outputs, orig_target_sizes)
+        return outputs
+
+
 def get_activation(act, inplace=True):
     if act is None:
         return nn.Identity()
@@ -284,6 +364,39 @@ class RepVggBlock(nn.Module):
             y = self.conv1(x) + self.conv2(x)
 
         return self.act(y)
+
+    def convert_to_deploy(self):
+        if not hasattr(self, "conv"):
+            self.conv = nn.Conv2d(self.ch_in, self.ch_out, 3, 1, padding=1)
+
+        kernel, bias = self.get_equivalent_kernel_bias()
+        self.conv.weight.data = kernel
+        self.conv.bias.data = bias
+
+    def get_equivalent_kernel_bias(self):
+        kernel3x3, bias3x3 = self._fuse_bn_tensor(self.conv1)
+        kernel1x1, bias1x1 = self._fuse_bn_tensor(self.conv2)
+
+        return kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1), bias3x3 + bias1x1
+
+    def _pad_1x1_to_3x3_tensor(self, kernel1x1):
+        if kernel1x1 is None:
+            return 0
+        else:
+            return F.pad(kernel1x1, [1, 1, 1, 1])
+
+    def _fuse_bn_tensor(self, branch: ConvNormLayer):
+        if branch is None:
+            return 0, 0
+        kernel = branch.conv.weight
+        running_mean = branch.norm.running_mean
+        running_var = branch.norm.running_var
+        gamma = branch.norm.weight
+        beta = branch.norm.bias
+        eps = branch.norm.eps
+        std = (running_var + eps).sqrt()
+        t = (gamma / std).reshape(-1, 1, 1, 1)
+        return kernel * t, beta - running_mean * gamma / std
 
 
 class CSPRepLayer(nn.Module):
@@ -1877,7 +1990,7 @@ class RTDETRCriterionv2(nn.Module):
 
 
 checkpoint_url = dict(
-    resnet18="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r18vd_120e_coco.pth",
+    resnet18="https://github.com/lyuwenyu/storage/releases/download/v0.2/rtdetrv2_r18vd_120e_coco_rerun_48.1.pth",
     resnet34="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r34vd_120e_coco_ema.pth",
     resnet50="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r50vd_6x_coco_ema.pth",
     resnet101="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetrv2_r101vd_6x_coco_from_paddle.pth",
@@ -1911,3 +2024,14 @@ class RTDETR(nn.Module):
         x["targets"] = targets
 
         return x
+
+    def deploy(
+        self,
+    ):
+        self.eval()
+        for m in self.modules():
+            # print(m, "without\n")
+            if hasattr(m, "convert_to_deploy"):
+                print(m)
+                m.convert_to_deploy()
+        return self
