@@ -2030,8 +2030,6 @@ class RTDETR(nn.Module):
     ):
         self.eval()
         for m in self.modules():
-            # print(m, "without\n")
             if hasattr(m, "convert_to_deploy"):
-                print(m)
                 m.convert_to_deploy()
         return self
