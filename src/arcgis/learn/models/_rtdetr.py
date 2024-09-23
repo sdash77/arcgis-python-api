@@ -250,8 +250,7 @@ class RTDetrV2(ModelExtension):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             import onnx
-        save_path_onnx = (f"{name}.onnx").__str__()
-        print("inside onnx save\n")
+        save_path_onnx = str(self.learn.path / self.learn.model_dir / f"{name}.onnx")
         device = self._device
         if hasattr(self._data, "chip_size"):
             chip_size = self._data.chip_size
@@ -263,8 +262,9 @@ class RTDetrV2(ModelExtension):
         size = torch.tensor([[chip_size[0], chip_size[1]]]).to(device)
 
         post_processor = RTDETRPostProcessor(num_classes=self._data.c)
+        import copy
 
-        model = RTDetrDeployWrapper(self.learn.model, post_processor)
+        model = RTDetrDeployWrapper(copy.deepcopy(self.learn.model), post_processor)
         model.to(device)
         _ = model(data, size)
 
@@ -289,6 +289,7 @@ class RTDetrV2(ModelExtension):
                 opset_version=16,
                 do_constant_folding=True,
             )
+        save_path_onnx = f"{name}.onnx"
         return [save_path_onnx]
 
     @classmethod
