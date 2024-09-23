@@ -12,7 +12,7 @@ import arcgis
 import json
 from arcgis.gis import GIS, Item
 import collections
-from ._util import _initialize_project, _flatten_adjust_settings, _nestify_context
+from ._util import _set_context
 import string as _string
 import random as _random
 
@@ -172,8 +172,6 @@ def _update_flight_info(
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
-    sensor_type: str = "Drone",
-    scenario_type: str = "Drone",
     *,
     gis: Optional[GIS] = None,
     **kwargs,
@@ -210,22 +208,6 @@ def _create_project(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
-
-    if sensor_type.lower() not in ["drone", "satellite", "aerialdigital", "aerialscanned"]:
-        raise RuntimeError(
-            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
-        )
-    if scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
-        raise RuntimeError(
-            "Invalid sensor type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
-        )
-    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in ["aerial_nadir", "aerial_oblique"]:
-        raise RuntimeError(
-            "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
-        )
-    if sensor_type.lower() == "satellite":
-        scenario_type = ""
-
     folder = None
     folderId = None
 
@@ -241,7 +223,6 @@ def _create_project(
         )
     folder = folder_dict["title"]
     folderId = folder_dict["id"]
-    item_data = _initialize_project(sensor_type, scenario_type, is_rm=False)
 
     item_properties = {
         "title": name,
@@ -254,8 +235,6 @@ def _create_project(
     item_properties["text"] = json.dumps(definition)
     folder = gis.content.folders.get(folder)
     item = folder.add(item_properties).result()
-    props = item.properties
-    item.update(item_properties=props, data=json.dumps(item_data))
     return item
 
 
@@ -817,67 +796,32 @@ def compute_sensor_model(
         mission = image_collection
         image_collection = image_collection.image_collection
         update_flight_json = True
-        project = mission._project
-        project_adj_settings = project.get_settings()["template"]["adjustSettings"]
-        keys_to_pop = ["parallelProcessingFactor"]
 
-        # adj_dict = {}
+        adj_dict = {}
         if isinstance(context, dict):
-            # context_new = {k.lower(): v for k, v in context.items()}
-            # adj_keys = [
-            #     "computeCandidate",
-            #     "maxOverlap",
-            #     "maxLoss",
-            #     "maxResidual",
-            #     "initPointResolution",
-            #     "k",
-            #     "p",
-            #     "principalPoint",
-            #     "focalLength",
-            # ]
-            # adj_dict = {
-            #     k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-            # }
-            adjust_options = context.pop("adjustOptions", [])
-            adjust_options = _flatten_adjust_settings(adjust_options)
-            # context is flattened
-            context.update(adjust_options)
-            # update adj dict with all the params from context
-            project_adj_settings.update(context)
-            # pop the keys that are not relevant to the adj settings
-            for key in keys_to_pop:
-                project_adj_settings.pop(key, None)
-            # update context with default values from project_adj_settings if they are not present in context
-            context.update(project_adj_settings)
-            _nestify_context(context)
-            
-            if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
-                project_adj_settings.update({"locationAccuracy": location_accuracy})
-            keys_to_check = [
-                "computeCandidate", "maxOverlap", "maxLoss",
-                "pointSimilarity", "pointDensity", "pointDistribution"
+            context_new = {k.lower(): v for k, v in context.items()}
+            adj_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "maxResidual",
+                "initPointResolution",
+                "k",
+                "p",
+                "principalPoint",
+                "focalLength",
             ]
-            for key in keys_to_check:
-                if key in context:
-                    project_adj_settings.update({key: context[key]})
-
-        elif context is None:
-            context = dict(project_adj_settings)
-            _nestify_context(context)
-
-        #     adj_dict.update({"locationAccuracy": location_accuracy})
-        # adj_dict.update({"mode": mode})
-        project_adj_settings.update({"mode": mode})
-
+            adj_dict = {
+                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+            }
+            adj_dict.update({"locationAccuracy": location_accuracy})
+        adj_dict.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": "adjustment",
-            # "adjust_settings": adj_dict,
-            "adjust_settings": project_adj_settings,
+            "adjust_settings": adj_dict,
         }
-
-    print(f"context: {context}")
 
     return gis._tools.orthomapping.compute_sensor_model(
         image_collection=image_collection,
@@ -1791,19 +1735,12 @@ def generate_dem(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
-    print(f"context before: {context}")
 
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
         update_flight_json = True
-        project = mission._project
-        project_dem_settings = project.get_settings()["template"]["processingSettings"][surface_type.lower()]
-        project_pc_settings = project_dem_settings["pointCloud"]
-        project_interpolation_settings = project_dem_settings["interpolation"]
 
-        print(f"pc_settings before: {project_pc_settings}")
-        print(f"int_settings before: {project_interpolation_settings}")
         if kwargs is not None:
             if "folder" in kwargs:
                 folder = kwargs["folder"]
@@ -1816,65 +1753,51 @@ def generate_dem(
 
         dem_dict = {}
         if isinstance(context, dict):
-            # point_cloud_keys = [
-            #     "maxObjectSize",
-            #     "groundSpacing",
-            #     "minAngle",
-            #     "maxAngle",
-            #     "minOverlap",
-            #     "maxOmegaPhiDif",
-            #     "maxGSDDif",
-            #     "numImagePairs",
-            #     "adjQualityThreshold",
-            # ]
-            interpolation_dict = {
-                k: context[k]
-                for k in project_interpolation_settings.keys()
-                if k in context
-            }
-            # update the default with user-provided context settings
-            project_interpolation_settings.update(interpolation_dict)
-            # update the context with the default settings if not provided
-            context.update(project_interpolation_settings)
-            context.pop("method", None)
+            context_new = {k.lower(): v for k, v in context.items()}
 
-            if "groundSpacing" in point_cloud_dict:
-                point_cloud_dict["DSMGroundSpacing"] = point_cloud_dict.pop("groundSpacing", "NaN")
+            point_cloud_keys = [
+                "maxObjectSize",
+                "groundSpacing",
+                "minAngle",
+                "maxAngle",
+                "minOverlap",
+                "maxOmegaPhiDif",
+                "maxGSDDif",
+                "numImagePairs",
+                "adjQualityThreshold",
+            ]
             point_cloud_dict = {
-                k: context[k]
-                for k in project_pc_settings.keys()
-                if k in context
+                "pointCloud": {
+                    k: context_new[k.lower()]
+                    for k in point_cloud_keys
+                    if k.lower() in context_new
+                }
             }
-            # update the default with user-provided context settings
-            project_pc_settings.update(point_cloud_dict)
-            # update the context with the default settings if not provided
-            context.update(project_pc_settings)
-            # add the matching method at the end because we don't want to include it in the context
-            if matching_method is not None:
-                project_pc_settings.update({"method": matching_method})
-            # interpolation_keys = [
-            #     "pixelSize",
-            #     "pixelSizeUnit",
-            #     "method",
-            #     "smoothingMethod",
-            # ]
-            apply_to_ortho = context.get("applytoortho", False)
-            dem_dict = {"applyToOrtho": apply_to_ortho}
-            dem_dict.update({"pointCloud": project_pc_settings})
-            dem_dict.update({"interpolation": project_interpolation_settings})
+            point_cloud_dict["pointCloud"].update({"method": matching_method})
+            interpolation_keys = [
+                "pixelSize",
+                "pixelSizeUnit",
+                "method",
+                "smoothingMethod",
+            ]
+            interpolation_dict = {
+                "interpolation": {
+                    k: context_new[k.lower()]
+                    for k in interpolation_keys
+                    if k.lower() in context_new
+                }
+            }
 
+            apply_to_ortho = context_new.get("applytoortho", False)
+            dem_dict = {"applyToOrtho": apply_to_ortho}
+            dem_dict.update(point_cloud_dict)
+            dem_dict.update(interpolation_dict)
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": surface_type.lower(),
             "processing_states": dem_dict,
         }
-
-    print(f"pc settings: {project_pc_settings}")
-    print(f"int settings: {project_interpolation_settings}")
-    print(f"context after: {context}")
-    print(f"dem_dict: {dem_dict}")
-    return
 
     return gis._tools.orthomapping.generate_dem(
         image_collection=image_collection,
@@ -2524,15 +2447,13 @@ class Project:
         self,
         project=None,
         definition=None,
-        sensor_type="Drone",
-        scenario_type="Drone",
         *,
         gis: Optional[GIS] = None,
         **kwargs,
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition, sensor_type=sensor_type, scenario_type=scenario_type)
+                project = _create_project(name=project, definition=definition)
             except:
                 raise RuntimeError("Creation of orthomapping project failed.")
 
@@ -2605,15 +2526,6 @@ class Project:
         """
         deleted = self._folder.delete()
         return deleted
-    
-    def get_settings(self):
-         return self._project_item.get_data()
-
-    def set_settings(self, properties_dict):
-        item = self._project_item
-        props = item.properties
-        updated_item = item.update(item_properties=props, data=properties_dict)
-        return updated_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
