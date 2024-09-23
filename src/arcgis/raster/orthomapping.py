@@ -725,7 +725,7 @@ def compute_sensor_model(
 
                            By default, 'Quick' mode is applied to compute the sensor model.
     ------------------     --------------------------------------------------------------------
-    location_accuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+    location_accuracy      Optional string. this option allows users to specify the GPS location accuracy level of the
                            source image. It determines how far the underline tool will search for neighboring
                            matching images, then calculate tie points and compute adjustments.
 
