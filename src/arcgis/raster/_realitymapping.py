@@ -179,7 +179,7 @@ def _create_project(
 
     gis = arcgis.env.active_gis if gis is None else gis
 
-    if sensor_type.lower() not in [
+    if sensor_type and sensor_type.lower() not in [
         "drone",
         "satellite",
         "aerialdigital",
@@ -188,18 +188,18 @@ def _create_project(
         raise RuntimeError(
             "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
         )
-    if scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
+    if scenario_type and scenario_type.lower() not in ["drone", "aerial_nadir", "aerial_oblique"]:
         raise RuntimeError(
-            "Invalid sensor type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
+            "Invalid scenario type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
         )
-    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in [
+    if sensor_type and sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in [
         "aerial_nadir",
         "aerial_oblique",
     ]:
         raise RuntimeError(
             "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
         )
-    if sensor_type.lower() == "satellite":
+    if sensor_type and sensor_type.lower() == "satellite":
         scenario_type = ""
 
     folder = None
@@ -217,7 +217,6 @@ def _create_project(
         )
     folder = folder_dict["title"]
     folderId = folder_dict["id"]
-    item_data = _initialize_project(sensor_type, scenario_type, is_rm=True)
 
     item_properties = {
         "title": name,
@@ -229,8 +228,14 @@ def _create_project(
 
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
-    props = item.properties
-    item.update(item_properties=props, data=json.dumps(item_data))
+    item_data = None
+    try:
+        item_data = _initialize_project(sensor_type, scenario_type, is_rm=True)
+    except:
+        pass
+    if item_data:
+        props = item.properties
+        item.update(item_properties=props, data=json.dumps(item_data))
     return item
 
 
@@ -800,50 +805,66 @@ def compute_sensor_model(
     if isinstance(mission, RMMission):
         image_collection = mission.image_collection
         update_flight_json = True
-        project = mission._project
-        project_adj_settings = project.get_settings()["template"]["adjustSettings"]
-        keys_to_pop = ["parallelProcessingFactor"]
+        settings = {}
 
-        if isinstance(context, dict):
-            adjust_options = context.pop("adjustOptions", [])
-            adjust_options = _flatten_adjust_settings(adjust_options)
-            # context is flattened
-            context.update(adjust_options)
-            # update adj dict with all the params from context
-            project_adj_settings.update(context)
-            # pop the keys that are not relevant to the adj settings
-            for key in keys_to_pop:
-                project_adj_settings.pop(key, None)
-            # update context with default values from project_adj_settings if they are not present in context
-            context.update(project_adj_settings)
-            _nestify_context(context)
+        try:
+            project = mission._project
+            project_adj_settings = project.settings
+            if isinstance(project_adj_settings, dict) and ("template" in project_adj_settings.keys()) and "adjustSettings" in project_adj_settings["template"].keys():
+                project_adj_settings = project_adj_settings["template"]["adjustSettings"]
+            keys_to_pop = ["parallelProcessingFactor"]
 
-            if (
-                project_adj_settings["locationAccuracy"].lower()
-                != location_accuracy.lower()
-            ):
-                project_adj_settings.update({"locationAccuracy": location_accuracy})
-            keys_to_check = [
-                "computeCandidate",
-                "maxOverlap",
-                "maxLoss",
-                "pointSimilarity",
-                "pointDensity",
-                "pointDistribution",
-            ]
-            for key in keys_to_check:
-                if key in context:
-                    project_adj_settings.update({key: context[key]})
-        elif context is None:
-            context = dict(project_adj_settings)
-            _nestify_context(context)
+            if isinstance(context, dict):
+                adjust_options = context.pop("adjustOptions", [])
+                adjust_options = _flatten_adjust_settings(adjust_options)
+                # context is flattened
+                context.update(adjust_options)
+                # update adj dict with all the params from context
+                project_adj_settings.update(context)
+                # pop the keys that are not relevant to the adj settings
+                for key in keys_to_pop:
+                    project_adj_settings.pop(key, None)
+                # update context with default values from project_adj_settings if they are not present in context
+                context.update(project_adj_settings)
+                _nestify_context(context)
 
-        project_adj_settings.update({"mode": mode})
+                if (
+                    project_adj_settings["locationAccuracy"].lower()
+                    != location_accuracy.lower()
+                ):
+                    project_adj_settings.update({"locationAccuracy": location_accuracy})
+            elif context is None:
+                context = dict(project_adj_settings)
+                _nestify_context(context)
+            # update the settings to update flight json
+            settings = project_adj_settings
+        except:
+            adj_dict = {}
+            if isinstance(context, dict):
+                context_new = {k.lower(): v for k, v in context.items()}
+                adj_keys = [
+                    "computeCandidate",
+                    "maxOverlap",
+                    "maxLoss",
+                    "maxResidual",
+                    "initPointResolution",
+                    "k",
+                    "p",
+                    "principalPoint",
+                    "focalLength",
+                ]
+                adj_dict = {
+                    k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+                }
+                adj_dict.update({"locationAccuracy": location_accuracy})
+                settings = adj_dict
+        
+        settings.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "mission": mission,
             "item_name": "adjustment",
-            "adjust_settings": project_adj_settings,
+            "adjust_settings": settings,
         }
 
     return gis._tools.realitymapping.compute_sensor_model(
@@ -2280,10 +2301,23 @@ class RMProject:
         deleted = self._folder.delete()
         return deleted
 
-    def get_settings(self):
-        return self._project_item.get_data()
+    @property
+    def settings(self):
+        settings = {}
+        try:
+            settings = self._project_item.get_data()
+        except:
+            pass
+        return settings
 
-    def set_settings(self, properties_dict):
+    @settings.setter
+    def settings(self, properties_dict):
+        """
+        The ``settings`` method updates the properties of the project item.
+
+        """
+        if properties_dict is None:
+            raise ValueError("properties_dict cannot be None")
         item = self._project_item
         props = item.properties
         updated_item = item.update(item_properties=props, data=properties_dict)
