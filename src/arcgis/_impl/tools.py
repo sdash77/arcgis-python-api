@@ -7837,10 +7837,14 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         current_version = None
         if self._is_ortho:
             if "currentVersion" in self._gis._tools.orthomapping.properties.keys():
-                current_version = self._gis._tools.orthomapping.properties["currentVersion"]
+                current_version = self._gis._tools.orthomapping.properties[
+                    "currentVersion"
+                ]
         else:
             if "currentVersion" in self._gis._tools.realitymapping.properties.keys():
-                current_version = self._gis._tools.realitymapping.properties["currentVersion"]
+                current_version = self._gis._tools.realitymapping.properties[
+                    "currentVersion"
+                ]
         return current_version
 
     # ----------------------------------------------------------------------
