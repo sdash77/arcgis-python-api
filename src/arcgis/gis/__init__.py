@@ -1214,19 +1214,26 @@ class GIS(object):
 
                 url = f"https://{url[0]}/admin"
                 return [AGOLNotebookManager(url=url, gis=self)]
-        else:
-            try:
-                from arcgis.gis.nb import NotebookServer
+        elif self._portal.is_arcgisonline == False and (
+            hasattr(self, "admin") and getattr(self, "admin")
+        ):
+            from arcgis.gis.nb import NotebookServer
 
-                res = self._portal.con.post("portals/self/servers", {"f": "json"})
+            notebooks: list[NotebookServer] = []
+            res = self.servers
+            for server in res["servers"]:
+                if server["serverFunction"].lower() == "notebookserver":
+                    try:
+                        nbs = NotebookServer(server["adminUrl"] + "/admin", self)
+                        nbs.properties
+                        notebooks.append(nbs)
+                    except Exception as ex:
+                        _log.warning(ex)
+                        nbs = NotebookServer(server["url"] + "/admin", self)
+                        nbs.properties
+                        notebooks.append(nbs)
+            return notebooks
 
-                return [
-                    NotebookServer(server["adminUrl"] + "/admin", self)
-                    for server in res["servers"]
-                    if server["serverFunction"].lower() == "notebookserver"
-                ]
-            except Exception:
-                return []
         return []
 
     @property
@@ -3914,7 +3921,6 @@ class UserManager(object):
         # map role parameter of a viewer to the internal value for org viewer.
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
-
                 if user_type is None:
                     if (
                         self.user_settings
@@ -10299,6 +10305,33 @@ class Group(dict):
         """
         return self._portal.delete_group_thumbnail(self.groupid)
 
+    def reassign_to(self, target_owner: Union[str, User]):
+        """
+        The ``reassign_to`` method reassigns this group from its current owner to another owner.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_owner      Required string or User.  The username of the new group owner.
+        ================  ========================================================
+
+        :return:
+            A boolean indicating success (True) or failure (False).
+        """
+        params = {"f": "json"}
+        if isinstance(target_owner, User):
+            params["targetUsername"] = target_owner.username
+        else:
+            params["targetUsername"] = target_owner
+        res = self._gis._con.post(
+            "community/groups/" + self.groupid + "/reassign", params
+        )
+        if res:
+            self._hydrated = False
+            self._hydrate()
+            return res.get("success")
+        return False
+
     def remove_users(self, usernames: Union[list[str], str]):
         """
         The ``remove_users`` method is used to remove users from this group.
@@ -15145,9 +15178,9 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            # applicable to online and to enterprise 11.3 and higher if recycle bin is enabled
+            # applicable to online if recycle bin is enabled
             if permanent:
-                rsupport = self._gis.properties.recycleBinSupported
+                rsupport = self._gis.properties.get("recycleBinSupported", False)
                 renabled = (
                     self._gis.properties.recycleBinEnabled
                     if rsupport and hasattr(self._gis.properties, "recycleBinEnabled")
@@ -16200,11 +16233,12 @@ class Item(dict):
             # Publishing a Hosted Table Example
 
             >>> csv_item = gis.content.get('<csv item id>')
-            >>> analyzed = gis.content.analyze(item=csv_item)
+            >>> analyzed = gis.content.analyze(item=csv_item, file_type='csv')
             >>> publish_parameters = analyzed['publishParameters']
             >>> publish_parameters['name'] = 'AVeryUniqueName' # this needs to be updated
-            >>> publish_parameters['locationType'] = None # this makes it a hosted table
+            >>> publish_parameters['locationType'] = "none" # this makes it a hosted table
             >>> published_item = csv_item.publish(publish_parameters)
+
 
         .. code-block:: python
 

@@ -251,6 +251,7 @@ class MMSegmentation(ModelExtension):
         "mobilenet_v2",
         "nonlocal_net",
         "ocrnet",
+        "prithvi100m",
         "psanet",
         "pspnet",
         "resnest",

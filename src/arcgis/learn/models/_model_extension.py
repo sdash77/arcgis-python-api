@@ -132,8 +132,10 @@ class ModelExtension(ArcGISModel):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
-        if self._is_multispectral:
-            model = _change_tail(model, data)
+        if self._is_multispectral or (
+            not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
+        ):
+            model = _change_tail(model, data, backbone=self._backbone)
         if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
@@ -356,6 +358,8 @@ class ModelExtension(ArcGISModel):
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
+            if backbone is not None and "hf:" in backbone:
+                data._extract_bands = emd.get("ExtractBands")
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
             if dataset_type == "Panoptic_Segmentation":
@@ -1151,7 +1155,8 @@ class ModelExtension(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path
-                                input_video_path appended with _prediction.
+                                input_video_path appended with _prediction.avi.
+                                Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

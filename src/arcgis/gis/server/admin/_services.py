@@ -261,7 +261,7 @@ class ServiceManager(BaseServer):
                     netloc=parsed.netloc,
                     path=quote(parsed.path),
                 )
-                self._services.append(Service(url_or_item=u_url, gis=self._con))
+                self._services.append(Service(url=u_url, gis=self._con))
         return self._services
 
     # ----------------------------------------------------------------------

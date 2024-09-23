@@ -48,26 +48,44 @@ class WMTSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     def __init__(self, url, version="1.0.0", gis=None, **kwargs):
         super(WMTSLayer, self)
-        if gis:
-            gis = gis
-        elif gis is None and _env.active_gis:
-            gis = _env.active_gis
-        else:
-            gis = GIS()
-        assert isinstance(gis, GIS)
+        self._gis = gis or _env.active_gis or GIS()
+        self._con = self._gis._con
+        assert isinstance(
+            self._gis, GIS
+        ), "gis is required and must be of type arcgis.GIS"
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._version = version
-        self._session = gis.session
+        self._session = self._gis.session
         self._title = kwargs.pop("title", "WMTS Layer")
-        self._gis = gis
-        if url[-1] == "/":
-            url = url[:-1]
-        self._url = url
-        self._con = gis._con
+        self._url = url.rstrip("/")
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._opacity = kwargs.pop("opacity", 1)
         self._type = "WebTiledLayer"
+
+    def _get_capabilities_xml(self, urls: list[str]) -> str:
+        """
+        Retrieves the capabilities XML from the WMTS service
+        using the first URL that returns a valid response,
+        raises an exception if none of the URLs return a valid response
+        """
+        # use gis session and vanilla requests
+        # some gis sessions change the request
+        # also use vanilla requests for a unencumbered request
+        get_funcs = [self._session.get, requests.get]
+        for url in urls:
+            for get_func in get_funcs:
+                try:
+                    resp: requests.Response = get_func(url)
+                    resp.raise_for_status()
+                    if "<?xml" not in resp.text.lower():
+                        raise ValueError(
+                            f"Could not retrieve valid XML from WebMap Tile Service Capabilities Endpoint; Got:\n{resp.text}"
+                        )
+                    return resp.text
+                except (requests.exceptions.RequestException, ValueError):
+                    pass
+        raise Exception("Could not retrieve valid XML from any of the provided URLs")
 
     # ----------------------------------------------------------------------
     @property
@@ -77,104 +95,87 @@ class WMTSLayer(BaseOGC):
 
         :return: dict
         """
-        if self._properties is None:
+        if self._properties:
+            return self._properties
 
-            if self._add_token:
-                url = self._capabilities_url(
-                    service_url=self._url, vendor_kwargs={"token": self._con.token}
-                )
-            else:
-                url = self._capabilities_url(service_url=self._url)
-            resp: requests.Response = self._session.get(url=url)
-            resp.raise_for_status()
-            text = resp.text
-            if text.find("Invalid Token") > -1 or text.find("Get Token") > -1:
-                url = self._capabilities_url(service_url=self._url)
-                resp: requests.Response = self._session.get(url=url)
-                resp.raise_for_status()
-                text = resp.text
-            elif text.lower().find("<html>") > -1:
-                url = self._capabilities_url(service_url=self._url)
-                resp: requests.Response = self._session.get(url=url)
-                resp.raise_for_status()
-                text = resp.text
-            elif text.lower().find("<?xml version=") > -1:
-                pass
-            else:
-                raise Exception("Could not connect to the WebMap Tile Service")
-            sss = BytesIO()
-            sss.write(text.encode())
-            sss.seek(0)
-            tree = ET.XML(text=sss.read())
-            d = self._xml_to_dictionary(tree)
-            self._properties = d
+        capabilities_urls = [
+            self._capabilities_url(
+                service_url=self._url,
+                version=self._version,
+                vendor_kwargs={"token": self._con.token} if self._add_token else None,
+            )
+        ]
+        if self._add_token:
+            # try without token if token call fails
+            capabilities_urls.append(
+                self._capabilities_url(service_url=self._url, version=self._version)
+            )
+        text = self._get_capabilities_xml(capabilities_urls)
+
+        self._properties = self._get_dict_from_xml(text)
         return self._properties
 
-    # ----------------------------------------------------------------------
-    def _capabilities_url(self, service_url, vendor_kwargs=None):
+    @staticmethod
+    def _get_dict_from_xml(xml_str):
+        sss = BytesIO()
+        sss.write(xml_str.encode())
+        sss.seek(0)
+        tree = ET.XML(text=sss.read())
+        # TODO try ET.fromstring(xml_str) once we have unit tests
+        return WMTSLayer._xml_to_dictionary(tree)
+
+    @staticmethod
+    def _capabilities_url(service_url, version="1.0.0", vendor_kwargs=None):
         """Return a capabilities url"""
         pieces = urlparse(service_url)
         args = parse_qs(pieces.query)
-        if "service" not in args:
-            args["service"] = "WMTS"
-        if "request" not in args:
-            args["request"] = "GetCapabilities"
-        if "version" not in args:
-            args["version"] = self._version
-        if vendor_kwargs:
-            args.update(vendor_kwargs)
-        query = urlencode(args, doseq=True)
-        pieces = ParseResult(
-            pieces.scheme,
-            pieces.netloc,
-            pieces.path,
-            pieces.params,
-            query,
-            pieces.fragment,
-        )
+        args["service"] = args.get("service", "WMTS")
+        args["request"] = args.get("request", "GetCapabilities")
+        args["version"] = args.get("version", version)
+        args.update(vendor_kwargs or {})
+        pieces = pieces._replace(query=urlencode(args, doseq=True))
         return urlunparse(pieces)
 
-    # ----------------------------------------------------------------------
-    def _format_tags(self, tag):
-        """attempts to format tags by stripping out the {text} from the keys"""
-        import re
+    @staticmethod
+    def _xml_to_dictionary(t):
+        """converts the xml to a dictionary object (recursively)"""
 
-        regex = r".*\}(.*)"
-        matches = re.search(regex, tag)
-        if matches:
-            return matches.groups()[0]
-        return tag
+        def _format_tags(tag):
+            """attempts to format tags by stripping out the {text} from the keys"""
+            import re
 
-    # ----------------------------------------------------------------------
-    def _xml_to_dictionary(self, t):
-        """converts the xml to a dictionary object (recursivly)"""
+            regex = r".*\}(.*)"
+            matches = re.search(regex, tag)
+            if matches:
+                return matches.groups()[0]
+            return tag
+
         import json
         from collections import defaultdict
 
-        d = {self._format_tags(t.tag): {} if t.attrib else None}
+        d = {_format_tags(t.tag): {} if t.attrib else None}
         children = list(t)
         if children:
             dd = defaultdict(list)
-            for dc in map(self._xml_to_dictionary, children):
+            for dc in map(WMTSLayer._xml_to_dictionary, children):
                 for k, v in dc.items():
-                    dd[self._format_tags(k)].append(v)
+                    dd[_format_tags(k)].append(v)
             d = {
-                self._format_tags(t.tag): {
-                    self._format_tags(k): v[0] if len(v) == 1 else v
-                    for k, v in dd.items()
+                _format_tags(t.tag): {
+                    _format_tags(k): v[0] if len(v) == 1 else v for k, v in dd.items()
                 }
             }
         if t.attrib:
-            d[self._format_tags(t.tag)].update(
-                [("@" + self._format_tags(k), v) for k, v in t.attrib.items()]
+            d[_format_tags(t.tag)].update(
+                [(f"@{_format_tags(k)}", v) for k, v in t.attrib.items()]
             )
         if t.text:
             text = t.text.strip()
             if children or t.attrib:
                 if text:
-                    d[self._format_tags(t.tag)]["#text"] = text
+                    d[_format_tags(t.tag)]["#text"] = text
             else:
-                d[self._format_tags(t.tag)] = text
+                d[_format_tags(t.tag)] = text
         removals = [
             "{http://www.opengis.net/wmts/1.0}",
             "{http://www.opengis.net/ows/1.1}",
@@ -200,24 +201,20 @@ class WMTSLayer(BaseOGC):
             "type": self._type,
         }
 
-    # ----------------------------------------------------------------------
-    @property
-    def __text__(self):
-        """creates the item's text properties"""
-
+    @staticmethod
+    def _get_operational_layer_config(url: str, properties: dict) -> dict:
+        """Returns the operational layer configuration"""
         layer = None
         tile_matrix = None
 
-        if isinstance(
-            self.properties["Capabilities"]["Contents"]["Layer"], (list, tuple)
-        ):
-            layer = self.properties["Capabilities"]["Contents"]["Layer"][0]
-            tile_matrix = self.properties["Capabilities"]["Contents"]["TileMatrixSet"][
-                0
-            ]
-        elif isinstance(self.properties["Capabilities"]["Contents"]["Layer"], (dict)):
-            layer = self.properties["Capabilities"]["Contents"]["Layer"]
-            tile_matrix = self.properties["Capabilities"]["Contents"]["TileMatrixSet"]
+        if isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
+            layer = properties["Capabilities"]["Contents"]["Layer"][0]
+            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][0]
+        elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (dict)):
+            layer = properties["Capabilities"]["Contents"]["Layer"]
+            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"]
+            if isinstance(tile_matrix, (list, tuple)):
+                tile_matrix = tile_matrix[0]
         else:
             raise ValueError("Could not parse the results properly.")
 
@@ -280,13 +277,18 @@ class WMTSLayer(BaseOGC):
                 "lods": lods,
             },
             "wmtsInfo": {
-                "url": self._url,
+                "url": url,
                 "layerIdentifier": layer["Title"],
                 "tileMatrixSet": [tile_matrix["Identifier"]],
             },
         }
 
     @property
-    def _operational_layer_json(self):
+    def __text__(self) -> dict:
+        """gets the item's text properties"""
+        return self._get_operational_layer_config(self._url, self.properties)
+
+    @property
+    def _operational_layer_json(self) -> dict:
         """Represents the Map's JSON format"""
         return self.__text__

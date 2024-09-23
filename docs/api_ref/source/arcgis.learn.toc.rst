@@ -97,6 +97,13 @@ SingleShotDetector
     :inherited-members:
     :undoc-members:
 
+RTDetrV2
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.RTDetrV2
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 MaskRCNN
 ^^^^^^^^
 .. autoclass:: arcgis.learn.MaskRCNN
@@ -335,6 +342,8 @@ TimeSeriesModel
     :inherited-members:
     :undoc-members:
 
+Raster Time Series Models
+-------------------------
 PSETAE
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.PSETAE
