@@ -5,7 +5,9 @@ from functools import lru_cache
 from arcgis.gis import GIS
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import _validate_url
+from arcgis.auth.tools import LazyLoader
 
+_util = LazyLoader("arcgis._impl.common._utils")
 _log = _logging.getLogger(__name__)
 
 _use_async = False
@@ -125,7 +127,12 @@ def get_tool_info(
         "include_network_source_info": include_network_source_info,
     }
 
+    kwargs = _util.inspect_function_inputs(fn=tbx.get_tool_info, **kwargs)
     return tbx.get_tool_info(**kwargs)
 
 
-get_tool_info.__annotations__ = {"service_name": str, "tool_name": str, "return": str}
+get_tool_info.__annotations__ = {
+    "service_name": str,
+    "tool_name": str,
+    "return": str,
+}

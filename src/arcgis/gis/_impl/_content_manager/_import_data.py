@@ -174,9 +174,12 @@ def _create_items(gis, file, file_type, **kwargs):
         publish_parameters["locationType"] = None
     else:
         # start creating publish params from new file item
-        publish_parameters = gis.content.analyze(
-            item=file_item, file_type=file_type.lower()
-        )["publishParameters"]
+        publish_parameters = {
+            "name": "data",
+            "maxRecordCount": 2000,
+            "hasStaticData": True,
+            "layerInfo": {"capabilities": "Query"},
+        }
         if service_name is None:
             service_name = publish_parameters["name"]
         #  get a unique service name

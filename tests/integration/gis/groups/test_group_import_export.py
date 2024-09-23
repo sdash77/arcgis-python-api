@@ -40,7 +40,7 @@ class TestGroupExport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
         if self.epk_item:
             assert self.epk_item.delete(permanent=True)
 
@@ -114,7 +114,7 @@ class TestGroupImport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
 
     def test_group_import_to_different_gis(self):
         """tests importing the group items from an epk"""
@@ -166,8 +166,26 @@ class TestGroupImport(unittest.TestCase):
 
         res = self.new_group.migration.load(self.epk_item, overwrite=True)
         assert isinstance(res, StatusJob)
-        assert isinstance(res.result(), dict)
-
+        assert isinstance(res.result(), dict)    
+    
+    @classmethod
+    def tearDownClass(cls):
+        for gis in [cls.from_gis, cls.to_gis]:
+            folder_list = list(gis.content.folders.list())
+            for folder in folder_list:
+                if folder.name.startswith("imports_") or folder.name.startswith("exports"):
+                    if len(list(folder.list("*"))) == 0:
+                        folder.delete()
+                    else:
+                        for import_item in folder.list("*"):
+                            import_item.delete(permanent=True)
+                        folder.delete()
+                if folder.name == "exports":
+                    for exp_item in folder.list(
+                        item_type=ItemTypeEnum.EXPORT_PACKAGE.value
+                    ):
+                        exp_item.delete(permanent=True)
+                    folder.delete()
 
 if __name__ == "__main__":
     unittest.main()

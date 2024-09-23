@@ -253,7 +253,7 @@ class GeometryFactory(type):
             elif "xmin" in iterable:
                 cls = Envelope
             elif "wkid" in iterable or "wkt" in iterable:
-                return SpatialReference(iterable=iterable)
+                cls = SpatialReference
             elif isinstance(iterable, list):
                 return Point(
                     {
@@ -328,7 +328,9 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             self._ao = None
 
     def __setitem__(self, key, value):
-        if key in self._properties:
+        if self._properties is None:
+            self._properties = {}
+        if self._properties and key in self._properties:
             self._properties[key] = value
         if key in [
             "spatialReference",
@@ -3856,7 +3858,7 @@ class Envelope(Geometry):
 
 
 ########################################################################
-class SpatialReference(BaseGeometry):
+class SpatialReference(Geometry):
     """
     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
