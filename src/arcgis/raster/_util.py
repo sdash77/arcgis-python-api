@@ -2309,3 +2309,459 @@ def _try_data_transfer(src, dst, gis=None):
                 return final_dst
         except:
             continue
+
+
+def _construct_point_cloud_gen_params():
+    params = {}
+    params["minAngle"] = 5.0
+    params["maxAngle"] = 90.0
+    params["minOverlap"] = 0.5
+    params["maxOmegaPhiDif"] = 8.0
+    params["maxGSDDif"] = 2.0
+    # these are PointCloudGeneration specific
+    params["method"] = "ETM"
+    params["maxObjectSize"] = "NaN"
+    params["DSMGroundSpacing"] = "NaN"
+    params["numOfImagePairs"] = 8
+    params["adjQualityThreshold"] = 0.2
+
+    return params
+
+
+def _construct_seamline_generation_params(properties_dict):
+    props = {}
+    props["method"] = "VORONOI"
+    props["sortMethod"] = "NORTH_WEST"
+    props["sortAttribute"] = ""
+    props["sortBaseValue"] = ""
+    props["sortViewPointX"] = "NaN"
+    props["sortViewPointY"] = "NaN"
+    props["sortAscending"] = True
+    props["cellsize"] = "NaN"
+    props["minRegionSize"] = 100
+    props["blendWidthUnits"] = "PIXELS"
+    props["blendWidth"] = float(10)
+    props["blendType"] = "BOTH"
+    props["requestSizeType"] = "PIXELS"
+    props["requestSize"] = 1000
+    props["minThinessRatio"] = float(0.5)
+    props["maxSliverSize"] = 20
+    properties_dict["template"]["processingSettings"]["ortho"]["seamline"] = props
+
+
+def _construct_color_balancing_params(properties_dict):
+    props = {}
+    props["method"] = "DODGING"
+    props["surfaceType"] = "SECOND_ORDER"
+    props["targetRaster"] = ""
+    props["recalculateStats"] = True
+    props["numberOfRowsToSkip"] = 10
+    props["numberOfColumnsToSkip"] = 10
+    props["inputDEM"] = ""
+    props["zFactor"] = float(1)
+    props["zOffset"] = float(0)
+    props["applyGeoid"] = True
+    props["inputSolutionPoints"] = ""
+    props["targetRasterOID"] = ""
+    props["refineEstimationByCorrelation"] = True
+    props["reduceCloudInfluence"] = False
+    props["reduceShadowInfluence"] = False
+    properties_dict["template"]["processingSettings"]["ortho"]["colorBalance"] = props
+
+
+def _add_default_compression_params(props_dict):
+    if "compression" not in props_dict:
+        props_dict["compression"] = "NONE"
+    if "compressionQuality" not in props_dict:
+        props_dict["compressionQuality"] = 75
+    if "lERCMaxError" not in props_dict:
+        props_dict["lERCMaxError"] = float(0)
+
+
+def _add_default_cellsize_params(props_dict, is_dem):
+    if "cellsizeFactor" not in props_dict:
+        props_dict["cellsizeFactor"] = 5 if is_dem else 1
+    if "useCellsizeFactor" not in props_dict:
+        props_dict["useCellsizeFactor"] = True
+
+
+def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    if "locationAccuracy" not in adjust_settings:
+        adjust_settings["locationAccuracy"] = "MEDIUM"
+    adjust_settings["pointSimilarity"] = "MEDIUM"
+    adjust_settings["pointDensity"] = (
+        "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
+    )
+    adjust_settings["pointDistribution"] = "RANDOM"
+    if sensor_type.lower() == "aerialdigital":
+        adjust_settings["fullFrameMatch"] = False
+
+
+def _compute_block_adjustment_params(sensor_type, properties_dict):
+    """
+    sensor_type can be one of "Drone", "Satellite", "AerialScanned" or "AerialDigital".
+    """
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+
+    if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialscanned":
+        adjust_settings["initPointResolution"] = 8
+        adjust_settings["locationAccuracy"] = (
+            "LOW" if sensor_type.lower() == "aerialscanned" else "HIGH"
+        )
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["p"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["principalPoint"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["k"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["focalLength"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["cameraCalibration"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["fixImageLocationForHighAccuracyGPS"] = False
+        adjust_settings["transformationType"] = "Frame"
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        if sensor_type.lower() == "drone":
+            adjust_settings["estimateOPK"] = False
+            adjust_settings["rollingShutter"] = False
+            adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "aerialdigital":
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["cameraCalibration"] = False
+        adjust_settings["p"] = False
+        adjust_settings["principalPoint"] = False
+        adjust_settings["k"] = False
+        adjust_settings["focalLength"] = False
+        adjust_settings["transformationType"] = "Frame"
+        for key in [
+            "aPrioriAccuracyX",
+            "aPrioriAccuracyY",
+            "aPrioriAccuracyZ",
+            "aPrioriAccuracyXY",
+            "aPrioriAccuracyXYZ",
+            "aPrioriAccuracyOmega",
+            "aPrioriAccuracyPhi",
+            "aPrioriAccuracyKappa",
+        ]:
+            adjust_settings[key] = "NaN"
+        adjust_settings["computeAntennaOffset"] = False
+        adjust_settings["computeShift"] = False
+        adjust_settings["computeImagePosteriorStd"] = True
+        adjust_settings["computeSolutionPointPosteriorStd"] = False
+        adjust_settings["processAsRigCamera"] = False
+    elif sensor_type.lower() == "satellite":
+        _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+        adjust_settings["maxResidual"] = float(5)
+        adjust_settings["transformationType"] = "RPC"
+        adjust_settings["generateTiePoints"] = True
+
+    adjust_settings["adjustTiePoints"] = False
+    adjust_settings["maskPolygons"] = ""
+
+
+def _construct_compute_gcp_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["pointSimilarity"] = "HIGH"
+    adjust_settings["referenceImage"] = ""
+    adjust_settings["correctGeoid"] = False
+    adjust_settings["elevationSource"] = ""
+
+
+def _construct_analyze_tie_points_params(properties_dict):
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["minOverlapArea"] = float(0.2)
+    adjust_settings["maxOverlapLevel"] = float(2)
+    adjust_settings["maskPolygons"] = ""
+
+
+def _construct_recompute_tie_points_params(sensor_type, properties_dict):
+    _compute_primary_tie_points_gen_params(sensor_type, properties_dict)
+    adjust_settings = properties_dict["template"]["adjustSettings"]
+    adjust_settings["maskPolygons"] = ""
+    adjust_settings["controlPointsUpdateMode"] = ""
+
+
+def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
+    key = "trueortho" if is_ortho else "dsm"
+    props = {key: {}}
+    props[key]["outputType"] = "TILED"
+    props[key]["format"] = "TIFF"
+    _add_default_compression_params(props[key])
+    props[key]["resampling"] = "BILINEAR"
+    props[key]["noDataValue"] = "NaN"
+    props[key]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+
+    if key == "trueortho":
+        properties_dict["template"]["processingSettings"][key] = props[key]
+    else:
+        properties_dict["template"]["processingSettings"][key] = props
+
+
+def _construct_orthomosaic_generation_params(properties_dict, is_rm):
+    props = {"ortho": {}}
+
+    if is_rm:
+        properties_dict["template"]["processingSettings"]["ortho"] = {}
+        return
+
+    props["ortho"]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props["ortho"], is_dem=False)
+    props["ortho"]["format"] = "CRF"
+    _add_default_compression_params(props["ortho"])
+    props["ortho"]["resampling"] = "BILINEAR"
+    props["ortho"]["noDataValue"] = "NaN"
+    props["ortho"]["zFactor"] = float(1)
+    props["ortho"]["zOffset"] = float(0)
+    props["ortho"]["applyGeoid"] = False
+    props["ortho"]["DEMMode"] = "RefDEM"
+    props["ortho"]["selectedDEMProduct"] = "UseProductDTM"
+    props["ortho"]["extent"] = ""
+    props["ortho"]["mask"] = ""
+    props["ortho"]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+    props["ortho"]["collectionOrthorectificationDEM"] = ""
+    properties_dict["template"]["processingSettings"]["ortho"] = props
+
+
+def _construct_dem_params(
+    properties_dict,
+    key_name,
+    dtm=True,
+    add_pc_gen_params=False,
+    backward_compatible=True,
+    is_rm=False,
+):
+    props = {key_name: {}}
+    props[key_name]["cellsize"] = "NaN"
+    _add_default_cellsize_params(props[key_name], True)
+    props[key_name]["format"] = "CRF"
+    _add_default_compression_params(props[key_name])
+    props[key_name]["interpolationMethod"] = "IDW" if is_rm else "TRIANGULATION"
+    props[key_name]["smoothingMethod"] = "GAUSS5x5"
+    props[key_name]["fillDEM"] = ""
+    props[key_name]["extent"] = ""
+    props[key_name]["mask"] = ""
+    props[key_name]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
+
+    if dtm:
+        props[key_name]["classifyLowNoise"] = True
+        props[key_name]["lowNoise"] = 0.25
+        props[key_name]["classifyHighNoise"] = True
+        props[key_name]["highNoise"] = 100.0
+        props[key_name]["groundDetectionMethod"] = "Standard"
+        props[key_name]["reuseGround"] = False
+        props[key_name]["reuseLowNoise"] = False
+        props[key_name]["reuseHighNoise"] = False
+
+    if backward_compatible:
+        props["key_name"]["surfaceType"] = "DTM" if dtm else "DSM"
+
+    pc_dict = None
+    if add_pc_gen_params:
+        props[key_name]["pointCloudSourceType"] = "STD"
+        pc_dict = _construct_point_cloud_gen_params()
+
+    properties_dict["template"]["processingSettings"][key_name] = props
+
+    if pc_dict:
+        properties_dict["template"]["processingSettings"][key_name][
+            "pointCloud"
+        ] = pc_dict
+
+
+def _construct_interpolation_dict(properties_dict, key_name, is_rm):
+    method = "IDW" if is_rm else "TRIANGULATION"
+    properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {}
+    # when the key_name is "dsm" and is_rm is True, we don't need to set the interpolation method
+    if not (key_name == "dsm" and is_rm):
+        properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {
+            "method": method
+        }
+
+
+def _construct_mesh_params(properties_dict, is_dsm_mesh, textured=True):
+    props = {}
+    props["format"] = "SLPK"
+    if textured:
+        props["textureFormat"] = "JPG & DDS"
+    if is_dsm_mesh:
+        # props["cellsize"] = "NaN"
+        # _add_default_cellsize_params(props, is_dem=False)
+        properties_dict["template"]["processingSettings"]["dsmMesh"] = props
+    else:
+        properties_dict["template"]["processingSettings"]["3dMesh"] = props
+
+
+def _construct_general_settings(properties_dict, quality, auto_cellsize):
+    general_settings = {}
+    general_settings["quality"] = quality
+    general_settings["cellsize"] = "NaN"
+    _add_default_cellsize_params(general_settings, False)
+    general_settings["autoCellsize"] = auto_cellsize
+    properties_dict["template"]["processingSettings"][
+        "generalReconSettings"
+    ] = general_settings
+
+
+def _construct_advanced_settings(properties_dict):
+    advanced_settings = {}
+    advanced_settings["productBoundary"] = ""
+    advanced_settings["correctionFeatures"] = ""
+    advanced_settings["waterbodyFeatures"] = ""
+    advanced_settings["processingFolder"] = ""
+    advanced_settings["exportBinaryMaskImageForNonInterpolatedPixels"] = False
+    advanced_settings["exportDistanceMapToNextNonInterpolatedPixels"] = False
+    advanced_settings["exportMapWithStereoModelCountOfFinalPoint"] = False
+    properties_dict["template"]["processingSettings"][
+        "advancedReconSettings"
+    ] = advanced_settings
+
+
+def _initialize_project(sensor_type, scenario_type, is_rm):
+    project_version = 1 if is_rm else 2
+    properties_dict = {
+        "projectVersion": project_version,
+        "template": {"processingSettings": {}, "adjustSettings": {}},
+    }
+
+    raster_type = "Raster Dataset"
+    if sensor_type.lower() == "drone":
+        raster_type = "UAV/UAS"
+    elif sensor_type.lower() == "satellite":
+        raster_type = "Satellite"
+    elif sensor_type.lower() == "aerialdigital":
+        raster_type = "Frame"
+    elif sensor_type.lower() == "aerialscannned":
+        raster_type = "AerialScanned"
+    else:
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+
+    properties_dict["rasterType"] = raster_type
+
+    quality = "HIGH"
+    if sensor_type.lower() == "satellite" or (
+        sensor_type.lower() == "aerialdigital"
+        and (
+            scenario_type.lower() == "aerial_nadir"
+            or scenario_type.lower() == "aerial_oblique"
+        )
+    ):
+        quality = "ULTRA"
+
+    _compute_block_adjustment_params(sensor_type, properties_dict)
+    _construct_orthomosaic_generation_params(properties_dict, is_rm=is_rm)
+
+    if not is_rm:
+        _construct_seamline_generation_params(properties_dict)
+        _construct_color_balancing_params(properties_dict)
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+        _construct_dem_params(
+            properties_dict,
+            key_name="dsm",
+            dtm=False,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+    else:
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=False,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+        _construct_mesh_params(properties_dict, is_dsm_mesh=True)
+        _construct_mesh_params(properties_dict, is_dsm_mesh=False)
+        _construct_dsm_or_dsm_orthomosaic_params(properties_dict)
+        _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=True)
+        _construct_advanced_settings(properties_dict)
+        _construct_general_settings(properties_dict, quality, True)
+
+    # _construct_compute_gcp_params(sensor_type, properties_dict)
+    # _construct_analyze_tie_points_params(properties_dict)
+    # _construct_recompute_tie_points_params(sensor_type, properties_dict)
+    _construct_interpolation_dict(properties_dict, key_name="dsm", is_rm=is_rm)
+    _construct_interpolation_dict(properties_dict, key_name="dtm", is_rm=is_rm)
+
+    if "flights" not in properties_dict:
+        properties_dict["flights"] = [{"oid": 0}]
+    return properties_dict
+
+
+def _flatten_adjust_settings(adjust_options_list):
+    flat = {}
+    mapping = {
+        "CalibrateF": "focalLength",
+        "CalibrateK": "k",
+        "CalibrateP": "p",
+        "CalibratePP": "principalPoint",
+        "CameraCalibration": "cameraCalibration",
+        "EstimateOPK": "estimateOPK",
+        "ComputeImagePosteriorStd": "computeImagePosteriorStd",
+        "ComputeSolutionPointPosteriorStd": "computeSolutionPointPosteriorStd",
+        "rollingshutter": "rollingShutter",
+        "rigCamera": "processAsRigCamera",
+        "AdjustTiepoints": "adjustTiePoints",
+    }
+
+    for ele in adjust_options_list:
+        key, value = ele.split(" ")
+        match value:
+            case "0":
+                value = False
+            case "1":
+                value = True
+            case _:
+                value = value
+
+        flat[mapping[key]] = value
+
+    return flat
+
+
+def _nestify_context(context):
+    adjust_options_list = []
+    mapping = {
+        "focalLength": "CalibrateF",
+        "k": "CalibrateK",
+        "p": "CalibrateP",
+        "principalPoint": "CalibratePP",
+        "cameraCalibration": "CameraCalibration",
+        "estimateOPK": "EstimateOPK",
+        "computeImagePosteriorStd": "ComputeImagePosteriorStd",
+        "computeSolutionPointPosteriorStd": "ComputeSolutionPointPosteriorStd",
+        "rollingShutter": "rollingshutter",
+        "processAsRigCamera": "rigCamera",
+        "adjustTiePoints": "AdjustTiepoints",
+    }
+
+    for key in mapping:
+        if key in context:
+            value = context.pop(key)
+            match value:
+                case False:
+                    value = "0"
+                case True:
+                    value = "1"
+                case _:
+                    value = value
+
+            adjust_options_list.append(f"{mapping[key]} {value}")
+
+    context["adjustOptions"] = adjust_options_list
