@@ -2387,7 +2387,9 @@ def _compute_primary_tie_points_gen_params(sensor_type, properties_dict):
     if "locationAccuracy" not in adjust_settings:
         adjust_settings["locationAccuracy"] = "MEDIUM"
     adjust_settings["pointSimilarity"] = "MEDIUM"
-    adjust_settings["pointDensity"] = "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
+    adjust_settings["pointDensity"] = (
+        "MEDIUM" if sensor_type.lower() == "satellite" else "HIGH"
+    )
     adjust_settings["pointDistribution"] = "RANDOM"
     if sensor_type.lower() == "aerialdigital":
         adjust_settings["fullFrameMatch"] = False
@@ -2398,16 +2400,24 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
     sensor_type can be one of "Drone", "Satellite", "AerialScanned" or "AerialDigital".
     """
     adjust_settings = properties_dict["template"]["adjustSettings"]
-    
+
     if sensor_type.lower() == "drone" or sensor_type.lower() == "aerialscanned":
         adjust_settings["initPointResolution"] = 8
-        adjust_settings["locationAccuracy"] = "LOW" if sensor_type.lower() == "aerialscanned" else "HIGH"
+        adjust_settings["locationAccuracy"] = (
+            "LOW" if sensor_type.lower() == "aerialscanned" else "HIGH"
+        )
         adjust_settings["maxResidual"] = float(5)
         adjust_settings["p"] = True if sensor_type.lower() == "drone" else False
-        adjust_settings["principalPoint"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["principalPoint"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
         adjust_settings["k"] = True if sensor_type.lower() == "drone" else False
-        adjust_settings["focalLength"] = True if sensor_type.lower() == "drone" else False
-        adjust_settings["cameraCalibration"] = True if sensor_type.lower() == "drone" else False
+        adjust_settings["focalLength"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
+        adjust_settings["cameraCalibration"] = (
+            True if sensor_type.lower() == "drone" else False
+        )
         adjust_settings["fixImageLocationForHighAccuracyGPS"] = False
         adjust_settings["transformationType"] = "Frame"
         adjust_settings["computeImagePosteriorStd"] = True
@@ -2425,7 +2435,16 @@ def _compute_block_adjustment_params(sensor_type, properties_dict):
         adjust_settings["k"] = False
         adjust_settings["focalLength"] = False
         adjust_settings["transformationType"] = "Frame"
-        for key in ["aPrioriAccuracyX", "aPrioriAccuracyY", "aPrioriAccuracyZ", "aPrioriAccuracyXY", "aPrioriAccuracyXYZ", "aPrioriAccuracyOmega", "aPrioriAccuracyPhi", "aPrioriAccuracyKappa"]:
+        for key in [
+            "aPrioriAccuracyX",
+            "aPrioriAccuracyY",
+            "aPrioriAccuracyZ",
+            "aPrioriAccuracyXY",
+            "aPrioriAccuracyXYZ",
+            "aPrioriAccuracyOmega",
+            "aPrioriAccuracyPhi",
+            "aPrioriAccuracyKappa",
+        ]:
             adjust_settings[key] = "NaN"
         adjust_settings["computeAntennaOffset"] = False
         adjust_settings["computeShift"] = False
@@ -2474,7 +2493,7 @@ def _construct_dsm_or_dsm_orthomosaic_params(properties_dict, is_ortho=False):
     props[key]["resampling"] = "BILINEAR"
     props[key]["noDataValue"] = "NaN"
     props[key]["pyramidSettings"] = "PYRAMIDS -1 BILINEAR DEFAULT 75 NO_SKIP"
-    
+
     if key == "trueortho":
         properties_dict["template"]["processingSettings"][key] = props[key]
     else:
@@ -2506,7 +2525,14 @@ def _construct_orthomosaic_generation_params(properties_dict, is_rm):
     properties_dict["template"]["processingSettings"]["ortho"] = props
 
 
-def _construct_dem_params(properties_dict, key_name, dtm=True, add_pc_gen_params=False, backward_compatible=True, is_rm=False):
+def _construct_dem_params(
+    properties_dict,
+    key_name,
+    dtm=True,
+    add_pc_gen_params=False,
+    backward_compatible=True,
+    is_rm=False,
+):
     props = {key_name: {}}
     props[key_name]["cellsize"] = "NaN"
     _add_default_cellsize_params(props[key_name], True)
@@ -2536,11 +2562,13 @@ def _construct_dem_params(properties_dict, key_name, dtm=True, add_pc_gen_params
     if add_pc_gen_params:
         props[key_name]["pointCloudSourceType"] = "STD"
         pc_dict = _construct_point_cloud_gen_params()
-    
+
     properties_dict["template"]["processingSettings"][key_name] = props
-    
+
     if pc_dict:
-        properties_dict["template"]["processingSettings"][key_name]["pointCloud"] = pc_dict
+        properties_dict["template"]["processingSettings"][key_name][
+            "pointCloud"
+        ] = pc_dict
 
 
 def _construct_interpolation_dict(properties_dict, key_name, is_rm):
@@ -2548,7 +2576,9 @@ def _construct_interpolation_dict(properties_dict, key_name, is_rm):
     properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {}
     # when the key_name is "dsm" and is_rm is True, we don't need to set the interpolation method
     if not (key_name == "dsm" and is_rm):
-        properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {"method": method}
+        properties_dict["template"]["processingSettings"][key_name]["interpolation"] = {
+            "method": method
+        }
 
 
 def _construct_mesh_params(properties_dict, is_dsm_mesh, textured=True):
@@ -2570,7 +2600,9 @@ def _construct_general_settings(properties_dict, quality, auto_cellsize):
     general_settings["cellsize"] = "NaN"
     _add_default_cellsize_params(general_settings, False)
     general_settings["autoCellsize"] = auto_cellsize
-    properties_dict["template"]["processingSettings"]["generalReconSettings"] = general_settings
+    properties_dict["template"]["processingSettings"][
+        "generalReconSettings"
+    ] = general_settings
 
 
 def _construct_advanced_settings(properties_dict):
@@ -2582,19 +2614,18 @@ def _construct_advanced_settings(properties_dict):
     advanced_settings["exportBinaryMaskImageForNonInterpolatedPixels"] = False
     advanced_settings["exportDistanceMapToNextNonInterpolatedPixels"] = False
     advanced_settings["exportMapWithStereoModelCountOfFinalPoint"] = False
-    properties_dict["template"]["processingSettings"]["advancedReconSettings"] = advanced_settings
+    properties_dict["template"]["processingSettings"][
+        "advancedReconSettings"
+    ] = advanced_settings
 
 
 def _initialize_project(sensor_type, scenario_type, is_rm):
     project_version = 1 if is_rm else 2
     properties_dict = {
         "projectVersion": project_version,
-        "template": {
-            "processingSettings": {}, 
-            "adjustSettings": {}
-            }
-        }
-    
+        "template": {"processingSettings": {}, "adjustSettings": {}},
+    }
+
     raster_type = "Raster Dataset"
     if sensor_type.lower() == "drone":
         raster_type = "UAV/UAS"
@@ -2605,25 +2636,53 @@ def _initialize_project(sensor_type, scenario_type, is_rm):
     elif sensor_type.lower() == "aerialscannned":
         raster_type = "AerialScanned"
     else:
-        raise RuntimeError("Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'")
-    
+        raise RuntimeError(
+            "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
+        )
+
     properties_dict["rasterType"] = raster_type
 
     quality = "HIGH"
-    if sensor_type.lower() == "satellite" or \
-    (sensor_type.lower() == "aerialdigital" and (scenario_type.lower() == "aerial_nadir" or scenario_type.lower() == "aerial_oblique")):
+    if sensor_type.lower() == "satellite" or (
+        sensor_type.lower() == "aerialdigital"
+        and (
+            scenario_type.lower() == "aerial_nadir"
+            or scenario_type.lower() == "aerial_oblique"
+        )
+    ):
         quality = "ULTRA"
 
     _compute_block_adjustment_params(sensor_type, properties_dict)
     _construct_orthomosaic_generation_params(properties_dict, is_rm=is_rm)
-    
+
     if not is_rm:
         _construct_seamline_generation_params(properties_dict)
         _construct_color_balancing_params(properties_dict)
-        _construct_dem_params(properties_dict, key_name="dtm", dtm=True, add_pc_gen_params=True, backward_compatible=False, is_rm=is_rm)
-        _construct_dem_params(properties_dict, key_name="dsm", dtm=False, add_pc_gen_params=True, backward_compatible=False, is_rm=is_rm)
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
+        _construct_dem_params(
+            properties_dict,
+            key_name="dsm",
+            dtm=False,
+            add_pc_gen_params=True,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
     else:
-        _construct_dem_params(properties_dict, key_name="dtm", dtm=True, add_pc_gen_params=False, backward_compatible=False, is_rm=is_rm)
+        _construct_dem_params(
+            properties_dict,
+            key_name="dtm",
+            dtm=True,
+            add_pc_gen_params=False,
+            backward_compatible=False,
+            is_rm=is_rm,
+        )
         _construct_mesh_params(properties_dict, is_dsm_mesh=True)
         _construct_mesh_params(properties_dict, is_dsm_mesh=False)
         _construct_dsm_or_dsm_orthomosaic_params(properties_dict)
@@ -2636,7 +2695,7 @@ def _initialize_project(sensor_type, scenario_type, is_rm):
     # _construct_recompute_tie_points_params(sensor_type, properties_dict)
     _construct_interpolation_dict(properties_dict, key_name="dsm", is_rm=is_rm)
     _construct_interpolation_dict(properties_dict, key_name="dtm", is_rm=is_rm)
-    
+
     if "flights" not in properties_dict:
         properties_dict["flights"] = [{"oid": 0}]
     return properties_dict
@@ -2667,7 +2726,7 @@ def _flatten_adjust_settings(adjust_options_list):
                 value = True
             case _:
                 value = value
- 
+
         flat[mapping[key]] = value
 
     return flat
@@ -2699,7 +2758,7 @@ def _nestify_context(context):
                     value = "1"
                 case _:
                     value = value
-            
+
             adjust_options_list.append(f"{mapping[key]} {value}")
 
     context["adjustOptions"] = adjust_options_list

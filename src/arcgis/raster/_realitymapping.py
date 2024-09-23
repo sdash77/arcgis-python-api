@@ -179,7 +179,12 @@ def _create_project(
 
     gis = arcgis.env.active_gis if gis is None else gis
 
-    if sensor_type.lower() not in ["drone", "satellite", "aerialdigital", "aerialscanned"]:
+    if sensor_type.lower() not in [
+        "drone",
+        "satellite",
+        "aerialdigital",
+        "aerialscanned",
+    ]:
         raise RuntimeError(
             "Invalid sensor type. Supported values are 'Drone', 'Satellite', 'AerialDigital', 'AerialScanned'"
         )
@@ -187,7 +192,10 @@ def _create_project(
         raise RuntimeError(
             "Invalid sensor type. Supported values are 'Drone', 'Aerial_Nadir', 'Aerial_Oblique'"
         )
-    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in ["aerial_nadir", "aerial_oblique"]:
+    if sensor_type.lower() == "aerialdigital" and scenario_type.lower() not in [
+        "aerial_nadir",
+        "aerial_oblique",
+    ]:
         raise RuntimeError(
             "Invalid scenario type for Aerial Digital sensor. Supported values are 'Aerial_Nadir', 'Aerial_Oblique'"
         )
@@ -810,11 +818,18 @@ def compute_sensor_model(
             context.update(project_adj_settings)
             _nestify_context(context)
 
-            if project_adj_settings["locationAccuracy"].lower() != location_accuracy.lower():
+            if (
+                project_adj_settings["locationAccuracy"].lower()
+                != location_accuracy.lower()
+            ):
                 project_adj_settings.update({"locationAccuracy": location_accuracy})
             keys_to_check = [
-                "computeCandidate", "maxOverlap", "maxLoss",
-                "pointSimilarity", "pointDensity", "pointDistribution"
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "pointSimilarity",
+                "pointDensity",
+                "pointDistribution",
             ]
             for key in keys_to_check:
                 if key in context:
@@ -2164,11 +2179,23 @@ class RMProject:
     _spatial_reference = None
 
     def __init__(
-        self, project=None, definition=None, sensor_type="Drone", scenario_type="Drone", *, gis: Optional[GIS] = None, **kwargs
+        self,
+        project=None,
+        definition=None,
+        sensor_type="Drone",
+        scenario_type="Drone",
+        *,
+        gis: Optional[GIS] = None,
+        **kwargs,
     ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project, definition=definition, sensor_type=sensor_type, scenario_type=scenario_type)
+                project = _create_project(
+                    name=project,
+                    definition=definition,
+                    sensor_type=sensor_type,
+                    scenario_type=scenario_type,
+                )
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
@@ -2254,7 +2281,7 @@ class RMProject:
         return deleted
 
     def get_settings(self):
-         return self._project_item.get_data()
+        return self._project_item.get_data()
 
     def set_settings(self, properties_dict):
         item = self._project_item
