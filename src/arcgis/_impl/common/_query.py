@@ -343,7 +343,9 @@ def _process_query_result(result, params, raw, layer, url):
     # Determine the type of result to return
     if _is_true(params.get("returnCountOnly")):
         return result["count"]
-    elif _is_true(params.get("returnIdsOnly")) or _is_true(params.get("returnExtentOnly")):
+    elif _is_true(params.get("returnIdsOnly")) or _is_true(
+        params.get("returnExtentOnly")
+    ):
         return result
     elif _is_true(raw):
         return result
@@ -379,7 +381,7 @@ def _fetch_all_features(layer, url, params, features, result):
         params["resultOffset"] = len(features) + original_offset
         result = layer._con.post(path=url, postdata=params, token=layer._token)
         features += result.get("features", [])
-    
+
     return features
 
 
@@ -403,8 +405,8 @@ def _handle_query_exception(query_exception, layer, url, params, raw):
 def _is_invalid_token_error(exception):
     """Checks if the exception is due to an invalid token."""
     return (
-        isinstance(exception.args[0], str) and
-        "invalid token" in exception.args[0].lower()
+        isinstance(exception.args[0], str)
+        and "invalid token" in exception.args[0].lower()
     )
 
 
@@ -518,6 +520,7 @@ def _query_df(layer, url, params, **kwargs):
                 geom["spatialReference"] = sr
             attribs["SHAPE"] = Geometry(geom)
         return attribs
+
     try:
         # Perform the initial query
         result = layer._con.post(url, params, token=layer._token)
