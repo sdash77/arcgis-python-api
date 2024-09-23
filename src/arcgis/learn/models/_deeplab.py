@@ -445,6 +445,13 @@ class DeepLab(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def _supported_backbones():
         timm_models = filter_timm_models(
             [
@@ -459,15 +466,15 @@ class DeepLab(ArcGISModel):
             ]
         )
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        from ._hf_weightutils import hf_resnet_cfgs
 
         transformer_backbone = DeepLab.transformer_backbones()
+        torchgeo_backbone = DeepLab.torchgeo_backbones()
 
         return (
             [*_resnet_family, *_densenet_family, *_vgg_family]
             + timm_backbones
             + transformer_backbone
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+            + torchgeo_backbone
         )
 
     @property
@@ -509,6 +516,7 @@ class DeepLab(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
+        backbone = model_params["backbone"]
 
         try:
             class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
@@ -527,6 +535,8 @@ class DeepLab(ArcGISModel):
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
             empty_data._is_empty = True
+            if backbone is not None and "hf:" in backbone:
+                empty_data._extract_bands = emd.get("ExtractBands")
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd

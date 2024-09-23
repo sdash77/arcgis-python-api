@@ -17,27 +17,22 @@ except Exception as e:
 
 
 class TextModelExtension:
-    def __init__(self, emd_path_or_dict: Path | Dict, model):
-        self.emd_path_or_dict: Path | Dict = emd_path_or_dict
+    def __init__(self, emd_path: str | Path, model):
+        self.emd_path: Path = emd_path
         self.model = model
         self.model_loaded = False
 
     @classmethod
-    def from_model(cls, emd_path_or_dict: Path | Dict, **kwargs) -> List[str]:
-        if not isinstance(emd_path_or_dict, Dict):
-            emd_path_or_dict = _get_emd_path(emd_path_or_dict)
-            with open(emd_path_or_dict) as f:
-                emd_json = json.load(f)
-        else:
-            emd_json = emd_path_or_dict
+    def from_model(cls, emd_path: str | Path, **kwargs):
+        emd_path = _get_emd_path(emd_path)
+        with open(emd_path) as f:
+            emd_json = json.load(f)
 
         # Till here we are not aware of the type of the task. Either we infer it from emd or ask the upstream to supply
         # it explicitly. Currently, upstream will only call predict method and parsing will be task specific
 
         inference_function, inference_function_full_path = (
-            TextModelExtension._get_inference_function_details(
-                emd_json, emd_path_or_dict
-            )
+            TextModelExtension._get_inference_function_details(emd_json, emd_path)
         )
         load_class_name = os.path.basename(inference_function_full_path).split(".")[0]
         if inference_function:
@@ -72,11 +67,12 @@ class TextModelExtension:
                     f"the value of the common key: {common_keys} in the user-defined parameters will take "
                     f"precedence."
                 )
-
-            emd_json.update(kwargs)
-            model = model(**emd_json)
-            model.initialize(**emd_json)
-            cls_object = cls(emd_path_or_dict, model)
+            # prepare a payload JSON
+            payload_json = {"model": emd_path}
+            payload_json.update(kwargs)
+            model = model()
+            model.initialize(**payload_json)
+            cls_object = cls(emd_path, model)
             cls_object.model_loaded = True
         else:
             cls_object = cls({}, None)

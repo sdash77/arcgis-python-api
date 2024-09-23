@@ -76,13 +76,20 @@ class MyFasterRCNN:
             from arcgis.learn.models._transformer_backbone import (
                 transformer_backbone_downstream,
             )
+            from arcgis.learn.models._faster_rcnn import FasterRCNN
 
             backbone = get_backbone_func(
                 backbone, data, is_fpn=True, chip_size=data.chip_size * 1.5
             )
             is_transformer = False
+            is_torchgeo = False
             if backbone.__name__ in transformer_backbone_downstream:
                 is_transformer = True
+            if (
+                backbone is not None
+                and "hf:" + backbone.__name__ in FasterRCNN.torchgeo_backbones()
+            ):
+                is_torchgeo = True
 
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
         assert type(pretrained_backbone) == bool
@@ -132,7 +139,7 @@ class MyFasterRCNN:
             backbone_small = self.fastai.vision.learner.create_body(
                 backbone, pretrained_backbone, backbone_cut
             )
-            if "timm" in backbone.__module__:
+            if "timm" in backbone.__module__ or is_torchgeo:
                 from arcgis.learn.models._maskrcnn import TimmFPNBackbone
 
                 try:
@@ -671,6 +678,13 @@ class FasterRCNN(ModelExtension):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return FasterRCNN._supported_backbones()
@@ -680,13 +694,13 @@ class FasterRCNN(ModelExtension):
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = FasterRCNN.transformer_backbones()
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = FasterRCNN.torchgeo_backbones()
 
         return (
             [*_resnet_family]
             + transformer_backbone
             + timm_backbones
-            + list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+            + torchgeo_backbone
         )
 
     @property
@@ -773,7 +787,7 @@ class FasterRCNN(ModelExtension):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
-            if "hf:" in backbone:
+            if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
         data.resize_to = resize_to
@@ -893,7 +907,7 @@ class FasterRCNN(ModelExtension):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

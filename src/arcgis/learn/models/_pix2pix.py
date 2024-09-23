@@ -47,7 +47,7 @@ class Pix2Pix(ArcGISModel):
                             creating the base of the :class:`~arcgis.learn.Pix2Pix`, which
                             is UNet with vanilla encoder by default.
                             Compatible backbones as encoder: 'resnet18', 'resnet34',
-                            'resnet50', "resnet101", "resnet152", 'resnext50', 'wide_resnet50'
+                            'resnet50', "resnet101", "resnet152", 'resnext50_32x4d', 'wide_resnet50_2'
     ---------------------   -------------------------------------------
     perceptual_loss         Optional boolean. True when Perceptual loss is used.
                             Default set to False.
@@ -308,6 +308,6 @@ class Pix2Pix(ArcGISModel):
             "resnet50",
             "resnet101",
             "resnet152",
-            "resnext50",
-            "wide_resnet50",
+            "resnext50_32x4d",
+            "wide_resnet50_2",
         ]

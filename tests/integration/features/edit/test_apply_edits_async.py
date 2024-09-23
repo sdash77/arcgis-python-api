@@ -153,13 +153,17 @@ class TestApplyEditsAsync(unittest.TestCase):
         ]
         fl = item.layers[0]
         try:
+            feat_count = fl.query(return_count_only=True)
             res = fl.edit_features(adds=edit_data, future=True)
             assert isinstance(res, concurrent.futures.Future)
             result = res.result()
             assert result
+            assert bool(result[0]["addResults"])
+            assert fl.query(return_count_only=True) == feat_count + 1
         finally:
-            if item:
-                item.delete()
+            for itm in item.related_items("Service2Data", "forward"):
+                itm.delete(permanent=True)
+            item.delete(permanent=True)
 
 
 if __name__ == "__main__":
