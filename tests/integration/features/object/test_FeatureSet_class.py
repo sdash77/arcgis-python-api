@@ -2,6 +2,8 @@
 # Name:        Feature class tests
 # Purpose:     Tests for checking the save function of the feature class works properly.
 # -------------------------------------------------------------------------------
+
+
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -337,13 +339,13 @@ class Test_Feature_class(unittest.TestCase):
                 else:  # Polygon
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
                     # create the simple renderer dataclass
-                    simple_renderer = arcgismapping.SimpleRenderer(
-                        symbol=arcgismapping.SimpleMarkerSymbolEsriSMS(
-                            style=arcgismapping.SimpleMarkerSymbolStyle.esriSMSCircle,
+                    simple_renderer = arcgismapping.renderers.SimpleRenderer(
+                        symbol=arcgismapping.symbols.SimpleMarkerSymbolEsriSMS(
+                            style=arcgismapping.symbols.SimpleMarkerSymbolStyle.esriSMSCircle,
                             color=[255, 0, 0, 255],
                             size=12,
-                            outline=arcgismapping.SimpleLineSymbolEsriSLS(
-                                style=arcgismapping.SimpleLineSymbolStyle.esriSLSSolid,
+                            outline=arcgismapping.symbols.SimpleLineSymbolEsriSLS(
+                                style=arcgismapping.symbols.SimpleLineSymbolStyle.esriSLSSolid,
                                 color=[0, 0, 0, 255],
                                 width=1,
                             ),

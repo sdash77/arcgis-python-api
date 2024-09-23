@@ -271,7 +271,7 @@ def main_tracker(
             z = z_box[idx]
             z = np.expand_dims(z, axis=0).T
             tmp_trk = Tracker()  # Create a new tracker
-            x = np.array([[z[0], 0, z[1], 0, z[2], 0, z[3], 0]]).T
+            x = np.array([[z[0], 0, z[1], 0, z[2], 0, z[3], 0]], dtype="object").T
             tmp_trk.x_state = x
             tmp_trk.predict()
             xx = tmp_trk.x_state

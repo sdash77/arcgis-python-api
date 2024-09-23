@@ -121,15 +121,18 @@ def _find_service_name(
     gis: "GIS", name: str, service_type: str = "featureService"
 ) -> str:
     i: int = 1
-    while gis.content.is_service_name_available(name, service_type) == False:
-        name = f"{name}{i}"
-        if gis.content.is_service_name_available(name, "featureService"):
+    if name == "data":
+        name = "mydata"
+    new_name: str = name
+    while gis.content.is_service_name_available(new_name, service_type) == False:
+        new_name = f"{name}{i}"
+        if gis.content.is_service_name_available(new_name, "featureService"):
             break
 
         i += 1
         if i > 10:
-            name = f"{name}{uuid.uuid4().hex[:3]}"
-    return name
+            new_name = f"{name}{uuid.uuid4().hex[:3]}"
+    return new_name
 
 
 def _create_items(gis, file, file_type, **kwargs):
@@ -171,9 +174,12 @@ def _create_items(gis, file, file_type, **kwargs):
         publish_parameters["locationType"] = None
     else:
         # start creating publish params from new file item
-        publish_parameters = gis.content.analyze(
-            item=file_item, file_type=file_type.lower()
-        )["publishParameters"]
+        publish_parameters = {
+            "name": "data",
+            "maxRecordCount": 2000,
+            "hasStaticData": True,
+            "layerInfo": {"capabilities": "Query"},
+        }
         if service_name is None:
             service_name = publish_parameters["name"]
         #  get a unique service name

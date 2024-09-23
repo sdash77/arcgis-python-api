@@ -655,7 +655,7 @@ class SequenceToSequence(ArcGISModel):
                         "Validation set is empty. Data object must not be empty or None."
                     )
 
-                validation_dataframe = self._data._valid_df
+                validation_dataframe = self._data._valid_df.sample(n=rows)
 
                 predictions = [
                     x[1]

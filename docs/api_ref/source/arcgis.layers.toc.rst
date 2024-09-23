@@ -9,7 +9,21 @@ Service
     :members:
     :undoc-members:
     :show-inheritance:
-
+    
+BasemapServices
+---------------
+.. autoclass:: arcgis.layers.BasemapServices
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+BasemapService
+--------------
+.. autoclass:: arcgis.layers.BasemapService
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 Working with 3D Maps
 --------------------
 
