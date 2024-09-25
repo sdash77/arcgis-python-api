@@ -16,7 +16,7 @@ try:
     from ._scannedmapdigitizer import ScannedMapDigitizer
     from .models._timm_utils import load_timm_bckbn_pretrained
 except ImportError as ie:
-    print(ie)
+    pass
 
 # from timm.models import helpers
 
@@ -78,7 +78,7 @@ try:
     from ._process_df import process_df, add_datepart
     from ._utils.evaluate_batchsize import estimate_batch_size
 except:
-    print("here")
+    pass
 
 
 _point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
