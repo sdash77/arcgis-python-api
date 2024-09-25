@@ -6118,6 +6118,81 @@ class Cover:
         ] = date
 
     # ----------------------------------------------------------------------
+    @property
+    def vertical_position(self) -> str:
+        """
+        Get/Set the vertical position of the cover panel.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        vertical_position   Optional string. The vertical position of the cover slide.
+
+                            ``Values: "top" | "middle" | "bottom"``
+        ===============     ====================================================================
+        """
+        return self._story._properties["nodes"][self._node]["data"]["titlePanelVerticalPosition"]
+    
+    # ----------------------------------------------------------------------
+    @vertical_position.setter
+    def vertical_position(self, position: str):
+        if position not in ["top", "middle", "bottom"]:
+            raise ValueError(
+                "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
+            )
+        self._story._properties["nodes"][self._node]["data"]["titlePanelVerticalPosition"] = position
+    
+    # ----------------------------------------------------------------------
+    @property
+    def horizontal_position(self) -> str:
+        """
+        Get/Set the horizontal position of the cover panel.
+
+        ===================     ====================================================================
+        **Parameter**           **Description**
+        -------------------     --------------------------------------------------------------------
+        horizontal_position     Optional string. The horizontal position of the cover slide.
+
+                                ``Values: "left" | "center" | "right"``
+        ===================     ====================================================================
+        """
+        return self._story._properties["nodes"][self._node]["data"]["titlePanelHorizontalPosition"]
+    
+    # ----------------------------------------------------------------------
+    @horizontal_position.setter
+    def horizontal_position(self, position: str):
+        if position not in ["left", "center", "right"]:
+            raise ValueError(
+                "Invalid horizontal position value. Please provide 'left', 'center', or 'right'."
+            )
+        self._story._properties["nodes"][self._node]["data"]["titlePanelHorizontalPosition"] = position
+        
+    # ----------------------------------------------------------------------
+    @property
+    def style(self) -> str:
+        """
+        Get/Set the style of the cover panel.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        style               Optional string. The style of the cover slide.
+
+                            ``Values: "gradient" | "solid"``
+        ===============     ====================================================================
+        """
+        return self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"]
+    
+    # ----------------------------------------------------------------------
+    @style.setter
+    def style(self, style: str):
+        if style not in ["gradient", "solid"]:
+            raise ValueError(
+                "Invalid style value. Please provide 'gradient' or 'solid'."
+            )
+        self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"] = style
+    
+    # ----------------------------------------------------------------------
     def _check_node(self):
         if self._story is None or self._node is None:
             return False
