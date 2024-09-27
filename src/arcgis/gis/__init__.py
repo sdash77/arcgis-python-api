@@ -13222,6 +13222,17 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def attachments_size(self):
+        """
+        The ``attachments_size`` property returns the total size of the attachments for the item.
+        The item has to support this property.
+
+        :return: int
+        """
+        return self.subInfo or 0
+
+    # ----------------------------------------------------------------------
+    @property
     def favorite(self) -> bool:
         """
         Gets/Sets if the Item is in the user's favorites
