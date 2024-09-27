@@ -13227,7 +13227,11 @@ class Item(dict):
         The ``attachments_size`` property returns the total size of the attachments for the item.
         The item has to support this property.
 
-        :return: int
+        .. note::
+            The size is returned in bytes. To get the size in megabytes, divide the size by 1024*1024.
+
+        :return: The size in bytes.
+
         """
         return self.subInfo or 0
 
