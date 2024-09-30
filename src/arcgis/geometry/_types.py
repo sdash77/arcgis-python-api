@@ -230,6 +230,8 @@ class GeometryFactory(type):
             # WKB
             if isinstance(iterable, (bytearray, bytes)):
                 iterable = GeometryFactory._from_wkb(iterable)
+            elif isinstance(iterable, int):
+                iterable = {"wkid": iterable}
             elif hasattr(iterable, "JSON"):
                 iterable = _ujson.loads(getattr(iterable, "JSON"))
             elif "coordinates" in iterable:
