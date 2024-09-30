@@ -4203,7 +4203,7 @@ class NotificationManager:
         self.workflow_item_id = item.id
         self.websocket_connection = None
         self.subscribed_jobs = {}
-        self._workflow = workflow_manager
+        self._workflow_manager = workflow_manager
         self._connected = False
 
         # need baseAddress/ server address, orgid, and workflow item id
@@ -4404,8 +4404,8 @@ class ExecutionType(Enum):
     This enum class represents the possible step execution types to be run with websocket messaging.
     """
 
-    RUN = ("RUN",)
-    STOP = ("STOP",)
+    RUN = "RUN"
+    STOP = "STOP"
     FINISH = "FINISH"
 
 
