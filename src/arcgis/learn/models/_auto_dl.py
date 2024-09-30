@@ -3,9 +3,10 @@ import traceback
 import json, time, datetime
 from datetime import datetime as dt
 import pandas as pd
-from IPython.display import clear_output
+
 
 try:
+    from IPython.display import clear_output
     import arcgis as ag
     import torch, sys
     from . import MMSegmentation, MMDetection
@@ -90,7 +91,10 @@ class ImageryModel(ArcGISModel):
             self._modeltype = emd["ModelType"]
             if "ModelFileConfigurationClass" in list(emd.keys()):
                 self._modelconfig = emd["ModelFileConfigurationClass"]
-                if self._modelconfig in ["MMDetectionConfig", "MMSegmentationConfig"]:
+                if self._modelconfig in [
+                    "MMDetectionConfig",
+                    "MMSegmentationConfig",
+                ]:
                     mm_model = emd["Kwargs"]["model"]
                     is_mm = True
         except Exception as e:
@@ -119,7 +123,7 @@ class ImageryModel(ArcGISModel):
         checkpoint=True,
         tensorboard=False,
         monitor="valid_loss",
-        **kwargs
+        **kwargs,
     ):
         """
         Train the model for the specified number of epochs while using the
@@ -184,7 +188,7 @@ class ImageryModel(ArcGISModel):
                 checkpoint,
                 tensorboard,
                 monitor,
-                **kwargs
+                **kwargs,
             )
         except Exception as E:
             print("Load the model first using load()")
@@ -209,7 +213,7 @@ class ImageryModel(ArcGISModel):
         compute_metrics=True,
         save_optimizer=False,
         save_inference_file=True,
-        **kwargs
+        **kwargs,
     ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
@@ -275,7 +279,7 @@ class ImageryModel(ArcGISModel):
             compute_metrics,
             save_optimizer,
             save_inference_file,
-            **kwargs
+            **kwargs,
         )
         return saved_path
 
@@ -460,7 +464,7 @@ class AutoDL:
         mode="basic",
         network=None,
         verbose=True,
-        **kwargs
+        **kwargs,
     ):
         if "save_evaluated_models" in kwargs:
             self._save_evaluated_models = kwargs["save_evaluated_models"]
@@ -835,7 +839,9 @@ class AutoDL:
         else:
             if not self._model_stats()[model]["is_mm"]:
                 setattr(
-                    self, model, getattr(ag.learn, model)(self._data, backbone=backbone)
+                    self,
+                    model,
+                    getattr(ag.learn, model)(self._data, backbone=backbone),
                 )
                 try:
                     estimated_batch_size = estimate_batch_size(getattr(self, model))
@@ -889,7 +895,9 @@ class AutoDL:
 
         if self.verbose:
             log_msg = "{date}: {network} initialized with {bk} backbone".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, bk=backbone
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                bk=backbone,
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -930,7 +938,9 @@ class AutoDL:
         lr_val = getattr(self, model).lr_find(allow_plot=False)
         if self.verbose:
             log_msg = "{date}: Best learning rate for {network} with the selected data is {lr}".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=lr_val
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                lr=lr_val,
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -1150,7 +1160,9 @@ class AutoDL:
 
         if not self._model_stats()[model]["is_mm"]:
             setattr(
-                self, model + "_backbones", getattr(self, model).supported_backbones
+                self,
+                model + "_backbones",
+                getattr(self, model).supported_backbones,
             )
             delattr(self, model)
             gc.collect()
@@ -1221,7 +1233,8 @@ class AutoDL:
             # self._max_epochs = int(self._epoch_obj[model])
             if self.verbose:
                 log_msg = "{date}: Current network - {network}. ".format(
-                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
+                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                    network=model,
                 )
                 print(log_msg)
                 self._logger_dict.append(log_msg)
@@ -1263,7 +1276,8 @@ class AutoDL:
             if epochs <= 0:
                 if self.verbose:
                     log_msg = """{date}: The time left to train the {network} is not sufficent.""".format(
-                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        network=model,
                     )
                     print(log_msg)
                     self._logger_dict.append(log_msg)
@@ -1280,7 +1294,10 @@ class AutoDL:
 
             self.train_basic_model = self._train_model
             tot_sec = self.train_basic_model(
-                model, epochs=epochs, model_type=m_type, model_time=model_time
+                model,
+                epochs=epochs,
+                model_type=m_type,
+                model_time=model_time,
             )
             self.train_basic_model = None
             del self.train_basic_model

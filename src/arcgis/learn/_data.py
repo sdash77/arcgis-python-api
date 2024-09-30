@@ -596,7 +596,12 @@ _models_dir = "models"
 
 
 def _prepare_working_dir(path):
-    _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    try:
+        _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    except Exception as e:
+        raise Exception(
+            "Failed to create the specified working directory. Create it manually and retry."
+        )
 
 
 def merge_emd_and_stats(data_folders):
