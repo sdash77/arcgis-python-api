@@ -3301,8 +3301,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except:
+        except Exception as e:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
+            raise e
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3384,8 +3385,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except:
+        except Exception as e:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
+            raise e
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3464,9 +3466,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except:
+        except Exception as e:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-
+            raise e
         # If it succeeds, return the JobExecution
         je._started()
         return je
