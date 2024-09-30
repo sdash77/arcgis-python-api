@@ -120,33 +120,3 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: boo
             _add_deps(item)
     
     return graph
-
-# class Node:
-#     def __init__(self, itemid, **kwargs):
-#         self.id = itemid
-#         self.adjacency_list = []
-#         self.found_in = []
-#         self.contains = []
-#         self.data = kwargs
-
-# class Graph:
-#     def __init__(self):
-#         self.node_list = {}
-#         self.adjacency_list = 
-
-#     def add_node(self, itemid):
-#         if itemid not in self.node_list:
-#             self.node_list[itemid] = Node(itemid)
-
-#     def get_vertices(self):
-#         return list(self.adjacency_list.keys())
-
-#     def get_edges(self):
-#         edges = []
-#         for vertex in self.adjacency_list:
-#             for neighbor in self.adjacency_list[vertex]:
-#                 edges.append((vertex, neighbor))
-#         return edges
-
-#     def __str__(self):
-#         return str(self.adjacency_list)
