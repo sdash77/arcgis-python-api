@@ -168,7 +168,7 @@ Separator
 
 BriefingSlide
 -----------------
-.. autoclass:: arcgis.apps.storymap.briefing.BriefingSlide
+.. autoclass:: arcgis.apps.storymap.BriefingSlide
    :members:
    :undoc-members:
    :show-inheritance:

@@ -3,12 +3,13 @@ import json
 import traceback
 import numpy as np
 import pandas as pd
-from IPython.display import display
+
 
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
+    from IPython.display import display
     from ._climax_utils import lat_weighted_mse
     from ._climax_utils import climaX
     from .._utils.climax import load_pretrained_path
@@ -95,7 +96,7 @@ class ClimaX(ArcGISModel):
             default_vars=data._variables,
             out_variables=data._out_variables,
             img_size=data.chp_size,
-            **kwargs
+            **kwargs,
         )
 
         self.learn = Learner(

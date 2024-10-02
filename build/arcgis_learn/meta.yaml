@@ -1,20 +1,22 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.4.0" %}
+{% set version = "2.4.1" %}
 
 package:
   name: {{ name | lower }}
   version: {{ version }}
 
 build:
-  number: 55
+  number: 3
 
 requirements:
   build:
     - python
 
   run:
-    - arcgis >=2.4.0
+    - accelerate 0.33.*
+    - arcgis >=2.4.1
     - boost 1.82.*
+    - bitsandbytes 0.43.*
     - cudatoolkit 11.8.*
     - cudnn 8.7.*
     - detreg 1.0.0.*
@@ -25,7 +27,8 @@ requirements:
     - fastprogress 0.2.3.*
     - fasttext
     - graphviz
-    - gdal >=3.8
+    - gdal 3.8.* # [py<311 or linux]
+    - gdal=3.8.3=py311_16 # [py==311 and win]
     - h3-py >=3.7.3
     - h5py # [linux or py==310]
     - h5py=3.9.0=py311h4e0e482_0 # [py==311 and win]
@@ -47,14 +50,15 @@ requirements:
     - mmdet3d 1.2.0.*
     - mmengine 0.8.5.*
     - mmsegmentation 1.1.2.*
-    - notebook
     - numpy 1.22.* # [py <= 39]
     - numpy 1.23.5.* # [py == 310]
     - numpy >=1.24.3 # [py >= 311]
-    - opencv 4.8.* # [py==311 or linux]
+    - opencv=4.8.1=py311_cuda11.8_cudnn8.7_2 # [py==311 and win]
+    - opencv 4.8.* # [linux]
     - opencv 4.9.* # [py<311 and win]
     - openpyxl
     - onnx
+    - onnxruntime
     - onnx-tf >=1.9
     - pandas >=2.0.0
     - pillow >=8.3.2
@@ -68,7 +72,7 @@ requirements:
     - scikit-learn >=1.0.0
     - shap >=0.36.0
     - spacy >=3.5
-    - spconv # [win]
+    - spconv 2.3.6
     - tensorboard 2.13.*
     - tensorboardX 2.6.*
     - tensorflow 2.13.* 
@@ -81,7 +85,7 @@ requirements:
     - torch-sparse 0.6.18.* 
     - torch-spline-conv 1.2.2.*
     - tflite-model-maker 0.3.4.*
-    - transformers >=4.34.0
+    - transformers >=4.43.0
 
 test:
   imports:
@@ -103,6 +107,7 @@ test:
     - mmseg
     - numpy
     - onnx
+    - onnxruntime
     - onnx_tf
     - osgeo.gdal
     - osgeo.gdal_array
@@ -114,6 +119,7 @@ test:
     - skimage
     - sklearn
     - spacy
+    - spconv
     - supervised
     - tensorboard
     - tensorboardX

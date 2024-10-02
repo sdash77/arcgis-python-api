@@ -400,8 +400,9 @@ class SingleShotDetector(ArcGISModel):
 
                 if grids is None:
                     logger.info("Computing optimal grid size...")
-                    hw = data.height_width
-                    hw = np.array(hw)
+
+                    # scale between 0-1
+                    hw = data.height_width / data.x[0].shape[-1]
 
                     # find most suitable centroids for dataset
                     centroid = kmeans(hw, 1)
@@ -425,7 +426,7 @@ class SingleShotDetector(ArcGISModel):
                             int,
                             map(
                                 round,
-                                data.chip_size / centroid,
+                                1 / centroid,
                             ),
                         )
                     )
@@ -433,7 +434,6 @@ class SingleShotDetector(ArcGISModel):
                     grids.sort(reverse=True)
                     if grids[-1] == 0:
                         grids[-1] = 1
-                    grids = list(set(grids))
 
                 self._create_anchors(grids, zooms, ratios)
 
