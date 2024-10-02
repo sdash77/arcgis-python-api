@@ -18108,7 +18108,16 @@ class Item(dict):
             raise ValueError(
                 f"Item type {self.type} is not supported for remapping data"
             )
-
+    
+    # ----------------------------------------------------------------------
+    def get_dependencies(self, deep = False, exclude_outside = False, as_items = True):
+        from arcgis.ItemGraph import create_item_graph
+        graph = create_item_graph(self._gis, [self], exclude_outside=exclude_outside)
+        node = graph.get_item(self.id)
+        if deep:
+            return node.requires(as_items=as_items)
+        else:
+            return node.contains(as_items=as_items)
 
 ########################################################################
 class ViewManager:

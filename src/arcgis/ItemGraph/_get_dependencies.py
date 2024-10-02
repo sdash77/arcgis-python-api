@@ -156,14 +156,19 @@ def _parse_wma(item):
 
 def _parse_storymap(item):
     itemids = []
-    pub_data = item.get_data()
+    data_list = [item.get_data()]
+    draft_name = None
     for res in item.resources.list():
         if "draft" in res["resource"] and "express" not in res["resource"]:
             draft_name = res["resource"]
-    
-    draft_data = item.resources.get(draft_name)
 
-    for draft in [pub_data, draft_data]:
+    if draft_name:
+        draft_data = item.resources.get(draft_name)
+        data_list.append(draft_data)
+
+    for draft in data_list:
+        if "resources" not in draft:
+            continue
         web_maps = set(
             [
                 v["data"]["itemId"]
