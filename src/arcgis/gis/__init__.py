@@ -16286,16 +16286,21 @@ class Item(dict):
         geocode_service=None,
     ):
         from arcgis.geocoding._functions import Geocoder
+        from arcgis.geocoding import get_geocoders
 
         if geocode_service and isinstance(geocode_service, str):
             geocode_service = Geocoder(location=geocode_service, gis=self._gis)
         elif geocode_service and isinstance(geocode_service, Geocoder):
             ...
-        elif not geocode_service is None:
-            _log.warning(
-                "The `geocode_service` parameter is invalid, please ensure it is of type `Geocoder`"
-            )
-            _log.warning("Ignoring input `geocode_service`")
+        elif not geocode_service:
+            geocoders = get_geocoders(self._gis)
+            if len(geocoders) >= 1:
+                geocode_service = geocoders[0]
+            else:
+                _log.warning(
+                    "The `geocode_service` parameter is invalid, please ensure it is of type `Geocoder`"
+                )
+                _log.warning("Ignoring input `geocode_service`")
 
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
@@ -16518,7 +16523,11 @@ class Item(dict):
         ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
 
-            res = self._gis.content.analyze(item=self, file_type=fileType)
+            res = self._gis.content.analyze(
+                item=self,
+                file_type=fileType,
+                geocoding_service=geocode_service,
+            )
             publish_parameters = res["publishParameters"]
             # case for hosted tables
             if (
@@ -16540,7 +16549,10 @@ class Item(dict):
 
                 # do general update and assign service name
                 publish_parameters.update(publish_parameters_orig)
-                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                if "name" in publish_parameters:
+                    service_name = re.sub(r"[\W_]+", "_", publish_parameters["name"])
+                else:
+                    service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
                 if not self._gis.content.is_service_name_available(
                     publish_parameters["name"], "featureService"
