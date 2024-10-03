@@ -18110,7 +18110,32 @@ class Item(dict):
             )
     
     # ----------------------------------------------------------------------
-    def get_dependencies(self, deep = False, exclude_outside = False, as_items = True):
+    def get_dependencies(self, deep: bool = False, exclude_outside: bool = False, as_items: bool = True):
+        """
+        Returns the dependencies of an item. Can be used to return either the immediate dependencies
+        of an item (other items that an item directly contains in its structure) or the full deep
+        dependency list (all of the items that must exist for the item to function properly- including 
+        dependencies of dependencies). Note that not all items/item types may have dependencies.
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        deep                Optional boolean. When set to True, the function will return every
+                            other item needed for an item to exist. When set to False, the 
+                            function will only return the immediate dependencies of an item, or
+                            ones referenced directly by the item. Default is False.
+        ---------------     --------------------------------------------------------------------
+        exclude_outside     Optional boolean. When set to True, the output list will not include
+                            items that come from an outside GIS organization. Default is False.
+        ---------------     --------------------------------------------------------------------
+        as_items            Optional boolean. When set to True, the function will return the
+                            dependencies as :class:`~arcgis.gis.Item` objects. When False, the
+                            function will return a list of item ID strings. Default is True.
+        ===============     ====================================================================
+
+        :return:
+                A list containing the dependencies of the item, in either Item or Item ID form.
+        """
+
         from arcgis.ItemGraph import create_item_graph
         graph = create_item_graph(self._gis, [self], exclude_outside=exclude_outside)
         node = graph.get_item(self.id)
