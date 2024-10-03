@@ -2043,9 +2043,20 @@ class GroupMigrationManager(object):
             else:
                 items = None
             params = {"itemIdList": items}
-            if export_folder and isinstance(export_folder, _folder.Folder):
-                params["exportContentFolderId"] = export_folder.properties["id"]
-            elif export_folder and isinstance(export_folder, _folder.Folder) == False:
+            if (
+                export_folder
+                and isinstance(export_folder, _folder.Folder)
+                and self._gis.version >= [2024, 2]
+            ):
+                if export_folder.properties["id"] == "Root Folder":
+                    params["exportContentFolderId"] = "/"
+                else:
+                    params["exportContentFolderId"] = export_folder.properties["id"]
+            elif (
+                export_folder
+                and isinstance(export_folder, _folder.Folder) == False
+                and self._gis.version >= [2024, 2]
+            ):
                 raise ValueError("The input must be of type `Folder`.")
             if output_filename:
                 params["outputFilename"] = output_filename
@@ -10188,7 +10199,11 @@ class Group(dict):
 
             arcgis.gis.GroupMigrationManager
         """
-        if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline is False:
+        if (
+            self._gis.version > [7, 3]
+            and self._gis._portal.is_arcgisonline is False
+            and self._migrate is None
+        ):
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
