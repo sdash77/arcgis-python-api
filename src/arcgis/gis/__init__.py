@@ -18108,19 +18108,21 @@ class Item(dict):
             raise ValueError(
                 f"Item type {self.type} is not supported for remapping data"
             )
-    
+
     # ----------------------------------------------------------------------
-    def get_dependencies(self, deep: bool = False, exclude_outside: bool = False, as_items: bool = True):
+    def get_dependencies(
+        self, deep: bool = False, exclude_outside: bool = False, as_items: bool = True
+    ):
         """
         Returns the dependencies of an item. Can be used to return either the immediate dependencies
         of an item (other items that an item directly contains in its structure) or the full deep
-        dependency list (all of the items that must exist for the item to function properly- including 
+        dependency list (all of the items that must exist for the item to function properly- including
         dependencies of dependencies). Note that not all items/item types may have dependencies.
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         deep                Optional boolean. When set to True, the function will return every
-                            other item needed for an item to exist. When set to False, the 
+                            other item needed for an item to exist. When set to False, the
                             function will only return the immediate dependencies of an item, or
                             ones referenced directly by the item. Default is False.
         ---------------     --------------------------------------------------------------------
@@ -18137,12 +18139,14 @@ class Item(dict):
         """
 
         from arcgis.ItemGraph import create_item_graph
+
         graph = create_item_graph(self._gis, [self], exclude_outside=exclude_outside)
         node = graph.get_item(self.id)
         if deep:
             return node.requires(as_items=as_items)
         else:
             return node.contains(as_items=as_items)
+
 
 ########################################################################
 class ViewManager:

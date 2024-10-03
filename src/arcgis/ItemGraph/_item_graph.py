@@ -2,12 +2,13 @@ from networkx import DiGraph
 from arcgis.gis import Item, GIS
 from ._get_dependencies import _get_item_dependencies
 
+
 class ItemNode:
     """
     An ItemNode is a node in an ItemGraph. It represents an item in the graph and contains methods to
     interact with the graph and other items in the graph. It is not intended to be created directly by
     the user, but rather as a part of the ItemGraph class. The nodes are very simple- the only properties
-    they contain are the item ID, a reference to the graph they're tied to, and in most cases, a 
+    they contain are the item ID, a reference to the graph they're tied to, and in most cases, a
     reference to the item they're tied to. Cases where an item will not be included:
     1. The item does not exist, or is not accessible to the user (e.g. outside of the organization)
     2. The graph is being reconstructed from a list of item ID's and the item has not been fetched yet
@@ -26,7 +27,7 @@ class ItemNode:
     ===============     ====================================================================
     """
 
-    def __init__(self, graph, itemid: str, item = None):
+    def __init__(self, graph, itemid: str, item=None):
         self.id = itemid
         self.graph = graph
         if item:
@@ -41,8 +42,8 @@ class ItemNode:
         neighbors.extend(self.contained_by())
         # do join
         return neighbors
-    
-    def contains(self, as_items = False):
+
+    def contains(self, as_items=False):
         """
         Compiles all of the items that this item directly contains. Can be returned in either
         the format of a list of item ID's or a list of item instances.
@@ -77,8 +78,8 @@ class ItemNode:
         # if not items, just return list of id's
         else:
             return list(self.graph.successors(self.id))
-    
-    def contained_by(self, as_items = False):
+
+    def contained_by(self, as_items=False):
         """
         Compiles all of the items that directly contain this item. Can be returned in either
         the format of a list of item ID's or a list of item instances.
@@ -113,12 +114,12 @@ class ItemNode:
         # if not items, just return list of id's
         else:
             return list(self.graph.predecessors(self.id))
-    
-    def requires(self, as_items = False):
+
+    def requires(self, as_items=False):
         """
         Compiles a deep list of all items that this item requires to exist. For example, if an
-        item contains a WebMap item that itself contains a Feature Service item, then both of 
-        them will be returned in the output list. Can be returned in either the format of a 
+        item contains a WebMap item that itself contains a Feature Service item, then both of
+        them will be returned in the output list. Can be returned in either the format of a
         list of item ID's or a list of item instances.
 
         ===============     ====================================================================
@@ -166,12 +167,12 @@ class ItemNode:
         item_list.pop()
         return item_list
 
-    def required_by(self, as_items = False):
+    def required_by(self, as_items=False):
         """
         Compiles a deep list of all items that require this item to exist. For example, if this
-        item is a Feature Service found in a WebMap that is then itself found in a Dashboard, 
-        both of those items will be in the output list, on the condition that they have been 
-        indexed into the ItemGraph. Can be returned in either the format of a list of item ID's 
+        item is a Feature Service found in a WebMap that is then itself found in a Dashboard,
+        both of those items will be in the output list, on the condition that they have been
+        indexed into the ItemGraph. Can be returned in either the format of a list of item ID's
         or a list of item instances.
 
         ===============     ====================================================================
@@ -218,6 +219,7 @@ class ItemNode:
         item_list.pop(0)
         return item_list
 
+
 class ItemGraph(DiGraph):
     """
     An ItemGraph is a directional dependency graph that represents relationships between
@@ -225,10 +227,10 @@ class ItemGraph(DiGraph):
     the first item's data, structure, or dependent items property- the relationship type of
     this graph can be intepreted as "Item A needs Item B to exist". Users can retrieve an
     item in the graph via an item's item ID (assuming the item has been indexed into the
-    graph), at which point they'll get an ItemNode to work with. Users can manually add 
-    items or relationships to the graph if desired, but most of the time this will be taken 
+    graph), at which point they'll get an ItemNode to work with. Users can manually add
+    items or relationships to the graph if desired, but most of the time this will be taken
     care by other functions, such as the create_item_graph function. The graph is built on
-    top of the NetworkX DiGraph class, meaning it also inherits all of its methods and 
+    top of the NetworkX DiGraph class, meaning it also inherits all of its methods and
     properties as well.
 
     ===============     ====================================================================
@@ -238,6 +240,7 @@ class ItemGraph(DiGraph):
     ===============     ====================================================================
 
     """
+
     def __init__(self, gis: GIS):
         super().__init__()
         self.gis = gis
@@ -251,27 +254,28 @@ class ItemGraph(DiGraph):
         """
         tree = {}
         visited = []
+
         def _assemble_tree(itemid, tree):
             tree[itemid] = {}
             for child in self.successors(itemid):
                 if child not in visited:
                     visited.append(child)
                     _assemble_tree(child, tree[itemid])
-        
+
         _assemble_tree(itemid, tree)
         return tree
-    
+
     def add_relationship(self, parent: str, child: str):
         """
-        Adds a relationship to the graph. This relationship is directional: the parent item 
+        Adds a relationship to the graph. This relationship is directional: the parent item
         contains the child item, so the parent item is dependent upon the child. If either
-        item is not already in the graph, they will be automatically added. 
-        
+        item is not already in the graph, they will be automatically added.
+
         .. note::
-            Relationships cannot go both ways- an item cannot be both dependent upon and 
+            Relationships cannot go both ways- an item cannot be both dependent upon and
             a dependency of the same item. Attempting to add a relationship will fail if
             the inverse already exists.
-        
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -287,14 +291,16 @@ class ItemGraph(DiGraph):
             self.add_item(child)
 
         if parent in self and child in self.predecessors(parent):
-            raise ValueError("An item cannot be both dependent upon and a dependency of the same item.")
+            raise ValueError(
+                "An item cannot be both dependent upon and a dependency of the same item."
+            )
         self.add_edge(parent, child)
-        
+
     def delete_relationship(self, parent: str, child: str):
         """
         Deletes a relationship from the graph. The relationship is directional, so it is
         important to properly specify which item is the parent and which is the child.
-        
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -304,8 +310,8 @@ class ItemGraph(DiGraph):
         ===============     ====================================================================
         """
         self.remove_edge(parent, child)
-    
-    def add_item(self, itemid: str, item = None):
+
+    def add_item(self, itemid: str, item=None):
         """
         Adds an item to the graph. The item ID is required, but the item itself is optional.
         Creates an ItemNode with the item ID and item. Will usually be called by other functions
@@ -319,7 +325,7 @@ class ItemGraph(DiGraph):
         ===============     ====================================================================
         """
         node = ItemNode(self, itemid, item)
-        self.add_node(itemid, data = node)
+        self.add_node(itemid, data=node)
 
     def delete_item(self, itemid: str):
         """
@@ -331,10 +337,10 @@ class ItemGraph(DiGraph):
         ===============     ====================================================================
         """
         self.remove_node(itemid)
-    
+
     def get_item(self, itemid: str):
         """
-        Returns an ItemNode of the item in the graph with the given item ID. If the item is not 
+        Returns an ItemNode of the item in the graph with the given item ID. If the item is not
         in the graph, None will be returned.
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -346,15 +352,17 @@ class ItemGraph(DiGraph):
             return self.nodes[itemid]["data"]
         except:
             return None
-    
+
     def all_items(self):
         """
         Returns a list of the item ID's of all items in the graph.
         """
         return list(self.nodes())
-    
 
-def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: bool = False):
+
+def create_item_graph(
+    gis: GIS, item_list: list[Item, str], exclude_outside: bool = False
+):
     """
     Creates an ItemGraph from a list of items. The function recursively explores the dependencies
     of each item involved that's part of the organization, encompassing the full dependency tree
@@ -367,7 +375,7 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: boo
     gis                 Required GIS. The GIS instance that the graph is associated with.
     ---------------     --------------------------------------------------------------------
     item_list           Required list. A list of items to include in the graph. Items can be
-                        either Item instances or item ID's. 
+                        either Item instances or item ID's.
     ---------------     --------------------------------------------------------------------
     exclude_outside     Optional boolean. When set to True, items outside of the organization
                         will not be included in the graph. Default is False, meaning that
@@ -382,7 +390,7 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: boo
     graph = ItemGraph(gis)
 
     def _add_deps(item: Item):
-        
+
         deps = _get_item_dependencies(item, gis)
         for dep in deps:
 
@@ -410,10 +418,10 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: boo
         # first grab our item
         if isinstance(item, str):
             item = gis.content.get(item)
-        
+
         # if valid, add it and check its dependencies
         if item:
             graph.add_item(item.itemid, item)
             _add_deps(item)
-    
+
     return graph

@@ -29,21 +29,22 @@ _COMPLEX_ITEMS = [
 # regular expression to find GUID
 _REGEX_GUID = r"[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}"
 
+
 def _get_item_dependencies(itemid, gis):
     if isinstance(itemid, Item):
         item = itemid
     else:
         item = gis.content.get(itemid)
-    
+
     if not item:
         return []
-    
+
     if item["type"] not in _COMPLEX_ITEMS:
         return []
-    
+
     dependencies = []
     item_type = item["type"]
-    
+
     if item_type in ["Web Map", "Web Scene"]:
         dependencies = _parse_webmap(item)
     elif item_type == "Dashboard":
@@ -56,11 +57,12 @@ def _get_item_dependencies(itemid, gis):
         dependencies = _parse_storymap(item)
     else:
         dependencies = []
-    
+
     # add the dependent items property check from mtk
 
     return dependencies
-    
+
+
 def _parse_webmap(item):
     items = []
     services = []
@@ -70,7 +72,7 @@ def _parse_webmap(item):
         if layer.get("layerType") == "GroupLayer":
             for sublayer in layer.get("layers"):
                 process_op_layer(sublayer)
-        
+
         else:
             if "itemId" in layer:
                 items.append(layer["itemId"])
@@ -83,9 +85,10 @@ def _parse_webmap(item):
 
     for op_layer in webmap_json.get("operationalLayers"):
         process_op_layer(op_layer)
-    
+
     items.extend(services)
     return items
+
 
 def _parse_dashboard(item):
     # credit to Dan Yaw for this one
@@ -119,6 +122,7 @@ def _parse_dashboard(item):
     map_ids.extend(data_ids)
     return map_ids
 
+
 def _parse_exb(item):
     pub_data = item.get_data()
     draft_data = item.resources.get("config/config.json")
@@ -130,8 +134,9 @@ def _parse_exb(item):
         for ds in data_sources:
             if "itemId" in ds and ds["itemId"] not in itemids:
                 itemids.append(ds["itemId"])
-    
+
     return itemids
+
 
 def _parse_wma(item):
     data = item.get_data()
@@ -153,6 +158,7 @@ def _parse_wma(item):
                 pass
 
     return itemids
+
 
 def _parse_storymap(item):
     itemids = []
@@ -188,8 +194,9 @@ def _parse_storymap(item):
 
         for ids in [web_maps, themes]:
             itemids.extend(ids)
-    
+
     return itemids
+
 
 def _find_regex(i, regex, res=[]):
     """
