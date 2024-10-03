@@ -230,6 +230,8 @@ class GeometryFactory(type):
             # WKB
             if isinstance(iterable, (bytearray, bytes)):
                 iterable = GeometryFactory._from_wkb(iterable)
+            elif isinstance(iterable, int):
+                iterable = {"wkid": iterable}
             elif hasattr(iterable, "JSON"):
                 iterable = _ujson.loads(getattr(iterable, "JSON"))
             elif "coordinates" in iterable:
@@ -584,9 +586,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if "wkid" in self:
                 self._ao = arcpy.SpatialReference(self["wkid"])
             elif "wkt" in self:
-                self._ao = arcpy.SpatialReference(self["wkt"])
+                self._ao = arcpy.SpatialReference(text=self["wkt"])
+            elif "wkt2" in self:
+                self._ao = arcpy.SpatialReference(text=self["wkt2"])
             else:
                 raise ValueError("Invalid SpatialReference")
+        elif "wkt" in self:
+            self._ao = arcpy.SpatialReference(text=self["wkt"])
+        elif "wkid" in self:
+            self._ao = arcpy.SpatialReference(self["wkid"])
+        elif "wkt2" in self:
+            self._ao = arcpy.SpatialReference(text=self["wkt2"])
         elif isinstance(self, Envelope):
             return arcpy.Extent(
                 XMin=self["xmin"],
@@ -3987,6 +3997,10 @@ class SpatialReference(Geometry):
             elif "wkt" in self:
                 sr = arcpy.SpatialReference()
                 sr.loadFromString(self["wkt"])
+                return sr
+            elif "wkt2" in self:
+                sr = arcpy.SpatialReference()
+                sr.loadFromString(self["wkt2"])
                 return sr
         return None
 
