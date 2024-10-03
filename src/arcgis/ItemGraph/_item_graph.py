@@ -359,7 +359,7 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], exclude_outside: boo
     Creates an ItemGraph from a list of items. The function recursively explores the dependencies
     of each item involved that's part of the organization, encompassing the full dependency tree
     of each source item. Contains an option to include items from outside the organization;
-    if they are included, they are not explored for dependencies, but are still included in the
+    if they are included, they are not explored for dependencies, but are still part of the
     graph.
     ===============     ====================================================================
     **Parameter**        **Description**
