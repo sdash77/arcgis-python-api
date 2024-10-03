@@ -1857,6 +1857,7 @@ class ImageryLayer(Layer):
         newlyr._spatial_filter = self._spatial_filter
         newlyr._temporal_filter = self._temporal_filter
         newlyr._filtered = self._filtered
+        newlyr._rendering_rule_from_item = self._rendering_rule_from_item
 
         return newlyr
 
@@ -5703,6 +5704,9 @@ class ImageryLayer(Layer):
                 raise RuntimeError("You need to be signed in to a GIS to create Items")
         else:
             from .analytics import is_supported, generate_raster, _save_ra
+
+            if self._rendering_rule_from_item:
+                self._fnra = None
 
             if self._fnra is None:
                 from .functions import identity
@@ -11914,7 +11918,13 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
     @property
     def spatial_reference(self):
-        return self._raster.spatialReference.exportToString()
+        sr_type = self._raster.spatialReference.type
+        if sr_type == "Unknown":
+            return {"wkid": self._raster.spatialReference.factoryCode}
+        sr_string = self._raster.spatialReference.exportToString()
+        if sr_string:
+            return {"wkt": sr_string}
+        return None
 
     @property
     def variable_names(self):

@@ -80,9 +80,13 @@ class TestDeleteParcels(unittest.TestCase):
                 version,
                 self.parcel_fabric_flc,
             )
-            delete_parcels = self.parcelFabric.delete(parcels=parcel_features)
-            edits = delete_parcels.get("serviceEdits")
-            self.assertEqual(0, len(edits), "Edits were found after delete.")
+            with self.assertRaises(Exception) as ex:
+                delete_parcels = self.parcelFabric.delete(parcels=parcel_features)
+                error_str = "Invalid function arguments"
+                self.assertTrue(error_str in str(ex.exception))
+
+                edits = delete_parcels.get("serviceEdits")
+                self.assertEqual(None, edits, "Edits were found after delete.")
 
     @classmethod
     def tearDownClass(cls):
