@@ -13257,6 +13257,27 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def attachments_size(self) -> int | None:
+        """
+        The ``attachments_size`` property returns the total size of the attachments for the item.
+        The item has to support this property.
+
+        .. note::
+            The size is returned in bytes. To get the size in megabytes, divide the size by 1024*1024.
+            This is only supported for ArcGIS Online.
+
+        :return: The size in bytes.
+
+        """
+        if self._gis._is_agol:
+            try:
+                self.subInfo or 0
+            except:
+                return None
+        return None
+
+    # ----------------------------------------------------------------------
+    @property
     def favorite(self) -> bool:
         """
         Gets/Sets if the Item is in the user's favorites
