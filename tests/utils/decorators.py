@@ -7,10 +7,12 @@ from .timeout_decorator import (
 )
 from .classproperty import classproperty
 from ._common import environ_key_to_bool
-from arcgis.gis import GIS
+from arcgis.gis import GIS, ProfileManager
 from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
 from threading import TIMEOUT_MAX
+
+configured_profiles = ProfileManager().list()
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
@@ -63,6 +65,9 @@ _gis_by_profile = {}
 
 def _get_gis(profile):
     """Returns a gis for a profile"""
+    if profile not in configured_profiles:
+        print(f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!")
+        return None
     if profile not in _gis_by_profile:
         _gis_by_profile[profile] = GIS(
             profile=profile, verify_cert=False, proxy=PROXIES
