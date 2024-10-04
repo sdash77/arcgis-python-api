@@ -13233,7 +13233,9 @@ class Item(dict):
         :return: The size in bytes.
 
         """
-        return self.subInfo or 0
+        if self._gis._is_agol:
+            return self.subInfo or 0
+        return ValueError("Attachments size is not yet supported by Enterprise.")
 
     # ----------------------------------------------------------------------
     @property
