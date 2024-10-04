@@ -2054,7 +2054,7 @@ class GroupMigrationManager(object):
                     params["exportContentFolderId"] = export_folder.properties["id"]
             elif (
                 export_folder
-                and isinstance(export_folder, _folder.Folder) == False
+                and not isinstance(export_folder, _folder.Folder)
                 and self._gis.version >= [2024, 2]
             ):
                 raise ValueError("The input must be of type `Folder`.")
