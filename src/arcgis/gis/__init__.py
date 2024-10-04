@@ -13222,20 +13222,24 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
-    def attachments_size(self):
+    def attachments_size(self) -> int | None:
         """
         The ``attachments_size`` property returns the total size of the attachments for the item.
         The item has to support this property.
 
         .. note::
             The size is returned in bytes. To get the size in megabytes, divide the size by 1024*1024.
+            This is only supported for ArcGIS Online.
 
         :return: The size in bytes.
 
         """
         if self._gis._is_agol:
-            return self.subInfo or 0
-        return ValueError("Attachments size is not yet supported by Enterprise.")
+            try:
+                self.subInfo or 0
+            except:
+                return None
+        return None
 
     # ----------------------------------------------------------------------
     @property
