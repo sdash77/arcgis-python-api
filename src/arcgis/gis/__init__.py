@@ -10201,7 +10201,7 @@ class Group(dict):
         """
         if (
             self._gis.version > [7, 3]
-            and self._gis._portal.is_arcgisonline is False
+            and not self._gis._portal.is_arcgisonline
             and self._migrate is None
         ):
             self._migrate = GroupMigrationManager(group=self)
