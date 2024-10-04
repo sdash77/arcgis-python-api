@@ -1923,7 +1923,6 @@ class ArcGISModel(object):
             self._publish_dlpk(
                 (saved_path.parent / os.path.basename(saved_path)).with_suffix(".dlpk"),
                 gis=gis,
-                overwrite=kwargs.get("overwrite", False),
             )
 
         return saved_path.parent
@@ -2113,7 +2112,6 @@ class ArcGISModel(object):
                 "type": "Deep Learning Package",
                 "description": formatted_description,
                 "title": dlpk_path.stem,
-                "overwrite": "true" if overwrite else "false",
             },
             file=str(dlpk_path.absolute()),
         ).result()
@@ -2237,9 +2235,7 @@ class ArcGISModel(object):
                                 If False, the model will not work with ArcGIS Pro 2.6
                                 or earlier. Default is set to True.
         ---------------------   -------------------------------------------
-        kwargs                  Optional Parameters:
-                                Boolean `overwrite` if True, it will overwrite
-                                the item on ArcGIS Online/Enterprise, default False.
+        kwargs                  Optional Parameters.
         =====================   ===========================================
         """
         if int(os.environ.get("RANK", 0)):
