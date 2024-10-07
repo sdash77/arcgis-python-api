@@ -16,7 +16,7 @@ from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item, ItemDependency
 import concurrent.futures as _cf
-from typing import Optional, Any, Union
+from typing import Any
 from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
@@ -2284,7 +2284,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
-
+        new_item = None
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
             self._gis.users.me.username != orig_item.owner
@@ -2367,16 +2367,22 @@ class FeatureLayerCollectionManager(_GISResource):
                 file=data_path,
             ).result()
 
-        # Analyze the file to get publish parameters
-        analyze_ft = file_type.lower().replace(" ", "")
-        publish_parameters = self._gis.content.analyze(
-            item=file_item, file_type=analyze_ft
-        )["publishParameters"]
+        publish_parameters = {}
+        if not self._gis._is_arcgisonline and file_type == "File Geodatabase":
+            # FileGeodatabase has to be published first to get the layer info
+            new_item = file_item.publish()
+            lyr_info = new_item.layers[0].properties
+        else:
+            # Analyze the file to get publish parameters
+            analyze_ft = file_type.lower().replace(" ", "")
+            publish_parameters = self._gis.content.analyze(
+                item=file_item, file_type=analyze_ft
+            )["publishParameters"]
 
         # Get the layer info which will be used to append the data
         if file_type == "CSV" or file_type == "Excel":
             lyr_info = publish_parameters["layerInfo"]
-        else:
+        elif file_type == "Shapefile" or (self._gis._is_arcgisonline and file_type == "File Geodatabase"):
             lyr_info = publish_parameters["layers"][0]
 
         try:
@@ -2385,22 +2391,23 @@ class FeatureLayerCollectionManager(_GISResource):
                 upload_format = "filegdb"
             else:
                 upload_format = file_type.lower()
-            if lyr_info["type"] == "Feature Layer":
+            if lyr_info and lyr_info["type"] == "Feature Layer":
                 index = self._perform_insert(lyr_info)
                 if (
                     file_type == "File Geodatabase"
                     and "filegdb"
                     in orig_item.layers[index].properties.supportedAppendFormats
-                ) or file_type != "File Geodatabase":
-                    # Workflow for all file types and file geo databases that support append
+                ):
+                    # Use append since File Geodatabase is supported
                     orig_item.layers[index].append(
                         item_id=file_item.id,
                         upload_format=upload_format,
                         source_table_name=lyr_info["name"],
                     )
-                elif file_type == "File Geodatabase":
-                    # When filegdb not supported through append, use edit features
-                    new_item = file_item.publish(publish_parameters=publish_parameters)
+                else:
+                    # Use edit_features only if append isn't supported
+                    if not new_item:
+                        new_item = file_item.publish(publish_parameters=publish_parameters)
                     layer = new_item.layers[0]
                     features = layer.query().features
                     if self._gis._is_agol or (
@@ -2416,6 +2423,7 @@ class FeatureLayerCollectionManager(_GISResource):
                         )
                     else:
                         orig_item.layers[index].edit_features(adds=features)
+                if new_item:
                     new_item.delete()
             elif lyr_info["type"] == "Table":
                 index = self._perform_insert(lyr_info, table=True)
