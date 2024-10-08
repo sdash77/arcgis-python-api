@@ -265,9 +265,8 @@ class GeometryFactory(type):
                     # WKT Geometry
                     iterable = GeometryFactory._from_wkt(iterable)
                 else:
-                    raise ValueError(
-                        "Invalid WKT. WKT must start with a valid geometry type or spatial reference type."
-                    )
+                    # Could be a wkt spatial reference AND geometry, set as default
+                    iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
