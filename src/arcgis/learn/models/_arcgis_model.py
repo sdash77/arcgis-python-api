@@ -576,6 +576,11 @@ def get_backbone_func(backbone, data, **kwargs):
 
             if "resnet" in bckbn:
                 backbone = getattr(hfwu, bckbn)
+            elif "swin" in bckbn:
+                # backbone = hfwu.get_swin_model(variant=bckbn)
+                backbone = getattr(hfwu, bckbn)
+            elif "vit_small" in bckbn:
+                backbone = getattr(hfwu, bckbn)
         elif backbone in transformer_backbone_downstream:
             backbone_name = backbone
             in_channels = (
