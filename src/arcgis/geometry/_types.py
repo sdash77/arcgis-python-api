@@ -242,7 +242,7 @@ class GeometryFactory(type):
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
             elif isinstance(iterable, str):  # WKT
-                iterable = GeometryFactory._from_wkt(iterable)
+                iterable = {"wkt": iterable}
 
             if "x" in iterable:
                 cls = Point
@@ -3934,6 +3934,13 @@ class SpatialReference(Geometry):
         if len(kwargs) > 0:
             self.update(kwargs)
         self._properties = iterable
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    def __str__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
 
     # ----------------------------------------------------------------------
     @property
