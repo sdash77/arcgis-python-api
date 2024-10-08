@@ -190,6 +190,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkt(iterable):
+        """Create a geometry from wkt"""
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
@@ -241,10 +242,21 @@ class GeometryFactory(type):
                 iterable = {"wkt": iterable.exportToString()}
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
-            elif isinstance(iterable, str) and cls._type == "SpatialReference":
-                iterable = {"wkt": iterable}
-            elif isinstance(iterable, str):  # WKT Geometry
-                iterable = GeometryFactory._from_wkt(iterable)
+            # WKT handling
+            elif isinstance(iterable, str):
+                if cls._type == "SpatialReference" or iterable.startswith(
+                    ("PROJCS", "GEOGCS")
+                ):
+                    # WKT Spatial Reference
+                    iterable = {"wkt": iterable}
+                elif iterable.startswith(
+                    ("POINT", "POLYLINE", "POLYGON", "MULTIPOINT", "MULTIPOLYGON")
+                ):
+                    # WKT Geometry
+                    iterable = GeometryFactory._from_wkt(iterable)
+                else:
+                    # Fallback for unknown input
+                    iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
