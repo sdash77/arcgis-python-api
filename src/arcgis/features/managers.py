@@ -2251,14 +2251,16 @@ class FeatureLayerCollectionManager(_GISResource):
     # ----------------------------------------------------------------------
     def _perform_insert(self, layer_definition, table=False):
         # Add new layer to definition
+        if isinstance(layer_definition, PropertyMap):
+            layer_definition = dict(layer_definition)
         if table:
-            self.add_to_definition({"tables": [dict(layer_definition)]})
+            self.add_to_definition({"tables": [layer_definition]})
             for table in self.properties.tables:
                 if table["name"] == layer_definition["name"]:
                     fl_index = table["id"]
                     break
         else:
-            self.add_to_definition({"layers": [dict(layer_definition)]})
+            self.add_to_definition({"layers": [layer_definition]})
             # Find the index at which the layer was added
             for layer in self.properties.layers:
                 if layer["name"] == layer_definition["name"]:
@@ -2368,6 +2370,7 @@ class FeatureLayerCollectionManager(_GISResource):
             ).result()
 
         publish_parameters = {}
+        lyr_info = {}
         if not self._gis._is_arcgisonline and file_type == "File Geodatabase":
             # FileGeodatabase has to be published first to get the layer info
             new_item = file_item.publish()
@@ -2382,7 +2385,8 @@ class FeatureLayerCollectionManager(_GISResource):
         # Get the layer info which will be used to append the data
         if file_type == "CSV" or file_type == "Excel":
             lyr_info = publish_parameters["layerInfo"]
-        elif file_type == "Shapefile" or (self._gis._is_arcgisonline and file_type == "File Geodatabase"):
+        elif not lyr_info:
+            # Shapefile or file geodatabase online
             lyr_info = publish_parameters["layers"][0]
 
         try:
@@ -2393,44 +2397,27 @@ class FeatureLayerCollectionManager(_GISResource):
                 upload_format = file_type.lower()
             if lyr_info and lyr_info["type"] == "Feature Layer":
                 index = self._perform_insert(lyr_info)
-                if (
-                    file_type == "File Geodatabase"
-                    and "filegdb"
-                    in orig_item.layers[index].properties.supportedAppendFormats
-                ):
-                    # Use append since File Geodatabase is supported
-                    orig_item.layers[index].append(
-                        item_id=file_item.id,
-                        upload_format=upload_format,
-                        source_table_name=lyr_info["name"],
-                    )
-                else:
-                    # Use edit_features only if append isn't supported
+                append_item_id = file_item.id
+                if upload_format not in orig_item.layers[index].properties["supportedAppendFormats"]:
+                    upload_format = "featureService"
                     if not new_item:
-                        new_item = file_item.publish(publish_parameters=publish_parameters)
-                    layer = new_item.layers[0]
-                    features = layer.query().features
-                    if self._gis._is_agol or (
-                        "advancedEditingCapabilities" in layer.properties
-                        and "supportsAsyncApplyEdits"
-                        in layer.properties["advancedEditingCapabilities"]
-                        and layer.properties["advancedEditingCapabilities"][
-                            "supportsAsyncApplyEdits"
-                        ]
-                    ):
-                        orig_item.layers[index].edit_features(
-                            adds=features, future=True
-                        )
-                    else:
-                        orig_item.layers[index].edit_features(adds=features)
+                        new_item = file_item.publish()
+                    append_item_id = new_item.id
+                # Use append 
+                orig_item.layers[index].append(
+                    item_id=append_item_id,
+                    upload_format=upload_format,
+                    return_messages=True
+                )
                 if new_item:
-                    new_item.delete()
+                    self._gis.content.delete_items([new_item], permanent=True)
             elif lyr_info["type"] == "Table":
                 index = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
                     upload_format=upload_format,
                     source_info=lyr_info,
+                    return_messages=True
                 )
 
             # Add relationship between service and data
