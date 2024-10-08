@@ -250,13 +250,24 @@ class GeometryFactory(type):
                     # WKT Spatial Reference
                     iterable = {"wkt": iterable}
                 elif iterable.startswith(
-                    ("POINT", "POLYLINE", "POLYGON", "MULTIPOINT", "MULTIPOLYGON")
+                    (
+                        "POINT",
+                        "LINESTRING",
+                        "POLYGON",
+                        "MULTIPOINT",
+                        "MULTIPOLYGON",
+                        "MULTILINESTRING",
+                        "GEOMETRYCOLLECTION",
+                        "POINT ZM",
+                        "POINT M",
+                    )
                 ):
                     # WKT Geometry
                     iterable = GeometryFactory._from_wkt(iterable)
                 else:
-                    # Fallback for unknown input
-                    iterable = GeometryFactory._from_wkt(iterable)
+                    raise ValueError(
+                        "Invalid WKT. WKT must start with a valid geometry type or spatial reference type."
+                    )
 
             if "x" in iterable:
                 cls = Point
