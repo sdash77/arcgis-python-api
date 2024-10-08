@@ -257,13 +257,14 @@ class GeometryFactory(type):
                         "MULTIPOINT",
                         "MULTIPOLYGON",
                         "MULTILINESTRING",
-                        "GEOMETRYCOLLECTION",
                         "POINT ZM",
                         "POINT M",
                     )
                 ):
                     # WKT Geometry
                     iterable = GeometryFactory._from_wkt(iterable)
+                elif iterable.startswith("GEOMETRYCOLLECTION"):
+                    raise ValueError("GeometryCollection not supported")
                 else:
                     # Could be a wkt spatial reference AND geometry, set as default
                     iterable = GeometryFactory._from_wkt(iterable)
