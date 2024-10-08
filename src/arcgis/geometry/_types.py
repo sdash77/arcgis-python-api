@@ -242,7 +242,7 @@ class GeometryFactory(type):
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
             elif isinstance(iterable, str):  # WKT
-                iterable = {"wkt": iterable}
+                iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
