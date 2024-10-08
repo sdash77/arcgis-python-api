@@ -719,6 +719,29 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
+    if HASGDAL and not kwargs:
+        filename = _ensure_path_string(filename)
+        if not isinstance(filename, (str, Path, PurePath)):
+            raise ValueError(
+                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+            )
+        if filename.find("http://") > -1 or filename.find("https://") > -1:
+            r = requests.get(filename)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                archive_path = os.path.join(temp_dir, 'archive.zip')
+                with open(archive_path, 'wb') as f:
+                    f.write(r.content)
+
+                with zipfile.ZipFile(archive_path) as archive:
+                    archive.extractall(path=temp_dir)
+                
+                df = _gdal_to_sedf(path=temp_dir)
+        else:
+            df = _gdal_to_sedf(file_path=filename)
+
+        df.spatial._meta.source = filename
+        return df
+
     if HASARCPY and (
         isinstance(filename, (arcpy._mp.Layer))
         or type(filename).__name__.find("arcpy") > -1
@@ -1099,7 +1122,29 @@ def to_featureclass(
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
 
-    if HASARCPY:
+    if HASGDAL:
+        if fc_name.endswith(".gdb"):
+            out_type = "OpenFileGDB"
+            layer_name = fc_name[:-4]
+        elif fc_name.endswith(".shp"):
+            out_type = "Esri Shapefile"
+            fc_name = fc_name[:-4]
+            layer_name = fc_name
+        elif fc_name.endswith(".dbf"):
+            out_type = "DBF"
+            layer_name = fc_name
+        else:
+            layer_name = fc_name
+            fc_name = "%s.gdb" % fc_name
+            out_type = "OpenFileGDB"
+        return _gdal_to_fc(
+            df,
+            os.path.join(out_location, fc_name),
+            out_type,
+            layer_name=layer_name
+        )
+
+    elif HASARCPY:
         try:
             # 1. Create the Save Feature Class
             #
@@ -1317,27 +1362,7 @@ def to_featureclass(
             df.columns = original_columns
             df.set_index(old_idx)
         return fc
-    elif HASGDAL:
-        if fc_name.endswith(".gdb"):
-            out_type = "OpenFileGDB"
-            layer_name = fc_name[:-4]
-        elif fc_name.endswith(".shp"):
-            out_type = "Esri Shapefile"
-            fc_name = fc_name[:-4]
-            layer_name = fc_name
-        elif fc_name.endswith(".dbf"):
-            out_type = "DBF"
-            layer_name = fc_name
-        else:
-            layer_name = fc_name
-            fc_name = "%s.gdb" % fc_name
-            out_type = "OpenFileGDB"
-        _gdal_to_fc(
-            df,
-            os.path.join(out_location, fc_name),
-            out_type,
-            layer_name=layer_name
-        )
+    
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
@@ -1359,7 +1384,6 @@ def to_featureclass(
     else:
         df.set_index(old_idx)
         return None
-
 
 # --------------------------------------------------------------------------
 def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file = False):
@@ -1478,6 +1502,8 @@ def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file 
         path = os.path.dirname(out_path)
         dir_name = os.path.basename(out_path)
         _zip_dir(path, dir_name)
+    
+    return out_path
 
 # --------------------------------------------------------------------------
 def _zip_dir(path, dir_name):

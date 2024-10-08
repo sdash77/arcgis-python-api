@@ -241,8 +241,31 @@ class GeometryFactory(type):
                 iterable = {"wkt": iterable.exportToString()}
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
-            elif isinstance(iterable, str):  # WKT
-                iterable = GeometryFactory._from_wkt(iterable)
+            # WKT handling
+            elif isinstance(iterable, str):
+                if cls._type == "SpatialReference" or iterable.startswith(
+                    ("PROJCS", "GEOGCS")
+                ):
+                    # WKT Spatial Reference
+                    iterable = {"wkt": iterable}
+                elif iterable.startswith(
+                    (
+                        "POINT",
+                        "LINESTRING",
+                        "POLYGON",
+                        "MULTIPOINT",
+                        "MULTIPOLYGON",
+                        "MULTILINESTRING",
+                        "GEOMETRYCOLLECTION",
+                        "POINT ZM",
+                        "POINT M",
+                    )
+                ):
+                    # WKT Geometry
+                    iterable = GeometryFactory._from_wkt(iterable)
+                else:
+                    # Could be a wkt spatial reference AND geometry, set as default
+                    iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
@@ -255,7 +278,7 @@ class GeometryFactory(type):
             elif "xmin" in iterable:
                 cls = Envelope
             elif "wkid" in iterable or "wkt" in iterable:
-                return SpatialReference(iterable=iterable)
+                cls = SpatialReference
             elif isinstance(iterable, list):
                 return Point(
                     {
@@ -3868,7 +3891,7 @@ class Envelope(Geometry):
 
 
 ########################################################################
-class SpatialReference(BaseGeometry):
+class SpatialReference(Geometry):
     """
     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
@@ -3940,6 +3963,13 @@ class SpatialReference(BaseGeometry):
     def type(self):
         """Gets the type of the current ``Point`` object."""
         return self._type
+    
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    def __str__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
 
     # ----------------------------------------------------------------------
     def __hash__(self):
@@ -4014,10 +4044,3 @@ class SpatialReference(BaseGeometry):
     def __getstate__(self):
         """pickle support"""
         return dict(self)
-    
-    # ----------------------------------------------------------------------
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(f"'SpatialReference' object has no attribute '{name}'")
