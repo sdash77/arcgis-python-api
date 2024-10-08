@@ -241,7 +241,9 @@ class GeometryFactory(type):
                 iterable = {"wkt": iterable.exportToString()}
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
-            elif isinstance(iterable, str):  # WKT
+            elif isinstance(iterable, str) and cls._type == "SpatialReference":
+                iterable = {"wkt": iterable}
+            elif isinstance(iterable, str):  # WKT Geometry
                 iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:

@@ -1,4 +1,5 @@
 import sys
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
