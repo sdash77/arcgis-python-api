@@ -3301,9 +3301,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except Exception as e:
+        except:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise e
+            raise
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3385,9 +3385,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except Exception as e:
+        except:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise e
+            raise
 
         # If it succeeds, return the JobExecution
         je._started()
@@ -3466,9 +3466,9 @@ class Job(object):
                 self._gis._con._handle_json_error(return_obj["error"], 0)
             elif "success" in return_obj and return_obj["success"] is False:
                 raise Exception(return_obj["stepResponses"])
-        except Exception as e:
+        except:
             self._workflow_manager._notification_manager.unsubscribe([self.job_id])
-            raise e
+            raise
         # If it succeeds, return the JobExecution
         je._started()
         return je
@@ -3510,7 +3510,6 @@ class JobExecution:
             and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]
         ):
             self._messages.append(msg)
-            # TODO Need to consider cancelling GP case (https://devtopia.esri.com/WebGIS/workflow-manager/issues/7844)
             if self._execution_type is ExecutionType.RUN:
                 if msg.msg_type in [
                     MessageType.STEPFINISHED,
