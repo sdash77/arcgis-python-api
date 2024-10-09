@@ -2250,9 +2250,19 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _perform_insert(self, layer_definition, table=False):
+        """
+        This adds the layer definition to the feature service definition. It also
+        checks for the field mappings and returns them for future appends of data.
+        We have to do this because the field names can change when adding a new layer, especially in Enterprise
+        which depends on a geodatabase design and thus some field names are reserved.
+        """
         # Add new layer to definition
         if isinstance(layer_definition, PropertyMap):
             layer_definition = dict(layer_definition)
+            
+        # Extract original field names for comparison later
+        original_field_names = [field["name"] for field in layer_definition.get("fields", [])]
+    
         if table:
             self.add_to_definition({"tables": [layer_definition]})
             for table in self.properties.tables:
@@ -2266,7 +2276,19 @@ class FeatureLayerCollectionManager(_GISResource):
                 if layer["name"] == layer_definition["name"]:
                     fl_index = layer["id"]
                     break
-        return fl_index
+        
+        # Check if any field names have changed
+        updated_fields_names = [field["name"] for field in self.properties.layers[fl_index]["fields"]]
+        field_mappings = []
+        for original_field in original_field_names:
+            for updated_field in updated_fields_names:
+                if original_field != updated_field and original_field in updated_field:
+                    field_mappings.append({"name": updated_field, "sourceName": original_field})
+                    # Log or send a warning about the change
+                    print(f"Warning: Field '{original_field}' was renamed to '{updated_field}'")
+
+        # Return the index and field mappings to use for future appends
+        return fl_index, field_mappings
 
     # ----------------------------------------------------------------------
     def insert_layer(self, data_path: str, name: str = None):
@@ -2396,7 +2418,7 @@ class FeatureLayerCollectionManager(_GISResource):
             else:
                 upload_format = file_type.lower()
             if lyr_info and lyr_info["type"] == "Feature Layer":
-                index = self._perform_insert(lyr_info)
+                index, field_mappings = self._perform_insert(lyr_info)
                 append_item_id = file_item.id
                 if upload_format not in orig_item.layers[index].properties["supportedAppendFormats"]:
                     upload_format = "featureService"
@@ -2408,16 +2430,19 @@ class FeatureLayerCollectionManager(_GISResource):
                     item_id=append_item_id,
                     upload_format=upload_format,
                     source_table_name=lyr_info["name"],
+                    field_mappings=field_mappings,
                     return_messages=True
                 )
                 if new_item:
                     self._gis.content.delete_items([new_item], permanent=True)
             elif lyr_info["type"] == "Table":
-                index = self._perform_insert(lyr_info, table=True)
+                index, field_mappings = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
                     upload_format=upload_format,
                     source_info=lyr_info,
+                    field_mappings=field_mappings,
+                    layer_mappings=[{"id": index, "sourceId":0}],
                     return_messages=True
                 )
 
