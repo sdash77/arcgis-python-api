@@ -1099,7 +1099,7 @@ def combine_shapefiles(output_dir, file_name, data, extent):
     data_frame = DataFrame(data, columns=["FID", "SHAPE", "SPECIES", "SCANNED"])
 
     data_frame["SHAPE"] = data_frame["SHAPE"].apply(Polygon)
-    data_frame.spatial.set_geometry("SHAPE", extent["spatialReference"]["wkid"])
+    data_frame.spatial.set_geometry("SHAPE")
 
     file_path = os.path.join(output_dir, file_name + ".shp")
 
@@ -1169,7 +1169,7 @@ def write_shapefile(
     data_frame = DataFrame(data_temp, columns=["FID", "SHAPE", "SPECIES", "SCANNED"])
 
     data_frame["SHAPE"] = data_frame["SHAPE"].apply(Polygon)
-    data_frame.spatial.set_geometry("SHAPE", extent["spatialReference"]["wkid"])
+    data_frame.spatial.set_geometry("SHAPE")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

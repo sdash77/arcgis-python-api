@@ -1,7 +1,16 @@
+from arcgis.auth.tools import LazyLoader
 from typing import Dict, Any
 from arcgis.gis import GIS
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
+
+@_common_deprecated.deprecated(
+    deprecated_in="2.4.0",
+    removed_in="2.4.2",
+    current_version=None,
+    details="Deprecated REST API, no replacement provided.",
+)
 class DependencyManager:
     """Provides the ability for the manager to rebuild :class:`~arcgis.gis.Item` dependencies"""
 

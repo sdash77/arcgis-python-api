@@ -400,8 +400,9 @@ class SingleShotDetector(ArcGISModel):
 
                 if grids is None:
                     logger.info("Computing optimal grid size...")
-                    hw = data.height_width
-                    hw = np.array(hw)
+
+                    # scale between 0-1
+                    hw = data.height_width / data.x[0].shape[-1]
 
                     # find most suitable centroids for dataset
                     centroid = kmeans(hw, 1)
@@ -425,7 +426,7 @@ class SingleShotDetector(ArcGISModel):
                             int,
                             map(
                                 round,
-                                data.chip_size / centroid,
+                                1 / centroid,
                             ),
                         )
                     )
@@ -433,7 +434,6 @@ class SingleShotDetector(ArcGISModel):
                     grids.sort(reverse=True)
                     if grids[-1] == 0:
                         grids[-1] = 1
-                    grids = list(set(grids))
 
                 self._create_anchors(grids, zooms, ratios)
 
@@ -544,6 +544,13 @@ class SingleShotDetector(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def torchgeo_backbones():
+        from ._hf_weightutils import hf_resnet_cfgs
+
+        torchgeo_backbone = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
+        return torchgeo_backbone
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
@@ -554,9 +561,8 @@ class SingleShotDetector(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
-        from ._hf_weightutils import hf_resnet_cfgs
+        torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
 
-        hf_backbones = list(map(lambda m: "hf:" + m, hf_resnet_cfgs.keys()))
         return (
             [
                 *_resnet_family,
@@ -566,7 +572,8 @@ class SingleShotDetector(ArcGISModel):
             ]
             + transformer_backbone
             + timm_backbones
-        ) + hf_backbones
+            + torchgeo_backbone
+        )
 
     @property
     def supported_datasets(self):
@@ -677,7 +684,7 @@ class SingleShotDetector(ArcGISModel):
             data.c += 1
             data.emd_path = emd_path
             data.emd = emd
-            if "hf:" in backbone:
+            if backbone is not None and "hf:" in backbone:
                 data._extract_bands = emd.get("ExtractBands")
 
             data = get_multispectral_data_params_from_emd(data, emd)
@@ -1145,7 +1152,7 @@ class SingleShotDetector(ArcGISModel):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
+                                appended with _prediction.avi. Supports only AVI and MP4 formats.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

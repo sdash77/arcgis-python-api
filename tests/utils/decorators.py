@@ -7,10 +7,12 @@ from .timeout_decorator import (
 )
 from .classproperty import classproperty
 from ._common import environ_key_to_bool
-from arcgis.gis import GIS
+from arcgis.gis import GIS, ProfileManager
 from arcgis.auth.tools._util import detect_proxy
 from integration.config import get_resource_path
 from threading import TIMEOUT_MAX
+
+configured_profiles = ProfileManager().list()
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
@@ -63,6 +65,9 @@ _gis_by_profile = {}
 
 def _get_gis(profile):
     """Returns a gis for a profile"""
+    if profile not in configured_profiles:
+        print(f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!")
+        return None
     if profile not in _gis_by_profile:
         _gis_by_profile[profile] = GIS(
             profile=profile, verify_cert=False, proxy=PROXIES
@@ -179,6 +184,15 @@ class credentials:
             "AAPKed706a70151045f3a51b1917d84757610pwOA7fIeA6M3kLOR0_kBLPRMfwnympI0ql7knab8d6sTEJyRRKAzQBGqgP6XSDj",
         ),
     )
+    _agol_oauth_credential_parameters = (
+        "agol_oauth",
+        environ.get("STANDARD_AGOL_URL", "https://www.arcgis.com"),
+        environ.get("STANDARD_AGOL_USERNAME", "esri_requests"),
+        environ.get("STANDARD_AGOL_PASSWORD", "portalaccount1"),
+        None,
+        environ.get("AGOL_OAUTH_CLIENT_ID", "FONLvbtoFNAFZBTm"),
+        environ.get("AGOL_OAUTH_CLIENT_SECRET", "26bcc585a3b44862980abe390e85b06a"),
+    )
     _enterprise_oauth_credential_parameters = (
         "enterprise_oauth",
         _standard_enterprise_url,
@@ -290,6 +304,21 @@ class credentials:
         """Run tests for enterprise oauth credentials"""
         return cls._get_credentials_parameterized_class(
             cls._enterprise_oauth_credential_parameters
+        )
+    
+    @classproperty
+    def agol_oauth(cls):
+        """Run tests for agol oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._agol_oauth_credential_parameters
+        )
+    
+    @classproperty
+    def all_oauth(cls):
+        """Run tests for all oauth credentials"""
+        return cls._get_credentials_parameterized_class(
+            cls._agol_oauth_credential_parameters,
+            cls._enterprise_oauth_credential_parameters,
         )
 
     @classproperty
@@ -437,6 +466,15 @@ class profiles:
         return cls._get_profile_parameterized_class(cls._k8s_admin_profile_parameters)
 
     @classproperty
+    def admin_enterprise_and_k8s(cls):
+        """Run tests for enterprise admin and kubernetes admin profile"""
+
+        return cls._get_profile_parameterized_class(
+            cls._k8s_admin_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+        )
+
+    @classproperty
     def all(cls):
         """Run tests for all 3 profiles (agol, enterprise, k8s)"""
         return cls._get_profile_parameterized_class(
@@ -491,7 +529,7 @@ class from_to_profiles:
     _agol_to_k8s_params = {
         "description": "agol_to_k8s",
         "from_profile": "your_online_admin_profile",
-        "to_profile": "your_kubernetes_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
     _enterprise_to_agol_params = {
         "description": "enterprise_to_agol",
@@ -507,17 +545,22 @@ class from_to_profiles:
     _enterprise_to_k8s_params = {
         "description": "enterprise_to_k8s",
         "from_profile": "your_ent_admin_profile",
-        "to_profile": "your_kubernetes_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
     _k8s_to_agol_params = {
         "description": "k8s_to_agol",
-        "from_profile": "your_kubernetes_profile",
+        "from_profile": "your_kubernetes_admin_profile",
         "to_profile": "your_online_admin_profile",
     }
     _k8s_to_enterprise_params = {
         "description": "k8s_to_enterprise",
-        "from_profile": "your_kubernetes_profile",
+        "from_profile": "your_kubernetes_admin_profile",
         "to_profile": "your_ent_admin_profile",
+    }
+    _k8s_to_k8s_params = {
+        "description": "k8s_to_k8s",
+        "from_profile": "your_kubernetes_admin_profile",
+        "to_profile": "your_kubernetes_admin_profile",
     }
 
     def _get_multi_profile_parameterized_class(*args):
@@ -608,6 +651,16 @@ class from_to_profiles:
             cls._agol_to_enterprise_params,
             cls._enterprise_to_agol_params,
             cls._enterprise_to_enterprise_params,
+        )
+
+    @classproperty
+    def all_except_agol(cls):
+        """Run tests for all from-to profiles, except agol"""
+        return cls._get_multi_profile_parameterized_class(
+            cls._enterprise_to_k8s_params,
+            cls._enterprise_to_enterprise_params,
+            cls._k8s_to_enterprise_params,
+            cls._k8s_to_k8s_params,
         )
 
     # endregion

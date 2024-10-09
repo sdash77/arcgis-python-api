@@ -4,8 +4,9 @@ from arcgis.layers._ogc import WMTSLayer
 from utils.decorators import integration_test
 
 wm_urls = [
-    "https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/wmts",
-    "https://map.infogis2.ch/arcgis/rest/services/holderbank/holderbank_abwasser/MapServer/WMTS/",
+    # TODO replace infogis2 service with an esri-hosted or other public service
+    "https://map.infogis2.ch/arcgis/rest/services/holderbank/holderbank_abwasser/MapServer/WMTS",
+    "https://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer/WMTS",
 ]
 
 

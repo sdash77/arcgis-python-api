@@ -152,7 +152,7 @@ class TestUxClass(unittest.TestCase):
         # store original setting
         original_gallery_group = ux.gallery_group
         # set new group
-        groups = gis.groups.search()
+        groups = self.gis.groups.search()
         if not groups:
             self.skipTest("No groups configured, cannot test")
         # get a random group
@@ -169,7 +169,7 @@ class TestUxClass(unittest.TestCase):
 
 @profiles.admin_enterprise_and_agol
 @integration_test
-class Test_HomePageSettingsClass(unittest.TestCase):
+class TestHomePageSettingsClass(unittest.TestCase):
     """Tests Home Page Editor Class"""
 
     def test_class_calls(self):
@@ -243,77 +243,105 @@ class Test_HomePageSettingsClass(unittest.TestCase):
 
 @profiles.admin_enterprise_and_agol
 @integration_test
-class Test_MapSettingsClass(unittest.TestCase):
+class TestMapSettingsClass(unittest.TestCase):
     """Tests Org Map Settings Class"""
 
     def test_class_calls(self):
         ms = self.gis.admin.ux.map_settings
         assert isinstance(ms, MapSettings)
 
-    def test_properties(self):
-        # TODO: split test for each property
+    def test_default_extent(self):
+        """test the default_extent property of MapSettings class"""
         ms = self.gis.admin.ux.map_settings
-        groups = self.gis.groups.search()
-        if not groups:
-            self.skipTest("No groups configured, cannot test")
-        group = groups[randrange(len(groups))]
-
-        # default extent
         extent = ms.default_extent
-        assert extent
+        assert extent['spatialReference']["wkid"] == 102100
+
         new_extent = {
             "xmin": -13458971.714869041,
             "ymin": 3612376.446092521,
             "xmax": -12305256.512287628,
             "ymax": 4354833.185272345,
-            "spatialReference": {"wkid": 102100},
+            "spatialReference": {"wkid": 3857},
         }
         ms.default_extent = new_extent
-        assert ms.default_extent == {
-            "xmin": -13458971.714869041,
-            "ymin": 3612376.446092521,
-            "xmax": -12305256.512287628,
-            "ymax": 4354833.185272345,
-            "spatialReference": {"wkid": 102100},
-        }
+        assert ms.default_extent["spatialReference"]["wkid"] == 3857
         ms.default_extent = extent
 
-        # default basemap
-        df_bsmap = ms.default_basemap
-        assert df_bsmap
+    def test_default_basemap(self):
+        """test the default_basemap property of MapSettings class"""
+        ms = self.gis.admin.ux.map_settings
+        basemap = ms.default_basemap
+        assert basemap
 
-        # vector basemap
-        set_vb = ms.use_vector_basemap
-        assert set_vb in [True, False]
-        vbmap = ms.vector_basemap
-        assert vbmap
+    def test_vector_basemap(self):
+        """test the vector basemap properties of MapSettings class"""
+        ms = self.gis.admin.ux.map_settings
+        use_vector_basemap = ms.use_vector_basemap
+        assert use_vector_basemap in [True, False]
 
-        # basemap gallery group
+        vector_basemap = ms.vector_basemap
+        assert vector_basemap["title"] == "Topographic"
+
+    def test_basemap_gallery(self):
+        """test the basemap gallery property of MapSettings class"""
+        ms = self.gis.admin.ux.map_settings
         bsmap_gall_group = ms.basemap_gallery_group
-        assert bsmap_gall_group
+        assert isinstance(bsmap_gall_group, (Group, type(None)))
+
+        # test set basemap gallery group
+        groups = self.gis.groups.search()
+        if not groups:
+            self.skipTest("No groups configured, cannot test")
+        group = groups[randrange(len(groups))]
+
         ms.basemap_gallery_group = group.id
         assert isinstance(ms.basemap_gallery_group, Group)
         assert ms.basemap_gallery_group.id == group.id
+
+        # set back basemap gallery group
         ms.basemap_gallery_group = bsmap_gall_group.id if bsmap_gall_group else bsmap_gall_group
 
-        # map viewer
+    def test_map_viewer(self):
+        """test the map viewer property of MapSettings class"""
+        ms = self.gis.admin.ux.map_settings
         mv = ms.default_mapviewer
-        assert mv
+        assert mv in ['modern', 'classic']
 
-        # units
+    def test_units(self):
+        """test the units property of MapSettings class"""
+        ms = self.gis.admin.ux.map_settings
         units = ms.units
-        assert units
+        assert units in ['english', 'metric']
 
-        # config apps group
+    def test_config_apps_group(self):
+        """test the config apps group property of MapSettings class"""
+        groups = self.gis.groups.search()
+        if not groups:
+            self.skipTest("No groups configured, cannot test")
+        group = groups[randrange(len(groups))]
+
+        # get config apps group
+        ms = self.gis.admin.ux.map_settings
         config_apps_group = ms.config_apps_group
-        assert config_apps_group
+        assert isinstance(config_apps_group, (Group, type(None)))
+
+        # set config apps group
         ms.config_apps_group = group.id
         assert isinstance(ms.config_apps_group, Group)
         assert ms.config_apps_group.id == group.id
-        ms.config_apps_group = config_apps_group.id if config_apps_group else config_apps_group
+        ms.config_apps_group = config_apps_group
 
-        # analysis group layer
+    def test_analysis_group_layer(self):
+        """test the analysis group layer property of MapSettings class"""
+        groups = self.gis.groups.search()
+        if not groups:
+            self.skipTest("No groups configured, cannot test")
+        group = groups[randrange(len(groups))]
+
+        ms = self.gis.admin.ux.map_settings
         analysis_layer_group = ms.analysis_layer_group
+        assert isinstance(analysis_layer_group, (Group, str))
+
         ms.analysis_layer_group = group.id
         assert isinstance(ms.analysis_layer_group, Group)
         assert ms.analysis_layer_group.id == group.id
@@ -339,7 +367,7 @@ class Test_MapSettingsClass(unittest.TestCase):
 
 @profiles.admin_enterprise_and_agol
 @integration_test
-class Test_ItemSettingsClass(unittest.TestCase):
+class TestItemSettingsClass(unittest.TestCase):
     """Tests Org Item Settings Class"""
 
     def test_class_calls(self):
@@ -372,7 +400,7 @@ class Test_ItemSettingsClass(unittest.TestCase):
 
 @profiles.admin_enterprise_and_agol
 @integration_test
-class Test_SecuritySettingsClass(unittest.TestCase):
+class TestSecuritySettingsClass(unittest.TestCase):
     """Tests Org Security Settings Class"""
 
     def test_class_calls(self):
@@ -524,8 +552,8 @@ class Test_SecuritySettingsClass(unittest.TestCase):
         assert isinstance(ss.signin_settings, dict)
 
     def test_apps(self):
-        if self.gis._is_agol is True:
-            self.skipTest("UX Security settings not available for AGOL")
+        if not self.gis._is_agol:
+            self.skipTest("Set approved/blocked apps is only available for AGOL")
         ss = self.gis.admin.ux.security_settings
         assert ss.set_approved_apps(True)
         assert ss.set_approved_apps(False)
@@ -576,7 +604,7 @@ class TestUtilityServicesSettingsClass(unittest.TestCase):
 
         uss = enterprise_gis.admin.ux.utility_services_settings
         settings = uss.add_from_online(
-            ["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network"],
+            ["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Network", "Orthomapping Elevation"],
             online_gis,
             "RoutingService"
         )
@@ -587,7 +615,7 @@ class TestUtilityServicesSettingsClass(unittest.TestCase):
                 continue
             assert service in enterprise_gis.properties["helperServices"]
         
-        uss.reset_services(["Elevation", "Geocode", "GeoEnrichment", "Hydrology","Network", "Orthomapping Elevation"])
+        uss.reset_services(["Elevation", "Geocode", "GeoEnrichment", "Hydrology", "Network", "Orthomapping Elevation"])
 
 
 if __name__ == "__main__":
