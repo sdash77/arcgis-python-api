@@ -2407,6 +2407,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 orig_item.layers[index].append(
                     item_id=append_item_id,
                     upload_format=upload_format,
+                    source_table_name=lyr_info["name"],
                     return_messages=True
                 )
                 if new_item:
