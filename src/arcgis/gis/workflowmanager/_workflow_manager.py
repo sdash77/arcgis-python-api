@@ -3546,7 +3546,7 @@ class JobExecution:
         Gets the messages collected during execution
 
         :return:
-            `List of :class:`~arcgis.gis.workflowmanager.Notification`
+            List of :class:`~arcgis.gis.workflowmanager.Notification`
 
         """
         return self._messages
@@ -4357,6 +4357,23 @@ class Notification:
     ---------------     --------------------------------------------------------------------
     init_data           data object representing relevant properties of a notification
     ===============     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: Print Notification Properties
+
+        # create a WorkflowManager object from the workflow item
+        wm = WorkflowManager(wf_item)
+
+        job = wm.jobs.get('job_id')
+        run_execution = job.run(step_ids=['stepid'])
+
+        print(f'Result = { run_execution.result() }')
+        print(f'Messages:')
+        for m in run_execution.messages:
+            print(m.msg_type)
+            print(m.message)
+            print(m.timestamp)
     """
 
     def __init__(self, init_data):
