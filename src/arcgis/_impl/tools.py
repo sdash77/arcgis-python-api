@@ -18385,7 +18385,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_item_name = "TrainDeepLearningModel_" + _id_generator()
             output_name = output_item_name.replace(" ", "_")
 
-        if "/fileShares/" in output_name or "/rasterStores/" in output_name or "/cloudStores/" in output_name:
+        if (
+            "/fileShares/" in output_name
+            or "/rasterStores/" in output_name
+            or "/cloudStores/" in output_name
+        ):
             output_name = {"uri": output_name}
         else:
             if folderId is not None:
