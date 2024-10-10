@@ -3895,6 +3895,10 @@ class Envelope(Geometry):
 ########################################################################
 class SpatialReference(dict):
     """
+     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
+    `well-known text` (`wkt`). The default tolerance and resolution values for
+    the associated coordinate system are used.
+
     .. note::
         The x, y and z tolerance
         values are 1 mm or the equivalent in the unit of the coordinate system.
