@@ -2259,10 +2259,12 @@ class FeatureLayerCollectionManager(_GISResource):
         # Add new layer to definition
         if isinstance(layer_definition, PropertyMap):
             layer_definition = dict(layer_definition)
-            
+
         # Extract original field names for comparison later
-        original_field_names = [field["name"] for field in layer_definition.get("fields", [])]
-    
+        original_field_names = [
+            field["name"] for field in layer_definition.get("fields", [])
+        ]
+
         if table:
             self.add_to_definition({"tables": [layer_definition]})
             for table in self.properties.tables:
@@ -2276,16 +2278,22 @@ class FeatureLayerCollectionManager(_GISResource):
                 if layer["name"] == layer_definition["name"]:
                     fl_index = layer["id"]
                     break
-        
+
         # Check if any field names have changed
-        updated_fields_names = [field["name"] for field in self.properties.layers[fl_index]["fields"]]
+        updated_fields_names = [
+            field["name"] for field in self.properties.layers[fl_index]["fields"]
+        ]
         field_mappings = []
         for original_field in original_field_names:
             for updated_field in updated_fields_names:
                 if original_field != updated_field and original_field in updated_field:
-                    field_mappings.append({"name": updated_field, "sourceName": original_field})
+                    field_mappings.append(
+                        {"name": updated_field, "sourceName": original_field}
+                    )
                     # Log or send a warning about the change
-                    print(f"Warning: Field '{original_field}' was renamed to '{updated_field}'")
+                    print(
+                        f"Warning: Field '{original_field}' was renamed to '{updated_field}'"
+                    )
 
         # Return the index and field mappings to use for future appends
         return fl_index, field_mappings
@@ -2393,7 +2401,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         publish_parameters = {}
         lyr_info = {}
-        if not self._gis._is_arcgisonline and file_type == "File Geodatabase":
+        if not self._gis._is_arcgisonline:
             # FileGeodatabase has to be published first to get the layer info
             new_item = file_item.publish()
             lyr_info = new_item.layers[0].properties
@@ -2420,21 +2428,27 @@ class FeatureLayerCollectionManager(_GISResource):
             if lyr_info and lyr_info["type"] == "Feature Layer":
                 index, field_mappings = self._perform_insert(lyr_info)
                 append_item_id = file_item.id
-                if upload_format not in orig_item.layers[index].properties["supportedAppendFormats"]:
+                layer_mappings = []
+                if (
+                    upload_format
+                    not in orig_item.layers[index].properties["supportedAppendFormats"]
+                    or new_item
+                ):
                     upload_format = "featureService"
                     if not new_item:
+                        # special case
                         new_item = file_item.publish()
                     append_item_id = new_item.id
-                # Use append 
+                    layer_mappings = [{"id": index, "sourceId": 0}]
+                # Use append
                 orig_item.layers[index].append(
                     item_id=append_item_id,
                     upload_format=upload_format,
                     source_table_name=lyr_info["name"],
                     field_mappings=field_mappings,
-                    return_messages=True
+                    layer_mappings=layer_mappings,
+                    return_messages=True,
                 )
-                if new_item:
-                    self._gis.content.delete_items([new_item], permanent=True)
             elif lyr_info["type"] == "Table":
                 index, field_mappings = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
@@ -2442,17 +2456,19 @@ class FeatureLayerCollectionManager(_GISResource):
                     upload_format=upload_format,
                     source_info=lyr_info,
                     field_mappings=field_mappings,
-                    layer_mappings=[{"id": index, "sourceId":0}],
-                    return_messages=True
+                    layer_mappings=[{"id": index, "sourceId": 0}],
+                    return_messages=True,
                 )
 
-            # Add relationship between service and data
-            orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
-            # Remove newly published item since inserted into service
         except Exception as e:
-            # Remove newly published item since inserted into service
-            self._gis.content.delete_items([file_item], permanent=True)
             raise e
+        finally:
+            # Remove items created since no need for them anymore
+            # relationship not needed for hosted services
+            self._gis.content.delete_items([file_item], permanent=True)
+            if new_item:
+                self._gis.content.delete_items([new_item], permanent=True)
+
         return orig_item
 
     def swap_view(
