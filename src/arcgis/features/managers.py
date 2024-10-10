@@ -2447,7 +2447,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     source_table_name=lyr_info["name"],
                     field_mappings=field_mappings,
                     layer_mappings=layer_mappings,
-                    return_messages=True,
+                    upsert=True,  # avoid duplicate append
                 )
             elif lyr_info["type"] == "Table":
                 index, field_mappings = self._perform_insert(lyr_info, table=True)
