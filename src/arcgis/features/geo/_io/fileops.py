@@ -728,13 +728,13 @@ def from_featureclass(filename, **kwargs):
         if filename.find("http://") > -1 or filename.find("https://") > -1:
             r = requests.get(filename)
             with tempfile.TemporaryDirectory() as temp_dir:
-                archive_path = os.path.join(temp_dir, 'archive.zip')
-                with open(archive_path, 'wb') as f:
+                archive_path = os.path.join(temp_dir, "archive.zip")
+                with open(archive_path, "wb") as f:
                     f.write(r.content)
 
                 with zipfile.ZipFile(archive_path) as archive:
                     archive.extractall(path=temp_dir)
-                
+
                 df = _gdal_to_sedf(path=temp_dir)
         else:
             df = _gdal_to_sedf(file_path=filename)
@@ -879,13 +879,13 @@ def from_featureclass(filename, **kwargs):
         if filename.find("http://") > -1 or filename.find("https://") > -1:
             r = requests.get(filename)
             with tempfile.TemporaryDirectory() as temp_dir:
-                archive_path = os.path.join(temp_dir, 'archive.zip')
-                with open(archive_path, 'wb') as f:
+                archive_path = os.path.join(temp_dir, "archive.zip")
+                with open(archive_path, "wb") as f:
                     f.write(r.content)
 
                 with zipfile.ZipFile(archive_path) as archive:
                     archive.extractall(path=temp_dir)
-                
+
                 df = _gdal_to_sedf(path=temp_dir)
         else:
             df = _gdal_to_sedf(file_path=filename)
@@ -1138,10 +1138,7 @@ def to_featureclass(
             fc_name = "%s.gdb" % fc_name
             out_type = "OpenFileGDB"
         return _gdal_to_fc(
-            df,
-            os.path.join(out_location, fc_name),
-            out_type,
-            layer_name=layer_name
+            df, os.path.join(out_location, fc_name), out_type, layer_name=layer_name
         )
 
     elif HASARCPY:
@@ -1362,7 +1359,7 @@ def to_featureclass(
             df.columns = original_columns
             df.set_index(old_idx)
         return fc
-    
+
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
@@ -1385,28 +1382,29 @@ def to_featureclass(
         df.set_index(old_idx)
         return None
 
+
 # --------------------------------------------------------------------------
-def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file = False):
+def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table=False, zip_file=False):
     GEOMTYPELOOKUP = {
         "Polygon": ogr.wkbPolygon,
         "Point": ogr.wkbPoint,
         "Polyline": ogr.wkbLineString,
         "null": ogr.wkbUnknown,
     }
-    
+
     out_driver = ogr.GetDriverByName(out_type)
     if gdb_table:
         if os.path.basename(out_path).find(".gdb") > -1:
             gdb_dir = out_path
         else:
             gdb_dir = os.path.dirname(out_path)
-            
+
         out_file = out_driver.Open(gdb_dir, 1)
         if out_file is None:
             out_file = out_driver.CreateDataSource(gdb_dir)
     else:
         out_file = out_driver.CreateDataSource(out_path)
-    
+
     geom_field = df.spatial.name
     if geom_field is None:
         return
@@ -1414,17 +1412,17 @@ def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file 
     idx = df[geom_field].first_valid_index()
     if idx > -1:
         geom_type = df.loc[idx][geom_field].type
-    
+
     df_ref = df.spatial.sr
     osr_ref = osr.SpatialReference()
-    if 'wkid' in df_ref:
-        ref_code = df_ref['wkid']
+    if "wkid" in df_ref:
+        ref_code = df_ref["wkid"]
         resp = osr_ref.ImportFromEPSG(ref_code)
         if resp != 0:
-            osr_ref.SetFromUserInput('ESRI:' + str(ref_code))
+            osr_ref.SetFromUserInput("ESRI:" + str(ref_code))
         osr_ref.MorphToESRI()
-    elif 'wkt' in df_ref:
-        osr_ref.ImportFromWkt(df_ref['wkt'])
+    elif "wkt" in df_ref:
+        osr_ref.ImportFromWkt(df_ref["wkt"])
 
     out_layer = out_file.CreateLayer(layer_name, osr_ref, GEOMTYPELOOKUP[geom_type])
     # out_layer = out_file.CreateLayer(layer_name, osr_ref, ogr.wkbPoint25D)
@@ -1459,7 +1457,13 @@ def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file 
                 elif (
                     isinstance(
                         df[c].loc[idx],
-                        (datetime.datetime, np.datetime64, datetime.date, datetime.time, datetime.timedelta),
+                        (
+                            datetime.datetime,
+                            np.datetime64,
+                            datetime.date,
+                            datetime.time,
+                            datetime.timedelta,
+                        ),
                     )
                     or df[c].dtype.name.find("datetime") > -1
                 ):
@@ -1483,46 +1487,50 @@ def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table = False, zip_file 
         geom_string = _ujson.dumps(dict(geom))
         ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
         feature.SetGeometry(ogr_geom)
-        
+
         for field_name, value in row.items():
             if field_name != df.spatial.name:
                 # continue
                 if field_name in dfields:
-                    value = value.strftime('%Y-%m-%d %H:%M:%S')
+                    value = value.strftime("%Y-%m-%d %H:%M:%S")
                 feature.SetField(field_mapping[field_name], value)
-                
+
         out_layer.CreateFeature(feature)
         del idx
         del row
         del geom
         del ogr_geom
-    
+
     # out_file = None
     if zip_file:
         path = os.path.dirname(out_path)
         dir_name = os.path.basename(out_path)
         _zip_dir(path, dir_name)
-    
+
     return out_path
+
 
 # --------------------------------------------------------------------------
 def _zip_dir(path, dir_name):
     # Helper function to zip a directory
     import zipfile
-    zipf = zipfile.ZipFile(dir_name + '.zip', 'w', zipfile.ZIP_DEFLATED)
+
+    zipf = zipfile.ZipFile(dir_name + ".zip", "w", zipfile.ZIP_DEFLATED)
     for root, dirs, files in os.walk(path):
         for file in files:
             zipf.write(
-                os.path.join(root, file), 
-                os.path.relpath(os.path.join(root, file), os.path.join(path, '..'))
+                os.path.join(root, file),
+                os.path.relpath(os.path.join(root, file), os.path.join(path, "..")),
             )
     zipf.close()
+
+
 # --------------------------------------------------------------------------
 def _gdal_to_sedf(file_path):
     def feature_generator(layer):
         for feature in layer:
             yield feature
-    
+
     data_source = ogr.Open(file_path)
     out_layer = data_source.GetLayer()
     lay_name = out_layer.GetName()
@@ -1553,6 +1561,8 @@ def _gdal_to_sedf(file_path):
         # df.spatial.sr = _types.SpatialReference({'wkid' : sr_code})
         df.spatial.sr = Geometry(sr_code)
     return df
+
+
 # --------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):
     """

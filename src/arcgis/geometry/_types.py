@@ -3972,7 +3972,7 @@ class SpatialReference(Geometry):
     def type(self):
         """Gets the type of the current ``Point`` object."""
         return self._type
-    
+
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "SpatialReference({})".format(dict(self))
