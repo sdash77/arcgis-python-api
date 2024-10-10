@@ -3020,12 +3020,19 @@ class GeoAccessor(object):
             except ImportError:
                 self._HASARCPY = False
         if self._HASSHAPELY is None:
+            self._HASSHAPELY = False
             try:
                 import shapely
 
                 self._HASSHAPELY = True
             except ImportError:
-                self._HASSHAPELY = False
+                pass
+            try:
+                import shapefile
+
+                self._HASSHAPELY = True
+            except ImportError:
+                pass
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------
