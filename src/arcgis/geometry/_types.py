@@ -190,6 +190,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkt(iterable):
+        """Create a geometry from wkt"""
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
@@ -256,13 +257,14 @@ class GeometryFactory(type):
                         "MULTIPOINT",
                         "MULTIPOLYGON",
                         "MULTILINESTRING",
-                        "GEOMETRYCOLLECTION",
                         "POINT ZM",
                         "POINT M",
                     )
                 ):
                     # WKT Geometry
                     iterable = GeometryFactory._from_wkt(iterable)
+                elif iterable.startswith("GEOMETRYCOLLECTION"):
+                    raise ValueError("GeometryCollection not supported")
                 else:
                     # Could be a wkt spatial reference AND geometry, set as default
                     iterable = GeometryFactory._from_wkt(iterable)
@@ -3957,6 +3959,13 @@ class SpatialReference(Geometry):
         if len(kwargs) > 0:
             self.update(kwargs)
         self._properties = iterable
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    def __str__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
 
     # ----------------------------------------------------------------------
     @property
