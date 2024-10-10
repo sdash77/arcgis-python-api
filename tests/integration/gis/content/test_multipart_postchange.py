@@ -146,14 +146,14 @@ def create_item(gis, thumbnail=None):
     """creates a dummy item on the GIS"""
 
     folder = gis.content.folders._get_or_create(
-        folder="integration_testing_gis_content_num",
+        folder="integration_testing_gis_content_multipart_postchange",
         owner=gis._username,
     )
     return folder.add(
         item_properties={
-            "title": uuid.uuid4().hex,
+            "title": f"test_multipart_postchange_{uuid.uuid4().hex[:4]}",
             "type": "Web Map",
-            "tags": "erase, me",
+            "tags": "integration_testing",
             "text": json.dumps(wm),
             "thumbnail": thumbnail,
         },
