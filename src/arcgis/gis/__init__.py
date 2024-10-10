@@ -16719,8 +16719,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> folder = gis.content.folders.create("new folder")
-            >>> item.move(folder)  # current syntax
+            >>> folder = gis.content.folders.get(folder="my folder")
+            >>> item.move(folder)
 
         """
         owner_name = self._user_id
