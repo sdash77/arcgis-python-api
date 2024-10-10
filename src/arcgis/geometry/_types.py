@@ -3906,6 +3906,7 @@ class SpatialReference(dict):
         The resolution values are 10x smaller or 1/10 the tolerance values.
         Thus, 0.0001 m or 0.0003280833333 ft. For geographic coordinate systems
         using degrees, the equivalent of a mm at the equator is used.
+
     The `well-known ID` (`WKID`) for a given spatial reference can occasionally
     change. For example, the WGS 1984 Web Mercator (Auxiliary Sphere)
     projection was originally assigned `WKID` 102100, but was later changed
@@ -3915,12 +3916,14 @@ class SpatialReference(dict):
     An additional property, latestWkid, identifies the current `WKID` value
     (as of a given software release) associated with the same spatial
     reference.
+
     A ``SpatialReference`` object can optionally include a definition for a `vertical`
     `coordinate system` (`VCS`), which is used to interpret the z-values of a
     geometry. A `VCS` defines units of measure, the location of z = 0, and
     whether the positive vertical direction is up or down. When a vertical
     coordinate system is specified with a `WKID`, the same caveat as
     mentioned above applies.
+
     .. note::
         There are two `VCS WKID` properties: `vcsWkid` and
         `latestVcsWkid`. A VCS WKT can also be embedded in the string value of
