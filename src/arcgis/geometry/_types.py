@@ -3893,135 +3893,82 @@ class Envelope(Geometry):
 
 
 ########################################################################
-class SpatialReference(Geometry):
+class SpatialReference(dict):
     """
     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
     the associated coordinate system are used.
+    ...
 
-    .. note::
-        The x, y and z tolerance
-        values are 1 mm or the equivalent in the unit of the coordinate system.
-        If the coordinate system uses feet, the tolerance is 0.00328083333 ft.
-        The resolution values are 10x smaller or 1/10 the tolerance values.
-        Thus, 0.0001 m or 0.0003280833333 ft. For geographic coordinate systems
-        using degrees, the equivalent of a mm at the equator is used.
-
-    The `well-known ID` (`WKID`) for a given spatial reference can occasionally
-    change. For example, the WGS 1984 Web Mercator (Auxiliary Sphere)
-    projection was originally assigned `WKID` 102100, but was later changed
-    to 3857. To ensure backward compatibility with older spatial data
-    servers, the JSON `wkid` property will always be the value that was
-    originally assigned to an SR when it was created.
-    An additional property, latestWkid, identifies the current `WKID` value
-    (as of a given software release) associated with the same spatial
-    reference.
-
-    A ``SpatialReference`` object can optionally include a definition for a `vertical`
-    `coordinate system` (`VCS`), which is used to interpret the z-values of a
-    geometry. A `VCS` defines units of measure, the location of z = 0, and
-    whether the positive vertical direction is up or down. When a vertical
-    coordinate system is specified with a `WKID`, the same caveat as
-    mentioned above applies.
-
-    .. note::
-        There are two `VCS WKID` properties: `vcsWkid` and
-        `latestVcsWkid`. A VCS WKT can also be embedded in the string value of
-        the wkt property. In other words, the WKT syntax can be used to define
-        an SR with both horizontal and vertical components in one string. If
-        either part of an SR is custom, the entire SR will be serialized with
-        only the wkt property.
-
-    .. note::
-        Starting at 10.3, Image Service supports image coordinate systems.
     """
 
     _typ = "SpatialReference"
     _type = "SpatialReference"
-    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
-        super(SpatialReference, self)
+        super().__init__()  # Initialize the dict
         if iterable is None:
             iterable = {}
         if isinstance(iterable, int):
             iterable = {"wkid": iterable}
-        if isinstance(iterable, str):
+        elif isinstance(iterable, str):
             iterable = {"wkt": iterable}
+
+        # Assuming _check_geometry_engine is defined elsewhere
         HASARCPY, HASSHAPELY = _check_geometry_engine()
+
         if HASARCPY and isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {"wkid": iterable.factoryCode}
             else:
                 iterable = {"wkt": iterable.exportToString()}
-        if len(iterable) > 0:
-            self.update(iterable)
-        if len(kwargs) > 0:
-            self.update(kwargs)
-        self._properties = iterable
 
-    # ----------------------------------------------------------------------
+        self.update(iterable)  # Store properties in the dict
+        self.update(kwargs)  # Update with additional kwargs
+
+    def __getattr__(self, name):
+        """Allow access to dictionary keys as attributes."""
+        if name in self:
+            return self[name]
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
+
     def __repr__(self) -> str:
         return "SpatialReference({})".format(dict(self))
 
     def __str__(self) -> str:
         return "SpatialReference({})".format(dict(self))
 
-    # ----------------------------------------------------------------------
     @property
     def type(self):
-        """Gets the type of the current ``Point`` object."""
+        """Gets the type of the current ``SpatialReference`` object."""
         return self._type
 
-    # ----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
 
-    # ----------------------------------------------------------------------
-    _repr_svg_ = None
-
-    # ----------------------------------------------------------------------
-    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
-        """
-        Retrieves SVG (Scalable Vector Graphic) polygon element for a ``SpatialReference`` field.
-
-        ================  ===============================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
-        ----------------  -------------------------------------------------------------------------------
-        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
-                          valid, and "#ff3333" if invalid.
-        ================  ===============================================================================
-
-        :return:
-            The SVG element
-        """
-        return "<g/>"
-
-    # ----------------------------------------------------------------------
     def __eq__(self, other):
-        """checks if the spatial reference is not equal"""
-        if "wkt" in self and "wkt" in other and self["wkt"] == other["wkt"]:
-            return True
-        elif "wkid" in self and "wkid" in other and self["wkid"] == other["wkid"]:
-            return True
+        """Checks if the spatial reference is equal."""
+        if not isinstance(other, SpatialReference):
+            return False
+
+        # check what type of spatial reference is being used, only compare the same type
+        if hasattr(self, "wkid") and hasattr(other, "wkid"):
+            return self.wkid == other.wkid
+        elif hasattr(self, "wkt") and hasattr(other, "wkt"):
+            return self.wkt == other.wkt
+        elif hasattr(self, "wkid2") and hasattr(other, "wkid2"):
+            return self.wkid2 == other.wkid2
         return False
 
-    # ----------------------------------------------------------------------
     def __ne__(self, other):
-        """checks if the two values are unequal"""
-        return self.__eq__(other) == False
+        """Checks if the two values are not equal."""
+        return not self.__eq__(other)
 
-    # ----------------------------------------------------------------------
     @property
     def as_arcpy(self):
-        """
-        The ``as_arcpy`` property retrieves the class as an ``arcpy SpatialReference`` object.
-
-        :return:
-            An ``arcpy SpatialReference`` object
-        """
+        """Gets the arcpy SpatialReference object."""
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
             if "wkid" in self:
@@ -4036,13 +3983,10 @@ class SpatialReference(Geometry):
                 return sr
         return None
 
-    # ----------------------------------------------------------------------
-    def __setstate__(self, d):
-        """unpickle support"""
-        self.__dict__.update(d)
-        self = SpatialReference(iterable=d)
-
-    # ----------------------------------------------------------------------
     def __getstate__(self):
-        """pickle support"""
+        """Pickle support."""
         return dict(self)
+
+    def __setstate__(self, d):
+        """Unpickle support."""
+        self.update(d)
