@@ -3895,7 +3895,7 @@ class Envelope(Geometry):
 ########################################################################
 class SpatialReference(dict):
     """
-     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
+    A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
     the associated coordinate system are used.
 
@@ -3980,6 +3980,25 @@ class SpatialReference(dict):
 
     def __hash__(self):
         return hash(json.dumps(dict(self)))
+
+    # ----------------------------------------------------------------------
+    _repr_svg_ = None
+
+    def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
+        """
+        Retrieves SVG (Scalable Vector Graphic) polygon element for a ``SpatialReference`` field.
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+        :return:
+            The SVG element
+        """
+        return "<g/>"
 
     def __eq__(self, other):
         """Checks if the spatial reference is equal."""
