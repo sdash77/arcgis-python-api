@@ -774,7 +774,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             "ymin": self.geoextent[1],
             "xmax": self.geoextent[2],
             "ymax": self.geoextent[3],
-            "spatialReference": self.spatial_reference,
+            "spatialReference": dict(self.spatial_reference),
         }
 
         return Envelope(env_dict)
