@@ -16719,7 +16719,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.move("C:\Projects\ARCGIS\ArcGis_data\")
+            >>> folder = gis.content.folders.create("new folder")
+            >>> item.move(folder)  # current syntax
 
         """
         owner_name = self._user_id
