@@ -217,12 +217,12 @@ class ReportManager(BaseServer):
                                      - ``RequestAvgResponseTime`` - the average response time
                                      - ``ServiceRunningInstancesMax`` — the maximum number of active service instances
                                        sampled at one-minute intervals for a specified service.
-                                     
+
                                      .. note::
                                          For ArcGIS Enterprise deployments at 11.0 and below, if you include
                                          *ServiceRunningInstancesMax*, it must be the only metric included in the report.
-                                    
-                                     - ``RequestAvgWaitTime`` — the average time all requests waited for an available instance 
+
+                                     - ``RequestAvgWaitTime`` — the average time all requests waited for an available instance
                                      - ``RequestMaxWaitTime`` — the maximum time a request waited for an available instance
                                      - ``RequestMinWaitTime`` — the minimum time a request waited for an available instance
         --------------------     --------------------------------------------------------------------
@@ -401,7 +401,7 @@ class ReportManager(BaseServer):
                                          - Map_bv_999.MapServer.
 
                                  .. code-block:: python
-                                 
+
                                      # Example:
                                      >>> my_server.usage.quick_report(
                                              ...
@@ -420,17 +420,17 @@ class ReportManager(BaseServer):
                                     - RequestAvgResponseTime -- the average response time
                                     - ServiceRunningInstancesMax -- the maximum number of running service instances,
                                       sampled at one-minute intervals for a specified service.
-                                    
+
                                     .. note::
                                         For ArcGIS Enterprise deployments at 11.0 and below, if you include *ServiceRunningInstancesMax*,
                                         it must be the only metric included in the report.
-                                    
+
                                     - RequestAvgWaitTime— the average time all requests waited for an available instance
                                     - RequestMaxWaitTime— the maximum time a request waited for an available instance
                                     - RequestMinWaitTime— the minimum time a request waited for an available instance
 
                                  .. code-block:: python
-                                 
+
                                      # Example:
                                      >>> my_server.usage.quick_report(
                                              ...
