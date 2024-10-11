@@ -418,7 +418,8 @@ class ReportManager(BaseServer):
                                     - RequestsTimedOut -- the number of requests that timed out
                                     - RequestMaxResponseTime -- the maximum response time
                                     - RequestAvgResponseTime -- the average response time
-                                    - ServiceRunningInstancesMax -- the maximum number of running service instances, sampled at one-minute intervals for a specified service.
+                                    - ServiceRunningInstancesMax -- the maximum number of running service instances,
+                                      sampled at one-minute intervals for a specified service.
                                     
                                     .. note::
                                         For ArcGIS Enterprise deployments at 11.0 and below, if you include *ServiceRunningInstancesMax*,
