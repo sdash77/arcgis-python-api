@@ -184,6 +184,8 @@ class ReportManager(BaseServer):
                                                        ]
                                                   }
                                             ]
+                                            ...
+                                        )
 
                                  Each key's corresponding value is a list of strings specifying
                                  a resource for which to gather metrics, or the metrics to
