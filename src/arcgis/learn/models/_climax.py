@@ -3,12 +3,13 @@ import json
 import traceback
 import numpy as np
 import pandas as pd
-from IPython.display import display
+
 
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
+    from IPython.display import display
     from ._climax_utils import lat_weighted_mse
     from ._climax_utils import climaX
     from .._utils.climax import load_pretrained_path
@@ -95,7 +96,7 @@ class ClimaX(ArcGISModel):
             default_vars=data._variables,
             out_variables=data._out_variables,
             img_size=data.chp_size,
-            **kwargs
+            **kwargs,
         )
 
         self.learn = Learner(
@@ -133,7 +134,7 @@ class ClimaX(ArcGISModel):
             _emd_template["InferenceFunction"] = (
                 "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
             )
-        _emd_template["ModelType"] = "SuperResolution"
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["n_channel"] = self._data._n_channels
         _emd_template["train_valid_years"] = (
             self._data._trainperiod,
@@ -234,13 +235,12 @@ class ClimaX(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         total_sample_size       Optional int. Number of rows of results
                                 to be displayed.
-        =====================   ===========================================
+        ---------------------   -------------------------------------------
         variable_no             Optional int. variable count to be displayed
         =====================   ===========================================
-        **kwargs**
 
         """
         show_results(self, rows, variable, **kwargs)

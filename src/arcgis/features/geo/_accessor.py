@@ -1936,7 +1936,6 @@ class GeoAccessor(object):
         content = gis.content
 
         # Check that the user is the owner of both the source and the published item
-        user = gis._username
         if isinstance(feature_service, str):
             service = content.get(feature_service)
         else:
@@ -1944,7 +1943,7 @@ class GeoAccessor(object):
 
         if (
             gis.users.me.username != service.owner
-            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            and "portal:admin:updateItems" not in gis.users.me.privileges
         ):
             raise AssertionError(
                 "You must own the service or have administrative privileges to insert data."
@@ -1953,8 +1952,8 @@ class GeoAccessor(object):
         related_items = service.related_items(rel_type="Service2Data")
         for item in related_items:
             if (
-                item.owner != user
-                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+                item.owner != gis.users.me.username
+                and "portal:admin:updateItems" not in gis.users.me.privileges
             ):
                 raise AssertionError(
                     "You must own the service or have administrative privileges to insert data."
@@ -3021,12 +3020,19 @@ class GeoAccessor(object):
             except ImportError:
                 self._HASARCPY = False
         if self._HASSHAPELY is None:
+            self._HASSHAPELY = False
             try:
                 import shapely
 
                 self._HASSHAPELY = True
             except ImportError:
-                self._HASSHAPELY = False
+                pass
+            try:
+                import shapefile
+
+                self._HASSHAPELY = True
+            except ImportError:
+                pass
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------

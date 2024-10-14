@@ -20,7 +20,9 @@ class TestGroupExport(unittest.TestCase):
         """setup item and group, and share item to group"""
 
         # create item
-        self.folder = self.gis.content.folders.get("group_export_integration_testing")
+        self.folder = self.gis.content.folders._get_or_create(
+            "group_export_integration_testing"
+        )
         item_properties = ItemProperties(
             title=f"test_group_import_export_{uuid.uuid4().hex[:4]}",
             item_type=ItemTypeEnum.SHAPEFILE.value,
@@ -30,7 +32,8 @@ class TestGroupExport(unittest.TestCase):
         isinstance(self.pitem, Item)
 
         self.new_group = self.gis.groups.create(
-            title=f"export_test_group_{uuid.uuid4().hex[:4]}", tags="integration_testing"
+            title=f"export_test_group_{uuid.uuid4().hex[:4]}",
+            tags="integration_testing",
         )
         isinstance(self.new_group, Group)
 
@@ -40,7 +43,7 @@ class TestGroupExport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
         if self.epk_item:
             assert self.epk_item.delete(permanent=True)
 
@@ -48,6 +51,19 @@ class TestGroupExport(unittest.TestCase):
         """tests exporting the group items to an epk asynchronously"""
         self.epk_job = self.new_group.migration.create(
             items=[self.pitem], future=True
+        )
+        assert isinstance(self.epk_job, StatusJob)
+
+        self.epk_item = self.epk_job.result()
+        assert isinstance(self.epk_item, Item)
+        assert self.epk_item.type == "Export Package"
+
+    def test_group_export_async_folder(self):
+        """tests exporting the group items to an epk asynchronously"""
+        self.epk_job = self.new_group.migration.create(
+            items=[self.pitem],
+            future=True,
+            export_folder=self.gis.content.folders.get(),
         )
         assert isinstance(self.epk_job, StatusJob)
 
@@ -85,7 +101,9 @@ class TestGroupImport(unittest.TestCase):
         """setup item, group and export epk item"""
 
         # create item
-        self.folder = self.from_gis.content.folders.get("group_export_integration_testing")
+        self.folder = self.from_gis.content.folders.get(
+            "group_export_integration_testing"
+        )
         item_properties = ItemProperties(
             title=f"test_group_import_export_{uuid.uuid4().hex[:4]}",
             item_type=ItemTypeEnum.SHAPEFILE.value,
@@ -96,7 +114,8 @@ class TestGroupImport(unittest.TestCase):
 
         # create group
         self.new_group = self.from_gis.groups.create(
-            title=f"export_test_group_{uuid.uuid4().hex[:4]}", tags="integration_testing"
+            title=f"export_test_group_{uuid.uuid4().hex[:4]}",
+            tags="integration_testing",
         )
         isinstance(self.new_group, Group)
 
@@ -114,7 +133,7 @@ class TestGroupImport(unittest.TestCase):
         if self.pitem:
             assert self.pitem.delete(permanent=True)
         if self.new_group:
-            assert self.new_group.delete(permanent=True)
+            assert self.new_group.delete()
 
     def test_group_import_to_different_gis(self):
         """tests importing the group items from an epk"""
@@ -123,7 +142,9 @@ class TestGroupImport(unittest.TestCase):
             self.skipTest("testing export and import to a different gis")
 
         if self.from_gis.version > self.to_gis.version:
-            self.skipTest("The receiving Enterprise version must be the same or later of the exporting Enterprise.")
+            self.skipTest(
+                "The receiving Enterprise version must be the same or later of the exporting Enterprise."
+            )
 
         # delete old test group in to_gis
         group_search_result = self.to_gis.groups.search("new_group1_dest")
@@ -131,17 +152,22 @@ class TestGroupImport(unittest.TestCase):
 
         # create group in to_gis
         group_dest = self.to_gis.groups.create(
-            f"new_group1_dest_{uuid.uuid4().hex[:4]}", tags="integration_testing"
+            f"new_group1_dest_{uuid.uuid4().hex[:4]}",
+            tags="integration_testing",
         )
 
         # create item from exported epk file in to_gis
-        self.folder = self.to_gis.content.folders.get("group_export_integration_testing")
+        self.folder = self.to_gis.content.folders.get(
+            "group_export_integration_testing"
+        )
         item_properties = ItemProperties(
             title=f"test_group_import_export_add_epk_{uuid.uuid4().hex[:4]}",
             item_type=ItemTypeEnum.EXPORT_PACKAGE.value,
             tags=["integration_testing"],
         )
-        new_item = self.folder.add(item_properties, file=self.export_package_file).result()
+        new_item = self.folder.add(
+            item_properties, file=self.export_package_file
+        ).result()
         assert isinstance(new_item, Item)
 
         # add item to group
@@ -167,6 +193,27 @@ class TestGroupImport(unittest.TestCase):
         res = self.new_group.migration.load(self.epk_item, overwrite=True)
         assert isinstance(res, StatusJob)
         assert isinstance(res.result(), dict)
+
+    @classmethod
+    def tearDownClass(cls):
+        for gis in [cls.from_gis, cls.to_gis]:
+            folder_list = list(gis.content.folders.list())
+            for folder in folder_list:
+                if folder.name.startswith(
+                    "imports_"
+                ) or folder.name.startswith("exports"):
+                    if len(list(folder.list("*"))) == 0:
+                        folder.delete()
+                    else:
+                        for import_item in folder.list("*"):
+                            import_item.delete(permanent=True)
+                        folder.delete()
+                if folder.name == "exports":
+                    for exp_item in folder.list(
+                        item_type=ItemTypeEnum.EXPORT_PACKAGE.value
+                    ):
+                        exp_item.delete(permanent=True)
+                    folder.delete()
 
 
 if __name__ == "__main__":

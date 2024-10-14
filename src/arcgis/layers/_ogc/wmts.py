@@ -63,6 +63,30 @@ class WMTSLayer(BaseOGC):
         self._opacity = kwargs.pop("opacity", 1)
         self._type = "WebTiledLayer"
 
+    def _get_capabilities_xml(self, urls: list[str]) -> str:
+        """
+        Retrieves the capabilities XML from the WMTS service
+        using the first URL that returns a valid response,
+        raises an exception if none of the URLs return a valid response
+        """
+        # use gis session and vanilla requests
+        # some gis sessions change the request
+        # also use vanilla requests for a unencumbered request
+        get_funcs = [self._session.get, requests.get]
+        for url in urls:
+            for get_func in get_funcs:
+                try:
+                    resp: requests.Response = get_func(url)
+                    resp.raise_for_status()
+                    if "<?xml" not in resp.text.lower():
+                        raise ValueError(
+                            f"Could not retrieve valid XML from WebMap Tile Service Capabilities Endpoint; Got:\n{resp.text}"
+                        )
+                    return resp.text
+                except (requests.exceptions.RequestException, ValueError):
+                    pass
+        raise Exception("Could not retrieve valid XML from any of the provided URLs")
+
     # ----------------------------------------------------------------------
     @property
     def properties(self) -> dict:
@@ -74,27 +98,19 @@ class WMTSLayer(BaseOGC):
         if self._properties:
             return self._properties
 
-        url = self._capabilities_url(
-            service_url=self._url,
-            version=self._version,
-            vendor_kwargs={"token": self._con.token} if self._add_token else None,
-        )
-        resp: requests.Response = self._session.get(url=url)
-        resp.raise_for_status()
-        text = resp.text
-        text_lower = text.lower()
-        if (
-            "invalid token" in text_lower
-            or "get token" in text_lower
-            or "<html>" in text_lower
-        ):
-            url = self._capabilities_url(service_url=self._url, version=self._version)
-            resp: requests.Response = self._session.get(url=url)
-            resp.raise_for_status()
-            text = resp.text
-            text_lower = text.lower()
-        if "<?xml version=" not in text_lower:
-            raise Exception("Could not connect to the WebMap Tile Service")
+        capabilities_urls = [
+            self._capabilities_url(
+                service_url=self._url,
+                version=self._version,
+                vendor_kwargs={"token": self._con.token} if self._add_token else None,
+            )
+        ]
+        if self._add_token:
+            # try without token if token call fails
+            capabilities_urls.append(
+                self._capabilities_url(service_url=self._url, version=self._version)
+            )
+        text = self._get_capabilities_xml(capabilities_urls)
 
         self._properties = self._get_dict_from_xml(text)
         return self._properties
