@@ -77,6 +77,7 @@ _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
+_folder = LazyLoader("arcgis.gis._impl._content_manager.folder")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _dt = LazyLoader("datetime")
 _log = logging.getLogger(__name__)
@@ -1887,6 +1888,7 @@ class GroupMigrationManager(object):
         folder_id=None,
         folder_owner=None,
         keep_package_item_after_import: bool | None = None,
+        import_content_folder: str | None = None,
     ):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
@@ -1907,6 +1909,8 @@ class GroupMigrationManager(object):
                 "folderOwnerUsername": "",
                 "token": self._con.token,
             }
+            if import_content_folder:
+                params["importContentFolder"] = import_content_folder
             if keep_package_item_after_import in [True, False]:
                 params["keepPackageItemAfterImport"] = json.dumps(
                     keep_package_item_after_import
@@ -1958,6 +1962,7 @@ class GroupMigrationManager(object):
         items: list[Item] | None = None,
         output_filename: str | None = None,
         future: bool = True,
+        export_folder: "Folder" | None = None,
     ):
         """
         The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
@@ -1993,6 +1998,9 @@ class GroupMigrationManager(object):
                                that can be queried for results. When `False` the operation
                                runs synchronously and returns an *export package*
                                :class:`~arcgis.gis.Item` upon completion.
+        ------------------     --------------------------------------------------------------------
+        export_folder          Optional Folder. Introduced at 11.4. The ID of the folder the export
+                               package will be added to.
         ==================     ====================================================================
 
         :return:
@@ -2035,7 +2043,23 @@ class GroupMigrationManager(object):
             else:
                 items = None
             params = {"itemIdList": items}
-
+            if (
+                export_folder
+                and isinstance(export_folder, _folder.Folder)
+                and self._gis.version >= [2024, 2]
+            ):
+                if export_folder.properties["id"] == "Root Folder":
+                    params["exportContentFolderId"] = "/"
+                else:
+                    params["exportContentFolderId"] = export_folder.properties["id"]
+            elif (
+                export_folder
+                and not isinstance(export_folder, _folder.Folder)
+                and self._gis.version >= [2024, 2]
+            ):
+                raise ValueError("The input must be of type `Folder`.")
+            if output_filename:
+                params["outputFilename"] = output_filename
             params["async"] = json.dumps(True)
             if self._gis.version >= [2024, 1] and output_filename:
                 params["outputFilename"] = output_filename
@@ -2078,6 +2102,7 @@ class GroupMigrationManager(object):
         folder_id: Optional[str] = None,
         folder_owner: Optional[str] = None,
         keep_epk_item: bool | None = None,
+        folder_name: str | None = None,
     ):
         """
         The ``load`` method imports the contents of an *export package*
@@ -2120,7 +2145,8 @@ class GroupMigrationManager(object):
                           information about the output.
         ----------------  -------------------------------------------------------------------------------
         folder_id         Optional String. In ArcGIS Enterprise 10.9 and later, the folder id of
-                          the destination Enterprise for the package contents.
+                          the destination Enterprise for the package contents. At 11.4, to import it to
+                          the root folder, specify ```/```.
         ----------------  -------------------------------------------------------------------------------
         folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
                           folder owner.
@@ -2129,6 +2155,10 @@ class GroupMigrationManager(object):
                           item will be deleted after it's items have been imported. If true, the package
                           will not be deleted and will remain as an item in the organization. By default,
                           the package will be deleted (false).
+        ----------------  -------------------------------------------------------------------------------
+        folder_name       Optional String. Introduced at 11.4. The name of the folder the imported items
+                          will be added to. If no folder name is specified, the imported items will be
+                          added to a folder named **Exports**.
         ================  ===============================================================================
 
         :return:
@@ -2184,6 +2214,7 @@ class GroupMigrationManager(object):
                 folder_id=folder_id,
                 folder_owner=folder_owner,
                 keep_package_item_after_import=keep_epk_item,
+                import_content_folder=folder_name,
             )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
@@ -10168,7 +10199,11 @@ class Group(dict):
 
             arcgis.gis.GroupMigrationManager
         """
-        if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline is False:
+        if (
+            self._gis.version > [7, 3]
+            and not self._gis._portal.is_arcgisonline
+            and self._migrate is None
+        ):
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
@@ -13219,6 +13254,27 @@ class Item(dict):
 
     def __hash__(self):
         return hash(tuple(frozenset(self)))
+
+    # ----------------------------------------------------------------------
+    @property
+    def attachments_size(self) -> int | None:
+        """
+        The ``attachments_size`` property returns the total size of the attachments for the item.
+        The item has to support this property.
+
+        .. note::
+            The size is returned in bytes. To get the size in megabytes, divide the size by 1024*1024.
+            This is only supported for ArcGIS Online.
+
+        :return: The size in bytes.
+
+        """
+        if self._gis._is_agol:
+            try:
+                self.subInfo or 0
+            except:
+                return None
+        return None
 
     # ----------------------------------------------------------------------
     @property
@@ -16636,14 +16692,15 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str):
+    def move(self, folder: str | _folder.Folder):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        folder            Required string. The name of the folder to move the item to.
+        folder            Required string or Folder instance. The name of the folder to move the item to or
+                          the Folder class instance representing this folder.
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
@@ -16662,7 +16719,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.move("C:\Projects\ARCGIS\ArcGis_data\")
+            >>> folder = gis.content.folders.get(folder="my folder")
+            >>> item.move(folder)
 
         """
         owner_name = self._user_id
@@ -16675,6 +16733,8 @@ class Item(dict):
                     folder_id = self._portal.get_folder_id(owner_name, folder)
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
+            elif isinstance(folder, _folder.Folder):
+                folder_id = folder._fid
             else:
                 print("folder should be folder name as a string, or dict with id")
 
