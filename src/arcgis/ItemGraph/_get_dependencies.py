@@ -6,7 +6,7 @@ import re
 from collections import OrderedDict
 
 # any item that can contain another item or require another to exist
-_COMPLEX_ITEMS = [
+_COMPLEX_ITEMS = frozenset([
     "Web Map",
     "Web Scene",
     "Web Mapping Application",
@@ -24,7 +24,7 @@ _COMPLEX_ITEMS = [
     "Web Experience",
     "Hub Site Application",
     "Hub Page",
-]
+])
 
 # regular expression to find GUID
 _REGEX_GUID = r"[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}"

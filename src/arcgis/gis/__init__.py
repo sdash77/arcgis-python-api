@@ -18123,7 +18123,7 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def get_dependencies(
-        self, deep: bool = False, exclude_outside: bool = False, as_items: bool = True
+        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
     ):
         """
         Returns the dependencies of an item. Can be used to return either the immediate dependencies
@@ -18138,26 +18138,27 @@ class Item(dict):
                             function will only return the immediate dependencies of an item, or
                             ones referenced directly by the item. Default is False.
         ---------------     --------------------------------------------------------------------
-        exclude_outside     Optional boolean. When set to True, the output list will not include
-                            items that come from an outside GIS organization. Default is False.
+        outside_org         Optional boolean. When set to True, the output list will not include
+                            items that come from an outside GIS organization. Default is True.
         ---------------     --------------------------------------------------------------------
-        as_items            Optional boolean. When set to True, the function will return the
-                            dependencies as :class:`~arcgis.gis.Item` objects. When False, the
-                            function will return a list of item ID strings. Default is True.
+        out_format          Optional string. Determines the format of the output list. Options
+                            are "item", "id", or "graph". Default is "item".
         ===============     ====================================================================
 
         :return:
                 A list containing the dependencies of the item, in either Item or Item ID form.
         """
 
-        from arcgis.ItemGraph import create_item_graph
+        from arcgis.itemgraph import create_item_graph
 
-        graph = create_item_graph(self._gis, [self], exclude_outside=exclude_outside)
+        graph = create_item_graph(self._gis, [self], outside_org = outside_org)
+        if out_format.lower() == "graph":
+            return graph
         node = graph.get_item(self.id)
         if deep:
-            return node.requires(as_items=as_items)
+            return node.requires(out_format=out_format)
         else:
-            return node.contains(as_items=as_items)
+            return node.contains(out_format=out_format)
 
 
 ########################################################################

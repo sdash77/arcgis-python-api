@@ -43,116 +43,143 @@ class ItemNode:
         # do join
         return neighbors
 
-    def contains(self, as_items=False):
+    def contains(self, out_format: str ="id"):
         """
         Compiles all of the items that this item directly contains. Can be returned in either
-        the format of a list of item ID's or a list of item instances.
+        the format of a list of item ID's, a list of item instances, or a list of graph nodes.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        as_items            Optional boolean. When set to True, the method will return a list
-                            of item instances instead of item ID's. Default is False.
+        out_format          Optional string. Options are "id", "item", and "node". Default is
+                            "id".
 
                             .. note::
-                                If this is set to True, and an item instance is not accessible,
-                                the item ID will be returned for that item instead.
+                                If this is set to "item", and an item instance is not 
+                                accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
         :return:
             A list of item ID's or items.
         """
 
-        # if returning items instead of just id's...
-        if as_items:
+        out_format = out_format.lower()
+        # if returning items or nodes instead of just id's...
+        if out_format != "id":
             items = []
             for c in self.graph.successors(self.id):
-                # check if item was included when node was created
                 node = self.graph.get_item(c)
+                # if node format, append node
+                if out_format == "node":
+                    items.append(node)
+                    continue
+                # otherwise, try to append the item
                 if node.item:
                     items.append(node.item)
                 # otherwise, grab it
                 else:
-                    items.append(self.graph.gis.content.get(c))
+                    item = self.graph.gis.content.get(c)
+                    if item != None:
+                        items.append(item)
+                    # if there's no item available, append id
+                    else:
+                        items.append(c)
             return items
         # if not items, just return list of id's
         else:
             return list(self.graph.successors(self.id))
 
-    def contained_by(self, as_items=False):
+    def contained_by(self, out_format: str ="id"):
         """
         Compiles all of the items that directly contain this item. Can be returned in either
-        the format of a list of item ID's or a list of item instances.
+        the format of a list of item ID's, a list of item instances, or a list of graph nodes.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        as_items            Optional boolean. When set to True, the method will return a list
-                            of item instances instead of item ID's. Default is False.
+        out_format          Optional string. Options are "id", "item", and "node". Default is
+                            "id".
 
                             .. note::
-                                If this is set to True, and an item instance is not accessible,
-                                the item ID will be returned for that item instead.
+                                If this is set to "item", and an item instance is not 
+                                accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
         :return:
             A list of item ID's or items.
         """
 
+        out_format = out_format.lower()
         # if returning items instead of just id's...
-        if as_items:
+        if out_format != "id":
             items = []
             for p in self.graph.predecessors(self.id):
-                # check if item was included when node was created
                 node = self.graph.get_item(p)
+                # if node format, append node
+                if out_format == "node":
+                    items.append(node)
+                    continue
+                # otherwise, try to append the item
                 if node.item:
                     items.append(node.item)
                 # otherwise, grab it
                 else:
-                    items.append(self.graph.gis.content.get(p))
+                    item = self.graph.gis.content.get(p)
+                    if item != None:
+                        items.append(item)
+                    # if there's no item available, append id
+                    else:
+                        items.append(p)
             return items
         # if not items, just return list of id's
         else:
             return list(self.graph.predecessors(self.id))
 
-    def requires(self, as_items=False):
+    def requires(self, out_format: str ="id"):
         """
         Compiles a deep list of all items that this item requires to exist. For example, if an
         item contains a WebMap item that itself contains a Feature Service item, then both of
         them will be returned in the output list. Can be returned in either the format of a
-        list of item ID's or a list of item instances.
+        list of item ID's, a list of item instances, or a list of graph nodes.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        as_items            Optional boolean. When set to True, the method will return a list
-                            of item instances instead of item ID's. Default is False.
+        out_format          Optional string. Options are "id", "item", and "node". Default is
+                            "id".
 
                             .. note::
-                                If this is set to True, and an item instance is not accessible,
-                                the item ID will be returned for that item instead.
+                                If this is set to "item", and an item instance is not 
+                                accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
         :return:
             A list of item ID's or items.
         """
 
+        out_format = out_format.lower()
         item_list = []
 
         # recursive function to create deep list
         def _requires(itemid):
-            # if returning items instead of just id's...
-            if as_items:
-                # check if item was included when node was created
-                item = self.graph.get_item(itemid).item
-                # otherwise, grab it
-                if not item:
-                    item = self.graph.gis.content.get(itemid)
-                # if still not, just use the item id
-                if not item:
-                    item = itemid
-            else:
+            # if id's...
+            if out_format == "id":
                 item = itemid
+            # if returning items or nodes...
+            else:
+                # grab the node
+                node = self.graph.get_item(itemid)
+                # if node format, use node
+                if out_format == "node":
+                    item = node
+                # otherwise, check if item was included when node was created
+                else:
+                    item = node.item
+                    if not item:
+                        item = self.graph.gis.content.get(itemid)
+                    # if still not, just use the item id
+                    if not item:
+                        item = itemid
 
             # if we haven't visited it already, process it
             if item not in item_list:
@@ -167,45 +194,52 @@ class ItemNode:
         item_list.pop()
         return item_list
 
-    def required_by(self, as_items=False):
+    def required_by(self, out_format: str ="id"):
         """
         Compiles a deep list of all items that require this item to exist. For example, if this
         item is a Feature Service found in a WebMap that is then itself found in a Dashboard,
         both of those items will be in the output list, on the condition that they have been
-        indexed into the ItemGraph. Can be returned in either the format of a list of item ID's
-        or a list of item instances.
+        indexed into the ItemGraph. Can be returned in either the format of a list of item ID's,
+        a list of item instances, or a list of graph nodes.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        as_items            Optional boolean. When set to True, the method will return a list
-                            of item instances instead of item ID's. Default is False.
+        out_format          Optional string. Options are "id", "item", and "node". Default is
+                            "id".
 
                             .. note::
-                                If this is set to True, and an item instance is not accessible,
-                                the item ID will be returned for that item instead.
+                                If this is set to "item", and an item instance is not 
+                                accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
         :return:
             A list of item ID's or items.
         """
 
+        out_format = out_format.lower()
         item_list = []
 
         # recursive function to create deep list
         def _required_by(itemid):
-            # if returning items instead of just id's...
-            if as_items:
-                # check if item was included when node was created
-                item = self.graph.get_item(itemid).item
-                # otherwise, grab it
-                if not item:
-                    item = self.graph.gis.content.get(itemid)
-                # if still not, just use the item id
-                if not item:
-                    item = itemid
-            else:
+            # if id's...
+            if out_format == "id":
                 item = itemid
+            # if returning items or nodes...
+            else:
+                # grab the node
+                node = self.graph.get_item(itemid)
+                # if node format, use node
+                if out_format == "node":
+                    item = node
+                # otherwise, check if item was included when node was created
+                else:
+                    item = node.item
+                    if not item:
+                        item = self.graph.gis.content.get(itemid)
+                    # if still not, just use the item id
+                    if not item:
+                        item = itemid
 
             # if we haven't visited it already, process it
             if item not in item_list:
@@ -361,7 +395,7 @@ class ItemGraph(DiGraph):
 
 
 def create_item_graph(
-    gis: GIS, item_list: list[Item, str], exclude_outside: bool = False
+    gis: GIS, item_list: list[Item, str], outside_org: bool = True
 ):
     """
     Creates an ItemGraph from a list of items. The function recursively explores the dependencies
@@ -377,10 +411,10 @@ def create_item_graph(
     item_list           Required list. A list of items to include in the graph. Items can be
                         either Item instances or item ID's.
     ---------------     --------------------------------------------------------------------
-    exclude_outside     Optional boolean. When set to True, items outside of the organization
-                        will not be included in the graph. Default is False, meaning that
-                        the items will be included in the graph (but not explored for their
-                        dependencies).
+    outside_org         Optional boolean. When True, items outside of the organization will
+                        be included in the graph (but still not explored for their 
+                        dependencies). When False, only items owned by users in the org will
+                        be included in the graph. Default is True.
     ===============     ====================================================================
 
     :return:
@@ -403,7 +437,7 @@ def create_item_graph(
 
             # check if item is outside of the organization
             if not dep_item or gis.url not in dep_item.homepage:
-                if exclude_outside:
+                if not outside_org:
                     continue
                 graph.add_item(dep, dep_item)
                 graph.add_relationship(item.itemid, dep)
