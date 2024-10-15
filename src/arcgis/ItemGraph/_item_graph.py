@@ -2,6 +2,7 @@ import networkx as nx
 from arcgis.gis import Item, GIS
 import arcgis
 from ._get_dependencies import _get_item_dependencies
+import os
 
 
 class ItemNode:
@@ -264,8 +265,11 @@ class ItemGraph(nx.DiGraph):
 
     """
 
-    def __init__(self, gis: GIS = None):
-        super().__init__()
+    def __init__(self, gis: GIS = None, digraph: nx.DiGraph = None):
+        if not digraph:
+            super().__init__()
+        else:
+            super().__init__(digraph)
         if not gis:
             gis = arcgis.env.active_gis
         if not gis:
@@ -392,7 +396,82 @@ class ItemGraph(nx.DiGraph):
         else:
             return list(self.nodes())
 
-    # def write_to_file(
+    def write_to_file(self, location: str):
+        """
+        Writes the graph to a file in GML format. Note that this strictly writes the ID's and
+        edges of the graph, no information about the items themselves is included.
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        path                Required string. The path to write the file to.
+        ===============     ====================================================================
+        """
+        # assert the path is valid and ends with gml
+        if not location.endswith(".gml"):
+            location += ".gml"
+
+        # create a stringizer that tells us later to make a node
+        def stringize_node(data):
+            if isinstance(data, ItemNode):
+                node_str = "node_" + data.id
+                if data.item:
+                    node_str += "_item"
+                return node_str
+            else:
+                return data
+
+        nx.write_gml(self, location, stringize_node)
+        return location
+
+
+def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
+    """
+    Loads a graph from a file in GML format. The graph should have been written to the file
+    using the write_to_file method.
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    path                Required string. The path to the GML file to load the graph from.
+    ---------------     --------------------------------------------------------------------
+    gis                 Required GIS. The GIS instance that the graph is associated with.
+                        If not provided, the active GIS will be used, if available. Must be
+                        the same GIS as the one used to create the graph in order for
+                        everything to work properly.
+    ---------------     --------------------------------------------------------------------
+    include_items       Optional boolean. When True, the ItemNode instances will include the
+                        item instances as well. Otherwise, they will be retrieved later, as
+                        needed. Default is True, but recommended to be set to False on
+                        very large graphs.
+    ===============     ====================================================================
+
+    :return:
+        An ItemGraph instance.
+    """
+    if not gis:
+        gis = arcgis.env.active_gis
+    if not gis:
+        raise ValueError("An active GIS is required to load an ItemGraph.")
+    if not os.path.exists(path):
+        raise FileNotFoundError("The file does not exist.")
+    if not path.endswith(".gml"):
+        raise ValueError("The file must be in GML format.")
+
+    # create a destringizer to create nodes
+    def destringize_node(data):
+        if data.startswith("node_"):
+            itemid = data.split("_")[1]
+            item = None
+            if include_items and data.endswith("_item"):
+                item = gis.content.get(itemid)
+            return ItemNode(None, itemid, item)
+        else:
+            return data
+
+    graph = nx.read_gml(path, destringizer=destringize_node)
+    ig = ItemGraph(gis, digraph=graph)
+    for node in ig.all_items():
+        node.graph = ig
+    return ig
 
 
 def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = True):
