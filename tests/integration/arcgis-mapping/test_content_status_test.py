@@ -49,6 +49,7 @@ class TestItemContentStatus(unittest.TestCase):
                             "org_authoritative",
                             "public_authoritative",
                         ]
+                item.delete()
             env.active_gis = None
             del gis
 
