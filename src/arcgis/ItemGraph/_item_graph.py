@@ -1,5 +1,6 @@
-from networkx import DiGraph
+import networkx as nx
 from arcgis.gis import Item, GIS
+import arcgis
 from ._get_dependencies import _get_item_dependencies
 
 
@@ -33,6 +34,15 @@ class ItemNode:
         if item:
             self.item = item
 
+    def __str__(self):
+        if self.item:
+            return f"ItemNode(id: {self.id}, item: {self.item.title})"
+        else:
+            return f"ItemNode(id: {self.id})"
+
+    def __repr__(self):
+        return self.__str__()
+
     def _adj_list(self):
         """
         Returns a list of all items that are directly connected to this item.
@@ -43,7 +53,7 @@ class ItemNode:
         # do join
         return neighbors
 
-    def contains(self, out_format: str = "id"):
+    def contains(self, out_format: str = "node"):
         """
         Compiles all of the items that this item directly contains. Can be returned in either
         the format of a list of item ID's, a list of item instances, or a list of graph nodes.
@@ -89,7 +99,7 @@ class ItemNode:
         else:
             return list(self.graph.successors(self.id))
 
-    def contained_by(self, out_format: str = "id"):
+    def contained_by(self, out_format: str = "node"):
         """
         Compiles all of the items that directly contain this item. Can be returned in either
         the format of a list of item ID's, a list of item instances, or a list of graph nodes.
@@ -135,7 +145,7 @@ class ItemNode:
         else:
             return list(self.graph.predecessors(self.id))
 
-    def requires(self, out_format: str = "id"):
+    def requires(self, out_format: str = "node"):
         """
         Compiles a deep list of all items that this item requires to exist. For example, if an
         item contains a WebMap item that itself contains a Feature Service item, then both of
@@ -158,43 +168,32 @@ class ItemNode:
         """
 
         out_format = out_format.lower()
-        item_list = []
-
-        # recursive function to create deep list
-        def _requires(itemid):
-            # if id's...
-            if out_format == "id":
-                item = itemid
-            # if returning items or nodes...
-            else:
-                # grab the node
-                node = self.graph.get_item(itemid)
-                # if node format, use node
+        # if returning items or nodes instead of just id's...
+        if out_format != "id":
+            items = []
+            for d in nx.descendants(self.graph, self.id):
+                node = self.graph.get_item(d)
+                # if node format, append node
                 if out_format == "node":
-                    item = node
-                # otherwise, check if item was included when node was created
+                    items.append(node)
+                    continue
+                # otherwise, try to append the item
+                if node.item:
+                    items.append(node.item)
+                # otherwise, grab it
                 else:
-                    item = node.item
-                    if not item:
-                        item = self.graph.gis.content.get(itemid)
-                    # if still not, just use the item id
-                    if not item:
-                        item = itemid
+                    item = self.graph.gis.content.get(d)
+                    if item != None:
+                        items.append(item)
+                    # if there's no item available, append id
+                    else:
+                        items.append(d)
+            return items
+        # if not items, just return list of id's
+        else:
+            return list(nx.descendants(self.graph, self.id))
 
-            # if we haven't visited it already, process it
-            if item not in item_list:
-                # run the recursion first so we get all the way to the leaf nodes
-                # this ensures that any cloning will take care of stuff in right order
-                for child in self.graph.successors(itemid):
-                    _requires(child)
-                item_list.append(item)
-
-        _requires(self.id)
-        # remove the original item, we don't need to include the self
-        item_list.pop()
-        return item_list
-
-    def required_by(self, out_format: str = "id"):
+    def required_by(self, out_format: str = "node"):
         """
         Compiles a deep list of all items that require this item to exist. For example, if this
         item is a Feature Service found in a WebMap that is then itself found in a Dashboard,
@@ -218,43 +217,33 @@ class ItemNode:
         """
 
         out_format = out_format.lower()
-        item_list = []
-
-        # recursive function to create deep list
-        def _required_by(itemid):
-            # if id's...
-            if out_format == "id":
-                item = itemid
-            # if returning items or nodes...
-            else:
-                # grab the node
-                node = self.graph.get_item(itemid)
-                # if node format, use node
+        # if returning items or nodes instead of just id's...
+        if out_format != "id":
+            items = []
+            for a in nx.ancestors(self.graph, self.id):
+                node = self.graph.get_item(a)
+                # if node format, append node
                 if out_format == "node":
-                    item = node
-                # otherwise, check if item was included when node was created
+                    items.append(node)
+                    continue
+                # otherwise, try to append the item
+                if node.item:
+                    items.append(node.item)
+                # otherwise, grab it
                 else:
-                    item = node.item
-                    if not item:
-                        item = self.graph.gis.content.get(itemid)
-                    # if still not, just use the item id
-                    if not item:
-                        item = itemid
-
-            # if we haven't visited it already, process it
-            if item not in item_list:
-                item_list.append(item)
-                # run recursively
-                for parent in self.graph.predecessors(itemid):
-                    _required_by(parent)
-
-        _required_by(self.id)
-        # remove the original item, we don't need to include the self
-        item_list.pop(0)
-        return item_list
+                    item = self.graph.gis.content.get(a)
+                    if item != None:
+                        items.append(item)
+                    # if there's no item available, append id
+                    else:
+                        items.append(a)
+            return items
+        # if not items, just return list of id's
+        else:
+            return list(nx.ancestors(self.graph, self.id))
 
 
-class ItemGraph(DiGraph):
+class ItemGraph(nx.DiGraph):
     """
     An ItemGraph is a directional dependency graph that represents relationships between
     items. An item is deemed to be dependent upon another item if the other item appears in
@@ -275,8 +264,12 @@ class ItemGraph(DiGraph):
 
     """
 
-    def __init__(self, gis: GIS):
+    def __init__(self, gis: GIS = None):
         super().__init__()
+        if not gis:
+            gis = arcgis.env.active_gis
+        if not gis:
+            raise ValueError("A GIS instance is required to create an ItemGraph.")
         self.gis = gis
 
     def _create_tree(self, itemid: str):
@@ -359,7 +352,7 @@ class ItemGraph(DiGraph):
         ===============     ====================================================================
         """
         node = ItemNode(self, itemid, item)
-        self.add_node(itemid, data=node)
+        self.add_node(itemid, node=node)
 
     def delete_item(self, itemid: str):
         """
@@ -383,15 +376,23 @@ class ItemGraph(DiGraph):
         ===============     ====================================================================
         """
         try:
-            return self.nodes[itemid]["data"]
+            return self.nodes[itemid]["node"]
         except:
             return None
 
-    def all_items(self):
+    def all_items(self, out_format: str = "node"):
         """
         Returns a list of the item ID's of all items in the graph.
         """
-        return list(self.nodes())
+        out_format = out_format.lower()
+        if out_format == "node":
+            return [i[1]["node"] for i in list(self.nodes(data=True))]
+        elif out_format == "item":
+            return [i[1]["node"].item for i in list(self.nodes(data=True))]
+        else:
+            return list(self.nodes())
+
+    # def write_to_file(
 
 
 def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = True):
