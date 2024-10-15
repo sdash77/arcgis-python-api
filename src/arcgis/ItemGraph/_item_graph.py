@@ -43,7 +43,7 @@ class ItemNode:
         # do join
         return neighbors
 
-    def contains(self, out_format: str ="id"):
+    def contains(self, out_format: str = "id"):
         """
         Compiles all of the items that this item directly contains. Can be returned in either
         the format of a list of item ID's, a list of item instances, or a list of graph nodes.
@@ -55,7 +55,7 @@ class ItemNode:
                             "id".
 
                             .. note::
-                                If this is set to "item", and an item instance is not 
+                                If this is set to "item", and an item instance is not
                                 accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
@@ -89,7 +89,7 @@ class ItemNode:
         else:
             return list(self.graph.successors(self.id))
 
-    def contained_by(self, out_format: str ="id"):
+    def contained_by(self, out_format: str = "id"):
         """
         Compiles all of the items that directly contain this item. Can be returned in either
         the format of a list of item ID's, a list of item instances, or a list of graph nodes.
@@ -101,7 +101,7 @@ class ItemNode:
                             "id".
 
                             .. note::
-                                If this is set to "item", and an item instance is not 
+                                If this is set to "item", and an item instance is not
                                 accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
@@ -135,7 +135,7 @@ class ItemNode:
         else:
             return list(self.graph.predecessors(self.id))
 
-    def requires(self, out_format: str ="id"):
+    def requires(self, out_format: str = "id"):
         """
         Compiles a deep list of all items that this item requires to exist. For example, if an
         item contains a WebMap item that itself contains a Feature Service item, then both of
@@ -149,7 +149,7 @@ class ItemNode:
                             "id".
 
                             .. note::
-                                If this is set to "item", and an item instance is not 
+                                If this is set to "item", and an item instance is not
                                 accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
@@ -194,7 +194,7 @@ class ItemNode:
         item_list.pop()
         return item_list
 
-    def required_by(self, out_format: str ="id"):
+    def required_by(self, out_format: str = "id"):
         """
         Compiles a deep list of all items that require this item to exist. For example, if this
         item is a Feature Service found in a WebMap that is then itself found in a Dashboard,
@@ -209,7 +209,7 @@ class ItemNode:
                             "id".
 
                             .. note::
-                                If this is set to "item", and an item instance is not 
+                                If this is set to "item", and an item instance is not
                                 accessible, the item ID will be returned for that item instead.
         ===============     ====================================================================
 
@@ -394,9 +394,7 @@ class ItemGraph(DiGraph):
         return list(self.nodes())
 
 
-def create_item_graph(
-    gis: GIS, item_list: list[Item, str], outside_org: bool = True
-):
+def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = True):
     """
     Creates an ItemGraph from a list of items. The function recursively explores the dependencies
     of each item involved that's part of the organization, encompassing the full dependency tree
@@ -412,7 +410,7 @@ def create_item_graph(
                         either Item instances or item ID's.
     ---------------     --------------------------------------------------------------------
     outside_org         Optional boolean. When True, items outside of the organization will
-                        be included in the graph (but still not explored for their 
+                        be included in the graph (but still not explored for their
                         dependencies). When False, only items owned by users in the org will
                         be included in the graph. Default is True.
     ===============     ====================================================================
