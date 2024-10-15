@@ -3958,6 +3958,7 @@ class SpatialReference(dict):
 
         self.update(iterable)  # Store properties in the dict
         self.update(kwargs)  # Update with additional kwargs
+        self._properties = iterable
 
     def __getattr__(self, name):
         """Allow access to dictionary keys as attributes."""
@@ -3981,6 +3982,21 @@ class SpatialReference(dict):
     def __hash__(self):
         return hash(json.dumps(dict(self)))
 
+    @property
+    def JSON(self):
+        """
+        The ``JSON`` method retrieves an Esri JSON representation of the :class:`~arcgis.geometry.Geometry` object as a
+        string.
+
+        :return:
+            A string representing a :class:`~arcgis.geometry.Geometry` object
+        """
+        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
+            return getattr(self.as_arcpy, "JSON", None)
+
+        return json.dumps(self)
+
     # ----------------------------------------------------------------------
     _repr_svg_ = None
 
@@ -4002,16 +4018,27 @@ class SpatialReference(dict):
 
     def __eq__(self, other):
         """Checks if the spatial reference is equal."""
+        if isinstance(other, dict):
+            # Compare with dictionary containing 'wkid' and possibly 'latestWkid'
+            return (
+                hasattr(self, "wkid")
+                and self.wkid == other.get("wkid")
+                and (
+                    not hasattr(self, "latestWkid")
+                    or self.latestWkid == other.get("latestWkid")
+                )
+            )
+
         if not isinstance(other, SpatialReference):
             return False
 
-        # check what type of spatial reference is being used, only compare the same type
+        # Compare same types of spatial reference
         if hasattr(self, "wkid") and hasattr(other, "wkid"):
             return self.wkid == other.wkid
         elif hasattr(self, "wkt") and hasattr(other, "wkt"):
             return self.wkt == other.wkt
-        elif hasattr(self, "wkid2") and hasattr(other, "wkid2"):
-            return self.wkid2 == other.wkid2
+        elif hasattr(self, "latestWkid") and hasattr(other, "latestWkid"):
+            return self.latestWkid == other.latestWkid
         return False
 
     def __ne__(self, other):
