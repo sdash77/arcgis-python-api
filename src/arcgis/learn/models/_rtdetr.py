@@ -241,6 +241,57 @@ class RTDetrV2(ModelExtension):
     def _supported_datasets():
         return ["PASCAL_VOC_rectangles", "KITTI_rectangles"]
 
+    def _save_pytorch_onnx(self, name):
+        from arcgis.learn.models._rtdetr_utils import (
+            RTDetrDeployWrapper,
+            RTDETRPostProcessor,
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+        save_path_onnx = str(self.learn.path / self.learn.model_dir / f"{name}.onnx")
+        device = self._device
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+
+        data = torch.rand(1, num_input_channels, chip_size[0], chip_size[1]).to(device)
+        size = torch.tensor([[chip_size[0], chip_size[1]]]).to(device)
+
+        post_processor = RTDETRPostProcessor(num_classes=self._data.c)
+        import copy
+
+        model = RTDetrDeployWrapper(copy.deepcopy(self.learn.model), post_processor)
+        model.to(device)
+        _ = model(data, size)
+
+        dynamic_axes = {
+            "images": {
+                0: "N",
+            },
+            "orig_target_sizes": {0: "N"},
+        }
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                model,
+                (data, size),
+                save_path_onnx,
+                export_params=True,
+                verbose=True,
+                input_names=["images", "orig_target_sizes"],
+                output_names=["labels", "boxes", "scores"],
+                dynamic_axes=dynamic_axes,
+                opset_version=16,
+                do_constant_folding=True,
+            )
+        save_path_onnx = f"{name}.onnx"
+        return [save_path_onnx]
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
@@ -434,7 +485,7 @@ class RTDetrV2(ModelExtension):
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.avi. Supports only AVI and MP4 formats.
+                                appended with _prediction.
         ---------------------   -------------------------------------------
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------

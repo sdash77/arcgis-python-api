@@ -770,7 +770,7 @@ class Portal(object):
         else:
             post_data = self._postdata()
         if permanent:
-            # applicable to online 2024.2 and enterprise 11.3 and higher if recycle bin is enabled
+            # applicable to online 2024.2 if recycle bin is enabled
             post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 

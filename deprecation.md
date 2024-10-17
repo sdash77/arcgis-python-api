@@ -25,6 +25,7 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Swipe.edit` - deprecated in **2.4.0** removed in future major release. Use the `content` property setter instead.
 - `MapAction` - deprecated in **2.4.0** removed in future major release. Use the `MediaAction` class instead.
 - `JournalStoryMap` - deprecated in **2.0.0** removed in **2.4.0**.  Template was removed from the ArcGIS platform.
+- `Hub.initiatives` - deprecated in **2.4.0** removed in a future release. Use `Hub.sites` instead.
 
 
 ### `arcgis.learn` Module
@@ -49,6 +50,8 @@ These classes, functions, and modules in the ArcGIS API for Python are deprecate
 - `Item.share` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.shared_with` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
 - `Item.unshare` - deprecated in **2.3.0** will be removed in a future major release (example: 2.x to 3.x).  Use `Item.sharing` instead.
+- `overwrite` item_property on `Folder.add` is deprecated and will be removed at **2.4.2**.  Use `item.update` to update the source file for an `Item` instead.
+
 
 ### `arcgis.mapping` Module
 
@@ -147,6 +150,10 @@ Several classes, functions, and methods have been completely removed from the Ar
 - `path_distance` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation instead.
 - `path_distance_back_link` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation with value specified for output_back_direction_raster_name, instead..
 - `path_distance_allocation` - deprecated in **1.8.1** removed in **2.4.0**. Please use arcgis.raster.functions.gbl.distance_accumulation.
+- `Raster.cmap` - removed in **2.4.0**. Use `arcgis.raster.functions.colormap` to apply colormap on the Raster object before adding it to map.
+- `Raster.vmin` - removed in **2.4.0**. Use `arcgis.raster.functions.stretch` to apply colormap on the Raster object before adding it to map.
+- `Raster.vmax` - removed in **2.4.0**. Use `arcgis.raster.functions.stretch` to apply colormap on the Raster object before adding it to map.
+- `Raster.opacity` - removed in **2.4.0**. Please set the opacity in `options` parameter in the add method of the map widget.
 
 ### `arcgis.features` Module
 
