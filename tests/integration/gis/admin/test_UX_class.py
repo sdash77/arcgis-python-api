@@ -283,7 +283,14 @@ class TestMapSettingsClass(unittest.TestCase):
         assert vector_basemap["title"] == "Topographic"
 
     def test_basemap_gallery(self):
-        """test the basemap gallery property of MapSettings class"""
+        """
+        test the basemap_gallery_group property of MapSettings class
+
+        note:
+        basemap_gallery_group will return a string "title:"ArcGIS Online Vector Basemaps" AND owner:esri_en" when group
+        was set as default;
+        basemap_gallery_group will return a Group object when group was set as a specific group in org.
+        """
         ms = self.gis.admin.ux.map_settings
         bsmap_gall_group = ms.basemap_gallery_group
         assert isinstance(bsmap_gall_group, (Group, str))
