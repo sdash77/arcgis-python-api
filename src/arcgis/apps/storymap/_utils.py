@@ -434,7 +434,10 @@ def _publish_enterprise(story, access, item_properties):
             },
         )
 
-def _prepare_story_for_save(story, publish, make_copyable, no_seo, title, tags, sm_version):
+
+def _prepare_story_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version
+):
     """
     Remove old resource and add new draft resource that is the story._properties.
     """
@@ -458,8 +461,11 @@ def _prepare_story_for_save(story, publish, make_copyable, no_seo, title, tags, 
         # update the draft with the story._properties
         story._item.resources.update(file=temp.name, file_name=draft)
 
-    item_properties = _prepare_item_properties_for_save(story, publish, make_copyable, no_seo, title, tags, sm_version, draft)
+    item_properties = _prepare_item_properties_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+    )
     return item_properties
+
 
 def _prepare_item_properties_for_save(
     story, publish, make_copyable, no_seo, title, tags, sm_version, draft
@@ -588,7 +594,9 @@ def save(
         _publish_online(story, sm_version, access, make_copyable)
     else:
         # No endpoint, do manually
-        item_properties = _prepare_story_for_save(story, publish, make_copyable, no_seo, title, tags, sm_version)
+        item_properties = _prepare_story_for_save(
+            story, publish, make_copyable, no_seo, title, tags, sm_version
+        )
 
         if publish is True and not story._gis._is_agol:
             _publish_enterprise(story, access, item_properties)
