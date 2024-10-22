@@ -526,8 +526,8 @@ class Briefing(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
-        make_copyable: bool = False,
-        no_seo: bool = False,
+        make_copyable: bool = None,
+        no_seo: bool = None,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
