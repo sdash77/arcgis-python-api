@@ -375,106 +375,38 @@ def save(
     tags: Optional[list] = None,
     access: str = None,
     publish: bool = False,
+    make_copyable: bool = False,
+    no_seo: bool = False,
 ):
     """
-    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
-    with unpublished changes unless `publish` parameter is specified to True.
-
-    The title only needs to be specified if a change is wanted, otherwise exisiting title
-    is used.
+    This method saves your StoryMap or Briefing to your active GIS.
+    The story will be saved with unpublished changes unless `publish`
+    is set to True. Specify `title` only if you want to change it.
     """
-    # Remove old draft item
-    for resource in story._resources:
-        if re.match("draft_[0-9]{13}.json", resource["resource"]) or re.match(
-            "draft.json", resource["resource"]
-        ):
-            _remove_resource(story, file=resource["resource"])
 
-    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    if title:
-        root = story._properties["root"]
-        if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
-        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-        if "config" not in story._properties["nodes"][root]:
-            story._properties["nodes"][root]["config"] = {}
-        story._properties["nodes"][root]["config"][
-            "shouldPushMetaToAGOItemDetails"
-        ] = False
-
-    # Add new draft with time in milliseconds
-    draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-
-    # Add a new empty json draft
-    _add_resource(story, resource_name=draft, text="{}", access="private")
-
-    # Create a temporary file to write the story._properties
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
-        json.dump(story._properties, temp, ensure_ascii=False)
-        temp.seek(0)
-
-        # update the draft with the story._properties
-        story._item.resources.update(file=temp.name, file_name=draft)
-
-    # get the story map version from endpoint
-    sm_version = get_version(story)
-    # Find type keywords to use based on whether to publish or not
-    if isinstance(story, briefing.Briefing):
-        briefing_keywords = ["alphabriefing", "storymapbriefing"]
-    elif isinstance(story, collection.Collection):
-        collection_keywords = ["storymapcollection"]
-
-    # PUBLISH MODE
-    if publish is True:
-        # Remove old publish item
-        for resource in story._resources:
-            if (
-                "publish_data" in resource["resource"]
-                or "published_data" in resource["resource"]
-                or "publish" in resource["resource"]
-            ):
-                _remove_resource(story, file=resource["resource"])
-        # Add new publish
-        _add_resource(
-            story,
-            resource_name="published_data.json",
-            text=json.dumps(story._properties),
-        )
-        # Set the keywords
-        # Start by getting the existing keywords and remove what will be replaced
+    def update_keywords(story, new_keywords, draft, sm_version, previously_published=False):
         keywords = story._item.typeKeywords
-        if "smstatusunpublishedchanges" in keywords:
-            # changing to publish after
-            idx = keywords.index("smstatusunpublishedchanges")
-            del keywords[idx]
-        if "smstatusdraft" in keywords:
-            idx = keywords.index("smstatusdraft")
-            del keywords[idx]
-        for keyword in keywords:
-            # iterate through since only know part of keyword we want to remove
-            if (
-                "smdraftresourceid"
-                or "smpublisheddate"
-                or "smstatusdraft"
-                or "smpublisherapp"
-            ) in keyword:
-                keywords.remove(keyword)
-        new_keywords = [
-            "smstatuspublished",
-            "smversiondraft:" + sm_version,
-            "smversionpublished:" + sm_version,
-            "python-api",
-            "smpublisherapp:python-api-" + arcgis.__version__,
-            "smdraftresourceid:" + draft,
-            "smpublisheddate:" + str(int(time.time() * 1000)),
+        keywords = [
+            kw for kw in keywords
+            if not any(k in kw for k in ["smdraftresourceid", "smpublisheddate", "smstatusdraft", "smpublisherapp"])
         ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Setting the keywords in a set will remove duplicates
+        if previously_published:
+            new_keywords += [
+                "smstatusunpublishedchanges",
+                "smversiondraft:" + sm_version,
+                "smpublisheddate:" + str(int(time.time() * 1000)),
+            ]
+        else:
+            new_keywords += [
+                "smstatusdraft",
+                "smversiondraft:" + sm_version,
+                "smdraftresourceid:" + draft,
+            ]
+        return list(set(keywords + new_keywords))
+    
+    def update_item_properties(story, title, tags, keywords, access):
         p = {
-            "typeKeywords": list(set(keywords + new_keywords)),
+            "typeKeywords": keywords,
             "text": json.dumps(story._properties),
             "url": story._url,
         }
@@ -482,88 +414,71 @@ def save(
             p["title"] = title
         if tags:
             p["tags"] = tags
-
-        # Find and set access
-        sharing = access if access is not None else story._item.access
-        p["access"] = sharing
-
-        # Update the item and invoke share to have correct access
+        p["access"] = access if access is not None else story._item.access
         story._item.update(item_properties=p)
 
-        if sharing == "private":
-            story._item.sharing.sharing_level = "PRIVATE"
-        elif sharing == "org":
-            story._item.sharing.sharing_level = "ORGANIZATION"
-        elif sharing == "public":
-            story._item.sharing.sharing_level = "EVERYONE"
+    # Handle title change
+    if title:
+        root = story._properties["root"]
+        meta_settings = story._properties["nodes"][root]["data"].setdefault("metaSettings", {})
+        meta_settings["title"] = title
+        config = story._properties["nodes"][root].setdefault("config", {})
+        config["shouldPushMetaToAGOItemDetails"] = False
+    
+    # Get the story map version
+    sm_version = get_version(story)
+    
+    # Publish to AGOL
+    if publish and story._gis._is_agol:
+        url = f"https://storymaps.arcgis.com/api/item/{story._itemid}/publish"
+        data = {
+            "access": access if access else story._item.access,
+            "appVersion": sm_version,
+            "storyDraftData": story._properties,
+            "canViewersCopy": make_copyable,
+        }
+        story._gis._session.post(url, json=data, headers={'x-storymaps-auth': story._gis._session.auth.token})
+        story._item = story._gis.content.get(story._itemid)
+        return story._item
 
-        if (
-            story._gis._con._session.auth
-            and story._gis._con._session.auth.token is not None
-        ):
-            # Make a call to the StoryMaps publish endpoint
-            story._gis._con.post(
-                path=story._url + "/publish",
-                params={
-                    "f": "json",
-                    "token": story._gis._con._session.auth.token,
-                },
-            )
+    # Remove old drafts
+    for resource in story._resources:
+        if re.match(r"draft_[0-9]{13}.json", resource["resource"]) or re.match(r"draft.json", resource["resource"]):
+            _remove_resource(story, file=resource["resource"])
+
+    # Add new draft
+    draft = f"draft_{int(time.time() * 1000)}.json"
+    _add_resource(story, resource_name=draft, text="{}", access="private")
+
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
+        json.dump(story._properties, temp, ensure_ascii=False)
+        temp.seek(0)
+        story._item.resources.update(file=temp.name, file_name=draft)
+
+    # Keyword settings for Story types
+    new_keywords = ["python-api", "smeditorapp:python-api-" + arcgis.__version__]
+    if isinstance(story, briefing.Briefing):
+        new_keywords += ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        new_keywords += ["storymapcollection"]
+
+    # Publish for Enterprise
+    if publish and not story._gis._is_agol:
+        for resource in story._resources:
+            if any(k in resource["resource"] for k in ["publish_data", "published_data", "publish"]):
+                _remove_resource(story, file=resource["resource"])
+        _add_resource(story, resource_name="published_data.json", text=json.dumps(story._properties))
+
+        # Set keywords for published mode
+        keywords = update_keywords(story, new_keywords, draft, sm_version, previously_published=True)
+        update_item_properties(story, title, tags, keywords, access)
     else:
-        # Set the type keywords
-        keywords = story._item.typeKeywords
-        previously_published = False
-        for keyword in keywords:
-            if "smpublisheddate" in keyword:
-                # Update the date in new keywords
-                previously_published = True
-                keywords.remove(keyword)
-            elif (
-                "smstatuspublished" in keyword
-                or "smstatusdraft" in keyword
-                or "smdraftresourceid" in keyword
-                or "smeditorapp" in keyword
-                or "Copy Item" in keyword
-            ):
-                # Remove old keywords and will be replaced in new keywords
-                keywords.remove(keyword)
-        if previously_published is True:
-            # Unpublished changes mode
-            new_keywords = [
-                "smstatusunpublishedchanges",
-                "smversiondraft:" + sm_version,
-                "python-api",
-                "smeditorapp:python-api-" + arcgis.__version__,
-                "smdraftresourceid:" + draft,
-                "smversionpublished:" + sm_version,
-                "smpublisheddate:" + str(int(time.time() * 1000)),
-            ]
-        if previously_published is False:
-            # Draft mode
-            new_keywords = [
-                "smstatusdraft",
-                "smversiondraft:" + sm_version,
-                "python-api",
-                "smeditorapp:python-api-" + arcgis.__version__,
-                "smdraftresourceid:" + draft,
-            ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Pass through set first to remove duplicates
-        p = {"typeKeywords": list(set(keywords + new_keywords))}
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-        # access does not change when only saving
-        p["access"] = story._item.access
-        story._item.update(item_properties=p)
+        previously_published = any("smpublisheddate" in kw for kw in story._item.typeKeywords)
+        keywords = update_keywords(story, new_keywords, draft, sm_version, previously_published)
+        update_item_properties(story, title, tags, keywords, story._item.access)
 
     story._item = story._gis.content.get(story._itemid)
     return story._item
-
 
 # ----------------------------------------------------------------------
 def delete_item(story):

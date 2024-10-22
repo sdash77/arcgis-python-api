@@ -342,6 +342,8 @@ class Collection(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
+        make_copyable: bool = False,
+        no_seo: bool = False,
     ):
         """
         This method will save your Story Map to your active GIS. The story will be saved
@@ -375,6 +377,10 @@ class Collection(object):
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
+        ---------------     --------------------------------------------------------------------
+        make_copyable       Optional boolean. If True, the story is saved as copyable for users.
+        ---------------     --------------------------------------------------------------------
+        no_seo              Optional boolean. If True, the story is saved without SEO metadata.
         ===============     ====================================================================
 
 
@@ -382,7 +388,7 @@ class Collection(object):
 
         """
         # call the save method in common utils module
-        return utils.save(self, title, tags, access, publish)
+        return utils.save(self, title, tags, access, publish, make_copyable, no_seo)
 
     # ----------------------------------------------------------------------
     def delete_collection(self):
