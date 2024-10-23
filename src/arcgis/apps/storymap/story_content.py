@@ -125,6 +125,68 @@ class SlideSubLayout(Enum):
     ONE_ONE = "1-1"
 
 
+class GalleryDisplay(Enum):
+    JIGSAW = "jigsaw"
+    SQUAREDYNAMIC = "square-dynamic"
+
+
+class CoverType(Enum):
+    """
+    The different cover types for the StoryMap, briefings, and collections.
+
+    Storymap and Briefing can be: FULL | SIDEBYSIDE | MINIMAL
+    Collection can be: GRID | MAGAZINE | JOURNAL
+    """
+
+    FULL = "full"
+    SIDEBYSIDE = "sidebyside"
+    MINIMAL = "minimal"
+    GRID = "grid"
+    MAGAZINE = "magazine"
+    JOURNAL = "journal"
+
+
+class VerticalPosition(Enum):
+    """
+    The vertical position of the cover.
+    """
+
+    TOP = "top"
+    MIDDLE = "middle"
+    BOTTOM = "bottom"
+
+
+class HorizontalPosition(Enum):
+    """
+    The horizontal position of the cover.
+    """
+
+    START = "start"
+    CENTER = "center"
+    END = "end"
+
+
+class CoverStyle(Enum):
+    """
+    The style of the cover
+    """
+
+    GRADIENT = "gradient"
+    THEMED = "themed"
+    TRANSPARENTWITHLIGHTCOLOR = "transparent-with-light-color"
+    TRANSPARENTWITHDARKCOLOR = "transparent-with-dark-color"
+
+
+class CoverSize(Enum):
+    """
+    The size of the cover
+    """
+
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
+
+
 ###############################################################################################################
 class Separator:
     """
@@ -3013,6 +3075,8 @@ class Gallery:
     @display.setter
     def display(self, display):
         if self._existing is True:
+            if isinstance(display, GalleryDisplay):
+                display = display.value
             self._story._properties["nodes"][self.node]["config"]["size"] = display
             return self.display
 
@@ -6005,7 +6069,7 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        type                Optional string. The type of story cover to be used in the story.
+        type                Optional string or CoverType enum. The type of story cover to be used in the story.
 
                             ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal"``
                             ``Values for Collection: "grid" | "magazine" | "journal"``
@@ -6020,7 +6084,9 @@ class Cover:
 
     # ----------------------------------------------------------------------
     @type.setter
-    def type(self, cover_type: str):
+    def type(self, cover_type: str | CoverType):
+        if isinstance(cover_type, CoverType):
+            cover_type = cover_type.value
         if self._existing:
             if (
                 isinstance(self._story, story.StoryMap)
@@ -6126,7 +6192,7 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        vertical_position   Optional string. The vertical position of the cover slide.
+        vertical_position   Optional string or instance of VerticalPosition Enum. The vertical position of the cover slide.
 
                             ``Values: "top" | "middle" | "bottom"``
         ===============     ====================================================================
@@ -6138,6 +6204,8 @@ class Cover:
     # ----------------------------------------------------------------------
     @vertical_position.setter
     def vertical_position(self, position: str):
+        if isinstance(position, VerticalPosition):
+            position = position.value
         if position not in ["top", "middle", "bottom"]:
             raise ValueError(
                 "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
@@ -6155,7 +6223,7 @@ class Cover:
         ===================     ====================================================================
         **Parameter**           **Description**
         -------------------     --------------------------------------------------------------------
-        horizontal_position     Optional string. The horizontal position of the cover slide.
+        horizontal_position     Optional string or instance of HorizontalPosition Enum. The horizontal position of the cover slide.
 
                                 ``Values: "start" | "center" | "end"``
         ===================     ====================================================================
@@ -6167,6 +6235,8 @@ class Cover:
     # ----------------------------------------------------------------------
     @horizontal_position.setter
     def horizontal_position(self, position: str):
+        if isinstance(position, HorizontalPosition):
+            position = position.value
         if position not in ["start", "center", "end"]:
             raise ValueError(
                 "Invalid horizontal position value. Please provide 'start', 'center', or 'end'."
@@ -6184,7 +6254,7 @@ class Cover:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        style               Optional string. The style of the cover slide.
+        style               Optional string or instance of CoverStyle Enum. The style of the cover slide.
 
                             ``Values: "gradient" | "themed" | "transparent-with-light-color" | "transparent-with-dark-color"``
         ===============     ====================================================================
@@ -6194,6 +6264,8 @@ class Cover:
     # ----------------------------------------------------------------------
     @style.setter
     def style(self, style: str):
+        if isinstance(style, CoverStyle):
+            style = style.value
         if style not in [
             "gradient",
             "themed",
@@ -6224,6 +6296,8 @@ class Cover:
     # ----------------------------------------------------------------------
     @size.setter
     def size(self, size: str):
+        if isinstance(size, CoverSize):
+            size = size.value
         if size not in ["small", "medium", "large"]:
             raise ValueError(
                 "Invalid size value. Please provide 'small', 'medium', or 'large'."
