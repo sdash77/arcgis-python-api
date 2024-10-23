@@ -91,10 +91,12 @@ class Foo:
         pass
 
 
-# sample util functions
-data = None
-def util_function_a(data):
-    pass
-
-def util_function_b(data):
-    pass
+    # sample util functions
+    data = None
+    @staticmethod
+    def util_function_a(data):
+        pass
+    
+    @staticmethod
+    def util_function_b(data):
+        pass
