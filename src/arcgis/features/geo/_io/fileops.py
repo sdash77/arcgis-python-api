@@ -1552,11 +1552,11 @@ def _gdal_to_sedf(file_path):
                     if "/" in fv:
                         fv = fv.replace("/", "-")
                     # note: can't go off of field number because it's not always accurate
-                    if "-" and ":" in fv: # date and time
+                    if "-" and ":" in fv:  # date and time
                         fv = datetime.datetime.strptime(fv, "%Y-%m-%d %H:%M:%S")
-                    elif "-" in fv: # date
+                    elif "-" in fv:  # date
                         fv = datetime.datetime.strptime(fv, "%Y-%m-%d")
-                    else: # time
+                    else:  # time
                         fv = datetime.datetime.strptime(fv, "%H:%M:%S")
                 except:
                     fv = feature.GetField(field)
