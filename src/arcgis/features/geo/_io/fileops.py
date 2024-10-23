@@ -1535,13 +1535,32 @@ def _gdal_to_sedf(file_path):
     out_layer = data_source.GetLayer()
     lay_name = out_layer.GetName()
     gen = feature_generator(out_layer)
-    field_names = [field.GetName() for field in out_layer.schema]
+    field_names = []
+    date_fields = []
+    for field in out_layer.schema:
+        field_names.append(field.name)
+        if field.type in [7, 8, 9]:
+            date_fields.append(field.name)
     field_values = {field: [] for field in field_names}
     geoms = []
     sr_code = False
     for feature in gen:
         for field in field_names:
-            field_values[field].append(feature.GetField(field))
+            fv = feature.GetField(field)
+            if isinstance(fv, str) and field in date_fields:
+                try:
+                    if "/" in fv:
+                        fv = fv.replace("/", "-")
+                    # note: can't go off of field number because it's not always accurate
+                    if "-" and ":" in fv: # date and time
+                        fv = datetime.datetime.strptime(fv, "%Y-%m-%d %H:%M:%S")
+                    elif "-" in fv: # date
+                        fv = datetime.datetime.strptime(fv, "%Y-%m-%d")
+                    else: # time
+                        fv = datetime.datetime.strptime(fv, "%H:%M:%S")
+                except:
+                    fv = feature.GetField(field)
+            field_values[field].append(fv)
         geom = feature.geometry()
         esri_geom = Geometry(_ujson.loads(geom.ExportToJson()))
         if not sr_code:
