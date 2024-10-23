@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
 from utils.mocks import *  # import mock utils if needed from tests/utils, or MagicMock from unittest
-from sample_class import Foo
-from sample_class import util_function_a, util_function_b
 
 
 # These are test classes for class and functions from tests/sample_class.py
@@ -71,3 +69,32 @@ class TestUtil(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+#########################################################
+# sample class stub for demonstrating unit test template
+#########################################################
+class Foo:
+    """
+    Sample Class for Unit Test Template
+    This is a sample class that requires gis connection
+    """
+
+    def __init__(self, gis):
+        self.gis = gis
+
+    def foo_method(self, data):
+        # a sample method in Foo class
+        pass
+
+    def _foo_private_method(self):
+        # a sample private method in Foo class
+        pass
+
+
+# sample util functions
+data = None
+def util_function_a(data):
+    pass
+
+def util_function_b(data):
+    pass
