@@ -190,6 +190,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkt(iterable):
+        """Create a geometry from wkt"""
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
@@ -241,8 +242,32 @@ class GeometryFactory(type):
                 iterable = {"wkt": iterable.exportToString()}
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
-            elif isinstance(iterable, str):  # WKT
-                iterable = GeometryFactory._from_wkt(iterable)
+            # WKT handling
+            elif isinstance(iterable, str):
+                if cls._type == "SpatialReference" or iterable.startswith(
+                    ("PROJCS", "GEOGCS")
+                ):
+                    # WKT Spatial Reference
+                    iterable = {"wkt": iterable}
+                elif iterable.startswith(
+                    (
+                        "POINT",
+                        "LINESTRING",
+                        "POLYGON",
+                        "MULTIPOINT",
+                        "MULTIPOLYGON",
+                        "MULTILINESTRING",
+                        "POINT ZM",
+                        "POINT M",
+                    )
+                ):
+                    # WKT Geometry
+                    iterable = GeometryFactory._from_wkt(iterable)
+                elif iterable.startswith("GEOMETRYCOLLECTION"):
+                    raise ValueError("GeometryCollection not supported")
+                else:
+                    # Could be a wkt spatial reference AND geometry, set as default
+                    iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
@@ -586,9 +611,17 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if "wkid" in self:
                 self._ao = arcpy.SpatialReference(self["wkid"])
             elif "wkt" in self:
-                self._ao = arcpy.SpatialReference(self["wkt"])
+                self._ao = arcpy.SpatialReference(text=self["wkt"])
+            elif "wkt2" in self:
+                self._ao = arcpy.SpatialReference(text=self["wkt2"])
             else:
                 raise ValueError("Invalid SpatialReference")
+        elif "wkt" in self:
+            self._ao = arcpy.SpatialReference(text=self["wkt"])
+        elif "wkid" in self:
+            self._ao = arcpy.SpatialReference(self["wkid"])
+        elif "wkt2" in self:
+            self._ao = arcpy.SpatialReference(text=self["wkt2"])
         elif isinstance(self, Envelope):
             return arcpy.Extent(
                 XMin=self["xmin"],
@@ -3928,6 +3961,13 @@ class SpatialReference(Geometry):
         self._properties = iterable
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    def __str__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    # ----------------------------------------------------------------------
     @property
     def type(self):
         """Gets the type of the current ``Point`` object."""
@@ -3989,6 +4029,10 @@ class SpatialReference(Geometry):
             elif "wkt" in self:
                 sr = arcpy.SpatialReference()
                 sr.loadFromString(self["wkt"])
+                return sr
+            elif "wkt2" in self:
+                sr = arcpy.SpatialReference()
+                sr.loadFromString(self["wkt2"])
                 return sr
         return None
 
