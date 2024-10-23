@@ -16,7 +16,7 @@ from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item, ItemDependency
 import concurrent.futures as _cf
-from typing import Optional, Any, Union
+from typing import Any
 from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
@@ -2250,21 +2250,53 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _perform_insert(self, layer_definition, table=False):
+        """
+        This adds the layer definition to the feature service definition. It also
+        checks for the field mappings and returns them for future appends of data.
+        We have to do this because the field names can change when adding a new layer, especially in Enterprise
+        which depends on a geodatabase design and thus some field names are reserved.
+        """
         # Add new layer to definition
+        if isinstance(layer_definition, PropertyMap):
+            layer_definition = dict(layer_definition)
+
+        # Extract original field names for comparison later
+        original_field_names = [
+            field["name"] for field in layer_definition.get("fields", [])
+        ]
+
         if table:
-            self.add_to_definition({"tables": [dict(layer_definition)]})
+            self.add_to_definition({"tables": [layer_definition]})
             for table in self.properties.tables:
                 if table["name"] == layer_definition["name"]:
                     fl_index = table["id"]
                     break
         else:
-            self.add_to_definition({"layers": [dict(layer_definition)]})
+            self.add_to_definition({"layers": [layer_definition]})
             # Find the index at which the layer was added
             for layer in self.properties.layers:
                 if layer["name"] == layer_definition["name"]:
                     fl_index = layer["id"]
                     break
-        return fl_index
+
+        # Check if any field names have changed
+        updated_fields_names = [
+            field["name"] for field in self.properties.layers[fl_index]["fields"]
+        ]
+        field_mappings = []
+        for original_field in original_field_names:
+            for updated_field in updated_fields_names:
+                if original_field != updated_field and original_field in updated_field:
+                    field_mappings.append(
+                        {"name": updated_field, "sourceName": original_field}
+                    )
+                    # Log or send a warning about the change
+                    print(
+                        f"Warning: Field '{original_field}' was renamed to '{updated_field}'"
+                    )
+
+        # Return the index and field mappings to use for future appends
+        return fl_index, field_mappings
 
     # ----------------------------------------------------------------------
     def insert_layer(self, data_path: str, name: str = None):
@@ -2284,7 +2316,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
-
+        new_item = None
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
             self._gis.users.me.username != orig_item.owner
@@ -2367,16 +2399,24 @@ class FeatureLayerCollectionManager(_GISResource):
                 file=data_path,
             ).result()
 
-        # Analyze the file to get publish parameters
-        analyze_ft = file_type.lower().replace(" ", "")
-        publish_parameters = self._gis.content.analyze(
-            item=file_item, file_type=analyze_ft
-        )["publishParameters"]
+        publish_parameters = {}
+        lyr_info = {}
+        if not self._gis._is_arcgisonline:
+            # FileGeodatabase has to be published first to get the layer info
+            new_item = file_item.publish()
+            lyr_info = new_item.layers[0].properties
+        else:
+            # Analyze the file to get publish parameters
+            analyze_ft = file_type.lower().replace(" ", "")
+            publish_parameters = self._gis.content.analyze(
+                item=file_item, file_type=analyze_ft
+            )["publishParameters"]
 
         # Get the layer info which will be used to append the data
         if file_type == "CSV" or file_type == "Excel":
             lyr_info = publish_parameters["layerInfo"]
-        else:
+        elif not lyr_info:
+            # Shapefile or file geodatabase online
             lyr_info = publish_parameters["layers"][0]
 
         try:
@@ -2385,53 +2425,50 @@ class FeatureLayerCollectionManager(_GISResource):
                 upload_format = "filegdb"
             else:
                 upload_format = file_type.lower()
-            if lyr_info["type"] == "Feature Layer":
-                index = self._perform_insert(lyr_info)
+            if lyr_info and lyr_info["type"] == "Feature Layer":
+                index, field_mappings = self._perform_insert(lyr_info)
+                append_item_id = file_item.id
+                layer_mappings = []
                 if (
-                    file_type == "File Geodatabase"
-                    and "filegdb"
-                    in orig_item.layers[index].properties.supportedAppendFormats
-                ) or file_type != "File Geodatabase":
-                    # Workflow for all file types and file geo databases that support append
-                    orig_item.layers[index].append(
-                        item_id=file_item.id,
-                        upload_format=upload_format,
-                        source_table_name=lyr_info["name"],
-                    )
-                elif file_type == "File Geodatabase":
-                    # When filegdb not supported through append, use edit features
-                    new_item = file_item.publish(publish_parameters=publish_parameters)
-                    layer = new_item.layers[0]
-                    features = layer.query().features
-                    if self._gis._is_agol or (
-                        "advancedEditingCapabilities" in layer.properties
-                        and "supportsAsyncApplyEdits"
-                        in layer.properties["advancedEditingCapabilities"]
-                        and layer.properties["advancedEditingCapabilities"][
-                            "supportsAsyncApplyEdits"
-                        ]
-                    ):
-                        orig_item.layers[index].edit_features(
-                            adds=features, future=True
-                        )
-                    else:
-                        orig_item.layers[index].edit_features(adds=features)
-                    new_item.delete()
+                    upload_format
+                    not in orig_item.layers[index].properties["supportedAppendFormats"]
+                    or new_item
+                ):
+                    upload_format = "featureService"
+                    if not new_item:
+                        # special case
+                        new_item = file_item.publish()
+                    append_item_id = new_item.id
+                    layer_mappings = [{"id": index, "sourceId": 0}]
+                # Use append
+                orig_item.layers[index].append(
+                    item_id=append_item_id,
+                    upload_format=upload_format,
+                    source_table_name=lyr_info["name"],
+                    field_mappings=field_mappings,
+                    layer_mappings=layer_mappings,
+                    upsert=True,  # avoid duplicate append
+                )
             elif lyr_info["type"] == "Table":
-                index = self._perform_insert(lyr_info, table=True)
+                index, field_mappings = self._perform_insert(lyr_info, table=True)
                 orig_item.tables[index].append(
                     item_id=file_item.id,
                     upload_format=upload_format,
                     source_info=lyr_info,
+                    field_mappings=field_mappings,
+                    layer_mappings=[{"id": index, "sourceId": 0}],
+                    return_messages=True,
                 )
 
-            # Add relationship between service and data
-            orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
-            # Remove newly published item since inserted into service
         except Exception as e:
-            # Remove newly published item since inserted into service
-            self._gis.content.delete_items([file_item], permanent=True)
             raise e
+        finally:
+            # Remove items created since no need for them anymore
+            # relationship not needed for hosted services
+            self._gis.content.delete_items([file_item], permanent=True)
+            if new_item:
+                self._gis.content.delete_items([new_item], permanent=True)
+
         return orig_item
 
     def swap_view(
