@@ -29,6 +29,7 @@ tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
 features = LazyLoader("arcgis.features")
 _gis = LazyLoader("arcgis.gis")
+_env = LazyLoader("arcgis.env")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -1860,13 +1861,11 @@ class GeoAccessor(object):
 
         # otherwise, if a map widget is NOT explicitly defined
         else:
-            from arcgis.gis import GIS
-            from arcgis.env import active_gis
 
             # if a gis is not already created in the session, create an anonymous one
-            gis = active_gis
+            gis = _env.active_gis
             if gis is None:
-                gis = GIS()
+                gis = _gis.GIS()
 
             # use the GIS to create a map widget
             map_widget = gis.map()
@@ -1922,7 +1921,6 @@ class GeoAccessor(object):
 
         :return: The feature service item that was appended to.
         """
-        from arcgis import env
         import copy
         from arcgis.gis._impl._content_manager._import_data import (
             _create_file,
@@ -1930,7 +1928,7 @@ class GeoAccessor(object):
 
         # Get the gis
         if gis is None:
-            gis = env.active_gis
+            gis = _env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
