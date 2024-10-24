@@ -16692,14 +16692,15 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str):
+    def move(self, folder: str | _folder.Folder):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        folder            Required string. The name of the folder to move the item to.
+        folder            Required string or Folder instance. The name of the folder to move the item to or
+                          the Folder class instance representing this folder.
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
@@ -16718,7 +16719,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.move("C:\Projects\ARCGIS\ArcGis_data\")
+            >>> folder = gis.content.folders.get(folder="my folder")
+            >>> item.move(folder)
 
         """
         owner_name = self._user_id
@@ -16731,6 +16733,8 @@ class Item(dict):
                     folder_id = self._portal.get_folder_id(owner_name, folder)
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
+            elif isinstance(folder, _folder.Folder):
+                folder_id = folder._fid
             else:
                 print("folder should be folder name as a string, or dict with id")
 
