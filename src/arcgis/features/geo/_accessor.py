@@ -29,6 +29,7 @@ tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
 features = LazyLoader("arcgis.features")
 _gis = LazyLoader("arcgis.gis")
+_env = LazyLoader("arcgis.env")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -1860,13 +1861,11 @@ class GeoAccessor(object):
 
         # otherwise, if a map widget is NOT explicitly defined
         else:
-            from arcgis.gis import GIS
-            from arcgis.env import active_gis
 
             # if a gis is not already created in the session, create an anonymous one
-            gis = active_gis
+            gis = _env.active_gis
             if gis is None:
-                gis = GIS()
+                gis = _gis.GIS()
 
             # use the GIS to create a map widget
             map_widget = gis.map()
@@ -1922,7 +1921,6 @@ class GeoAccessor(object):
 
         :return: The feature service item that was appended to.
         """
-        from arcgis import env
         import copy
         from arcgis.gis._impl._content_manager._import_data import (
             _create_file,
@@ -1930,13 +1928,12 @@ class GeoAccessor(object):
 
         # Get the gis
         if gis is None:
-            gis = env.active_gis
+            gis = _env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
 
         # Check that the user is the owner of both the source and the published item
-        user = gis._username
         if isinstance(feature_service, str):
             service = content.get(feature_service)
         else:
@@ -1944,7 +1941,7 @@ class GeoAccessor(object):
 
         if (
             gis.users.me.username != service.owner
-            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            and "portal:admin:updateItems" not in gis.users.me.privileges
         ):
             raise AssertionError(
                 "You must own the service or have administrative privileges to insert data."
@@ -1953,8 +1950,8 @@ class GeoAccessor(object):
         related_items = service.related_items(rel_type="Service2Data")
         for item in related_items:
             if (
-                item.owner != user
-                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+                item.owner != gis.users.me.username
+                and "portal:admin:updateItems" not in gis.users.me.privileges
             ):
                 raise AssertionError(
                     "You must own the service or have administrative privileges to insert data."
@@ -3021,12 +3018,19 @@ class GeoAccessor(object):
             except ImportError:
                 self._HASARCPY = False
         if self._HASSHAPELY is None:
+            self._HASSHAPELY = False
             try:
                 import shapely
 
                 self._HASSHAPELY = True
             except ImportError:
-                self._HASSHAPELY = False
+                pass
+            try:
+                import shapefile
+
+                self._HASSHAPELY = True
+            except ImportError:
+                pass
         return self._HASARCPY, self._HASSHAPELY
 
     # ----------------------------------------------------------------------
