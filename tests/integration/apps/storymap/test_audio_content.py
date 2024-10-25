@@ -41,8 +41,7 @@ class TestAudioContent(unittest.TestCase):
             assert separator
             assert isinstance(story.content_list, list) and len(story.content_list) > 0
 
-        item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ Tests the functionality of the knowledge graph
 import unittest
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
+from arcgis.layers import Service
 from typing import Generator
 import requests
 import uuid
@@ -89,7 +90,11 @@ class TestImport(unittest.TestCase):
         items = gis.content.search("type:Knowledge Graph")
         if len(items) > 0:
             assert isinstance(KnowledgeGraph.fromitem(items[0]), KnowledgeGraph)
-
+    
+    def test_service_init(self):
+        s = Service(kg._url, gis=gis)
+        assert isinstance(s, KnowledgeGraph)
+        
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
 @integration_test
