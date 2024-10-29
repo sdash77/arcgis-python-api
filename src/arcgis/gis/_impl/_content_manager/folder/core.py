@@ -410,10 +410,11 @@ class Folder:
 
         results = []
         futures = {}
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as tp:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as tp:
             for idx, chunk in enumerate(
                 chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
             ):
+                logger.info(f"loading part: {idx} part into the upload queue.")
                 part_name: str = ftuple[0]
                 part_params: dict[str, Any] = {
                     "f": "json",
@@ -620,6 +621,7 @@ class Folder:
         data_url: str | None = None,
         item_id: str | None = None,
         stream: bool = True,
+        upload_file_size: int | None = None,
     ) -> concurrent.futures.Future:
         """
         Adds an :class:`~arcgis.gis.Item` to the current folder.
@@ -628,49 +630,54 @@ class Folder:
             This method returns a :class:`concurrent.futures.Future` object. To
             obtain *item*, use :meth:`concurrent.future.Future.result` method.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item_properties     Required *ItemProperties* object. The properties for the item to add.
-                            When initializing the object, the *title* and *item_type* are
-                            required.
+        =================     ====================================================================
+        **Parameter**          **Description**
+        -----------------     --------------------------------------------------------------------
+        item_properties       Required *ItemProperties* object. The properties for the item to add.
+                              When initializing the object, the *title* and *item_type* are
+                              required.
 
-                            .. code-block:: python
+                              .. code-block:: python
 
-                                >>> from arcgis.gis import ItemProperties, ItemTypeEnum
+                                  >>> from arcgis.gis import ItemProperties, ItemTypeEnum
 
-                                >>> item_props = ItemProperties(title="<item_title>",
-                                                                item_type=ItemTypeEnum.SHAPEFILE.value)
-        ---------------     --------------------------------------------------------------------
-        file                Optional string, io.StringIO, or io.BytesIO. Provide the data to the
-                            item.
-        ---------------     --------------------------------------------------------------------
-        text                Optional String. The JSON content for the item to be submitted.
-        ---------------     --------------------------------------------------------------------
-        url                 Optional string. The URL of the item to be submitted. The URL can be
-                            a URL to a service, a web mapping application, or any other content
-                            available at that URL.
-        ---------------     --------------------------------------------------------------------
-        data_url            Optional string. The URL where the item can be downloaded. The
-                            resource will be downloaded and stored as a file type. Similar to
-                            uploading a file to be added, but instead of transferring the
-                            contents of the file, the URL of the data file is referenced and
-                            creates a file item. The referenced URL must be an unsecured URL
-                            where the data can be downloaded. This parameter requires the
-                            operation to be performed asynchronously. Once the job status
-                            returns as complete, the item can be downloaded and the item is
-                            added successfully.
-        ---------------     --------------------------------------------------------------------
-        item_id             Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
-                            This parameter allows the desired item id to be specified during creation which
-                            can be useful for cloning and automated content creation scenarios.
-                            The specified id must be a 32 character GUID string without any special characters.
+                                  >>> item_props = ItemProperties(title="<item_title>",
+                                                                  item_type=ItemTypeEnum.SHAPEFILE.value)
+        -----------------     --------------------------------------------------------------------
+        file                  Optional string, io.StringIO, or io.BytesIO. Provide the data to the
+                              item.
+        -----------------     --------------------------------------------------------------------
+        text                  Optional String. The JSON content for the item to be submitted.
+        -----------------     --------------------------------------------------------------------
+        url                   Optional string. The URL of the item to be submitted. The URL can be
+                              a URL to a service, a web mapping application, or any other content
+                              available at that URL.
+        -----------------     --------------------------------------------------------------------
+        data_url              Optional string. The URL where the item can be downloaded. The
+                              resource will be downloaded and stored as a file type. Similar to
+                              uploading a file to be added, but instead of transferring the
+                              contents of the file, the URL of the data file is referenced and
+                              creates a file item. The referenced URL must be an unsecured URL
+                              where the data can be downloaded. This parameter requires the
+                              operation to be performed asynchronously. Once the job status
+                              returns as complete, the item can be downloaded and the item is
+                              added successfully.
+        -----------------     --------------------------------------------------------------------
+        item_id               Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                              This parameter allows the desired item id to be specified during creation which
+                              can be useful for cloning and automated content creation scenarios.
+                              The specified id must be a 32 character GUID string without any special characters.
 
-                            If the `item_id` is already being used, an error will be raised
-                            during the `add` operation.
+                              If the `item_id` is already being used, an error will be raised
+                              during the `add` operation.
 
-                            Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
-        ===============     ====================================================================
+                              Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -----------------     --------------------------------------------------------------------
+        upload_file_size      Optional int. This is used when uploading very large files
+                              (50GB+ in size).
+                              This is the part size to split the file into when performing a
+                              streaming upload.  Each piece will be the size of this value.
+        =================     ====================================================================
 
         :returns:
             :class:`concurrent.futures.Future` object
@@ -720,7 +727,7 @@ class Folder:
                 "When providing a `StringIO` or `BytesIO` object, `file_name` must be given in the `ItemProperties` class."
             )
 
-        upload_size: int | None = None
+        upload_size: float | int | None = None
         thumbnail: str | None = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
         file_list: dict[str, Any] = {}
@@ -771,7 +778,7 @@ class Folder:
             if stream == True and file:
                 # upload by streaming data
                 logger.info("Adding Item by parts using streaming.")
-
+                upload_size = upload_file_size
                 params["multipart"] = True
                 params["fileName"] = params.get("fileName") or os.path.basename(file)
                 params["async"] = True

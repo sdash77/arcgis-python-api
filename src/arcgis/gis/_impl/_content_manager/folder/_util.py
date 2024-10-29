@@ -82,7 +82,8 @@ def chunk_by_file_size(
 ) -> Iterator[Union[Tuple[str, io.BytesIO, str], io.BytesIO]]:
     """Splits a File based on a specific bytes size"""
     if size is None:
-        size = int(2.5e7)  # 25MB
+        size: int = int(calculate_upload_size(fp))
+        # size = int(2.5e7)  # 25MB
     i = 1
     if isinstance(fp, str):
         with open(fp, "rb") as reader:
@@ -180,6 +181,7 @@ def close_upload_files(upload_tuple: list[tuple]) -> None:
 
 
 # -------------------------------------------------------------------------
+@lru_cache(maxsize=100)
 def calculate_upload_size(fp: str) -> int:
     """calculates the file MAX upload limit."""
     fd = os.open(fp, os.O_RDONLY)
@@ -195,10 +197,18 @@ def calculate_upload_size(fp: str) -> int:
         return int(25 * (1024 * 1024))
     elif size > 25 * (1024 * 1024) and size <= 35 * (1024 * 1024):
         return int(30 * (1024 * 1024))
-    elif size > 35 * (1024 * 1024) and size <= 40 * (1024 * 1024):
-        return int(40 * (1024 * 1024))
+    elif size > 35 * (1024 * 1024) and size <= 100 * (1024 * 1024):
+        return int(50 * (1024 * 1024))
+    elif size > 100 * (1024 * 1024) and size <= 200 * (1024 * 1024):
+        return int(100 * (1024 * 1024))
+    elif size > 200 * (1024 * 1024) and size <= 300 * (1024 * 1024):
+        return int(200 * (1024 * 1024))
+    elif size > 300 * (1024 * 1024) and size <= 600 * (1024 * 1024):
+        return int(300 * (1024 * 1024))
+    elif size > 700 * (1024 * 1024) and size <= 1000 * (1024 * 1024):
+        return int(700 * (1024 * 1024))
     else:
-        return int(45 * (1024 * 1024))
+        return int(size / 2000)  # null case split by 2K parts.
 
 
 # -------------------------------------------------------------------------
