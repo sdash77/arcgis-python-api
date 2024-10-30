@@ -1154,6 +1154,7 @@ class MapFeatureLayer(Layer):
             return resp.json()
         return ""
 
+
 ###########################################################################
 class MapRasterLayer(MapFeatureLayer):
     """
