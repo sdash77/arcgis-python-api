@@ -646,318 +646,286 @@ class Query:
         return params
 
     
-    def _execute_concurrently(self, url, raw):
-        try:
-            result = self.layer._con.post(url, self.parameters, token=self.layer._token)
-            return self._process_query_result(result, raw, url)
-        except Exception as query_exception:
-            return self._handle_query_exception(query_exception, url, raw)
-
-    def _process_query_result(self, result, raw, url):
-        """Processes the query result based on the parameters and handles pagination."""
-        # Handle errors in the result
-        if "error" in result:
-            raise ValueError(result)
-
-        # Determine the type of result to return
-        if self._is_true(self.parameters.get("returnCountOnly")):
-            return result["count"]
-        elif self._is_true(self.parameters.get("returnIdsOnly")) or self._is_true(
-            self.parameters.get("returnExtentOnly")
-        ):
-            return result
-        elif self._is_true(raw):
-            return result
-
-        # Handle features and exceeded transfer limit
-        features = result.get("features", [])
-        if self._needs_more_features(result, features):
-            features = self._fetch_all_features(url, features, result)
-
-        result["features"] = features
-        return arcgis_features.FeatureSet.from_dict(result)
+def _query(layer, url, params, raw=False):
+    """Returns results of the query for the provided layer and URL."""
+    try:
+        # Perform the initial query
+        result = layer._con._session.post(url, params, token=layer._token).json()
+        return _process_query_result(result, params, raw, layer, url)
+    except Exception as query_exception:
+        return _handle_query_exception(query_exception, layer, url, params, raw)
 
 
-    def _needs_more_features(self, result, features):
-        """Checks if more features need to be fetched."""
-        return result.get("exceededTransferLimit") or (
-            self.parameters.get("resultRecordCount") != len(features)
-        )
+def _process_query_result(result, params, raw, layer, url):
+    """Processes the query result based on the parameters and handles pagination."""
+    # Handle errors in the result
+    if "error" in result:
+        raise ValueError(result)
 
-
-    def _fetch_all_features(self, url, features, result):
-        """Fetches all features by handling pagination with concurrent requests."""
-        original_record_count = self.parameters.get("resultRecordCount")
-        original_offset = self.parameters.get("resultOffset", 0)
-        total_features = len(features)  # Track how many we have so far
-        lock = threading.Lock()  # Lock for safe feature accumulation
-        
-        # handle if original_record_count is None
-        if original_record_count is None:
-            # make a post request where returnCountOnly is True
-            params = self.parameters.copy()
-            params["returnCountOnly"] = True
-            original_record_count = self.layer._con.post(url, params, token=self.layer._token)["count"]
-        with ThreadPoolExecutor() as executor:
-            futures = []
-            
-            # Only add new requests if we have more to fetch
-            while result.get("exceededTransferLimit") and total_features < original_record_count:
-                next_offset = total_features + original_offset
-                remaining_count = original_record_count - total_features
-
-                # Adjust params for this specific request
-                request_params = self.parameters.copy()
-                request_params["resultOffset"] = next_offset
-                request_params["resultRecordCount"] = remaining_count
-                
-                # Submit request
-                futures.append(executor.submit(self.layer._con.post, url, request_params, token=self.layer._token))
-
-                # Handle each completed future as they return
-                for future in as_completed(futures):
-                    try:
-                        partial_result = future.result()
-                        with lock:
-                            new_features = partial_result.get("features", [])
-                            features.extend(new_features)
-                            total_features += len(new_features)
-
-                        # Check if we reached the exact feature count
-                        if total_features >= original_record_count or not partial_result.get("exceededTransferLimit"):
-                            result["exceededTransferLimit"] = False
-                            break
-                            
-                    except Exception as e:
-                        print(f"Error fetching features: {e}")
-                        # Optionally handle specific retry logic here if necessary
-
-        return features
-
-
-    def _handle_query_exception(self, query_exception, url, raw):
-        """Handles exceptions raised during the query process."""
-        error_messages = [
-            "Error performing query operation",
-            "HTTP Error 504: GATEWAY_TIMEOUT",
-        ]
-
-        if self._is_invalid_token_error(query_exception):
-            self.parameters.pop("token", None)
-            return self._execute_concurrently(url, raw)
-
-        if self._is_known_error(query_exception, error_messages):
-            return self._retry_query_with_fewer_records(url, raw)
-
-        raise query_exception
-
-
-    def _is_invalid_token_error(self, exception):
-        """Checks if the exception is due to an invalid token."""
-        return (
-            isinstance(exception.args[0], str)
-            and "invalid token" in exception.args[0].lower()
-        )
-
-
-    def _is_known_error(self, exception, error_messages):
-        """Checks if the exception contains a known error message."""
-        return any(msg in str(exception) for msg in error_messages)
-
-
-    def _retry_query_with_fewer_records(self, url,raw):
-        """Retries the query with a reduced result record count using concurrent processing."""
-        max_record = self.parameters.get("resultRecordCount", 1000)
-        offset = self.parameters.get("resultOffset", 0)
-        
-        if max_record < 250:
-            raise Exception("Max record count too low; query still failing.")
-
-        result = None
-        max_rec = (max_record + 1) // 2  # Halve the record count
-        futures = []
-        
-        with ThreadPoolExecutor() as executor:
-            i = 0
-            while max_rec * i < max_record:
-                self.parameters["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
-                self.parameters["resultOffset"] = offset + max_rec * i
-                futures.append(executor.submit(self._execute_concurrently, self.layer, url, self.parameters, raw=True))
-                i += 1
-
-            for future in as_completed(futures):
-                try:
-                    records = future.result()
-                    if result:
-                        result["features"].extend(records["features"])
-                    else:
-                        result = records
-                except Exception as retry_exception:
-                    raise retry_exception
-        
+    # Determine the type of result to return
+    if _is_true(params.get("returnCountOnly")):
+        return result["count"]
+    elif _is_true(params.get("returnIdsOnly")) or _is_true(
+        params.get("returnExtentOnly")
+    ):
+        return result
+    elif _is_true(raw):
         return result
 
+    # Handle features and exceeded transfer limit
+    features = result.get("features", [])
+    if _needs_more_features(result, params, features):
+        features = _fetch_all_features(layer, url, params, features, result)
+
+    result["features"] = features
+    return arcgis_features.FeatureSet.from_dict(result)
 
 
-    def _is_true(self, x):
-        if isinstance(x, bool) and x:
-            return True
-        elif isinstance(x, str) and x.lower() == "true":
-            return True
-        else:
-            return False
+def _needs_more_features(result, params, features):
+    """Checks if more features need to be fetched."""
+    return result.get("exceededTransferLimit") or (
+        params.get("resultRecordCount") != len(features)
+    )
 
 
-    def _query_df(self, url, **kwargs):
-        """returns results of a query as a pd.DataFrame"""
-        import pandas as pd
-        import numpy as np
+def _fetch_all_features(layer, url, params, features, result):
+    """Fetches all features by handling pagination."""
+    original_record_count = params.get("resultRecordCount")
+    original_offset = params.get("resultOffset", 0)
 
-        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": pd.datetime,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.datetime,
-                "esriFieldTypeDateOnly": pd.datetime,
-                "esriFieldTypeTimestampOffset": pd.datetime,
-            }
-        else:
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": "<M8[ns]",
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.StringDtype(),
-                "esriFieldTypeDateOnly": "<M8[ns]",
-                "esriFieldTypeTimestampOffset": object,
-                "esriFieldTypeBigInteger": pd.Int64Dtype(),
-            }
+    while result.get("exceededTransferLimit") is True:
+        if original_record_count is not None:
+            remaining_record_count = original_record_count - len(features)
+            if remaining_record_count <= 0:
+                break
+            params["resultRecordCount"] = remaining_record_count
 
-        def feature_to_row(feature, sr):
-            """:return: a feature from a dict"""
-            geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
-            if "centroid" in feature:
-                if attribs is None:
-                    attribs = {"centroid": feature["centroid"]}
-                elif "centroid" in attribs:
-                    import uuid
+        params["resultOffset"] = len(features) + original_offset
+        result = layer._con.post(path=url, postdata=params, token=layer._token)
+        features += result.get("features", [])
 
-                    fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature["centroid"]
-                else:
-                    attribs["centroid"] = feature["centroid"]
-            if geom:
-                if "spatialReference" not in geom:
-                    geom["spatialReference"] = sr
-                attribs["SHAPE"] = Geometry(geom)
-            return attribs
+    return features
+
+
+def _handle_query_exception(query_exception, layer, url, params, raw):
+    """Handles exceptions raised during the query process."""
+    error_messages = [
+        "Error performing query operation",
+        "HTTP Error 504: GATEWAY_TIMEOUT",
+    ]
+
+    if _is_invalid_token_error(query_exception):
+        params.pop("token", None)
+        return _query(layer, url, params, raw)
+
+    if _is_known_error(query_exception, error_messages):
+        return _retry_query_with_fewer_records(layer, url, params, raw)
+
+    raise query_exception
+
+
+def _is_invalid_token_error(exception):
+    """Checks if the exception is due to an invalid token."""
+    return (
+        isinstance(exception.args[0], str)
+        and "invalid token" in exception.args[0].lower()
+    )
+
+
+def _is_known_error(exception, error_messages):
+    """Checks if the exception contains a known error message."""
+    return any(msg in str(exception) for msg in error_messages)
+
+
+def _retry_query_with_fewer_records(layer, url, params, raw):
+    """Retries the query with a reduced result record count."""
+    max_record = params.get("resultRecordCount", 1000)
+    offset = params.get("resultOffset", 0)
+
+    if max_record < 250:
+        raise Exception("Max record count too low; query still failing.")
+
+    result = None
+    max_rec = (max_record + 1) // 2  # Halve the record count
+    i = 0
+
+    while max_rec * i < max_record:
+        params["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
+        params["resultOffset"] = offset + max_rec * i
 
         try:
-            # Perform the initial query
-            result = self.layer._con.post(url, self.parameters, token= self.layer._token)
-            # Handle features and exceeded transfer limit
-            features = result.get("features", [])
-            if self._needs_more_features(result, features):
-                features = self._fetch_all_features(url, features, result)
+            records = _query(layer, url, params, raw=True)
+            if result:
+                result["features"].extend(records["features"])
+            else:
+                result = records
+            i += 1
+        except Exception as retry_exception:
+            raise retry_exception
 
-            result["features"] = features
-        except Exception as query_exception:
-            return self._handle_query_exception(query_exception, url, False)
+    return result
 
-        if len(result["features"]) == 0:
-            # create columns even if empty dataframe
-            columns = {}
-            for fld in self.layer.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.layer.properties
-                and self.layer.properties.geometryType is not None
-            ):
-                columns["SHAPE"] = object
-            if "return_geometry" in self.parameters and self.parameters["return_geometry"] == False:
-                columns.pop("SHAPE", None)
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if "out_fields" in self.parameters and self.parameters["out_fields"] != "*":
-                df = df[self.parameters["out_fields"].split(",")].copy()
 
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.layer.renderer
-                df.spatial._meta.source = self.layer
+def _is_true(x):
+    if isinstance(x, bool) and x:
+        return True
+    elif isinstance(x, str) and x.lower() == "true":
+        return True
+    else:
+        return False
 
-            return pd.DataFrame([], columns=columns).astype(columns)
-        sr = None
-        if "spatialReference" in result:
-            sr = result["spatialReference"]
 
-        rows = [feature_to_row(row, sr) for row in result["features"]]
-        if len(rows) == 0:
-            return None
-        df = pd.DataFrame.from_records(data=rows)
-        # set based on layer
-        df.spatial.renderer = self.layer.renderer
-        df.spatial._meta.source = self.layer.url
+----------------------------------------------------------------------
+def _query_df(layer, url, params, **kwargs):
+    """returns results of a query as a pd.DataFrame"""
+    import pandas as pd
+    import numpy as np
+
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _fld_lu = {
+            "esriFieldTypeSmallInteger": np.int32,
+            "esriFieldTypeInteger": np.int32,
+            "esriFieldTypeSingle": float,
+            "esriFieldTypeDouble": float,
+            "esriFieldTypeFloat": float,
+            "esriFieldTypeString": str,
+            "esriFieldTypeDate": pd.datetime,
+            "esriFieldTypeOID": np.int64,
+            "esriFieldTypeGeometry": object,
+            "esriFieldTypeBlob": object,
+            "esriFieldTypeRaster": object,
+            "esriFieldTypeGUID": str,
+            "esriFieldTypeGlobalID": str,
+            "esriFieldTypeXML": object,
+            "esriFieldTypeTimeOnly": pd.datetime,
+            "esriFieldTypeDateOnly": pd.datetime,
+            "esriFieldTypeTimestampOffset": pd.datetime,
+        }
+    else:
+        _fld_lu = {
+            "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+            "esriFieldTypeInteger": pd.Int32Dtype(),
+            "esriFieldTypeSingle": pd.Float64Dtype(),
+            "esriFieldTypeDouble": pd.Float64Dtype(),
+            "esriFieldTypeFloat": pd.Float64Dtype(),
+            "esriFieldTypeString": pd.StringDtype(),
+            "esriFieldTypeDate": "<M8[ns]",
+            "esriFieldTypeOID": pd.Int64Dtype(),
+            "esriFieldTypeGeometry": object,
+            "esriFieldTypeBlob": object,
+            "esriFieldTypeRaster": object,
+            "esriFieldTypeGUID": pd.StringDtype(),
+            "esriFieldTypeGlobalID": pd.StringDtype(),
+            "esriFieldTypeXML": object,
+            "esriFieldTypeTimeOnly": pd.StringDtype(),
+            "esriFieldTypeDateOnly": "<M8[ns]",
+            "esriFieldTypeTimestampOffset": object,
+            "esriFieldTypeBigInteger": pd.Int64Dtype(),
+        }
+
+    def feature_to_row(feature, sr):
+        """:return: a feature from a dict"""
+        geom = feature["geometry"] if "geometry" in feature else None
+        attribs = feature["attributes"] if "attributes" in feature else {}
+        if "centroid" in feature:
+            if attribs is None:
+                attribs = {"centroid": feature["centroid"]}
+            elif "centroid" in attribs:
+                import uuid
+
+                fld = "centroid_" + uuid.uuid4().hex[:2]
+                attribs[fld] = feature["centroid"]
+            else:
+                attribs["centroid"] = feature["centroid"]
+        if geom:
+            if "spatialReference" not in geom:
+                geom["spatialReference"] = sr
+            attribs["SHAPE"] = Geometry(geom)
+        return attribs
+
+    try:
+        # Perform the initial query
+        result = layer._con.post(url, params, token=layer._token)
+        # Handle features and exceeded transfer limit
+        features = result.get("features", [])
+        if _needs_more_features(result, params, features):
+            features = _fetch_all_features(layer, url, params, features, result)
+
+        result["features"] = features
+    except Exception as query_exception:
+        return _handle_query_exception(query_exception, layer, url, params, False)
+
+    if len(result["features"]) == 0:
+        # create columns even if empty dataframe
+        columns = {}
+        for fld in layer.properties.fields:
+            fld = dict(fld)
+            columns[fld["name"]] = _fld_lu[fld["type"]]
+        if (
+            "geometryType" in layer.properties
+            and layer.properties.geometryType is not None
+        ):
+            columns["SHAPE"] = object
+        if "return_geometry" in params and params["return_geometry"] == False:
+            columns.pop("SHAPE", None)
+        df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+        if "out_fields" in params and params["out_fields"] != "*":
+            df = df[params["out_fields"].split(",")].copy()
 
         if "SHAPE" in df.columns:
-            df.loc[df.SHAPE.isna(), "SHAPE"] = None
+            df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
             df.spatial.set_geometry("SHAPE")
+            df.spatial.renderer = layer.renderer
+            df.spatial._meta.source = layer
 
-        # work with the fields and their data types
-        dfields = []
-        dtypes = {}
-        if "fields" in result:
-            fields = result["fields"]
-            for fld in fields:
-                if fld["type"] != "esriFieldTypeGeometry":
-                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
-                if fld["type"] in [
-                    "esriFieldTypeDate",
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]:
-                    dfields.append(fld["name"])
+        return pd.DataFrame([], columns=columns).astype(columns)
+    sr = None
+    if "spatialReference" in result:
+        sr = result["spatialReference"]
 
-        if len(dfields) > 0:
-            for fld in [fld for fld in dfields if fld in df.columns]:
-                if not pd.api.types.is_datetime64_any_dtype(df[fld]):
-                    try:
-                        df[fld] = pd.to_datetime(
-                            df[fld] / 1000,
-                            errors="coerce",
-                            unit="s",
-                        )
-                    except Exception:
-                        df[fld] = pd.to_datetime(
-                            df[fld],
-                            errors="coerce",
-                        )
+    rows = [feature_to_row(row, sr) for row in result["features"]]
+    if len(rows) == 0:
+        return None
+    df = pd.DataFrame.from_records(data=rows)
+    # set based on layer
+    df.spatial.renderer = layer.renderer
+    df.spatial._meta.source = layer.url
 
-        if dtypes:
-            df = df.astype(dtypes)
+    if "SHAPE" in df.columns:
+        df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        df.spatial.set_geometry("SHAPE")
 
-        return df
+    # work with the fields and their data types
+    dfields = []
+    dtypes = {}
+    if "fields" in result:
+        fields = result["fields"]
+        for fld in fields:
+            if fld["type"] != "esriFieldTypeGeometry":
+                dtypes[fld["name"]] = _fld_lu[fld["type"]]
+            if fld["type"] in [
+                "esriFieldTypeDate",
+                "esriFieldTypeDateOnly",
+                "esriFieldTypeTimestampOffset",
+            ]:
+                dfields.append(fld["name"])
+
+    if len(dfields) > 0:
+        for fld in [fld for fld in dfields if fld in df.columns]:
+            if not pd.api.types.is_datetime64_any_dtype(df[fld]):
+                try:
+                    df[fld] = pd.to_datetime(
+                        df[fld] / 1000,
+                        errors="coerce",
+                        unit="s",
+                    )
+                except Exception:
+                    df[fld] = pd.to_datetime(
+                        df[fld],
+                        errors="coerce",
+                    )
+
+    if dtypes:
+        df = df.astype(dtypes)
+
+    return df
