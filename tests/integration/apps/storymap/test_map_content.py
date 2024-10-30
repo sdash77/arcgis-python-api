@@ -41,9 +41,8 @@ class TestMapContent(unittest.TestCase):
                 assert isinstance(map_content.map, Item)
                 assert map_content.caption
                 assert isinstance(map.set_viewpoint(scale=storymap.Scales.CONTINENT), dict)
-
-        item = gis.content.get(story._itemid)
-        assert item.delete()
+            item = gis.content.get(story._itemid)
+            assert story.delete_story()
 
 
 if __name__ == "__main__":

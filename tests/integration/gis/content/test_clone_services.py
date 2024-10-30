@@ -56,7 +56,7 @@ class TestCloneServices(unittest.TestCase):
 
         finally:
             for item in created_items:
-                item.delete()
+                item.delete(permanent=True)
 
     # @unittest.skip("Skipping test")
     def test_export_cloning(self):
@@ -102,7 +102,7 @@ class TestCloneServices(unittest.TestCase):
 
         finally:
             for item in created_items:
-                item.delete()
+                item.delete(permanent=True)
 
     # @unittest.skip("Skipping test")
     def test_read_only_cloning(self):
@@ -172,7 +172,7 @@ class TestCloneServices(unittest.TestCase):
 
         finally:
             for item in created_items:
-                item.delete()
+                item.delete(permanent=True)
 
 
 @integration_test
@@ -243,7 +243,7 @@ class TestCloneEditorTracking(unittest.TestCase):
 
         finally:
             for item in created_items:
-                item.delete()
+                item.delete(permanent=True)
 
     # @unittest.skip("Skipping test")
     def test_export_editor(self):
@@ -313,7 +313,7 @@ class TestCloneEditorTracking(unittest.TestCase):
 
         finally:
             for item in created_items:
-                item.delete()
+                item.delete(permanent=True)
 
 
 if __name__ == "__main__":

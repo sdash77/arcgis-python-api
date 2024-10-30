@@ -22,7 +22,7 @@ class TestVideoContent(unittest.TestCase):
         assert vid.video
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_replace_url(self):
         # establish gis connection
@@ -43,7 +43,7 @@ class TestVideoContent(unittest.TestCase):
         assert vid._is_url
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":
