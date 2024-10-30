@@ -2208,11 +2208,8 @@ class FeatureLayer(Layer):
 
 
         """
-
-        return _query._common_query(
-            layer=self,
-            is_layer=True,
-            where=where,
+        # validate parameters
+        params = _query.QueryParameters(where=where,
             out_fields=out_fields,
             time_filter=time_filter,
             geometry_filter=geometry_filter,
@@ -2245,10 +2242,14 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             return_true_curves=return_true_curves,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            **kwargs,
+            )
+        return _query._common_query(
+            layer=self,
+            is_layer=True,
+            parameters=params, 
+            as_df=as_df,   
         )
 
     # ----------------------------------------------------------------------

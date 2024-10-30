@@ -1,11 +1,9 @@
 from typing import Union, Optional, Any, Literal
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Geometry
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 from arcgis.auth.tools import LazyLoader
 
 arcgis_features = LazyLoader("arcgis.features")
@@ -519,138 +517,123 @@ class QueryParameters(BaseModel):
             return value.filter
         return value
 
-    # TODO: add validation for return all records
+    @field_validator("out_fields", mode="before")
+    def validate_out_fields(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(value)
+        return value
 
+    @model_validator(mode='before')
+    def check_parameters(cls, values):
+        # Set return_all_records to False if either return_ids_only or return_count_only is True
+        if values.get('return_ids_only') or values.get('return_count_only'):
+            values['return_all_records'] = False
+        
+        # Set result_record_count to None if return_all_records is True
+        if values.get('return_all_records'):
+            values['result_record_count'] = None
+        
+        # Check the new conditions for order_by_fields
+        return_all_records = values.get('return_all_records')
+        out_statistics = values.get('out_statistics')
 
-class Query:
-    def __init__(
-        self,
-        layer,
-        parameters: QueryParameters,
-        query_3d: bool = False,
-        is_layer: bool = True,
-    ):
-        self.layer = layer
-        self.session = layer._con._session
-        self.is_layer = is_layer
-        self.query_3d = query_3d
-        self.parameters = self._create_parameters(parameters)
-        # pop out as_df from parameters
-        self.as_df = self.parameters.pop("as_df", False)
-
-    def execute(self):
-        url = self._get_url()
-        raw = True if self.query_3d else False
-        if self.as_df:
-            return self._query_df(url)
-        return self._execute_concurrently(url, raw)
-
-    def _get_url(self):
-        if self.query_3d and hasattr(self.layer, "_is_3d") and self.layer._is_3d:
-            url = self.layer._url + "/query3D"
-        # else query normal
-        elif self.layer._dynamic_layer is None:
-            url = self.layer._url + "/query"
-        else:
-            url = "%s/query" % self.layer._url.split("?")[0]
-        return url
-
-    def _remove_parameters(self, remove_params: list, params: dict):
-        """Removes parameters from the query parameters when needed"""
-        for param in remove_params:
-            try:
-                del params[param]
-            except:
-                pass
-        return params
-
-    def _create_parameters(
-        self,
-        parameters: QueryParameters,
-    ) -> dict[str, Any]:
-        ## Extract parameters
-        params = parameters.model_dump(mode="json", by_alias=True, exclude_none=True)
-        params["f"] = "json"
-
-        ## Update parameters based on query type
-        if self.query_3d:
-            # Remove un-accepted parameters for 3D querying
-            remove_params = ["returnDistinctValues", "returnCountOnly", "returnIdsOnly"]
-            params = self._remove_parameters(remove_params, params)
-        if not self.is_layer:
-            # Remove parameters for table query
-            remove_params = [
-                "returnExtentOnly",
-                "returnCentroid",
-                "returnGeometry",
-                "returnZ",
-                "returnM",
-                "formatOf3DObjects",
-            ]
-            params = self._remove_parameters(remove_params, params)
-
-        ## Update out fields
-        out_fields = params.get("outFields", "*")
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        # out_fields and object_ids workflow
-        if out_fields != "*" and not params["returnDistinctValues"]:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.layer.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-
-        params["outFields"] = out_fields
-
-        # add parameters based on other parameter values, if doesn't apply to table it will be ignored
-        if (
-            parameters.return_count_only
-            or parameters.return_extent_only
-            or parameters.return_ids_only
-        ):
-            parameters.return_all_records = False
-        if parameters.return_all_records:
-            params = self._remove_parameters(
-                ["resultRecordCount", "resultOffset"], params
-            )
-        if parameters.time_filter is None and self.layer.time_filter:
-            params["time"] = self.layer.time_filter
-
-        # handle geometry filter parameter
-        if parameters.geometry_filter and isinstance(parameters.geometry_filter, dict):
-            del params["geometryFilter"]
-            for key, val in parameters.geometry_filter.items():
-                params[key] = val
-
-        if not parameters.return_all_records or "outStatistics" in params:
-            # we cannot assume that because return_all_records is False it means we specified something else
-            if (
-                parameters.return_count_only
-                or parameters.return_extent_only
-                or parameters.return_ids_only
-            ):
+        if not return_all_records or out_statistics is None:
+            if (values.get('return_count_only') or 
+                values.get('return_extent_only') or 
+                values.get('return_ids_only')):
                 # Remove to avoid missing when wanting counts only
-                if "orderByFields" in params:
-                    del params["orderByFields"]
+                values['order_by_fields'] = None  # Adjust this based on your actual field
+        
+        return values
 
-        return params
+def _common_query(
+    layer,
+    is_layer: bool,
+    parameters: QueryParameters,
+    as_df: bool = False,
+    **kwargs,
+):
+    query_3d = kwargs.pop("query_3d", False)
+    raw = False  # default to False
+    # get url
+    # if raw is True it means it came from query 3D layer
+    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
+        url = layer._url + "/query3D"
+        raw = True
+    # else query normal
+    elif layer._dynamic_layer is None:
+        url = layer._url + "/query"
+    else:
+        url = "%s/query" % layer._url.split("?")[0]
 
-    
+    params = _create_parameters(
+        layer=layer,
+        is_layer=is_layer,
+        parameters = parameters,
+        query_3d=query_3d
+    )
+
+    # Two workflows: Return as FeatureSet or return as DataFrame
+    if as_df:
+        return _query_df(layer, url, params)
+    else:
+        return _query(layer, url, params, raw)
+
+
+def _create_parameters(
+    layer,
+    is_layer:bool,
+    parameters: QueryParameters,
+    query_3d:bool,
+):
+    # create parameters dictionary
+    params:dict[str, Any] = parameters.model_dump(mode='json', exclude_none=True, by_alias=True)
+    params["f"] = "json"
+
+    # add optional parameters
+    if layer._dynamic_layer is not None:
+        params["layer"] = layer._dynamic_layer
+
+    # Remove parameters that are not supported by 3D feature query
+    if query_3d:
+        del params["returnDistinctValues"]
+        del params["returnCountOnly"]
+        del params["returnIdsOnly"]
+
+    # Remove parameters that are not supported by table query
+    if is_layer is False:
+        del params["returnCentroid"]
+        del params["returnExtentOnly"]
+        del params["returnGeometry"]
+        del params["returnZ"]
+        del params["returnM"]
+
+    # layer specific workflows
+    if parameters.out_fields != "*" and parameters.return_distinct_values is False:
+        try:
+            # Check if object id field is in out_fields.
+            # If it isn't, add it
+            object_id_field = [
+                x.name for x in layer.properties.fields if x.type == "esriFieldTypeOID"
+            ][0]
+            if object_id_field not in out_fields.split(","):
+                out_fields = object_id_field + "," + out_fields
+            # update out_fields parameter
+            params["outFields"] = out_fields
+        except (IndexError, AttributeError):
+            pass
+
+    if parameters.time_filter is None and layer.time_filter:
+        params["time"] = layer.time_filter
+
+    return params
+
+
 def _query(layer, url, params, raw=False):
     """Returns results of the query for the provided layer and URL."""
     try:
         # Perform the initial query
-        result = layer._con._session.post(url, params, token=layer._token).json()
+        result = layer._con.post(url, params, token=layer._token)
         return _process_query_result(result, params, raw, layer, url)
     except Exception as query_exception:
         return _handle_query_exception(query_exception, layer, url, params, raw)
@@ -775,7 +758,7 @@ def _is_true(x):
         return False
 
 
-----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 def _query_df(layer, url, params, **kwargs):
     """returns results of a query as a pd.DataFrame"""
     import pandas as pd
