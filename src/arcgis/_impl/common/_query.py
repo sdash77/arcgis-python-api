@@ -158,7 +158,7 @@ class QueryParameters(BaseModel):
                     return_all_records is True (i.e. by default).
                     """,
     )
-    object_ids: Optional[list[str]] = Field(
+    object_ids: Optional[Union[list[str], str]] = Field(
         None,
         alias="objectIds",
         description="""Optional string. The object IDs of this layer or table to be queried.
@@ -528,20 +528,23 @@ class QueryParameters(BaseModel):
     @model_validator(mode="before")
     def check_parameters(cls, values):
         # If either return_ids_only or return_count_only or return_extent_only is True, set return_all_records to False
-        if values.get('return_ids_only') or values.get('return_count_only') or values.get('return_extent_only'):
-            values['return_all_records'] = False
-
-        # If return_all_records is True, set result_record_count to None
-        if values.get('return_all_records'):
-            values['result_record_count'] = None
+        if (
+            values.get("return_ids_only")
+            or values.get("return_count_only")
+            or values.get("return_extent_only")
+            or values.get("result_record_count") is not None
+        ):
+            values["return_all_records"] = False
 
         # Check the conditions for order_by_fields
-        if not values.get('return_all_records') or values.get('out_statistics') is None:
-            if (values.get('return_count_only') or
-                values.get('return_extent_only') or
-                values.get('return_ids_only')):
+        if not values.get("return_all_records") or values.get("out_statistics") is None:
+            if (
+                values.get("return_count_only")
+                or values.get("return_extent_only")
+                or values.get("return_ids_only")
+            ):
                 # Set order_by_fields to None if the conditions are met
-                values['order_by_fields'] = None
+                values["order_by_fields"] = None
 
         return values
 
@@ -565,6 +568,7 @@ def _common_query(
     else:
         return _query(layer, url, params, raw)
 
+
 def _get_url(layer, query_3d: bool = False):
     if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
         url = layer._url + "/query3D"
@@ -573,6 +577,7 @@ def _get_url(layer, query_3d: bool = False):
     else:
         url = "%s/query" % layer._url.split("?")[0]
     return url
+
 
 def _create_parameters(
     layer,
@@ -654,7 +659,12 @@ def _process_query_result(result, params, raw, layer, url):
     # Handle features and exceeded transfer limit
     features = result.get("features", [])
     if _needs_more_features(result, params, features):
-        features = _fetch_all_features(layer, url, params, features,result)
+        if params.get("resultOffset") or params.get("resultRecordCount"):
+            # When a user specifies either of these we go by id to make it more efficient
+            features = _fetch_all_features_by_id(layer, url, params, result)
+        else:
+            # A simple query to fetch features based on pagination
+            features = _fetch_all_features_simple(layer, url, params, features, result)
 
     result["features"] = features
     return arcgis_features.FeatureSet.from_dict(result)
@@ -667,38 +677,22 @@ def _needs_more_features(result, params, features):
     )
 
 
-# def _fetch_all_features(layer, url, params, features, result):
-#     """Fetches all features by handling pagination."""
-    # original_record_count = params.get("resultRecordCount")
-    # original_offset = params.get("resultOffset", 0)
-
-    # while result.get("exceededTransferLimit") is True:
-    #     if original_record_count is not None:
-    #         remaining_record_count = original_record_count - len(features)
-    #         if remaining_record_count <= 0:
-    #             break
-    #         params["resultRecordCount"] = remaining_record_count
-
-    #     params["resultOffset"] = len(features) + original_offset
-    #     result = layer._con._session.get(url, params=params).json()
-    #     features += result.get("features", [])
-
-#     return features
-
-def _fetch_all_features(layer, url, params, features, result):
+# Works as multi-threaded but simple query
+def _fetch_all_features_simple(layer, url, params, features, result):
     """Fetches all features by handling pagination."""
     original_offset = params.get("resultOffset", 0)
 
-    # Step 1: Preliminary query to determine total count
-    count_params = copy.deepcopy(params)
-    count_params["returnCountOnly"] = True
-    count_params["returnAllRecords"] = False #must be false when above True
-    count_result = layer._con._session.get(url, params=count_params).json()
-    total_count = count_result.get("count")
-
-    # Step 2: Set resultRecordCount to a fixed value per page (e.g., 1000)
     page_size = 1000
-    params["resultRecordCount"] = page_size  # Adjust page size as necessary
+    # Step 1: Preliminary query to determine total count
+    if params.get("resultRecordCount") is None:
+        count_params = copy.deepcopy(params)
+        count_params["returnCountOnly"] = True
+        count_params["returnAllRecords"] = False  # must be false when above True
+        count_result = layer._con._session.get(url, params=count_params).json()
+        total_count = count_result.get("count")
+        params["resultRecordCount"] = page_size  # Adjust page size as necessary
+    else:
+        total_count = params.get("resultRecordCount")
 
     # Step 3: Define function to fetch a page of features
     def fetch_page(offset, params):
@@ -710,14 +704,77 @@ def _fetch_all_features(layer, url, params, features, result):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
         # Calculate the number of requests needed, using page_size for offset increment
-        for offset in range(original_offset+len(features), total_count, page_size):
+        for offset in range(original_offset + len(features), total_count, page_size):
             futures.append(executor.submit(fetch_page, offset, params))
-        
+
         # Step 5: Process the results
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
             features += result.get("features", [])
 
+    return features
+
+
+def _fetch_all_ids(layer, url, params):
+    """Query to create a list of object ids."""
+    ids = []
+    id_params = copy.deepcopy(params)
+    id_params["returnIdsOnly"] = True
+    id_params["returnAllRecords"] = False  # must be false when above True
+    original_offset = id_params.get("resultOffset", 0)
+
+    # Get the total count of ids
+    if id_params.get("resultRecordCount") is None:
+        count_params = copy.deepcopy(params)
+        count_params["returnCountOnly"] = True
+        count_params["returnAllRecords"] = False  # must be false when above True
+        count_result = layer._con._session.get(url, params=count_params).json()
+        total_count = count_result.get("count")
+    else:
+        total_count = id_params.get("resultRecordCount")
+
+    # Perform query until all ids are fetched
+    while True:
+        result = layer._con._session.get(url, params=id_params).json()
+        ids.extend(result.get("objectIds", []))
+
+        if len(ids) >= total_count:
+            break
+        id_params["resultOffset"] = original_offset + len(ids)
+        if id_params.get("resultRecordCount") is not None:
+            id_params["resultRecordCount"] = total_count - len(ids)
+    return ids
+
+
+def _fetch_all_features_by_id(layer, url, params, result):
+    """Fetches all the features by handling pagination and uses the ids of the features."""
+    features = []  # start from an empty list
+    # Step 1: Query for all the ids using the parameters set
+    ids = _fetch_all_ids(layer, url, params)
+    params["resultRecordCount"] = (
+        None  # we got the number of ids, so no need to limit the records
+    )
+    params["resultOffset"] = 0  # reset the offset to 0
+
+    # Step 2: Define function to fetch a page of features
+    def fetch_page(ids_subset):
+        page_params = copy.deepcopy(params)
+        page_params["objectIds"] = ids_subset
+        return layer._con._session.get(url, params=page_params)
+
+    # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
+    with concurrent.futures.ThreadPoolExecutor(5) as executor:
+        futures = []
+        # Calculate the number of requests needed, using page_size for offset increment
+        page_size = 100
+        for i in range(0, len(ids), page_size):
+            ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
+            futures.append(executor.submit(fetch_page, ids_subset))
+
+        # Step 4: Process the results
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result().json()
+            features += result.get("features", [])
     return features
 
 
@@ -862,8 +919,12 @@ def _query_df(layer, url, params, **kwargs):
         result = layer._con.post(url, params, token=layer._token)
         # Handle features and exceeded transfer limit
         features = result.get("features", [])
-        if _needs_more_features(result, params, features):
-            features = _fetch_all_features(layer, url, params, features, result)
+        if params.get("resultOffset") or params.get("resultRecordCount"):
+            # When a user specifies either of these we go by id to make it more efficient
+            features = _fetch_all_features_by_id(layer, url, params, result)
+        else:
+            # A simple query to fetch features based on pagination
+            features = _fetch_all_features_simple(layer, url, params, features, result)
 
         result["features"] = features
     except Exception as query_exception:
