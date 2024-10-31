@@ -2209,7 +2209,8 @@ class FeatureLayer(Layer):
 
         """
         # validate parameters
-        params = _query.QueryParameters(where=where,
+        query_parameters = _query.QueryParameters(
+            where=where,
             out_fields=out_fields,
             time_filter=time_filter,
             geometry_filter=geometry_filter,
@@ -2244,12 +2245,12 @@ class FeatureLayer(Layer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
-            )
+        )
         return _query._common_query(
             layer=self,
             is_layer=True,
-            parameters=params, 
-            as_df=as_df,   
+            parameters=query_parameters,
+            as_df=as_df,
         )
 
     # ----------------------------------------------------------------------

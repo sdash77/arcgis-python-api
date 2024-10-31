@@ -1,15 +1,21 @@
+from __future__ import annotations
 from typing import Union, Optional, Any, Literal
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Geometry
+import concurrent.futures
+import copy
 from arcgis.auth.tools import LazyLoader
 
 arcgis_features = LazyLoader("arcgis.features")
 
 
 class QueryParameters(BaseModel):
+    model_config = ConfigDict(
+        extra="ignore", use_enum_values=True, populate_by_name=True
+    )
     where: str = Field(
         "1=1",
         alias="where",
@@ -26,7 +32,7 @@ class QueryParameters(BaseModel):
                     COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
                     """,
     )
-    out_fields: Union[str, list[str]] = Field(
+    out_fields: Optional[Union[str, list[str]]] = Field(
         "*",
         alias="outFields",
         description="""Optional list of fields to be included in the returned result set.
@@ -59,14 +65,15 @@ class QueryParameters(BaseModel):
         alias="geometryFilter",
         description="Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to be filtered on spatial relationship with another geometry.",
     )
-    return_geometry: bool = Field(
+    return_geometry: Optional[bool] = Field(
         True,
         alias="returnGeometry",
         description="Optional boolean. If true, geometry is returned with the query.",
     )
-    return_count_only: bool = Field(
+    return_count_only: Optional[bool] = Field(
         False,
         alias="returnCountOnly",
+        strict=True,
         description="""Optional boolean. If true, the response only includes the count
                     (number of features/records) that would be returned by a query.
                     Otherwise, the response is a feature set. The default is false. This
@@ -75,7 +82,7 @@ class QueryParameters(BaseModel):
                     the extent.
                     """,
     )
-    return_ids_only: bool = Field(
+    return_ids_only: Optional[bool] = Field(
         False,
         alias="returnIdsOnly",
         description="""Optional boolean. Default is False.  If true, the response only
@@ -84,7 +91,7 @@ class QueryParameters(BaseModel):
                                             true is invalid.
                     """,
     )
-    return_distinct_values: bool = Field(
+    return_distinct_values: Optional[bool] = Field(
         False,
         alias="returnDistinctValues",
         description="""Optional boolean.  If true, it returns distinct values based on the
@@ -98,7 +105,7 @@ class QueryParameters(BaseModel):
                         Otherwise, reliable results will not be returned.
                     """,
     )
-    return_extent_only: bool = Field(
+    return_extent_only: Optional[bool] = Field(
         False,
         alias="returnExtentOnly",
         description="""Optional boolean. If true, the response only includes the extent of
@@ -261,17 +268,17 @@ class QueryParameters(BaseModel):
                     ]
                     """,
     )
-    return_z: bool = Field(
+    return_z: Optional[bool] = Field(
         False,
         alias="returnZ",
         description="Optional boolean. If true, Z values are included in the results if the features have Z values. Otherwise, Z values are not returned.",
     )
-    return_m: bool = Field(
+    return_m: Optional[bool] = Field(
         False,
         alias="returnM",
         description="Optional boolean. If true, M values are included in the results if the features have M values. Otherwise, M values are not returned.",
     )
-    multipatch_option: tuple = Field(
+    multipatch_option: Optional[tuple] = Field(
         None,
         alias="multipatchOption",
         description="Optional x/y footprint. This option dictates how the geometry of a multipatch feature will be returned.",
@@ -281,7 +288,7 @@ class QueryParameters(BaseModel):
         alias="quantizationParameters",
         description="Optional dict. Used to project the geometry onto a virtual grid, likely representing pixels on the screen.",
     )
-    return_centroid: bool = Field(
+    return_centroid: Optional[bool] = Field(
         False,
         alias="returnCentroid",
         description="""Optional boolean. Used to return the geometry centroid associated
@@ -290,7 +297,7 @@ class QueryParameters(BaseModel):
                     polygon geometry type.
                     """,
     )
-    return_all_records: bool = Field(
+    return_all_records: Optional[bool] = Field(
         True,
         alias="returnAllRecords",
         description="""Optional boolean. When True, the query operation will call the
@@ -328,7 +335,7 @@ class QueryParameters(BaseModel):
                     depends on useStandardizedQuery parameter.
                     """,
     )
-    return_true_curves: bool = Field(
+    return_true_curves: Optional[bool] = Field(
         False,
         alias="returnTrueCurves",
         description="""Optional boolean. When set to true, returns true curves in output
@@ -348,11 +355,6 @@ class QueryParameters(BaseModel):
                     This allows a client to find the resolution in which the transfer
                     limit is no longer exceeded without making multiple calls.
                     """,
-    )
-    as_df: bool = Field(
-        False,
-        alias="as_df",
-        description="Optional boolean.  If True, the results are returned as a DataFrame instead of a FeatureSet.",
     )
     datum_transformation: Optional[Union[int, dict[str, Any]]] = Field(
         None,
@@ -523,54 +525,38 @@ class QueryParameters(BaseModel):
             return ",".join(value)
         return value
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def check_parameters(cls, values):
-        # Set return_all_records to False if either return_ids_only or return_count_only is True
-        if values.get('return_ids_only') or values.get('return_count_only'):
+        # If either return_ids_only or return_count_only or return_extent_only is True, set return_all_records to False
+        if values.get('return_ids_only') or values.get('return_count_only') or values.get('return_extent_only'):
             values['return_all_records'] = False
-        
-        # Set result_record_count to None if return_all_records is True
+
+        # If return_all_records is True, set result_record_count to None
         if values.get('return_all_records'):
             values['result_record_count'] = None
-        
-        # Check the new conditions for order_by_fields
-        return_all_records = values.get('return_all_records')
-        out_statistics = values.get('out_statistics')
 
-        if not return_all_records or out_statistics is None:
-            if (values.get('return_count_only') or 
-                values.get('return_extent_only') or 
+        # Check the conditions for order_by_fields
+        if not values.get('return_all_records') or values.get('out_statistics') is None:
+            if (values.get('return_count_only') or
+                values.get('return_extent_only') or
                 values.get('return_ids_only')):
-                # Remove to avoid missing when wanting counts only
-                values['order_by_fields'] = None  # Adjust this based on your actual field
-        
+                # Set order_by_fields to None if the conditions are met
+                values['order_by_fields'] = None
+
         return values
+
 
 def _common_query(
     layer,
     is_layer: bool,
     parameters: QueryParameters,
     as_df: bool = False,
-    **kwargs,
+    query_3d: bool = False,
 ):
-    query_3d = kwargs.pop("query_3d", False)
-    raw = False  # default to False
-    # get url
-    # if raw is True it means it came from query 3D layer
-    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
-        url = layer._url + "/query3D"
-        raw = True
-    # else query normal
-    elif layer._dynamic_layer is None:
-        url = layer._url + "/query"
-    else:
-        url = "%s/query" % layer._url.split("?")[0]
-
+    raw = True if query_3d else False
+    url = _get_url(layer, query_3d=query_3d)
     params = _create_parameters(
-        layer=layer,
-        is_layer=is_layer,
-        parameters = parameters,
-        query_3d=query_3d
+        layer=layer, is_layer=is_layer, parameters=parameters, query_3d=query_3d
     )
 
     # Two workflows: Return as FeatureSet or return as DataFrame
@@ -579,15 +565,25 @@ def _common_query(
     else:
         return _query(layer, url, params, raw)
 
+def _get_url(layer, query_3d: bool = False):
+    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
+        url = layer._url + "/query3D"
+    elif layer._dynamic_layer is None:
+        url = layer._url + "/query"
+    else:
+        url = "%s/query" % layer._url.split("?")[0]
+    return url
 
 def _create_parameters(
     layer,
-    is_layer:bool,
+    is_layer: bool,
     parameters: QueryParameters,
-    query_3d:bool,
+    query_3d: bool,
 ):
     # create parameters dictionary
-    params:dict[str, Any] = parameters.model_dump(mode='json', exclude_none=True, by_alias=True)
+    params: dict[str, Any] = parameters.model_dump(
+        mode="json", exclude_none=True, by_alias=True
+    )
     params["f"] = "json"
 
     # add optional parameters
@@ -633,7 +629,7 @@ def _query(layer, url, params, raw=False):
     """Returns results of the query for the provided layer and URL."""
     try:
         # Perform the initial query
-        result = layer._con.post(url, params, token=layer._token)
+        result = layer._con._session.get(url, params=params).json()
         return _process_query_result(result, params, raw, layer, url)
     except Exception as query_exception:
         return _handle_query_exception(query_exception, layer, url, params, raw)
@@ -658,7 +654,7 @@ def _process_query_result(result, params, raw, layer, url):
     # Handle features and exceeded transfer limit
     features = result.get("features", [])
     if _needs_more_features(result, params, features):
-        features = _fetch_all_features(layer, url, params, features, result)
+        features = _fetch_all_features(layer, url, params, features,result)
 
     result["features"] = features
     return arcgis_features.FeatureSet.from_dict(result)
@@ -671,21 +667,56 @@ def _needs_more_features(result, params, features):
     )
 
 
+# def _fetch_all_features(layer, url, params, features, result):
+#     """Fetches all features by handling pagination."""
+    # original_record_count = params.get("resultRecordCount")
+    # original_offset = params.get("resultOffset", 0)
+
+    # while result.get("exceededTransferLimit") is True:
+    #     if original_record_count is not None:
+    #         remaining_record_count = original_record_count - len(features)
+    #         if remaining_record_count <= 0:
+    #             break
+    #         params["resultRecordCount"] = remaining_record_count
+
+    #     params["resultOffset"] = len(features) + original_offset
+    #     result = layer._con._session.get(url, params=params).json()
+    #     features += result.get("features", [])
+
+#     return features
+
 def _fetch_all_features(layer, url, params, features, result):
     """Fetches all features by handling pagination."""
-    original_record_count = params.get("resultRecordCount")
     original_offset = params.get("resultOffset", 0)
 
-    while result.get("exceededTransferLimit") is True:
-        if original_record_count is not None:
-            remaining_record_count = original_record_count - len(features)
-            if remaining_record_count <= 0:
-                break
-            params["resultRecordCount"] = remaining_record_count
+    # Step 1: Preliminary query to determine total count
+    count_params = copy.deepcopy(params)
+    count_params["returnCountOnly"] = True
+    count_params["returnAllRecords"] = False #must be false when above True
+    count_result = layer._con._session.get(url, params=count_params).json()
+    total_count = count_result.get("count")
 
-        params["resultOffset"] = len(features) + original_offset
-        result = layer._con.post(path=url, postdata=params, token=layer._token)
-        features += result.get("features", [])
+    # Step 2: Set resultRecordCount to a fixed value per page (e.g., 1000)
+    page_size = 1000
+    params["resultRecordCount"] = page_size  # Adjust page size as necessary
+
+    # Step 3: Define function to fetch a page of features
+    def fetch_page(offset, params):
+        page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
+        page_params["resultOffset"] = offset
+        return layer._con._session.get(url, params=page_params).json()
+
+    # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        # Calculate the number of requests needed, using page_size for offset increment
+        for offset in range(original_offset+len(features), total_count, page_size):
+            futures.append(executor.submit(fetch_page, offset, params))
+        
+        # Step 5: Process the results
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            features += result.get("features", [])
 
     return features
 
