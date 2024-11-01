@@ -524,6 +524,12 @@ class QueryParameters(BaseModel):
         if isinstance(value, (list, tuple)):
             return ",".join(value)
         return value
+    
+    @field_validator("object_ids", mode="before")
+    def validate_object_ids(cls, value):
+        if isinstance(value, (list, tuple)):
+            return ",".join(map(str,value))
+        return value
 
     @model_validator(mode="before")
     def check_parameters(cls, values):
@@ -634,7 +640,10 @@ def _query(layer, url, params, raw=False):
     """Returns results of the query for the provided layer and URL."""
     try:
         # Perform the initial query
-        result = layer._con._session.get(url, params=params).json()
+        if params.get("objectIds"):
+            result = {"features":_fetch_all_features_by_id(layer, url, params)}
+        else:
+            result = layer._con._session.get(url, params=params).json()
         return _process_query_result(result, params, raw, layer, url)
     except Exception as query_exception:
         return _handle_query_exception(query_exception, layer, url, params, raw)
@@ -659,9 +668,9 @@ def _process_query_result(result, params, raw, layer, url):
     # Handle features and exceeded transfer limit
     features = result.get("features", [])
     if _needs_more_features(result, params, features):
-        if params.get("resultOffset") or params.get("resultRecordCount"):
+        if params.get("resultOffset") or params.get("resultRecordCount") or params.get("objectIds"):
             # When a user specifies either of these we go by id to make it more efficient
-            features = _fetch_all_features_by_id(layer, url, params, result)
+            features = _fetch_all_features_by_id(layer, url, params)
         else:
             # A simple query to fetch features based on pagination
             features = _fetch_all_features_simple(layer, url, params, features, result)
@@ -672,7 +681,7 @@ def _process_query_result(result, params, raw, layer, url):
 
 def _needs_more_features(result, params, features):
     """Checks if more features need to be fetched."""
-    return result.get("exceededTransferLimit") or (
+    return result.get("exceededTransferLimit") or (params.get("resultRecordCount") and
         params.get("resultRecordCount") != len(features)
     )
 
@@ -701,7 +710,7 @@ def _fetch_all_features_simple(layer, url, params, features, result):
         return layer._con._session.get(url, params=page_params).json()
 
     # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(5) as executor:
         futures = []
         # Calculate the number of requests needed, using page_size for offset increment
         for offset in range(original_offset + len(features), total_count, page_size):
@@ -746,11 +755,11 @@ def _fetch_all_ids(layer, url, params):
     return ids
 
 
-def _fetch_all_features_by_id(layer, url, params, result):
+def _fetch_all_features_by_id(layer, url, params):
     """Fetches all the features by handling pagination and uses the ids of the features."""
     features = []  # start from an empty list
     # Step 1: Query for all the ids using the parameters set
-    ids = _fetch_all_ids(layer, url, params)
+    ids = params.get("objectIds") or _fetch_all_ids(layer, url, params)
     params["resultRecordCount"] = (
         None  # we got the number of ids, so no need to limit the records
     )

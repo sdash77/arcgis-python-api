@@ -4252,9 +4252,7 @@ class Table(FeatureLayer):
             <149>
 
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=False,
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -4273,9 +4271,13 @@ class Table(FeatureLayer):
             historic_moment=historic_moment,
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             time_reference_unknown_client=time_reference_unknown_client,
-            **kwargs,
+        )
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            parameters=query_params,
+            as_df=as_df,
         )
 
 
