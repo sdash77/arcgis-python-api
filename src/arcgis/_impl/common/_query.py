@@ -10,6 +10,7 @@ import copy
 from arcgis.auth.tools import LazyLoader
 
 arcgis_features = LazyLoader("arcgis.features")
+pd = LazyLoader("pandas")
 
 
 class QueryParameters(BaseModel):
@@ -554,462 +555,416 @@ class QueryParameters(BaseModel):
 
         return values
 
+class Query:
+    def __init__(self, layer, parameters, is_layer: bool = True, query_3d: bool = False, as_df: bool = False):
+        self.layer = layer
+        self.is_layer = is_layer
+        self.query_3d = query_3d
+        self.as_df = as_df
+        self.parameters = self.create_parameters(parameters)
+        
+    def create_parameters(
+        self,
+        parameters: QueryParameters,
+    ) -> dict[str, Any]:
+        # create parameters dictionary
+        params: dict[str, Any] = parameters.model_dump(
+            mode="json", exclude_none=True, by_alias=True
+        )
+        params["f"] = "json"
 
-def _common_query(
-    layer,
-    is_layer: bool,
-    parameters: QueryParameters,
-    as_df: bool = False,
-    query_3d: bool = False,
-):
-    raw = True if query_3d else False
-    url = _get_url(layer, query_3d=query_3d)
-    params = _create_parameters(
-        layer=layer, is_layer=is_layer, parameters=parameters, query_3d=query_3d
-    )
+        # add optional parameters
+        if self.layer._dynamic_layer is not None:
+            params["layer"] = self.layer._dynamic_layer
 
-    # Two workflows: Return as FeatureSet or return as DataFrame
-    if as_df:
-        return _query_df(layer, url, params)
-    else:
-        return _query(layer, url, params, raw)
+        # Remove parameters that are not supported by 3D feature query
+        if self.query_3d:
+            del params["returnDistinctValues"]
+            del params["returnCountOnly"]
+            del params["returnIdsOnly"]
 
+        # Remove parameters that are not supported by table query
+        if self.is_layer is False:
+            del params["returnCentroid"]
+            del params["returnExtentOnly"]
+            del params["returnGeometry"]
+            del params["returnZ"]
+            del params["returnM"]
 
-def _get_url(layer, query_3d: bool = False):
-    if query_3d and hasattr(layer, "_is_3d") and layer._is_3d:
-        url = layer._url + "/query3D"
-    elif layer._dynamic_layer is None:
-        url = layer._url + "/query"
-    else:
-        url = "%s/query" % layer._url.split("?")[0]
-    return url
+        # layer specific workflows
+        if parameters.out_fields != "*" and parameters.return_distinct_values is False:
+            try:
+                # Check if object id field is in out_fields.
+                # If it isn't, add it
+                object_id_field = [
+                    x.name for x in self.layer.properties.fields if x.type == "esriFieldTypeOID"
+                ][0]
+                if object_id_field not in out_fields.split(","):
+                    out_fields = object_id_field + "," + out_fields
+                # update out_fields parameter
+                params["outFields"] = out_fields
+            except (IndexError, AttributeError):
+                pass
 
+        if parameters.time_filter is None and self.layer.time_filter:
+            params["time"] = self.layer.time_filter
 
-def _create_parameters(
-    layer,
-    is_layer: bool,
-    parameters: QueryParameters,
-    query_3d: bool,
-):
-    # create parameters dictionary
-    params: dict[str, Any] = parameters.model_dump(
-        mode="json", exclude_none=True, by_alias=True
-    )
-    params["f"] = "json"
+        return params
 
-    # add optional parameters
-    if layer._dynamic_layer is not None:
-        params["layer"] = layer._dynamic_layer
+    def execute(self):
+        raw = True if self.query_3d else False
+        url = self._get_url()
 
-    # Remove parameters that are not supported by 3D feature query
-    if query_3d:
-        del params["returnDistinctValues"]
-        del params["returnCountOnly"]
-        del params["returnIdsOnly"]
-
-    # Remove parameters that are not supported by table query
-    if is_layer is False:
-        del params["returnCentroid"]
-        del params["returnExtentOnly"]
-        del params["returnGeometry"]
-        del params["returnZ"]
-        del params["returnM"]
-
-    # layer specific workflows
-    if parameters.out_fields != "*" and parameters.return_distinct_values is False:
-        try:
-            # Check if object id field is in out_fields.
-            # If it isn't, add it
-            object_id_field = [
-                x.name for x in layer.properties.fields if x.type == "esriFieldTypeOID"
-            ][0]
-            if object_id_field not in out_fields.split(","):
-                out_fields = object_id_field + "," + out_fields
-            # update out_fields parameter
-            params["outFields"] = out_fields
-        except (IndexError, AttributeError):
-            pass
-
-    if parameters.time_filter is None and layer.time_filter:
-        params["time"] = layer.time_filter
-
-    return params
-
-
-def _query(layer, url, params, raw=False):
-    """Returns results of the query for the provided layer and URL."""
-    try:
-        # Perform the initial query
-        if params.get("objectIds"):
-            result = {"features":_fetch_all_features_by_id(layer, url, params)}
+        # Two workflows: Return as FeatureSet or return as DataFrame
+        return self._query(url, raw)
+        
+    def _get_url(self):
+        if self.query_3d and hasattr(self.layer, "_is_3d") and self.layer._is_3d:
+            url = self.layer._url + "/query3D"
+        elif self.layer._dynamic_layer is None:
+            url = self.layer._url + "/query"
         else:
-            result = layer._con._session.get(url, params=params).json()
-        return _process_query_result(result, params, raw, layer, url)
-    except Exception as query_exception:
-        return _handle_query_exception(query_exception, layer, url, params, raw)
+            url = "%s/query" % self.layer._url.split("?")[0]
+        return url
 
-
-def _process_query_result(result, params, raw, layer, url):
-    """Processes the query result based on the parameters and handles pagination."""
-    # Handle errors in the result
-    if "error" in result:
-        raise ValueError(result)
-
-    # Determine the type of result to return
-    if _is_true(params.get("returnCountOnly")):
-        return result["count"]
-    elif _is_true(params.get("returnIdsOnly")) or _is_true(
-        params.get("returnExtentOnly")
-    ):
-        return result
-    elif _is_true(raw):
-        return result
-
-    # Handle features and exceeded transfer limit
-    features = result.get("features", [])
-    if _needs_more_features(result, params, features):
-        if params.get("resultOffset") or params.get("resultRecordCount") or params.get("objectIds"):
-            # When a user specifies either of these we go by id to make it more efficient
-            features = _fetch_all_features_by_id(layer, url, params)
-        else:
-            # A simple query to fetch features based on pagination
-            features = _fetch_all_features_simple(layer, url, params, features, result)
-
-    result["features"] = features
-    return arcgis_features.FeatureSet.from_dict(result)
-
-
-def _needs_more_features(result, params, features):
-    """Checks if more features need to be fetched."""
-    return result.get("exceededTransferLimit") or (params.get("resultRecordCount") and
-        params.get("resultRecordCount") != len(features)
-    )
-
-
-# Works as multi-threaded but simple query
-def _fetch_all_features_simple(layer, url, params, features, result):
-    """Fetches all features by handling pagination."""
-    original_offset = params.get("resultOffset", 0)
-
-    page_size = 1000
-    # Step 1: Preliminary query to determine total count
-    if params.get("resultRecordCount") is None:
-        count_params = copy.deepcopy(params)
-        count_params["returnCountOnly"] = True
-        count_params["returnAllRecords"] = False  # must be false when above True
-        count_result = layer._con._session.get(url, params=count_params).json()
-        total_count = count_result.get("count")
-        params["resultRecordCount"] = page_size  # Adjust page size as necessary
-    else:
-        total_count = params.get("resultRecordCount")
-
-    # Step 3: Define function to fetch a page of features
-    def fetch_page(offset, params):
-        page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
-        page_params["resultOffset"] = offset
-        return layer._con._session.get(url, params=page_params).json()
-
-    # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
-    with concurrent.futures.ThreadPoolExecutor(5) as executor:
-        futures = []
-        # Calculate the number of requests needed, using page_size for offset increment
-        for offset in range(original_offset + len(features), total_count, page_size):
-            futures.append(executor.submit(fetch_page, offset, params))
-
-        # Step 5: Process the results
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            features += result.get("features", [])
-
-    return features
-
-
-def _fetch_all_ids(layer, url, params):
-    """Query to create a list of object ids."""
-    ids = []
-    id_params = copy.deepcopy(params)
-    id_params["returnIdsOnly"] = True
-    id_params["returnAllRecords"] = False  # must be false when above True
-    original_offset = id_params.get("resultOffset", 0)
-
-    # Get the total count of ids
-    if id_params.get("resultRecordCount") is None:
-        count_params = copy.deepcopy(params)
-        count_params["returnCountOnly"] = True
-        count_params["returnAllRecords"] = False  # must be false when above True
-        count_result = layer._con._session.get(url, params=count_params).json()
-        total_count = count_result.get("count")
-    else:
-        total_count = id_params.get("resultRecordCount")
-
-    # Perform query until all ids are fetched
-    while True:
-        result = layer._con._session.get(url, params=id_params).json()
-        ids.extend(result.get("objectIds", []))
-
-        if len(ids) >= total_count:
-            break
-        id_params["resultOffset"] = original_offset + len(ids)
-        if id_params.get("resultRecordCount") is not None:
-            id_params["resultRecordCount"] = total_count - len(ids)
-    return ids
-
-
-def _fetch_all_features_by_id(layer, url, params):
-    """Fetches all the features by handling pagination and uses the ids of the features."""
-    features = []  # start from an empty list
-    # Step 1: Query for all the ids using the parameters set
-    ids = params.get("objectIds") or _fetch_all_ids(layer, url, params)
-    params["resultRecordCount"] = (
-        None  # we got the number of ids, so no need to limit the records
-    )
-    params["resultOffset"] = 0  # reset the offset to 0
-
-    # Step 2: Define function to fetch a page of features
-    def fetch_page(ids_subset):
-        page_params = copy.deepcopy(params)
-        page_params["objectIds"] = ids_subset
-        return layer._con._session.get(url, params=page_params)
-
-    # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
-    with concurrent.futures.ThreadPoolExecutor(5) as executor:
-        futures = []
-        # Calculate the number of requests needed, using page_size for offset increment
-        page_size = 100
-        for i in range(0, len(ids), page_size):
-            ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
-            futures.append(executor.submit(fetch_page, ids_subset))
-
-        # Step 4: Process the results
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result().json()
-            features += result.get("features", [])
-    return features
-
-
-def _handle_query_exception(query_exception, layer, url, params, raw):
-    """Handles exceptions raised during the query process."""
-    error_messages = [
-        "Error performing query operation",
-        "HTTP Error 504: GATEWAY_TIMEOUT",
-    ]
-
-    if _is_invalid_token_error(query_exception):
-        params.pop("token", None)
-        return _query(layer, url, params, raw)
-
-    if _is_known_error(query_exception, error_messages):
-        return _retry_query_with_fewer_records(layer, url, params, raw)
-
-    raise query_exception
-
-
-def _is_invalid_token_error(exception):
-    """Checks if the exception is due to an invalid token."""
-    return (
-        isinstance(exception.args[0], str)
-        and "invalid token" in exception.args[0].lower()
-    )
-
-
-def _is_known_error(exception, error_messages):
-    """Checks if the exception contains a known error message."""
-    return any(msg in str(exception) for msg in error_messages)
-
-
-def _retry_query_with_fewer_records(layer, url, params, raw):
-    """Retries the query with a reduced result record count."""
-    max_record = params.get("resultRecordCount", 1000)
-    offset = params.get("resultOffset", 0)
-
-    if max_record < 250:
-        raise Exception("Max record count too low; query still failing.")
-
-    result = None
-    max_rec = (max_record + 1) // 2  # Halve the record count
-    i = 0
-
-    while max_rec * i < max_record:
-        params["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
-        params["resultOffset"] = offset + max_rec * i
-
+    def _query(self, url, raw=False):
+        """Returns results of the query for the provided layer and URL."""
         try:
-            records = _query(layer, url, params, raw=True)
-            if result:
-                result["features"].extend(records["features"])
-            else:
-                result = records
-            i += 1
-        except Exception as retry_exception:
-            raise retry_exception
-
-    return result
+            # Perform the initial query
+            result = self.layer._con._session.get(url, params=self.parameters).json()
+            return self._process_query_result(result, raw, url)
+        except Exception as query_exception:
+            return self._handle_query_exception(query_exception, url)
 
 
-def _is_true(x):
-    if isinstance(x, bool) and x:
-        return True
-    elif isinstance(x, str) and x.lower() == "true":
-        return True
-    else:
-        return False
+    def _process_query_result(self, result, raw, url):
+        """Processes the query result based on the parameters and handles pagination."""
+        # Handle errors in the result
+        if "error" in result:
+            raise ValueError(result)
 
+        # Determine the type of result to return
+        if self._is_true(self.parameters.get("returnCountOnly")):
+            return result["count"]
+        elif self._is_true(self.parameters.get("returnIdsOnly")) or self._is_true(
+            self.parameters.get("returnExtentOnly")
+        ):
+            return result
+        elif self._is_true(raw):
+            return result
 
-# ----------------------------------------------------------------------
-def _query_df(layer, url, params, **kwargs):
-    """returns results of a query as a pd.DataFrame"""
-    import pandas as pd
-    import numpy as np
-
-    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
-        _fld_lu = {
-            "esriFieldTypeSmallInteger": np.int32,
-            "esriFieldTypeInteger": np.int32,
-            "esriFieldTypeSingle": float,
-            "esriFieldTypeDouble": float,
-            "esriFieldTypeFloat": float,
-            "esriFieldTypeString": str,
-            "esriFieldTypeDate": pd.datetime,
-            "esriFieldTypeOID": np.int64,
-            "esriFieldTypeGeometry": object,
-            "esriFieldTypeBlob": object,
-            "esriFieldTypeRaster": object,
-            "esriFieldTypeGUID": str,
-            "esriFieldTypeGlobalID": str,
-            "esriFieldTypeXML": object,
-            "esriFieldTypeTimeOnly": pd.datetime,
-            "esriFieldTypeDateOnly": pd.datetime,
-            "esriFieldTypeTimestampOffset": pd.datetime,
-        }
-    else:
-        _fld_lu = {
-            "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-            "esriFieldTypeInteger": pd.Int32Dtype(),
-            "esriFieldTypeSingle": pd.Float64Dtype(),
-            "esriFieldTypeDouble": pd.Float64Dtype(),
-            "esriFieldTypeFloat": pd.Float64Dtype(),
-            "esriFieldTypeString": pd.StringDtype(),
-            "esriFieldTypeDate": "<M8[ns]",
-            "esriFieldTypeOID": pd.Int64Dtype(),
-            "esriFieldTypeGeometry": object,
-            "esriFieldTypeBlob": object,
-            "esriFieldTypeRaster": object,
-            "esriFieldTypeGUID": pd.StringDtype(),
-            "esriFieldTypeGlobalID": pd.StringDtype(),
-            "esriFieldTypeXML": object,
-            "esriFieldTypeTimeOnly": pd.StringDtype(),
-            "esriFieldTypeDateOnly": "<M8[ns]",
-            "esriFieldTypeTimestampOffset": object,
-            "esriFieldTypeBigInteger": pd.Int64Dtype(),
-        }
-
-    def feature_to_row(feature, sr):
-        """:return: a feature from a dict"""
-        geom = feature["geometry"] if "geometry" in feature else None
-        attribs = feature["attributes"] if "attributes" in feature else {}
-        if "centroid" in feature:
-            if attribs is None:
-                attribs = {"centroid": feature["centroid"]}
-            elif "centroid" in attribs:
-                import uuid
-
-                fld = "centroid_" + uuid.uuid4().hex[:2]
-                attribs[fld] = feature["centroid"]
-            else:
-                attribs["centroid"] = feature["centroid"]
-        if geom:
-            if "spatialReference" not in geom:
-                geom["spatialReference"] = sr
-            attribs["SHAPE"] = Geometry(geom)
-        return attribs
-
-    try:
-        # Perform the initial query
-        result = layer._con.post(url, params, token=layer._token)
-        # Handle features and exceeded transfer limit
         features = result.get("features", [])
-        if params.get("resultOffset") or params.get("resultRecordCount"):
-            # When a user specifies either of these we go by id to make it more efficient
-            features = _fetch_all_features_by_id(layer, url, params, result)
-        else:
-            # A simple query to fetch features based on pagination
-            features = _fetch_all_features_simple(layer, url, params, features, result)
+        if self._needs_more_features(result, features):
+            # Pagination workflow
+            if self.parameters.get("objectIds") or self.parameters.get("orderByFields"):
+                # When objectIds or orderByFields are provided, we use a single threaded workflow
+                features = self._fetch_all_features_single_thread(url, features)
+            elif self.parameters.get("resultRecordCount"):
+                # When a user specifies either of these we can make pre-defined chunks
+                features = self._fetch_all_features_by_chunk(url)
+            else:
+                # Otherwise, we use a concurrent workflow to fetch all features
+                features = self._fetch_all_features_concurrent(url, features)
 
         result["features"] = features
-    except Exception as query_exception:
-        return _handle_query_exception(query_exception, layer, url, params, False)
+        if self.as_df:
+            return self._query_df(result)
+        return arcgis_features.FeatureSet.from_dict(result)
 
-    if len(result["features"]) == 0:
-        # create columns even if empty dataframe
-        columns = {}
-        for fld in layer.properties.fields:
-            fld = dict(fld)
-            columns[fld["name"]] = _fld_lu[fld["type"]]
-        if (
-            "geometryType" in layer.properties
-            and layer.properties.geometryType is not None
-        ):
-            columns["SHAPE"] = object
-        if "return_geometry" in params and params["return_geometry"] == False:
-            columns.pop("SHAPE", None)
-        df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-        if "out_fields" in params and params["out_fields"] != "*":
-            df = df[params["out_fields"].split(",")].copy()
+    def _is_true(self, x):
+        if isinstance(x, bool) and x:
+            return True
+        elif isinstance(x, str) and x.lower() == "true":
+            return True
+        else:
+            return False
+
+    def _needs_more_features(self, result, features):
+        """
+        Checks if more features need to be fetched. 
+        This can be because exceededTransferLimit is True 
+        or resultRecordCount is set and the number of 
+        features fetched is less than the resultRecordCount.
+        """
+        return result.get("exceededTransferLimit") or (self.parameters.get("resultRecordCount") and
+            self.parameters.get("resultRecordCount") != len(features)
+        )
+
+    def _fetch_all_features_single_thread(self, url, features):
+        """Fetches all features by handling pagination."""
+        original_record_count = self.parameters.get("resultRecordCount")
+        original_offset = self.parameters.get("resultOffset", 0)
+
+        while result.get("exceededTransferLimit") is True:
+            if original_record_count is not None:
+                remaining_record_count = original_record_count - len(features)
+                if remaining_record_count <= 0:
+                    break
+                self.parameters["resultRecordCount"] = remaining_record_count
+
+            self.parameters["resultOffset"] = len(features) + original_offset
+            result = self.layer._con._session.get(url, params=self.parameters).json()
+            features += result.get("features", [])
+
+        return features
+
+    def _fetch_all_features_concurrent(self, url, features):
+        """Fetches all features by handling pagination and using concurrent requests."""
+        original_offset = self.parameters.get("resultOffset", 0)
+
+        page_size = 1000
+        # Step 1: Preliminary query to determine total count
+        if self.parameters.get("resultRecordCount") is None:
+            count_params = copy.deepcopy(self.parameters)
+            count_params["returnCountOnly"] = True
+            count_params["returnAllRecords"] = False  # must be false when above True
+            count_result = self.layer._con._session.get(url, params=count_params).json()
+            total_count = count_result.get("count")
+            self.parameters["resultRecordCount"] = page_size  # Adjust page size as necessary
+        else:
+            total_count = self.parameters.get("resultRecordCount")
+
+        # Step 3: Define function to fetch a page of features
+        def fetch_page(offset, params):
+            page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
+            page_params["resultOffset"] = offset
+            return self.layer._con._session.get(url, params=page_params).json()
+
+        # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
+        with concurrent.futures.ThreadPoolExecutor(5) as executor:
+            futures = []
+            # Calculate the number of requests needed, using page_size for offset increment
+            for offset in range(original_offset + len(features), total_count, page_size):
+                futures.append(executor.submit(fetch_page, offset, self.parameters))
+
+            # Step 5: Process the results
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                features += result.get("features", [])
+
+        return features
+
+
+    def _fetch_all_ids(self, url):
+        """Query to create a list of object ids."""
+        ids = []
+        id_params = copy.deepcopy(self.parameters)
+        id_params["returnIdsOnly"] = True
+        id_params["returnAllRecords"] = False  # must be false when above True
+        original_offset = id_params.get("resultOffset", 0)
+
+        # Get the total count of ids
+        if id_params.get("resultRecordCount") is None:
+            count_params = copy.deepcopy(self.parameters)
+            count_params["returnCountOnly"] = True
+            count_params["returnAllRecords"] = False  # must be false when above True
+            count_result = self.layer._con._session.get(url, params=count_params).json()
+            total_count = count_result.get("count")
+        else:
+            total_count = id_params.get("resultRecordCount")
+
+        # Perform query until all ids are fetched
+        while True:
+            result = self.layer._con._session.get(url, params=id_params).json()
+            ids.extend(result.get("objectIds", []))
+
+            if len(ids) >= total_count:
+                break
+            id_params["resultOffset"] = original_offset + len(ids)
+            if id_params.get("resultRecordCount") is not None:
+                id_params["resultRecordCount"] = total_count - len(ids)
+        return ids
+
+
+    def _fetch_all_features_by_chunk(self, url):
+        """
+        This workflow is used when users specify either resultOffset or resultRecordCount.
+        """
+        features = []  # start from an empty list
+        # Step 1: Query for all the ids using the parameters set
+        ids = self._fetch_all_ids(url)
+        self.parameters["resultRecordCount"] = (
+            None  # we got the number of ids, so no need to limit the records
+        )
+        self.parameters["resultOffset"] = 0  # reset the offset to 0
+
+        # Step 2: Define function to fetch a page of features
+        def fetch_page(ids_subset):
+            page_params = copy.deepcopy(self.parameters)
+            page_params["objectIds"] = ids_subset
+            return self.layer._con._session.get(url, params=page_params)
+
+        # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
+        with concurrent.futures.ThreadPoolExecutor(5) as executor:
+            futures = []
+            # Calculate the number of requests needed, using page_size for offset increment
+            page_size = 100
+            for i in range(0, len(ids), page_size):
+                ids_subset = ",".join(str(i) for i in ids[i : i + page_size])
+                futures.append(executor.submit(fetch_page, ids_subset))
+
+            # Step 4: Process the results
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result().json()
+                features += result.get("features", [])
+        return features
+
+
+    def _handle_query_exception(self, query_exception, url):
+        """Handles exceptions raised during the query process."""
+        error_messages = [
+            "Error performing query operation",
+            "HTTP Error 504: GATEWAY_TIMEOUT",
+        ]
+
+        if any(msg in str(query_exception) for msg in error_messages):
+            return self._retry_query_with_fewer_records(url)
+
+        raise query_exception
+
+
+    def _retry_query_with_fewer_records(self, url):
+        """Retries the query with a reduced result record count."""
+        max_record = self.parameters.get("resultRecordCount", 1000)
+        offset = self.parameters.get("resultOffset", 0)
+
+        if max_record < 250:
+            raise Exception("Max record count too low; query still failing.")
+
+        result = None
+        max_rec = (max_record + 1) // 2  # Halve the record count
+        i = 0
+
+        while max_rec * i < max_record:
+            self.parameters["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
+            self.parameters["resultOffset"] = offset + max_rec * i
+
+            try:
+                records = self._query(url, raw=True)
+                if result:
+                    result["features"].extend(records["features"])
+                else:
+                    result = records
+                i += 1
+            except Exception as retry_exception:
+                raise retry_exception
+
+        return result
+
+    def _query_df(self, result):
+        """returns results of a query as a pd.DataFrame"""
+        _fld_lu = {
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
+                "esriFieldTypeDate": "<M8[ns]",
+                "esriFieldTypeOID": pd.Int64Dtype(),
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
+                "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.StringDtype(),
+                "esriFieldTypeDateOnly": "<M8[ns]",
+                "esriFieldTypeTimestampOffset": object,
+                "esriFieldTypeBigInteger": pd.Int64Dtype(),
+            }
+
+        def feature_to_row(feature, sr):
+            """:return: a feature from a dict"""
+            geom = feature["geometry"] if "geometry" in feature else None
+            attribs = feature["attributes"] if "attributes" in feature else {}
+            if "centroid" in feature:
+                if attribs is None:
+                    attribs = {"centroid": feature["centroid"]}
+                elif "centroid" in attribs:
+                    import uuid
+
+                    fld = "centroid_" + uuid.uuid4().hex[:2]
+                    attribs[fld] = feature["centroid"]
+                else:
+                    attribs["centroid"] = feature["centroid"]
+            if geom:
+                if "spatialReference" not in geom:
+                    geom["spatialReference"] = sr
+                attribs["SHAPE"] = Geometry(geom)
+            return attribs
+
+        if len(result["features"]) == 0:
+            # create columns even if empty dataframe
+            columns = {}
+            for fld in self.layer.properties.fields:
+                fld = dict(fld)
+                columns[fld["name"]] = _fld_lu[fld["type"]]
+            if (
+                "geometryType" in self.layer.properties
+                and self.layer.properties.geometryType is not None
+            ):
+                columns["SHAPE"] = object
+            if "return_geometry" in self.parameters and self.parameters["return_geometry"] == False:
+                columns.pop("SHAPE", None)
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            if "out_fields" in self.parameters and self.parameters["out_fields"] != "*":
+                df = df[self.parameters["out_fields"].split(",")].copy()
+
+            if "SHAPE" in df.columns:
+                df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
+                df.spatial.set_geometry("SHAPE")
+                df.spatial.renderer = self.parameters.renderer
+                df.spatial._meta.source = self.parameters
+
+            return pd.DataFrame([], columns=columns).astype(columns)
+        sr = None
+        if "spatialReference" in result:
+            sr = result["spatialReference"]
+
+        rows = [feature_to_row(row, sr) for row in result["features"]]
+        if len(rows) == 0:
+            return None
+        df = pd.DataFrame.from_records(data=rows)
+        # set based on layer
+        df.spatial.renderer = self.layer.renderer
+        df.spatial._meta.source = self.layer.url
 
         if "SHAPE" in df.columns:
-            df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
+            df.loc[df.SHAPE.isna(), "SHAPE"] = None
             df.spatial.set_geometry("SHAPE")
-            df.spatial.renderer = layer.renderer
-            df.spatial._meta.source = layer
 
-        return pd.DataFrame([], columns=columns).astype(columns)
-    sr = None
-    if "spatialReference" in result:
-        sr = result["spatialReference"]
+        # work with the fields and their data types
+        dfields = []
+        dtypes = {}
+        if "fields" in result:
+            fields = result["fields"]
+            for fld in fields:
+                if fld["type"] != "esriFieldTypeGeometry":
+                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
+                if fld["type"] in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]:
+                    dfields.append(fld["name"])
 
-    rows = [feature_to_row(row, sr) for row in result["features"]]
-    if len(rows) == 0:
-        return None
-    df = pd.DataFrame.from_records(data=rows)
-    # set based on layer
-    df.spatial.renderer = layer.renderer
-    df.spatial._meta.source = layer.url
+        if len(dfields) > 0:
+            for fld in [fld for fld in dfields if fld in df.columns]:
+                if not pd.api.types.is_datetime64_any_dtype(df[fld]):
+                    try:
+                        df[fld] = pd.to_datetime(
+                            df[fld] / 1000,
+                            errors="coerce",
+                            unit="s",
+                        )
+                    except Exception:
+                        df[fld] = pd.to_datetime(
+                            df[fld],
+                            errors="coerce",
+                        )
 
-    if "SHAPE" in df.columns:
-        df.loc[df.SHAPE.isna(), "SHAPE"] = None
-        df.spatial.set_geometry("SHAPE")
+        if dtypes:
+            df = df.astype(dtypes)
 
-    # work with the fields and their data types
-    dfields = []
-    dtypes = {}
-    if "fields" in result:
-        fields = result["fields"]
-        for fld in fields:
-            if fld["type"] != "esriFieldTypeGeometry":
-                dtypes[fld["name"]] = _fld_lu[fld["type"]]
-            if fld["type"] in [
-                "esriFieldTypeDate",
-                "esriFieldTypeDateOnly",
-                "esriFieldTypeTimestampOffset",
-            ]:
-                dfields.append(fld["name"])
-
-    if len(dfields) > 0:
-        for fld in [fld for fld in dfields if fld in df.columns]:
-            if not pd.api.types.is_datetime64_any_dtype(df[fld]):
-                try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000,
-                        errors="coerce",
-                        unit="s",
-                    )
-                except Exception:
-                    df[fld] = pd.to_datetime(
-                        df[fld],
-                        errors="coerce",
-                    )
-
-    if dtypes:
-        df = df.astype(dtypes)
-
-    return df
+        return df

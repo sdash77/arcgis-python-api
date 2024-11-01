@@ -2209,7 +2209,7 @@ class FeatureLayer(Layer):
 
         """
         # validate parameters
-        query_parameters = _query.QueryParameters(
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -2246,12 +2246,12 @@ class FeatureLayer(Layer):
             datum_transformation=datum_transformation,
             time_reference_unknown_client=time_reference_unknown_client,
         )
-        return _query._common_query(
+        return _query.Query(
             layer=self,
+            parameters=query_params,
             is_layer=True,
-            parameters=query_parameters,
             as_df=as_df,
-        )
+        ).execute()
 
     # ----------------------------------------------------------------------
     def validate_sql(self, sql: str, sql_type: str = "where"):
@@ -3469,251 +3469,6 @@ class FeatureLayer(Layer):
             path=url,
             postdata=params,
         )
-
-    # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False, **kwargs):
-        """returns results of query"""
-        try:
-            result = self._con.post(
-                path=url,
-                postdata=params,
-            )
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop("token", None)
-                return self._query(url, params, raw=False)
-            elif any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    result = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if result:
-                                for feature in records["features"]:
-                                    result["features"].append(feature)
-                            else:
-                                result = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        def is_true(x):
-            if isinstance(x, bool) and x:
-                return True
-            elif isinstance(x, str) and x.lower() == "true":
-                return True
-            else:
-                return False
-
-        if "error" in result:
-            raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
-            return result["count"]
-        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
-            return result
-        elif "extent" in result:
-            return result
-        elif is_true(raw):
-            return result
-        else:
-            return FeatureSet.from_dict(result)
-
-    # ----------------------------------------------------------------------
-    def _query_df(self, url, params, **kwargs):
-        """returns results of a query as a pd.DataFrame"""
-        import pandas as pd
-        import numpy as np
-
-        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
-                "esriFieldTypeDate": pd.datetime,
-                "esriFieldTypeOID": np.int64,
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.datetime,
-                "esriFieldTypeDateOnly": pd.datetime,
-                "esriFieldTypeTimestampOffset": pd.datetime,
-            }
-        else:
-            from datetime import datetime as _datetime
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": object,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.StringDtype(),
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-                "esriFieldTypeBigInteger": pd.Int64Dtype(),
-            }
-
-        def feature_to_row(feature, sr):
-            """:return: a feature from a dict"""
-            geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
-            if "centroid" in feature:
-                if attribs is None:
-                    attribs = {"centroid": feature["centroid"]}
-                elif "centroid" in attribs:
-                    import uuid
-
-                    fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature["centroid"]
-                else:
-                    attribs["centroid"] = feature["centroid"]
-            if geom:
-                if "spatialReference" not in geom:
-                    geom["spatialReference"] = sr
-                attribs["SHAPE"] = Geometry(geom)
-            return attribs
-
-        # ------------------------------------------------------------------
-        try:
-            featureset_dict = self._con.post(url, params)
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop("token", None)
-                return self._query_df(url, params, raw=False)
-            if any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    featureset_dict = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if featureset_dict is not None:
-                                for feature in records["features"]:
-                                    featureset_dict["features"].append(feature)
-                            else:
-                                featureset_dict = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        if len(featureset_dict["features"]) == 0:
-            return pd.DataFrame([])
-        sr = None
-        if "spatialReference" in featureset_dict:
-            sr = featureset_dict["spatialReference"]
-
-        df = None
-        dtypes = None
-        geom = None
-        names = None
-        dfields = []
-        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
-        if len(rows) == 0:
-            return None
-        df = pd.DataFrame.from_records(data=rows)
-        if "SHAPE" in df.columns:
-            df.loc[df.SHAPE.isna(), "SHAPE"] = None
-        if "fields" in featureset_dict:
-            dtypes = {}
-            names = []
-            fields = featureset_dict["fields"]
-            for fld in fields:
-                if fld["type"] != "esriFieldTypeGeometry":
-                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
-                    names.append(fld["name"])
-                if fld["type"] in [
-                    "esriFieldTypeDate",
-                    #
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]:
-                    dfields.append(fld["name"])
-        if dtypes:
-            df = df.astype(dtypes)
-
-        if "SHAPE" in featureset_dict:
-            df.spatial.set_geometry("SHAPE")
-        if len(dfields) > 0:
-            for fld in [fld for fld in dfields if fld in df.columns]:
-                try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000,
-                        errors="coerce",
-                        unit="s",
-                    )
-                except:
-                    df[fld] = pd.to_datetime(
-                        df[fld],
-                        errors="coerce",
-                    )
-        return df
-
     # ----------------------------------------------------------------------
     def query_3d(
         self,
@@ -3927,16 +3682,10 @@ class FeatureLayer(Layer):
             result = layer.query_3d(where="OBJECTID < 10", out_fields="*", format_3d_objects="3D_dae")
             print(result)
         """
-        if not where:
-            if geometry_filter:
-                where = None
-            elif result_offset:
-                where = "1=1"
-            else:
-                where = "1=1"
-        return _query._common_query(
-            layer=self,
-            is_layer=True,
+        if geometry_filter:
+            where = None
+        
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -3955,8 +3704,13 @@ class FeatureLayer(Layer):
             sql_format=sql_format,
             format_3d_objects=format_3d_objects,
             time_reference_unknown_client=time_reference_unknown_client,
-            query_3d=True,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=True,
+            query_3d=True,
+        ).execute()
 
 
 ###########################################################################
@@ -4273,12 +4027,12 @@ class Table(FeatureLayer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             time_reference_unknown_client=time_reference_unknown_client,
         )
-        return _query._common_query(
+        return _query.Query(
             layer=self,
-            is_layer=False,
             parameters=query_params,
+            is_layer=False,
             as_df=as_df,
-        )
+        ).execute()
 
 
 class FeatureLayerCollection(_GISResource):
