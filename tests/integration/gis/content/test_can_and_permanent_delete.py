@@ -1,8 +1,8 @@
+import json, uuid
 import unittest
-from arcgis.gis import GIS, ContentManager
-from utils.decorators import integration_test
+from arcgis.gis import ContentManager
+from utils.decorators import integration_test, profiles
 
-profiles = ["your_online_profile", "your_enterprise_profile", "your_kubernetes_profile"]
 wm = {
     "operationalLayers": [],
     "baseMap": {
@@ -126,76 +126,88 @@ wm = {
 }
 
 
-def create_item(gis):
-    """creates a dummy item on the GIS"""
-    import json, uuid
-
-    return gis.content.add(
-        item_properties={
-            "title": uuid.uuid4().hex,
-            "type": "Web Map",
-            "tags": "erase, me",
-            "text": json.dumps(wm),
-        }
-    )
-
-
+@profiles.all
 @integration_test
-class TestCMCanDelete(unittest.TestCase):
-    def test_can_delete(self):
-        import copy
+class TestContentManagerCanDelete(unittest.TestCase):
 
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            content = gis.content
-            assert isinstance(content, ContentManager)
+    @classmethod
+    def setUpClass(cls):
+        cls.folder = cls.gis.content.folders._get_or_create(
+            folder="integration_testing_gis_content_delete",
+            owner=cls.gis._username,
+        )
 
-            item = create_item(gis=gis)
-            item.protect(False)
-            res = content.can_delete(item)
-            assert res
-            assert isinstance(res, dict)
-            assert res["success"] == True
-            item.protect(True)
-            res = content.can_delete(item)
-            assert res["success"] == False
-            item.protect(False)
-            assert item.delete()
+    def setUp(self):
+        self.item = self.folder.add(
+            item_properties={
+                "title": f"test_delete_{uuid.uuid4().hex}",
+                "type": "Web Map",
+                "tags": "integration_testing",
+                "text": json.dumps(wm),
+            },
+        ).result()
+
+        self.content = self.gis.content
+        assert isinstance(self.content, ContentManager)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.folder:
+            cls.folder.delete(permanent=True)
+
+    def test_can_delete_content_manager(self):
+        """
+        test can_delete on ContentManager
+        """
+        item = self.item
+
+        item.protect(False)
+        res = self.content.can_delete(item)
+        assert res
+        assert isinstance(res, dict)
+        assert res["success"] == True
+
+        item.protect(True)
+        res = self.content.can_delete(item)
+        assert res["success"] == False
+
+        item.protect(False)
+        assert item.delete(permanent=True)
 
     def test_can_delete_item(self):
         """
-        tests if can_delete on Item
+        tests can_delete on Item
         """
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            content = gis.content
-            assert isinstance(content, ContentManager)
+        item = self.item
 
-            item = create_item(gis=gis)
-            item.protect(False)
-            res = item.can_delete
-            assert res
+        item.protect(False)
+        res = item.can_delete
+        assert res
 
-            item.protect(True)
-            res = item.can_delete
-            assert res == False
-            item.protect(False)
-            assert item.delete()
+        item.protect(True)
+        res = item.can_delete
+        assert res == False
 
+        item.protect(False)
+        assert item.delete(permanent=True)
 
-@integration_test
-class TestPermanentDelete(unittest.TestCase):
     def test_permanent_delete(self):
-        # As of now, only available in ArcGIS Online
-        gis = GIS(profile="your_dev_profile", verify_cert=False)  # devext
-        content = gis.content
-        assert isinstance(content, ContentManager)
-        user = gis.users.me
+
+        if not self.gis._is_agol:
+            if self.gis.version < [2025, 1]:
+                self.skipTest("Recyclebin functionality is not supported before enterprise 11.5")
+
+        if not self.gis.properties.recycleBinSupported:
+            self.skipTest("recyclebin not supported in this GIS")
+
+        if not self.gis.properties.recycleBinEnabled:
+            self.skipTest("recyclebin not enabled in this GIS")
+
+        user = self.gis.users.me
         rb = user.recyclebin
         num_items_before = len(list(rb.content))
 
-        item = create_item(gis=gis)
-        res = content.delete_items([item], permanent=True)
+        res = self.content.delete_items([self.item], permanent=True)
         assert res
 
         num_items_after = len(list(rb.content))
