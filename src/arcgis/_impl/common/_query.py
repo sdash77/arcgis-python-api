@@ -525,11 +525,11 @@ class QueryParameters(BaseModel):
         if isinstance(value, (list, tuple)):
             return ",".join(value)
         return value
-    
+
     @field_validator("object_ids", mode="before")
     def validate_object_ids(cls, value):
         if isinstance(value, (list, tuple)):
-            return ",".join(map(str,value))
+            return ",".join(map(str, value))
         return value
 
     @model_validator(mode="before")
@@ -555,14 +555,22 @@ class QueryParameters(BaseModel):
 
         return values
 
+
 class Query:
-    def __init__(self, layer, parameters, is_layer: bool = True, query_3d: bool = False, as_df: bool = False):
+    def __init__(
+        self,
+        layer,
+        parameters,
+        is_layer: bool = True,
+        query_3d: bool = False,
+        as_df: bool = False,
+    ):
         self.layer = layer
         self.is_layer = is_layer
         self.query_3d = query_3d
         self.as_df = as_df
         self.parameters = self.create_parameters(parameters)
-        
+
     def create_parameters(
         self,
         parameters: QueryParameters,
@@ -597,7 +605,9 @@ class Query:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
                 object_id_field = [
-                    x.name for x in self.layer.properties.fields if x.type == "esriFieldTypeOID"
+                    x.name
+                    for x in self.layer.properties.fields
+                    if x.type == "esriFieldTypeOID"
                 ][0]
                 if object_id_field not in out_fields.split(","):
                     out_fields = object_id_field + "," + out_fields
@@ -617,7 +627,7 @@ class Query:
 
         # Two workflows: Return as FeatureSet or return as DataFrame
         return self._query(url, raw)
-        
+
     def _get_url(self):
         if self.query_3d and hasattr(self.layer, "_is_3d") and self.layer._is_3d:
             url = self.layer._url + "/query3D"
@@ -635,7 +645,6 @@ class Query:
             return self._process_query_result(result, raw, url)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception, url)
-
 
     def _process_query_result(self, result, raw, url):
         """Processes the query result based on the parameters and handles pagination."""
@@ -681,13 +690,14 @@ class Query:
 
     def _needs_more_features(self, result, features):
         """
-        Checks if more features need to be fetched. 
-        This can be because exceededTransferLimit is True 
-        or resultRecordCount is set and the number of 
+        Checks if more features need to be fetched.
+        This can be because exceededTransferLimit is True
+        or resultRecordCount is set and the number of
         features fetched is less than the resultRecordCount.
         """
-        return result.get("exceededTransferLimit") or (self.parameters.get("resultRecordCount") and
-            self.parameters.get("resultRecordCount") != len(features)
+        return result.get("exceededTransferLimit") or (
+            self.parameters.get("resultRecordCount")
+            and self.parameters.get("resultRecordCount") != len(features)
         )
 
     def _fetch_all_features_single_thread(self, url, features):
@@ -720,7 +730,9 @@ class Query:
             count_params["returnAllRecords"] = False  # must be false when above True
             count_result = self.layer._con._session.get(url, params=count_params).json()
             total_count = count_result.get("count")
-            self.parameters["resultRecordCount"] = page_size  # Adjust page size as necessary
+            self.parameters["resultRecordCount"] = (
+                page_size  # Adjust page size as necessary
+            )
         else:
             total_count = self.parameters.get("resultRecordCount")
 
@@ -734,7 +746,9 @@ class Query:
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             futures = []
             # Calculate the number of requests needed, using page_size for offset increment
-            for offset in range(original_offset + len(features), total_count, page_size):
+            for offset in range(
+                original_offset + len(features), total_count, page_size
+            ):
                 futures.append(executor.submit(fetch_page, offset, self.parameters))
 
             # Step 5: Process the results
@@ -743,7 +757,6 @@ class Query:
                 features += result.get("features", [])
 
         return features
-
 
     def _fetch_all_ids(self, url):
         """Query to create a list of object ids."""
@@ -774,7 +787,6 @@ class Query:
             if id_params.get("resultRecordCount") is not None:
                 id_params["resultRecordCount"] = total_count - len(ids)
         return ids
-
 
     def _fetch_all_features_by_chunk(self, url):
         """
@@ -809,7 +821,6 @@ class Query:
                 features += result.get("features", [])
         return features
 
-
     def _handle_query_exception(self, query_exception, url):
         """Handles exceptions raised during the query process."""
         error_messages = [
@@ -821,7 +832,6 @@ class Query:
             return self._retry_query_with_fewer_records(url)
 
         raise query_exception
-
 
     def _retry_query_with_fewer_records(self, url):
         """Retries the query with a reduced result record count."""
@@ -836,7 +846,9 @@ class Query:
         i = 0
 
         while max_rec * i < max_record:
-            self.parameters["resultRecordCount"] = min(max_rec, max_record - max_rec * i)
+            self.parameters["resultRecordCount"] = min(
+                max_rec, max_record - max_rec * i
+            )
             self.parameters["resultOffset"] = offset + max_rec * i
 
             try:
@@ -854,25 +866,25 @@ class Query:
     def _query_df(self, result):
         """returns results of a query as a pd.DataFrame"""
         _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": "<M8[ns]",
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": pd.StringDtype(),
-                "esriFieldTypeDateOnly": "<M8[ns]",
-                "esriFieldTypeTimestampOffset": object,
-                "esriFieldTypeBigInteger": pd.Int64Dtype(),
-            }
+            "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+            "esriFieldTypeInteger": pd.Int32Dtype(),
+            "esriFieldTypeSingle": pd.Float64Dtype(),
+            "esriFieldTypeDouble": pd.Float64Dtype(),
+            "esriFieldTypeFloat": pd.Float64Dtype(),
+            "esriFieldTypeString": pd.StringDtype(),
+            "esriFieldTypeDate": "<M8[ns]",
+            "esriFieldTypeOID": pd.Int64Dtype(),
+            "esriFieldTypeGeometry": object,
+            "esriFieldTypeBlob": object,
+            "esriFieldTypeRaster": object,
+            "esriFieldTypeGUID": pd.StringDtype(),
+            "esriFieldTypeGlobalID": pd.StringDtype(),
+            "esriFieldTypeXML": object,
+            "esriFieldTypeTimeOnly": pd.StringDtype(),
+            "esriFieldTypeDateOnly": "<M8[ns]",
+            "esriFieldTypeTimestampOffset": object,
+            "esriFieldTypeBigInteger": pd.Int64Dtype(),
+        }
 
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
@@ -905,7 +917,10 @@ class Query:
                 and self.layer.properties.geometryType is not None
             ):
                 columns["SHAPE"] = object
-            if "return_geometry" in self.parameters and self.parameters["return_geometry"] == False:
+            if (
+                "return_geometry" in self.parameters
+                and self.parameters["return_geometry"] == False
+            ):
                 columns.pop("SHAPE", None)
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
             if "out_fields" in self.parameters and self.parameters["out_fields"] != "*":

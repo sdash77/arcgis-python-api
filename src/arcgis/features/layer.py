@@ -3469,6 +3469,7 @@ class FeatureLayer(Layer):
             path=url,
             postdata=params,
         )
+
     # ----------------------------------------------------------------------
     def query_3d(
         self,
@@ -3684,7 +3685,7 @@ class FeatureLayer(Layer):
         """
         if geometry_filter:
             where = None
-        
+
         query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
