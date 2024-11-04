@@ -947,10 +947,7 @@ class MapFeatureLayer(Layer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            as_df=as_df,
-            is_layer=True,
+        query_params = _query.QueryParameters(
             where=where,
             text=text,
             out_fields=out_fields,
@@ -988,8 +985,13 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            **kwargs,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            as_df=as_df,
+            is_layer=True,
+        ).execute()
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -1560,9 +1562,7 @@ class MapTable(MapFeatureLayer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=False,
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -1581,11 +1581,16 @@ class MapTable(MapFeatureLayer):
             historic_moment=historic_moment,
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            **kwargs,
         )
+
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=False,
+            as_df=as_df,
+        ).execute()
 
 
 ###########################################################################
