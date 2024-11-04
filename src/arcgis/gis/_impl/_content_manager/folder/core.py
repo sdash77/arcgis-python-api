@@ -691,7 +691,7 @@ class Folder:
             >>> folders_obj = gis.content.folders
             >>> item_folder = folders_obj.get(folder="water_data")
 
-            >>> add_job = item_folder.add(item_props=item_props,
+            >>> add_job = item_folder.add(item_properties=item_props,
                                           file=data_path)
             >>> if not add_job.done():
             >>>     print("...job precessing...")

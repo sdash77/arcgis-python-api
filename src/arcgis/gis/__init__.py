@@ -8379,6 +8379,7 @@ class ContentManager(object):
         service_name: str | None = None,
         title: str | None = None,
         publish_parameters: dict[str, Any] = None,
+        folder: str | None = None,
     ) -> Item:
         """
         The `import_table` function takes a Pandas' DataFrame and publishes it
@@ -8396,6 +8397,9 @@ class ContentManager(object):
         publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
                              responsible for passing all the publish parameters defined
                              `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        -------------------  --------------------------------------------------------------------------
+        folder               Optional String. The name of the folder where the item will be stored.
+                             Default is the root folder of the active user.
         ===================  ==========================================================================
 
         returns: Published Hosted Table Item
@@ -8416,7 +8420,18 @@ class ContentManager(object):
             "type": "CSV",
             "title": title,
         }
-        csv_item: Item = self.add(item_properties=pp, data=fname)
+        if folder:
+            folder = self.folders.get(folder=folder, owner=self._gis._username)
+        if not folder:
+            folder = self.folders.get()
+
+        job = folder.add(
+            **{
+                "item_properties": pp,
+                "file": fname,
+            }
+        )
+        csv_item: Item = job.result()
         try:
             os.remove(fname)
         except Exception:

@@ -25,7 +25,7 @@ class TestTextContent(unittest.TestCase):
         assert btn.properties
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_add_text(self):
         """Test adding Text of different styles and seeing properties"""
@@ -56,7 +56,7 @@ class TestTextContent(unittest.TestCase):
         assert story.add(paragraph)
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_get(self):
         """Test the get method for getting nodes by type and from an id"""
@@ -81,7 +81,7 @@ class TestTextContent(unittest.TestCase):
         assert story.get(node=text_id)
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":
