@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\workspace\geosaurus\src")
+sys.path.insert(1, r"C:\workspace\geosaurus\tests")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap, Themes
@@ -26,12 +29,12 @@ class TestStoryMap(unittest.TestCase):
         cover = story.content_list[0]
         cover.title = "My First Story"
         cover.summary = "Testing the Python API"
-        cover.by_line = "Python Tester"
+        cover.byline = "Python Tester"
         cover.media = river
         cover.size = "large"
         cover.style = "transparent-with-light-color"
-        cover.horizontal_alignment = "center"
-        cover.vertical_alignment = "bottom"
+        cover.horizontal_position = "center"
+        cover.vertical_position = "bottom"
         
         story.save()
         
@@ -40,11 +43,11 @@ class TestStoryMap(unittest.TestCase):
         assert cover_data["summary"] == "Testing the Python API"
         assert cover_data["byline"] == "Python Tester"
         assert cover_data["titlePanelSize"] == "large"
-        assert cover_data["style"] == "transparent-with-light-color"
-        assert cover_data["titlePanelHorizontalAlignment"] == "center"
-        assert cover_data["titlePanelVerticalAlignment"] == "bottom"
+        assert cover_data["titlePanelStyle"] == "transparent-with-light-color"
+        assert cover_data["titlePanelHorizontalPosition"] == "center"
+        assert cover_data["titlePanelVerticalPosition"] == "bottom"
 
-        story.delete_story()
+        story._item.delete(permanent=True)
 
 
 if __name__ == "__main__":
