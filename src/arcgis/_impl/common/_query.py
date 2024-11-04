@@ -619,6 +619,11 @@ class Query:
         if parameters.time_filter is None and self.layer.time_filter:
             params["time"] = self.layer.time_filter
 
+        # Need to unpack geometry filter into parameters
+        geom_filter = params.pop("geometryFilter", None)
+        if geom_filter is not None:
+            for key, val in parameters.geometry_filter.items():
+                params[key] = val
         return params
 
     def execute(self):
@@ -665,7 +670,12 @@ class Query:
         features = result.get("features", [])
         if self._needs_more_features(result, features):
             # Pagination workflow
-            if self.parameters.get("objectIds") or self.parameters.get("orderByFields") or self.parameters.get("geometryFilter") or self.parameters.get("statisticFilter"):
+            if (
+                self.parameters.get("objectIds")
+                or self.parameters.get("orderByFields")
+                or self.parameters.get("geometryFilter")
+                or self.parameters.get("statisticFilter")
+            ):
                 # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
                 features = self._fetch_all_features_single_thread(url, features, result)
             elif self.parameters.get("resultRecordCount"):

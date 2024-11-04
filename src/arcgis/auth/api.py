@@ -466,6 +466,7 @@ class EsriSession:
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
         return params
+
     # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":
         r"""Sends a GET request. Returns :class:`Response` object.
