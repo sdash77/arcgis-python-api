@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
-sys.path.insert(1, r"C:\workspace\geosaurus\src")
 import unittest
 from utils.decorators import integration_test, profiles
 from arcgis.features import FeatureSet
