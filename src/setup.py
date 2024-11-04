@@ -72,7 +72,7 @@ else:
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",
-        "ujson >=3,<4",
+        "ujson >=3",
         "truststore>=0.10.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
