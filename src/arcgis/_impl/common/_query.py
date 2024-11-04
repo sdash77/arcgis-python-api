@@ -127,7 +127,7 @@ class QueryParameters(BaseModel):
     )
     statistic_filter: Optional[dict] = Field(
         None,
-        alias="statisticFilter",
+        alias="outStatistics",
         description="""Optional ``StatisticFilter`` instance. The definitions for one or more field-based
                     statistics can be added, e.g. statisticType, onStatisticField, or
                     outStatisticFieldName.
@@ -609,8 +609,8 @@ class Query:
                     for x in self.layer.properties.fields
                     if x.type == "esriFieldTypeOID"
                 ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
+                if object_id_field not in params["outFields"].split(","):
+                    out_fields = object_id_field + "," + params["outFields"]
                 # update out_fields parameter
                 params["outFields"] = out_fields
             except (IndexError, AttributeError):
@@ -665,9 +665,9 @@ class Query:
         features = result.get("features", [])
         if self._needs_more_features(result, features):
             # Pagination workflow
-            if self.parameters.get("objectIds") or self.parameters.get("orderByFields"):
-                # When objectIds or orderByFields are provided, we use a single threaded workflow
-                features = self._fetch_all_features_single_thread(url, features)
+            if self.parameters.get("objectIds") or self.parameters.get("orderByFields") or self.parameters.get("geometryFilter") or self.parameters.get("statisticFilter"):
+                # For certain parameters, we do not expect all records to be returned or they have to be returned in a specific order
+                features = self._fetch_all_features_single_thread(url, features, result)
             elif self.parameters.get("resultRecordCount"):
                 # When a user specifies either of these we can make pre-defined chunks
                 features = self._fetch_all_features_by_chunk(url)
@@ -700,7 +700,7 @@ class Query:
             and self.parameters.get("resultRecordCount") != len(features)
         )
 
-    def _fetch_all_features_single_thread(self, url, features):
+    def _fetch_all_features_single_thread(self, url, features, result):
         """Fetches all features by handling pagination."""
         original_record_count = self.parameters.get("resultRecordCount")
         original_offset = self.parameters.get("resultOffset", 0)
@@ -929,8 +929,8 @@ class Query:
             if "SHAPE" in df.columns:
                 df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
                 df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.parameters.renderer
-                df.spatial._meta.source = self.parameters
+                df.spatial.renderer = self.layer.renderer
+                df.spatial._meta.source = self.layer
 
             return pd.DataFrame([], columns=columns).astype(columns)
         sr = None
