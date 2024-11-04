@@ -41,7 +41,7 @@ dependencies:
 - anywidget 0.9.10
 - ipywidgets >=8.0.0
 - jupyterlab >=4.0.7,<5
-- pydantic >=2.4.0
+- pydantic >=2.8.2, <3
 # ---- arcgis-learn ----
 # ONLY DEPS REQUIRED FOR BUILDING DOCS
 # arcgis_learn officially requires fastchan=1.0.63, 
