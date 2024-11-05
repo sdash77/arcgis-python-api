@@ -7019,7 +7019,7 @@ class ContentManager(object):
         text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
         file_type                  Optional string. The type of the input file: shapefile, csv, excel,
-                                   or geoPackage. In ArcGIS Online you can also use geojson file.
+                                   geoPackage, or geojson (geojson only supported for ArcGIS Online).
         -----------------------    -------------------------------------------------------------
         source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
