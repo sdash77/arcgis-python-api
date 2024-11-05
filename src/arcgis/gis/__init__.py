@@ -13649,8 +13649,30 @@ class Item(dict):
                                authoritative.
                                If a value of None is given, then the value will be reset.
 
-                               Allowed Values: authoritative, deprecated, or None
+                               Allowed Values:
+
+                               * *authoritative*
+                               * *org_authoritative*
+                               * *public_authoritative*
+                               * *deprecated*
+
+                               .. note::
+                                   See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
+                                   for requirements to use *public_authoritative* status.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            #Usage Example: Setting status to org_authoritative:
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> dep_item = gis.content.get("<item_id>")
+            >>> dep_item.content_status = "org_authoritative"
+            >>> print(dep_item.content_status)
+
+            org_authoritative
+
         """
         try:
             return self.contentStatus
