@@ -7019,7 +7019,7 @@ class ContentManager(object):
         text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
         file_type                  Optional string. The type of the input file: shapefile, csv, excel,
-                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
+                                   geoPackage, or geojson (geojson only supported for ArcGIS Online).
         -----------------------    -------------------------------------------------------------
         source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -7090,7 +7090,12 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile"]:
+        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
+            if (
+                str(file_type).lower() == "geojson"
+                and not self._gis._portal.is_arcgisonline
+            ):
+                raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
         if source_country:
@@ -13649,8 +13654,30 @@ class Item(dict):
                                authoritative.
                                If a value of None is given, then the value will be reset.
 
-                               Allowed Values: authoritative, deprecated, or None
+                               Allowed Values:
+
+                               * *authoritative*
+                               * *org_authoritative*
+                               * *public_authoritative*
+                               * *deprecated*
+
+                               .. note::
+                                   See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
+                                   for requirements to use *public_authoritative* status.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            #Usage Example: Setting status to org_authoritative:
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> dep_item = gis.content.get("<item_id>")
+            >>> dep_item.content_status = "org_authoritative"
+            >>> print(dep_item.content_status)
+
+            org_authoritative
+
         """
         try:
             return self.contentStatus
@@ -16326,7 +16353,6 @@ class Item(dict):
             <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
             in the ArcGIS REST API for more details.
         """
-        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -16338,11 +16364,17 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
-        job: concurrent.futures.Future = tp.submit(self._publish, **params)
-        tp.shutdown(wait=True)
-        if future == False:
-            return job.result()
-        return job
+        if future:
+            executor: concurrent.futures.ThreadPoolExecutor = (
+                concurrent.futures.ThreadPoolExecutor(1)
+            )
+            futureobj: concurrent.futures.Future = executor.submit(
+                self._publish, **params
+            )
+            executor.shutdown(False)
+            return futureobj
+        else:
+            return self._publish(**params)
 
     # ----------------------------------------------------------------------
     def _publish(
