@@ -16353,7 +16353,6 @@ class Item(dict):
             <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
             in the ArcGIS REST API for more details.
         """
-        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -16365,11 +16364,17 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
-        job: concurrent.futures.Future = tp.submit(self._publish, **params)
-        tp.shutdown(wait=True)
-        if future == False:
-            return job.result()
-        return job
+        if future:
+            executor: concurrent.futures.ThreadPoolExecutor = (
+                concurrent.futures.ThreadPoolExecutor(1)
+            )
+            futureobj: concurrent.futures.Future = executor.submit(
+                self._publish, **params
+            )
+            executor.shutdown(False)
+            return futureobj
+        else:
+            return self._publish(**params)
 
     # ----------------------------------------------------------------------
     def _publish(
