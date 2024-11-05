@@ -1,21 +1,13 @@
-import sys
 import os
 import json
 import uuid
-import logging
 import tempfile
 import unittest
-from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, from_to_profiles
+from utils._logging import enable_verbose_logging
 
-root = logging.getLogger()
-root.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-root.addHandler(handler)
 
+enable_verbose_logging()
 storymap_item_data = {
     "nodes": {
         "n-1A6t0x": {
@@ -57,22 +49,25 @@ storymap_item_data = {
 }
 
 
+@from_to_profiles.all_except_k8s
 @integration_test
 class TestStoryMapCloning(unittest.TestCase):
     """Tests clone items for storymaps (2.0)"""
 
-    def test_clone_agol_to_enterprise_draft(self):
-        """tests cloning from agol to enterprise in draft mode"""
-        text_data = json.dumps(storymap_item_data)
-        gis_source = GIS(
-            profile="your_online_profile", verify_cert=False, trust_env=True
+    def setUp(self):
+        self.folder = self.from_gis.content.folders._get_or_create(
+            folder="integration_testing_gis_content_clone_storymap",
+            owner=self.from_gis._username,
         )
 
-        item = gis_source.content.add(
+    def test_clone_storymap_draft(self):
+        """tests cloning storymap in draft mode: agol <--> ent"""
+        text_data = json.dumps(storymap_item_data)
+        item = self.folder.add(
             {
                 "type": "StoryMap",
-                "tags": "tags",
-                "title": f"Test Storymap {uuid.uuid4().hex[:5]}",
+                "tags": "integration_testing",
+                "title": f"Test Storymap Clone {uuid.uuid4().hex[:5]}",
                 "description": "story_map.description",
                 "typeKeywords": [
                     "arcgis-storymaps",
@@ -87,7 +82,8 @@ class TestStoryMapCloning(unittest.TestCase):
                 ],
                 "text": text_data,
             }
-        )
+        ).result()
+
         with tempfile.TemporaryDirectory() as path:
             draft_file = os.path.join(path, "draft_1616064052930.json")
             with open(draft_file, "w") as writer:
@@ -95,29 +91,23 @@ class TestStoryMapCloning(unittest.TestCase):
             rm = item.resources
             rm.add(file=draft_file, file_name="draft_1616064052930.json")
 
-        gis_dest = GIS(
-            profile="your_enterprise_profile", verify_cert=False, trust_env=True
-        )
+        gis_dest = self.to_gis
         result = gis_dest.content.clone_items([item])
-        item.delete()
+        item.delete(permanent=True)
         assert isinstance(result, list)
         assert result[0].type == "StoryMap"
         assert result[0].url is None
         assert len(result[0].resources.list()) > 0
-        assert result[0].delete()
+        assert result[0].delete(permanent=True)
 
-    def test_clone_agol_to_enterprise(self):
-        """tests cloning from agol to enterprise"""
+    def test_clone_storymap(self):
+        """tests cloning storymap: agol <--> ent"""
         text_data = json.dumps(storymap_item_data)
-        gis_source = GIS(
-            profile="your_online_profile", verify_cert=False, trust_env=True
-        )
-
-        item = gis_source.content.add(
+        item = self.folder.add(
             {
                 "type": "StoryMap",
-                "tags": "tags",
-                "title": f"Test Storymap {uuid.uuid4().hex[:5]}",
+                "tags": "integration_testing",
+                "title": f"Test Storymap Clone {uuid.uuid4().hex[:5]}",
                 "description": "story_map.description",
                 "typeKeywords": [
                     "arcgis-storymaps",
@@ -132,7 +122,8 @@ class TestStoryMapCloning(unittest.TestCase):
                 ],
                 "text": text_data,
             }
-        )
+        ).result()
+
         item.update({"url": f"https://storymaps.arcgis.com/stories/{item.id}"})
         with tempfile.TemporaryDirectory() as path:
             draft_file = os.path.join(path, "draft_1616064052930.json")
@@ -141,61 +132,14 @@ class TestStoryMapCloning(unittest.TestCase):
             rm = item.resources
             rm.add(file=draft_file, file_name="draft_1616064052930.json")
 
-        gis_dest = GIS(
-            profile="your_enterprise_profile", verify_cert=False, trust_env=True
-        )
+        gis_dest = self.to_gis
         result = gis_dest.content.clone_items([item])
-        item.delete()
+        item.delete(permanent=True)
         assert isinstance(result, list)
         assert result[0].type == "StoryMap"
         assert result[0].url
         assert len(result[0].resources.list()) > 0
-        assert result[0].delete()
-
-    def test_clone_ent_to_agol(self):
-        """tests cloning from enterprise to ago"""
-        text_data = json.dumps(storymap_item_data)
-        gis_source = GIS(
-            profile="your_enterprise_profile", verify_cert=False, trust_env=True
-        )
-
-        item = gis_source.content.add(
-            {
-                "type": "StoryMap",
-                "tags": "tags",
-                "title": f"Test Storymap {uuid.uuid4().hex[:5]}",
-                "description": "story_map.description",
-                "typeKeywords": [
-                    "arcgis-storymaps",
-                    "smdraftresourceid:draft_1616064052930.json",
-                    "smfirstpublisheddate:1616064052928",
-                    "smpublisheddate:1616064052928",
-                    "smstatuspublished",
-                    "smversiondraft:21.11.0",
-                    "smversionpublished:21.11.0",
-                    "StoryMap",
-                    "Web Application",
-                ],
-                "text": text_data,
-            }
-        )
-        url = f"{gis_source._portal.url}/apps/storymaps/stories/{item.id}"
-        item.update({"url": url})
-        with tempfile.TemporaryDirectory() as path:
-            draft_file = os.path.join(path, "draft_1616064052930.json")
-            with open(draft_file, "w") as writer:
-                writer.write(text_data)
-            rm = item.resources
-            rm.add(file=draft_file, file_name="draft_1616064052930.json")
-
-        gis_dest = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
-        result = gis_dest.content.clone_items([item])
-        item.delete()
-        assert isinstance(result, list)
-        assert result[0].type == "StoryMap"
-        assert result[0].url
-        assert len(result[0].resources.list()) > 0
-        assert result[0].delete()
+        assert result[0].delete(permanent=True)
 
 
 if __name__ == "__main__":

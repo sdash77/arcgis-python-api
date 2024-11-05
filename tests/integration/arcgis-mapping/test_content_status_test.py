@@ -49,6 +49,7 @@ class TestItemContentStatus(unittest.TestCase):
                             "org_authoritative",
                             "public_authoritative",
                         ]
+                item.delete(permanent=True)
             env.active_gis = None
             del gis
 
@@ -63,7 +64,7 @@ class TestItemContentStatus(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             item.content_status = "public_authoritative"
         item.protect(False)
-        item.delete()
+        item.delete(permanent=True)
 
     # ----------------------------------------------------------------------
     def test_get_set_content_status_public(self):
@@ -106,7 +107,7 @@ class TestItemContentStatus(unittest.TestCase):
                     item.content_status = orig_status
 
                 item.protect(False)
-                item.delete()
+                item.delete(permanent=True)
             env.active_gis = None
             del gis
 

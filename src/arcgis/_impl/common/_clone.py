@@ -2823,7 +2823,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     "enableEditorTracking": False,
                 }
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
@@ -2896,7 +2897,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             edit_params = {
                 "editorTrackingInfo": self.service_definition["editorTrackingInfo"]
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         # Add attachments
         for original_layer in original_layers:
@@ -3029,8 +3031,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     source_user = self.portal_item._gis.users.me
                     if (
                         source_user.role == "org_admin"
-                        or self.portal_item.owner == source_user.username
-                    ):
+                        and self.portal_item._gis.url.lower() == self.target.url.lower()
+                    ) or self.portal_item.owner == source_user.username:
                         can_export = True
                 except:
                     pass
@@ -3174,7 +3176,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     temp_export.delete()
 
                 else:
-                    for key in ["layers", "tables", "fullExtent", "hasViews"]:
+                    for key in [
+                        "layers",
+                        "tables",
+                        "fullExtent",
+                        "hasViews",
+                    ]:
                         if key in service_definition:
                             del service_definition[key]
 

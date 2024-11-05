@@ -26,6 +26,7 @@ from arcgis.layers import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
 from arcgis.layers._scenelyrs import SceneLayer
+from arcgis.graph._service import KnowledgeGraph
 from ...gis._impl._con import Connection
 from ...gis.server._service._geodataservice import GeoData
 import requests
@@ -264,6 +265,7 @@ class ServiceFactory(type):
             "geometryserver": GeometryService,
             "gpserver": ("GeoprocessingToolbox", _import_toolbox),
             "imageserver": ImageryLayer,
+            "knowledgegraphserver": KnowledgeGraph,
             "mapserver": MapServiceLayer if has_layer else MapImageLayer,
             "naserver": NetworkDataset,
             "sceneserver": SceneLayer,

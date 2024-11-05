@@ -142,5 +142,10 @@ class TestServiceFactory(unittest.TestCase):
         updated_url = ServiceFactory._get_url_for_item(url, {'type': 'KML Collection'})
         self.assertEqual(url, updated_url)
 
+    def test_layer_type_from_url_knowledge_graph(self):
+        url = "https://enterprise-arcgis.myorg.com/server/rest/services/Hosted/kg_test/KnowledgeGraphServer"
+        _type = ServiceFactory._layer_type_from_url(url)
+        self.assertEqual(_type.__name__, 'KnowledgeGraph')
+
 if __name__ == '__main__':
     unittest.main()
