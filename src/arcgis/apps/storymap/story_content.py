@@ -6204,7 +6204,9 @@ class Cover:
     # ----------------------------------------------------------------------
     @vertical_position.setter
     def vertical_position(self, position: str):
-        position = position.value if isinstance(position, VerticalPosition) else position
+        position = (
+            position.value if isinstance(position, VerticalPosition) else position
+        )
         if position not in ["top", "middle", "bottom"]:
             raise ValueError(
                 "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
@@ -6234,8 +6236,9 @@ class Cover:
     # ----------------------------------------------------------------------
     @horizontal_position.setter
     def horizontal_position(self, position: str):
-        if isinstance(position, HorizontalPosition):
-            position = position.value
+        position = (
+            position.value if isinstance(position, HorizontalPosition) else position
+        )
         if position not in ["start", "center", "end"]:
             raise ValueError(
                 "Invalid horizontal position value. Please provide 'start', 'center', or 'end'."
@@ -6263,8 +6266,7 @@ class Cover:
     # ----------------------------------------------------------------------
     @style.setter
     def style(self, style: str):
-        if isinstance(style, CoverStyle):
-            style = style.value
+        style = style.value if isinstance(style, CoverStyle) else style
         if style not in [
             "gradient",
             "themed",
@@ -6295,8 +6297,7 @@ class Cover:
     # ----------------------------------------------------------------------
     @size.setter
     def size(self, size: str):
-        if isinstance(size, CoverSize):
-            size = size.value
+        size = size.value if isinstance(size, CoverSize) else size
         if size not in ["small", "medium", "large"]:
             raise ValueError(
                 "Invalid size value. Please provide 'small', 'medium', or 'large'."
