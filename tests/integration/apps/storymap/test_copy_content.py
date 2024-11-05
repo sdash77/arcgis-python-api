@@ -37,8 +37,7 @@ class TestStoryMapsCopyContent(unittest.TestCase):
         target_story.save()
 
         # delete target story
-        item = gis.content.get(target_story._itemid)
-        item.delete()
+        target_story.delete_story()
 
 
 if __name__ == "__main__":

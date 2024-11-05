@@ -63,6 +63,11 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
             parameter service. You can leave out the serviceName and type parameters
             in the JSON representation. Any other properties that are left out are not persisted by the server.
 
+        .. note::
+            If the service is currently running you need to stop the service before editing it. This can be done
+            by calling the stop method on the service object. Once the service is stopped, you can edit the service
+            and then start it again by calling the start method on the service object.
+
         ===================     ====================================================================
         **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------

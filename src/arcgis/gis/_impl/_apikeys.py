@@ -158,7 +158,7 @@ class APIKey(object):
         if http_referers:
             params["httpReferrers"] = http_referers
         if privileges:
-            params["priveleges"] = privileges
+            params["privileges"] = privileges
         self._properties = None
         return self._gis._con.post(url, params)
 

@@ -2073,7 +2073,8 @@ class FeatureLayer(Layer):
                                             returned. Note: result_offset and result_record_count will be
                                             ignored if return_all_records is True. Also, if return_count_only,
                                             return_ids_only, or return_extent_only are True, this parameter
-                                            will be ignored.
+                                            will be ignored. If this parameter is set to False but no other limit is
+                                            specified, the default is True.
         -------------------------------     --------------------------------------------------------------------
         result_type                         Optional string. The result_type parameter can be used to control
                                             the number of features returned by the query operation.

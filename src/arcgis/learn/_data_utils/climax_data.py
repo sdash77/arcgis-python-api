@@ -258,7 +258,12 @@ def nc2np(
         for year, i in zip(years, range(lenallyear)):
             np_vars = {}
             for var in variables:
-                ds = gdal.Open(img.replace(img.split("\\")[-4], var))
+                img_path = Path(img)
+                parts = list(img_path.parts)
+                parts[-4] = var
+                new_img_path = Path(*parts)
+                ds = gdal.Open(str(new_img_path))
+
                 img_arr = ds.ReadAsArray()
 
                 width = ds.RasterXSize
@@ -312,7 +317,7 @@ def nc2np(
         )
 
         if partition == "train":
-            norm_lats[img.split("\\")[-1][:12]] = lat_chips["lattitude"]
+            norm_lats[os.path.basename(img)[:12]] = lat_chips["lattitude"]
 
     if partition == "train":
         normalize_mean["lattitude"] = np.array([j for i, j in norm_lats.items()]).mean(
