@@ -7019,7 +7019,7 @@ class ContentManager(object):
         text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
         file_type                  Optional string. The type of the input file: shapefile, csv, excel,
-                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
+                                   or geoPackage. In ArcGIS Online you can also use geojson file.
         -----------------------    -------------------------------------------------------------
         source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -7090,7 +7090,12 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile"]:
+        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
+            if (
+                str(file_type).lower() == "geojson"
+                and not self._gis._portal.is_arcgisonline
+            ):
+                raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
         if source_country:
