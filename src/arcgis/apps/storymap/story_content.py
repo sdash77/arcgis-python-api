@@ -1925,6 +1925,31 @@ class Map:
 
     # ----------------------------------------------------------------------
     @property
+    def pinned_popup_info(self):
+        """
+        Get/Set the pinned popup info. This info is linked to a specific layer on the map and has information about
+        the popup being seen by the user. This is one popup at a time.
+        
+        ==================  ================================================
+        **Parameter**        **Description**
+        ------------------  ------------------------------------------------
+        pinned_popup_info   The new pinned popup info for the Map. This is a 
+                            dictionary containing the following keys:
+                            - `layerId`: String. The layer id of the feature layer.
+                            - `idFieldName`: String. The field name that defines the id.
+                            - `idFieldValue`: Integer. The id of the feature you want to show.
+                            - `location`: Dictionary. The location of the feature.
+        ==================  ================================================
+        """
+        if self._existing is True:
+            if "pinnedPopupInfo" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "pinnedPopupInfo"
+                ]
+            else:
+                return None
+    # ----------------------------------------------------------------------
+    @property
     def caption(self):
         """
         Get/Set the caption property for the map.
