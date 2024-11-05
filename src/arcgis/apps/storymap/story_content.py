@@ -6204,8 +6204,7 @@ class Cover:
     # ----------------------------------------------------------------------
     @vertical_position.setter
     def vertical_position(self, position: str):
-        if isinstance(position, VerticalPosition):
-            position = position.value
+        position = position.value if isinstance(position, VerticalPosition) else position
         if position not in ["top", "middle", "bottom"]:
             raise ValueError(
                 "Invalid vertical position value. Please provide 'top', 'middle', or 'bottom'."
