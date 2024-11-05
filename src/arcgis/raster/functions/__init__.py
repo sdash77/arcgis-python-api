@@ -13763,6 +13763,7 @@ def subset_bands(
     method: str = "BY_IDS",
     bands: str = None,
     missing_band_action: str = "BestMatch",
+    exclude_bad_bands: bool = False,
 ):
     """
     The subset_bands function allows you to extract a subset of bands using ranges or lists. This function supports both multispectral and hyperspectral images, and maintains the same band order as the input.
@@ -13799,6 +13800,14 @@ def subset_bands(
 
                                          - BestMatch : Finds the best available band to use in place of the missing band based on wavelength.
                                          - Fail : If the input dataset is missing any band specified in the Combination parameter, the function will fail.
+    --------------------------------     --------------------------------------------------------------------
+    exclude_bad_bands                    Optional boolean. Specify whether bad bands will be exclued or not.
+
+                                         Possible options are:
+
+                                         - True : Exclude bad bands
+                                         - False : Include bad bands. This is default.                                         
+  
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -13876,6 +13885,12 @@ def subset_bands(
         template_dict["rasterFunctionArguments"]["MissingBandAction"] = (
             missing_band_actions[missing_band_action.upper()]
         )
+
+    if exclude_bad_bands is not None:
+        if isinstance(exclude_bad_bands, bool):
+            template_dict["rasterFunctionArguments"]["ExcludeBadBands"] = exclude_bad_bands
+        else:
+            raise RuntimeError("exclude_bad_bands should be of type: boolean")          
 
     return _clone_layer(layer, template_dict, raster_ra)
 
