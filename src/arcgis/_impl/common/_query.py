@@ -735,11 +735,7 @@ class Query:
         page_size = 1000
         # Step 1: Preliminary query to determine total count
         if self.parameters.get("resultRecordCount") is None:
-            count_params = copy.deepcopy(self.parameters)
-            count_params["returnCountOnly"] = True
-            count_params["returnAllRecords"] = False  # must be false when above True
-            count_result = self.layer._con._session.get(url, params=count_params).json()
-            total_count = count_result.get("count")
+            total_count = self._fetch_total_records_count(url)
             self.parameters["resultRecordCount"] = (
                 page_size  # Adjust page size as necessary
             )
@@ -768,6 +764,13 @@ class Query:
 
         return features
 
+    def _fetch_total_records_count(self, url):
+        count_params = copy.deepcopy(self.parameters)
+        count_params["returnCountOnly"] = True
+        count_params["returnAllRecords"] = False  # must be false when above True
+        count_result = self.layer._con._session.get(url, params=count_params).json()
+        return count_result.get("count")
+
     def _fetch_all_ids(self, url):
         """Query to create a list of object ids."""
         ids = []
@@ -778,11 +781,7 @@ class Query:
 
         # Get the total count of ids
         if id_params.get("resultRecordCount") is None:
-            count_params = copy.deepcopy(self.parameters)
-            count_params["returnCountOnly"] = True
-            count_params["returnAllRecords"] = False  # must be false when above True
-            count_result = self.layer._con._session.get(url, params=count_params).json()
-            total_count = count_result.get("count")
+            total_count = self._fetch_total_records_count(url)
         else:
             total_count = id_params.get("resultRecordCount")
 
@@ -845,7 +844,9 @@ class Query:
 
     def _retry_query_with_fewer_records(self, url):
         """Retries the query with a reduced result record count."""
-        max_record = self.parameters.get("resultRecordCount", 1000)
+        max_record = self.parameters.get(
+            "resultRecordCount", self._fetch_total_records_count(url)
+        )
         offset = self.parameters.get("resultOffset", 0)
 
         if max_record < 250:
