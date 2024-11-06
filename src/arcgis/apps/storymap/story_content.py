@@ -1925,7 +1925,7 @@ class Map:
     def time_slider(self):
         """Get/Set the time slider toggle. True if enabled and False if disabled"""
         if self._existing is True:
-            if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
+            if "timeSlider" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
             else:
                 return False
