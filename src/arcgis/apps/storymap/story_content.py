@@ -293,6 +293,68 @@ class Image:
 
     # ----------------------------------------------------------------------
     @property
+    def link(self):
+        """
+        Get/Set a URL that will open in a new tab when readers click the image.
+        An image with a link cannot be expanded.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        link                String. The new link for the Image. To
+                            remove the link, set to None.
+        ==================  ========================================
+
+        :return:
+            A string representing the link that is being used.
+        """
+        if self._existing is True:
+            if "link" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["link"]
+
+    # ----------------------------------------------------------------------
+    @link.setter
+    def link(self, link):
+        if self._existing is True:
+            if link is None:
+                if "link" in self._story._properties["nodes"][self.node]["data"]:
+                    del self._story._properties["nodes"][self.node]["data"]["link"]
+            else:
+                self._story._properties["nodes"][self.node]["data"]["link"] = link
+            return self.link
+
+    # ----------------------------------------------------------------------
+    @property
+    def full_view(self):
+        """
+        This property, if True, will set the image to fit to screen. Enable this option
+        for portrait images you would like readers to see in their entirety without
+        scrolling. This constraint does not apply when the story is viewed on a small
+        screen, and other image sizing options may have no effect when it is enabled.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        enable              Boolean. Set to True to enable full view.
+        ==================  ========================================
+
+        :return:
+            A boolean representing if full view is enabled.
+        """
+        if self._existing is True:
+            if "isInFullView" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "isInFullView"
+                ]
+
+    # ----------------------------------------------------------------------
+    @full_view.setter
+    def full_view(self, enable: bool):
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["isInFullView"] = enable
+
+    # ----------------------------------------------------------------------
+    @property
     def caption(self):
         """
         Get/Set the caption property for the image.
