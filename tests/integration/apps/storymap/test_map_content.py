@@ -86,7 +86,7 @@ class TestMapContent(unittest.TestCase):
         
         assert smap.time_slider is False
         smap.time_slider = True
-        # assert smap.time_slider is True
+        assert smap.time_slider is True
         
         assert smap.popup_docked is False
         smap.popup_docked = True

@@ -1669,7 +1669,6 @@ class Map:
     def map(self, map):
         if self._existing is True:
             self._update_map(map)
-            return self.map
 
     # ----------------------------------------------------------------------
     @property
@@ -1682,6 +1681,7 @@ class Map:
         """
         if self._existing is True:
             return self._map_layers
+        return []
 
     # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
@@ -1874,8 +1874,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "isShowingLegend"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_legend.setter
@@ -1897,8 +1896,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "legendPinned"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @legend_pinned.setter
@@ -1912,8 +1910,7 @@ class Map:
         if self._existing is True:
             if "search" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["search"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_search.setter
@@ -1927,8 +1924,7 @@ class Map:
         if self._existing is True:
             if "timeSlider" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @time_slider.setter
@@ -1974,8 +1970,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "pinnedPopupInfo"
                 ]
-            else:
-                return None
+        return None
 
     # ----------------------------------------------------------------------
     @pinned_popup_info.setter
@@ -2010,8 +2005,7 @@ class Map:
         if self._existing is True:
             if "caption" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["caption"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -2019,7 +2013,6 @@ class Map:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -2039,15 +2032,13 @@ class Map:
         if self._existing is True:
             if "alt" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["alt"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-            return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
@@ -2060,8 +2051,7 @@ class Map:
         if self._existing is True:
             if "config" in self._story._properties["nodes"][self.node]:
                 return self._story._properties["nodes"][self.node]["config"]["size"]
-            else:
-                return None
+        return None
 
     # ----------------------------------------------------------------------
     @display.setter
@@ -2097,8 +2087,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "popupDocked"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @popup_docked.setter
