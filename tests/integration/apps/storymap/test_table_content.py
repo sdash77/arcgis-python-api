@@ -41,7 +41,7 @@ class TestTableContent(unittest.TestCase):
         table.content = cells
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

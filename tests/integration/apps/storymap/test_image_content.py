@@ -28,7 +28,7 @@ class TestImageContent(unittest.TestCase):
         assert img.alt_text
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_create_gallery(self):
         """Test creating a gallery and adding images to it"""
@@ -60,7 +60,7 @@ class TestImageContent(unittest.TestCase):
         assert gallery.images
 
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ class TestEmbedContent(unittest.TestCase):
         assert emb.link
         assert emb.properties
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
@@ -41,7 +41,7 @@ class TestEmbedContent(unittest.TestCase):
         deleted = emb.delete()
         assert deleted
         item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 def test_replace_media_item(self):
@@ -65,7 +65,7 @@ def test_replace_media_item(self):
 
     assert emd.link
     item = gis.content.get(story._itemid)
-    assert item.delete()
+    assert story.delete_story()
 
 
 if __name__ == "__main__":

@@ -7019,7 +7019,7 @@ class ContentManager(object):
         text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
         file_type                  Optional string. The type of the input file: shapefile, csv, excel,
-                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
+                                   geoPackage, or geojson (geojson only supported for ArcGIS Online).
         -----------------------    -------------------------------------------------------------
         source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -7090,7 +7090,12 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile"]:
+        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
+            if (
+                str(file_type).lower() == "geojson"
+                and not self._gis._portal.is_arcgisonline
+            ):
+                raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
         if source_country:
@@ -8379,6 +8384,7 @@ class ContentManager(object):
         service_name: str | None = None,
         title: str | None = None,
         publish_parameters: dict[str, Any] = None,
+        folder: str | None = None,
     ) -> Item:
         """
         The `import_table` function takes a Pandas' DataFrame and publishes it
@@ -8396,6 +8402,9 @@ class ContentManager(object):
         publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
                              responsible for passing all the publish parameters defined
                              `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        -------------------  --------------------------------------------------------------------------
+        folder               Optional String. The name of the folder where the item will be stored.
+                             Default is the root folder of the active user.
         ===================  ==========================================================================
 
         returns: Published Hosted Table Item
@@ -8416,7 +8425,18 @@ class ContentManager(object):
             "type": "CSV",
             "title": title,
         }
-        csv_item: Item = self.add(item_properties=pp, data=fname)
+        if folder:
+            folder = self.folders.get(folder=folder, owner=self._gis._username)
+        if not folder:
+            folder = self.folders.get()
+
+        job = folder.add(
+            **{
+                "item_properties": pp,
+                "file": fname,
+            }
+        )
+        csv_item: Item = job.result()
         try:
             os.remove(fname)
         except Exception:
@@ -13257,6 +13277,27 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def attachments_size(self) -> int | None:
+        """
+        The ``attachments_size`` property returns the total size of the attachments for the item.
+        The item has to support this property.
+
+        .. note::
+            The size is returned in bytes. To get the size in megabytes, divide the size by 1024*1024.
+            This is only supported for ArcGIS Online.
+
+        :return: The size in bytes.
+
+        """
+        if self._gis._is_agol:
+            try:
+                self.subInfo or 0
+            except:
+                return None
+        return None
+
+    # ----------------------------------------------------------------------
+    @property
     def favorite(self) -> bool:
         """
         Gets/Sets if the Item is in the user's favorites
@@ -13613,8 +13654,30 @@ class Item(dict):
                                authoritative.
                                If a value of None is given, then the value will be reset.
 
-                               Allowed Values: authoritative, deprecated, or None
+                               Allowed Values:
+
+                               * *authoritative*
+                               * *org_authoritative*
+                               * *public_authoritative*
+                               * *deprecated*
+
+                               .. note::
+                                   See `Organization verification <https://doc.arcgis.com/en/arcgis-online/administer/configure-general.htm#VERIFY_ORG>`_
+                                   for requirements to use *public_authoritative* status.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            #Usage Example: Setting status to org_authoritative:
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> dep_item = gis.content.get("<item_id>")
+            >>> dep_item.content_status = "org_authoritative"
+            >>> print(dep_item.content_status)
+
+            org_authoritative
+
         """
         try:
             return self.contentStatus
@@ -16290,7 +16353,6 @@ class Item(dict):
             <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
             in the ArcGIS REST API for more details.
         """
-        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -16302,11 +16364,17 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
-        job: concurrent.futures.Future = tp.submit(self._publish, **params)
-        tp.shutdown(wait=True)
-        if future == False:
-            return job.result()
-        return job
+        if future:
+            executor: concurrent.futures.ThreadPoolExecutor = (
+                concurrent.futures.ThreadPoolExecutor(1)
+            )
+            futureobj: concurrent.futures.Future = executor.submit(
+                self._publish, **params
+            )
+            executor.shutdown(False)
+            return futureobj
+        else:
+            return self._publish(**params)
 
     # ----------------------------------------------------------------------
     def _publish(
@@ -16671,14 +16739,15 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str):
+    def move(self, folder: str | _folder.Folder):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        folder            Required string. The name of the folder to move the item to.
+        folder            Required string or Folder instance. The name of the folder to move the item to or
+                          the Folder class instance representing this folder.
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
@@ -16697,7 +16766,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.move("C:\Projects\ARCGIS\ArcGis_data\")
+            >>> folder = gis.content.folders.get(folder="my folder")
+            >>> item.move(folder)
 
         """
         owner_name = self._user_id
@@ -16710,6 +16780,8 @@ class Item(dict):
                     folder_id = self._portal.get_folder_id(owner_name, folder)
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
+            elif isinstance(folder, _folder.Folder):
+                folder_id = folder._fid
             else:
                 print("folder should be folder name as a string, or dict with id")
 

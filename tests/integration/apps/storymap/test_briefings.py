@@ -81,6 +81,7 @@ class TestStoryMap(unittest.TestCase):
         # establish gis connection
         gis = self.gis
         briefing = Briefing()
+        briefing.delete_briefing()
 
     def test_slide_layouts(self):
         # establish gis connection
