@@ -3,9 +3,7 @@ from arcgis.map.popups import PopupManager
 import unittest
 import os
 from utils.decorators import integration_test, profiles
-
-local_data_path = os.path.dirname(os.path.abspath(__file__))
-
+from tests.integration.config import get_resource_path
 
 @profiles.agol
 @integration_test
@@ -14,7 +12,7 @@ class TestTablesMap(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         content = cls.gis.content
-        cls.csv_path = os.path.join(local_data_path + "/data/capitals_tbl.csv")
+        cls.csv_path = get_resource_path("/mapping/capitals_tbl.csv")
         cls.table_item_file = content.add({}, data=cls.csv_path)  # add the file
         publish_parameters = content.analyze(
             item=cls.table_item_file, file_type="csv", location_type="none"
