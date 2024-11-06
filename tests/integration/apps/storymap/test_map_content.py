@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\tests")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.layers import Service
