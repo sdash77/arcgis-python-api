@@ -1981,16 +1981,16 @@ class Map:
     @pinned_popup_info.setter
     def pinned_popup_info(self, value: dict | None):
         # Check if the dictionary has the correct keys
-        if all(
+        if value is None:
+            self._story._properties["nodes"][self.node]["data"].pop(
+                "pinnedPopupInfo", None
+            )
+        elif all(
             k in value for k in ("layerId", "idFieldName", "idFieldValue", "location")
         ):
             self._story._properties["nodes"][self.node]["data"][
                 "pinnedPopupInfo"
             ] = value
-        elif value is None:
-            self._story._properties["nodes"][self.node]["data"].pop(
-                "pinnedPopupInfo", None
-            )
 
     # ----------------------------------------------------------------------
     @property
