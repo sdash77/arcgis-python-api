@@ -28,11 +28,11 @@ class TestImageContent(unittest.TestCase):
         assert img.alt_text
         
         # set link
-        image.link = "www.google.com"
-        assert image.link == "www.google.com"
+        img.link = "www.google.com"
+        assert img.link == "www.google.com"
         
-        image.full_view = True
-        assert image.full_view == True
+        img.full_view = True
+        assert img.full_view == True
         
         item = gis.content.get(story._itemid)
         assert story.delete_story()
