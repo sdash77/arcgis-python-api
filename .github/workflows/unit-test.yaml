@@ -123,13 +123,7 @@ jobs:
       - name: Get arcgis release info
         id: arcgis-info
         run: |
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            # osx-arm64 is currently only available on prerelease label
-            echo "latest-version=$(conda search -c esri -c esri/label/prerelease arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          else
-            echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
-          fi
-          
+          echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
       - name: Load dependency cache
         id: restore-cache
         uses: actions/cache/restore@v3
