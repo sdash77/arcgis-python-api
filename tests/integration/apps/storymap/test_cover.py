@@ -15,7 +15,6 @@ class TestStoryMap(unittest.TestCase):
 
     def test_editing(self):
         """Change the storycover for the story"""
-        gis = self.gis
         story = StoryMap()
 
         # image for story cover
@@ -29,6 +28,7 @@ class TestStoryMap(unittest.TestCase):
         cover.summary = "Testing the Python API"
         cover.byline = "Python Tester"
         cover.media = river
+        cover.type = "full"
         cover.size = "large"
         cover.style = "transparent-with-light-color"
         cover.horizontal_position = "center"
