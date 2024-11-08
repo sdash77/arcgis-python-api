@@ -141,6 +141,7 @@ jobs:
           conda install -c main nose2 --yes
           pip install requests-mock
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
+          conda install -c esri esri::pydantic --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache
