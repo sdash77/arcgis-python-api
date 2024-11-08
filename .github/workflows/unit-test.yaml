@@ -33,6 +33,11 @@ on:
         description: Run unit tests on Python 3.11?
         required: false
         default: true
+      py312:
+        type: boolean
+        description: Run unit tests on Python 3.12?
+        required: false
+        default: false
 
 jobs:
   preflight:
@@ -67,6 +72,7 @@ jobs:
           echo "windows=${{ github.event_name == 'schedule' || github.event.inputs.windows }}" >> $GITHUB_OUTPUT
           echo "py310=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py310 }}" >> $GITHUB_OUTPUT
           echo "py311=${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.py311 }}" >> $GITHUB_OUTPUT
+          echo "py312=${{ (github.event_name == 'schedule' && github.event.schedule == '30 12 * * 1') || github.event.inputs.py312 }}" >> $GITHUB_OUTPUT
       - name: Construct matrix
         id: set-matrix
         run: |
@@ -90,6 +96,10 @@ jobs:
           if [ "${{ steps.get-parameters.outputs.py311 }}" = 'true' ]; then
             echo "Running on Python 3.11"
             matrix=$(echo $matrix | jq '.python_version += ["3.11"]' | jq -r tostring)
+          fi
+          if [ "${{ steps.get-parameters.outputs.py312 }}" = 'true' ]; then
+            echo "Running on Python 3.12"
+            matrix=$(echo $matrix | jq '.python_version += ["3.12"]' | jq -r tostring)
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
   unit-test:
