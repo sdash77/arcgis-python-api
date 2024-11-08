@@ -47,6 +47,31 @@ class TestGroupExport(unittest.TestCase):
         if self.epk_item:
             assert self.epk_item.delete(permanent=True)
 
+    def test_invalid_item_id(self):
+        gis = self.gis
+        try:
+            gis.groups.search("testgrpinvalidid")[0].delete()
+        except:
+            pass
+        group = gis.groups.create(
+            title="testgrpinvalidid", tags=["test"], snippet="test"
+        )
+        epk_item = gis.content.search(
+            query="owner:esri_notebook",
+            item_type="Export Package",
+            outside_org=True,
+        )[0]
+
+        import_group_content = group.migration.load(
+            epk_item=epk_item,
+            item_ids=["72224efc9e044001934bb3be87120beb"],
+            overwrite=True,
+            keep_epk_item=True,
+        )
+        r = import_group_content.result()
+        assert r
+        group.delete()
+
     def test_group_export_async(self):
         """tests exporting the group items to an epk asynchronously"""
         self.epk_job = self.new_group.migration.create(

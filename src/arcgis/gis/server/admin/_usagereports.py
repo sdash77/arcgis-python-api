@@ -155,7 +155,7 @@ class ReportManager(BaseServer):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
-        See `CreateUsageReport <https://developers.arcgis.com/rest/enterprise-administration/server/createusagereport.htm>`_
+        See `Create Usage Report <https://developers.arcgis.com/rest/enterprise-administration/server/createusagereport.htm>`_
         for details on the REST request bundled by this method.
 
         ====================     ====================================================================
@@ -171,9 +171,21 @@ class ReportManager(BaseServer):
 
                                      # Usage Example
 
-                                     [{"resourceURIs": ["/services/Folder_name/",
-                                                        "Forest_loss.FeatureServer"],
-                                       "metrics": ["RequestCount,RequestsFailed"]}]
+                                     >>> server1.usage.create(
+                                           ...
+                                           queries = [
+                                                 {
+                                                   "resourceURIs": [
+                                                            "/services/Folder_name/",
+                                                            "Forest_loss.FeatureServer"
+                                                       ],
+                                                   "metrics": [
+                                                            "RequestCount,RequestsFailed"
+                                                       ]
+                                                  }
+                                            ]
+                                            ...
+                                        )
 
                                  Each key's corresponding value is a list of strings specifying
                                  a resource for which to gather metrics, or the metrics to
@@ -198,22 +210,21 @@ class ReportManager(BaseServer):
                                  - ``metrics`` --
                                      Comma-separated string of specific measures to gather.
 
-                                     - ``RequestCount`` —
-                                       the number of requests received
-                                     - ``RequestsFailed`` —
-                                       the number of requests that failed
-                                     - ``RequestsTimedOut`` —
-                                       the number of requests that timed out
-                                     - ``RequestMaxResponseTime`` —
-                                       the maximum response time
-                                     - ``RequestAvgResponseTime`` —
-                                       the average response time
-                                     - ``ServiceActiveInstances`` —
-                                       the maximum number of active (running) service instances sampled at 1 minute
-                                       intervals for a specified service
-                                     - ``ServiceRunningInstancesMax`` — the maximum number of active (running) service
-                                       instances, sampled at one-minute intervals for a specified service. If you
-                                       include this metric, it must be the only metric included in the report.
+                                     - ``RequestCount`` — the number of requests received
+                                     - ``RequestsFailed`` - the number of requests that failed
+                                     - ``RequestsTimedOut`` — the number of requests that timed out
+                                     - ``RequestMaxResponseTime`` — the maximum response time
+                                     - ``RequestAvgResponseTime`` - the average response time
+                                     - ``ServiceRunningInstancesMax`` — the maximum number of active service instances
+                                       sampled at one-minute intervals for a specified service.
+
+                                     .. note::
+                                         For ArcGIS Enterprise deployments at 11.0 and below, if you include
+                                         *ServiceRunningInstancesMax*, it must be the only metric included in the report.
+
+                                     - ``RequestAvgWaitTime`` — the average time all requests waited for an available instance
+                                     - ``RequestMaxWaitTime`` — the maximum time a request waited for an available instance
+                                     - ``RequestMinWaitTime`` — the minimum time a request waited for an available instance
         --------------------     --------------------------------------------------------------------
         metadata                 Optional string. Any JSON object representing presentation tier
                                  data for the usage report, such as report title, colors,
@@ -360,12 +371,14 @@ class ReportManager(BaseServer):
     ) -> dict:
         """
         Generates an on the fly usage report for a service, services, or folder.
+        See `Create Usage Report <https://developers.arcgis.com/rest/enterprise-administration/server/createusagereport/>`_
+        for full details on server reports.
 
         ====================     ====================================================================
         **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         since                    Optional string. The time duration of the report. The supported
-                                 values are: LAST_DAY, LAST_WEEK, LAST_MONTH, or LAST_YEAR.
+                                 values are:
 
                                  - ``LAST_DAY`` represents a time range spanning the previous 24 hours.
                                    This is the default value.
@@ -373,11 +386,11 @@ class ReportManager(BaseServer):
                                  - ``LAST_MONTH`` represents a time range spanning the previous 30 days.
                                  - ``LAST_YEAR`` represents a time range spanning the previous 365 days.
         --------------------     --------------------------------------------------------------------
-        queries                  Required string. A string of resourceURIs for which to generate the report.
+        queries                  Opitonal string. A string of resources for which to generate the report.
                                  Specified as a comma-separated sting of services or folders for which to
                                  gather metrics.
 
-                                    - ``services/`` -- Entire Site
+                                    - ``services/`` -- Entire Site. The default.
                                     - ``services/Folder/`` -- Folder within a Site. Reports metrics
                                       aggregated across all services within that Folder and Sub-Folders.
                                     - ``services/Folder/ServiceName.ServiceType`` -- Service in a
@@ -389,7 +402,12 @@ class ReportManager(BaseServer):
 
                                  .. code-block:: python
 
-                                     queries="services/Hydroligic_Data/Lake_algae.FeatureServer,services/Mountains"
+                                     # Example:
+                                     >>> my_server.usage.quick_report(
+                                             ...
+                                             queries = "services/Hydroligic_Data/Lake_algae.FeatureServer,services/Mountains"
+                                             ...
+                                        )
         --------------------     --------------------------------------------------------------------
         metrics                  Optional string. Comma separated list of metrics to be reported.
 
@@ -400,13 +418,24 @@ class ReportManager(BaseServer):
                                     - RequestsTimedOut -- the number of requests that timed out
                                     - RequestMaxResponseTime -- the maximum response time
                                     - RequestAvgResponseTime -- the average response time
-                                    - ServiceActiveInstances -- the maximum number of active
-                                      (running) service instances sampled at 1 minute intervals,
-                                      for a specified service
+                                    - ServiceRunningInstancesMax -- the maximum number of running service instances,
+                                      sampled at one-minute intervals for a specified service.
+
+                                    .. note::
+                                        For ArcGIS Enterprise deployments at 11.0 and below, if you include *ServiceRunningInstancesMax*,
+                                        it must be the only metric included in the report.
+
+                                    - RequestAvgWaitTime— the average time all requests waited for an available instance
+                                    - RequestMaxWaitTime— the maximum time a request waited for an available instance
+                                    - RequestMinWaitTime— the minimum time a request waited for an available instance
 
                                  .. code-block:: python
 
-                                     metrics="RequestCount,RequestsFailed"
+                                     # Example:
+                                     >>> my_server.usage.quick_report(
+                                             ...
+                                             metrics="RequestCount,RequestsFailed"
+                                        )
         ====================     ====================================================================
 
         :return:
