@@ -140,11 +140,7 @@ jobs:
         run: |
           conda install -c main nose2 --yes
           conda install conda-forge::requests-mock --yes
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            conda install -c esri -c esri/label/prerelease arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          else
-            conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
-          fi
+          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache
