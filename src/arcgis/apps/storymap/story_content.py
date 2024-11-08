@@ -144,6 +144,9 @@ class CoverType(Enum):
     GRID = "grid"
     MAGAZINE = "magazine"
     JOURNAL = "journal"
+    CARD = "card"
+    SPLIT = "split"
+    TOP = "top"
 
 
 class VerticalPosition(Enum):
@@ -6071,8 +6074,11 @@ class Cover:
         ---------------     --------------------------------------------------------------------
         type                Optional string or CoverType enum. The type of story cover to be used in the story.
 
-                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal"``
+                            ``Values for Storymap and Briefing: "full" | "sidebyside" | "minimal" | "card" | "split" | "top"``
                             ``Values for Collection: "grid" | "magazine" | "journal"``
+
+                            .. note::
+                                As of Enterprise 11.4 only "full", "sidebyside", and "minimal" are supported for Storymap and Briefing.
         ===============     ====================================================================
 
         :return:
@@ -6085,28 +6091,37 @@ class Cover:
     # ----------------------------------------------------------------------
     @type.setter
     def type(self, cover_type: str | CoverType):
+        # get value
         if isinstance(cover_type, CoverType):
             cover_type = cover_type.value
+
+        # check value
+        if (
+            isinstance(self._story, briefing.Briefing)
+            or isinstance(self._story, story.StoryMap)
+            and cover_type
+            not in [
+                "full",
+                "sidebyside",
+                "minimal",
+                "card",
+                "split",
+                "top",
+            ]
+        ):
+            raise ValueError(
+                "Invalid cover type. Please provide 'full', 'sidebyside', 'minimal', 'card', 'split', or 'top'."
+            )
+        elif isinstance(self._story, collection.Collection) and cover_type not in [
+            "grid",
+            "magazine",
+            "journal",
+        ]:
+            raise ValueError(
+                "Invalid cover type. Please provide 'grid', 'magazine', or 'journal'."
+            )
         if self._existing:
-            if (
-                isinstance(self._story, story.StoryMap)
-                or isinstance(self._story, briefing.Briefing)
-            ) and cover_type in ["full", "sidebyside", "minimal"]:
-                self._story._properties["nodes"][self._node]["data"][
-                    "type"
-                ] = cover_type
-            elif isinstance(self._story, collection.Collection) and cover_type in [
-                "grid",
-                "magazine",
-                "journal",
-            ]:
-                self._story._properties["nodes"][self._node]["data"][
-                    "type"
-                ] = cover_type
-            else:
-                raise ValueError(
-                    "Invalid cover type. Please provide 'full', 'sidebyside', or 'minimal'."
-                )
+            self._story._properties["nodes"][self._node]["data"]["type"] = cover_type
 
     # ----------------------------------------------------------------------
     @property
@@ -6193,17 +6208,27 @@ class Cover:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         vertical_position   Optional string or instance of VerticalPosition Enum. The vertical position of the cover slide.
+                            This is available when the cover type is 'full'.
 
                             ``Values: "top" | "middle" | "bottom"``
         ===============     ====================================================================
         """
-        return self._story._properties["nodes"][self._node]["data"][
-            "titlePanelVerticalPosition"
-        ]
+        return (
+            self._story._properties["nodes"][self._node]["data"][
+                "titlePanelVerticalPosition"
+            ]
+            if "titlePanelVerticalPosition"
+            in self._story._properties["nodes"][self._node]["data"]
+            else None
+        )
 
     # ----------------------------------------------------------------------
     @vertical_position.setter
     def vertical_position(self, position: str):
+        if self.type != "full":
+            raise Exception(
+                "This property is only available when the cover type is 'full'."
+            )
         position = (
             position.value if isinstance(position, VerticalPosition) else position
         )
@@ -6225,17 +6250,27 @@ class Cover:
         **Parameter**           **Description**
         -------------------     --------------------------------------------------------------------
         horizontal_position     Optional string or instance of HorizontalPosition Enum. The horizontal position of the cover slide.
+                                This is available when the cover type is "minimal", "top", or "full".
 
                                 ``Values: "start" | "center" | "end"``
         ===================     ====================================================================
         """
-        return self._story._properties["nodes"][self._node]["data"][
-            "titlePanelHorizontalPosition"
-        ]
+        return (
+            self._story._properties["nodes"][self._node]["data"][
+                "titlePanelHorizontalPosition"
+            ]
+            if "titlePanelHorizontalPosition"
+            in self._story._properties["nodes"][self._node]["data"]
+            else None
+        )
 
     # ----------------------------------------------------------------------
     @horizontal_position.setter
     def horizontal_position(self, position: str):
+        if self.type not in ["minimal", "top", "full"]:
+            raise Exception(
+                "This property is only available when the cover type is 'minimal', 'top', or 'full'."
+            )
         position = (
             position.value if isinstance(position, HorizontalPosition) else position
         )
@@ -6257,15 +6292,24 @@ class Cover:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         style               Optional string or instance of CoverStyle Enum. The style of the cover slide.
+                            This is available when the type is 'full'.
 
                             ``Values: "gradient" | "themed" | "transparent-with-light-color" | "transparent-with-dark-color"``
         ===============     ====================================================================
         """
-        return self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"]
+        return (
+            self._story._properties["nodes"][self._node]["data"]["titlePanelStyle"]
+            if "titlePanelStyle" in self._story._properties["nodes"][self._node]["data"]
+            else None
+        )
 
     # ----------------------------------------------------------------------
     @style.setter
     def style(self, style: str):
+        if self.type != "full":
+            raise Exception(
+                "This property is only available when the cover type is 'full'."
+            )
         style = style.value if isinstance(style, CoverStyle) else style
         if style not in [
             "gradient",
@@ -6288,15 +6332,24 @@ class Cover:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         size                Optional string. The size of the cover slide.
+                            This is available when the type is 'full', "card", or "sidebyside".
 
                             ``Values: "small" | "medium" | "large"``
         ===============     ====================================================================
         """
-        return self._story._properties["nodes"][self._node]["data"]["titlePanelSize"]
+        return (
+            self._story._properties["nodes"][self._node]["data"]["titlePanelSize"]
+            if "titlePanelSize" in self._story._properties["nodes"][self._node]["data"]
+            else None
+        )
 
     # ----------------------------------------------------------------------
     @size.setter
     def size(self, size: str):
+        if self.type not in ["full", "card", "sidebyside"]:
+            raise Exception(
+                "This property is only available when the cover type is 'full', 'card', or 'sidebyside'."
+            )
         size = size.value if isinstance(size, CoverSize) else size
         if size not in ["small", "medium", "large"]:
             raise ValueError(
