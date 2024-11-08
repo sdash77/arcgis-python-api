@@ -139,7 +139,7 @@ jobs:
       - name: Install shared dependencies
         run: |
           conda install -c main nose2 --yes
-          conda install conda-forge::requests-mock --yes
+          pip install requests-mock
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
