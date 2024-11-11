@@ -366,12 +366,7 @@ class UnetClassifier(ArcGISModel):
             if not callable(getattr(Swin_Weights, attr)) and not attr.startswith("__")
         ]
 
-        satlas_backbone = list(
-            map(
-                lambda m: "hf:" + m,
-                resnet_keys + swin_keys,
-            )
-        )
+        satlas_backbone = list(map(lambda m: "hf:" + m, resnet_keys + swin_keys))
         return satlas_backbone
 
     @staticmethod
