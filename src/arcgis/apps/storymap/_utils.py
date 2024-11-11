@@ -368,39 +368,84 @@ def get_version(story) -> str:
     return sm_version
 
 
-# ----------------------------------------------------------------------
-def save(
-    story,
-    title: Optional[str] = None,
-    tags: Optional[list] = None,
-    access: str = None,
-    publish: bool = False,
+def _publish_online(story, sm_version, access: str = None, make_copyable: bool = None):
+    """
+    Online has a publish endpoint. We do not need to take care of resources or keywords with this workflow.
+    """
+    # Publish Mode Online
+    # publish endpoint
+    url = "https://storymaps.arcgis.com/api/item/{}/publish".format(story._itemid)
+    data = {
+        "access": access or story._item.access,
+        "appVersion": sm_version,
+        "storyDraftData": story._properties,
+    }
+    if make_copyable in [True, False]:
+        data["canViewersCopy"] = make_copyable
+    story._gis._session.post(
+        url,
+        json.dumps(data),
+        headers={"x-storymaps-auth": story._gis._session.auth.token},
+    )
+
+
+def _publish_enterprise(story, access, item_properties):
+    """
+    Enterprise does not have a publish endpoint. We need to manually update the item properties and resources.
+    """
+    # Remove old publish item
+    for resource in story._resources:
+        if (
+            "publish_data" in resource["resource"]
+            or "published_data" in resource["resource"]
+            or "publish" in resource["resource"]
+        ):
+            _remove_resource(story, file=resource["resource"])
+    # Add new publish
+    _add_resource(
+        story,
+        resource_name="published_data.json",
+        text=json.dumps(story._properties),
+    )
+
+    # add to item properties
+    item_properties["text"] = json.dumps(story._properties)
+    item_properties["url"] = story._url
+    sharing = access or story._item.access
+    item_properties["access"] = sharing
+
+    # Update the item and invoke share to have correct access
+    story._item.update(item_properties=item_properties)
+
+    if sharing == "private":
+        story._item.sharing.sharing_level = "PRIVATE"
+    elif sharing == "org":
+        story._item.sharing.sharing_level = "ORGANIZATION"
+    elif sharing == "public":
+        story._item.sharing.sharing_level = "EVERYONE"
+
+    if story._gis._session.auth and story._gis._session.auth.token is not None:
+        # Make a call to the StoryMaps publish endpoint
+        story._gis._session.post(
+            url=story._url + "/publish",
+            data={
+                "f": "json",
+                "token": story._gis._session.auth.token,
+            },
+        )
+
+
+def _prepare_story_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version
 ):
     """
-    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
-    with unpublished changes unless `publish` parameter is specified to True.
-
-    The title only needs to be specified if a change is wanted, otherwise exisiting title
-    is used.
+    Remove old resource and add new draft resource that is the story._properties.
     """
-    # Remove old draft item
     for resource in story._resources:
         if re.match("draft_[0-9]{13}.json", resource["resource"]) or re.match(
             "draft.json", resource["resource"]
         ):
             _remove_resource(story, file=resource["resource"])
-
-    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    if title:
-        root = story._properties["root"]
-        if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
-        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-        if "config" not in story._properties["nodes"][root]:
-            story._properties["nodes"][root]["config"] = {}
-        story._properties["nodes"][root]["config"][
-            "shouldPushMetaToAGOItemDetails"
-        ] = False
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
@@ -416,32 +461,17 @@ def save(
         # update the draft with the story._properties
         story._item.resources.update(file=temp.name, file_name=draft)
 
-    # get the story map version from endpoint
-    sm_version = get_version(story)
-    # Find type keywords to use based on whether to publish or not
-    if isinstance(story, briefing.Briefing):
-        briefing_keywords = ["alphabriefing", "storymapbriefing"]
-    elif isinstance(story, collection.Collection):
-        collection_keywords = ["storymapcollection"]
+    item_properties = _prepare_item_properties_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+    )
+    return item_properties
 
-    # PUBLISH MODE
-    if publish is True:
-        # Remove old publish item
-        for resource in story._resources:
-            if (
-                "publish_data" in resource["resource"]
-                or "published_data" in resource["resource"]
-                or "publish" in resource["resource"]
-            ):
-                _remove_resource(story, file=resource["resource"])
-        # Add new publish
-        _add_resource(
-            story,
-            resource_name="published_data.json",
-            text=json.dumps(story._properties),
-        )
-        # Set the keywords
-        # Start by getting the existing keywords and remove what will be replaced
+
+def _prepare_item_properties_for_save(
+    story, publish, make_copyable, no_seo, title, tags, sm_version, draft
+):
+    # Find type keywords to use based on whether to publish or not
+    if publish:
         keywords = story._item.typeKeywords
         if "smstatusunpublishedchanges" in keywords:
             # changing to publish after
@@ -468,47 +498,11 @@ def save(
             "smdraftresourceid:" + draft,
             "smpublisheddate:" + str(int(time.time() * 1000)),
         ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Setting the keywords in a set will remove duplicates
-        p = {
-            "typeKeywords": list(set(keywords + new_keywords)),
-            "text": json.dumps(story._properties),
-            "url": story._url,
-        }
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-
-        # Find and set access
-        sharing = access if access is not None else story._item.access
-        p["access"] = sharing
-
-        # Update the item and invoke share to have correct access
-        story._item.update(item_properties=p)
-
-        if sharing == "private":
-            story._item.sharing.sharing_level = "PRIVATE"
-        elif sharing == "org":
-            story._item.sharing.sharing_level = "ORGANIZATION"
-        elif sharing == "public":
-            story._item.sharing.sharing_level = "EVERYONE"
-
-        if (
-            story._gis._con._session.auth
-            and story._gis._con._session.auth.token is not None
-        ):
-            # Make a call to the StoryMaps publish endpoint
-            story._gis._con.post(
-                path=story._url + "/publish",
-                params={
-                    "f": "json",
-                    "token": story._gis._con._session.auth.token,
-                },
-            )
+        # publish keywords
+        if make_copyable is True:
+            new_keywords.append("Viewer Copyable")
+        if no_seo is False:
+            new_keywords.append("smsharingnoseo")
     else:
         # Set the type keywords
         keywords = story._item.typeKeywords
@@ -547,19 +541,69 @@ def save(
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
             ]
-        if isinstance(story, briefing.Briefing):
-            new_keywords = new_keywords + briefing_keywords
-        elif isinstance(story, collection.Collection):
-            new_keywords = new_keywords + collection_keywords
-        # Pass through set first to remove duplicates
-        p = {"typeKeywords": list(set(keywords + new_keywords))}
-        if title:
-            p["title"] = title
-        if tags:
-            p["tags"] = tags
-        # access does not change when only saving
-        p["access"] = story._item.access
-        story._item.update(item_properties=p)
+
+    # Add extra keywords
+    if isinstance(story, briefing.Briefing):
+        new_keywords = new_keywords + ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        new_keywords = new_keywords + ["storymapcollection"]
+
+    new_keywords = list(set(keywords + new_keywords))
+
+    p = {"typeKeywords": new_keywords}
+    if title:
+        p["title"] = title
+    if tags:
+        p["tags"] = tags
+    return p
+
+
+# ----------------------------------------------------------------------
+def save(
+    story,
+    title: Optional[str] = None,
+    tags: Optional[list] = None,
+    access: str = None,
+    publish: bool = False,
+    make_copyable: bool = None,
+    no_seo: bool = None,
+):
+    """
+    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
+    with unpublished changes unless publish parameter is specified to True.
+
+    The title only needs to be specified if a change is wanted, otherwise exisiting title
+    is used.
+    """
+    # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
+    if title:
+        root = story._properties["root"]
+        if "metaSettings" not in story._properties["nodes"][root]["data"]:
+            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
+        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+        if "config" not in story._properties["nodes"][root]:
+            story._properties["nodes"][root]["config"] = {}
+        story._properties["nodes"][root]["config"][
+            "shouldPushMetaToAGOItemDetails"
+        ] = False
+
+    # get the story map version from endpoint
+    sm_version = get_version(story)
+
+    if publish is True and story._gis._is_agol:
+        _publish_online(story, sm_version, access, make_copyable)
+    else:
+        # No endpoint, do manually
+        item_properties = _prepare_story_for_save(
+            story, publish, make_copyable, no_seo, title, tags, sm_version
+        )
+
+        if publish is True and not story._gis._is_agol:
+            _publish_enterprise(story, access, item_properties)
+        else:
+            # access does not change when only saving
+            item_properties["access"] = story._item.access
+            story._item.update(item_properties=item_properties)
 
     story._item = story._gis.content.get(story._itemid)
     return story._item
@@ -572,7 +616,7 @@ def delete_item(story):
     """
     # Check if item id exists
     item = story._gis.content.get(story._itemid)
-    return item.delete()
+    return item.delete(permanent=True)
 
 
 # ----------------------------------------------------------------------

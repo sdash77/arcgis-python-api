@@ -2,7 +2,7 @@ import os
 import io
 import uuid
 import unittest
-from arcgis.gis import GIS, Item
+from arcgis.gis import Item
 from arcgis.gis._impl._content_manager import Folder, Folders
 from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
@@ -1027,12 +1027,15 @@ class TestFolderAddContent(unittest.TestCase):
         item_passengers = folder.add(
             item_properties={
                 "type": "CSV",
-                "title": f"Airline Passenger Data {uuid.uuid4().hex[:4]}",
+                "title": f"Airline Passenger IO Data {uuid.uuid4().hex[:4]}",
                 "fileName": f"airline{uuid.uuid4().hex[:5]}.csv",
+                "tags": "integration_testing",
             },
             file=buffer,
-        )
-        item_passengers.result().delete()
+        ).result()
+        assert isinstance(item_passengers, Item)
+        assert item_passengers.type == "CSV"
+        assert item_passengers.delete(permanent=True)
 
     def test_add_service_url(self):
         gis = self.gis
@@ -1040,14 +1043,16 @@ class TestFolderAddContent(unittest.TestCase):
         folder = mgr.get("Root Folder")
         item = folder.add(
             item_properties={
-                "title": "url by referrence",
+                "title": f"url map service {uuid.uuid4().hex[:4]}",
                 "type": "Map Service",
+                "tags": "integration_testing",
             },
             url="https://sampleserver5.arcgisonline.com/arcgis/rest/services/AGP/USA/MapServer",
         )
         item = item.result()
         assert isinstance(item, Item)
-        assert item.delete()
+        assert item.type == "Map Service"
+        assert item.delete(permanent=True)
 
     def test_add_data_url(self):
         gis = self.gis
@@ -1055,14 +1060,16 @@ class TestFolderAddContent(unittest.TestCase):
         folder = mgr.get("Root Folder")
         item = folder.add(
             item_properties={
-                "title": "data_url_shapefile",
+                "title": f"data url shapefile {uuid.uuid4().hex[:4]}",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
             data_url="https://www2.census.gov/geo/tiger/TIGER2022/STATE/tl_2022_us_state.zip",
         )
         item = item.result()
         assert isinstance(item, Item)
-        assert item.delete()
+        assert item.type == "Shapefile"
+        assert item.delete(permanent=True)
 
     def test_add_text(self):
         gis = self.gis
@@ -1070,72 +1077,78 @@ class TestFolderAddContent(unittest.TestCase):
         folder = mgr.get("Root Folder")
         item = folder.add(
             item_properties={
-                "title": "webmap test",
+                "title": f"text webmap {uuid.uuid4().hex[:4]}",
                 "type": "Web Map",
+                "tags": "integration_testing",
             },
             text=TEXT_DATA,
         )
         item = item.result()
         assert isinstance(item, Item)
-        assert item.delete()
+        assert item.type == "Web Map"
+        assert item.delete(permanent=True)
 
-    def test_add_small_file(self):
+    def test_add_small_file_root(self):
         """adds a small item on the root"""
         gis = self.gis
         mgr = gis.content.folders
         folder = mgr.get("Root Folder")
         item = folder.add(
             item_properties={
-                "title": "shapefile_data",
+                "title": f"root small file {uuid.uuid4().hex[:4]}",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
             file=os.path.join(QA_LABS_FOLDER, "shapefile.zip"),
         )
         item = item.result()
         assert isinstance(item, Item)
-        item.delete()
+        assert item.type == "Shapefile"
+        assert item.delete(permanent=True)
 
     def test_add_small_file_folder(self):
         """adds a small item inside a folder"""
         gis = self.gis
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_add_small_file"
         mgr = gis.content.folders
         folder = mgr.create(unique_folder_name)
 
         item = folder.add(
             item_properties={
-                "title": "shapefile_data",
+                "title": f"folder small file {uuid.uuid4().hex[:4]}",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
             file=os.path.join(QA_LABS_FOLDER, "shapefile.zip"),
         )
         item = item.result()
         assert isinstance(item, Item)
-        assert item.delete()
-        assert folder.delete()
+        assert item.delete(permanent=True)
+        assert folder.delete(permanent=True)
 
     def test_add_small_file_owner(self):
-        """"""
+        """adds a small item inside root through owner"""
         gis = self.gis
         mgr = gis.content.folders
         owner = [user for user in gis.users.search("*")][0]
         folder = mgr.get("Root Folder", owner=owner)
         item = folder.add(
             item_properties={
-                "title": "shapefile_data",
+                "title": f"owner small file {uuid.uuid4().hex[:4]}",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
             file=os.path.join(QA_LABS_FOLDER, "shapefile.zip"),
             # owner=owner,
         )
         item = item.result()
         assert isinstance(item, Item)
-        item.delete()
+        assert item.delete(permanent=True)
 
     def test_add_small_file_folder_owner(self):
         """"""
         gis = self.gis
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_add_small_file_owner"
         mgr = gis.content.folders
         owner = [user for user in gis.users.search("*")][0]
         folder = mgr.create(unique_folder_name)
@@ -1144,18 +1157,20 @@ class TestFolderAddContent(unittest.TestCase):
             item_properties={
                 "title": "shapefile_data",
                 "type": "Shapefile",
+                "tags": "integration_testing",
             },
             file=os.path.join(QA_LABS_FOLDER, "shapefile.zip"),
             # owner=owner,
         )
         item = item.result()
         assert isinstance(item, Item)
-        item.delete()
+        assert item.delete(permanent=True)
+        assert folder.delete(permanent=True)
 
     def test_add_large_file(self):
-        """"""
+        """adds a large item inside a folder"""
         gis = self.gis
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_add_large_file"
         mgr = gis.content.folders
         # owner = [user for user in gis.users.search("*")][0]
         folder = mgr.create(unique_folder_name)
@@ -1164,6 +1179,7 @@ class TestFolderAddContent(unittest.TestCase):
             item_properties={
                 "title": "sd_data",
                 "type": "Service Definition",
+                "tags": "integration_testing",
             },
             file=os.path.join(QA_LABS_FOLDER, "servicedefinition.sd"),
         )
@@ -1173,7 +1189,8 @@ class TestFolderAddContent(unittest.TestCase):
             == item.size
         )
         assert isinstance(item, Item)
-        item.delete()
+        assert item.delete(permanent=True)
+        assert folder.delete(permanent=True)
 
 
 @integration_test
@@ -1181,24 +1198,24 @@ class TestFolderAddContent(unittest.TestCase):
 class TestFolder(unittest.TestCase):
 
     def test_folder_delete(self):
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_delete"
         gis = self.gis
         folder = gis.content.folders.create(folder=unique_folder_name)
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
     def test_folder_properties(self):
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_properties"
         gis = self.gis
         folder = gis.content.folders.create(folder=unique_folder_name)
         assert folder.properties
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
     def test_folder_name(self):
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_name"
         gis = self.gis
         folder = gis.content.folders.create(folder=unique_folder_name)
         assert folder.name
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
     def test_folder_list(self):
         gis = self.gis
@@ -1208,8 +1225,8 @@ class TestFolder(unittest.TestCase):
             break
 
     def test_folder_rename(self):
-        unique_folder_name: str = f"folder_{uuid.uuid4().hex[:4]}"
-        unique_folder_name2: str = f"folder_{uuid.uuid4().hex[:4]}"
+        unique_folder_name: str = "integration_testing_folder_before"
+        unique_folder_name2: str = "integration_testing_folder_after"
         gis = self.gis
         mgr = gis.content.folders
         folder = gis.content.folders.create(folder=unique_folder_name)
@@ -1217,7 +1234,7 @@ class TestFolder(unittest.TestCase):
         assert mgr.get(unique_folder_name2)
         assert mgr.get(unique_folder_name) is None
         assert folder.name == unique_folder_name2
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
 
 @integration_test
@@ -1231,9 +1248,9 @@ class TestFolders(unittest.TestCase):
 
     def test_create_folder(self):
         gis = self.gis
-        folder = gis.content.folders.create(folder="a folder for testing")
+        folder = gis.content.folders.create(folder="integration_testing_folders_create")
         assert isinstance(folder, Folder)
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
     def test_create_folder_another_user(self):
         gis = self.gis
@@ -1242,9 +1259,9 @@ class TestFolders(unittest.TestCase):
             if user["username"] != gis.users.me.username:
                 owner = user["username"]
                 break
-        folder = gis.content.folders.create(folder="a folder for testing", owner=owner)
+        folder = gis.content.folders.create(folder="integration_testing_folder_create_for_owner", owner=owner)
         assert isinstance(folder, Folder)
-        assert folder.delete()
+        assert folder.delete(permanent=True)
 
     def test_get_folder_other_user(self):
         gis = self.gis

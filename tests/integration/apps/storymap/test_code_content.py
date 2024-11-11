@@ -21,8 +21,7 @@ class TestEmbedContent(unittest.TestCase):
         assert code_block
         assert code_block.content
         assert code_block.language
-        item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
@@ -36,8 +35,7 @@ class TestEmbedContent(unittest.TestCase):
 
         deleted = code_block.delete()
         assert deleted
-        item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
     def test_replace_code_item(self):
         """Test replacing the webpage link. This can be done through a property for each content"""
@@ -58,8 +56,7 @@ class TestEmbedContent(unittest.TestCase):
         print(code_block.language)
 
         assert code_block.language
-        item = gis.content.get(story._itemid)
-        assert item.delete()
+        assert story.delete_story()
 
 
 if __name__ == "__main__":
