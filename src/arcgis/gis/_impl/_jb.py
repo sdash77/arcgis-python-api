@@ -52,7 +52,14 @@ class StatusJob(object):
 
     # ----------------------------------------------------------------------
     def __init__(
-        self, future, op, jobid, gis, notify=False, extra_marker="Group", key=None
+        self,
+        future,
+        op,
+        jobid,
+        gis,
+        notify=False,
+        extra_marker="Group",
+        key=None,
     ):
         """
         initializer
@@ -242,16 +249,12 @@ class StatusJob(object):
                     for i in res["result"]["itemsImported"]
                     if "itemId" in i
                 ]
-                return_result["itemsSkipped"] = [
-                    Item(itemid=i["itemId"], gis=self._gis)
-                    for i in res["result"]["itemsSkipped"]
-                    if "itemId" in i
-                ]
-                return_result["itemsFailedImport"] = [
-                    Item(itemid=i["itemId"], gis=self._gis)
-                    for i in res["result"]["itemsFailedImport"]
-                    if "itemId" in i
-                ]
+                return_result["itemsSkipped"] = res["result"].get("itemsSkipped", [])
+
+                return_result["itemsFailedImport"] = res["result"].get(
+                    "itemsFailedImport", []
+                )
+
                 return return_result
             elif "services" in res["result"]:
                 return [

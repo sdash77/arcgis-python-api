@@ -1,99 +1,64 @@
 import unittest
 import io
 import uuid
-from arcgis.gis import GIS
 import pandas as pd
 import requests
-from utils.decorators import integration_test
+from arcgis.gis import Item
+from utils.decorators import integration_test, profiles
 
-GUID = uuid.uuid4().hex[:6]
-item_properties = {
-    "type": "CSV",
-    "title": f"IOTest{GUID}",
-    "fileName": f"io_{GUID}_test.csv",
-}
-URL = (
-    "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-)
-PROFILES = ["your_online_profile", "your_kubernetes_profile"]
 
+@profiles.all
 @integration_test
 class TestAddUsingIO(unittest.TestCase):
-    def test_add_by_string_io(self):
-        """adds the CSV file using stringIO object"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.folder = cls.gis.content.folders._get_or_create(
+            folder="integration_testing_gis_content_add_by_io",
+            owner=cls.gis._username
+        )
+
+        GUID = uuid.uuid4().hex[:6]
+        cls.item_properties = {
+            "type": "CSV",
+            "title": f"IOTest{GUID}",
+            "fileName": f"io_{GUID}_test.csv",
+            "tags": "integration_testing"
+        }
+
+        # setup io data
+        URL = (
+            "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
+        )
         input = requests.get(URL).text
         input_io = io.StringIO(input)
-        data = pd.read_csv(input_io)
-        output = io.StringIO()
-        data.to_csv(output, index=False)
-        gis = GIS(profile=PROFILES[0], verify_cert=False, trust_env=True)
-        item = gis.content.add(item_properties, data=output)
-        assert item
-        assert item.delete()
+        cls.data = pd.read_csv(input_io)
+        cls.output = io.StringIO()
+        cls.data.to_csv(cls.output, index=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.folder:
+            cls.folder.delete(permanent=True)
+
+    def test_add_by_string_io(self):
+        """adds the CSV file using stringIO object"""
+        item = self.folder.add(self.item_properties, file=self.output).result()
+        assert isinstance(item, Item)
+        assert item.type == "CSV"
+        assert item.delete(permanent=True)
 
     def test_update_by_string_io(self):
         """adds the CSV file using stringIO object"""
-        input = requests.get(URL).text
-        input_io = io.StringIO(input)
-        data = pd.read_csv(input_io)
-        output = io.StringIO()
-        data.to_csv(output, index=False)
-        gis = GIS(profile=PROFILES[0], verify_cert=False, trust_env=True)
-        item = gis.content.add(item_properties, data=output)
-        assert item
+        item = self.folder.add(self.item_properties, file=self.output).result()
+        assert isinstance(item, Item)
         try:
-            assert item.update(data=output)
+            assert item.update(data=self.output)
         except Exception as e:
             raise e
         finally:
             if item:
-                assert item.delete()
-
-@integration_test
-class TestAddUpdateKubeUsingIO(unittest.TestCase):
-    def test_add_by_string_io(self):
-        """adds the CSV file using stringIO object"""
-        input = requests.get(URL).text
-        input_io = io.StringIO(input)
-        data = pd.read_csv(input_io)
-        output = io.StringIO()
-        data.to_csv(output, index=False)
-        gis = GIS(
-            profile=PROFILES[1],
-            verify_cert=False,
-            trust_env=True,
-        )
-        item = None
-        try:
-            item = gis.content.add(item_properties, data=output)
-            assert item
-        except Exception as e:
-            raise e
-        finally:
-            if item:
-                item.delete()
-
-    def test_update_by_string_io(self):
-        """adds the CSV file using stringIO object"""
-        input = requests.get(URL).text
-        input_io = io.StringIO(input)
-        data = pd.read_csv(input_io)
-        output = io.StringIO()
-        data.to_csv(output, index=False)
-        gis = GIS(
-            profile=PROFILES[1],
-            verify_cert=False,
-            trust_env=True,
-        )
-        item = gis.content.add(item_properties, data=output)
-        assert item
-        try:
-            assert item.update(data=output)
-        except Exception as e:
-            raise e
-        finally:
-            if item:
-                assert item.delete()
+                assert item.delete(permanent=True)
 
 
 if __name__ == "__main__":

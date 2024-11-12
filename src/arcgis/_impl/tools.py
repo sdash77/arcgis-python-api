@@ -10778,7 +10778,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="2.4.2", current_version="2.4.1")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -18385,7 +18385,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_item_name = "TrainDeepLearningModel_" + _id_generator()
             output_name = output_item_name.replace(" ", "_")
 
-        if "/fileShares/" in output_name or "/rasterStores/" in output_name:
+        if (
+            "/fileShares/" in output_name
+            or "/rasterStores/" in output_name
+            or "/cloudStores/" in output_name
+        ):
             output_name = {"uri": output_name}
         else:
             if folderId is not None:
