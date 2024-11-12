@@ -16065,6 +16065,7 @@ class Item(dict):
             "Mission2Item",
             "Map2FeatureCollectionMobileApp2Code",
             "Notebook2WebTool",
+            "Listed2ImplicitlyListed",
         ]
     )
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])

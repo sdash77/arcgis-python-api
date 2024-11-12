@@ -28,20 +28,140 @@ _COMPLEX_ITEMS = frozenset(
     ]
 )
 
+_RELATIONSHIPS = {
+    "API Key": {"forward": ["APIKey2Item"], "reverse": []},
+    "Application Configuration": {"forward": [], "reverse": ["Map2AppConfig"]},
+    "Code Attachment": {"forward": [], "reverse": ["MobileApp2Code", "WMA2Code"]},
+    "Compact Tile Package": {"forward": [], "reverse": ["Service2Data"]},
+    "CSV": {"forward": [], "reverse": ["Service2Data"]},
+    "DesktopStyle": {"forward": [], "reverse": ["WebStyle2DesktopStyle"]},
+    "Feature Collection": {
+        "forward": [],
+        "reverse": ["Service2Data", "Map2FeatureCollection"],
+    },
+    "Feature Service": {
+        "forward": [
+            "Service2Data",
+            "Service2Layer",
+            "Service2Service",
+            "TrackView2Map",
+        ],
+        "reverse": [
+            "Map2Service",
+            "Service2Data",
+            "Service2Layer",
+            "Survey2Data",
+            "Survey2Service",
+        ],
+    },
+    "File Geodatabase": {"forward": [], "reverse": ["Service2Data"]},
+    "Form": {"forward": ["Survey2Data", "Survey2Service"], "reverse": []},
+    "GeoJson": {"forward": [], "reverse": ["Service2Data"]},
+    "GeoPackage": {"forward": [], "reverse": ["Service2Data"]},
+    "Geoprocessing Service": {"forward": [], "reverse": ["Notebook2WebTool"]},
+    "Hosted Feature Service": {
+        "forward": ["Service2Data", "Service2Route"],
+        "reverse": [],
+    },
+    "Image": {"forward": [], "reverse": ["Item2Attachment", "Item2Report"]},
+    "Image Collection": {"forward": [], "reverse": ["Service2Data"]},
+    "Image Service": {"forward": [], "reverse": ["Map2Service"]},
+    "Indoors Map Configuration": {"forward": [], "reverse": ["Map2IndoorsConfig"]},
+    "Map Area": {
+        "forward": ["Area2CustomPackage", "Area2Package"],
+        "reverse": ["Map2Area"],
+    },
+    "Map Package": {
+        "forward": [],
+        "reverse": ["Area2CustomPackage", "Area2Package", "Survey2Data"],
+    },
+    "Map Service": {
+        "forward": ["Service2Data"],
+        "reverse": ["Service2Service", "Map2Service"],
+    },
+    "Microsoft Excel": {
+        "forward": [],
+        "reverse": ["Item2Attachment", "Item2Report", "Service2Data"],
+    },
+    "Microsoft PowerPoint": {
+        "forward": [],
+        "reverse": ["Item2Attachment", "Item2Report"],
+    },
+    "Microsoft Word": {
+        "forward": [],
+        "reverse": ["Item2Attachment", "Item2Report", "Survey2Data"],
+    },
+    "Mission": {"forward": ["Mission2Item"], "reverse": []},
+    "Mobile Application": {"forward": ["MobileApp2Code"], "reverse": []},
+    "Notebook": {"forward": ["Notebook2WebTool"], "reverse": []},
+    "OGCFeatureServer": {"forward": ["Service2Data"], "reverse": []},
+    "PDF": {"forward": [], "reverse": ["Item2Attachment", "Item2Report"]},
+    "Route Layer": {"forward": [], "reverse": ["Service2Route"]},
+    "Scene Package": {"forward": [], "reverse": ["Service2Data"]},
+    "Scene Service": {"forward": ["Service2Data"], "reverse": []},
+    "Service Definition": {"forward": [], "reverse": ["Service2Data"]},
+    "Shapefile": {"forward": [], "reverse": ["Service2Data"]},
+    "SQLite Geodatabase": {
+        "forward": [],
+        "reverse": ["Area2CustomPackage", "Area2Package", "Service2Data"],
+    },
+    "StoryMap": {"forward": [], "reverse": ["Theme2Story"]},
+    "StoryMap Theme": {"forward": ["Theme2Story"], "reverse": []},
+    "Style": {
+        "forward": ["Service2Style", "Style2Style", "WebStyle2DesktopStyle"],
+        "reverse": ["Service2Style", "Style2Style"],
+    },
+    "Survey123 Add In": {"forward": ["SurveyAddIn2Data"], "reverse": []},
+    "Tile Package": {
+        "forward": [],
+        "reverse": [
+            "Area2CustomPackage",
+            "Area2Package",
+            "Service2Data",
+            "Survey2Data",
+        ],
+    },
+    "Vector Tile Package": {
+        "forward": [],
+        "reverse": [
+            "Area2CustomPackage",
+            "Area2Package",
+            "Service2Data",
+            "Survey2Data",
+        ],
+    },
+    "Vector Tile Service": {
+        "forward": ["Service2Data", "Service2Style", "Style2Style"],
+        "reverse": ["Service2Style", "Style2Style"],
+    },
+    "Visio Document": {"forward": [], "reverse": ["Item2Attachment", "Item2Report"]},
+    "Web Map": {
+        "forward": [
+            "Map2AppConfig",
+            "Map2Area",
+            "Map2FeatureCollection",
+            "Map2Service",
+            "Map2IndoorsConfig",
+        ],
+        "reverse": ["Survey2Data", "TrackView2Map"],
+    },
+    "Web Mapping Application": {"forward": ["WMA2Code"], "reverse": []},
+    "WFS": {"forward": ["Service2Data"], "reverse": []},
+    "WMS": {"forward": ["Service2Data"], "reverse": []},
+    "WMTS": {"forward": ["Service2Data"], "reverse": []},
+}
+
 # regular expression to find GUID
 _REGEX_GUID = r"[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}"
 
 
-def _get_item_dependencies(itemid, gis):
+def _get_item_dependencies(itemid, gis, include_rel=True):
     if isinstance(itemid, Item):
         item = itemid
     else:
         item = gis.content.get(itemid)
 
     if not item:
-        return []
-
-    if item["type"] not in _COMPLEX_ITEMS:
         return []
 
     dependencies = []
@@ -60,9 +180,51 @@ def _get_item_dependencies(itemid, gis):
     else:
         dependencies = []
 
-    # add the dependent items property check from mtk
+    if include_rel:
+        # only doing forward dependencies for now
+        forward_deps, reverse_deps = _get_related_items(
+            item, forward=True, reverse=False
+        )
+        dependencies.extend(f for f in forward_deps if f not in dependencies)
 
     return dependencies
+
+
+def _get_related_items(item, forward=True, reverse=True):
+    if not forward and not reverse:
+        raise ValueError("At least one direction must be specified.")
+
+    forward_deps = []
+    reverse_deps = []
+    f_rel_types = [
+        "Item2Attachment",
+        "Item2Report",
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+    ]
+    r_rel_types = [
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+        "SurveyAddIn2Data",
+        "Solution2Item",
+        "APIKey2Item",
+        "Mission2Item",
+    ]
+    if item.type in _RELATIONSHIPS:
+        f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
+        r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+
+    if forward:
+        for rel_type in f_rel_types:
+            rel_items = item.related_items(rel_type, direction="forward")
+            forward_deps.extend(f for f in rel_items if f not in forward_deps)
+
+    if reverse:
+        for rel_type in r_rel_types:
+            rel_items = item.related_items(rel_type, direction="reverse")
+            reverse_deps.extend(r for r in rel_items if r not in reverse_deps)
+
+    return forward_deps, reverse_deps
 
 
 def _parse_webmap(item):
