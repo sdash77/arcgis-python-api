@@ -2833,7 +2833,10 @@ class FeatureLayerCollectionManager(_GISResource):
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
-                lyr_id = lyr.manager.properties.serviceItemId
+                if hasattr(lyr.manager.properties, "serviceItemId"):
+                    lyr_id = lyr.manager.properties.serviceItemId
+                else:
+                    lyr_id = lyr.properties.serviceItemId
                 data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
@@ -2877,7 +2880,11 @@ class FeatureLayerCollectionManager(_GISResource):
             if view_layers:
                 if isinstance(view_layers, list):
                     for lyr in view_layers:
-                        lyr_id = lyr.manager.properties.serviceItemId
+                        if hasattr(lyr.manager.properties, "serviceItemId"):
+                            lyr_id = lyr.manager.properties.serviceItemId
+                        else:
+                            # enterprise layers have serviceItemId in properties of layer not manager
+                            lyr_id = lyr.properties.serviceItemId
                         data_path = "content/items/" + lyr_id + "/data"
                         data = item._portal.con.get(path=data_path)
                         def_lyr = dict(lyr.properties)
