@@ -1,7 +1,8 @@
 from __future__ import annotations
 import io
-import json
 import os
+import json
+import logging
 import requests
 import mimetypes
 from functools import lru_cache
@@ -11,6 +12,9 @@ from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
 
 _arcgis_gis = LazyLoader("arcgis.gis")
+
+__log__ = logging.getLogger()
+
 __all__ = [
     "guess_mimetype",
     "create_upload_tuple",
@@ -73,61 +77,49 @@ def status(
     return resp.json()
 
 
-# -------------------------------------------------------------------------
 def chunk_by_file_size(
-    fp: str | io.BytesIO,
-    size: int = None,
+    file_path: Union[str, io.BytesIO, io.StringIO],
+    size: int | None = None,
     parameter_name: str = "file",
     upload_format: bool = False,
-) -> Iterator[Union[Tuple[str, io.BytesIO, str], io.BytesIO]]:
-    """Splits a File based on a specific bytes size"""
+) -> Iterator[Union[Tuple[str, Union[bytes, str], str], bytes, str]]:
+    """Lazy function (generator) to read a file piece by piece using os module.
+    Default chunk size: 1k."""
     if size is None:
-        size: int = int(calculate_upload_size(fp))
-        # size = int(2.5e7)  # 25MB
-    i = 1
-    if isinstance(fp, str):
-        with open(fp, "rb") as reader:
-            while True:
-                bio = io.BytesIO()
-                data = bio.write(reader.read(size))
-                bio.seek(0)
-                if not data:
-                    break
-                if upload_format:
-                    fpath = f"split{i}.split"
-                    yield parameter_name, bio, fpath
-                else:
-                    yield bio
-                i += 1
-    elif isinstance(fp, io.StringIO):
-        fp.seek(0)
+        size = calculate_upload_size(file_path)
+        __log__.debug(f"Calculated chunk size: {size / (1024 * 1024)} MB")
+    if isinstance(file_path, str) and not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    if not isinstance(size, int) or size <= 0:
+        raise ValueError("size must be a positive integer")
+    i: int = 1
+    if isinstance(file_path, (io.BytesIO, io.StringIO, io.BufferedReader)):
+        file_path.seek(0)
         while True:
-            bio = io.StringIO()
-            data = bio.write(fp.read(size))
-            bio.seek(0)
-            if not data:
+            chunk = file_path.read(size)
+            if not chunk:
                 break
             if upload_format:
-                fpath = f"split{i}.split"
-                yield parameter_name, bio, fpath
+                fpath: str = f"split{i}.split"
+                yield parameter_name, chunk, fpath
             else:
-                yield bio
+                yield chunk
             i += 1
     else:
-        fp.seek(0)
-        while True:
-            bio = io.BytesIO()
-            data = bio.write(fp.read(size))
-            bio.seek(0)
-            if not data:
-                break
-            if upload_format:
-                fpath = f"split{i}.split"
-                yield parameter_name, bio, fpath
-            else:
-                yield bio
-            i += 1
-    return None
+        fd = os.open(file_path, os.O_RDONLY)
+        try:
+            while True:
+                chunk = os.read(fd, size)
+                if not chunk:
+                    break
+                if upload_format:
+                    fpath: str = f"split{i}.split"
+                    yield parameter_name, chunk, fpath
+                else:
+                    yield chunk
+                i += 1
+        finally:
+            os.close(fd)
 
 
 # -------------------------------------------------------------------------
@@ -182,10 +174,16 @@ def close_upload_files(upload_tuple: list[tuple]) -> None:
 
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=100)
-def calculate_upload_size(fp: str) -> int:
+def calculate_upload_size(fp: str | io.BytesIO | io.StringIO) -> int:
     """calculates the file MAX upload limit."""
-    fd = os.open(fp, os.O_RDONLY)
-    size: float = os.fstat(fd).st_size
+    if isinstance(fp, (io.BytesIO, io.StringIO, io.BufferedReader)):
+        fp.seek(0, os.SEEK_END)
+        size: int = fp.tell()
+        fp.seek(0)  # Reset the pointer to the beginning
+    else:
+        fd = os.open(fp, os.O_RDONLY)
+        size: int = os.fstat(fd).st_size
+        os.close(fd)
 
     if size <= 5 * (1024 * 1024):
         return int(5 * (1024 * 1024))
@@ -200,13 +198,13 @@ def calculate_upload_size(fp: str) -> int:
     elif size > 35 * (1024 * 1024) and size <= 100 * (1024 * 1024):
         return int(50 * (1024 * 1024))
     elif size > 100 * (1024 * 1024) and size <= 200 * (1024 * 1024):
-        return int(100 * (1024 * 1024))
+        return int(100 / 2 * (1024 * 1024))
     elif size > 200 * (1024 * 1024) and size <= 300 * (1024 * 1024):
-        return int(200 * (1024 * 1024))
+        return int(200 / 2 * (1024 * 1024))
     elif size > 300 * (1024 * 1024) and size <= 600 * (1024 * 1024):
-        return int(300 * (1024 * 1024))
+        return int(300 / 2 * (1024 * 1024))
     elif size > 700 * (1024 * 1024) and size <= 1000 * (1024 * 1024):
-        return int(700 * (1024 * 1024))
+        return int(700 / 2 * (1024 * 1024))
     else:
         return int(size / 2000)  # null case split by 2K parts.
 
