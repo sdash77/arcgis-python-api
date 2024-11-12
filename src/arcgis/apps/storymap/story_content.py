@@ -1933,10 +1933,12 @@ class Map:
 
     # ----------------------------------------------------------------------
     @property
-    def pinned_popup_info(self):
+    def pinned_popup(self):
         """
-        Get/Set the pinned popup info. This info is linked to a specific layer on the map and has information about
-        the popup being seen by the user. This is one popup at a time.
+        Get/Set the pinned popup. You must know the layer id and the featureId name and value that represents
+        the popup you want to pin. You can find the layer id by looking at the `map_layers` property.
+
+        This is considered a more advance workflow as you must know the layer data to pin the popup.
 
         ==================  ================================================
         **Parameter**        **Description**
@@ -1944,25 +1946,17 @@ class Map:
         pinned_popup_info   The new pinned popup info for the Map. This is a
                             dictionary containing the following keys:
                             - `layerId`: String. The layer id of the feature layer. You can find this value in the `map_layers` property.
-                            - `idFieldName`: String. The field name that defines the id.
+                            - `idFieldName`: String. The field name that represents the id of the feature.
                             - `idFieldValue`: Integer. The id of the feature you want to show.
-                            - `location`: Dictionary. The location of the feature.
 
                             Example:
                                 | {
                                 |   "layerId": "0",
                                 |   "idFieldName": "OBJECTID",
-                                |   "idFieldValue": 1,
-                                |   "location": {
-                                |       "x": -13046177.801,
-                                |       "y": 4036369.113,
-                                |       "spatialReference": {
-                                |           "wkid": 102100
-                                |       }
-                                |   }
+                                |   "idFieldValue": 1
                                 | }
 
-                            If you want to remove the pinned popup info, set this to None.
+                            If you want to remove the pinned popup, set this to None.
         ==================  ================================================
         """
         if self._existing is True:
@@ -1973,16 +1967,14 @@ class Map:
         return None
 
     # ----------------------------------------------------------------------
-    @pinned_popup_info.setter
+    @pinned_popup.setter
     def pinned_popup_info(self, value: dict | None):
         # Check if the dictionary has the correct keys
         if value is None:
             self._story._properties["nodes"][self.node]["data"].pop(
                 "pinnedPopupInfo", None
             )
-        elif all(
-            k in value for k in ("layerId", "idFieldName", "idFieldValue", "location")
-        ):
+        elif all(k in value for k in ("layerId", "idFieldName", "idFieldValue")):
             self._story._properties["nodes"][self.node]["data"][
                 "pinnedPopupInfo"
             ] = value
