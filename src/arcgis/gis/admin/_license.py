@@ -150,7 +150,12 @@ class LicenseManager(BasePortalAdmin):
 
                     licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
-                    _LOG.warning(str(ex))
+                    _LOG.warning(
+                        str(ex)
+                        + "\nError for license: "
+                        + str(purchase["listing"]["title"])
+                        + ". License may be expired or is inaccessible."
+                    )
         if "trials" in self.properties:
             purchases = self.properties["trials"]
             for purchase in purchases:
@@ -158,7 +163,12 @@ class LicenseManager(BasePortalAdmin):
 
                     licenses.append(License(gis=self._gis, info=purchase))
                 except Exception as ex:
-                    _LOG.warning(str(ex))
+                    _LOG.warning(
+                        str(ex)
+                        + "\nError for license: "
+                        + str(purchase["listing"]["title"])
+                        + ". License may be expired or is inaccessible."
+                    )
         return licenses
 
     # ----------------------------------------------------------------------
