@@ -2213,10 +2213,6 @@ class BusinessAnalyst(object):
                 pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
             ]
 
-        # stash useful pieces for potential later access in metadata
-        enrich_df.attrs["arcgis_ba"] = self
-        enrich_df.attrs["arcgis_aoi"] = country
-
         return enrich_df
 
     @lru_cache(maxsize=255)
