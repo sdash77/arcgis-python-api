@@ -271,11 +271,15 @@ class WMSLayer(BaseOGC):
 
         # Default visibleLayers to an empty list, then add the first layer if it exists
         new_layer["visibleLayers"] = (
-            [new_layer["layers"][0]["name"]] if new_layer["layers"] else []
+            [new_layer["layers"][0]["name"]]
+            if new_layer["layers"] and len(new_layer["layers"]) > 0
+            else []
         )
 
         # Safely set the extent and spatial references with default values if missing
-        new_layer["extent"] = self._extents[0] if self._extents else {}
+        new_layer["extent"] = (
+            self._extents[0] if self._extents and len(self._extents) > 0 else {}
+        )
         new_layer["spatialReferences"] = self._spatial_references or []
 
         return new_layer
