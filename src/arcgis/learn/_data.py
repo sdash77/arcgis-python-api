@@ -265,7 +265,7 @@ def _get_bbox_classes(
             obs_angle.append(float(lst[2]))  # onservation angle
             occluded.append(float(lst[3]))  # if the object is occluded
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
             hwl.append([hieght, width, length])
             d_xyz.append([x, y, z])
             rot_yaxis.append(float(lst[14]))  # angle of rotation along y axis
@@ -307,7 +307,7 @@ def _get_bbox_classes(
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
+            height_width.append(((xmax - xmin), (ymax - ymin)))
 
     if len(bboxes) == 0:
         return [[[0.0, 0.0, 0.0, 0.0]], [list(class_mapping.values())[0]]]
@@ -596,7 +596,12 @@ _models_dir = "models"
 
 
 def _prepare_working_dir(path):
-    _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    try:
+        _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+    except Exception as e:
+        raise Exception(
+            "Failed to create the specified working directory. Create it manually and retry."
+        )
 
 
 def merge_emd_and_stats(data_folders):
@@ -3463,7 +3468,7 @@ def prepare_data(
         )
     data.orig_path = path
     data.resize_to = kwargs_transforms.get("size", None)
-    data.height_width = height_width
+    data.height_width = np.array(height_width)
     data.downsample_factor = kwargs.get("downsample_factor")
     data.dataset_type = dataset_type
 

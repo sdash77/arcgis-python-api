@@ -11918,7 +11918,13 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
     @property
     def spatial_reference(self):
-        return self._raster.spatialReference.exportToString()
+        sr_type = self._raster.spatialReference.type
+        if sr_type == "Unknown":
+            return {"wkid": self._raster.spatialReference.factoryCode}
+        sr_string = self._raster.spatialReference.exportToString()
+        if sr_string:
+            return {"wkt": sr_string}
+        return None
 
     @property
     def variable_names(self):
