@@ -120,19 +120,21 @@ class _DeepCloner:
         self._temp_dir = tempfile.TemporaryDirectory()
 
         self._cloned_items = []
-        for index, item in enumerate(self._items):
+        self._dashboards = []
+        for item in self._items:
             if (
                 item["type"] == "Dashboard"
                 and "desktopView" in item.get_data()
                 and not from_dash
             ):
-                self._items.pop(index)
+                self._dashboards.append(item)
                 dash_list = self._clone_dashboard(item)
                 if len(dash_list) > 0:
                     for cloned_item in dash_list:
                         self._cloned_items.append(cloned_item)
 
         # parse the config and get values
+        self._items = [i for i in self._items if i not in self._dashboards]
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
