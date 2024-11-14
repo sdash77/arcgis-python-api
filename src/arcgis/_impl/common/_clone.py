@@ -120,19 +120,21 @@ class _DeepCloner:
         self._temp_dir = tempfile.TemporaryDirectory()
 
         self._cloned_items = []
-        for index, item in enumerate(self._items):
+        self._dashboards = []
+        for item in self._items:
             if (
                 item["type"] == "Dashboard"
                 and "desktopView" in item.get_data()
                 and not from_dash
             ):
-                self._items.pop(index)
+                self._dashboards.append(item)
                 dash_list = self._clone_dashboard(item)
                 if len(dash_list) > 0:
                     for cloned_item in dash_list:
                         self._cloned_items.append(cloned_item)
 
         # parse the config and get values
+        self._items = [i for i in self._items if i not in self._dashboards]
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
@@ -2821,7 +2823,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     "enableEditorTracking": False,
                 }
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         for layer_id in layer_ids:
             pre_fields = copy.deepcopy(layers[layer_id].properties["fields"])
@@ -2894,7 +2897,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             edit_params = {
                 "editorTrackingInfo": self.service_definition["editorTrackingInfo"]
             }
-            layers[0].container.manager.update_definition(edit_params)
+            for key in layers.keys():
+                layers[key].container.manager.update_definition(edit_params)
 
         # Add attachments
         for original_layer in original_layers:
@@ -3027,8 +3031,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     source_user = self.portal_item._gis.users.me
                     if (
                         source_user.role == "org_admin"
-                        or self.portal_item.owner == source_user.username
-                    ):
+                        and self.portal_item._gis.url.lower() == self.target.url.lower()
+                    ) or self.portal_item.owner == source_user.username:
                         can_export = True
                 except:
                     pass
@@ -3172,7 +3176,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     temp_export.delete()
 
                 else:
-                    for key in ["layers", "tables", "fullExtent", "hasViews"]:
+                    for key in [
+                        "layers",
+                        "tables",
+                        "fullExtent",
+                        "hasViews",
+                    ]:
                         if key in service_definition:
                             del service_definition[key]
 

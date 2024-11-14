@@ -190,6 +190,7 @@ class GeometryFactory(type):
 
     @staticmethod
     def _from_wkt(iterable):
+        """Create a geometry from wkt"""
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
@@ -241,8 +242,32 @@ class GeometryFactory(type):
                 iterable = {"wkt": iterable.exportToString()}
             elif isinstance(iterable, str) and "{" in iterable:
                 iterable = _ujson.loads(iterable)
-            elif isinstance(iterable, str):  # WKT
-                iterable = GeometryFactory._from_wkt(iterable)
+            # WKT handling
+            elif isinstance(iterable, str):
+                if cls._type == "SpatialReference" or iterable.startswith(
+                    ("PROJCS", "GEOGCS")
+                ):
+                    # WKT Spatial Reference
+                    iterable = {"wkt": iterable}
+                elif iterable.startswith(
+                    (
+                        "POINT",
+                        "LINESTRING",
+                        "POLYGON",
+                        "MULTIPOINT",
+                        "MULTIPOLYGON",
+                        "MULTILINESTRING",
+                        "POINT ZM",
+                        "POINT M",
+                    )
+                ):
+                    # WKT Geometry
+                    iterable = GeometryFactory._from_wkt(iterable)
+                elif iterable.startswith("GEOMETRYCOLLECTION"):
+                    raise ValueError("GeometryCollection not supported")
+                else:
+                    # Could be a wkt spatial reference AND geometry, set as default
+                    iterable = GeometryFactory._from_wkt(iterable)
 
             if "x" in iterable:
                 cls = Point
@@ -3868,7 +3893,7 @@ class Envelope(Geometry):
 
 
 ########################################################################
-class SpatialReference(Geometry):
+class SpatialReference(dict):
     """
     A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
     `well-known text` (`wkt`). The default tolerance and resolution values for
@@ -3907,52 +3932,77 @@ class SpatialReference(Geometry):
         either part of an SR is custom, the entire SR will be serialized with
         only the wkt property.
 
-    .. note::
-        Starting at 10.3, Image Service supports image coordinate systems.
+
     """
 
     _typ = "SpatialReference"
     _type = "SpatialReference"
-    _properties = None
 
     def __init__(self, iterable=None, **kwargs):
-        super(SpatialReference, self)
+        super().__init__()  # Initialize the dict
         if iterable is None:
             iterable = {}
         if isinstance(iterable, int):
             iterable = {"wkid": iterable}
-        if isinstance(iterable, str):
+        elif isinstance(iterable, str):
             iterable = {"wkt": iterable}
+
+        # Assuming _check_geometry_engine is defined elsewhere
         HASARCPY, HASSHAPELY = _check_geometry_engine()
+
         if HASARCPY and isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {"wkid": iterable.factoryCode}
             else:
                 iterable = {"wkt": iterable.exportToString()}
-        if len(iterable) > 0:
-            self.update(iterable)
-        if len(kwargs) > 0:
-            self.update(kwargs)
+
+        self.update(iterable)  # Store properties in the dict
+        self.update(kwargs)  # Update with additional kwargs
         self._properties = iterable
 
-    # ----------------------------------------------------------------------
+    def __getattr__(self, name):
+        """Allow access to dictionary keys as attributes."""
+        if name in self:
+            return self[name]
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
+
+    def __repr__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
+    def __str__(self) -> str:
+        return "SpatialReference({})".format(dict(self))
+
     @property
     def type(self):
-        """Gets the type of the current ``Point`` object."""
+        """Gets the type of the current ``SpatialReference`` object."""
         return self._type
 
-    # ----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
+
+    @property
+    def JSON(self):
+        """
+        The ``JSON`` method retrieves an Esri JSON representation of the :class:`~arcgis.geometry.Geometry` object as a
+        string.
+
+        :return:
+            A string representing a :class:`~arcgis.geometry.Geometry` object
+        """
+        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
+            return getattr(self.as_arcpy, "JSON", None)
+
+        return json.dumps(self)
 
     # ----------------------------------------------------------------------
     _repr_svg_ = None
 
-    # ----------------------------------------------------------------------
     def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
         Retrieves SVG (Scalable Vector Graphic) polygon element for a ``SpatialReference`` field.
-
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -3961,35 +4011,43 @@ class SpatialReference(Geometry):
         fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
-
         :return:
             The SVG element
         """
         return "<g/>"
 
-    # ----------------------------------------------------------------------
     def __eq__(self, other):
-        """checks if the spatial reference is not equal"""
-        if "wkt" in self and "wkt" in other and self["wkt"] == other["wkt"]:
-            return True
-        elif "wkid" in self and "wkid" in other and self["wkid"] == other["wkid"]:
-            return True
+        """Checks if the spatial reference is equal."""
+        if isinstance(other, dict):
+            # Compare with dictionary containing 'wkid' and possibly 'latestWkid'
+            return (
+                hasattr(self, "wkid")
+                and self.wkid == other.get("wkid")
+                and (
+                    not hasattr(self, "latestWkid")
+                    or self.latestWkid == other.get("latestWkid")
+                )
+            )
+
+        if not isinstance(other, SpatialReference):
+            return False
+
+        # Compare same types of spatial reference
+        if hasattr(self, "wkid") and hasattr(other, "wkid"):
+            return self.wkid == other.wkid
+        elif hasattr(self, "wkt") and hasattr(other, "wkt"):
+            return self.wkt == other.wkt
+        elif hasattr(self, "latestWkid") and hasattr(other, "latestWkid"):
+            return self.latestWkid == other.latestWkid
         return False
 
-    # ----------------------------------------------------------------------
     def __ne__(self, other):
-        """checks if the two values are unequal"""
-        return self.__eq__(other) == False
+        """Checks if the two values are not equal."""
+        return not self.__eq__(other)
 
-    # ----------------------------------------------------------------------
     @property
     def as_arcpy(self):
-        """
-        The ``as_arcpy`` property retrieves the class as an ``arcpy SpatialReference`` object.
-
-        :return:
-            An ``arcpy SpatialReference`` object
-        """
+        """Gets the arcpy SpatialReference object."""
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
             if "wkid" in self:
@@ -4004,13 +4062,10 @@ class SpatialReference(Geometry):
                 return sr
         return None
 
-    # ----------------------------------------------------------------------
-    def __setstate__(self, d):
-        """unpickle support"""
-        self.__dict__.update(d)
-        self = SpatialReference(iterable=d)
-
-    # ----------------------------------------------------------------------
     def __getstate__(self):
-        """pickle support"""
+        """Pickle support."""
         return dict(self)
+
+    def __setstate__(self, d):
+        """Unpickle support."""
+        self.update(d)
