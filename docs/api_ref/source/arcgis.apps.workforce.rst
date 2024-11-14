@@ -20,6 +20,10 @@ It can be used as shown in the following code example.
     workers = project.workers.search()
     project2 = arcgis.apps.workforce.create_project('new_project', summary='This project was created by Python')
 
+create_project
+----------------
+.. autofunction:: arcgis.apps.workforce.create_project
+
 Assignment
 ----------
 .. autoclass:: arcgis.apps.workforce.Assignment
