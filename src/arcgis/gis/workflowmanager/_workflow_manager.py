@@ -1,17 +1,24 @@
 from __future__ import annotations
+
 import datetime
 import json
+import logging
 import sys
-from typing import Optional, Callable
+import threading
 import urllib.parse
 from enum import Enum
+from ssl import SSLContext
+from typing import Optional, Callable
 
-import ssl
-import threading
 import websocket
-import logging
+from requests.adapters import HTTPAdapter
+from requests.cookies import RequestsCookieJar
 
-logger = logging.getLogger("WorkflowManager")
+from arcgis.auth.tools import parse_url
+from arcgis.auth.tools._adapter import PKIAdapter
+from arcgis.auth.tools.cert import TruststoreAdapter
+
+logger = logging.getLogger(__name__)
 
 from arcgis.geometry import Geometry
 import arcgis.gis
@@ -53,6 +60,7 @@ def _initialize(instance, gis, is_admin=False):
         raise ValueError("An authenticated `GIS` is required.")
 
     instance._url = _wmx_server_url(instance, is_admin)[0]
+    logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
     if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
@@ -1011,6 +1019,7 @@ class WorkflowManager:
 
     @property
     def _notification_manager(self):
+        # TODO We are never disconnecting after the connection is made
         if not self._nm:
             self._nm = NotificationManager(self._item, self)
             self._nm.connect()
@@ -3509,6 +3518,7 @@ class JobExecution:
             and msg.message["jobId"] == self._job.job_id
             and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]
         ):
+            logger.debug(f"Received {msg}")
             self._messages.append(msg)
             if self._execution_type is ExecutionType.RUN:
                 if msg.msg_type in [
@@ -4129,14 +4139,28 @@ class WebsocketConnection:
     msgs = []
 
     def __init__(
-        self, subscribe_callback: Callable, headers: dict, token, timeout: int
+        self,
+        subscribe_callback: Callable,
+        headers: dict,
+        timeout: int,
+        context: SSLContext = None,
     ):
         self.timeout = timeout
         self.subscribe_callback = subscribe_callback
         self.headers = headers
-        self.headers["Authorization"] = f"Token {token}"
+        if context:
+            self.sslopt = {"context": context}
+        else:
+            self.sslopt = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
 
     def __on_message__(self, app, msg):
+        logger.debug(f"Received msg {msg}")
         if self.msgEvent:
             self.msgEvent[1].set()
             self.msgs.append(msg)
@@ -4147,17 +4171,33 @@ class WebsocketConnection:
         except Exception as e:
             logger.error(f"Error when processing a incoming message: {e}")
 
-    def connect(self, url):
+    def connect(self, url: str, token: str, cookie: str):
         _open_event = threading.Event()
+        # TODO Header does not work (bug with web adaptors), so use query parameter until that is fixed.
+        # Sending all headers from requests also causes issues
+        # self.headers["X-Esri-Authorization"] = f"Bearer {token}"
+        headers = {"X-Esri-Authorization": f"Bearer {token}"}
+        url_with_token = url + "?token=" + token
 
         def start_websocket():
-            self.ws.run_forever()
+            self.ws.run_forever(sslopt=self.sslopt)
 
         def on_open(ws: websocket.WebSocket):
             _open_event.set()
 
+        def on_error(ws, err):
+            logger.exception("Error in webhook handler")
+
+        logger.debug(url_with_token)
+        logger.debug(self.headers)
+
         self.ws = websocket.WebSocketApp(
-            url, on_open=on_open, on_message=self.__on_message__
+            url_with_token,
+            on_open=on_open,
+            on_message=self.__on_message__,
+            on_error=on_error,
+            header=headers,
+            cookie=cookie,
         )
 
         self.thread = threading.Thread(target=start_websocket, daemon=True)
@@ -4171,10 +4211,12 @@ class WebsocketConnection:
         self.ws.send(msg)
 
     def send_and_wait(self, msg):
+        logger.debug(f"Sending {msg}")
         self.msgs = []
         self.msgEvent = (msg, threading.Event())
         self.send(msg)
         self.msgEvent[1].wait(self.timeout)
+        logger.debug(f"Sent {msg}")
         return self.msgs
 
     def disconnect(self):
@@ -4209,18 +4251,40 @@ class NotificationManager:
 
         # need baseAddress/ server address, orgid, and workflow item id
         base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
-        ws_address = f"{base}/{self.org_id}/{self.workflow_item_id}/notificationWs"
-        self.websocket_url = self._generate_url(ws_address)
+        item_url = f"{self.org_id}/{self.workflow_item_id}"
+        self.websocket_url = f"{base}/{item_url}/notificationWs"
+        self.token_request_url = f"{self.server_url}/{item_url}"
 
-    def _token_generator(self):
-        return self._gis._con.token
+    def _token_generator(self) -> (str, str):
+        # TODO this is always going to make the request even when the token is cached, but would need to expose more to avoid
+        # TODO Can optimize to not get cookies when they're not going to be used
+        logger.debug(f"Making request to {self.token_request_url} to generate token")
+        resp = self._gis._session._session.get(f"{self.token_request_url}")
+        logger.debug(
+            f"Response headers: {resp.headers}. Request header: {resp.request.headers}"
+        )
+        token = resp.request.headers["X-Esri-Authorization"][7:]
+        cookie = self._get_cookie(
+            self._gis._session._session.cookies, self.token_request_url
+        )
+        return token, cookie
 
-    def _generate_url(self, url):
-        token = self._token_generator()
-        return f"{url}?token={token}"
+    def _get_cookie(self, jar: RequestsCookieJar, url: str) -> str:
+        parsed = parse_url(url)
+        domain_cookies: str = None
+        logger.debug(f"Getting cookies for {parsed.hostname}")
+        for d in jar.list_domains():
+            if parsed.hostname.endswith(d):
+                for c in jar.get_dict(domain=d).items():
+                    if domain_cookies:
+                        domain_cookies += f"; {c[0]}={c[1]}"
+                    else:
+                        domain_cookies = f"{c[0]}={c[1]}"
+
+        return domain_cookies
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         return self._connected
 
     def _subscriber(self, message):
@@ -4237,18 +4301,38 @@ class NotificationManager:
         except Exception as e:
             logger.error(e)
 
+    def _connect(self) -> WebsocketConnection:
+        scheme = parse_url(self.server_url).scheme
+        adapter = self._gis.session.adapters.get(f"{scheme}://", None)
+
+        context = None
+        if isinstance(adapter, PKIAdapter):
+            context = adapter.ssl_context
+        elif isinstance(adapter, TruststoreAdapter):
+            context = adapter.custom_context
+        elif isinstance(adapter, HTTPAdapter) and hasattr(adapter, "ssl_context"):
+            tmp = getattr(adapter, "ssl_context")
+            if isinstance(tmp, SSLContext):
+                context = tmp
+        logger.debug(f"Websocket SSL context = {context}")
+
+        ws = WebsocketConnection(
+            self._subscriber,
+            self._gis.session.headers,
+            context=context,
+            timeout=30,
+        )
+        (token, cookie) = self._token_generator()
+        ws.connect(self.websocket_url, token, cookie)
+        return ws
+
     def connect(self):
         """
         Establishes a websocket connection to the workflow manager server.
         """
         if self.websocket_connection is None:
-            self.websocket_connection = WebsocketConnection(
-                self._subscriber,
-                self._gis.session.headers,
-                self._gis._con.token,
-                timeout=30,
-            )
-            self.websocket_connection.connect(self.websocket_url)
+            logger.debug(f"Creating websocket connection to {self.websocket_url}")
+            self.websocket_connection = self._connect()
             self._connected = True
 
     def disconnect(self):
@@ -4285,24 +4369,20 @@ class NotificationManager:
                 subscribe_obj = {
                     "msgType": "subscribe",
                     "jobIds": ids,
-                    "token": self._token_generator(),
+                    "token": self._token_generator()[0],
                 }
 
-                ws = WebsocketConnection(
-                    self._subscriber,
-                    self._gis.session.headers,
-                    self._gis._con.token,
-                    timeout=30,
+                logger.debug(
+                    f"Creating temporary websocket connection to {self.websocket_url}"
                 )
-                ws.connect(self.websocket_url)
-                ws.send_and_wait(json.dumps(subscribe_obj))
-                ws.disconnect()
+                with self._connect() as ws:
+                    ws.send_and_wait(json.dumps(subscribe_obj))
             else:
                 ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
                 subscribe_obj = {
                     "msgType": "subscribe",
                     "jobIds": ids,
-                    "token": self._token_generator(),
+                    "token": self._token_generator()[0],
                 }
                 if len(ids) > 0:
                     self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
@@ -4337,7 +4417,7 @@ class NotificationManager:
                 unsubscribe_obj = {
                     "msgType": "unsubscribe",
                     "jobIds": job_ids,
-                    "token": self._token_generator(),
+                    "token": self._token_generator()[0],
                 }
                 self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
