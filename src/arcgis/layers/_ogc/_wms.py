@@ -70,6 +70,8 @@ class WMSLayer(BaseOGC):
     def properties(self) -> dict:
         """
         Returns the properties of the Layer, including sublayers if present.
+
+        :return: dict
         """
         if self._properties is None:
             # Construct the WMS GetCapabilities request
