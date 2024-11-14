@@ -1,17 +1,11 @@
-import sys
 import base64
 import tempfile
 import os
 import unittest
 import json, uuid
-from arcgis.gis import GIS, ContentManager
-from utils.decorators import integration_test
+from arcgis.gis import ContentManager
+from utils.decorators import integration_test, profiles
 
-profiles = [
-    "your_online_profile",
-    "your_enterprise_profile",
-    #'your_kubernetes_profile'
-]
 wm = {
     "operationalLayers": [],
     "baseMap": {
@@ -151,42 +145,41 @@ def create_image():
 def create_item(gis, thumbnail=None):
     """creates a dummy item on the GIS"""
 
-    return gis.content.add(
-        item_properties={
-            "title": uuid.uuid4().hex,
-            "type": "Web Map",
-            "tags": "erase, me",
-            "text": json.dumps(wm),
-        },
-        thumbnail=thumbnail,
+    folder = gis.content.folders._get_or_create(
+        folder="integration_testing_gis_content_multipart_postchange",
+        owner=gis._username,
     )
+    return folder.add(
+        item_properties={
+            "title": f"test_multipart_postchange_{uuid.uuid4().hex[:4]}",
+            "type": "Web Map",
+            "tags": "integration_testing",
+            "text": json.dumps(wm),
+            "thumbnail": thumbnail,
+        },
+    ).result()
 
 
+@profiles.all
 @integration_test
 class TestCMAddItemMultiPartPost(unittest.TestCase):
     def test_add_text_file_item(self):
         """tests the unterlying multi-part FORM POST with an additional file"""
 
         thumbnail = create_image()
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            content = gis.content
-            assert isinstance(content, ContentManager)
+        content = self.gis.content
+        assert isinstance(content, ContentManager)
 
-            item = create_item(gis=gis, thumbnail=thumbnail)
-
-            assert item.delete()
+        item = create_item(gis=self.gis, thumbnail=thumbnail)
+        assert item.delete()
 
     def test_add_text_item(self):
         """tests the unterlying multi-part FORM POST"""
-        for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=False)
-            content = gis.content
-            assert isinstance(content, ContentManager)
+        content = self.gis.content
+        assert isinstance(content, ContentManager)
 
-            item = create_item(gis=gis)
-
-            assert item.delete()
+        item = create_item(gis=self.gis)
+        assert item.delete()
 
 
 if __name__ == "__main__":
