@@ -101,15 +101,15 @@ class WMSLayer(BaseOGC):
                     "Could not parse response as XML. Please check the WMS service."
                 )
 
-            # Parse XML and handle namespaces
-            sss = BytesIO()
-            sss.write(text.encode())
+            # Use the detected encoding
+            sss = BytesIO(text.encode("UTF-8"))
             sss.seek(0)
             tree = ET.parse(sss)
             root = tree.getroot()
 
-            # Process XML to dictionary
+            # Process the XML to a dictionary
             self._properties = self._xml_to_dictionary(root)
+
         return self._properties
 
     # ---------------------------------------------------------------------
@@ -148,14 +148,39 @@ class WMSLayer(BaseOGC):
     # ----------------------------------------------------------------------
     @property
     def layers(self) -> list:
-        """Returns a list of layers with their details."""
+        """Returns all layers from the WMS service, excluding the top-level group layer if present."""
         try:
-            main_layer = self.properties["WMS_Capabilities"]["Capability"]["Layer"]
-            return main_layer.get(
-                "Layer", []
-            )  # Returns list of sublayers if they exist
+            # Access the base layer structure
+            layers = self.properties["WMS_Capabilities"]["Capability"]["Layer"]
+
+            # Flatten the layer hierarchy
+            def extract_layers(layer):
+                """Recursively extract layers and sublayers, excluding the top-level group layer."""
+                layer_list = []
+                if "Layer" in layer:  # Check for nested sublayers
+                    sublayers = layer["Layer"]
+                    if isinstance(sublayers, list):
+                        for sublayer in sublayers:
+                            layer_list.extend(extract_layers(sublayer))
+                    else:
+                        layer_list.extend(extract_layers(sublayers))
+                elif (
+                    "Name" in layer
+                ):  # Only include actual layers with a "Name" property
+                    layer_list.append(layer)
+                return layer_list
+
+            # If the top layer is a group, only process its sublayers
+            if isinstance(layers, list):
+                all_layers = []
+                for layer in layers:
+                    all_layers.extend(extract_layers(layer))
+            else:
+                all_layers = extract_layers(layers)
+
+            return all_layers
         except KeyError:
-            return []
+            return []  # Return an empty list if no layers are found
 
     # ----------------------------------------------------------------------
     def _capabilities_url(self, service_url: str, vendor_kwargs: dict = None) -> str:
@@ -201,6 +226,16 @@ class WMSLayer(BaseOGC):
             # Removes namespace if present
             return tag.split("}")[-1] if "}" in tag else tag
 
+        def fix_encoding(value: str) -> str:
+            """
+            Fix any encoding issues in the text.
+            Attempts to decode incorrectly encoded characters and re-encode them to UTF-8.
+            """
+            try:
+                return value.encode("latin1").decode("utf-8", errors="ignore")
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                return value  # Return as-is if decoding fails
+
         d = {clean_tag(t.tag): {} if t.attrib else None}
         children = list(t)
 
@@ -228,6 +263,8 @@ class WMSLayer(BaseOGC):
         if t.text:
             text = t.text.strip()
             if text:
+                # Fix encoding issues in the text
+                text = fix_encoding(text)
                 if children or t.attrib:
                     d[clean_tag(t.tag)]["#text"] = text
                 else:
@@ -269,12 +306,8 @@ class WMSLayer(BaseOGC):
             for subLyr in layers
         ]
 
-        # Default visibleLayers to an empty list, then add the first layer if it exists
-        new_layer["visibleLayers"] = (
-            [new_layer["layers"][0]["name"]]
-            if new_layer["layers"] and len(new_layer["layers"]) > 0
-            else []
-        )
+        # Default visibleLayers to an empty list, then add all layers
+        new_layer["visibleLayers"] = [lyr["name"] for lyr in new_layer["layers"]]
 
         # Safely set the extent and spatial references with default values if missing
         new_layer["extent"] = (
