@@ -400,6 +400,9 @@ class Folder:
         .. note::
             Only available on non-Root Folder
             :class:`folders <arcgis.gis._impl._content_manger.Folder>`.
+
+        .. return::
+            A boolean indicating success (True), or failure (False)
         """
         url: str = (
             f"{self._gis._portal.resturl}content/users/{self._owner}/{self._folder_id}/delete"
