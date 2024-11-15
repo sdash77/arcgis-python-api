@@ -66,7 +66,12 @@ class MapFeatureLayer(Layer):
             gis: _gis.GIS = arcgis.env.active_gis
             if gis is None:
                 gis = arcgis.gis.GIS()
-        self._session = gis.session
+        if hasattr(gis, "session"):
+
+            self._session = gis.session
+        elif hasattr(gis, "_session"):
+            self._session = gis._session
+
         if str(url).lower().endswith("/"):
             url = url[:-1]
         super(MapFeatureLayer, self).__init__(url, gis)
@@ -2286,7 +2291,13 @@ class MapImageLayer(_gis.Layer):
 
         self._populate_layers()
         self._admin = None
-        self._session = gis.session
+        if hasattr(gis, "session"):
+
+            self._session = gis.session
+        elif hasattr(gis, "_session"):
+            self._session = gis._session
+        else:
+            raise ValueError("Please validate that the GIS object is correct.")
         try:
             from arcgis.gis.server._service._adminfactory import (
                 AdminServiceGen,
