@@ -514,7 +514,11 @@ class PortalAdminManager(BasePortalAdmin):
             from ._livingatlas import LivingAtlas
 
             url = self._url + "/system/content/livingatlas"
-            self._livingatlas = LivingAtlas(url=url, gis=self._gis)
+            try:
+
+                self._livingatlas = LivingAtlas(url=url, gis=self._gis)
+            except:
+                pass
         return self._livingatlas
 
     # ----------------------------------------------------------------------
