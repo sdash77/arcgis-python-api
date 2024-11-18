@@ -3,6 +3,7 @@ Entry point to working with local enterprise GIS functions
 """
 
 from __future__ import annotations
+import logging
 from datetime import datetime
 from typing import Optional
 from ...gis._impl._con import Connection
@@ -12,6 +13,9 @@ from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from arcgis.gis.tasks._schedule import Task
 from ._classification import ClassificationManager
+
+
+__log__ = logging.getLogger()
 
 
 ########################################################################
@@ -518,7 +522,12 @@ class PortalAdminManager(BasePortalAdmin):
 
                 self._livingatlas = LivingAtlas(url=url, gis=self._gis)
             except:
-                pass
+                __log__.info(
+                    (
+                        "Could not access the living atlas endpoint, please verify "
+                        "Living Atlas is enabled on the Enterprise system."
+                    )
+                )
         return self._livingatlas
 
     # ----------------------------------------------------------------------
