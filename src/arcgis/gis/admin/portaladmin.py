@@ -554,7 +554,7 @@ class PortalAdminManager(BasePortalAdmin):
 
         .. code-block:: python
 
-            >>> gis.admin.mode({'read_only' : False})
+            >>> gis.admin.mode = {'read_only' : False}
             >>> assert gis.admin.mode['isReadOnly'] == False
 
         """

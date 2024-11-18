@@ -1,2 +1,2 @@
 from . import _utils
-from . import _query
+from ._query import QueryParameters, Query
