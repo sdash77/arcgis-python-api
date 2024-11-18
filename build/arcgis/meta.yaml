@@ -41,6 +41,7 @@ requirements:
   - truststore
   - ujson >=3
   - urllib3 >=2,<3
+  - pydantic >=2.8.2, <3
 source:
   git_url: ../..
 test:

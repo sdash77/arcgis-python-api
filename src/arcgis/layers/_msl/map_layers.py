@@ -952,10 +952,7 @@ class MapFeatureLayer(Layer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            as_df=as_df,
-            is_layer=True,
+        query_params = _query.QueryParameters(
             where=where,
             text=text,
             out_fields=out_fields,
@@ -993,8 +990,13 @@ class MapFeatureLayer(Layer):
             datum_transformation=datum_transformation,
             range_values=range_values,
             parameter_values=parameter_values,
-            **kwargs,
         )
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            as_df=as_df,
+            is_layer=True,
+        ).execute()
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -1158,86 +1160,6 @@ class MapFeatureLayer(Layer):
             resp.raise_for_status()
             return resp.json()
         return ""
-
-    # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False):
-        """returns results of query"""
-        try:
-            resp: requests.Response = self._session.post(url=url, data=params)
-            resp.raise_for_status()
-            result = resp.json()
-            if "exceededTransferLimit" in result:
-                while (
-                    "exceededTransferLimit" in result
-                    and result["exceededTransferLimit"] == True
-                ):
-                    params["resultRecordCount"] = params["resultRecordCount"] * 2
-                    resp: requests.Response = self._session.post(url=url, data=params)
-                    resp.raise_for_status()
-                    result = resp.json()
-
-        except Exception as queryException:
-            error_list = [
-                "Error performing query operation",
-                "HTTP Error 504: GATEWAY_TIMEOUT",
-            ]
-            if any(ele in queryException.__str__() for ele in error_list):
-                # half the max record count
-                max_record = (
-                    int(params["resultRecordCount"])
-                    if "resultRecordCount" in params
-                    else 1000
-                )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
-                # reduce this number to 125 if you still sees 500/504 error
-                if max_record < 250:
-                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
-                    raise queryException
-                else:
-                    max_rec = int((max_record + 1) / 2)
-                    i = 0
-                    result = None
-                    while max_rec * i < max_record:
-                        params["resultRecordCount"] = (
-                            max_rec
-                            if max_rec * (i + 1) <= max_record
-                            else (max_record - max_rec * i)
-                        )
-                        params["resultOffset"] = offset + max_rec * i
-                        try:
-                            records = self._query(url, params, raw=True)
-                            if result:
-                                for feature in records["features"]:
-                                    result["features"].append(feature)
-                            else:
-                                result = records
-                            i += 1
-                        except Exception as queryException2:
-                            raise queryException2
-
-            else:
-                raise queryException
-
-        def is_true(x):
-            if isinstance(x, bool) and x:
-                return True
-            elif isinstance(x, str) and x.lower() == "true":
-                return True
-            else:
-                return False
-
-        if "error" in result:
-            raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
-            return result["count"]
-        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
-            return result
-        elif "extent" in result:
-            return result
-        elif is_true(raw):
-            return result
-        else:
-            return _features.FeatureSet.from_dict(result)
 
 
 ###########################################################################
@@ -1645,9 +1567,7 @@ class MapTable(MapFeatureLayer):
             >>> query_count
             <149>
         """
-        return _query._common_query(
-            layer=self,
-            is_layer=False,
+        query_params = _query.QueryParameters(
             where=where,
             out_fields=out_fields,
             time_filter=time_filter,
@@ -1666,11 +1586,16 @@ class MapTable(MapFeatureLayer):
             historic_moment=historic_moment,
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
-            as_df=as_df,
             range_values=range_values,
             parameter_values=parameter_values,
-            **kwargs,
         )
+
+        return _query.Query(
+            layer=self,
+            parameters=query_params,
+            is_layer=False,
+            as_df=as_df,
+        ).execute()
 
 
 ###########################################################################
