@@ -4,6 +4,7 @@ Entry point to working with local enterprise GIS functions
 
 from __future__ import annotations
 import logging
+from functools import lru_cache
 from datetime import datetime
 from typing import Optional
 from ...gis._impl._con import Connection
@@ -13,7 +14,7 @@ from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from arcgis.gis.tasks._schedule import Task
 from ._classification import ClassificationManager
-
+from arcgis.auth import EsriSession
 
 __log__ = logging.getLogger()
 
@@ -505,6 +506,23 @@ class PortalAdminManager(BasePortalAdmin):
         return self._license
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=100)
+    def _check_la_status(self) -> bool:
+        """checks if the living atlas is enabled on the system"""
+        grpid: str = "81f4ed89c3c74086a99d168925ce609e"
+        url: str = self._url + "/system/content/livingatlas/status"
+        session: EsriSession = self._gis.session
+        params: dict = {
+            "f": "json",
+            "groupId": grpid,
+            # 'token' : session.auth.token,
+        }
+        resp = session.post(url=url, data=params)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("publicContentEnabled", False)
+
+    # ----------------------------------------------------------------------
     @property
     def living_atlas(self):
         """
@@ -514,6 +532,11 @@ class PortalAdminManager(BasePortalAdmin):
             :class:`~arcgis.gis.admin.LivingAtlas` object
 
         """
+        if self._check_la_status() == False:
+            __log__.info(
+                "Living Atlas is not enabled, please enable it before performing any operations on the manager."
+            )
+
         if self._livingatlas is None:
             from ._livingatlas import LivingAtlas
 
