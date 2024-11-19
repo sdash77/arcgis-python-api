@@ -456,7 +456,7 @@ def get_symbology_bands(rgb_bands, extract_bands, bands):
     )
     symbology_bands = []
     if not (len(rgb_bands) == 3 or len(rgb_bands) == 1):
-        raise (e)
+        raise Exception(e)
     for b in rgb_bands:
         if type(b) == str:
             b_index = bands.index(b)
@@ -465,7 +465,7 @@ def get_symbology_bands(rgb_bands, extract_bands, bands):
             bands[b]
             b_index = b
         else:
-            raise (e)
+            raise Exception(e)
         b_index = extract_bands.index(b_index)
         symbology_bands.append(b_index)
     return symbology_bands
