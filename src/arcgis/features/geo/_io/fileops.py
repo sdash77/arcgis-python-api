@@ -289,6 +289,8 @@ def from_url(url: str) -> list:
     :return: List[pd.DataFrame]
 
     """
+    if HASGDAL:
+        return from_featureclass(url)
 
     if HASPYSHP == False:
         raise Exception("pyshp is required to read hosted shapefiles.")
@@ -719,7 +721,8 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    if HASGDAL and not kwargs:
+    # this covers files and shapefile URL's
+    def _gdal_workflow(filename=filename):
         filename = _ensure_path_string(filename)
         if not isinstance(filename, (str, Path, PurePath)):
             raise ValueError(
@@ -735,29 +738,38 @@ def from_featureclass(filename, **kwargs):
                 with zipfile.ZipFile(archive_path) as archive:
                     archive.extractall(path=temp_dir)
 
-                df = _gdal_to_sedf(path=temp_dir)
+                df = _gdal_to_sedf(file_path=temp_dir)
         else:
             df = _gdal_to_sedf(file_path=filename)
 
         df.spatial._meta.source = filename
         return df
 
+    # if no arcpy specific kwargs, prioritize gdal
+    if HASGDAL and not kwargs:
+        return _gdal_workflow()
+
     if HASARCPY and (
         isinstance(filename, (arcpy._mp.Layer))
         or type(filename).__name__.find("arcpy") > -1
     ):
         filename = filename
+    
+    # this part is for shapefile URL's if we don't have gdal
     else:
         filename = _ensure_path_string(filename)
         if not isinstance(filename, (str, Path, PurePath)):
             raise ValueError(
                 f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
             )
-        if filename.find("http://") > -1 or filename.find("https://") > -1:
+        # if url shapefile and no gdal, go to old shapefile-only method
+        if filename.find("http://") > -1 or filename.find("https://") > -1 and not HASGDAL:
             res = from_url(url=filename)
             if len(res) == 1:
                 return res[0]
             return res
+        
+    # if we either have arcpy-specific kwargs, or no gdal
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
         where_clause = kwargs.pop("where_clause", None)
@@ -870,28 +882,12 @@ def from_featureclass(filename, **kwargs):
             return df.convert_dtypes()
         except:
             return df.convert_dtypes()
+        
+    # this happens as a backup if we have arcpy kwargs but no arcpy
     elif HASGDAL:
-        filename = _ensure_path_string(filename)
-        if not isinstance(filename, (str, Path, PurePath)):
-            raise ValueError(
-                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-            )
-        if filename.find("http://") > -1 or filename.find("https://") > -1:
-            r = requests.get(filename)
-            with tempfile.TemporaryDirectory() as temp_dir:
-                archive_path = os.path.join(temp_dir, "archive.zip")
-                with open(archive_path, "wb") as f:
-                    f.write(r.content)
-
-                with zipfile.ZipFile(archive_path) as archive:
-                    archive.extractall(path=temp_dir)
-
-                df = _gdal_to_sedf(path=temp_dir)
-        else:
-            df = _gdal_to_sedf(file_path=filename)
-
-        df.spatial._meta.source = filename
-        return df
+        return _gdal_workflow()
+    
+    # pyshp workflow
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
@@ -913,6 +909,8 @@ def from_featureclass(filename, **kwargs):
         sdf.reset_index(inplace=True)
         sdf.spatial._meta.source = filename
         return sdf
+    
+    # fiona workflow
     elif (
         HASARCPY == False
         and HASFIONA == True
@@ -974,10 +972,12 @@ def from_featureclass(filename, **kwargs):
                     df.spatial.set_geometry(geoms)
                     df.spatial._meta.source = filename
                     return df
+                
+    # womp womp, no shape engines            
     else:
         if os.path.dirname(filename).lower().find(".gdb") > -1:
             message = """
-            Cannot Open Geodatabase without Arcpy or Fiona
+            Cannot Open Geodatabase without Arcpy, Fiona, pyshp, or GDAL
             \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
             """.strip()
             print(message)

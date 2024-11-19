@@ -35,6 +35,12 @@ try:
 except ImportError:
     has_pyshp = False
 
+try:
+    import osgeo
+    has_gdal = True
+except:
+    has_gdal = False
+
 
 def _json_encode_params(postdata):
     for k, v in postdata.items():
@@ -255,14 +261,14 @@ def import_as_item(gis, df, **kwargs):
     # Check whether it will be a layer or a table
     if features.geo._is_geoenabled(df):
         # layer
-        if has_arcpy == False and has_pyshp == False:
+        if has_arcpy == False and has_pyshp == False and has_gdal == False:
             raise Exception(
-                "Spatially enabled DataFrame's must have either pyshp or"
+                "Spatially enabled DataFrame's must have either pyshp, gdal, or"
                 + " arcpy available to use import_data"
             )
         if has_arcpy:
             file_type = "File Geodatabase"
-        elif has_pyshp:
+        else:
             file_type = "Shapefile"
     else:
         # table

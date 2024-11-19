@@ -1975,11 +1975,17 @@ class GeoAccessor(object):
                     "This service name is unavailable for Feature Service."
                 )
         if _is_geoenabled(self._data):
+            try:
+                import osgeo
+                _HAS_GDAL = True
+            except:
+                _HAS_GDAL = False
+
             _HAS_ARCPY, _HAS_PYSHP = self._check_geometry_engine()
             # layer
-            if not _HAS_ARCPY and not _HAS_PYSHP:
+            if not _HAS_ARCPY and not _HAS_PYSHP and not _HAS_GDAL:
                 raise Exception(
-                    "Spatially enabled DataFrame's must have either pyshp or"
+                    "Spatially enabled DataFrame's must have either gdal, shapely, or"
                     + " arcpy available to use import_data"
                 )
             file_type = "File Geodatabase" if _HAS_ARCPY else "Shapefile"
