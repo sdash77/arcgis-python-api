@@ -474,7 +474,7 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     return ig
 
 
-def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = True):
+def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = True, **kwargs):
     """
     Creates an ItemGraph from a list of items. The function recursively explores the dependencies
     of each item involved that's part of the organization, encompassing the full dependency tree
@@ -494,16 +494,30 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = 
                         dependencies). When False, only items owned by users in the org will
                         be included in the graph. Default is True.
     ===============     ====================================================================
+    
+    In addition to explicitly named parameters, this function supports optional key word
+    arguments:
 
+    ===============     ====================================================================
+    **kwargs**          **Description**
+    ---------------     --------------------------------------------------------------------
+    include_reverse     Optional boolean. When True, the graph will include reverse
+                        relationships found from an item's related_items property.
+    ===============     ====================================================================
+    
     :return:
             An ItemGraph with all of the relevant items and relationships.
     """
 
     graph = ItemGraph(gis)
+    rev = kwargs.get("include_reverse", False)
 
     def _add_deps(item: Item):
+        if rev is True:
+            deps, rev_deps = _get_item_dependencies(item, gis, True, True)
+        else:
+            deps = _get_item_dependencies(item, gis)
 
-        deps = _get_item_dependencies(item, gis)
         for dep in deps:
 
             # check if we've already checked this item before
@@ -525,6 +539,32 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = 
                 graph.add_item(dep, dep_item)
                 graph.add_relationship(item.itemid, dep)
                 _add_deps(dep_item)
+        
+        if rev_deps:
+            for dep in rev_deps:
+
+                # check if item is already in the graph
+                if dep in graph:
+                    # not allowing bidirectional relationships currently
+                    try:
+                        graph.add_relationship(dep, item.itemid)
+                    finally:
+                        continue
+                
+                dep_item = gis.content.get(dep)
+
+                # check if item is outside of the organization
+                if not dep_item or gis.url not in dep_item.homepage:
+                    if not outside_org:
+                        continue
+                    graph.add_item(dep, dep_item)
+                    graph.add_relationship(dep, item.itemid)
+
+                # if an item in our org, add it and check its dependencies
+                else:
+                    graph.add_item(dep, dep_item)
+                    graph.add_relationship(dep, item.itemid)
+                    _add_deps(dep_item)
 
     for item in item_list:
         # first grab our item

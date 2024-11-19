@@ -1,5 +1,4 @@
 from arcgis.gis import GIS, Item
-from arcgis.gis.clone import clone_registry
 from arcgis.features import FeatureLayer
 import itertools
 import re
@@ -155,7 +154,7 @@ _RELATIONSHIPS = {
 _REGEX_GUID = r"[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}"
 
 
-def _get_item_dependencies(itemid, gis, include_rel=True):
+def _get_item_dependencies(itemid, gis, include_related = True, include_reverse = False):
     if isinstance(itemid, Item):
         item = itemid
     else:
@@ -180,12 +179,15 @@ def _get_item_dependencies(itemid, gis, include_rel=True):
     else:
         dependencies = []
 
-    if include_rel:
-        # only doing forward dependencies for now
+    if include_related:
+        # if reverse deps, include them in _get_related_items
         forward_deps, reverse_deps = _get_related_items(
-            item, forward=True, reverse=False
+            item, forward=True, reverse=include_reverse,
         )
         dependencies.extend(f for f in forward_deps if f not in dependencies)
+        # if reverse deps, return a tuple, second containing reverse deps
+        if include_reverse:
+            return dependencies, reverse_deps
 
     return dependencies
 
