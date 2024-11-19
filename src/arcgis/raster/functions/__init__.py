@@ -13801,7 +13801,7 @@ def subset_bands(
                                          - BestMatch : Finds the best available band to use in place of the missing band based on wavelength.
                                          - Fail : If the input dataset is missing any band specified in the Combination parameter, the function will fail.
     --------------------------------     --------------------------------------------------------------------
-    exclude_bad_bands                    Optional boolean. Specify whether bad bands will be exclued or not.
+    exclude_bad_bands                    Optional boolean. Specify whether bad bands will be excluded or not.
 
                                          Possible options are:
 
