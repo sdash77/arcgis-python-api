@@ -87,6 +87,7 @@ else:
         "matplotlib-inline",
         "pyarrow >=11.0.0",
         "puremagic >=1.15,<2",
+        "pydantic >=2.8.2, <3",
     ]
 
 

@@ -28,6 +28,7 @@ dependencies:
 - pylerc
 - pyshp >=2,<3
 - pyspnego >=0.8.0
+- pydantic >=2.8.2, <3
 # - pywin32-security
 - requests >=2.30.0,<2.32.0
 - requests-gssapi
@@ -41,7 +42,6 @@ dependencies:
 - anywidget 0.9.13
 - ipywidgets >=8.0.0
 - jupyterlab >=4.0.7,<5
-- pydantic >=2.4.0
 # ---- arcgis-learn ----
 # ONLY DEPS REQUIRED FOR BUILDING DOCS
 # arcgis_learn officially requires fastchan=1.0.63, 
