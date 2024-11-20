@@ -18532,7 +18532,12 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
         --------------------     --------------------------------------------------------------------
-        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        set_item_id              Optional String. If set, the item id is defined by the user rather
+                                 than the system. The parameter requires *ArcGIS Enterprise 11.1 or
+                                 higher*.
+        
+                                 .. note::
+                                     This parameter is not available for ArcGIS Online.    
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
@@ -18611,7 +18616,6 @@ class ViewManager:
                           :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
                           objects for modifying the layers.
         =============     =====================================================
-
 
         :returns: Boolean
         """

@@ -2714,7 +2714,12 @@ class FeatureLayerCollectionManager(_GISResource):
                                      overwriting. See also `Considerations when creating hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm#GUID-E4F46139-1F6E-4036-8C4F-EF73C2C2CE72>`_
                                      for additional criteria for overwriting.
         --------------------     --------------------------------------------------------------------
-        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        set_item_id              Optional String. If set, the item id is defined by the user rather
+                                 than the system. The parameter requires
+                                 *ArcGIS Enterprise 11.1 or higher*.
+        
+                                 .. note::
+                                     This parameter is not available for ArcGIS Online.  
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `True`.
         --------------------     --------------------------------------------------------------------
