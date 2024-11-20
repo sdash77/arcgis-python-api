@@ -15,6 +15,9 @@ class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
+    Services can contain one to many layers within them. By default the first layer is used.
+    If you want to use a different layer, you can specify the layer by its index.
+
 
     ===============     ====================================================================
     **Parameter**        **Description**
@@ -213,12 +216,17 @@ class WMTSLayer(BaseOGC):
         }
 
     @staticmethod
-    def _get_operational_layer_config(url: str, properties: dict) -> dict:
+    def _get_operational_layer_config(url: str, properties: dict, idx=None) -> dict:
         """Returns the operational layer configuration"""
         layer = None
         tile_matrix = None
 
-        if isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
+        if idx is not None and isinstance(
+            properties["Capabilities"]["Contents"]["Layer"], (list, tuple)
+        ):
+            layer = properties["Capabilities"]["Contents"]["Layer"][idx]
+            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][idx]
+        elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
             layer = properties["Capabilities"]["Contents"]["Layer"][0]
             tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][0]
         elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (dict)):
@@ -306,10 +314,43 @@ class WMTSLayer(BaseOGC):
 
     @property
     def __text__(self) -> dict:
-        """gets the item's text properties"""
+        """gets the item's text properties for the first layer"""
         return self._get_operational_layer_config(self._url, self.properties)
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the Map's JSON format"""
+        """Represents the Map's JSON format for the first layer"""
         return self.__text__
+
+    def operational_layer_json(self, identifier: str) -> dict:
+        """
+        Represents the JSON Format for the specified layer.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        identifier          Required string. The layer's Identifier to get the JSON format for.
+
+                            You can find this by looping through the layers in the `properties` attribute.
+
+                            ex:
+                            ```
+                            for lyr in wmts.properties["Capabilities"]["Contents"]["Layer"]:
+                                print(lyr["Identifier"])
+                            ```
+        ===============     ====================================================================
+
+        :return: dict
+        """
+        # Find the index of the layer based on the identifier
+        layer_index = None
+        for idx, lyr in enumerate(self.properties["Capabilities"]["Contents"]["Layer"]):
+            if lyr["Identifier"] == identifier:
+                layer_index = idx
+                break
+        if layer_index is None:
+            raise ValueError("Layer not found")
+
+        return self._get_operational_layer_config(
+            self._url, self.properties, layer_index
+        )
