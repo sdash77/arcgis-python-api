@@ -15,10 +15,6 @@ class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
-    Services can contain one to many layers within them. By default the first layer is used.
-    If you want to use a different layer, you can specify the layer by its index.
-
-
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
