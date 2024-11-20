@@ -78,6 +78,17 @@ class WMTSLayer(BaseOGC):
                 try:
                     resp: requests.Response = get_func(url)
                     resp.raise_for_status()
+                    if (
+                        "<Capabilities xmlns" in resp.text
+                        and "<?xml" not in resp.text.lower()
+                    ):
+                        # add the xml tag to beggining of text and return
+                        resp_text = resp.text
+                        xml_tag = (
+                            f'<?xml version="{self._version}" encoding="UTF-8"?>\n'
+                        )
+                        resp_text = xml_tag + resp_text
+                        return resp_text
                     if "<?xml" not in resp.text.lower():
                         raise ValueError(
                             f"Could not retrieve valid XML from WebMap Tile Service Capabilities Endpoint; Got:\n{resp.text}"
@@ -218,14 +229,24 @@ class WMTSLayer(BaseOGC):
         else:
             raise ValueError("Could not parse the results properly.")
 
-        url_template = (
-            layer["ResourceURL"]["@template"]
-            .replace("{TileMatrix}", "{level}")
-            .replace("{Style}", layer["Style"]["Identifier"])
-            .replace("{TileRow}", "{row}")
-            .replace("{TileCol}", "{col}")
-            .replace("{TileMatrixSet}", tile_matrix["Identifier"])
-        )
+        if isinstance(layer["ResourceURL"], (list, tuple)):
+            url_template = (
+                layer["ResourceURL"][0]["@template"]
+                .replace("{TileMatrix}", "{level}")
+                .replace("{Style}", layer["Style"]["Identifier"])
+                .replace("{TileRow}", "{row}")
+                .replace("{TileCol}", "{col}")
+                .replace("{TileMatrixSet}", tile_matrix["Identifier"])
+            )
+        else:
+            url_template = (
+                layer["ResourceURL"]["@template"]
+                .replace("{TileMatrix}", "{level}")
+                .replace("{Style}", layer["Style"]["Identifier"])
+                .replace("{TileRow}", "{row}")
+                .replace("{TileCol}", "{col}")
+                .replace("{TileMatrixSet}", tile_matrix["Identifier"])
+            )
         bounding_box_name = (
             "BoundingBox" if "BoundingBox" in layer else "WGS84BoundingBox"
         )
