@@ -27,9 +27,9 @@ from utils.decorators import integration_test, profiles
 class TestFormInfo(unittest.TestCase):
     """Test the renderers module"""
 
-    def setUpClass(cls):
-        cls.wm = Map(gis=cls.gis)
-        assert cls.wm
+    def setUp(self):
+        self.wm = Map(gis=self.gis)
+        assert self.wm
 
     def test_update_form(self):
         fl = FeatureLayer(
