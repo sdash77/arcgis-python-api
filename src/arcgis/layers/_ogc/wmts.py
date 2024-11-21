@@ -61,6 +61,11 @@ class WMTSLayer(BaseOGC):
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._opacity = kwargs.pop("opacity", 1)
         self._type = "WebTiledLayer"
+        self._properties = self.properties
+        self._lyr_identifiers = [
+            lyr["Identifier"]
+            for lyr in self._properties["Capabilities"]["Contents"]["Layer"]
+        ]
 
     def _get_capabilities_xml(self, urls: list[str]) -> str:
         """
@@ -332,14 +337,8 @@ class WMTSLayer(BaseOGC):
 
         :return: dict
         """
-        # Find the index of the layer based on the identifier
-        layer_index = None
-        for idx, lyr in enumerate(self.properties["Capabilities"]["Contents"]["Layer"]):
-            if lyr["Identifier"] == identifier:
-                layer_index = idx
-                break
-        if layer_index is None:
-            raise ValueError("Layer not found")
+        # User the property to get the layer index
+        layer_index = self._lyr_identifiers.index(identifier)
 
         return self._get_operational_layer_config(
             self._url, self.properties, layer_index
