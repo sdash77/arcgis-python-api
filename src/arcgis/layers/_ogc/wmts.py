@@ -62,10 +62,32 @@ class WMTSLayer(BaseOGC):
         self._opacity = kwargs.pop("opacity", 1)
         self._type = "WebTiledLayer"
         self._properties = self.properties
-        self._lyr_identifiers = [
-            lyr["Identifier"]
-            for lyr in self._properties["Capabilities"]["Contents"]["Layer"]
-        ]
+        self._lyr_identifiers = self._get_lyr_identifiers()
+        self._spatial_reference = self._get_spatial_reference()
+
+    def _get_spatial_reference(self):
+        """
+        Returns the spatial reference of the layer
+        """
+        if "BoundingBox" in self._properties["Capabilities"]["Contents"]["Layer"]:
+            crs = self._properties["Capabilities"]["Contents"]["Layer"]["BoundingBox"][
+                "@crs"
+            ]
+            return int(crs.split(":")[-1])
+        return 4326
+
+    def _get_lyr_identifiers(self):
+        """
+        Returns the identifiers of the layers
+        """
+        if isinstance(self._properties["Capabilities"]["Contents"]["Layer"], list):
+            return [
+                lyr["Identifier"]
+                for lyr in self._properties["Capabilities"]["Contents"]["Layer"]
+            ]
+        else:
+            # Only one layer so it's a dict
+            return [self._properties["Capabilities"]["Contents"]["Layer"]["Identifier"]]
 
     def _get_capabilities_xml(self, urls: list[str]) -> str:
         """
