@@ -233,10 +233,13 @@ class WMTSLayer(BaseOGC):
         else:
             raise ValueError("Could not parse the results properly.")
 
-        resource_url_template = layer["ResourceURL"][0]["@template"] if isinstance(layer["ResourceURL"], (list, tuple)) else layer["ResourceURL"]["@template"]
+        resource_url_template = (
+            layer["ResourceURL"][0]["@template"]
+            if isinstance(layer["ResourceURL"], (list, tuple))
+            else layer["ResourceURL"]["@template"]
+        )
         url_template = (
-            resource_url_template
-            .replace("{TileMatrix}", "{level}")
+            resource_url_template.replace("{TileMatrix}", "{level}")
             .replace("{Style}", layer["Style"]["Identifier"])
             .replace("{TileRow}", "{row}")
             .replace("{TileCol}", "{col}")
