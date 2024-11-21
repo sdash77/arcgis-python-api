@@ -233,24 +233,15 @@ class WMTSLayer(BaseOGC):
         else:
             raise ValueError("Could not parse the results properly.")
 
-        if isinstance(layer["ResourceURL"], (list, tuple)):
-            url_template = (
-                layer["ResourceURL"][0]["@template"]
-                .replace("{TileMatrix}", "{level}")
-                .replace("{Style}", layer["Style"]["Identifier"])
-                .replace("{TileRow}", "{row}")
-                .replace("{TileCol}", "{col}")
-                .replace("{TileMatrixSet}", tile_matrix["Identifier"])
-            )
-        else:
-            url_template = (
-                layer["ResourceURL"]["@template"]
-                .replace("{TileMatrix}", "{level}")
-                .replace("{Style}", layer["Style"]["Identifier"])
-                .replace("{TileRow}", "{row}")
-                .replace("{TileCol}", "{col}")
-                .replace("{TileMatrixSet}", tile_matrix["Identifier"])
-            )
+        resource_url_template = layer["ResourceURL"][0]["@template"] if isinstance(layer["ResourceURL"], (list, tuple)) else layer["ResourceURL"]["@template"]
+        url_template = (
+            resource_url_template
+            .replace("{TileMatrix}", "{level}")
+            .replace("{Style}", layer["Style"]["Identifier"])
+            .replace("{TileRow}", "{row}")
+            .replace("{TileCol}", "{col}")
+            .replace("{TileMatrixSet}", tile_matrix["Identifier"])
+        )
         bounding_box_name = (
             "BoundingBox" if "BoundingBox" in layer else "WGS84BoundingBox"
         )
