@@ -154,7 +154,7 @@ _RELATIONSHIPS = {
 _REGEX_GUID = r"[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}"
 
 
-def _get_item_dependencies(itemid, gis, include_related = True, include_reverse = False):
+def _get_item_dependencies(itemid, gis, include_related=True, include_reverse=False):
     if isinstance(itemid, Item):
         item = itemid
     else:
@@ -182,9 +182,13 @@ def _get_item_dependencies(itemid, gis, include_related = True, include_reverse 
     if include_related:
         # if reverse deps, include them in _get_related_items
         forward_deps, reverse_deps = _get_related_items(
-            item, forward=True, reverse=include_reverse,
+            item,
+            forward=True,
+            reverse=include_reverse,
         )
-        dependencies.extend(f.itemid for f in forward_deps if f.itemid not in dependencies)
+        dependencies.extend(
+            f.itemid for f in forward_deps if f.itemid not in dependencies
+        )
         # if reverse deps, return a tuple, second containing reverse deps
         if include_reverse:
             rd = [r.itemid for r in reverse_deps]
