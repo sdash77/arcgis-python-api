@@ -18239,7 +18239,7 @@ class Item(dict):
         of an item (other items that an item directly contains in its structure) or the full deep
         dependency list (all of the items that must exist for the item to function properly- including
         dependencies of dependencies). Note that not all items/item types may have dependencies.
-        
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
