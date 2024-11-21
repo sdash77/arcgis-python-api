@@ -56,6 +56,38 @@ class ItemNode:
         # do join
         return neighbors
 
+    def _handle_nodes(self, node_list, out_format):
+        # first, get lowercase out format and determine if it's valid
+        out_format = out_format.lower()
+        if out_format not in ["id", "item", "node"]:
+            raise ValueError(
+                "Invalid out_format. Options are 'id', 'item', and 'node'."
+            )
+
+        # if id's, just return list
+        if out_format == "id":
+            return node_list
+        # if returning items instead of just id's...
+        items = []
+        for n in node_list:
+            node = self.graph.get_item(n)
+            # if node format, append node
+            if out_format == "node":
+                items.append(node)
+                continue
+            # otherwise, try to append the item
+            if node.item:
+                items.append(node.item)
+            # otherwise, grab it
+            else:
+                item = self.graph.gis.content.get(n)
+                if item != None:
+                    items.append(item)
+                # if there's no item available, append id
+                else:
+                    items.append(n)
+        return items
+
     def contains(self, out_format: str = "node"):
         """
         Compiles all of the items that this item directly contains. Can be returned in either
@@ -76,31 +108,7 @@ class ItemNode:
             A list of item ID's or items.
         """
 
-        out_format = out_format.lower()
-        # if returning items or nodes instead of just id's...
-        if out_format != "id":
-            items = []
-            for c in self.graph.successors(self.id):
-                node = self.graph.get_item(c)
-                # if node format, append node
-                if out_format == "node":
-                    items.append(node)
-                    continue
-                # otherwise, try to append the item
-                if node.item:
-                    items.append(node.item)
-                # otherwise, grab it
-                else:
-                    item = self.graph.gis.content.get(c)
-                    if item != None:
-                        items.append(item)
-                    # if there's no item available, append id
-                    else:
-                        items.append(c)
-            return items
-        # if not items, just return list of id's
-        else:
-            return list(self.graph.successors(self.id))
+        return self._handle_nodes(list(self.graph.successors(self.id)), out_format)
 
     def contained_by(self, out_format: str = "node"):
         """
@@ -122,31 +130,7 @@ class ItemNode:
             A list of item ID's or items.
         """
 
-        out_format = out_format.lower()
-        # if returning items instead of just id's...
-        if out_format != "id":
-            items = []
-            for p in self.graph.predecessors(self.id):
-                node = self.graph.get_item(p)
-                # if node format, append node
-                if out_format == "node":
-                    items.append(node)
-                    continue
-                # otherwise, try to append the item
-                if node.item:
-                    items.append(node.item)
-                # otherwise, grab it
-                else:
-                    item = self.graph.gis.content.get(p)
-                    if item != None:
-                        items.append(item)
-                    # if there's no item available, append id
-                    else:
-                        items.append(p)
-            return items
-        # if not items, just return list of id's
-        else:
-            return list(self.graph.predecessors(self.id))
+        return self._handle_nodes(list(self.graph.predecessors(self.id)), out_format)
 
     def requires(self, out_format: str = "node"):
         """
@@ -170,31 +154,7 @@ class ItemNode:
             A list of item ID's or items.
         """
 
-        out_format = out_format.lower()
-        # if returning items or nodes instead of just id's...
-        if out_format != "id":
-            items = []
-            for d in nx.descendants(self.graph, self.id):
-                node = self.graph.get_item(d)
-                # if node format, append node
-                if out_format == "node":
-                    items.append(node)
-                    continue
-                # otherwise, try to append the item
-                if node.item:
-                    items.append(node.item)
-                # otherwise, grab it
-                else:
-                    item = self.graph.gis.content.get(d)
-                    if item != None:
-                        items.append(item)
-                    # if there's no item available, append id
-                    else:
-                        items.append(d)
-            return items
-        # if not items, just return list of id's
-        else:
-            return list(nx.descendants(self.graph, self.id))
+        return self._handle_nodes(list(nx.descendants(self.graph, self.id)), out_format)
 
     def required_by(self, out_format: str = "node"):
         """
@@ -219,31 +179,7 @@ class ItemNode:
             A list of item ID's or items.
         """
 
-        out_format = out_format.lower()
-        # if returning items or nodes instead of just id's...
-        if out_format != "id":
-            items = []
-            for a in nx.ancestors(self.graph, self.id):
-                node = self.graph.get_item(a)
-                # if node format, append node
-                if out_format == "node":
-                    items.append(node)
-                    continue
-                # otherwise, try to append the item
-                if node.item:
-                    items.append(node.item)
-                # otherwise, grab it
-                else:
-                    item = self.graph.gis.content.get(a)
-                    if item != None:
-                        items.append(item)
-                    # if there's no item available, append id
-                    else:
-                        items.append(a)
-            return items
-        # if not items, just return list of id's
-        else:
-            return list(nx.ancestors(self.graph, self.id))
+        return self._handle_nodes(list(nx.ancestors(self.graph, self.id)), out_format)
 
 
 class ItemGraph(nx.DiGraph):
