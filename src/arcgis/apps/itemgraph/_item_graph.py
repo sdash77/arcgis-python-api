@@ -467,14 +467,13 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
 
     # create a destringizer to create nodes
     def destringize_node(data):
-        if data.startswith("node_"):
-            itemid = data.split("_")[1]
-            item = None
-            if include_items and data.endswith("_item"):
-                item = gis.content.get(itemid)
-            return ItemNode(None, itemid, item)
-        else:
+        if not data.startswith("node_"):
             return data
+        itemid = data.split("_")[1]
+        item = None
+        if include_items and data.endswith("_item"):
+           item = gis.content.get(itemid)
+        return ItemNode(None, itemid, item)
 
     graph = nx.read_gml(path, destringizer=destringize_node)
     ig = ItemGraph(gis, digraph=graph)
