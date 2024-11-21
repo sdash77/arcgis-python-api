@@ -170,7 +170,7 @@ def _get_item_dependencies(itemid, gis, include_related = True, include_reverse 
         dependencies = _parse_webmap(item)
     elif item_type == "Dashboard":
         dependencies = _parse_dashboard(item)
-    elif item_type == "Experience Builder":
+    elif item_type == "Web Experience":
         dependencies = _parse_exb(item)
     elif item_type == "Web Mapping Application":
         dependencies = _parse_wma(item)
@@ -184,10 +184,11 @@ def _get_item_dependencies(itemid, gis, include_related = True, include_reverse 
         forward_deps, reverse_deps = _get_related_items(
             item, forward=True, reverse=include_reverse,
         )
-        dependencies.extend(f for f in forward_deps if f not in dependencies)
+        dependencies.extend(f.itemid for f in forward_deps if f.itemid not in dependencies)
         # if reverse deps, return a tuple, second containing reverse deps
         if include_reverse:
-            return dependencies, reverse_deps
+            rd = [r.itemid for r in reverse_deps]
+            return dependencies, rd
 
     return dependencies
 
@@ -241,13 +242,16 @@ def _parse_webmap(item):
 
         else:
             if "itemId" in layer:
-                items.append(layer["itemId"])
+                if layer["itemId"] not in items:
+                    items.append(layer["itemId"])
             elif "url" in layer:
                 try:
                     sid = FeatureLayer(layer["url"]).properties["serviceItemId"]
-                    items.append(sid)
+                    if sid not in items:
+                        items.append(sid)
                 except:
-                    services.append(layer["url"])
+                    if layer["url"] not in services:
+                        services.append(layer["url"])
 
     for op_layer in webmap_json.get("operationalLayers"):
         process_op_layer(op_layer)
@@ -297,7 +301,7 @@ def _parse_exb(item):
 
     for data in [pub_data, draft_data]:
         data_sources = data.get("dataSources", [])
-        for ds in data_sources:
+        for ds in data_sources.values():
             if "itemId" in ds and ds["itemId"] not in itemids:
                 itemids.append(ds["itemId"])
 
@@ -359,7 +363,9 @@ def _parse_storymap(item):
         )
 
         for ids in [web_maps, themes]:
-            itemids.extend(ids)
+            for i in ids:
+                if i not in itemids:
+                    itemids.append(i)
 
     return itemids
 

@@ -34,6 +34,8 @@ class ItemNode:
         self.graph = graph
         if item:
             self.item = item
+        else:
+            self.item = None
 
     def __str__(self):
         if self.item:
@@ -392,7 +394,14 @@ class ItemGraph(nx.DiGraph):
         if out_format == "node":
             return [i[1]["node"] for i in list(self.nodes(data=True))]
         elif out_format == "item":
-            return [i[1]["node"].item for i in list(self.nodes(data=True))]
+            out_list = []
+            for i in list(self.nodes(data=True)):
+                node = i[1]["node"]
+                if node.item:
+                    out_list.append(node.item)
+                else:
+                    out_list.append(node.id)
+            return out_list
         else:
             return list(self.nodes())
 
@@ -517,13 +526,17 @@ def create_item_graph(gis: GIS, item_list: list[Item, str], outside_org: bool = 
             deps, rev_deps = _get_item_dependencies(item, gis, True, True)
         else:
             deps = _get_item_dependencies(item, gis)
+            rev_deps = None
 
         for dep in deps:
 
             # check if we've already checked this item before
             if dep in graph:
-                graph.add_relationship(item.itemid, dep)
-                continue
+                # not allowing bidirectional relationships currently
+                try:
+                    graph.add_relationship(item.itemid, dep)
+                finally:
+                    continue
 
             dep_item = gis.content.get(dep)
 
