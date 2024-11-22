@@ -37,6 +37,7 @@ except ImportError:
 
 try:
     import osgeo
+
     has_gdal = True
 except:
     has_gdal = False
