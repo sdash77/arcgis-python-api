@@ -387,7 +387,6 @@ def _find_regex(i, regex, res=[]):
         for v in i:
             _find_regex(v, regex, res)
     elif isinstance(i, str):
-        # print(i)
         matches = re.findall(regex, i, re.MULTILINE)
         if matches:
             res.append(matches)
