@@ -18677,7 +18677,8 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
         """
-        Updates a set of layers with new queries, geometries, and column visibilities.
+        Updates a view definition with new queries, geometries, and column
+        visibilities.
 
         =============     =====================================================
         **Argument**      **Description**
