@@ -754,7 +754,7 @@ def from_featureclass(filename, **kwargs):
         or type(filename).__name__.find("arcpy") > -1
     ):
         filename = filename
-    
+
     # this part is for shapefile URL's if we don't have gdal
     else:
         filename = _ensure_path_string(filename)
@@ -763,12 +763,16 @@ def from_featureclass(filename, **kwargs):
                 f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
             )
         # if url shapefile and no gdal, go to old shapefile-only method
-        if filename.find("http://") > -1 or filename.find("https://") > -1 and not HASGDAL:
+        if (
+            filename.find("http://") > -1
+            or filename.find("https://") > -1
+            and not HASGDAL
+        ):
             res = from_url(url=filename)
             if len(res) == 1:
                 return res[0]
             return res
-        
+
     # if we either have arcpy-specific kwargs, or no gdal
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
@@ -882,11 +886,11 @@ def from_featureclass(filename, **kwargs):
             return df.convert_dtypes()
         except:
             return df.convert_dtypes()
-        
+
     # this happens as a backup if we have arcpy kwargs but no arcpy
     elif HASGDAL:
         return _gdal_workflow()
-    
+
     # pyshp workflow
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
@@ -909,7 +913,7 @@ def from_featureclass(filename, **kwargs):
         sdf.reset_index(inplace=True)
         sdf.spatial._meta.source = filename
         return sdf
-    
+
     # fiona workflow
     elif (
         HASARCPY == False
@@ -972,8 +976,8 @@ def from_featureclass(filename, **kwargs):
                     df.spatial.set_geometry(geoms)
                     df.spatial._meta.source = filename
                     return df
-                
-    # womp womp, no shape engines            
+
+    # womp womp, no shape engines
     else:
         if os.path.dirname(filename).lower().find(".gdb") > -1:
             message = """

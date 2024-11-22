@@ -1976,6 +1976,7 @@ class GeoAccessor(object):
         if _is_geoenabled(self._data):
             try:
                 import osgeo
+
                 _HAS_GDAL = True
             except:
                 _HAS_GDAL = False
