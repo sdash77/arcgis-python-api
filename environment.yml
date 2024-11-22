@@ -2,7 +2,7 @@ name: geosaurus_dev_env
 channels:
 - defaults
 - esri
-- esri/label/jupyterlab
+- esri/label/prerelease
 - esri-build
 dependencies:
 - python 3.11
@@ -27,6 +27,7 @@ dependencies:
 - pyarrow >=11.0.0
 - pylerc
 - pyspnego >=0.8.0
+- pydantic >=2.8.2, <3
 # - pywin32-security
 - requests >=2.30.0,<2.32.0
 - requests-gssapi
@@ -37,10 +38,9 @@ dependencies:
 - ujson >=3
 - urllib3 >=1.26.1,<3
 # ---- arcgis-mapping ----
-- anywidget 0.9.10
+- anywidget 0.9.13
 - ipywidgets >=8.0.0
 - jupyterlab >=4.0.7,<5
-- pydantic >=2.4.0
 # ---- arcgis-learn ----
 # ONLY DEPS REQUIRED FOR BUILDING DOCS
 # arcgis_learn officially requires fastchan=1.0.63, 
@@ -53,21 +53,15 @@ dependencies:
 - timm 0.4.12.*
 - torchvision >=0.15.0
 # ---- sphinx/docs build ----
-- alabaster <0.7.14
-- jinja2 3.0.3
-- sphinx 3.2.1
-- sphinxcontrib-applehelp <1.0.8
-- sphinxcontrib-devhelp <1.0.6
-- sphinxcontrib-htmlhelp <2.0.5
-- sphinxcontrib-qthelp <1.0.7
-- sphinxcontrib-serializinghtml <1.1.10
+- sphinx >=7,<8
 # ---- etc ----
 - black
 - keyrings.alt
 - selenium
 - pip:
   # ---- sphinx/docs build ----
-  - sphinx-rtd-theme==0.5.2
+  - sphinx_rtd_theme>=2,<3
+  - autodoc_pydantic>=2,<3
   # ---- automated testing ----
   - coverage
   - nose2

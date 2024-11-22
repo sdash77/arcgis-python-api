@@ -1110,14 +1110,10 @@ def to_featureclass(
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
     if location.lower().endswith(".shp"):
-
         df[df.select_dtypes(include="number").columns.tolist()] = df[
             df.select_dtypes(include="number").columns.tolist()
         ].replace({pd.NA: 0})
-    else:
-        df[df.select_dtypes(include="number").columns.tolist()] = df[
-            df.select_dtypes(include="number").columns.tolist()
-        ].replace({pd.NA: None})
+
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
