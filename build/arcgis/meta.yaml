@@ -30,7 +30,6 @@ requirements:
   - puremagic >=1.15,<2
   - pyarrow >=11.0.0
   - pylerc
-  - pyshp >=2,<3
   - pyspnego >=0.8.0
   - pywin32-security [win]
   - requests >=2.30.0,<2.32.0

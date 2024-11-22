@@ -293,7 +293,7 @@ def from_url(url: str) -> list:
         return from_featureclass(url)
 
     if HASPYSHP == False:
-        raise Exception("pyshp is required to read hosted shapefiles.")
+        raise Exception("GDAL or pyshp is required to read hosted shapefiles.")
     import requests
 
     r = requests.get(url)
@@ -470,9 +470,9 @@ def from_table(filename, **kwargs):
             except:
                 return df
         return None
-    elif filename.lower().endswith(".dbf"):
-        import shapefile
-
+    elif filename.lower().endswith(".dbf") and HASGDAL:
+        return _gdal_to_sedf(file_path=filename)
+    elif filename.lower().endswith(".dbf") and HASPYSHP:
         with open(filename, "rb") as f:
             reader = shapefile.Reader(dbf=f)
             return pd.DataFrame([record.as_dict() for record in reader.iterRecords()])
@@ -1562,7 +1562,8 @@ def _gdal_to_sedf(file_path):
                     fv = feature.GetField(field)
             field_values[field].append(fv)
         geom = feature.geometry()
-        esri_geom = Geometry(_ujson.loads(geom.ExportToJson()))
+        if geom is not None:
+            esri_geom = Geometry(_ujson.loads(geom.ExportToJson()))
         if not sr_code:
             try:
                 sr = geom.GetSpatialReference()

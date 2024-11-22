@@ -1981,9 +1981,9 @@ class GeoAccessor(object):
             except:
                 _HAS_GDAL = False
 
-            _HAS_ARCPY, _HAS_PYSHP = self._check_geometry_engine()
+            _HAS_ARCPY, _HAS_SHAPELY = self._check_geometry_engine()
             # layer
-            if not _HAS_ARCPY and not _HAS_PYSHP and not _HAS_GDAL:
+            if not _HAS_ARCPY and not _HAS_SHAPELY and not _HAS_GDAL:
                 raise Exception(
                     "Spatially enabled DataFrame's must have either gdal, shapely, or"
                     + " arcpy available to use import_data"

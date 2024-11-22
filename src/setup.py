@@ -75,7 +75,6 @@ else:
         "ujson >=3",
         "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
-        "pyshp >=2",
         "geomet",
         "requests >=2.30.0,<2.32.0",
         "requests-oauthlib",
