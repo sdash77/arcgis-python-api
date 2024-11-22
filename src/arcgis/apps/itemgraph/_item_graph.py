@@ -32,10 +32,7 @@ class ItemNode:
     def __init__(self, graph, itemid: str, item=None):
         self.id = itemid
         self.graph = graph
-        if item:
-            self.item = item
-        else:
-            self.item = None
+        self.item = item
 
     def __str__(self):
         if self.item:
@@ -81,11 +78,7 @@ class ItemNode:
             # otherwise, grab it
             else:
                 item = self.graph.gis.content.get(n)
-                if item != None:
-                    items.append(item)
-                # if there's no item available, append id
-                else:
-                    items.append(n)
+                items.append(item or n)
         return items
 
     def contains(self, out_format: str = "node"):
@@ -208,11 +201,9 @@ class ItemGraph(nx.DiGraph):
             super().__init__()
         else:
             super().__init__(digraph)
-        if not gis:
-            gis = arcgis.env.active_gis
-        if not gis:
+        self.gis = gis or arcgis.env.active_gis
+        if not self.gis:
             raise ValueError("A GIS instance is required to create an ItemGraph.")
-        self.gis = gis
 
     def _create_tree(self, itemid: str):
         """
@@ -357,13 +348,9 @@ class ItemGraph(nx.DiGraph):
 
         # create a stringizer that tells us later to make a node
         def stringize_node(data):
-            if isinstance(data, ItemNode):
-                node_str = "node_" + data.id
-                if data.item:
-                    node_str += "_item"
-                return node_str
-            else:
+            if not isinstance(data, ItemNode):
                 return data
+            return f"node_{data.id}_item" if data.item else f"node_{data.id}"
 
         nx.write_gml(self, location, stringize_node)
         return location
@@ -465,39 +452,17 @@ def create_item_graph(
             deps = _get_item_dependencies(item, gis)
             rev_deps = None
 
-        for dep in deps:
+        def _handle_deps(item, deps, forward):
+            for dep in deps:
 
-            # check if we've already checked this item before
-            if dep in graph:
-                # not allowing bidirectional relationships currently
-                try:
-                    graph.add_relationship(item.itemid, dep)
-                finally:
-                    continue
-
-            dep_item = gis.content.get(dep)
-
-            # check if item is outside of the organization
-            if not dep_item or gis.url not in dep_item.homepage:
-                if not outside_org:
-                    continue
-                graph.add_item(dep, dep_item)
-                graph.add_relationship(item.itemid, dep)
-
-            # if an item in our org, add it and check its dependencies
-            else:
-                graph.add_item(dep, dep_item)
-                graph.add_relationship(item.itemid, dep)
-                _add_deps(dep_item)
-
-        if rev_deps:
-            for dep in rev_deps:
-
-                # check if item is already in the graph
+                # check if we've already checked this item before
                 if dep in graph:
                     # not allowing bidirectional relationships currently
                     try:
-                        graph.add_relationship(dep, item.itemid)
+                        if forward:
+                            graph.add_relationship(item.itemid, dep)
+                        else:
+                            graph.add_relationship(dep, item.itemid)
                     finally:
                         continue
 
@@ -508,13 +473,23 @@ def create_item_graph(
                     if not outside_org:
                         continue
                     graph.add_item(dep, dep_item)
-                    graph.add_relationship(dep, item.itemid)
+                    if forward:
+                        graph.add_relationship(item.itemid, dep)
+                    else:
+                        graph.add_relationship(dep, item.itemid)
 
                 # if an item in our org, add it and check its dependencies
                 else:
                     graph.add_item(dep, dep_item)
-                    graph.add_relationship(dep, item.itemid)
+                    if forward:
+                        graph.add_relationship(item.itemid, dep)
+                    else:
+                        graph.add_relationship(dep, item.itemid)
                     _add_deps(dep_item)
+
+        _handle_deps(item, deps, True)
+        if rev_deps:
+            _handle_deps(item, rev_deps, False)
 
     for item in item_list:
         # first grab our item

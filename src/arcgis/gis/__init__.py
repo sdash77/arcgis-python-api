@@ -18267,8 +18267,7 @@ class Item(dict):
         node = graph.get_item(self.id)
         if deep:
             return node.requires(out_format=out_format)
-        else:
-            return node.contains(out_format=out_format)
+        return node.contains(out_format=out_format)
 
 
 ########################################################################

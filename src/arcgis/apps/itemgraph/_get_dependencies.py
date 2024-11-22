@@ -266,15 +266,14 @@ def _parse_webmap(item):
 
 def _parse_dashboard(item):
     # credit to Dan Yaw for this one
-    data_ids = []
-    map_ids = []
+    deps = []
 
     widgets = item.get_data().get("widgets")
 
     if widgets is not None:
         for widget in widgets:
             if widget.get("type") == "mapWidget":
-                map_ids.append(widget.get("itemId"))
+                deps.append(widget.get("itemId"))
 
             else:
                 try:
@@ -283,18 +282,15 @@ def _parse_dashboard(item):
                             data_source = dataset.get("dataSource")
 
                             if data_source.get("type") == "itemDataSource":
-                                data_ids.append(data_source.get("itemId"))
+                                deps.append(data_source.get("itemId"))
 
                             elif data_source.get("type") == "arcadeDataSource":
                                 script = data_source.get("script")
-
-                                for item_id in _find_regex(script, _REGEX_GUID, []):
-                                    data_ids.append(item_id)
+                                deps.extend(_find_regex(script, _REGEX_GUID, []))
                 except:
                     pass
 
-    map_ids.extend(data_ids)
-    return map_ids
+    return deps
 
 
 def _parse_exb(item):
