@@ -38,10 +38,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
-from arcgis.gis._impl._dataclasses._sfilters import (
-    SpatialFilter,
-    SpatialRelationship
-)
+from arcgis.gis._impl._dataclasses._sfilters import SpatialFilter, SpatialRelationship
 
 try:
     import pandas as pd
@@ -18241,13 +18238,13 @@ class ViewManager:
     Objects of this class are not meant to be created, but rather
     accessed from the :attr:`~arcgis.gis.Item.view_manager` property on
     a feature layer or feature layer view :class:`~arcgis.gis.Item`.
-    
+
     .. code-block:: python
-    
+
         # Usage Example: Accessing a ViewManager
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> view_item = gis.content.get("<view_item_id>")
         >>> vw_mgr = view_item.view_manager
         >>> vw_mgr
@@ -18269,15 +18266,15 @@ class ViewManager:
         :returns:
             List of feature layer view :class:`items <arcgis.gis.Item>` for
             the hosted feature layer.
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> flyr_item = gis.content.get("<item_id>")
             >>> flyr_vw_items = flyr_item.view_manager.list()
             >>> flry_vw_items
             [<Item title:"flyr_view" type:Feature Layer Collection owner:gis_user>]
-            
+
         """
         return [
             i
@@ -18573,23 +18570,23 @@ class ViewManager:
         .. code-block:: python
 
             # USAGE EXAMPLE: Create a view from a hosted feature layer
-            
+
             >>> flyr_item = gis.content.search("*", item_type="Feature Service")[0]
             >>> view_item = flyr_item.view_manager.create(
                                 name="flyr_view",
                                 extent={
-                                    "xmin" : -9982417.919074, 
-                                    "ymin" : 4370975.025460, 
-                                    "xmax" : -8954750.737665, 
-                                    "ymax" : 4769966.758480, 
+                                    "xmin" : -9982417.919074,
+                                    "ymin" : 4370975.025460,
+                                    "xmax" : -8954750.737665,
+                                    "ymax" : 4769966.758480,
                                     "spatialReference" : {
                                         "wkid" : 102100,
                                         "latestWkid" : 3857
-                                    }        
+                                    }
                                 },
                                 view_layers=[
                                     flyr_item.layers[0]
-                                ], 
+                                ],
                                 allow_schema_changes=True,
                                 updateable=True,
                                 capabilities="Query,Update,Delete",
@@ -18636,23 +18633,23 @@ class ViewManager:
         :return:
             List of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
             objects or None.
-            
+
         .. code-block:: python
-        
+
             # Usage Example: Getting ViewLayerDefParameter object from a view
             >>> from arcgis.gis import GIS
-            
+
             >>> gis = GIS(profile="your_organization_profile")
-            
+
             >>> fsvc_items = gis.content.search("flyr_view", item_type="Feature Service")
             >>> view_item = [
                        vi for vi in fsvc_items if "View Service" in vi.typeKeywords
                 ][0]
-            
+
             >>> vw_mgr = view_item.view_manager
             >>> vw_def_list = vw_mgr.get_definitions(view_item)
             [<ViewLayerDefParameter>]
-            
+
             >>> vw_def = vw_def_list[0]
             >>> vw_def.as_json()
             {'viewLayerDefinition': {'filter': {'geometry': {'rings': [[[-9982417.919074,4370975.02546],
@@ -18665,7 +18662,7 @@ class ViewManager:
              'fields': [{'name': 'objectid', 'visible': True},
                         ...
                         {'name': 'globalid', 'visible': True}]
-            }            
+            }
         """
         if "View Service" in item.typeKeywords:
             from arcgis.gis._impl._dataclasses import ViewLayerDefParameter

@@ -272,14 +272,14 @@ class ViewLayerDefParameter:
     method.
 
     .. code-block:: python
-    
+
         # Usage Example 1: Initializing an object directly
         >>> from arcgis.gis import GIS, ViewLayerDefParameter
         >>> from arcgis.gis import SpatialFilter, SpatialRelationship
         >>> from arcgis.geometry import Envelope, SpatialReference
-        
+
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> filter_geom = Envelope(
               iterable={
                             "xmin": -10571116.801669,
@@ -290,13 +290,13 @@ class ViewLayerDefParameter:
                               "wkid": 102100,
                               "latestWkid": 3857
                             }
-                        }  
+                        }
             )
         >>> spat_filter = SpatialFilter(
                 goemetry= filter_geom,
                 spatial_rel= SpatialRelationship.CROSSES,
                 sr= SpatialReference({"latestWkid": 3857, "wkid": 102100})
-            )        
+            )
         >>> vw_def = ViewLayerDefParameter(
                layer= view_item.layers[0],
                query_definition= "unit_field IS NOT NULL",
@@ -308,18 +308,18 @@ class ViewLayerDefParameter:
                     {"name": "system_id", "visible": False}
                 ]
             )
-        
+
         # Usage Example 2: Accessing from a Feature Layer view
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> view_item = gis.content.get("<item_id_for_view>")
         >>> vw_mgr = view_item.view_manager
-        
+
         >>> vw_defs = vw_mgr.get_definitions(view_item)
         >>> vw_def - vw_defs[0]
         <ViewLayerDefParameter>
-        
+
         >>> vw_def.as_json()
         {'viewLayerDefinition': {'filter': {'geometry': {'rings': [[[-9982417.919074,4370975.02546],
                                                             [-9982417.919074,4769966.75848],
@@ -398,7 +398,7 @@ class ViewLayerDefParameter:
     ) -> "ViewLayerDefParameter":
         """Creates a view layer definition parameter object from a feature layer
         or feature layer manager.
-        
+
         =================     ==================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------

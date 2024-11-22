@@ -51,22 +51,22 @@ class SpatialFilter:
     :attr:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter.spatial_filter`
     property of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
     objects.
-    
+
     .. code-block:: python
-    
+
         #Usage Example 1: Get SpatialFilter from view
         >>> gis = GIS(profile="your_organization_profile")
         >>> view_item = gis.content.get("<view_item_id>")
-        
+
         >>> vw_mgr = view_item.view_manager
         >>> vw_def = vw_mgr.get_definitions(view_item)[0]
-        
+
         >>> vw_def.spatial_filter
         SpatialFilter()
-        
+
         >>> vw_def.spatial_filter.sr
         {'latestWkid': 3857, 'wkid': 102100}
-        
+
         >>> vw_def.spatial_filter.as_json()
             {'geometry': {'rings': [[[-9982417.919074, 4370975.02546],
                             [-9982417.919074, 4769966.75848],
@@ -77,11 +77,11 @@ class SpatialFilter:
              'geometryType': 'esriGeometryPolygon',
              'spatialRel': 'esriSpatialRelIntersects',
              'inSR': {'latestWkid': 3857, 'wkid': 102100}}
-             
+
         #Usage Example 2: Initialize a SpatialFilter
         >>> from arcgis.gis import SpatialFilter, SpatialRelationship
         >>> from arcgis.geomtry import Polygon, SpatialReference
-        
+
         >>> filter_poly = Polygon(
                 {'geometry': {'rings': [
                                         [[-12942501.854427, 5403724.074921],
@@ -92,9 +92,9 @@ class SpatialFilter:
                                        ],
                               'spatialReference': {'latestWkid': 3857, 'wkid': 102100}
                               }
-                }   
+                }
         )
-        
+
         >>> spatial_filt = SpatialFilter(
                 geometry= filter_poly,
                 spatial_rel= SpatialRelationship.INTERSECTS,
@@ -112,7 +112,7 @@ class SpatialFilter:
     * :class:`~arcgis.geometry.Envelope`
     * :class:`~arcgis.geometry.MultiPoint`    
     """
-    
+
     spatial_rel: SpatialRelationship = SpatialRelationship.INTERSECTS
     """
     A member of the :class:`~arcgis.gis._impl._dataclasses.SpatialRelationship`
