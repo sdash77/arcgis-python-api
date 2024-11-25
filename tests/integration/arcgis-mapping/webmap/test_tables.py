@@ -3,7 +3,7 @@ from arcgis.map.popups import PopupManager
 import unittest
 import os
 from utils.decorators import integration_test, profiles
-from tests.integration.config import get_resource_path
+from integration.config import get_resource_path
 
 @profiles.agol
 @integration_test
