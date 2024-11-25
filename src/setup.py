@@ -63,21 +63,21 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3>=1.26.1,<3",
+        "urllib3>=2.1.0,<3",
         "cachetools",
         "lxml",
         "cryptography",
-        "pandas >=2.0.0,<2.2.0",
+        "pandas >=2.0.0,<2.3.0",
         "numpy >=1.21.6,<2",
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",
         "ujson >=3",
-        "truststore>=0.7.0;python_version>'3.9'",
+        "truststore>=0.10.0",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.30.0,<2.32.0",
+        "requests >=2.31.0,!=2.32.0.*,!= 2.32.1.*,!=2.32.2.*,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
@@ -87,6 +87,7 @@ else:
         "matplotlib-inline",
         "pyarrow >=11.0.0",
         "puremagic >=1.15,<2",
+        "pydantic >=2.8.2, <3",
     ]
 
 

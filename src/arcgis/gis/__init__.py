@@ -7019,7 +7019,7 @@ class ContentManager(object):
         text                       Optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
         file_type                  Optional string. The type of the input file: shapefile, csv, excel,
-                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
+                                   geoPackage, or geojson (geojson only supported for ArcGIS Online).
         -----------------------    -------------------------------------------------------------
         source_locale              Optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -7090,7 +7090,12 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile"]:
+        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
+            if (
+                str(file_type).lower() == "geojson"
+                and not self._gis._portal.is_arcgisonline
+            ):
+                raise ValueError("GeoJSON is not supported in ArcGIS Enterprise")
             params["fileType"] = file_type
             params["analyzeParameters"]["enableGlobalGeocoding"] = False
         if source_country:
@@ -16348,7 +16353,6 @@ class Item(dict):
             <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
             in the ArcGIS REST API for more details.
         """
-        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         params: dict[str, Any] = {
             "publish_parameters": publish_parameters,
@@ -16360,11 +16364,17 @@ class Item(dict):
             "item_id": item_id,
             "geocode_service": geocode_service,
         }
-        job: concurrent.futures.Future = tp.submit(self._publish, **params)
-        tp.shutdown(wait=True)
-        if future == False:
-            return job.result()
-        return job
+        if future:
+            executor: concurrent.futures.ThreadPoolExecutor = (
+                concurrent.futures.ThreadPoolExecutor(1)
+            )
+            futureobj: concurrent.futures.Future = executor.submit(
+                self._publish, **params
+            )
+            executor.shutdown(False)
+            return futureobj
+        else:
+            return self._publish(**params)
 
     # ----------------------------------------------------------------------
     def _publish(
@@ -18522,7 +18532,12 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
         --------------------     --------------------------------------------------------------------
-        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        set_item_id              Optional String. If set, the item id is defined by the user rather
+                                 than the system. The parameter requires *ArcGIS Enterprise 11.1 or
+                                 higher*.
+
+                                 .. note::
+                                     This parameter is not available for ArcGIS Online.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
@@ -18601,7 +18616,6 @@ class ViewManager:
                           :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
                           objects for modifying the layers.
         =============     =====================================================
-
 
         :returns: Boolean
         """

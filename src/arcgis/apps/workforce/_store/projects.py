@@ -45,7 +45,7 @@ def create_project(title, summary=None, major_version=None, gis=None):
                            Defaults to the active GIS if None is provided.
     ==================     ====================================================================
 
-    Returns a :class:`arcgis.apps.workforce.Project`
+    Returns a :class:`~arcgis.apps.workforce.Project`
     """
 
     if gis is None:
