@@ -13845,34 +13845,35 @@ def subset_bands(
 
         template_dict["rasterFunctionArguments"]["Method"] = in_method
 
-        if isinstance(bands, list):
-            bands = ";".join(str(band) for band in bands)
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, str):
-            if "," in bands:
-                raise ValueError("Invalid separator. Only space and ';' are allowed.")
-            template_dict["rasterFunctionArguments"]["Bands"] = bands
-        elif isinstance(bands, int):
-            template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
-        else:
-            raise TypeError("bands should be  either a single string or a list")
-
-        bands = template_dict["rasterFunctionArguments"]["Bands"]
-        if isinstance(bands, str):
-            if method.upper() == "BY_IDS":
-                separator = ";" if ";" in bands else " "
-                parts = bands.split(separator)
-
-                new_parts = []
-                for part in parts:
-                    if "-" in part:
-                        start, end = map(int, part.split("-"))
-                        new_parts.append(f"{start-1}-{end-1}")
-                    else:
-                        new_parts.append(str(int(part) - 1))
-
-                bands = separator.join(new_parts).replace(" ;", ";")
+        if bands is not None:
+            if isinstance(bands, list):
+                bands = ";".join(str(band) for band in bands)
                 template_dict["rasterFunctionArguments"]["Bands"] = bands
+            elif isinstance(bands, str):
+                if "," in bands:
+                    raise ValueError("Invalid separator. Only space and ';' are allowed.")
+                template_dict["rasterFunctionArguments"]["Bands"] = bands
+            elif isinstance(bands, int):
+                template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
+            else:
+                raise TypeError("bands should be  either a single string or a list")
+
+            bands = template_dict["rasterFunctionArguments"]["Bands"]
+            if isinstance(bands, str):
+                if method.upper() == "BY_IDS":
+                    separator = ";" if ";" in bands else " "
+                    parts = bands.split(separator)
+
+                    new_parts = []
+                    for part in parts:
+                        if "-" in part:
+                            start, end = map(int, part.split("-"))
+                            new_parts.append(f"{start-1}-{end-1}")
+                        else:
+                            new_parts.append(str(int(part) - 1))
+
+                    bands = separator.join(new_parts).replace(" ;", ";")
+                    template_dict["rasterFunctionArguments"]["Bands"] = bands
 
     missing_band_actions = {"BESTMATCH": 0, "FAIL": 1}
 
