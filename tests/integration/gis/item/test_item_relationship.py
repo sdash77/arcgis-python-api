@@ -1,56 +1,32 @@
-import sys
-import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 from config import QALAB_ROOT_PATH
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-profiles = ['your_online_profile']  # , 'your_enterprise_profile']
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
 
 
 @integration_test
+@profiles.enterprise_and_agol
 class TestItemRelationships(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.gis_objs = [
-            GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            for profile in profiles
-        ]
-        cls.items = []
-        cls.pitems = []
+    def setUp(self):
+        self.items = []
+        self.pitems = []
         fp: str = QALAB_ROOT_PATH + r"\esri_requests\issue_10433\issue_10433.zip"
-        for gis in cls.gis_objs:
-            item = gis.content.add(
-                item_properties={
-                    "type": "Shapefile",
-                    "title": "issue_10433",
-                },
-                data=fp,
+        self.folder = self.gis.content.folders._get_or_create("integration_testing_gis_item_relationship")
+        item = self.folder.add(
+            item_properties={
+                "type": "Shapefile",
+                "title": "test_related_items",
+                "tags": "integration_testing",
+            },
+            file=fp,
+        ).result()
+        self.items.append(item)
+        self.pitems.append(
+            item.publish(
+                {
+                    'name': "test_related_items_data",
+                }
             )
-            cls.items.append(item)
-            cls.pitems.append(
-                item.publish(
-                    {
-                        'name': "issue10433data",
-                    }
-                )
-            )
+        )
 
     def test_relationships(self):
         """tests the relationships"""
@@ -60,12 +36,13 @@ class TestItemRelationships(unittest.TestCase):
             )
             assert len(related) > 0
 
-    @classmethod
-    def tearDownClass(cls):
-        for i in cls.pitems:
-            i.delete()
-        for i in cls.items:
-            i.delete()
+    def tearDown(self):
+        for i in self.pitems:
+            i.delete(permanent=True)
+        for i in self.items:
+            i.delete(permanent=True)
+        if self.folder:
+            self.folder.delete(permanent=True)
 
 
 if __name__ == "__main__":

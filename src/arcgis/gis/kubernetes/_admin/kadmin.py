@@ -19,6 +19,7 @@ from arcgis.gis.admin._livingatlas import (
     LivingAtlasJob,
     LivingAtlasManager,
 )
+from arcgis.gis.admin._classification import ClassificationManager
 
 
 class KubernetesAdmin(_BaseKube):
@@ -59,11 +60,12 @@ class KubernetesAdmin(_BaseKube):
     _category_schema = None
     _jobs = None
     _collaborations = None
+    _classification: ClassificationManager | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """class initializer"""
-        super(KubernetesAdmin, self)
+        super()
         self._url = url
         self._gis = gis
         self._con = gis._con
@@ -458,3 +460,22 @@ class KubernetesAdmin(_BaseKube):
             url = self._gis._portal.resturl + "portals/self/webhooks"
             self._whm = WebhookManager(url=url, gis=self._gis)
         return self._whm
+
+    # ----------------------------------------------------------------------
+    @property
+    def classification(self) -> ClassificationManager:
+        """
+        Provides access to the functionality for managing the ArcGIS Enterprise
+        classification schema if it has been configured.
+
+        :return:
+            An instance of the :class:`~arcgis.gis.admin.ClassificationManager`.
+        """
+        if (
+            self._classification is None
+            and "hasClassificationSchema" in self._gis.properties
+            and self._gis.version >= [2024, 2]
+        ):
+            url: str = f"{self._gis.resturl}portals/self/classification"
+            self._classification = ClassificationManager(url=url, gis=self._gis)
+        return self._classification

@@ -799,6 +799,7 @@ class Connection(object):
                     cert=cert,
                     verify=self._verify_cert,
                     allow_redirects=allow_redirects,
+                    not_encoded=False,
                 )
                 self._session.auth = auth
             else:
@@ -808,6 +809,7 @@ class Connection(object):
                     cert=cert,
                     verify=self._verify_cert,
                     allow_redirects=allow_redirects,
+                    not_encoded=False,
                 )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(

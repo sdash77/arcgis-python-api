@@ -1995,10 +1995,11 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy[0])
-            params["useData"] = json.dumps(
-                {"sourceCountry": country.properties.iso3, "hierarchy": hierarchy}
-            )
+            use_data = {"sourceCountry": country.properties.iso3}
+            hierarchy = kwargs.pop("hierarchy", None)
+            if hierarchy is not None:
+                use_data["hierarchy"] = hierarchy
+            params["useData"] = json.dumps(use_data)
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
@@ -2211,10 +2212,6 @@ class BusinessAnalyst(object):
             enrich_df.columns = [
                 pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
             ]
-
-        # stash useful pieces for potential later access in metadata
-        enrich_df.attrs["arcgis_ba"] = self
-        enrich_df.attrs["arcgis_aoi"] = country
 
         return enrich_df
 

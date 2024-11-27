@@ -2,7 +2,7 @@ from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
 from arcgis.map import Map
 from arcgis.map.symbols import (
-    PictureFillSymbolsEsriPFS,
+    PictureFillSymbolEsriPFS,
     PictureMarkerSymbolEsriPMS,
     SimpleFillSymbolEsriSFS,
     SimpleLineSymbolEsriSLS,
@@ -30,7 +30,7 @@ class TestSymbols(unittest.TestCase):
         )
         assert fl
 
-        symbol = PictureFillSymbolsEsriPFS(
+        symbol = PictureFillSymbolEsriPFS(
             url="https://static.arcgis.com/images/Symbols/Shapes/BluePin1LargeB.png",
             width=20,
             height=20,

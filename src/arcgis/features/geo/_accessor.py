@@ -1323,7 +1323,7 @@ class GeoAccessor(object):
                 return getattr(g, n, None)() if g is not None else None
 
             vals = np.vectorize(fn, otypes="O")(self._data[self.name], "svg")
-            svg = "\n".join(vals.tolist())
+            svg = "\n".join([v for v in vals.tolist() if v])
             svg_top = (
                 '<svg xmlns="http://www.w3.org/2000/svg" '
                 'xmlns:xlink="http://www.w3.org/1999/xlink" '
@@ -1861,7 +1861,6 @@ class GeoAccessor(object):
 
         # otherwise, if a map widget is NOT explicitly defined
         else:
-
             # if a gis is not already created in the session, create an anonymous one
             gis = _env.active_gis
             if gis is None:
