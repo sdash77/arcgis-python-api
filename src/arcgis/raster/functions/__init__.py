@@ -13806,8 +13806,8 @@ def subset_bands(
                                          Possible options are:
 
                                          - True : Exclude bad bands
-                                         - False : Include bad bands. This is default.                                         
-  
+                                         - False : Include bad bands. This is default.
+
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -13851,7 +13851,9 @@ def subset_bands(
                 template_dict["rasterFunctionArguments"]["Bands"] = bands
             elif isinstance(bands, str):
                 if "," in bands:
-                    raise ValueError("Invalid separator. Only space and ';' are allowed.")
+                    raise ValueError(
+                        "Invalid separator. Only space and ';' are allowed."
+                    )
                 template_dict["rasterFunctionArguments"]["Bands"] = bands
             elif isinstance(bands, int):
                 template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
@@ -13889,9 +13891,11 @@ def subset_bands(
 
     if exclude_bad_bands is not None:
         if isinstance(exclude_bad_bands, bool):
-            template_dict["rasterFunctionArguments"]["ExcludeBadBands"] = exclude_bad_bands
+            template_dict["rasterFunctionArguments"][
+                "ExcludeBadBands"
+            ] = exclude_bad_bands
         else:
-            raise RuntimeError("exclude_bad_bands should be of type: boolean")          
+            raise RuntimeError("exclude_bad_bands should be of type: boolean")
 
     return _clone_layer(layer, template_dict, raster_ra)
 
