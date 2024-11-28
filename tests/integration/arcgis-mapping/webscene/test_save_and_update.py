@@ -1,6 +1,8 @@
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.map import Scene
+from arcgis.map.renderers import SimpleRenderer
+from arcgis.map.symbols import PolygonSymbol3D, Material, SolidEdges
 import unittest
 from utils.decorators import integration_test, profiles
 
@@ -38,24 +40,20 @@ class TestSaveAndUpdateMap(unittest.TestCase):
         new_wm.content.add(
             layer,
             drawing_info={
-                "renderer": {
-                    "type": "simple",
-                    "symbol": {
-                        "type": "PolygonSymbol3D",
-                        "symbolLayers": [
-                            {
-                                "type": "ExtrudeSymbol3DLayer",
-                                "material": {"color": [255, 0, 0, 0.5]},
-                                "size": 100,
-                                "edges": {
-                                    "type": "Solid",
-                                    "color": [50, 50, 50, 0.5],
-                                },
-                            }
-                        ],
-                    },
-                }
-            },
+                "renderer": SimpleRenderer(
+                    symbol=PolygonSymbol3D(**{
+                                "type": "PolygonSymbol3D",
+                                "symbolLayers": [
+                                    {
+                                        "type": "Extrude",
+                                        "material": Material(color= [255, 0, 0, 0.5]),
+                                        "size": 100,
+                                        "edges": SolidEdges(color= [50, 50, 50, 0.5]),
+                                    }
+                                ],
+                            },)
+                )
+            }
         )
         assert len(new_wm.content.layers) == 1
 
@@ -63,7 +61,7 @@ class TestSaveAndUpdateMap(unittest.TestCase):
         assert new_wm.update()
 
         # delete the item
-        new_item.delete()
+        new_item.delete(permanent=True)
 
 
 if __name__ == "__main__":
