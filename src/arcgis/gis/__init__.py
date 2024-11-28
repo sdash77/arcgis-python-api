@@ -12940,7 +12940,7 @@ class User(dict):
         data: dict = self._gis.session.get(url=url, params=params).json()
         if len(data["items"]) > 0 and reassign_to is None:
             raise Exception(
-                f"User: {self._gis.users.me.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
+                f"User: {self.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
             )
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
