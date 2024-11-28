@@ -243,15 +243,14 @@ class WMTSLayer(BaseOGC):
         """Returns the operational layer configuration"""
         layer = None
         tile_matrix = None
+        tile_matrix_identifier = None
 
         if idx is not None and isinstance(
             properties["Capabilities"]["Contents"]["Layer"], (list, tuple)
         ):
             layer = properties["Capabilities"]["Contents"]["Layer"][idx]
-            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][idx]
         elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
             layer = properties["Capabilities"]["Contents"]["Layer"][0]
-            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][0]
         elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (dict)):
             layer = properties["Capabilities"]["Contents"]["Layer"]
             tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"]
@@ -259,6 +258,14 @@ class WMTSLayer(BaseOGC):
                 tile_matrix = tile_matrix[0]
         else:
             raise ValueError("Could not parse the results properly.")
+
+        # Get the tile_matrix
+        if tile_matrix is None:
+            tile_matrix_identifier = layer["TileMatrixSetLink"]["TileMatrixSet"]
+            for t in properties["Capabilities"]["Contents"]["TileMatrixSet"]:
+                if t["Identifier"] == tile_matrix_identifier:
+                    tile_matrix = t
+                    break
 
         resource_url_template = (
             layer["ResourceURL"][0]["@template"]
