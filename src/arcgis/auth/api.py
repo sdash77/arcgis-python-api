@@ -1,11 +1,6 @@
 from __future__ import annotations
 import sys
 import logging
-import copy
-import json
-from arcgis._impl.common._utils import _date_handler
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._isd import InsensitiveDict
 from typing import Dict, Any, Tuple
 from requests.sessions import Session
 from urllib3 import Retry
@@ -450,24 +445,6 @@ class EsriSession:
             )
 
     # ----------------------------------------------------------------------
-    def _encode_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Encodes the parameters for the request.
-
-        :param params: dict
-        :return: dict
-        """
-        if isinstance(params, dict):
-            for k, v in copy.copy(params).items():
-                if isinstance(v, (tuple, dict, list, bool)):
-                    params[k] = json.dumps(v, default=_date_handler)
-                elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v), default=_date_handler)
-                elif isinstance(v, InsensitiveDict):
-                    params[k] = v.json
-        return params
-
-    # ----------------------------------------------------------------------
     def get(self, url, **kwargs) -> "requests.Response":
         r"""Sends a GET request. Returns :class:`Response` object.
 
@@ -475,15 +452,6 @@ class EsriSession:
         :param \*\*kwargs: Optional arguments that ``request`` takes.
         :rtype: requests.Response
         """
-        # Param workflow from connection class
-        params = kwargs.pop("params", {})
-        json_encode = kwargs.pop("json_encode", True)
-        not_encoded = kwargs.pop("not_encoded", True)
-        if isinstance(params, dict) and not_encoded:
-            if params and json_encode:
-                params = self._encode_params(params)
-        kwargs["params"] = params
-        # End param workflow from connection class
         if "allow_redirects" in kwargs:
             redirects = kwargs.pop("allow_redirects")
         else:
