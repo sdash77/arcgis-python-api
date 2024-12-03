@@ -546,7 +546,7 @@ class Connection(object):
             self._session.auth = EsriNotebookAuth(
                 token=self._token,
                 referer=self._referer,
-                auth=GuessAuth(username=None, password=None),
+                auth=GuessAuth(username=None, password=None, session=self._session),
             )
         elif self._auth.lower() == "ags_auth":
             from arcgis.auth._auth import ArcGISServerAuth
@@ -669,7 +669,7 @@ class Connection(object):
                 )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
-                username=self._username, password=self._password
+                username=self._username, password=self._password, session=self._session
             )
         elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
@@ -682,7 +682,8 @@ class Connection(object):
             )
         elif self._auth.lower() == "pro":
             self._session.auth = (
-                GuessAuth(None, None, legacy=False) + ArcGISProAuth()
+                GuessAuth(None, None, legacy=False, session=self._session)
+                + ArcGISProAuth()
             )  # GuessAuth(None, None, legacy=False)
         elif not self._cert_file and not self._key_file:
             # else:
