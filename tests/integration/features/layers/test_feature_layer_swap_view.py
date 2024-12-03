@@ -1,4 +1,5 @@
 import sys
+import uuid
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -31,6 +32,7 @@ class TestFeatureLayerCollectionSwap(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        uid: str = uuid.uuid4().hex[:3]
         cls.gis = GIS(
             profile='your_online_profile', verify_cert=False, proxy=PROXIES
         )
@@ -39,28 +41,25 @@ class TestFeatureLayerCollectionSwap(unittest.TestCase):
         content = cls.gis.content
         folder = content.folders.get()
         ip = ItemProperties(
-            title="swap_layers_source", item_type=ItemTypeEnum.SHAPEFILE
+            title=f"swap_{uid}_source", item_type=ItemTypeEnum.SHAPEFILE
         )
         cls.item_source = folder.add(
             item_properties=ip, file=cls.path1
         ).result()
         cls.pitem_source = cls.item_source.publish(
-            {
-                "name": "swap_layer_source",
-            }
+            {"name":f"swap_{uid}_source","maxRecordCount":2000,"hasStaticData":True,"layerInfo":{"capabilities":"Query"}}
         )
         mgr = cls.pitem_source.layers[0].container.manager
-        cls.view_item_source = mgr.create_view(name="swap_layer_view")
+        cls.view_item_source = mgr.create_view(name=f"swap_{uid}_view")
         ip = ItemProperties(
-            title="swap_layers_replace", item_type=ItemTypeEnum.SHAPEFILE
+            title=f"swap_{uid}_replace", item_type=ItemTypeEnum.SHAPEFILE
         )
         cls.item_replace = folder.add(
             item_properties=ip, file=cls.path2
         ).result()
+        #{"name":"swap_layers_source","maxRecordCount":2000,"hasStaticData":true,"layerInfo":{"capabilities":"Query"}}
         cls.pitem_replace = cls.item_replace.publish(
-            {
-                "name": "swap_layer_replace",
-            }
+            {"name":f"swap_{uid}_replace","maxRecordCount":2000,"hasStaticData":True,"layerInfo":{"capabilities":"Query"}}
         )
 
         print("stop")
@@ -77,11 +76,11 @@ class TestFeatureLayerCollectionSwap(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.view_item_source.delete()
-        cls.pitem_replace.delete()
-        cls.item_replace.delete()
-        cls.pitem_source.delete()
-        cls.item_source.delete()
+        cls.view_item_source.delete(permanent=True)
+        cls.pitem_replace.delete(permanent=True)
+        cls.item_replace.delete(permanent=True)
+        cls.pitem_source.delete(permanent=True)
+        cls.item_source.delete(permanent=True)
 
 
 if __name__ == "__main__":
