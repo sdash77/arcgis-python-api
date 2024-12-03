@@ -1,5 +1,8 @@
+from __future__ import annotations
 from requests.auth import AuthBase
 from requests import PreparedRequest, Response
+
+__all__ = ["BaseEsriAuth"]
 
 
 ###########################################################################

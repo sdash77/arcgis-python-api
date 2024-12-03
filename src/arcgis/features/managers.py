@@ -2819,8 +2819,6 @@ class FeatureLayerCollectionManager(_GISResource):
             )
 
         res = gis._con.post(path=url, postdata=params)
-        if res["success"] == False:
-            raise Exception(json.dumps(res))
         view = content.get(res["itemId"])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
         add_def = {"layers": [], "tables": []}

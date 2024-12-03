@@ -14,6 +14,8 @@ from arcgis._impl.common._mixins import PropertyMap
 
 from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 _dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
@@ -2236,7 +2238,11 @@ class MapImageLayer(_gis.Layer):
     def fromitem(cls, item: _gis.Item) -> MapImageLayer:
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     @property
     def _lyr_dict(self):

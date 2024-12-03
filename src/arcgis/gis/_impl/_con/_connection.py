@@ -566,6 +566,7 @@ class Connection(object):
                 expiration=self._expiration,
                 verify_cert=self._verify_cert,
                 proxies=proxies,
+                session=self._session,
             )
         elif self._auth.lower() == "builtin":
             if self._check_product() == "SERVER":
@@ -584,6 +585,7 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=self.legacy,
                     proxies=proxies,
+                    session=self._session,
                 )
             else:
                 if self._use_gen_token:
@@ -599,6 +601,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=self.legacy,
                         proxies=proxies,
+                        session=self._session,
                     )
                 else:
                     self._session.auth = EsriBuiltInAuth(
@@ -640,6 +643,7 @@ class Connection(object):
                     proxies=self._proxy,
                     username=self._username,
                     password=self._password,
+                    session=self._session,
                     verify_cert=self._verify_cert,
                     legacy=False,
                     **self._security_kwargs,
@@ -651,6 +655,7 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=False,
                     proxies=self._proxy,
+                    session=self._session,
                 )
             else:
                 self._session.auth = EsriKerberosAuth(
@@ -659,6 +664,7 @@ class Connection(object):
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,
+                    session=self._session,
                     **self._security_kwargs,
                 )
         elif self._username and self._password and self._auth.lower() != "iwa":
@@ -672,6 +678,7 @@ class Connection(object):
                 verify_cert=self._verify_cert,
                 legacy=False,
                 proxies=self._proxy,
+                session=self._session,
             )
         elif self._auth.lower() == "pro":
             self._session.auth = (
@@ -686,6 +693,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=False,
                         proxies=self._proxy,
+                        session=self._session,
                     )
                 except:
                     ...
@@ -695,6 +703,7 @@ class Connection(object):
                         verify_cert=self._verify_cert,
                         legacy=False,
                         proxies=self._proxy,
+                        session=self._session,
                     )
                 except:
                     ...

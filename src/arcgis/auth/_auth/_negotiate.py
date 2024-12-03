@@ -69,14 +69,12 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def __init__(
         self,
+        session: requests.Session | "EsriSesssion",
         username=None,
         password=None,
         service=None,
         host=None,
         delegate=False,
-        *,
-        referer: str = "http",
-        verify_cert: bool = True,
         **kwargs,
     ):
         """Create a new Negotiate auth handler
@@ -121,9 +119,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
 
         self._delegate = delegate
         self._server_log: dict[str, typing.Any] = {}
-        self._referer: str = referer
-        self._verify_cert: bool = verify_cert
-        self._proxy: dict[str, typing.Any] = kwargs.pop("proxy", None)
+        self.session = session
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -147,20 +143,15 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
         parsed = parse_url(url=r.url)
         server_url = assemble_url(parsed)
         token_url: str = None
-        if "verify" in args:
-            verify = args["verify"]
-        else:
-            verify = self._verify_cert
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
         elif r.text.lower().find("token required") > -1:
-            resp = requests.get(
+            resp = self.session.get(
                 f"{server_url}/rest/info",
                 params={"f": "json"},
                 auth=self,
-                headers={"referer": self._referer},
-                verify=verify,
-                proxies=self._proxy,
+                headers={"referer": self.session.referer},
+                proxies=self.session.proxies,
             ).json()
             self._server_log[parsed.netloc] = resp["authInfo"]["tokenServicesUrl"]
             token_url: str = self._server_log[parsed.netloc]
@@ -180,13 +171,12 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
                 "referer": "http",
                 "f": "json",
             }
-            resp = requests.post(
+            resp = self.session.post(
                 token_url,
                 params=postdata,
                 auth=self,
-                headers={"referer": self._referer},
-                verify=verify,
-                proxies=self._proxy,
+                headers={"referer": self.session.referer},
+                proxies=self.session.proxies,
             ).json()
             token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
@@ -378,14 +368,22 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
 
         response3 = response2.connection.send(request, **args)
 
-        if response3.text.lower().find("token required") > -1:
+        if (
+            response3.text.lower().find("token required") > -1
+            or response3.text.lower().find("Not Authorized".lower()) > -1
+        ):
             request4 = self.generate_token(r=response3, scheme=scheme, args=args)
             response4 = response3.connection.send(request4, **args)
             if response4.status_code == 401:
                 response4.request.headers.pop("Authorization")
-            return self._retry_using_http_Negotiate_auth(
-                response=response4, scheme=scheme, args=args
-            )
+            if hasattr(response, "request"):
+                return self._retry_using_http_Negotiate_auth(
+                    response=response4.request, scheme=scheme, args=args
+                )
+            else:
+                return self._retry_using_http_Negotiate_auth(
+                    response=response4, scheme=scheme, args=args
+                )
 
         else:
             # Update the history and return
