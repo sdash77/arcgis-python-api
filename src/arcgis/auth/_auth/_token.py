@@ -23,6 +23,14 @@ requests = LazyLoader("requests")
 requests_oauthlib = LazyLoader("requests_oauthlib")
 warnings = LazyLoader("warnings")
 
+
+__all__ = [
+    "ArcGISProAuth",
+    "EsriBuiltInAuth",
+    "EsriGenTokenAuth",
+    "ArcGISServerAuth",
+]
+
 _MSG = """
 
 You need to a security question by integer:
@@ -479,14 +487,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
 
     # ----------------------------------------------------------------------
     def create_authorization_response(self, redirect_uri: str | None = None) -> str:
-        """creats the authorization URL"""
-        if redirect_uri is None:
-            redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+        """creates the authorization URL"""
+        redirect_uri = redirect_uri or "urn:ietf:wg:oauth:2.0:oob"
 
         session = requests_oauthlib.OAuth2Session(
             self._clientid,
             client=self._client,
-            redirect_uri=redirect_uri,  # "urn:ietf:wg:oauth:2.0:oob",  #
+            redirect_uri=redirect_uri,
         )
         auth_url, state = session.authorization_url(
             self._auth_url,
@@ -875,22 +882,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     @property
     def token(self):
-        """
-        Obtains the login token for the session.
-
-        .. code-block:: python
-
-            # Usage Example: Get token for built-in authenticated user
-            >>> gis = GIS(
-                         url="url_to_Web_GIS",
-                         username="valid_username",
-                         password="strong_password"
-                      )
-
-            >>> token = gis.session.auth.token
-
-            '6ABHt6i4urlQtqPu ... adKfJhTrM4cYBWkO7WGo.'
-        """
+        """obtains the login token"""
         try:
             if self._auth_token:
                 if (

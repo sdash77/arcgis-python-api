@@ -13763,7 +13763,6 @@ def subset_bands(
     method: str = "BY_IDS",
     bands: str = None,
     missing_band_action: str = "BestMatch",
-    exclude_bad_bands: bool = False,
 ):
     """
     The subset_bands function allows you to extract a subset of bands using ranges or lists. This function supports both multispectral and hyperspectral images, and maintains the same band order as the input.
@@ -13800,14 +13799,6 @@ def subset_bands(
 
                                          - BestMatch : Finds the best available band to use in place of the missing band based on wavelength.
                                          - Fail : If the input dataset is missing any band specified in the Combination parameter, the function will fail.
-    --------------------------------     --------------------------------------------------------------------
-    exclude_bad_bands                    Optional boolean. Specify whether bad bands will be excluded or not.
-
-                                         Possible options are:
-
-                                         - True : Exclude bad bands
-                                         - False : Include bad bands. This is default.
-
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -13845,37 +13836,34 @@ def subset_bands(
 
         template_dict["rasterFunctionArguments"]["Method"] = in_method
 
-        if bands is not None:
-            if isinstance(bands, list):
-                bands = ";".join(str(band) for band in bands)
+        if isinstance(bands, list):
+            bands = ";".join(str(band) for band in bands)
+            template_dict["rasterFunctionArguments"]["Bands"] = bands
+        elif isinstance(bands, str):
+            if "," in bands:
+                raise ValueError("Invalid separator. Only space and ';' are allowed.")
+            template_dict["rasterFunctionArguments"]["Bands"] = bands
+        elif isinstance(bands, int):
+            template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
+        else:
+            raise TypeError("bands should be  either a single string or a list")
+
+        bands = template_dict["rasterFunctionArguments"]["Bands"]
+        if isinstance(bands, str):
+            if method.upper() == "BY_IDS":
+                separator = ";" if ";" in bands else " "
+                parts = bands.split(separator)
+
+                new_parts = []
+                for part in parts:
+                    if "-" in part:
+                        start, end = map(int, part.split("-"))
+                        new_parts.append(f"{start-1}-{end-1}")
+                    else:
+                        new_parts.append(str(int(part) - 1))
+
+                bands = separator.join(new_parts).replace(" ;", ";")
                 template_dict["rasterFunctionArguments"]["Bands"] = bands
-            elif isinstance(bands, str):
-                if "," in bands:
-                    raise ValueError(
-                        "Invalid separator. Only space and ';' are allowed."
-                    )
-                template_dict["rasterFunctionArguments"]["Bands"] = bands
-            elif isinstance(bands, int):
-                template_dict["rasterFunctionArguments"]["Bands"] = str(bands)
-            else:
-                raise TypeError("bands should be  either a single string or a list")
-
-            bands = template_dict["rasterFunctionArguments"]["Bands"]
-            if isinstance(bands, str):
-                if method.upper() == "BY_IDS":
-                    separator = ";" if ";" in bands else " "
-                    parts = bands.split(separator)
-
-                    new_parts = []
-                    for part in parts:
-                        if "-" in part:
-                            start, end = map(int, part.split("-"))
-                            new_parts.append(f"{start-1}-{end-1}")
-                        else:
-                            new_parts.append(str(int(part) - 1))
-
-                    bands = separator.join(new_parts).replace(" ;", ";")
-                    template_dict["rasterFunctionArguments"]["Bands"] = bands
 
     missing_band_actions = {"BESTMATCH": 0, "FAIL": 1}
 
@@ -13888,14 +13876,6 @@ def subset_bands(
         template_dict["rasterFunctionArguments"]["MissingBandAction"] = (
             missing_band_actions[missing_band_action.upper()]
         )
-
-    if exclude_bad_bands is not None:
-        if isinstance(exclude_bad_bands, bool):
-            template_dict["rasterFunctionArguments"][
-                "ExcludeBadBands"
-            ] = exclude_bad_bands
-        else:
-            raise RuntimeError("exclude_bad_bands should be of type: boolean")
 
     return _clone_layer(layer, template_dict, raster_ra)
 
