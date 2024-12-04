@@ -21,6 +21,8 @@ import arcgis.gis
 from arcgis.gis import Item, Layer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import (
     Point,
@@ -21494,7 +21496,11 @@ class _GeometryService(_GISService):
     def fromitem(cls, item):
         if not item.type == "Geometry Service":
             raise TypeError("item must be a type of Geometry Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def areas_and_lengths(

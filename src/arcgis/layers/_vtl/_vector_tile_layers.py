@@ -7,6 +7,8 @@ from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 import requests
 from arcgis.auth.tools import LazyLoader
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -715,8 +717,11 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise TypeError(
                 "Item must be a type of Vector Tile Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     @property
