@@ -202,8 +202,6 @@ class ItemGraph(nx.DiGraph):
         else:
             super().__init__(digraph)
         self.gis = gis or arcgis.env.active_gis
-        if not self.gis:
-            raise ValueError("A GIS instance is required to create an ItemGraph.")
 
     def _create_tree(self, itemid: str):
         """
@@ -381,8 +379,8 @@ def load_from_file(path: str, gis: GIS = None, include_items: bool = True):
     """
     if not gis:
         gis = arcgis.env.active_gis
-    if not gis:
-        raise ValueError("An active GIS is required to load an ItemGraph.")
+    if not gis and include_items:
+        raise ValueError("An active GIS is required to load an ItemGraph with items.")
     if not os.path.exists(path):
         raise FileNotFoundError("The file does not exist.")
     if not path.endswith(".gml"):
