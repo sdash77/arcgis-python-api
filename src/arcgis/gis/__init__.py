@@ -39,6 +39,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
 from arcgis._impl.common._utils import _validate_url
+from ._impl._util import _get_item_url
 
 try:
     import pandas as pd
@@ -919,6 +920,19 @@ class GIS(object):
     def _is_multitenant(self) -> bool:
         """Returns true if this portal is multitenant."""
         return self.properties["portalMode"] == "multitenant"
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=10)
+    def _use_private_url_only(self) -> bool:
+        """determines if the GIS should only use private URLs.  This only applies to NBAUTH"""
+        try:
+
+            return os.getenv("NB_AUTH_FILE", None) is not None and os.path.isfile(
+                os.getenv("NB_AUTH_FILE")
+            )
+        except:
+            return False
 
     # ----------------------------------------------------------------------
     @property
@@ -13418,15 +13432,18 @@ class Item(dict):
         from arcgis.raster import ImageryLayer
         from arcgis.features import FeatureCollection
         from arcgis.network import NetworkDataset
+        from ._impl._util import _get_item_url
 
         if self._has_layers():
             layers = []
             tables = []
 
             params = {"f": "json"}
-
+            url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
-                lyr = ImageryLayer(self.url, self._gis)
+
+                lyr = ImageryLayer(url, self._gis)
+
                 try:
                     item_data = self.get_data()
                     rendering_rule = item_data.get("renderingRule", None)
@@ -13446,13 +13463,13 @@ class Item(dict):
                     layers.append(FeatureCollection(layer))
 
             elif self.type == "Big Data File Share":
-                serviceinfo = self._portal.con.post(self.url, params)
+                serviceinfo = self._portal.con.post(url, params)
                 for lyr in serviceinfo["children"]:
-                    lyrurl = self.url + "/" + lyr["name"]
+                    lyrurl = url + "/" + lyr["name"]
                     layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(Service(self.url, self._gis))
+                layers.append(Service(url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13469,9 +13486,10 @@ class Item(dict):
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
-                    layers.append(Service(self.url, self._gis))
+
+                    layers.append(Service(url, self._gis))
                 else:
-                    svc = Service(self, self._gis)
+                    svc = Service(url, self._gis)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
                         if (
@@ -13490,16 +13508,16 @@ class Item(dict):
                         tables.append(tbl)
 
             elif self.type == "Map Service":
-                svc = Service(self, self._gis)
+                svc = Service(url, self._gis)
                 for lyr in svc.layers:
                     layers.append(lyr)
                 tables.extend(svc.tables)
             else:
                 m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
-                    layers.append(Service(self.url, self._gis))
+                    layers.append(Service(url, self._gis))
                 else:
-                    svc = _GISResource(self.url, self._gis)
+                    svc = _GISResource(url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
@@ -18913,7 +18931,10 @@ class _GISResource(object):
         """
         if not item.type.lower().endswith("service"):
             raise TypeError("item must be a type of service, not " + item.type)
-        url: str = _validate_url(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
     def _refresh(self):
