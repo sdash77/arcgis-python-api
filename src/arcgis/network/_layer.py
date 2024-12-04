@@ -12,6 +12,7 @@ from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, Table
 from arcgis.network import _utils
 from arcgis._impl.common._utils import _validate_url
+from arcgis.gis._impl._util import _get_item_url
 from dataclasses import dataclass
 from enum import Enum
 
@@ -2009,7 +2010,10 @@ class NetworkDataset(_GISResource):
             raise TypeError(
                 "item must be a type of Network Analysis Service, not " + item.type
             )
-        url = _validate_url(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
     # ----------------------------------------------------------------------

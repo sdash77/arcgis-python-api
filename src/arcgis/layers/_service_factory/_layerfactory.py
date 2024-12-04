@@ -33,6 +33,7 @@ import requests
 from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
+from arcgis.gis._impl._util import _get_item_url
 
 
 ###########################################################################
@@ -349,7 +350,7 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = url_or_item.url
+            url = _get_item_url(url_or_item)
             if url in [None, ""]:
                 url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):

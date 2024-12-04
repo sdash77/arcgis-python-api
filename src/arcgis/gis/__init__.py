@@ -38,7 +38,8 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
-
+from arcgis._impl.common._utils import _validate_url
+from ._impl._util import _get_item_url
 
 try:
     import pandas as pd
@@ -919,6 +920,19 @@ class GIS(object):
     def _is_multitenant(self) -> bool:
         """Returns true if this portal is multitenant."""
         return self.properties["portalMode"] == "multitenant"
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=10)
+    def _use_private_url_only(self) -> bool:
+        """determines if the GIS should only use private URLs.  This only applies to NBAUTH"""
+        try:
+
+            return os.getenv("NB_AUTH_FILE", None) is not None and os.path.isfile(
+                os.getenv("NB_AUTH_FILE")
+            )
+        except:
+            return False
 
     # ----------------------------------------------------------------------
     @property
@@ -13418,15 +13432,18 @@ class Item(dict):
         from arcgis.raster import ImageryLayer
         from arcgis.features import FeatureCollection
         from arcgis.network import NetworkDataset
+        from ._impl._util import _get_item_url
 
         if self._has_layers():
             layers = []
             tables = []
 
             params = {"f": "json"}
-
+            url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
-                lyr = ImageryLayer(self.url, self._gis)
+
+                lyr = ImageryLayer(url, self._gis)
+
                 try:
                     item_data = self.get_data()
                     rendering_rule = item_data.get("renderingRule", None)
@@ -13446,13 +13463,13 @@ class Item(dict):
                     layers.append(FeatureCollection(layer))
 
             elif self.type == "Big Data File Share":
-                serviceinfo = self._portal.con.post(self.url, params)
+                serviceinfo = self._portal.con.post(url, params)
                 for lyr in serviceinfo["children"]:
-                    lyrurl = self.url + "/" + lyr["name"]
+                    lyrurl = url + "/" + lyr["name"]
                     layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(Service(self.url, self._gis))
+                layers.append(Service(url, self._gis))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13469,9 +13486,10 @@ class Item(dict):
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
-                    layers.append(Service(self.url, self._gis))
+
+                    layers.append(Service(url, self._gis))
                 else:
-                    svc = Service(self, self._gis)
+                    svc = Service(url, self._gis)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
                         if (
@@ -13490,16 +13508,16 @@ class Item(dict):
                         tables.append(tbl)
 
             elif self.type == "Map Service":
-                svc = Service(self, self._gis)
+                svc = Service(url, self._gis)
                 for lyr in svc.layers:
                     layers.append(lyr)
                 tables.extend(svc.tables)
             else:
                 m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
-                    layers.append(Service(self.url, self._gis))
+                    layers.append(Service(url, self._gis))
                 else:
-                    svc = _GISResource(self.url, self._gis)
+                    svc = _GISResource(url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
@@ -13943,72 +13961,69 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + "/data"
+        data_path: str = f"content/items/" + self.itemid + "/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
-            save_path = self._workdir
-        try:
-            url = self._gis._portal.resturl + data_path
-            con = self._gis._con
-            resp = con.get(
-                path=url,
-                file_name=file_name,
-                out_folder=save_path,
-                try_json=False,
-                force_bytes=False,
-                allow_redirects=False,
-                return_raw_response=True,
-            )
-            if resp.status_code >= 300 and resp.status_code < 400:
-                url = resp.headers["location"]
-                resp = con.get(
-                    path=url,
-                    file_name=file_name,
-                    out_folder=save_path,
-                    try_json=False,
-                    force_bytes=False,
-                    allow_redirects=False,
-                    return_raw_response=True,
-                    drop_auth=True,
-                )
-                download_path = con._handle_response(
-                    resp,
-                    file_name=file_name,
-                    out_path=save_path,
-                    try_json=False,
-                )
-            else:
-                download_path = con._handle_response(
-                    resp,
-                    file_name=file_name,
-                    out_path=save_path,
-                    try_json=False,
-                )
-        except Exception as e:
-            _log.debug(msg=str(e))
-            _log.debug(
-                msg="Retrying download parsing name from title or name property."
-            )
-            if file_name is None:
-                import re
+            save_path: str = self._workdir
+        fp: str = os.path.join(save_path, file_name)
 
-                file_name = self.name or self.title
-                file_name = re.sub(r"[^a-zA-Z0-9 \n\.]", "", file_name) or self.itemid
-            if save_path is None:
-                save_path = tempfile.gettempdir()
-            download_path = self._portal.con.get(
-                path=data_path,
-                file_name=file_name,
-                out_folder=save_path,
-                try_json=False,
-                force_bytes=False,
-            )
-        if download_path == "":
-            return None
-        else:
-            return download_path
+        url = self._gis._portal.resturl + data_path
+        session: EsriSession = self._gis.session
+        resp: requests.Response = session.get(
+            url=url,
+            params={
+                "f": "json",
+            },
+            allow_redirects=False,
+        )
+        if resp.status_code >= 300 and resp.status_code < 400:
+            auth = session.auth
+            try:
+                session.auth = None
+                url = resp.headers["location"]
+                resp: requests.Response = session.get(url)
+                content_length: int = int(
+                    int(resp.headers.get("Content-Length", 1025)) / 4
+                )
+                with open(fp, "wb") as writer:
+                    for chunk in resp.iter_content(chunk_size=content_length):
+                        writer.write(chunk)
+
+            except Exception as ex:
+                raise Exception(ex)
+            finally:
+                session.auth = auth
+            return fp
+
+        elif resp.status_code > 199 and resp.status_code < 300:
+            content_disposition = resp.headers["Content-Disposition"]
+            size: int | None = None
+            if "filename=" in content_disposition and file_name is None:
+                regex = r"filename=\"([^\"]+)"
+                filename = re.findall(regex, content_disposition)
+                if len(filename) > 0:
+                    file_name = filename[0]
+            if resp.headers.get("Content-Length", None):
+                size: int = int(resp.headers.get("Content-Length"))
+            elif "size=" in content_disposition:
+                regex = r"size=([^\"]+)"
+                sizes: list[str] = re.findall(regex, content_disposition)
+                if len(sizes) > 0:
+                    size: int = int(sizes[0])
+
+            if size is None:
+                chunk_size: int = int(5e6)
+            else:
+                if size <= int(5e6):
+                    chunk_size = size
+                else:
+                    chunk_size: int = int(size / 4)
+            with open(fp, "wb") as writer:
+                for chunk in resp.iter_content(chunk_size=chunk_size):
+                    writer.write(chunk)
+            return fp
 
     # ----------------------------------------------------------------------
     def export(
@@ -18573,7 +18588,12 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
         --------------------     --------------------------------------------------------------------
-        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        set_item_id              Optional String. If set, the item id is defined by the user rather
+                                 than the system. The parameter requires *ArcGIS Enterprise 11.1 or
+                                 higher*.
+
+                                 .. note::
+                                     This parameter is not available for ArcGIS Online.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
@@ -18652,7 +18672,6 @@ class ViewManager:
                           :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
                           objects for modifying the layers.
         =============     =====================================================
-
 
         :returns: Boolean
         """
@@ -18946,7 +18965,11 @@ class _GISResource(object):
         """
         if not item.type.lower().endswith("service"):
             raise TypeError("item must be a type of service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     def _refresh(self):
         params = {"f": "json"}

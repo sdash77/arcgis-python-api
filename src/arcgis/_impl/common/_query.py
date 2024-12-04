@@ -7,10 +7,32 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Geometry
 import concurrent.futures
 import copy
+import json
+from arcgis._impl.common._isd import InsensitiveDict
+from arcgis._impl.common._mixins import PropertyMap
 from arcgis.auth.tools import LazyLoader
 
 arcgis_features = LazyLoader("arcgis.features")
 pd = LazyLoader("pandas")
+
+
+# ----------------------------------------------------------------------
+def _encode_params(params: dict[str, Any]) -> dict[str, Any]:
+    """
+    Encodes the parameters for the request.
+
+    :param params: dict
+    :return: dict
+    """
+    if isinstance(params, dict):
+        for k, v in copy.copy(params).items():
+            if isinstance(v, (tuple, dict, list, bool)):
+                params[k] = json.dumps(v, default=_date_handler)
+            elif isinstance(v, PropertyMap):
+                params[k] = json.dumps(dict(v), default=_date_handler)
+            elif isinstance(v, InsensitiveDict):
+                params[k] = v.json
+    return params
 
 
 class QueryParameters(BaseModel):
@@ -645,8 +667,9 @@ class Query:
     def _query(self, url, raw=False):
         """Returns results of the query for the provided layer and URL."""
         try:
+            encoded_parameters = _encode_params(self.parameters)
             # Perform the initial query
-            result = self.layer._con._session.get(url, params=self.parameters).json()
+            result = self.layer._con._session.get(url, params=encoded_parameters).json()
             return self._process_query_result(result, raw, url)
         except Exception as query_exception:
             return self._handle_query_exception(query_exception, url)
@@ -723,7 +746,8 @@ class Query:
                 self.parameters["resultRecordCount"] = remaining_record_count
 
             self.parameters["resultOffset"] = len(features) + original_offset
-            result = self.layer._con._session.get(url, params=self.parameters).json()
+            encoded_parameters = _encode_params(self.parameters)
+            result = self.layer._con._session.get(url, params=encoded_parameters).json()
             features += result.get("features", [])
 
         return features
@@ -746,6 +770,7 @@ class Query:
         def fetch_page(offset, params):
             page_params = copy.deepcopy(params)  # Copy params to avoid conflicts
             page_params["resultOffset"] = offset
+            page_params = _encode_params(page_params)
             return self.layer._con._session.get(url, params=page_params).json()
 
         # Step 4: Use ThreadPoolExecutor to send multiple requests concurrently
@@ -768,6 +793,7 @@ class Query:
         count_params = copy.deepcopy(self.parameters)
         count_params["returnCountOnly"] = True
         count_params["returnAllRecords"] = False  # must be false when above True
+        count_params = _encode_params(count_params)
         count_result = self.layer._con._session.get(url, params=count_params).json()
         return count_result.get("count")
 
@@ -787,7 +813,8 @@ class Query:
 
         # Perform query until all ids are fetched
         while True:
-            result = self.layer._con._session.get(url, params=id_params).json()
+            encoded_params = _encode_params(id_params)
+            result = self.layer._con._session.get(url, params=encoded_params).json()
             ids.extend(result.get("objectIds", []))
 
             if len(ids) >= total_count:
@@ -813,6 +840,7 @@ class Query:
         def fetch_page(ids_subset):
             page_params = copy.deepcopy(self.parameters)
             page_params["objectIds"] = ids_subset
+            page_params = _encode_params(page_params)
             return self.layer._con._session.get(url, params=page_params)
 
         # Step 3: Use ThreadPoolExecutor to send multiple requests concurrently
