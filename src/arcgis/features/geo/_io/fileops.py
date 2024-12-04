@@ -18,6 +18,7 @@ import zipfile
 from arcgis.geometry import Geometry, _types
 import requests
 import tempfile
+import shutil
 
 arcgis = LazyLoader("arcgis")
 try:
@@ -1384,13 +1385,18 @@ def to_featureclass(
 
 
 # --------------------------------------------------------------------------
-def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table=False, zip_file=False):
+def _gdal_to_fc(
+    df, out_path, out_type, layer_name, gdb_table=False, zip_file=False, overwrite=True
+):
     GEOMTYPELOOKUP = {
         "Polygon": ogr.wkbPolygon,
         "Point": ogr.wkbPoint,
         "Polyline": ogr.wkbLineString,
         "null": ogr.wkbUnknown,
     }
+
+    if not overwrite and os.path.exists(out_path):
+        raise ValueError("overwrite set to False, cannot overwrite existent location.")
 
     out_driver = ogr.GetDriverByName(out_type)
     if gdb_table:
@@ -1403,6 +1409,8 @@ def _gdal_to_fc(df, out_path, out_type, layer_name, gdb_table=False, zip_file=Fa
         if out_file is None:
             out_file = out_driver.CreateDataSource(gdb_dir)
     else:
+        if os.path.exists(out_path):
+            shutil.rmtree(out_path)
         out_file = out_driver.CreateDataSource(out_path)
 
     geom_field = df.spatial.name
