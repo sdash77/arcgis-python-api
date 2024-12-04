@@ -1139,7 +1139,11 @@ def to_featureclass(
             fc_name = "%s.gdb" % fc_name
             out_type = "OpenFileGDB"
         return _gdal_to_fc(
-            df, os.path.join(out_location, fc_name), out_type, layer_name=layer_name
+            df,
+            os.path.join(out_location, fc_name),
+            out_type,
+            layer_name=layer_name,
+            overwrite=overwrite,
         )
 
     elif HASARCPY:
