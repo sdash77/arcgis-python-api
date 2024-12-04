@@ -42,6 +42,7 @@ requirements:
   - ujson >=3
   - urllib3 >=2,<3
   - pydantic >=2.8.2, <3
+  - networkx >=3.3, <4
 source:
   git_url: ../..
 test:

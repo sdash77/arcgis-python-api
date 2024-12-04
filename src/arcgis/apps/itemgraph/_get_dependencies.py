@@ -300,7 +300,7 @@ def _parse_exb(item):
     itemids = []
 
     for data in [pub_data, draft_data]:
-        data_sources = data.get("dataSources", [])
+        data_sources = data.get("dataSources", {})
         for ds in data_sources.values():
             if "itemId" in ds and ds["itemId"] not in itemids:
                 itemids.append(ds["itemId"])
