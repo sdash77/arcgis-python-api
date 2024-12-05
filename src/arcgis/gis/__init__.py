@@ -13154,7 +13154,7 @@ class User(dict):
         folder                 Optional string. The specifc folder (as a string or dictionary)
                                to get a list of items in.
         ------------------     --------------------------------------------------------------------
-        max_items              Optional integer. The maximum number of items to be returned. The default is 100.
+        max_items              Optional integer. The maximum number of items to be returned. The default is 100. A value of -1 will return all items.
         ==================     ====================================================================
 
 
@@ -13189,25 +13189,20 @@ class User(dict):
 
         """
         count: int = 1
-
         if isinstance(folder, str):
             folder: _folder.Folder = self._gis.content.folders.get(folder, self)
 
         if isinstance(folder, _folder.Folder):
-            for item in folder.list():
+            folder: list[_folder.Folder] = [folder]
+        elif folder is None:
+            folder: Iterator[_folder.Folder] = self._gis.content.folders.list(self)
+
+        for fld in folder:
+            for item in fld.list():
                 yield item
                 if count == max_items:
                     break
-                else:
-                    count += 1
-        else:
-            for folder in self._gis.content.folders.list(self):
-                for item in folder.list():
-                    yield item
-                    if count == max_items:
-                        break
-                    else:
-                        count += 1
+                count += 1
 
     # ----------------------------------------------------------------------
     @property

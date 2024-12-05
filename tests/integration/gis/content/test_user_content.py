@@ -1,3 +1,7 @@
+import sys
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_12448\src")
+sys.path.insert(1, r"c:\SVN\geosaurus_issue_12448\tests")
+
 #######################################################################
 import unittest
 from utils.decorators import profiles, integration_test
@@ -11,7 +15,8 @@ enable_verbose_logging()
 class TestUserContentMethods(unittest.TestCase):
     def test_item_folders(self):
         gis: GIS = self.gis
-        users: list[User] = [user for user in gis.users.search("*") if user.role == 'org_admin']
+        users: list[User] = [user for user in gis.users.search("*") \
+                             if user.role == 'org_admin']
         if len(users) > 0:
             user: User = users[-1]
             folders = list(user.folders)
