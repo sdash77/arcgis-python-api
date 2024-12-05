@@ -14,12 +14,14 @@ class TestUserContentMethods(unittest.TestCase):
         users: list[User] = [user for user in gis.users.search("*") \
                              if user.role == 'org_admin']
         if len(users) > 0:
-            user: User = users[-1]
-            folders = list(user.folders)
-            if len(folders) > 0:
-                folder= folders[0]
-                assert folder
-                assert isinstance(list(user.items(folder, 1)), list)
+            self.skipTest("No valid users, skipping")
+        
+        user: User = users[-1]
+        folders = list(user.folders)
+        
+        folder= folders[0] #  There is always one folder (root) regardless of the user. 
+        assert folder
+        assert isinstance(list(user.items(folder, 1)), list)
     
 
 if __name__ == "__main__":
