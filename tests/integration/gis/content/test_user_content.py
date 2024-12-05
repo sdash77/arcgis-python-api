@@ -1,7 +1,3 @@
-import sys
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_12448\src")
-sys.path.insert(1, r"c:\SVN\geosaurus_issue_12448\tests")
-
 #######################################################################
 import unittest
 from utils.decorators import profiles, integration_test
