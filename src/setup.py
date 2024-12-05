@@ -77,7 +77,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.31.0,!=2.32.0.*,!= 2.32.1.*,!=2.32.2.*,<3",
+        "requests >=2.32.3,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",
@@ -87,6 +87,8 @@ else:
         "matplotlib-inline",
         "pyarrow >=11.0.0",
         "puremagic >=1.15,<2",
+        "pydantic >=2.8.2, <3",
+        "websocket-client >=1.2.3, <2.0.0",
     ]
 
 

@@ -1437,7 +1437,7 @@ class TabularDataObject(object):
                         bands.append(raster[1])
                         band_count = len(raster[1])
                         if band_count > raster[0].band_count:
-                            raise (
+                            raise Exception(
                                 "Incorrect band ids passed. The input raster has only "
                                 + str(band_count)
                                 + " bands"

@@ -21,6 +21,7 @@ try:
     HAS_SPNEGO = True
 except:
     HAS_SPNEGO = False
+__all__ = ["EsriHttpNtlmAuth"]
 
 
 class ShimSessionSecurity:
@@ -57,7 +58,14 @@ class EsriHttpNtlmAuth(AuthBase):
 
     """
 
-    def __init__(self, username, password, session=None, send_cbt=True, **kwargs):
+    def __init__(
+        self,
+        session,
+        username,
+        password,
+        send_cbt=True,
+        **kwargs,
+    ):
         """Create an authentication handler for NTLM over HTTP.
 
         :param str username: Username in 'domain\\username' format
@@ -86,10 +94,8 @@ class EsriHttpNtlmAuth(AuthBase):
         # sent after ntlm authentication. These methods are utilised by libraries that
         # call requests_ntlm to encrypt and decrypt the messages sent after authentication
         self.session_security = None
+        self.session = session
         self._server_log: dict[str, t.Any] = {}
-        self._verify_cert: bool = kwargs.pop("verify_cert", True)
-        self._referer: str = kwargs.pop("referer", "http")
-        self._proxy: dict[str, t.Any] = kwargs.pop("proxy", None)
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -114,13 +120,12 @@ class EsriHttpNtlmAuth(AuthBase):
             or r.text.lower().find("Access to admin resources are not allowed".lower())
             > -1
         ):
-            resp = requests.get(
+            resp = self.session.get(
                 f"{server_url}/rest/info",
                 params={"f": "json"},
                 auth=self,
-                verify=self._verify_cert,
-                headers={"referer": self._referer},
-                proxies=self._proxy,
+                headers={"referer": self.session.referer},
+                proxies=self.session.proxies,
             ).json()
             self._server_log[parsed.netloc] = resp["authInfo"]["tokenServicesUrl"]
             token_url: str = self._server_log[parsed.netloc]
@@ -140,13 +145,12 @@ class EsriHttpNtlmAuth(AuthBase):
                 "referer": "http",
                 "f": "json",
             }
-            resp = requests.post(
+            resp = self.session.post(
                 token_url,
                 params=postdata,
                 auth=self,
-                verify=self._verify_cert,
-                headers={"referer": self._referer},
-                proxies=self._proxy,
+                headers={"referer": self.session.referer},
+                proxies=self.session.proxies,
             ).json()
             token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"

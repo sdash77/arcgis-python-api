@@ -11,6 +11,7 @@ import requests as _requests
 from six import b
 
 from arcgis._impl.common._utils import _date_handler
+from arcgis.gis._impl._util import _get_item_url
 from arcgis.gis import GIS, Layer, Item
 from arcgis.geometry import (
     Geometry,
@@ -857,8 +858,11 @@ class ImageryLayer(Layer):
         """
         if not item.type == "Image Service":
             raise TypeError("item must be a type of Image Service, not " + item.type)
-
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = item.url
+        return cls(url, item._gis)
 
     @property
     def extent(self):

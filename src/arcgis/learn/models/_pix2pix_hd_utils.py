@@ -111,7 +111,7 @@ def define_gen(
     elif netG == "encoder":
         netG = Encoder(input_nc, output_nc, ngf, n_downsample_global, norm_layer)
     else:
-        raise ("generator not implemented!")
+        raise NotImplementedError("generator not implemented!")
     if len(gpu_ids) > 0:
         assert torch.cuda.is_available()
         netG.cuda(gpu_ids[0])
