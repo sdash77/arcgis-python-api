@@ -2658,7 +2658,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             features = feature_layer.query(
                 out_sr=spatial_reference,
                 result_offset=offset,
-                result_record_count=max_record_count,
+                result_record_count=record_count,
                 return_z=return_z,
                 return_m=return_m,
             ).features
