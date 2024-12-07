@@ -4,6 +4,7 @@ import os
 import shutil
 import tempfile
 import tarfile
+import ujson as json
 
 JSON_BASED_TYPES = [
     "Application",
@@ -114,12 +115,6 @@ def _export_content(
     main_dir = os.path.join(output_folder, package_name)
     os.makedirs(main_dir, exist_ok=True)
     
-    # Create a metadata file at the top directory
-    metadata_file = os.path.join(main_dir, "metadata.txt")
-    with open(metadata_file, "w") as f:
-        f.write("Metadata for exported content\n")
-        # Add more metadata information as needed
-    
     # Helper function to create item folder and export item data
     def create_item_folder(item, parent_dir):
         item_dir = os.path.join(parent_dir, item.id)
@@ -127,9 +122,22 @@ def _export_content(
         # Call helper function to export item data
         export_item_data(item, item_dir)
     
+    manifest = {}
     # Iterate over all items in the graph and create their folders
-    for item in graph.all_items():
-        create_item_folder(item, main_dir)
+    for node in graph.all_items():
+        create_item_folder(node, main_dir)
+        item = node.item
+        manifest[item.id] = {
+            "title": item.title,
+            "type": item.type,
+            "created": item.created,
+            "org_source": item._gis.url,
+        }
+    
+    # Create a metadata file at the top directory
+    manifest_file = os.path.join(main_dir, "manifest.json")
+    with open(manifest_file, "w") as f:
+        f.dump(manifest, f, indent=4)
     
     # Create a static binary file containing the entire directory
     binary_file_path = os.path.join(output_folder, f"{package_name}.contentexport")
@@ -150,11 +158,14 @@ def export_item_data(node: ItemNode, output_folder: str):
     os.makedirs(output_folder, exist_ok=True)
     
     # create all the proper folders
-    for header in ["files", "resources", "data", "relationships", "proxies"]:
+    for header in ["files", "resources", "data", "proxies"]:
         os.makedirs(os.path.join(output_folder, header), exist_ok=True)
     
     # download json of item properties based
-
+    item_dict = dict(item)
+    json_file_path = os.path.join(output_folder, "properties.json")
+    with open(json_file_path, "w") as json_file:
+        json.dump(item_dict, json_file, indent=4)
 
     # download thumbnail
     files_folder = os.path.join(output_folder, "files")
@@ -165,16 +176,42 @@ def export_item_data(node: ItemNode, output_folder: str):
 
     # resources
     res_folder = os.path.join(output_folder, "resources")
+    # rm = item.resources
+    # rm.export(res_folder, "archive.zip")
     rm = item.resources
-    rm.export(res_folder, "archive.zip")
+    resources_list = rm.list()
+    res_manifest = {}
+    for resource in resources_list:
+        # get the info and then download
+        res_manifest[resource["resource"]] = resource
+        res_download = rm.get(
+            file = resource["resource"], out_folder=res_folder, try_json=False
+        )
+    with open(os.path.join(res_folder, "resources.json"), "w") as res_list:
+        json.dump(res_manifest, res_list, indent=4)
+
+    # relationships
+    relationships = {}
+    relationships["contains"] = node.contains("id")
+    relationships["requires"] = node.requires("id")
+    relationships["contained_by"] = node.contained_by("id")
+    relationships["required_by"] = node.required_by("id")
+    rel_file_path = os.path.join(output_folder, "relationships.json")
+    with open(rel_file_path, "w") as rel_file:
+        json.dump(relationships, rel_file, indent=4)
 
     # data
     data_folder = os.path.join(output_folder, "data")
     if item.type in JSON_BASED_TYPES:
         path_name = "structure.json"
-        item.download(data_folder, path_name)
+        download_path = item.download(data_folder, path_name)
     else:
-        item.download(data_folder)
+        download_path = item.download(data_folder)
+    
+
+    
+    if os.stat(download_path).st_size == 0:
+        os.remove(download_path)
 
     return output_folder
     
