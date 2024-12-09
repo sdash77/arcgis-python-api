@@ -147,6 +147,7 @@ jobs:
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
           conda install "pydantic>=2.8.2,<3" --yes
           conda install -c main "websocket-client>=1.2.3,<2"
+          conda install -c main "networkx>=3.3,<4"
         if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Save dependency cache
         id: save-cache
