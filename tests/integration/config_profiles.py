@@ -96,7 +96,7 @@ def setup_profiles(
     if not ent_name in updated_list:
         pm.create(
             ent_name,
-            url="https://pythonapitest.dev.geocloud.com/portal/",
+            url="https://pythonapitestnb.dev.geocloud.com/portal/",
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
@@ -105,7 +105,7 @@ def setup_profiles(
     if not ent_admin_name in updated_list:
         pm.create(
             ent_admin_name,
-            url="https://pythonapitest.dev.geocloud.com/portal/",
+            url="https://pythonapitestnb.dev.geocloud.com/portal/",
             username="arcgispyapibot",
             password="geosaurus_automation123",
         )
