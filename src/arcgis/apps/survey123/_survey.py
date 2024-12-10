@@ -818,23 +818,11 @@ class Survey:
                 "typeKeywords": "Survey123,Survey123 Hub,Print Template,Feature Report Template",
                 "snippet": "Report template",
             }
-            survey_folder_id = self._si.ownerFolder
-            gis = self._si._gis
-            user = gis.users.get(gis.properties.user.username)
-            user_folders = user.folders
-            survey_folder = next(
-                (f for f in user_folders if f["id"] == survey_folder_id), 0
-            )
-            folder = survey_folder["title"]
-            # folder = "Survey-" + self._si.title
-            if folder:
-                folder = gis.content.folders.get(folder)
-            else:
-                folder = gis.content.folders.get()
+            folder = self._gis.content.folders.get(folder=self._si.ownerFolder)
             template_item = folder.add(
                 item_properties=properties, file=template_file
             ).result()
-            add_relationship = self._si.add_relationship(template_item, "Survey2Data")
+            self._si.add_relationship(template_item, "Survey2Data")
         else:
             return check["details"][0]["description"]
 
