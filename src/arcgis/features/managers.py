@@ -2835,15 +2835,10 @@ class FeatureLayerCollectionManager(_GISResource):
         add_def = {"layers": [], "tables": []}
 
         def is_none_or_empty(view_param):
-            if not view_param:
-                return True
-            if isinstance(view_param, list) and len(view_param) == 0:
+            if not view_param:  # Handles None and empty lists/dicts
                 return True
             if isinstance(view_param, dict):
-                for k, v in view_param.items():
-                    if view_param[k] is not None:
-                        return False
-                return True
+                return all(v is None for v in view_param.values())
             return False
 
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
