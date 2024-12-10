@@ -218,7 +218,6 @@ class SurveyManager:
                 "name": f"survey123_{uid}",
                 "serviceDescription": f"Feature Service for survey {form_item.id}",
                 "hasStaticData": False,
-                "maxRecordCount": 2000,
                 "sourceSchemaChangesAllowed": True,
                 "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
                 "description": "",
@@ -249,7 +248,11 @@ class SurveyManager:
         service.update(
             {
                 "title": title,
-                "typeKeywords": f"Survey123,Survey123 Hub,OwnerView,Source,{uid}",
+                "typeKeywords": (
+                    f"Survey123,Survey123 Hub,OwnerView,Source,{uid},providerSDS"
+                    if self._gis.properties.isPortal
+                    else f"Survey123,Survey123 Hub,OwnerView,Source,{uid}"
+                ),
             },
             thumbnail=thumbnail,
         )
