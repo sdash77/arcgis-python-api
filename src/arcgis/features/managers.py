@@ -2657,6 +2657,7 @@ class FeatureLayerCollectionManager(_GISResource):
         preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
+        folder: Folder | str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2726,6 +2727,8 @@ class FeatureLayerCollectionManager(_GISResource):
         visible_fields           Optional list[str] or None. A list of visible fields to display.
         --------------------     --------------------------------------------------------------------
         query                    Optional String. A SQL statement that defines the view.
+        --------------------     --------------------------------------------------------------------
+        folder                   Optional string or Folder. The folder to which the view will be saved.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -2753,43 +2756,43 @@ class FeatureLayerCollectionManager(_GISResource):
         :return:
             Returns the newly created :class:`~arcgis.gis.Item` for the view.
         """
-
-        import os
-        from . import FeatureLayerCollection
-
+        # check name doesn't contain invalid characters
         invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
         if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
-        gis = self._gis
-        content = gis.content
+
+        # check if hosted service
         if "serviceItemId" not in self.properties:
             raise Exception(
                 "A registered hosted feature service is required to use create_view"
             )
-        item_id = self.properties["serviceItemId"]
-        item = content.get(itemid=item_id)
-        url = item.url
-        fs = FeatureLayerCollection(url=url, gis=gis)
-        if gis._url.lower().find("sharing/rest") < 0:
-            url = gis._url + "/sharing/rest"
-        else:
-            url = gis._url
 
-        if "serviceItemId" in self.properties:
-            # get the owner of the service
-            user = gis.content.get(self.properties["serviceItemId"])["owner"]
-        else:
-            # if no service item id then default to logged in user
-            user = gis.users.me.username
+        # get the FeatureLayerCollection
+        gis = self._gis
+        content = gis.content
+        item = content.get(itemid=self.properties["serviceItemId"])
+        fs = features.FeatureLayerCollection(url=item.url, gis=gis)
 
-        url = "%s/content/users/%s/createService" % (url, user)
-        if spatial_reference is None:
-            # handle for tables
-            if "spatialReference" in fs.properties:
-                spatial_reference = fs.properties["spatialReference"]
+        # check if the service is a view
+        rest_url = (
+            gis._url + "/sharing/rest"
+            if "sharing/rest" not in gis._url.lower()
+            else gis._url
+        )
+
+        # get the owner of the service
+        user = item["owner"] if "owner" in item else gis.users.me.username
+
+        # get create service endpoint
+        url = "%s/content/users/%s/createService" % (rest_url, user)
+
+        # handle for tables
+        if spatial_reference is None and "spatialReference" in fs.properties:
             # else it stays the spatial reference given or None
+            spatial_reference = fs.properties["spatialReference"]
+
         params = {
             "f": "json",
             "isView": True,
@@ -2818,9 +2821,17 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwrite is currently not supported on this platform, and will not be honored"
             )
 
-        res = gis._con.post(path=url, postdata=params)
-        view = content.get(res["itemId"])
-        fs_view = FeatureLayerCollection(url=view.url, gis=gis)
+        res = gis._session.post(url=url, data=params).json()
+
+        # Get the view feature layer collection
+        view_item = content.get(res["itemId"])
+        fs_view = features.FeatureLayerCollection(url=view_item.url, gis=gis)
+
+        # If folder provided, move the view to the folder
+        if folder:
+            # The move method allows string or Folder object
+            view_item.move(folder)
+
         add_def = {"layers": [], "tables": []}
 
         def is_none_or_empty(view_param):
@@ -2838,12 +2849,17 @@ class FeatureLayerCollectionManager(_GISResource):
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
+                # look in original feature service
                 if hasattr(lyr.manager.properties, "serviceItemId"):
                     lyr_id = lyr.manager.properties.serviceItemId
                 else:
                     lyr_id = lyr.properties.serviceItemId
-                data_path = "content/items/" + res["itemId"] + "/data"
-                data = item._portal.con.get(path=data_path)
+
+                # data path to view layer
+                data_path = gis._url + "content/items/" + res["itemId"] + "/data"
+                data = gis._session.get(data_path)
+
+                # create the layer definition
                 add_def["layers"].append(
                     {
                         "adminLayerInfo": {
@@ -2863,7 +2879,9 @@ class FeatureLayerCollectionManager(_GISResource):
                         "name": lyr.manager.properties["name"],
                     }
                 )
+
             for tbl in fs.tables:
+                # Get table data from original feature service and add to definition
                 add_def["tables"].append(
                     {
                         "adminLayerInfo": {
@@ -2986,18 +3004,12 @@ class FeatureLayerCollectionManager(_GISResource):
                                 del tbl_def[k]
                         add_def["tables"].append(tbl_def)
                 else:
-                    import logging
-
-                    _log = logging.getLogger(__name__)
-
-                    from arcgis.features.layer import Table
-
                     if isinstance(view_tables, dict):
                         if "tables" in view_tables:
                             add_def["tables"] = view_tables["tables"]
                         else:
                             add_def["tables"].append(view_tables)
-                    elif isinstance(view_tables, Table):
+                    elif isinstance(view_tables, features.Table):
                         add_def["tables"].append(
                             {
                                 "adminLayerInfo": {
@@ -3049,9 +3061,9 @@ class FeatureLayerCollectionManager(_GISResource):
                         if int(lyr.url[-1]) == ilyr["id"]
                     ]
                 }
-                view.update(data=item_upd_dict)
+                view_item.update(data=item_upd_dict)
         else:
-            view.update(data=item.get_data())
+            view_item.update(data=item.get_data())
         item = content.get(res["itemId"])
         if visible_fields or query:
             values: dict[str, Any] = {}
@@ -3073,7 +3085,7 @@ class FeatureLayerCollectionManager(_GISResource):
             if query:
                 values["viewDefinitionQuery"] = query
             if values:
-                flc = FeatureLayerCollection.fromitem(item)
+                flc = features.FeatureLayerCollection.fromitem(item)
                 lyr = flc.layers[0]
                 mgr = lyr.manager
                 if self._gis._is_arcgisonline:
