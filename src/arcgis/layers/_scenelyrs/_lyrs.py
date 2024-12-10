@@ -761,7 +761,7 @@ class Object3DLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
