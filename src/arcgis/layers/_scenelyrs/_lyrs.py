@@ -871,7 +871,7 @@ class IntegratedMeshLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
@@ -990,7 +990,7 @@ class Tiles3DLayer(Layer):
                 }
                 adminURL = self._str_replace(self._url, rd)
                 if adminURL.split("/")[-1].isdigit():
-                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                    adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = Tiles3DLayerManager(adminURL, self._gis, self)
         return self._admin
 
@@ -1099,7 +1099,7 @@ class VoxelLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
@@ -1210,7 +1210,7 @@ class Point3DLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
@@ -1320,7 +1320,7 @@ class PointCloudLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
@@ -1430,7 +1430,7 @@ class BuildingLayer(Layer):
             )
             adminURL = self._str_replace(url, rd)
             if adminURL.split("/")[-1].isdigit():
-                adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                adminURL = "/".join(adminURL.split("/")[:-1])
             self._admin = (
                 SceneLayerManager(adminURL, self._gis, self)
                 if self._gis._portal.is_arcgisonline
