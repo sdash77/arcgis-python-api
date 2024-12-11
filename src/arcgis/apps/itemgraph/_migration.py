@@ -1,4 +1,4 @@
-from ._item_graph import ItemGraph, ItemNode
+from ._item_graph import ItemGraph, ItemNode, load_from_file
 from arcgis.gis import GIS, Item, ContentManager
 import os
 import shutil
@@ -137,7 +137,11 @@ def _export_content(
     # Create a metadata file at the top directory
     manifest_file = os.path.join(main_dir, "manifest.json")
     with open(manifest_file, "w") as f:
-        f.dump(manifest, f, indent=4)
+        json.dump(manifest, f, indent=4)
+    
+    # create the graph structure file
+    graph_file = os.path.join(main_dir, "graph.gml")
+    graph.write_to_file(graph_file)
     
     # Create a static binary file containing the entire directory
     binary_file_path = os.path.join(output_folder, f"{package_name}.contentexport")
@@ -208,14 +212,61 @@ def export_item_data(node: ItemNode, output_folder: str):
     else:
         download_path = item.download(data_folder)
     
-
-    
     if os.stat(download_path).st_size == 0:
         os.remove(download_path)
 
     return output_folder
     
-
+class ImportPackage():
+    def __init__(self, package_path: str, gis: GIS):
+        self.package_path = package_path
+        self.gis = gis
+        basename = os.path.splitext(os.path.basename(package_path))[0]
+        self.temp_dir = self._unpack_package()
+        self.temp_package = os.path.join(self.temp_dir.name, basename)
+        temp_graph_path = os.path.join(self.temp_package, "graph.gml")
+        self.graph = load_from_file(temp_graph_path, gis, include_items=False)
+        manifest_file_path = os.path.join(self.temp_package, "manifest.json")
+        with open(manifest_file_path, "r") as manifest_file:
+            self.items = json.load(manifest_file)
+    
+    def _unpack_package(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        with tarfile.open(self.package_path, "r:gz") as tar:
+            tar.extractall(temp_dir.name)
+        return temp_dir
+    
+    def _import_item(self, item_folder):
+        # read the properties.json file
+        with open(os.path.join(item_folder, "properties.json"), "r") as prop_file:
+            item_properties = json.load(prop_file)
+        
+        # read the relationships.json file
+        with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
+            relationships = json.load(rel_file)
+        
+        # read the resources.json file
+        with open(os.path.join(item_folder, "resources.json"), "r") as res_file:
+            resources = json.load(res_file)
+        
+        # read the data folder
+        data_folder = os.path.join(item_folder, "data")
+        if item_properties["type"] in JSON_BASED_TYPES:
+            path_name = "structure.json"
+            data_path = os.path.join(data_folder, path_name)
+        else:
+            data_path = data_folder
+        
+        # import the item
+        item = self.gis.content.add(item_properties, data_path)
+        
+        # import the resources
+        for res in resources:
+            res_path = os.path.join(data_folder, res)
+            item.resources.add(res_path)
+        
+        # return the item
+        return item
 
 
     
