@@ -21,10 +21,10 @@ from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
 
-
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_cm = LazyLoader("arcgis.gis._impl._content_manager")
 re = LazyLoader("re")
 
 _log = logging.getLogger()
@@ -2657,7 +2657,7 @@ class FeatureLayerCollectionManager(_GISResource):
         preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
-        folder: Folder | str | None = None,
+        folder: _cm.Folder | str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
