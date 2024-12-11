@@ -13442,7 +13442,7 @@ class Item(dict):
             url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
 
-                lyr = ImageryLayer(url, self._gis)
+                lyr = ImageryLayer(url, self._gis, parent_url=url)
 
                 try:
                     item_data = self.get_data()
