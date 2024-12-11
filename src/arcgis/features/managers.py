@@ -2892,7 +2892,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 # Process specified layers and tables
                 if view_layers:
                     add_def["layers"] = process_layers(
-                        view_layers, fs, lambda lyr: lyr.get_data()
+                        view_layers, fs, lambda lyr: lyr.properties
                     )
                 if view_tables:
                     add_def["tables"] = process_tables(view_tables, fs)
