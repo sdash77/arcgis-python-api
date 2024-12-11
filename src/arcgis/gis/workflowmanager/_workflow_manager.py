@@ -1744,35 +1744,144 @@ class WorkflowManager:
         display_grid: bool,
         description: str = "",
         active: bool = False,
-        annotations: list = [],
-        data_sources: list = [],
+        annotations: Optional[list] = [],
+        data_sources: Optional[list] = [],
         diagram_id: Optional[str] = None,
+        centralized_data_references: list = []
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        name                Required string. Diagram Name
-        ---------------     --------------------------------------------------------------------
-        steps               Required list. List of Step objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        display_grid        Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
-        ---------------     --------------------------------------------------------------------
-        description         Optional string. Diagram description
-        ---------------     --------------------------------------------------------------------
-        active              Optional Boolean. Indicates whether the Diagram is active
-        ---------------     --------------------------------------------------------------------
-        annotations         Optinal list. List of Annotation objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        data_sources        Optional list. List of Data Source objects associated with the Diagram
-        ---------------     --------------------------------------------------------------------
-        diagram_id          Optional string. The unique ID of the diagram to be created.
-        ===============     ====================================================================
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        name                         Required string. Diagram Name
+        ---------------              --------------------------------------------------------------------
+        steps                        Required list. List of Step objects associated with the Diagram
+        ---------------              --------------------------------------------------------------------
+        display_grid                 Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
+        ---------------              --------------------------------------------------------------------
+        description                  Optional string. Diagram description
+        ---------------              --------------------------------------------------------------------
+        active                       Optional Boolean. Indicates whether the Diagram is active
+        ---------------              --------------------------------------------------------------------
+        annotations                  Optional list. List of Annotation objects associated with the Diagram
+        ---------------              --------------------------------------------------------------------
+        data_sources                 Optional list. Spatial data that will be used in the steps of the diagram.
+                                     Note: It is recommended to use centralizedDataReferences for new diagrams.
+                                     Data sources are not supported in ArcGIS Online.
+        ---------------              --------------------------------------------------------------------
+        diagram_id                   Optional string. The unique ID of the diagram to be created.
+        ---------------              --------------------------------------------------------------------
+        centralized_data_references  Required list. The Centralized references to data and other content that will be
+                                     used in the steps of the diagram. See details for CentralizedDataReference below.
+        ===============              ====================================================================
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
+
+        CentralizedDataReference Object
+        ===============================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        id                           Required string. The unique identifier of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        alias                        Required string. The unique name of the data reference to be stored in the diagram.
+        ---------------              --------------------------------------------------------------------
+        isValidated                  Required boolean. Indicates whether the data reference has been validated.
+                                     Note: Pro Items and Pro Commands are not validated.
+        ---------------              --------------------------------------------------------------------
+        referenceType                Required string. The type of data reference. Accepted values include, FeatureService,
+                                     Survey, GeoprocessingService, WebMap, ProProject, ProMapItem, ProSceneItem,
+                                     ProTaskItem, ProLayoutItem, ProSystemToolboxItem, or ProCommand. Note: Geoprocessing
+                                     services must use either standaloneGPUrl or portalItem.
+        ---------------              --------------------------------------------------------------------
+        capabilities                 Optional list. The capabilities of a branch versioned feature service. Valid values
+                                     include SupportsBranchVersioning, SupportsCreateReplica, and SupportsDataQuality.
+        ---------------              --------------------------------------------------------------------
+        portalItem                   Optional portalItem dict. The item information for the reference. Required for
+                                     referencesTypes set to FeatureService, Survey, WebMap, or ProProject. For more
+                                     details, see PortalItem below.
+        ---------------              --------------------------------------------------------------------
+        proItemName                  Optional string. The name of the Pro item. Required when the referenceType is set
+                                     to ProMapItem, ProSceneItem, ProTaskItem, ProLayoutItem, or ProSystemToolboxItem
+        ---------------              --------------------------------------------------------------------
+        command                      Optional string. The Pro command DAML id. Required when the referenceType is ProCommand.
+        ---------------              --------------------------------------------------------------------
+        standaloneGPUrl              Optional string. The service URL for the Geoprocessing Service. Required when the
+                                     referenceType is GeoprocessingService and portalItem is not defined.
+        ===============              ====================================================================
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 1:
+            {
+              "id": "50c6a626-2e45-4cfa-b149-3add455f9d72",
+              "alias": "ParcelFabricDataQuality",
+              "portalItem": {
+                "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                "portalType": "Current",
+                "portalUrl": null
+              },
+              "isValidated": true,
+              "referenceType": "FeatureService",
+              "capabilities": [
+                "SupportsBranchVersioning",
+                "SupportsDataQuality"
+              ]
+            }
+
+            # CentralizedDataReference Object Example 2:
+            {
+                "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                "alias": "GeocodingTools",
+                "portalItem": {
+                    "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                    "portalType": "Current",
+                    "portalUrl": null
+                },
+                "isValidated": true,
+                "referenceType": "GeoprocessingService"
+            }
+            
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 3:
+            {
+              "id": "b09ae444-3400-49ca-9a1b-1f3795332139",
+              "alias": "Echo Tool",
+              "isValidated": true,
+              "referenceType": "GeoprocessingService",
+              "standaloneGPUrl": "https://example.esri.com/arcgis/rest/services/ProcessingTool/GPServer/ProcessingTool"
+            }
+
+        .. code-block:: python
+
+            # CentralizedDataReference Object Example 4:
+            {
+              "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+              "proItemName": "MyProMap",
+              "referenceType": "ProMapItem"
+            }
+
+
+        PortalItem Object
+        ========================
+
+        ===============              ====================================================================
+        **Parameter**                **Description**
+        ---------------              --------------------------------------------------------------------
+        itemId                       Required string. The unique item identifier of the Portal item.
+        ---------------              --------------------------------------------------------------------
+        portalType                   Optional string. The hosting Portal location of the data reference relative to the
+                                     workflow item. Accepted values include Current, ArcGIS Online, and Other. This value
+                                     is set to Current by default.
+        ---------------              --------------------------------------------------------------------
+        portalUrl                    Optional string. Required when portalType is set to Other, the full URL including
+                                     Web Adaptor for the Portal hosting the item.
+        ===============              ====================================================================
 
         """
         try:
@@ -1790,6 +1899,8 @@ class WorkflowManager:
                     "dataSources": data_sources,
                     "annotations": annotations,
                     "displayGrid": display_grid,
+                    "centralizedDataReferences": centralized_data_references,
+                    "useCentralizedDataReferences": True
                 }
             )
             return post_diagram.post(self._gis, url)["diagram_id"]
