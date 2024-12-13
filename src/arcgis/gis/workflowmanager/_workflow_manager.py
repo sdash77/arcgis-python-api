@@ -1923,6 +1923,46 @@ class WorkflowManager:
         :return:
             success object
 
+        ... code-block:: python
+            # USAGE EXAMPLE: Creating a Lookup Table
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            # The update body contains only those fields we wish to update.
+            updated_diagram_body = {
+
+                                    "diagramName": "Updated Diagram Name",
+                                    "description": "Updated",
+                                    "centralizedDataReferences": [
+                                          {
+                                            "id": "f9f002b0-ea3e-49a3-b40c-5e08687282f0",
+                                            "alias": "GeocodingTools",
+                                            "isValidated": true,
+                                            "portalItem": {
+                                              "itemId": "7eacbbfff9a24bc0a7fc0e9d7b805ccd",
+                                              "portalType": "Current"
+                                            },
+                                            "acceptsToken": true,
+                                            "referenceType": "GeoprocessingService"
+                                          },
+                                          {
+                                            "id": "5a3aa2d1-06ed-49fc-9c38-e1576d9cc5d2",
+                                            "alias": "Example Feature Service",
+                                            "portalItem": {
+                                              "itemId": "a64fdcf5e7b44a27bd98d098ca02ca57",
+                                              "portalType": "Current",
+                                              "portalUrl": null
+                                            },
+                                            "isValidated": true,
+                                            "referenceType": "FeatureService",
+                                            "capabilities": [ "SupportsBranchVersioning", "SupportsDataQuality" ]
+                                          }
+                                        ]
+                                    }
+
+            wm.update_diagram(update_diagram_body, delete_draft=True)
+
         """
         try:
             url = "{base}/diagrams/{diagramid}".format(
@@ -1950,6 +1990,10 @@ class WorkflowManager:
                         body["annotations"] if "annotations" in body else ""
                     ),
                     "displayGrid": body["display_grid"],
+                    "centralizedDataReferences": (
+                        body["centralizedDataReferences"] if "centralizedDataReferences" in body else []
+                    ),
+                    "useCentralizedDataReferences": True
                 }
             )
             res = post_diagram.update(self._gis, url, delete_draft)

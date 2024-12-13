@@ -66,7 +66,7 @@ class TestWorkflowManager(unittest.TestCase):
                     "text": "test annotations",
                 }
             ],
-            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            data_sources=[],
             steps=[
                 {
                     "action": {"actionType": "Manual"},
@@ -96,6 +96,11 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
+            centralized_data_references=[{
+                "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                "proItemName": "MyProMap",
+                "referenceType": "ProMapItem"
+            }]
         )
 
     def create_diagram_robust(self):
@@ -116,7 +121,7 @@ class TestWorkflowManager(unittest.TestCase):
                     "text": "test annotations",
                 }
             ],
-            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            data_sources=[],
             steps=[
                 {
                     "action": {"actionType": "Manual"},
@@ -146,6 +151,11 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
+            centralized_data_references=[{
+                "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                "proItemName": "MyProMap",
+                "referenceType": "ProMapItem"
+            }]
         )
 
     def create_job(
@@ -3028,9 +3038,7 @@ class TestWorkflowManager(unittest.TestCase):
             body={
                 "annotations": [],
                 "active": True,
-                "data_sources": [
-                    {"name": "dsource", "sourceType": "string", "url": "string"}
-                ],
+                "data_sources": [],
                 "description": "UPDATED ",
                 "diagram_id": old_id,
                 "diagram_name": "UPDATED " + str(datetime.datetime.now()),
@@ -3094,6 +3102,11 @@ class TestWorkflowManager(unittest.TestCase):
                         "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
                     },
                 ],
+                "centralized_data_references": [{
+                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                    "proItemName": "MyProMapUPDATE",
+                    "referenceType": "ProMapItem"
+                }]
             }
         )
 
