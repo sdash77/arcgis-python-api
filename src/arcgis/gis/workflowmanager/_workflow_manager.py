@@ -1747,7 +1747,7 @@ class WorkflowManager:
         annotations: Optional[list] = [],
         data_sources: Optional[list] = [],
         diagram_id: Optional[str] = None,
-        centralized_data_references: list = []
+        centralized_data_references: Optional[list] = []
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
@@ -1773,7 +1773,7 @@ class WorkflowManager:
         ---------------              --------------------------------------------------------------------
         diagram_id                   Optional string. The unique ID of the diagram to be created.
         ---------------              --------------------------------------------------------------------
-        centralized_data_references  Required list. The Centralized references to data and other content that will be
+        centralized_data_references  Optional list. The Centralized references to data and other content that will be
                                      used in the steps of the diagram. See details for CentralizedDataReference below.
         ===============              ====================================================================
 
@@ -1886,9 +1886,7 @@ class WorkflowManager:
         """
         try:
             url = "{base}/diagrams".format(base=self._url)
-
-            post_diagram = JobDiagram(
-                {
+            diagram_obj = {
                     "diagramId": diagram_id,
                     "diagramName": name,
                     "description": description,
@@ -1898,11 +1896,13 @@ class WorkflowManager:
                     "steps": steps,
                     "dataSources": data_sources,
                     "annotations": annotations,
-                    "displayGrid": display_grid,
-                    "centralizedDataReferences": centralized_data_references,
-                    "useCentralizedDataReferences": True
+                    "displayGrid": display_grid
                 }
-            )
+            if centralized_data_references:
+                diagram_obj["centralizedDataReferences"] = centralized_data_references
+                diagram_obj["useCentralizedDataReferences"] = True
+
+            post_diagram = JobDiagram( diagram_obj )
             return post_diagram.post(self._gis, url)["diagram_id"]
         except:
             self._handle_error(sys.exc_info())
@@ -1968,34 +1968,33 @@ class WorkflowManager:
             url = "{base}/diagrams/{diagramid}".format(
                 base=self._url, diagramid=body["diagram_id"]
             )
-            post_diagram = JobDiagram(
-                {
-                    "diagramId": body["diagram_id"],
-                    "diagramName": body["diagram_name"],
-                    "description": (
-                        body["description"] if "description" in body else ""
-                    ),
-                    "active": (body["active"] if "active" in body else False),
-                    "initialStepId": (
-                        body["initial_step_id"] if "initial_step_id" in body else ""
-                    ),
-                    "initialStepName": (
-                        body["initial_step_name"] if "initial_step_name" in body else ""
-                    ),
-                    "steps": body["steps"],
-                    "dataSources": (
-                        body["data_sources"] if "data_sources" in body else []
-                    ),
-                    "annotations": (
-                        body["annotations"] if "annotations" in body else ""
-                    ),
-                    "displayGrid": body["display_grid"],
-                    "centralizedDataReferences": (
-                        body["centralizedDataReferences"] if "centralizedDataReferences" in body else []
-                    ),
-                    "useCentralizedDataReferences": True
-                }
-            )
+            diagram_obj = {
+                        "diagramId": body["diagram_id"],
+                        "diagramName": body["diagram_name"],
+                        "description": (
+                            body["description"] if "description" in body else ""
+                        ),
+                        "active": (body["active"] if "active" in body else False),
+                        "initialStepId": (
+                            body["initial_step_id"] if "initial_step_id" in body else ""
+                        ),
+                        "initialStepName": (
+                            body["initial_step_name"] if "initial_step_name" in body else ""
+                        ),
+                        "steps": body["steps"],
+                        "dataSources": (
+                            body["data_sources"] if "data_sources" in body else []
+                        ),
+                        "annotations": (
+                            body["annotations"] if "annotations" in body else ""
+                        ),
+                        "displayGrid": body["display_grid"],
+                    }
+            if "centralizedDataReferences" in body and body["centralizedDataReferences"]:
+                diagram_obj["centralizedDataReferences"] = body["centralizedDataReferences"]
+                diagram_obj["useCentralizedDataReferences"] = True
+
+            post_diagram = JobDiagram( diagram_obj )
             res = post_diagram.update(self._gis, url, delete_draft)
 
             return res

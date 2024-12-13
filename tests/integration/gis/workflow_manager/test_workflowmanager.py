@@ -66,6 +66,55 @@ class TestWorkflowManager(unittest.TestCase):
                     "text": "test annotations",
                 }
             ],
+            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            steps=[
+                {
+                    "action": {"actionType": "Manual"},
+                    "automatic": False,
+                    "canSkip": False,
+                    "color": "130, 202, 237",
+                    "description": "Start and end of a workflow",
+                    "helpText": "Start/End help text",
+                    "helpUrl": "Start/End help url",
+                    "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "labelColor": "black",
+                    "name": "Start/End",
+                    "outlineColor": "130, 202, 237",
+                    "paths": [
+                        {
+                            "assignedType": "Unassigned",
+                            "lineColor": "black",
+                            "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
+                            "notifications": [],
+                            "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                            "ports": ["BOTTOM", "TOP"],
+                        }
+                    ],
+                    "position": "0,0,100,50",
+                    "proceedNext": True,
+                    "shape": 3,
+                    "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                }
+            ],
+            centralized_data_references=[]
+        )
+
+    def create_diagram_with_cdr(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        return self.connection.workflow_manager.create_diagram(
+            name="Test New Diagram123 " + uniqueness,
+            display_grid=True,
+            description="Test Description",
+            active=True,
+            annotations=[
+                {
+                    "position": "0,0,100,250",
+                    "color": "130, 202, 237",
+                    "outlineColor": "130, 202, 237",
+                    "labelColor": "black",
+                    "text": "test annotations",
+                }
+            ],
             data_sources=[],
             steps=[
                 {
@@ -3005,6 +3054,16 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertEqual(len(actual), 22, "Incorrect size")
 
+    def test_create_diagram_with_cdr_successfully_returns(self):
+        # Arrange
+
+        # Act
+        actual = self.create_diagram_with_cdr()
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(len(actual), 22, "Incorrect size")
+
     def test_create_diagram_with_Custom_Id_successfully_returns(self):
         # Arrange
 
@@ -3030,6 +3089,87 @@ class TestWorkflowManager(unittest.TestCase):
     # region Update Diagrams
 
     def test_update_diagram_returns_successfully(self):
+        # Arrange
+
+        # Act
+        old_id = self.create_diagram()
+        actual = self.connection.workflow_manager.update_diagram(
+            body={
+                "annotations": [],
+                "active": True,
+                "data_sources": [],
+                "description": "UPDATED ",
+                "diagram_id": old_id,
+                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
+                "diagram_version": 2,
+                "display_grid": True,
+                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                "initial_step_name": "Start/End",
+                "steps": [
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": False,
+                        "color": "130, 202, 237",
+                        "description": "Step to be put at the start and end of a workflow",
+                        "helpText": "Start/End help text",
+                        "helpUrl": "Start/End help url",
+                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                        "labelColor": "black",
+                        "name": "Start/End",
+                        "outlineColor": "130, 202, 237",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0,0,100,50",
+                        "proceedNext": True,
+                        "shape": 3,
+                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                    },
+                    {
+                        "action": {"actionType": "Manual"},
+                        "automatic": False,
+                        "canSkip": True,
+                        "color": "242, 226, 121",
+                        "description": "Step to indicate manual work, with no additional logic",
+                        "helpText": "Manual Step help text",
+                        "helpUrl": "Manual Step help url",
+                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                        "labelColor": "black",
+                        "name": "Manual Step 1",
+                        "outlineColor": "242, 226, 121",
+                        "paths": [
+                            {
+                                "assignedType": "Unassigned",
+                                "lineColor": "black",
+                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
+                                "notifications": [],
+                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
+                                "ports": ["BOTTOM", "TOP"],
+                            }
+                        ],
+                        "position": "0, -100, 100, 50",
+                        "proceedNext": True,
+                        "shape": 1,
+                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
+                    },
+                ]
+            }
+        )
+
+        # Assert
+        self.assertTrue(actual, "Success was not true")
+
+        # ------------------------------------------------------------------------
+
+    def test_update_diagram_with_cdr_returns_successfully(self):
         # Arrange
 
         # Act
