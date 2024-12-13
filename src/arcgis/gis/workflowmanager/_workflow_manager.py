@@ -1573,6 +1573,85 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def diagram_upgraded_version(self, diagram_id: str, version_id: str):
+        """
+        Get an upgraded version of a workflow diagram that uses centralized data references. If the version number does
+        not exist, an error saying the specific diagram version does not exist is returned. The adminBasic or
+        adminAdvanced privilege is required to get an upgraded diagram.
+
+        Note: You can upgrade a diagram by placing the transformedDiagram dict in the diagram parameter of updateDiagram.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Required string. Diagram ID
+        ---------------     --------------------------------------------------------------------
+        version_id          Required string. Diagram Version ID
+        ===============     ====================================================================
+
+        :return:
+             Success Object
+
+        .. code-block:: python
+
+            # Success Object Example:
+            {
+                "transformedDiagram": {
+                    "diagramId": "gb1GBilqT4yk68Hfs5ghxw",
+                    "diagramVersion": 1,
+                    "diagramName": "Test New Diagram123 2024_12_13_11_59_54_764959",
+                    "description": "Test Description",
+                    "initialStepId": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "initialStepName": "Start/End",
+                    "steps": [
+                        {
+                            "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                            "name": "Start/End",
+                            "description": "Start and end of a workflow",
+                            "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                            "automatic": false,
+                            "proceedNext": true,
+                            "canSkip": false,
+                            "position": "0,0,100,50",
+                            "shape": 3,
+                            "color": "130, 202, 237",
+                            "outlineColor": "130, 202, 237",
+                            "labelColor": "black",
+                            "action": { "actionType": "Manual" },
+                            "paths": [
+                                {
+                                    "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
+                                    "points": [ { "x": 0, "y": 26 }, { "x": 0,  "y": 74 } ],
+                                    "ports": [  "BOTTOM", "TOP" ],
+                                    "assignedType": "Unassigned",
+                                    "notifications": [],
+                                    "lineColor": "black"
+                                }
+                            ],
+                            "helpUrl": "Start/End help url",
+                            "helpText": "Start/End help text"
+                        }
+                    ],
+                    "centralizedDataReferences": [],
+                    "displayGrid": true,
+                    "useCentralizedDataReferences": true
+                },
+                "modifiedStepIds": [],
+                "failedStepIds": [],
+                "modifiedDataSourceNames": [],
+                "failedDataSourceNames": []
+            }
+
+        """
+        try:
+            return  self._gis._con.get(
+                    "{base}/diagrams/{diagram}/{diagramVersion}/upgraded".format(
+                        base=self._url, diagram=diagram_id, diagramVersion=version_id
+                    )
+                )
+        except:
+            self._handle_error(sys.exc_info())
+
     def create_wm_role(self, name, description="", privileges=[]):
         """
         Adds a role to the Workflow Manager instance given a user-defined name
@@ -1832,6 +1911,8 @@ class WorkflowManager:
                 "SupportsDataQuality"
               ]
             }
+
+        .. code-block:: python
 
             # CentralizedDataReference Object Example 2:
             {
