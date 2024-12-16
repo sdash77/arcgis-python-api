@@ -20,6 +20,7 @@ dependencies:
 - matplotlib
 - matplotlib-inline
 - nbconvert
+- networkx >=3.3, <4
 - numpy>=1.21.6,<2
 - pandas >=2.0.0,<2.2.0
 - pillow

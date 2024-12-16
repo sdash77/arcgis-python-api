@@ -42,6 +42,8 @@ requirements:
   - ujson >=3
   - urllib3 >=2,<3
   - pydantic >=2.8.2, <3
+  - networkx >=3.3, <4
+  - websocket-client >=1.2.3, <2.0.0
 source:
   git_url: ../..
 test:

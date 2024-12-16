@@ -24,7 +24,7 @@ import configparser
 from contextlib import contextmanager
 import functools
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Iterator
 from urllib.error import HTTPError
 import requests
 import copy
@@ -38,6 +38,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
+from arcgis.gis._impl._dataclasses._sfilters import SpatialFilter, SpatialRelationship
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 
@@ -12954,7 +12955,7 @@ class User(dict):
         data: dict = self._gis.session.get(url=url, params=params).json()
         if len(data["items"]) > 0 and reassign_to is None:
             raise Exception(
-                f"User: {self._gis.users.me.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
+                f"User: {self.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
             )
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
@@ -13111,7 +13112,7 @@ class User(dict):
             return None
 
     @property
-    def folders(self):
+    def folders(self) -> Iterator[_folder.Folder]:
         """
         The ``folders`` property, when called, retrieves the list of the user's folders.
 
@@ -13123,22 +13124,25 @@ class User(dict):
 
             # Example to get name of all folders
 
-            user = User(gis, username)
+            user = gis.users.search("*")[5]
             folders = user.folders
             for folder in folders:
-                print(folder["title"])
+                print(folder.name)
 
             # Example to get id of all folders
 
-            user = User(gis, username)
+            user = gis.users.me
             folders = user.folders
             for folder in folders:
-                print(folder["id"])
+                print(folder.properties['id'])
 
         """
-        return self._portal.user_folders(self._user_id)
+        for folder in self._gis.content.folders.list(self):
+            yield folder
 
-    def items(self, folder: Optional[str] = None, max_items: int = 100):
+    def items(
+        self, folder: _folder.Folder | str = None, max_items: int = 100
+    ) -> Iterator[Item]:
         """
         The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
         For content in the root folder, use the default value of None for the folder argument.
@@ -13151,7 +13155,7 @@ class User(dict):
         folder                 Optional string. The specifc folder (as a string or dictionary)
                                to get a list of items in.
         ------------------     --------------------------------------------------------------------
-        max_items              Optional integer. The maximum number of items to be returned. The default is 100.
+        max_items              Optional integer. The maximum number of items to be returned. The default is 100. A value of -1 will return all items.
         ==================     ====================================================================
 
 
@@ -13185,30 +13189,21 @@ class User(dict):
                     print(item, folder)
 
         """
+        count: int = 1
+        if isinstance(folder, str):
+            folder: _folder.Folder = self._gis.content.folders.get(folder, self)
 
-        items = []
-        folder_id = None
-        if folder is not None:
-            if isinstance(folder, str):
-                folder_id = self._portal.get_folder_id(self._user_id, folder)
-                if folder_id is None:
-                    msg = "Could not locate the folder: %s" % folder
-                    raise ValueError(
-                        "%s. Please verify that this folder exists and try again." % msg
-                    )
-            elif isinstance(folder, dict):
-                folder_id = folder["id"]
-            else:
-                print(
-                    "folder should be folder name as a string"
-                    "or a dict containing the folder 'id'"
-                )
+        if isinstance(folder, _folder.Folder):
+            folder: list[_folder.Folder] = [folder]
+        elif folder is None:
+            folder: Iterator[_folder.Folder] = self._gis.content.folders.list(self)
 
-        resp = self._portal.user_items(self._user_id, folder_id, max_items)
-        for item in resp:
-            items.append(Item(self._gis, item["id"], item))
-
-        return items
+        for fld in folder:
+            for item in fld.list():
+                yield item
+                if count == max_items:
+                    break
+                count += 1
 
     # ----------------------------------------------------------------------
     @property
@@ -16080,6 +16075,8 @@ class Item(dict):
             "Mission2Item",
             "Map2FeatureCollectionMobileApp2Code",
             "Notebook2WebTool",
+            "Listed2ImplicitlyListed",
+            "Map2IndoorsConfig",
         ]
     )
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
@@ -18250,17 +18247,66 @@ class Item(dict):
                 f"Item type {self.type} is not supported for remapping data"
             )
 
+    # ----------------------------------------------------------------------
+    def get_dependencies(
+        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
+    ):
+        """
+        Returns the dependencies of an item. Can be used to return either the immediate dependencies
+        of an item (other items that an item directly contains in its structure) or the full deep
+        dependency list (all of the items that must exist for the item to function properly- including
+        dependencies of dependencies). Note that not all items/item types may have dependencies.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        deep                Optional boolean. When set to True, the function will return every
+                            other item needed for an item to exist. When set to False, the
+                            function will only return the immediate dependencies of an item, or
+                            ones referenced directly by the item. Default is False.
+        ---------------     --------------------------------------------------------------------
+        outside_org         Optional boolean. When set to True, the output list will not include
+                            items that come from an outside GIS organization. Default is True.
+        ---------------     --------------------------------------------------------------------
+        out_format          Optional string. Determines the format of the output list. Options
+                            are "item", "id", or "graph". Default is "item".
+        ===============     ====================================================================
+
+        :return:
+                A list containing the dependencies of the item, in either Item or Item ID form.
+        """
+
+        from arcgis.apps.itemgraph import create_item_graph
+
+        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        if out_format.lower() == "graph":
+            return graph
+        node = graph.get_item(self.id)
+        if deep:
+            return node.requires(out_format=out_format)
+        return node.contains(out_format=out_format)
+
 
 ########################################################################
 class ViewManager:
     """
     A helper class to work with hosted feature layer views created from
-    :class:`items <arcgis.gis.Item>` whose `type` property value is ``feature
-    service.``
+    hosted feature layer :class:`items <arcgis.gis.Item>`.
 
-    This class is not meant to be created directly, but instead returned
-    from the :attr:`~arcgis.gis.Item.view_manager` property on an
-    :class:`~arcgis.gis.Item`.
+    Objects of this class are not meant to be created, but rather
+    accessed from the :attr:`~arcgis.gis.Item.view_manager` property on
+    a feature layer or feature layer view :class:`~arcgis.gis.Item`.
+
+    .. code-block:: python
+
+        # Usage Example: Accessing a ViewManager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> view_item = gis.content.get("<view_item_id>")
+        >>> vw_mgr = view_item.view_manager
+        >>> vw_mgr
+        <arcgis.gis.ViewManager object at <mem_addr>>
     """
 
     _item = None
@@ -18273,10 +18319,20 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def list(self) -> list[Item]:
         """
-        Returns all views for a given item
+        Provides all the *views* for a given Feature Layer :class:`~arcgis.gis.Item`
 
         :returns:
-            List of feature layer view :class:`items <arcgis.gis.Item>`
+            List of feature layer view :class:`items <arcgis.gis.Item>` for
+            the hosted feature layer.
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> flyr_item = gis.content.get("<item_id>")
+            >>> flyr_vw_items = flyr_item.view_manager.list()
+            >>> flry_vw_items
+            [<Item title:"flyr_view" type:Feature Layer Collection owner:gis_user>]
+
         """
         return [
             i
@@ -18571,16 +18627,32 @@ class ViewManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Create a veiw from a hosted feature layer
+            # USAGE EXAMPLE: Create a view from a hosted feature layer
 
-            >>> crime_fl_item = gis.content.search("2012 crime")[0]
-            >>> view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
-                                                         updateable=True,
-                                                         allow_schema_changes=False,
-                                                         capabilities="Query,Update,Delete")
+            >>> flyr_item = gis.content.search("*", item_type="Feature Service")[0]
+            >>> view_item = flyr_item.view_manager.create(
+                                name="flyr_view",
+                                extent={
+                                    "xmin" : -9982417.919074,
+                                    "ymin" : 4370975.025460,
+                                    "xmax" : -8954750.737665,
+                                    "ymax" : 4769966.758480,
+                                    "spatialReference" : {
+                                        "wkid" : 102100,
+                                        "latestWkid" : 3857
+                                    }
+                                },
+                                view_layers=[
+                                    flyr_item.layers[0]
+                                ],
+                                allow_schema_changes=True,
+                                updateable=True,
+                                capabilities="Query,Update,Delete",
+                        )
+
 
         :return:
-            The :class:`~arcgis.gis.Item` for the view.
+            The view :class:`~arcgis.gis.Item`.
         """
         flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
@@ -18605,19 +18677,50 @@ class ViewManager:
 
     # ----------------------------------------------------------------------
     def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
-        """Gets the View Definition Parameters for a Given Item
+        """Gets the :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
+        objects that define the views for the *item* argument.
 
         =============     =====================================================
         **Argument**      **Description**
         -------------     -----------------------------------------------------
-        item              The :class:`~arcgis.gis.Item` to return the
-                          view layer definitions for.
+        item              The view :class:`~arcgis.gis.Item` to return the
+                          view definitions for.
         =============     =====================================================
 
 
         :return:
             List of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
             objects or None.
+
+        .. code-block:: python
+
+            # Usage Example: Getting ViewLayerDefParameter object from a view
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> fsvc_items = gis.content.search("flyr_view", item_type="Feature Service")
+            >>> view_item = [
+                       vi for vi in fsvc_items if "View Service" in vi.typeKeywords
+                ][0]
+
+            >>> vw_mgr = view_item.view_manager
+            >>> vw_def_list = vw_mgr.get_definitions(view_item)
+            [<ViewLayerDefParameter>]
+
+            >>> vw_def = vw_def_list[0]
+            >>> vw_def.as_json()
+            {'viewLayerDefinition': {'filter': {'geometry': {'rings': [[[-9982417.919074,4370975.02546],
+                                                            ...
+                                                                        [-9982417.919074,4370975.02546]]],
+                                                 'spatialReference': {'latestWkid': 3857, 'wkid': 102100}},
+                                                 'geometryType': 'esriGeometryPolygon',
+                                                 'spatialRel': 'esriSpatialRelIntersects',
+                                                 'inSR': {'latestWkid': 3857, 'wkid': 102100}}},
+             'fields': [{'name': 'objectid', 'visible': True},
+                        ...
+                        {'name': 'globalid', 'visible': True}]
+            }
         """
         if "View Service" in item.typeKeywords:
             from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
@@ -18629,7 +18732,8 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
         """
-        Updates a set of layers with new queries, geometries, and column visibilities.
+        Updates a view definition with new queries, geometries, and column
+        visibilities.
 
         =============     =====================================================
         **Argument**      **Description**
