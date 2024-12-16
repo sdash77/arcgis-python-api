@@ -2732,6 +2732,8 @@ class MapImageLayer(_gis.Layer):
             if return_geometry is not None
             else get_param("returnGeometry", True)
         )
+        layers = layers or get_param("layers", "all")
+        time_options = time_options or get_param("layerTimeOptions", None)
         return_m = return_m if return_m is not None else get_param("returnM", False)
         return_z = return_z if return_z is not None else get_param("returnZ", False)
         max_offset = max_offset or get_param("maxAllowableOffset", None)
@@ -2760,8 +2762,8 @@ class MapImageLayer(_gis.Layer):
                     "sr": sr,
                     "layerDefs": layer_defs,
                     "time": time_value,
-                    "layerTimeOptions": kwargs.get("time_options"),
-                    "layers": kwargs.get("layers"),
+                    "layerTimeOptions": time_options,
+                    "layers": layers,
                     "returnGeometry": return_geometry,
                     "returnM": return_m,
                     "returnZ": return_z,

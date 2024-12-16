@@ -24,7 +24,7 @@ import configparser
 from contextlib import contextmanager
 import functools
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Iterator
 from urllib.error import HTTPError
 import requests
 import copy
@@ -12955,7 +12955,7 @@ class User(dict):
         data: dict = self._gis.session.get(url=url, params=params).json()
         if len(data["items"]) > 0 and reassign_to is None:
             raise Exception(
-                f"User: {self._gis.users.me.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
+                f"User: {self.username} must not own any items. Either set a `reassign_to` user or delete all the items first then delete the user."
             )
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
@@ -13112,7 +13112,7 @@ class User(dict):
             return None
 
     @property
-    def folders(self):
+    def folders(self) -> Iterator[_folder.Folder]:
         """
         The ``folders`` property, when called, retrieves the list of the user's folders.
 
@@ -13124,22 +13124,25 @@ class User(dict):
 
             # Example to get name of all folders
 
-            user = User(gis, username)
+            user = gis.users.search("*")[5]
             folders = user.folders
             for folder in folders:
-                print(folder["title"])
+                print(folder.name)
 
             # Example to get id of all folders
 
-            user = User(gis, username)
+            user = gis.users.me
             folders = user.folders
             for folder in folders:
-                print(folder["id"])
+                print(folder.properties['id'])
 
         """
-        return self._portal.user_folders(self._user_id)
+        for folder in self._gis.content.folders.list(self):
+            yield folder
 
-    def items(self, folder: Optional[str] = None, max_items: int = 100):
+    def items(
+        self, folder: _folder.Folder | str = None, max_items: int = 100
+    ) -> Iterator[Item]:
         """
         The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
         For content in the root folder, use the default value of None for the folder argument.
@@ -13152,7 +13155,7 @@ class User(dict):
         folder                 Optional string. The specifc folder (as a string or dictionary)
                                to get a list of items in.
         ------------------     --------------------------------------------------------------------
-        max_items              Optional integer. The maximum number of items to be returned. The default is 100.
+        max_items              Optional integer. The maximum number of items to be returned. The default is 100. A value of -1 will return all items.
         ==================     ====================================================================
 
 
@@ -13186,30 +13189,21 @@ class User(dict):
                     print(item, folder)
 
         """
+        count: int = 1
+        if isinstance(folder, str):
+            folder: _folder.Folder = self._gis.content.folders.get(folder, self)
 
-        items = []
-        folder_id = None
-        if folder is not None:
-            if isinstance(folder, str):
-                folder_id = self._portal.get_folder_id(self._user_id, folder)
-                if folder_id is None:
-                    msg = "Could not locate the folder: %s" % folder
-                    raise ValueError(
-                        "%s. Please verify that this folder exists and try again." % msg
-                    )
-            elif isinstance(folder, dict):
-                folder_id = folder["id"]
-            else:
-                print(
-                    "folder should be folder name as a string"
-                    "or a dict containing the folder 'id'"
-                )
+        if isinstance(folder, _folder.Folder):
+            folder: list[_folder.Folder] = [folder]
+        elif folder is None:
+            folder: Iterator[_folder.Folder] = self._gis.content.folders.list(self)
 
-        resp = self._portal.user_items(self._user_id, folder_id, max_items)
-        for item in resp:
-            items.append(Item(self._gis, item["id"], item))
-
-        return items
+        for fld in folder:
+            for item in fld.list():
+                yield item
+                if count == max_items:
+                    break
+                count += 1
 
     # ----------------------------------------------------------------------
     @property
