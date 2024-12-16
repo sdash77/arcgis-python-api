@@ -16075,6 +16075,8 @@ class Item(dict):
             "Mission2Item",
             "Map2FeatureCollectionMobileApp2Code",
             "Notebook2WebTool",
+            "Listed2ImplicitlyListed",
+            "Map2IndoorsConfig",
         ]
     )
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
@@ -18237,6 +18239,45 @@ class Item(dict):
             raise ValueError(
                 f"Item type {self.type} is not supported for remapping data"
             )
+
+    # ----------------------------------------------------------------------
+    def get_dependencies(
+        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
+    ):
+        """
+        Returns the dependencies of an item. Can be used to return either the immediate dependencies
+        of an item (other items that an item directly contains in its structure) or the full deep
+        dependency list (all of the items that must exist for the item to function properly- including
+        dependencies of dependencies). Note that not all items/item types may have dependencies.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        deep                Optional boolean. When set to True, the function will return every
+                            other item needed for an item to exist. When set to False, the
+                            function will only return the immediate dependencies of an item, or
+                            ones referenced directly by the item. Default is False.
+        ---------------     --------------------------------------------------------------------
+        outside_org         Optional boolean. When set to True, the output list will not include
+                            items that come from an outside GIS organization. Default is True.
+        ---------------     --------------------------------------------------------------------
+        out_format          Optional string. Determines the format of the output list. Options
+                            are "item", "id", or "graph". Default is "item".
+        ===============     ====================================================================
+
+        :return:
+                A list containing the dependencies of the item, in either Item or Item ID form.
+        """
+
+        from arcgis.apps.itemgraph import create_item_graph
+
+        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        if out_format.lower() == "graph":
+            return graph
+        node = graph.get_item(self.id)
+        if deep:
+            return node.requires(out_format=out_format)
+        return node.contains(out_format=out_format)
 
 
 ########################################################################
