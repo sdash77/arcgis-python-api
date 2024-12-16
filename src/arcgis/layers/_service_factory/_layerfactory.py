@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import os
 from arcgis.auth.tools import LazyLoader
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from arcgis.gis import GIS
 from arcgis.features.layer import (
     FeatureLayer,
@@ -33,6 +33,7 @@ import requests
 from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
+from arcgis.gis._impl._util import _get_item_url
 
 
 ###########################################################################
@@ -296,6 +297,10 @@ class ServiceFactory(type):
             from .._ogc import WMTSLayer
 
             return WMTSLayer
+        if base_name_lower == "wmsserver" or url.lower().find("service=wms") > -1:
+            from .._ogc import WMSLayer
+
+            return WMSLayer
 
         # GlobeServer and MobileServer use generic Layer
         # Fall back to Layer for all other services
@@ -312,6 +317,14 @@ class ServiceFactory(type):
         """
         if layer_type == GeoData:
             return layer_type(url=url, connection=connection)
+        if layer_type == _arcgis.layers._ogc._wms.WMSLayer:
+            from urllib.parse import urlparse, parse_qs
+
+            parameters: dict = parse_qs(urlparse(url).query)
+            version: str = "1.3.0"
+            if "version" in parameters:
+                version: str = parameters["version"][0]
+            return layer_type(url=url, gis=server, version=version)
         if isinstance(layer_type, _arcgis.layers._ogc._csv.CSVLayer):
             return layer_type(url_or_item=url, gis=server)
         if isinstance(layer_type, tuple):
@@ -337,7 +350,7 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = url_or_item.url
+            url = _get_item_url(url_or_item)
             if url in [None, ""]:
                 url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):

@@ -1,12 +1,12 @@
 import unittest
-from arcgis.auth import EsriAPIKeyAuth, EsriKerberosAuth
-
+from arcgis.auth import EsriAPIKeyAuth, EsriKerberosAuth, EsriSession
 
 class TestApiKey(unittest.TestCase):
     """Tests working with the API Key"""
 
     def setUp(self):
         self.password = "NOT_A_REAL_API_KEY"
+        self.session =  EsriSession()
         self.api_key_handler = EsriAPIKeyAuth(
             api_key=self.password, referer=""
         )
@@ -15,7 +15,7 @@ class TestApiKey(unittest.TestCase):
             api_key=self.password, referer=self.referer
         )
         self.api_key_handler_kerberos = EsriAPIKeyAuth(
-            api_key=self.password, auth=EsriKerberosAuth(referer="")
+            api_key=self.password, auth=EsriKerberosAuth(referer="", session=self.session)
         )
 
     def test_api_key(self):

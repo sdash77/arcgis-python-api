@@ -1,4 +1,5 @@
 import unittest
+from arcgis.auth import EsriSession
 from arcgis.auth import EsriAPIKeyAuth, EsriKerberosAuth
 from arcgis.auth._auth._schain import _MultiAuth
 
@@ -7,10 +8,11 @@ class TestMultiAuth(unittest.TestCase):
         self.api_key_handler = EsriAPIKeyAuth(
             api_key="NOT_A_REAL_API_KEY", referer=""
         )
+        self._session =  EsriSession()
 
     def test_multi_auth_concat(self):
         """tests using multiple authentication"""
-        auth1 = self.api_key_handler + EsriKerberosAuth(referer="")
+        auth1 = self.api_key_handler + EsriKerberosAuth(referer="", session=self._session)
         auth1 += self.api_key_handler
         auth3 = self.api_key_handler + auth1
         assert auth1
@@ -20,7 +22,7 @@ class TestMultiAuth(unittest.TestCase):
 
     def test_multi_auth_and(self):
         """tests using multiple authentication"""
-        auth = self.api_key_handler & EsriKerberosAuth(referer="")
+        auth = self.api_key_handler & EsriKerberosAuth(referer="", session=self._session)
         auth2 = self.api_key_handler & auth
         assert auth
         assert isinstance(auth, _MultiAuth)

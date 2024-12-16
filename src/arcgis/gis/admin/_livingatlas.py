@@ -235,8 +235,7 @@ class LivingAtlas(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
-
-        super(LivingAtlas, self).__init__(url=url, gis=gis)
+        super()
         self._url = url.replace("http://", "https://")
         if isinstance(gis, Connection):
             self._con = gis
@@ -246,14 +245,14 @@ class LivingAtlas(BasePortalAdmin):
         else:
             raise ValueError("connection must be of type GIS or Connection")
 
-        self._init()
-
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """initializer"""
         try:
             self._groupquery = self._gis.properties["livingAtlasGroupQuery"]
         except:
+            self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
+        if self._groupquery == "":
             self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
         groups = self._gis.groups
         self._groups = []
