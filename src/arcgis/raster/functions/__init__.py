@@ -30,6 +30,7 @@ from .utility import (
     _get_raster_url,
     _get_raster_ra,
     _pixel_type_string_to_long,
+    _get_geometry_from_feature_layer,
 )
 from arcgis.gis import GIS, Item
 import copy
@@ -9382,6 +9383,12 @@ def raster_collection_function(
         template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
     if query_geometry is not None:
+        if isinstance(query_geometry, _FeatureLayer):
+            full_geometry_val = _get_geometry_from_feature_layer(query_geometry)
+            if isinstance(full_geometry_val, dict):
+                query_geometry = Geometry(full_geometry_val)
+            else:
+                raise RuntimeError("Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(query_geometry))
         if not isinstance(query_geometry, Geometry):
             query_geometry = Geometry(query_geometry)
 
@@ -9395,7 +9402,7 @@ def raster_collection_function(
                 "QueryGeometry"
             ] = query_geometry
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
 
 
 def monitor_vegetation(
@@ -14831,14 +14838,10 @@ class RFT:
 
         for key, value in arg_dict.items():
             if isinstance(value, _FeatureLayer):
-                try:
-                    rings = []
-                    feature_set = value.query(where = "1=1")
-                    for feature in feature_set.features:
-                        rings.append((feature.geometry["rings"][0]))
-                    arg_dict[key] = {"rings": rings}
-                except:
+                geometry_val = _get_geometry_from_feature_layer(value)
+                if geometry_val is None:
                     raise RuntimeError("Error setting the argument '{}'. Try passing a Geometry or dictionary object".format(key))
+                arg_dict[key] = geometry_val
 
         rft_dict = copy.deepcopy(self._rft_json)
         arg_dict_copy = copy.copy(arg_dict)

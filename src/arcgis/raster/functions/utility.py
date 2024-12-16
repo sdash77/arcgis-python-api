@@ -712,3 +712,19 @@ def _get_dimension_names(lyr):
             for ele_dim in ele["dimensions"]:
                 dim_list.append(ele_dim["name"])
     return dim_list
+
+
+def _get_geometry_from_feature_layer(lyr):
+    geometry_list = []
+    if not isinstance(lyr, FeatureLayer):
+        return None
+    try:
+        from arcgis.geometry import Geometry, union
+        feature_set = lyr.query(where = "1=1")
+        for feature in feature_set:
+            geometry_list.append(Geometry(feature.geometry))
+        union_op = union(geometry_list)
+        if isinstance(union_op, list) and len(union_op) == 1:
+            return union_op[0]
+    except:
+        return None
