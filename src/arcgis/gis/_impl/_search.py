@@ -181,6 +181,7 @@ def _search(
             "sortOrder",
             "f",
             "token",
+            "filter",
         }
         for k in list(params.keys()):
             if not k in allowed_keys:
