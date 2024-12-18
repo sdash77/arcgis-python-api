@@ -1832,35 +1832,35 @@ class WorkflowManager:
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
-        ===============                 ====================================================================
+        =============================== ====================================================================
         **Parameter**                   **Description**
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         name                            Required string. Diagram Name
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         steps                           Required list. List of Step objects associated with the Diagram
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         display_grid                    Required boolean. Boolean indicating whether the grid will be displayed in the
                                         Diagram
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         description                     Optional string. Diagram description
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         active                          Optional Boolean. Indicates whether the Diagram is active
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         annotations                     Optional list. List of Annotation objects associated with the Diagram
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         data_sources                    Optional list. Spatial data that will be used in the steps of the diagram.
                                         Note: It is recommended to use centralizedDataReferences for new diagrams.
                                         Data sources are not supported in ArcGIS Online.
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         diagram_id                      Optional string. The unique ID of the diagram to be created.
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         centralized_data_references     Optional list. The Centralized references to data and other content that will be
                                         used in the steps of the diagram. See details for CentralizedDataReference below
-        ---------------                 --------------------------------------------------------------------
+        ------------------------------- --------------------------------------------------------------------
         use_centralized_data_references Optional boolean. Indicates that the diagram's step configurations make use of
                                         CentralizedDataReferences. Defaults to false. Its recommended that this is set
                                         to True for new diagrams
-        ===============                 ====================================================================
+        =============================== ====================================================================
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
@@ -2011,7 +2011,7 @@ class WorkflowManager:
         :return:
             success object
 
-        ... code-block:: python
+        .. code-block:: python
             # USAGE EXAMPLE: Creating a Lookup Table
 
             # create a WorkflowManager object from the workflow item
