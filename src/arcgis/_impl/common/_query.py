@@ -624,17 +624,18 @@ class Query:
         # layer specific workflows
         if parameters.out_fields != "*" and parameters.return_distinct_values is False:
             try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
+                # Check if object id field is in out_fields. If it isn't, add it.
+                # First find the object id field
                 object_id_field = [
                     x.name
                     for x in self.layer.properties.fields
                     if x.type == "esriFieldTypeOID"
                 ][0]
+                # check if in outfields
                 if object_id_field not in params["outFields"].split(","):
                     out_fields = object_id_field + "," + params["outFields"]
-                # update out_fields parameter
-                params["outFields"] = out_fields
+                    # update out_fields parameter
+                    params["outFields"] = out_fields
             except (IndexError, AttributeError):
                 pass
 

@@ -88,6 +88,7 @@ else:
         "pyarrow >=11.0.0",
         "puremagic >=1.15,<2",
         "pydantic >=2.8.2, <3",
+        "networkx >=3.3, <4",
         "websocket-client >=1.2.3, <2.0.0",
     ]
 
