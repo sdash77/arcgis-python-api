@@ -1644,11 +1644,11 @@ class WorkflowManager:
 
         """
         try:
-            return  self._gis._con.get(
-                    "{base}/diagrams/{diagram}/{diagramVersion}/upgraded".format(
-                        base=self._url, diagram=diagram_id, diagramVersion=version_id
-                    )
+            return self._gis._con.get(
+                "{base}/diagrams/{diagram}/{diagramVersion}/upgraded".format(
+                    base=self._url, diagram=diagram_id, diagramVersion=version_id
                 )
+            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -1826,35 +1826,41 @@ class WorkflowManager:
         annotations: Optional[list] = [],
         data_sources: Optional[list] = [],
         diagram_id: Optional[str] = None,
-        centralized_data_references: Optional[list] = []
+        centralized_data_references: Optional[list] = [],
+        use_centralized_data_references: bool = False,
     ):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
-        ===============              ====================================================================
-        **Parameter**                **Description**
-        ---------------              --------------------------------------------------------------------
-        name                         Required string. Diagram Name
-        ---------------              --------------------------------------------------------------------
-        steps                        Required list. List of Step objects associated with the Diagram
-        ---------------              --------------------------------------------------------------------
-        display_grid                 Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
-        ---------------              --------------------------------------------------------------------
-        description                  Optional string. Diagram description
-        ---------------              --------------------------------------------------------------------
-        active                       Optional Boolean. Indicates whether the Diagram is active
-        ---------------              --------------------------------------------------------------------
-        annotations                  Optional list. List of Annotation objects associated with the Diagram
-        ---------------              --------------------------------------------------------------------
-        data_sources                 Optional list. Spatial data that will be used in the steps of the diagram.
-                                     Note: It is recommended to use centralizedDataReferences for new diagrams.
-                                     Data sources are not supported in ArcGIS Online.
-        ---------------              --------------------------------------------------------------------
-        diagram_id                   Optional string. The unique ID of the diagram to be created.
-        ---------------              --------------------------------------------------------------------
-        centralized_data_references  Optional list. The Centralized references to data and other content that will be
-                                     used in the steps of the diagram. See details for CentralizedDataReference below.
-        ===============              ====================================================================
+        ===============                 ====================================================================
+        **Parameter**                   **Description**
+        ---------------                 --------------------------------------------------------------------
+        name                            Required string. Diagram Name
+        ---------------                 --------------------------------------------------------------------
+        steps                           Required list. List of Step objects associated with the Diagram
+        ---------------                 --------------------------------------------------------------------
+        display_grid                    Required boolean. Boolean indicating whether the grid will be displayed in the
+                                        Diagram
+        ---------------                 --------------------------------------------------------------------
+        description                     Optional string. Diagram description
+        ---------------                 --------------------------------------------------------------------
+        active                          Optional Boolean. Indicates whether the Diagram is active
+        ---------------                 --------------------------------------------------------------------
+        annotations                     Optional list. List of Annotation objects associated with the Diagram
+        ---------------                 --------------------------------------------------------------------
+        data_sources                    Optional list. Spatial data that will be used in the steps of the diagram.
+                                        Note: It is recommended to use centralizedDataReferences for new diagrams.
+                                        Data sources are not supported in ArcGIS Online.
+        ---------------                 --------------------------------------------------------------------
+        diagram_id                      Optional string. The unique ID of the diagram to be created.
+        ---------------                 --------------------------------------------------------------------
+        centralized_data_references     Optional list. The Centralized references to data and other content that will be
+                                        used in the steps of the diagram. See details for CentralizedDataReference below
+        ---------------                 --------------------------------------------------------------------
+        use_centralized_data_references Optional boolean. Indicates that the diagram's step configurations make use of
+                                        CentralizedDataReferences. Defaults to false. Its recommended that this is set
+                                        to True for new diagrams
+        ===============                 ====================================================================
 
         :return:
             :class:`Workflow Manager Diagram <arcgis.gis.workflowmanager.JobDiagram>` ID
@@ -1926,7 +1932,7 @@ class WorkflowManager:
                 "isValidated": true,
                 "referenceType": "GeoprocessingService"
             }
-            
+
         .. code-block:: python
 
             # CentralizedDataReference Object Example 3:
@@ -1968,22 +1974,23 @@ class WorkflowManager:
         try:
             url = "{base}/diagrams".format(base=self._url)
             diagram_obj = {
-                    "diagramId": diagram_id,
-                    "diagramName": name,
-                    "description": description,
-                    "active": active,
-                    "initialStepId": "",
-                    "initialStepName": "",
-                    "steps": steps,
-                    "dataSources": data_sources,
-                    "annotations": annotations,
-                    "displayGrid": display_grid
-                }
+                "diagramId": diagram_id,
+                "diagramName": name,
+                "description": description,
+                "active": active,
+                "initialStepId": "",
+                "initialStepName": "",
+                "steps": steps,
+                "dataSources": data_sources,
+                "annotations": annotations,
+                "displayGrid": display_grid,
+            }
             if centralized_data_references:
                 diagram_obj["centralizedDataReferences"] = centralized_data_references
+            if use_centralized_data_references:
                 diagram_obj["useCentralizedDataReferences"] = True
 
-            post_diagram = JobDiagram( diagram_obj )
+            post_diagram = JobDiagram(diagram_obj)
             return post_diagram.post(self._gis, url)["diagram_id"]
         except:
             self._handle_error(sys.exc_info())
@@ -2041,41 +2048,50 @@ class WorkflowManager:
                                           }
                                         ]
                                     }
+                                    "useCentralizedDataReferences": True
 
             wm.update_diagram(update_diagram_body, delete_draft=True)
 
         """
         try:
+            body = {
+                _camelCase_to_underscore(k): v
+                for k, v in body.items()
+                if v is not None and not k.startswith("_")
+            }
             url = "{base}/diagrams/{diagramid}".format(
                 base=self._url, diagramid=body["diagram_id"]
             )
             diagram_obj = {
-                        "diagramId": body["diagram_id"],
-                        "diagramName": body["diagram_name"],
-                        "description": (
-                            body["description"] if "description" in body else ""
-                        ),
-                        "active": (body["active"] if "active" in body else False),
-                        "initialStepId": (
-                            body["initial_step_id"] if "initial_step_id" in body else ""
-                        ),
-                        "initialStepName": (
-                            body["initial_step_name"] if "initial_step_name" in body else ""
-                        ),
-                        "steps": body["steps"],
-                        "dataSources": (
-                            body["data_sources"] if "data_sources" in body else []
-                        ),
-                        "annotations": (
-                            body["annotations"] if "annotations" in body else ""
-                        ),
-                        "displayGrid": body["display_grid"],
-                    }
-            if "centralizedDataReferences" in body and body["centralizedDataReferences"]:
-                diagram_obj["centralizedDataReferences"] = body["centralizedDataReferences"]
-                diagram_obj["useCentralizedDataReferences"] = True
+                "diagramId": body["diagram_id"],
+                "diagramName": body["diagram_name"],
+                "description": (body["description"] if "description" in body else ""),
+                "active": (body["active"] if "active" in body else False),
+                "initialStepId": (
+                    body["initial_step_id"] if "initial_step_id" in body else ""
+                ),
+                "initialStepName": (
+                    body["initial_step_name"] if "initial_step_name" in body else ""
+                ),
+                "steps": body["steps"],
+                "dataSources": (body["data_sources"] if "data_sources" in body else []),
+                "annotations": (body["annotations"] if "annotations" in body else ""),
+                "displayGrid": body["display_grid"],
+                "useCentralizedDataReferences": (
+                    body["use_centralized_data_references"]
+                    if "use_centralized_data_references" in body
+                    else False
+                ),
+            }
+            if (
+                "centralized_data_references" in body
+                and body["centralized_data_references"]
+            ):
+                diagram_obj["centralizedDataReferences"] = body[
+                    "centralized_data_references"
+                ]
 
-            post_diagram = JobDiagram( diagram_obj )
+            post_diagram = JobDiagram(diagram_obj)
             res = post_diagram.update(self._gis, url, delete_draft)
 
             return res

@@ -96,7 +96,7 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
-            centralized_data_references=[]
+            centralized_data_references=[],
         )
 
     def create_diagram_with_cdr(self):
@@ -145,11 +145,14 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
-            centralized_data_references=[{
-                "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
-                "proItemName": "MyProMap",
-                "referenceType": "ProMapItem"
-            }]
+            centralized_data_references=[
+                {
+                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                    "proItemName": "MyProMap",
+                    "referenceType": "ProMapItem",
+                }
+            ],
+            use_centralized_data_references=True,
         )
 
     def create_diagram_robust(self):
@@ -200,11 +203,13 @@ class TestWorkflowManager(unittest.TestCase):
                     "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
                 }
             ],
-            centralized_data_references=[{
-                "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
-                "proItemName": "MyProMap",
-                "referenceType": "ProMapItem"
-            }]
+            centralized_data_references=[
+                {
+                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                    "proItemName": "MyProMap",
+                    "referenceType": "ProMapItem",
+                }
+            ],
         )
 
     def create_job(
@@ -2860,95 +2865,36 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
-    #region Get Upgraded Diagram Version
+    # region Get Upgraded Diagram Version
 
     def test_get_upgraded_diagram_successfully_returns(self):
         old_id = self.create_diagram()
-        actual = self.connection.workflow_manager.update_diagram(
-            body={
-                "annotations": [],
-                "active": True,
-                "data_sources": [
-                    {"name": "dsource", "sourceType": "string", "url": "string"}
-                ],
-                "description": "UPDATED",
-                "diagram_id": old_id,
-                "diagram_name": "UPDATED " + str(datetime.datetime.now()),
-                "diagram_version": 2,
-                "display_grid": True,
-                "initial_step_id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
-                "initial_step_name": "Start/End",
-                "steps": [
-                    {
-                        "action": {"actionType": "Manual"},
-                        "automatic": False,
-                        "canSkip": False,
-                        "color": "130, 202, 237",
-                        "description": "Step to be put at the start and end of a workflow",
-                        "helpText": "Start/End help text",
-                        "helpUrl": "Start/End help url",
-                        "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
-                        "labelColor": "black",
-                        "name": "Start/End",
-                        "outlineColor": "130, 202, 237",
-                        "paths": [
-                            {
-                                "assignedType": "Unassigned",
-                                "lineColor": "black",
-                                "nextStep": "21bff5ee-1586-a635-30ea-86769f01ac93",
-                                "notifications": [],
-                                "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
-                                "ports": ["BOTTOM", "TOP"],
-                            }
-                        ],
-                        "position": "0,0,100,50",
-                        "proceedNext": True,
-                        "shape": 3,
-                        "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
-                    },
-                    {
-                        "action": {"actionType": "Manual"},
-                        "automatic": False,
-                        "canSkip": True,
-                        "color": "242, 226, 121",
-                        "description": "Step to indicate manual work, with no additional logic",
-                        "helpText": "Manual Step help text",
-                        "helpUrl": "Manual Step help url",
-                        "id": "21bff5ee-1586-a635-30ea-86769f01ac93",
-                        "labelColor": "black",
-                        "name": "Manual Step 1",
-                        "outlineColor": "242, 226, 121",
-                        "paths": [
-                            {
-                                "assignedType": "Unassigned",
-                                "lineColor": "black",
-                                "nextStep": "f7c67858-5ccf-f428-9356-72ada9d8600a",
-                                "notifications": [],
-                                "points": [{"x": 0, "y": 126}, {"x": 0, "y": 174}],
-                                "ports": ["BOTTOM", "TOP"],
-                            }
-                        ],
-                        "position": "0, -100, 100, 50",
-                        "proceedNext": True,
-                        "shape": 1,
-                        "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
-                    },
-                ],
-            }
-        )
-        version_one = self.connection.workflow_manager.diagram_version(old_id, 1)
-
         actual = self.connection.workflow_manager.diagram_upgraded_version(old_id, 1)
 
+        self.assertTrue(
+            actual["transformedDiagram"],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["modifiedStepIds"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["failedStepIds"], [], "Did not have correct upgraded diagram version"
+        )
+        self.assertEqual(
+            actual["modifiedDataSourceNames"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
+        self.assertEqual(
+            actual["failedDataSourceNames"],
+            [],
+            "Did not have correct upgraded diagram version",
+        )
 
-        self.assertTrue(actual["transformedDiagram"], "Did not have correct upgraded diagram version")
-        self.assertEqual(actual["modifiedStepIds"], [], "Did not have correct upgraded diagram version")
-        self.assertEqual(actual["failedStepIds"], [], "Did not have correct upgraded diagram version")
-        self.assertEqual(actual["modifiedDataSourceNames"], [], "Did not have correct upgraded diagram version")
-        self.assertEqual(actual["failedDataSourceNames"], [], "Did not have correct upgraded diagram version")
-
-
-    #endregion
+    # endregion
 
     # region Delete Diagram Version
 
@@ -3248,10 +3194,30 @@ class TestWorkflowManager(unittest.TestCase):
                         "shape": 1,
                         "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
                     },
-                ]
+                ],
             }
         )
 
+        # Assert
+        self.assertTrue(actual, "Success was not true")
+
+        # ------------------------------------------------------------------------
+
+    def test_update_diagram_from_upgraded_version_returns_successfully(self):
+        # Arrange
+
+        # Act
+        old_id = self.create_diagram()
+        upgrade_obj = self.connection.workflow_manager.diagram_upgraded_version(
+            old_id, 1
+        )
+        upgrade_obj["transformedDiagram"]["diagramName"] += "UPDATED DIAGRAM"
+        upgrade_obj["transformedDiagram"]["active"] = True
+        actual = self.connection.workflow_manager.update_diagram(
+            body=upgrade_obj["transformedDiagram"], delete_draft=True
+        )
+
+        diagram = self.connection.workflow_manager.diagram(old_id)
         # Assert
         self.assertTrue(actual, "Success was not true")
 
@@ -3330,11 +3296,14 @@ class TestWorkflowManager(unittest.TestCase):
                         "stepTemplateId": "AVw8d-MryiKjHtuS9dJ7",
                     },
                 ],
-                "centralized_data_references": [{
-                    "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
-                    "proItemName": "MyProMapUPDATE",
-                    "referenceType": "ProMapItem"
-                }]
+                "centralized_data_references": [
+                    {
+                        "id": "e8e5c963-a485-4f5f-a298-dcf430f72c28",
+                        "proItemName": "MyProMapUPDATE",
+                        "referenceType": "ProMapItem",
+                    }
+                ],
+                "use_centralized_data_references": True,
             }
         )
 
