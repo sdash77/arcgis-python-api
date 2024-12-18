@@ -2026,14 +2026,13 @@ class WorkflowManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Creating a Lookup Table
+            # USAGE EXAMPLE: Updating a diagram with centralized data references
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)
 
             # The update body contains only those fields we wish to update.
             updated_diagram_body = {
-
                                     "diagramName": "Updated Diagram Name",
                                     "description": "Updated",
                                     "centralizedDataReferences": [
@@ -2061,8 +2060,8 @@ class WorkflowManager:
                                             "capabilities": [ "SupportsBranchVersioning", "SupportsDataQuality" ]
                                           }
                                         ]
-                                    }
                                     "useCentralizedDataReferences": True
+                                    }
 
             wm.update_diagram(update_diagram_body, delete_draft=True)
 
