@@ -260,76 +260,50 @@ def _init_schema(
     except AttributeError:
         pass
 
-    form_view = survey._gis.content.create_service(
+    form_view = arcgis.features.FeatureLayerCollection.fromitem(
+        survey._ssi
+    ).manager.create_view(
         name=f"survey123_{'a%s' % uuid.uuid4().hex}_form",
-        folder=survey._si.ownerFolder,
-        is_view=True,
+        allow_schema_changes=True,
+        updateable=True,
+        capabilities="Create,Editing",
+        view_layers=survey._ssi.layers,
+        view_tables=survey._ssi.tables,
+        description=f"Feature service view of form for the survey {survey._si.id}",
     )
+    _form_flcm = arcgis.features.managers.FeatureLayerCollectionManager(
+        url=form_view.url.replace("/rest/services", "/rest/admin/services"),
+        gis=survey._gis,
+        fs=form_view,
+    )
+    try:
+        _form_flcm.update_definition(
+            {
+                "editorTrackingInfo": {
+                    "enableEditorTracking": True,
+                    "enableOwnershipAccessControl": True,
+                    "allowOthersToUpdate": False,
+                    "allowOthersToDelete": False,
+                    "allowOthersToQuery": False,
+                    "allowAnonymousToQuery": False,
+                    "allowAnonymousToUpdate": False,
+                    "allowAnonymousToDelete": False,
+                }
+            }
+        )
+    except AttributeError:
+        pass
+    form_view.move(survey._si.ownerFolder)
     form_view.update(
         {
             "title": f"{survey._si.title}_form",
-            "typeKeywords": f"ArcGIS Server,Data,Feature Access,Feature Service,Service,Singlelayer,Hosted Service,View Service,FieldworkerView,{survey._si.id},Survey123,Survey123 Hub",
+            "typeKeywords": (
+                f"ArcGIS Server,Data,Feature Access,Feature Service,Service,Singlelayer,Hosted Service,View Service,FieldworkerView,{survey._si.id},Survey123,Survey123 Hub,providerSDS"
+                if survey._gis.properties.isPortal
+                else f"ArcGIS Server,Data,Feature Access,Feature Service,Service,Singlelayer,Hosted Service,View Service,FieldworkerView,{survey._si.id},Survey123,Survey123 Hub"
+            ),
         }
     )
-    form_view_definition = {"layers": [], "tables": []}
-    for layer in survey._ssi.layers:
-        form_view_definition["layers"].append(
-            {
-                "adminLayerInfo": {
-                    "viewLayerDefinition": {
-                        "sourceServiceName": survey._ssi.name,
-                        "sourceLayerId": layer.properties["id"],
-                        "sourceLayerFields": "*",
-                    }
-                },
-                "name": layer.properties["name"],
-            }
-        )
-    for table in survey._ssi.tables:
-        form_view_definition["tables"].append(
-            {
-                "adminLayerInfo": {
-                    "viewLayerDefinition": {
-                        "sourceServiceName": survey._ssi.name,
-                        "sourceLayerId": table.properties["id"],
-                        "sourceLayerFields": "*",
-                    }
-                },
-                "name": table.properties["name"],
-            }
-        )
-    form_view_url = form_view.url.replace("/rest/services", "/rest/admin/services")
-    form_view_flcm = arcgis.features.managers.FeatureLayerCollectionManager(
-        url=form_view_url, gis=survey._gis, fs=form_view
-    )
-    try:
-        form_view_flcm.add_to_definition(form_view_definition)
-    except AttributeError:
-        pass
-    try:
-        view_def = {
-            "serviceDescription": f"Feature service view of form for the survey {survey._si.id}",
-            "sourceSchemaChangesAllowed": True,
-            "editorTrackingInfo": {
-                "enableEditorTracking": True,
-                "enableOwnershipAccessControl": True,
-                "allowOthersToUpdate": False,
-                "allowOthersToDelete": False,
-                "allowOthersToQuery": False,
-                "allowAnonymousToUpdate": False,
-                "allowAnonymousToDelete": False,
-            },
-            "isUpdatableView": True,
-        }
-        if survey._gis.properties.isPortal is True:
-            # Enterprise
-            view_def.update({"capabilities": "Create,Editing"})
-        else:
-            # Online
-            view_def.update({"Capabilities": "Create,Editing"})
-        form_view_flcm.update_definition(view_def)
-    except AttributeError:
-        pass
 
     survey._si.add_relationship(form_view, "Survey2Service")
     survey._si.delete_relationship(survey._ssi, "Survey2Service")
@@ -798,25 +772,15 @@ def _xml2sd(xmldict, useGUID):
                         },
                         "transparency": 0,
                     },
-                    "extent": {
-                        "spatialReference": {"wkid": 102100},
-                        "type": "extent",
-                        "xmax": 180,
-                        "xmin": -180,
-                        "ymax": 90,
-                        "ymin": -90,
-                    },
                     "fields": [],
                     "geometryType": "esriGeometryPoint",
                     "globalIdField": "globalid",
                     "hasAttachments": False,
                     "hasM": False,
-                    "hasStaticData": False,
                     "hasZ": False,
                     "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
                     "id": 0,
                     "isDataVersioned": False,
-                    "maxRecordCount": 1000,
                     "maxScale": 0,
                     "minScale": 0,
                     "name": "point",
@@ -923,14 +887,6 @@ def _xml2sd(xmldict, useGUID):
                         },
                         "transparency": 0,
                     },
-                    "extent": {
-                        "spatialReference": {"wkid": 102100},
-                        "type": "extent",
-                        "xmax": 180,
-                        "xmin": -180,
-                        "ymax": 90,
-                        "ymin": -90,
-                    },
                     "fields": [
                         {
                             "name": "objectid",
@@ -957,12 +913,10 @@ def _xml2sd(xmldict, useGUID):
                     "globalIdField": "globalid",
                     "hasAttachments": False,
                     "hasM": False,
-                    "hasStaticData": False,
                     "hasZ": False,
                     "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
                     "id": 1,
                     "isDataVersioned": False,
-                    "maxRecordCount": 1000,
                     "maxScale": 0,
                     "minScale": 0,
                     "name": "line",
@@ -1071,14 +1025,6 @@ def _xml2sd(xmldict, useGUID):
                         },
                         "transparency": 0,
                     },
-                    "extent": {
-                        "spatialReference": {"wkid": 102100},
-                        "type": "extent",
-                        "xmax": 180,
-                        "xmin": -180,
-                        "ymax": 90,
-                        "ymin": -90,
-                    },
                     "fields": [
                         {
                             "name": "objectid",
@@ -1105,12 +1051,10 @@ def _xml2sd(xmldict, useGUID):
                     "globalIdField": "globalid",
                     "hasAttachments": False,
                     "hasM": False,
-                    "hasStaticData": False,
                     "hasZ": False,
                     "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
                     "id": 2,
                     "isDataVersioned": False,
-                    "maxRecordCount": 1000,
                     "maxScale": 0,
                     "minScale": 0,
                     "name": "polygon",
