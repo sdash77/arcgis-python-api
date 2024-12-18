@@ -202,11 +202,11 @@ class SharingGroupManager:
             if grp.get("id", None)
         ]
 
-        def chunks(l: list, n: int = 100):
+        def chunks(l: list, n: int = 25):
             for i in range(0, len(l), n):
                 yield l[i : i + n]
 
-        for chunk in chunks(search_result, 100):
+        for chunk in chunks(search_result, 50):
             groups.append(chunk)
         return groups
 
@@ -221,8 +221,8 @@ class SharingGroupManager:
             "items": itemid,
             "groups": "",
         }
-        groups: list[list[str]] = self._group_ids()
-        if len(groups) == 0:
+        groups_list: list[list[str]] = self._group_ids()
+        if len(groups_list) == 0:
             del params["groups"]
             resp: requests.Response = self._session.get(url=url, params=params)
             resp.raise_for_status()
@@ -230,7 +230,7 @@ class SharingGroupManager:
             return list(data.keys())
         else:
             data: dict[str, Any] = {}
-            for gid in self._group_ids():
+            for gid in groups_list:
                 params["groups"] = ",".join(gid)
 
                 resp: requests.Response = self._session.get(url=url, params=params)
