@@ -1579,7 +1579,8 @@ class WorkflowManager:
         not exist, an error saying the specific diagram version does not exist is returned. The adminBasic or
         adminAdvanced privilege is required to get an upgraded diagram.
 
-        Note: You can upgrade a diagram by placing the transformedDiagram dict in the diagram parameter of updateDiagram.
+        Note: You can upgrade a diagram by placing the transformedDiagram dictionary in the diagram
+        parameter of update_diagram.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -1591,6 +1592,18 @@ class WorkflowManager:
 
         :return:
              Success Object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Using the transformedDiagram from the result object to update a diagram.
+
+            # create a WorkflowManager object from the workflow item
+            wm = WorkflowManager(wf_item)
+
+            upgrade_obj = wm.diagram_upgraded_version("gb1GBilqT4yk68Hfs5ghxw", diagram_version=1)
+
+            # update diagram draft
+            wm.update_diagram( body=upgrade_obj['transformedDiagram'] )
 
         .. code-block:: python
 
@@ -2012,6 +2025,7 @@ class WorkflowManager:
             success object
 
         .. code-block:: python
+
             # USAGE EXAMPLE: Creating a Lookup Table
 
             # create a WorkflowManager object from the workflow item
