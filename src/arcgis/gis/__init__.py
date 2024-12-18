@@ -16676,7 +16676,7 @@ class Item(dict):
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
-        if (self._gis.is_arcgisonline or self._gis.version >= [2024,2]) and (
+        if (self._gis.is_arcgisonline or self._gis.version >= [2024, 2]) and (
             fileType in ["excel", "csv", "geojson"]
         ):
             publish_parameters["fieldTypesVersion"] = "V2"
