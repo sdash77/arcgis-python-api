@@ -1,9 +1,6 @@
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
-from typing import Generator
 from arcgis.geometry import Geometry
-import copy
-import datetime
 from arcgis.gis._impl._util import _get_item_url
 
 try:
@@ -137,6 +134,9 @@ class KnowledgeGraph:
         :return: List[list]
 
         """
+        return list(self._search(search=search, category=category))
+
+    def _search(self, search: str, category: str = "both"):
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
@@ -167,16 +167,14 @@ class KnowledgeGraph:
         )
 
         self._validate_response(response)
-        rows = []
         query_dec = _kgparser.GraphQueryDecoder()
         query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                rows.append(query_dec.get_current_row())
+                yield query_dec.get_current_row()
         if query_dec.has_error():
             raise Exception(query_dec.error.error_message)
-        return rows
 
     def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
         """
@@ -375,67 +373,33 @@ class KnowledgeGraph:
         # set bind parameters
         if bind_param:
 
-            def convert_to_properties(dictionary, last_key):
-                if not isinstance(dictionary, dict):
-                    return dictionary
-
-                properties_dict = {}
-                for key, value in dictionary.items():
-                    if isinstance(value, dict):
-                        if key != "_properties" and last_key == False:
-                            properties_dict[key] = {
-                                "_objectType": "object",
-                                "_properties": convert_to_properties(value, False),
-                            }
-                        elif key != "properties" and last_key == True:
-                            properties_dict[key] = convert_to_properties(value, False)
-                        else:
-                            properties_dict[key] = convert_to_properties(value, True)
-                    else:
-                        properties_dict[key] = value
-
-                return properties_dict
+            def _convert_to_proper_representation(python_value: Any) -> Any:
+                if isinstance(python_value, Geometry):
+                    copy_dict: dict[str, Any] = python_value.copy()
+                    copy_dict["_objectType"] = "geometry"
+                    return copy_dict
+                elif isinstance(python_value, dict):
+                    if "_objectType" in python_value:
+                        return python_value
+                    return {
+                        "_objectType": "object",
+                        "_properties": {
+                            key: _convert_to_proper_representation(value)
+                            for key, value in python_value.items()
+                        },
+                    }
+                elif isinstance(python_value, list):
+                    return [
+                        _convert_to_proper_representation(val) for val in python_value
+                    ]
+                return python_value
 
             for k, v in bind_param.items():
-                if isinstance(v, Geometry):
-                    if "_objectType" not in v.keys():
-                        copy_dict = copy.deepcopy(v)
-                        copy_dict["_objectType"] = "geometry"
-                        converted = _kgparser.from_value_object(copy_dict)
-                    else:
-                        converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(v, dict):
-                    copy_dict = copy.deepcopy(v)
-                    if "_properties" not in copy_dict.keys():
-                        changed = {
-                            "_objectType": "object",
-                            "_properties": convert_to_properties(copy_dict, False),
-                        }
-                        converted = _kgparser.from_value_object(changed)
-                    else:
-                        if "_objectType" not in copy_dict.keys():
-                            copy_dict["_objectType"] = "object"
-                        copy_dict["_properties"] = convert_to_properties(
-                            copy_dict["_properties"], True
-                        )
-                        converted = _kgparser.from_value_object(copy_dict)
-                    r_enc.set_param_key_value(k, converted)
-
-                elif isinstance(
-                    v,
-                    (
-                        datetime.date,
-                        datetime.time,
-                        datetime.datetime,
-                        datetime.timedelta,
-                    ),
-                ):
-                    r_enc.set_param_key_value(k, v)
+                converted: Any = _convert_to_proper_representation(v)
+                if isinstance(converted, dict) or isinstance(converted, list):
+                    r_enc.set_param_key_value(k, _kgparser.from_value_object(converted))
                 else:
-                    converted = _kgparser.from_value_object(v)
-                    r_enc.set_param_key_value(k, converted)
+                    r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
         if include_provenance == True:
