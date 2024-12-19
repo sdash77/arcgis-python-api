@@ -85,10 +85,11 @@ class AGOLAdminManager(object):
     @property
     def org_recyclebin(self) -> "OrgRecycleBin":
         """
-        Returns the organization recyclebin, which will allow administrators to look
-        at the entire organization recyclebin contents.
+        Returns the organization's recyclebin, which will allow administrators
+        to manage recycled content for the whole organization.
 
-        :return: OrgRecycleBin
+        :return:
+            :class:`~arcgis.gis._impl._content_manager.OrgRecycleBin` object.
         """
         if self._orb is None:
             from .._impl._content_manager._recyclebin import OrgRecycleBin

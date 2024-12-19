@@ -11277,7 +11277,8 @@ class User(dict):
         .. note::
             This functionality is only available for ArcGIS Online.
 
-        :Returns: :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
+        :Returns:
+            :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
 
         .. code-block:: python
 
@@ -16620,7 +16621,7 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "capabilities": "Query, Sync",
                 }
-            else:  # sd files
+            else:  # sd or geojson files
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters = {
                     "hasStaticData": True,
@@ -16673,6 +16674,13 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+
+        # New parameter that affects arcgis Online and Enterprise 11.4+
+        # Applied to geojson, csv, excel
+        if (self._gis.is_arcgisonline or self._gis.version >= [2024, 2]) and (
+            fileType in ["excel", "csv", "geojson"]
+        ):
+            publish_parameters["fieldTypesVersion"] = "V2"
 
         ret = self._portal.publish_item(
             self.itemid,
