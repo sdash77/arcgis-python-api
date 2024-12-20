@@ -176,9 +176,6 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     
     # download json of item properties based
     item_dict = dict(item)
-    json_file_path = os.path.join(output_folder, "properties.json")
-    with open(json_file_path, "w") as json_file:
-        json.dump(item_dict, json_file, indent=4)
 
     # download thumbnail
     files_folder = os.path.join(output_folder, "files")
@@ -223,9 +220,14 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         fc_item = item.export(item.title, service_format)
         download_path = fc_item.download(data_folder)
         fc_item.delete()
+        item_dict["data_item"] = service_format
         # fc_zip = zipfile.ZipFile(download_path)
     else:
         download_path = item.download(data_folder)
+    
+    json_file_path = os.path.join(output_folder, "properties.json")
+    with open(json_file_path, "w") as json_file:
+        json.dump(item_dict, json_file, indent=4)
     
     if os.stat(download_path).st_size == 0:
         os.remove(download_path)
@@ -296,6 +298,28 @@ class ImportPackage():
             and self.gis._portal.is_arcgisonline == False
         ):
             new_item_id = item_id
+        
+        def _add_data_item(fp, item_type):
+            data_props = {
+                "type": item_type,
+                "title": item_properties["title"],
+            }
+            try:
+                job = folder.add(
+                    **{
+                        "item_properties": data_props,
+                        "file": fp,
+                    }
+                )
+            except:
+                data_props["title"] = _get_unique_name(self.gis, item_properties["title"])
+                job = folder.add(
+                    **{
+                        "item_properties": data_props,
+                        "file": fp,
+                    }
+                )
+            return job.result()
         
         if item_properties["type"] == "Feature Service":
             # check if dependent file already was uploaded
