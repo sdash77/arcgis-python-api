@@ -16779,16 +16779,15 @@ class Item(dict):
         folder_id = None
         if folder is not None:
             if isinstance(folder, str):
-                if folder == "/":
-                    folder_id = "/"
-                else:
-                    folder_id = self._portal.get_folder_id(owner_name, folder)
+                folder_id = self._gis.content.folders.get(folder=folder)._fid
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
             elif isinstance(folder, _folder.Folder):
                 folder_id = folder._fid
             else:
-                print("folder should be folder name as a string, or dict with id")
+                print(
+                    "Folder not found. Folder should be an instance of Folder class, a folder name as a string, or dict with id"
+                )
 
         if folder_id is not None:
             ret = self._portal.move_item(
