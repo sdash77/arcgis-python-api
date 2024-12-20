@@ -13423,7 +13423,7 @@ class Item(dict):
             url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
 
-                lyr = ImageryLayer(url, self._gis)
+                lyr = ImageryLayer(url, self._gis, parent_url=url)
 
                 try:
                     item_data = self.get_data()
@@ -13450,7 +13450,7 @@ class Item(dict):
                     layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(Service(url, self._gis))
+                layers.append(Service(url, self._gis, parent_url=url))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13502,7 +13502,7 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
-                            lyr = Service(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis, parent_url=svc.url)
                         else:
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Layer(lyr_url, self._gis)
@@ -19169,7 +19169,7 @@ class Layer(_GISResource):
     the GIS.
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, **kwargs):
         super(Layer, self).__init__(url, gis)
         self.filter = None
         self._time_filter = None
