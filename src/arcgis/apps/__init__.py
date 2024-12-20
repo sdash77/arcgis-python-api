@@ -7,6 +7,7 @@ survey123 = LazyLoader("arcgis.apps.survey123")
 tracker = LazyLoader("arcgis.apps.tracker")
 dashboard = LazyLoader("arcgis.apps.dashboard")
 expbuilder = LazyLoader("arcgis.apps.expbuilder")
+itemgraph = LazyLoader("arcgis.apps.itemgraph")
 
 
 from ._url_schemes import build_collector_url
