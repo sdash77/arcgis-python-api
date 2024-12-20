@@ -65,6 +65,7 @@ from arcgis.graph.search_types import (
 from arcgis.graph.response_types import (
     Error,
     UpdateSearchIndexResponse,
+    SyncDataModelResult,
     SyncDataModelResponse,
     NamedObjectTypeAddResult,
     NamedObjectTypeAddsResponse,

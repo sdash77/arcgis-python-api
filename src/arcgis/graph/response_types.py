@@ -20,14 +20,75 @@ class UpdateSearchIndexResponse(BaseModel):
         return {"error": self.error}
 
 
-class SyncDataModelResponse(BaseModel):
+class SyncDataModelResult(BaseModel):
+    type_name: str
     error: Optional[Error] = None
+    warnings: list[Error] = []
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
-        if self.error is None:
+        if self.error is None and not self.warnings:
+            return {"typeName": self.type_name}
+        elif not self.warnings:
+            return {
+                "typeName": self.type_name,
+                "error": self.error,
+            }
+        elif self.error is None:
+            return {
+                "typeName": self.type_name,
+                "warnings": self.warnings,
+            }
+        return {
+            "typeName": self.type_name,
+            "error": self.error,
+            "warnings": self.warnings,
+        }
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+
+
+class SyncDataModelResponse(BaseModel):
+    error: Optional[Error] = None
+    warnings: list[Error] = []
+    named_type_sync_results: list[SyncDataModelResult] = []
+
+    @model_serializer
+    def ser_model(self) -> dict[str, Any]:
+        if (
+            self.error is None
+            and not self.warnings
+            and not self.named_type_sync_results
+        ):
             return {}
-        return {"error": self.error}
+        elif not self.warnings and not self.named_type_sync_results:
+            return {"error": self.error}
+        elif self.error is None and not self.named_type_sync_results:
+            return {"warnings": self.warnings}
+        elif self.error is None and not self.warnings:
+            return {"named_type_sync_results": self.named_type_sync_results}
+        elif not self.named_type_sync_results:
+            return {
+                "error": self.error,
+                "warnings": self.warnings,
+            }
+        elif not self.warnings:
+            return {
+                "error": self.error,
+                "named_type_sync_results": self.named_type_sync_results,
+            }
+        elif self.error is None:
+            return {
+                "warnings": self.warnings,
+                "named_type_sync_results": self.named_type_sync_results,
+            }
+        return {
+            "error": self.error,
+            "warnings": self.warnings,
+            "named_type_sync_results": self.named_type_sync_results,
+        }
 
 
 class NamedObjectTypeAddResult(BaseModel):

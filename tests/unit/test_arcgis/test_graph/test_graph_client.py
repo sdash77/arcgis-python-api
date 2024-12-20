@@ -827,6 +827,15 @@ class TestGraphClient(unittest.TestCase):
         def mock_service_func(data: Optional[bytes]) -> Response:
             self.assertIsNone(data)
             pbf_response = SyncDataModelResponse_pb2.SyncDataModelResponse()  # type: ignore
+            pbf_result_success = pbf_response.named_type_sync_results.add()
+            pbf_result_success.typeName = "SuccessType"
+            pbf_result_error = pbf_response.named_type_sync_results.add()
+            pbf_result_error.typeName = "ErrorType"
+            pbf_result_error.error.error_code = 123
+            pbf_result_error.error.error_message = "error"
+            pbf_warning = pbf_result_error.warnings.add()
+            pbf_warning.error_code = 456
+            pbf_warning.error_message = "warning"
             response_content: bytes = pbf_response.SerializeToString()
             return TestHelpers.construct_response(
                 status_code=200, content=response_content
@@ -843,7 +852,35 @@ class TestGraphClient(unittest.TestCase):
         )
         response: SyncDataModelResponse = graph_client.sync_data_model()
         results: dict[str, Any] = response.model_dump(by_alias=True)
-        self.assertTrue("error" not in results)
+        self.assertFalse("error" in results)
+        self.assertFalse("warnings" in results)
+        self.assertTrue("named_type_sync_results" in results)
+        named_type_sync_results: list[dict[str, Any]] = results[
+            "named_type_sync_results"
+        ]
+        self.assertEqual(2, len(named_type_sync_results))
+        result_success: dict[str, Any] = named_type_sync_results[0]
+        self.assertTrue("typeName" in result_success)
+        self.assertEqual("SuccessType", result_success["typeName"])
+        self.assertFalse("error" in result_success)
+        self.assertFalse("warnings" in result_success)
+        result_error: dict[str, Any] = named_type_sync_results[1]
+        self.assertTrue("typeName" in result_error)
+        self.assertEqual("ErrorType", result_error["typeName"])
+        self.assertTrue("error" in result_error)
+        error: dict[str, Any] = result_error["error"]
+        self.assertTrue("error_code" in error)
+        self.assertEqual(123, error["error_code"])
+        self.assertTrue("error_message" in error)
+        self.assertEqual("error", error["error_message"])
+        self.assertTrue("warnings" in result_error)
+        warnings: list[dict[str, Any]] = result_error["warnings"]
+        self.assertEqual(1, len(warnings))
+        warning: dict[str, Any] = warnings[0]
+        self.assertTrue("error_code" in warning)
+        self.assertEqual(456, warning["error_code"])
+        self.assertTrue("error_message" in warning)
+        self.assertEqual("warning", warning["error_message"])
 
     def test_sync_data_model_error(self):
         def mock_service_func(data: Optional[bytes]) -> Response:
@@ -851,6 +888,9 @@ class TestGraphClient(unittest.TestCase):
             pbf_response = SyncDataModelResponse_pb2.SyncDataModelResponse()  # type: ignore
             pbf_response.error.error_message = "something bad happened"
             pbf_response.error.error_code = 123
+            pbf_warning = pbf_response.warnings.add()
+            pbf_warning.error_code = 456
+            pbf_warning.error_message = "warning"
             response_content: bytes = pbf_response.SerializeToString()
             return TestHelpers.construct_response(
                 status_code=200, content=response_content
@@ -873,6 +913,15 @@ class TestGraphClient(unittest.TestCase):
         self.assertEqual(123, error["error_code"])
         self.assertTrue("error_message" in error)
         self.assertEqual("something bad happened", error["error_message"])
+        self.assertTrue("warnings" in results)
+        warnings: list[dict[str, Any]] = results["warnings"]
+        self.assertEqual(1, len(warnings))
+        warning: dict[str, Any] = warnings[0]
+        self.assertTrue("error_code" in warning)
+        self.assertEqual(456, warning["error_code"])
+        self.assertTrue("error_message" in warning)
+        self.assertEqual("warning", warning["error_message"])
+        self.assertFalse("named_type_sync_results" in results)
 
     def test_apply_edits(self):
         def mock_service_func(data: Optional[bytes]) -> Response:
