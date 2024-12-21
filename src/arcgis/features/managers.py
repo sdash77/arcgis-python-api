@@ -3309,7 +3309,7 @@ class FeatureLayerCollectionManager(_GISResource):
             related_data_item.type
             in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
-            or hosted_table is True
+            or (hosted_table is True and related_data_item.type != "Service Definition")
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time
