@@ -220,7 +220,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         fc_item = item.export(item.title, service_format)
         download_path = fc_item.download(data_folder)
         fc_item.delete()
-        item_dict["data_item"] = service_format
+        item_dict["data_item_type"] = service_format
         # fc_zip = zipfile.ZipFile(download_path)
     else:
         download_path = item.download(data_folder)
@@ -337,27 +337,10 @@ class ImportPackage():
                 for file in os.listdir(data_folder):
                     if file.endswith(".zip"):
                         fp = os.path.join(data_folder, file)
-                        data_props = {
-                            "type": "File Geodatabase",
-                            "title": item_properties["title"],
-                        }
-                        try:
-                            job = folder.add(
-                                **{
-                                    "item_properties": data_props,
-                                    "file": fp,
-                                }
-                            )
-                            service_item = job.result()
-                        except:
-                            data_props["title"] = _get_unique_name(self.gis, item_properties["title"])
-                            job = folder.add(
-                                **{
-                                    "item_properties": data_props,
-                                    "file": fp,
-                                }
-                            )
-                            service_item = job.result()
+                        dt = item_properties.get("data_item_type", None)
+                        if dt is None:
+                            raise RuntimeError("Feature Service does not have a valid data item")
+                        service_item = _add_data_item(fp, dt)
                         break
             
             # publish the service
@@ -369,27 +352,7 @@ class ImportPackage():
         for file in os.listdir(data_folder):
             if file.endswith(".zip"):
                 fp = os.path.join(data_folder, file)
-                data_props = {
-                    "type": item_properties["type"],
-                    "title": item_properties["title"],
-                }
-                try:
-                    job = folder.add(
-                        **{
-                            "item_properties": data_props,
-                            "file": fp,
-                        }
-                    )
-                    new_item = job.result()
-                except:
-                    data_props["title"] = _get_unique_name(self.gis, item_properties["title"])
-                    job = folder.add(
-                        **{
-                            "item_properties": data_props,
-                            "file": fp,
-                        }
-                    )
-                    new_item = job.result()
+                new_item = _add_data_item(fp, item_properties["type"])
                 self.created_item_mapping[item_id] = new_item.id
                 break
         
