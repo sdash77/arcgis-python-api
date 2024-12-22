@@ -9,6 +9,8 @@ import ujson as json
 import zipfile
 import re
 import uuid
+import random
+import string
 
 JSON_BASED_TYPES = [
     "Application",
@@ -215,12 +217,21 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     if item.type in JSON_BASED_TYPES:
         path_name = "structure.json"
         download_path = item.download(data_folder, path_name)
-    elif item.type in JSON_BASED_WITH_DATA_TYPES and node.requires("id") == []:
-        # if no associated data file, export the data
-        fc_item = item.export(item.title, service_format)
-        download_path = fc_item.download(data_folder)
-        fc_item.delete()
-        item_dict["data_item_type"] = service_format
+    elif item.type in JSON_BASED_WITH_DATA_TYPES:
+        reqs = node.requires("item")
+        needs_export = True
+        # go through and check if there's already a data file
+        for req in reqs:
+            if req.type in FILE_BASED_TYPES:
+                needs_export = False
+                break
+        # if no data file associated, export data to specified format
+        if needs_export:
+            fc_item = item.export(item.title, service_format)
+            download_path = fc_item.download(data_folder)
+            fc_item.delete()
+            item_dict["data_item_type"] = service_format
+                    
         # fc_zip = zipfile.ZipFile(download_path)
     else:
         download_path = item.download(data_folder)
@@ -290,8 +301,25 @@ class ImportPackage():
         # determine what file type is and create accordingly
         # for feature services: if data file, create and publish there,
         # otherwise, publish one that should have already been created based on relationships
-        props = item_properties.copy()
-        item_id = props["id"]
+        props = {}
+        _property_names = [
+            "title",
+            "type",
+            "description",
+            "snippet",
+            "tags",
+            "culture",
+            "accessInformation",
+            "licenseInfo",
+            "typeKeywords",
+            "extent",
+            "url",
+            "properties",
+        ]
+        for prop_name in _property_names:
+            if prop_name in item_properties:
+                props[prop_name] = item_properties[prop_name]
+        item_id = item_properties["id"]
         new_item_id = None
         if (
             preserve_id
@@ -299,24 +327,33 @@ class ImportPackage():
         ):
             new_item_id = item_id
         
-        def _add_data_item(fp, item_type):
-            data_props = {
-                "type": item_type,
-                "title": item_properties["title"],
-            }
+        def _add_data_item(fp, item_type, props=None):
+            if props is None:
+                data_props = {
+                    "type": item_type,
+                    "title": item_properties["title"],
+                }
+            else:
+                data_props = props
+                data_props["type"] = item_type
             try:
                 job = folder.add(
                     **{
                         "item_properties": data_props,
                         "file": fp,
+                        "stream" : False,
                     }
                 )
             except:
-                data_props["title"] = _get_unique_name(self.gis, item_properties["title"])
+                rand_name = "_" + "".join(random.choices(string.ascii_letters, k=5))
+                # switch this to removing extension and then re-adding
+                new_fp = fp[:-4] + rand_name + ".zip"
+                os.rename(fp, new_fp)
                 job = folder.add(
                     **{
                         "item_properties": data_props,
-                        "file": fp,
+                        "file": new_fp,
+                        "stream" : False,
                     }
                 )
             return job.result()
@@ -332,7 +369,8 @@ class ImportPackage():
                         service_id = self.created_item_mapping[req]
                         service_item = self.gis.content.get(service_id)
                         break
-            else:
+
+            if service_item is None:
                 # check if data file exists
                 for file in os.listdir(data_folder):
                     if file.endswith(".zip"):
@@ -345,16 +383,39 @@ class ImportPackage():
             
             # publish the service
             if service_item:
-                pub_params = {"name": item_properties["title"]}
-                new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
-                self.created_item_mapping[item_id] = new_item.id
+                # pub_params = {"name": item_properties["title"]}
+                pub_params = props
+                try:
+                    new_item = service_item.publish(publish_parameters = pub_params, item_id = new_item_id)
+                except:
+                    new_name = _get_unique_name(self.gis, item_properties["title"], True)
+                    new_name = new_name.replace("/", "_")
+                    pub_params["name"] = new_name
+                    new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
 
-        for file in os.listdir(data_folder):
-            if file.endswith(".zip"):
-                fp = os.path.join(data_folder, file)
-                new_item = _add_data_item(fp, item_properties["type"])
-                self.created_item_mapping[item_id] = new_item.id
-                break
+        elif item_properties["type"] in FILE_BASED_TYPES:
+            for file in os.listdir(data_folder):
+                if file.endswith(".zip"):
+                    fp = os.path.join(data_folder, file)
+                    new_item = _add_data_item(fp, item_properties["type"], props)
+                    break
+        
+        elif item_properties["type"] in JSON_BASED_TYPES:
+            structure_file_path = os.path.join(data_folder, "structure.json")
+            with open(structure_file_path, "r") as structure_file:
+                structure_data = json.load(structure_file)
+                props["text"] = json.dumps(structure_data)
+            
+            job = folder.add(
+                **{
+                    "item_properties": props,
+                    "item_id": new_item_id,
+                    "stream" : False,
+                }
+            )
+            new_item = job.result()
+        
+        self.created_item_mapping[item_id] = new_item.id
         
         # import the resources
         # for res in resources:
