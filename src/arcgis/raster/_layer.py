@@ -631,9 +631,10 @@ class ImageryLayer(Layer):
     _ilm = None
     _rendering_service_object = None
 
-    def __init__(self, url: str, gis: Optional[GIS] = None):
+    def __init__(self, url: str, gis: Optional[GIS] = None, parent_url=None):
         self._datastore_raster = False
         self._uri = None
+        self._parent_url = parent_url
         if isinstance(url, bytes):
             url = base64.b64decode(url)
             url = url.decode("UTF-8")
