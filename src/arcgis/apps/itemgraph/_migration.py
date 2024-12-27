@@ -1,6 +1,7 @@
 from ._item_graph import ItemGraph, ItemNode, load_from_file
 from arcgis.gis import GIS, Item, ContentManager
 from arcgis.gis._impl._content_manager.folder import Folder
+from arcgis._impl.common._utils import _text_replace
 import os
 import shutil
 import tempfile
@@ -148,7 +149,7 @@ def _export_content(
     # Create a metadata file at the top directory
     manifest_file = os.path.join(main_dir, "manifest.json")
     with open(manifest_file, "w") as f:
-        json.dump(manifest, f, indent=4)
+        json.dump(manifest, f, indent=4, ensure_ascii=False)
     
     # create the graph structure file
     graph_file = os.path.join(main_dir, "graph.gml")
@@ -238,8 +239,8 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     
     json_file_path = os.path.join(output_folder, "properties.json")
     with open(json_file_path, "w") as json_file:
-        json.dump(item_dict, json_file, indent=4)
-    
+        json.dump(item_dict, json_file, indent=4, ensure_ascii=False)
+
     if os.stat(download_path).st_size == 0:
         os.remove(download_path)
 
@@ -255,6 +256,8 @@ class ImportPackage():
         temp_graph_path = os.path.join(self._temp_package, "graph.gml")
         self.graph = load_from_file(temp_graph_path, gis, include_items=False)
         self.created_item_mapping = {}
+        self._name_mapping = {}
+        self._service_mapping = {}
         manifest_file_path = os.path.join(self._temp_package, "manifest.json")
         with open(manifest_file_path, "r") as manifest_file:
             self.items = json.load(manifest_file)
@@ -358,6 +361,7 @@ class ImportPackage():
                 )
             return job.result()
         
+        remap_dict = {}
         if item_properties["type"] == "Feature Service":
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
@@ -392,6 +396,8 @@ class ImportPackage():
                     new_name = new_name.replace("/", "_")
                     pub_params["name"] = new_name
                     new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
+            
+            self._service_mapping[item_id] = (item_properties["url"], new_item.url)
 
         elif item_properties["type"] in FILE_BASED_TYPES:
             for file in os.listdir(data_folder):
@@ -401,10 +407,25 @@ class ImportPackage():
                     break
         
         elif item_properties["type"] in JSON_BASED_TYPES:
+            reqs = self.graph.get_item(item_id).requires("node")
+            for req in reqs:
+                if req.id in self.created_item_mapping and self.created_item_mapping[req.id] != req.id:
+                    remap_dict[req.id] = self.created_item_mapping[req.id]
+                if req.id in self._name_mapping:
+                    orig_title, new_title = self._name_mapping[req.id]
+                    remap_dict[orig_title] = new_title
+                if req.id in self._service_mapping:
+                    orig_url, new_url = self._service_mapping[req.id]
+                    remap_dict[orig_url] = new_url
+
             structure_file_path = os.path.join(data_folder, "structure.json")
             with open(structure_file_path, "r") as structure_file:
                 structure_data = json.load(structure_file)
-                props["text"] = json.dumps(structure_data)
+                structure_text = json.dumps(structure_data, ensure_ascii=False)
+                if len(remap_dict) > 0:
+                    structure_text = structure_text.replace("\\/", "/")
+                    structure_text = _text_replace(structure_text, remap_dict)
+                props["text"] = structure_text
             
             job = folder.add(
                 **{
@@ -416,6 +437,8 @@ class ImportPackage():
             new_item = job.result()
         
         self.created_item_mapping[item_id] = new_item.id
+        if item_properties["title"] != new_item.title:
+            self._name_mapping[item_id] = (item_properties["title"], new_item.title)
         
         # import the resources
         # for res in resources:
