@@ -288,6 +288,7 @@ class ImportPackage():
         
         # read the data folder
         data_folder = os.path.join(item_folder, "data")
+        res_folder_path = os.path.join(item_folder, "resources")
         if item_properties["type"] in JSON_BASED_TYPES:
             path_name = "structure.json"
             data_path = os.path.join(data_folder, path_name)
@@ -362,6 +363,15 @@ class ImportPackage():
             return job.result()
         
         remap_dict = {}
+        def _remap_json(json_text, remap_dict):
+            if len(remap_dict) > 0:
+                json_text = json_text.replace("\\/", "/")
+                json_text = _text_replace(json_text, remap_dict)
+            if self.items[item_id]["org_source"] != self.gis.url:
+                secondary_remap = {self.items[item_id]["org_source"]: self.gis.url}
+                json_text = _text_replace(json_text, secondary_remap)
+            return json_text
+        
         if item_properties["type"] == "Feature Service":
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
@@ -417,15 +427,12 @@ class ImportPackage():
                 if req.id in self._service_mapping:
                     orig_url, new_url = self._service_mapping[req.id]
                     remap_dict[orig_url] = new_url
-
+            
             structure_file_path = os.path.join(data_folder, "structure.json")
             with open(structure_file_path, "r") as structure_file:
                 structure_data = json.load(structure_file)
                 structure_text = json.dumps(structure_data, ensure_ascii=False)
-                if len(remap_dict) > 0:
-                    structure_text = structure_text.replace("\\/", "/")
-                    structure_text = _text_replace(structure_text, remap_dict)
-                props["text"] = structure_text
+                props["text"] = _remap_json(structure_text, remap_dict)
             
             job = folder.add(
                 **{
@@ -441,9 +448,24 @@ class ImportPackage():
             self._name_mapping[item_id] = (item_properties["title"], new_item.title)
         
         # import the resources
-        # for res in resources:
-        #     res_path = os.path.join(data_folder, res)
-        #     new_item.resources.add(res_path)
+        for res_name in resources.keys():
+            res_split = res_name.split("/")
+            if len(res_split) > 1:
+                res_folder = res_split[-2]
+                res_basename = res_split[-1]
+            else:
+                res_folder = None
+                res_basename = res_split[0]
+            res_path = os.path.join(res_folder_path, res_basename)
+            if res_basename.endswith(".json"):
+                with open(res_path, "r") as res_file:
+                    res_data = json.load(res_file)
+                    res_text = json.dumps(res_data, ensure_ascii=False)
+                    res_text = _remap_json(res_text, remap_dict)
+                    new_item.resources.add(folder_name = res_folder, file_name = res_basename, text = res_text)
+            else:
+                new_item.resources.add(file = res_path, folder_name = res_folder)
+            # new_item.resources.add(res_path)
         
         # return the item
         return new_item
