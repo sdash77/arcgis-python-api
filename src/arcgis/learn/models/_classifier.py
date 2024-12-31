@@ -72,6 +72,7 @@ try:
         complete_transformer_backbone_name,
     )
     from fastai.vision import learner
+    from ._dofa_utils import dofa_config
 
     learner._test_cnn = test_cnn_trnsfrmr
     ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
@@ -258,6 +259,10 @@ class FeatureClassifier(ArcGISModel):
                 and backbone in FeatureClassifier._transformer_backbone_original_names()
             )
 
+            self._dofa = (
+                type(backbone) is str and backbone in FeatureClassifier.dofa_backbones()
+            )
+
             if self._transformer:
                 from ._timm_utils import create_transformer_FeatureClassifier
 
@@ -280,6 +285,35 @@ class FeatureClassifier(ArcGISModel):
                     idx = 8
                 self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
                 self.learn.create_opt(lr=3e-3)
+            elif self._dofa:
+                from arcgis.learn.models._arcgis_model import get_backbone_func
+
+                backbone_func = get_backbone_func(
+                    backbone,
+                    data,
+                    is_clf=True,
+                    num_classes=data.c,
+                    **kwargs,
+                )
+
+                backbone_dofa_clf = fastai.vision.learner.create_body(
+                    backbone_func, True, None
+                )
+
+                backbone_dofa_clf._is_dofa = True
+
+                if self._is_multispectral:
+                    backbone_dofa_clf = _change_tail(backbone_dofa_clf, data)
+
+                self.learn = Learner(
+                    data,
+                    model=backbone_dofa_clf,
+                    metrics=metrics,
+                )
+
+                idx = self._freeze()
+                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                self.learn.create_opt(lr=3e-3)
             else:
                 self.learn = cnn_learner(
                     data,
@@ -291,7 +325,9 @@ class FeatureClassifier(ArcGISModel):
                 )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
-            self._arcgis_init_callback()  # make first conv weights learnable
+
+            if not self._dofa:
+                self._arcgis_init_callback()  # make first conv weights learnable
 
             # Add Mixup data augmentation
             if mixup:
@@ -402,6 +438,11 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def dofa_backbones():
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
@@ -414,9 +455,10 @@ class FeatureClassifier(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbones = FeatureClassifier.transformer_backbones()
         torchgeo_backbone = FeatureClassifier.torchgeo_backbones()
+        dofa_backbone = FeatureClassifier.dofa_backbones()
 
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
-            timm_backbones + transformer_backbones + torchgeo_backbone
+            timm_backbones + transformer_backbones + torchgeo_backbone + dofa_backbone
         )
 
     @property

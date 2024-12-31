@@ -58,6 +58,7 @@ try:
     from .._utils.evaluate_batchsize import unsupported_models
     from .._data import prepare_data
     from ._transformer_backbone import custom_backbone, transformer_backbone_downstream
+    from ._dofa_utils import dofa_backbone, dofa_backbones_downstream
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -453,7 +454,13 @@ def change_tail_transformer(model, data):
 
 
 def _change_tail(model, data, tail_weights_type=None, **kwargs):
-    if hasattr(model, "backbone") and getattr(model.backbone, "_is_prithvi", False):
+
+    if hasattr(model, "_is_dofa"):
+        return model
+    if hasattr(model, "backbone") and (
+        getattr(model.backbone, "_is_prithvi", False)
+        or getattr(model.backbone, "_is_dofa", False)
+    ):
         return model
 
     tail_name, tail = _get_tail(model)
@@ -589,6 +596,25 @@ def get_backbone_func(backbone, data, **kwargs):
                 is_fpn=kwargs.get("is_fpn", False),
             )
             backbone.__name__ = backbone_name
+        elif backbone in dofa_backbones_downstream:
+            backbone_name = backbone
+            wavelengths = kwargs.get("dofa_wavelengths", None)
+            if wavelengths is None:
+                raise Exception(
+                    'DOFA models require a list of central wavelengths corresponding to each data band.\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
+                )
+
+            backbone = partial(
+                dofa_backbone,
+                backbone_name=backbone,
+                img_size=int(kwargs.get("chip_size", data.chip_size)),
+                pretrained=True,
+                wavelengths=wavelengths,
+                is_clf=kwargs.get("is_clf", False),
+                num_classes=kwargs.get("num_classes", data.c),
+            )
+            backbone.__name__ = backbone_name
+
     else:
         backbone = backbone
     return backbone
@@ -608,7 +634,7 @@ class ArcGISModel(object):
 
         self._device = _get_device()
 
-        self._backbone = get_backbone_func(backbone, data)
+        self._backbone = get_backbone_func(backbone, data, **kwargs)
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -1270,6 +1296,11 @@ class ArcGISModel(object):
         else:
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
+
+        if "dofa_" in model_params["backbone"]:
+            _emd_template["ModelParameters"]["dofa_wavelengths"] = self._model_kwargs[
+                "dofa_wavelengths"
+            ]
 
         if compute_metrics:
             if self._model_metrics_cache == None:

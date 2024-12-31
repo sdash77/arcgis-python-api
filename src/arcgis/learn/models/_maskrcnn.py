@@ -59,6 +59,7 @@ try:
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
     from .._utils.env import is_arcgispronotebook
     from ._transformer_backbone import vit_config, custom_backbone
+    from ._dofa_utils import dofa_config, dofa_backbone
 
     HAS_FASTAI = True
 except Exception as e:
@@ -174,6 +175,12 @@ class MaskRCNNTracer(torch.nn.Module):
 
 
 class MaskRCNN(ArcGISModel):
+
+    try:
+        import fastai
+    except:
+        pass
+
     """
     Model architecture from https://arxiv.org/abs/1703.06870.
     Creates a :class:`~arcgis.learn.MaskRCNN` Instance segmentation model,
@@ -287,6 +294,7 @@ class MaskRCNN(ArcGISModel):
         *args,
         **kwargs,
     ):
+
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -402,6 +410,32 @@ class MaskRCNN(ArcGISModel):
                     in_chans=len(data._extract_bands),
                 ).backbone_fpn
                 backbone_fpn._is_transformer = True
+            elif backbone in MaskRCNN.dofa_backbones():
+                wavelengths = kwargs.get("dofa_wavelengths", None)
+                if wavelengths is None:
+                    raise Exception(
+                        'DOFA models require a list of central wavelengths corresponding to each data band.\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
+                    )
+                from arcgis.learn.models._arcgis_model import get_backbone_func
+
+                backbone_fpn = get_backbone_func(
+                    backbone,
+                    data,
+                    is_fpn=True,
+                    chip_size=data.chip_size * 1.5,
+                    **kwargs,
+                )
+
+                backbone_fpn = self.fastai.vision.learner.create_body(
+                    backbone_fpn, True, None
+                )
+
+                backbone_fpn = backbone_fpn[0]
+
+                # backbone_fpn.out_channels = (
+                #     backbone_fpn[0].blocks[-1].mlp.fc2.out_features
+                # )
+                # backbone_fpn._is_dofa = True
             else:
                 ## warning_fix 'pretrained' replaced with 'weights'
                 backbone_fpn = resnet_fpn_backbone(
@@ -438,7 +472,10 @@ class MaskRCNN(ArcGISModel):
                     max_size=2 * data.chip_size,
                     **self.maskrcnn_kwargs,
                 )
-            if "timm" in self._backbone.__module__:
+            if (
+                "timm" in self._backbone.__module__
+                or "dofa_" in self._backbone.__name__
+            ):
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
@@ -556,6 +593,11 @@ class MaskRCNN(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def dofa_backbones():
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
@@ -573,12 +615,14 @@ class MaskRCNN(ArcGISModel):
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         transformer_backbone = MaskRCNN.transformer_backbones()
         torchgeo_backbone = MaskRCNN.torchgeo_backbones()
+        dofa_backbone = MaskRCNN.dofa_backbones()
 
         return (
             [*_resnet_family]
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + dofa_backbone
         )
 
     @property

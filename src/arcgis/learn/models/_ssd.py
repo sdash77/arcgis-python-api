@@ -15,6 +15,7 @@ HAS_FASTAI = True
 
 try:
     import torch
+    from torch import nn
     from torch import tensor, Tensor
     import numpy as np
     import fastai
@@ -70,6 +71,7 @@ try:
     from .._utils.utils import chips_to_batch
     from .._utils.pascal_voc_rectangles import _reconstruct
     from ._transformer_backbone import vit_config
+    from ._dofa_utils import dofa_config
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -437,18 +439,27 @@ class SingleShotDetector(ArcGISModel):
 
                 self._create_anchors(grids, zooms, ratios)
 
-                feature_sizes = _get_feature_size(
-                    (
-                        self._orig_backbone
-                        if hasattr(self, "_orig_backbone")
-                        else self._backbone
-                    ),
-                    cut=backbone_cut,
-                    chip_size=(data.chip_size, data.chip_size),
-                )
+                if not "dofa_" in self._backbone.__name__:
 
-                num_features = feature_sizes[-1][-1]
-                num_channels = feature_sizes[-1][1]
+                    feature_sizes = _get_feature_size(
+                        (
+                            self._orig_backbone
+                            if hasattr(self, "_orig_backbone")
+                            else self._backbone
+                        ),
+                        cut=backbone_cut,
+                        chip_size=(data.chip_size, data.chip_size),
+                    )
+
+                    num_features = feature_sizes[-1][-1]
+                    num_channels = feature_sizes[-1][1]
+
+                else:
+                    m = nn.Sequential(
+                        *create_body(self._backbone, False, None).children()
+                    )
+                    num_features = data.chip_size
+                    num_channels = m[0].blocks[-1].mlp.fc2.out_features
 
                 if (
                     grids[0] > 8
@@ -508,6 +519,10 @@ class SingleShotDetector(ArcGISModel):
                 self.unfreeze()
                 self._freeze()
 
+            # if backbone in SingleShotDetector.dofa_backbones():
+            #     self.unfreeze()
+            #     self._freeze()
+
     def _freeze(self):
         layers = flatten_model(self.learn.model[0][0].backbone)
         idx = len(layers)
@@ -544,6 +559,11 @@ class SingleShotDetector(ArcGISModel):
         return transformer_backbone
 
     @staticmethod
+    def dofa_backbones():
+        dofa_backbone = list(dofa_config.keys())
+        return dofa_backbone
+
+    @staticmethod
     def torchgeo_backbones():
         from ._hf_weightutils import hf_resnet_cfgs
 
@@ -562,6 +582,7 @@ class SingleShotDetector(ArcGISModel):
 
         transformer_backbone = SingleShotDetector.transformer_backbones()
         torchgeo_backbone = SingleShotDetector.torchgeo_backbones()
+        dofa_backbone = SingleShotDetector.dofa_backbones()
 
         return (
             [
@@ -573,6 +594,7 @@ class SingleShotDetector(ArcGISModel):
             + transformer_backbone
             + timm_backbones
             + torchgeo_backbone
+            + dofa_backbone
         )
 
     @property
@@ -639,6 +661,8 @@ class SingleShotDetector(ArcGISModel):
         ssd_version = int(emd.get("SSDVersion", 1))
         chip_size = emd["ImageWidth"]
 
+        model_params = emd["ModelParameters"]
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
@@ -691,16 +715,27 @@ class SingleShotDetector(ArcGISModel):
 
         data.resize_to = resize_to
 
-        ssd = cls(
-            data,
-            emd["Grids"],
-            emd["Zooms"],
-            emd["Ratios"],
-            pretrained_path=str(model_file),
-            backend=backend,
-            backbone=backbone,
-            ssd_version=ssd_version,
-        )
+        if not "dofa_" in backbone:
+            ssd = cls(
+                data,
+                emd["Grids"],
+                emd["Zooms"],
+                emd["Ratios"],
+                pretrained_path=str(model_file),
+                backend=backend,
+                backbone=backbone,
+                ssd_version=ssd_version,
+            )
+        else:
+            ssd = cls(
+                data,
+                emd["Grids"],
+                emd["Zooms"],
+                emd["Ratios"],
+                pretrained_path=str(model_file),
+                ssd_version=ssd_version,
+                **model_params,
+            )
 
         if not data_passed:
             ssd.learn.data.single_ds.classes = ssd._data.classes
