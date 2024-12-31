@@ -601,7 +601,7 @@ def get_backbone_func(backbone, data, **kwargs):
             wavelengths = kwargs.get("dofa_wavelengths", None)
             if wavelengths is None:
                 raise Exception(
-                    'DOFA models require a list of central wavelengths corresponding to each data band.\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
+                    'DOFA models require a list of central wavelengths corresponding to each data band (in micrometers).\nPlease provide a value for the "dofa_wavelenghts" keyword argument.',
                 )
 
             backbone = partial(
