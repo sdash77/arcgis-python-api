@@ -1,4 +1,4 @@
-from typing import Literal, Any, Annotated, Union
+from typing import Literal, Any, Annotated, Union, Optional
 from enum import Enum
 from pydantic import BaseModel, model_serializer, model_validator, Discriminator
 from pydantic.alias_generators import to_camel
@@ -69,7 +69,7 @@ class GraphProperty(BaseModel):
     alias: str = ""
     domain: str = ""
     field_type: esriFieldType
-    geometry_type: esriGeometryType = "esriGeometryPoint"
+    geometry_type: Optional[esriGeometryType] = None
     has_z: bool = False
     has_m: bool = False
     default_value: Any = None
@@ -79,6 +79,53 @@ class GraphProperty(BaseModel):
     required: bool = False
     is_system_maintained: bool = False
     role: esriGraphPropertyRole = "esriGraphPropertyRegular"
+
+    @model_serializer
+    def ser_model(self) -> dict[str, Any]:
+        if self.geometry_type is None:
+            return {
+                "name": self.name,
+                "alias": self.alias,
+                "domain": self.domain,
+                "fieldType": self.field_type,
+                "hasZ": self.has_z,
+                "hasM": self.has_m,
+                "defaultValue": self.default_value,
+                "nullable": self.nullable,
+                "visible": self.visible,
+                "editable": self.editable,
+                "required": self.required,
+                "isSystemMaintained": self.is_system_maintained,
+                "role": self.role,
+            }
+        return {
+            "name": self.name,
+            "alias": self.alias,
+            "domain": self.domain,
+            "fieldType": self.field_type,
+            "geometryType": self.geometry_type,
+            "hasZ": self.has_z,
+            "hasM": self.has_m,
+            "defaultValue": self.default_value,
+            "nullable": self.nullable,
+            "visible": self.visible,
+            "editable": self.editable,
+            "required": self.required,
+            "isSystemMaintained": self.is_system_maintained,
+            "role": self.role,
+        }
+
+    @model_validator(mode="before")  # type: ignore
+    @classmethod
+    def validate_model(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if (
+                "geometry_type" in data
+                and "field_type" in data
+                and data["field_type"] != "esriFieldTypeGeometry"
+            ):
+                data.pop("geometry_type")
+        return data
 
     class Config:
         alias_generator = to_camel
