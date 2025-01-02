@@ -255,9 +255,7 @@ class TestHelpers:
         test_case.assertEqual(9.399999999999999, result[10]["y"])
         test_case.assertIsNone(result[11])
         test_case.assertEqual(123, result[12])
-        test_case.assertIsNone(
-            result[13]
-        )  # TODO this should be a timestamp offset value!
+        test_case.assertEqual("1970-01-01T00:00:00.123+00:00", result[13])
         test_case.assertEqual("1970-05-04", result[14])
         test_case.assertEqual("00:00:00.123", result[15])
         test_case.assertEqual("P5M", result[16])

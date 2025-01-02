@@ -332,15 +332,17 @@ class TestGraphClient(unittest.TestCase):
             self.assertEqual(
                 123, pbf_request.parameters["sint64_value"].primitive_value.sint64_value
             )
+            self.assertTrue(
+                pbf_request.parameters["bool_value"].primitive_value.bool_value
+            )
             self.assertEqual(
                 UUID("12345678-1234-5678-1234-567812345678").bytes,
                 pbf_request.parameters["uuid_value"].primitive_value.uuid_value,
             )
-            # TODO investigate why empty bytes in pbf:
-            # self.assertEqual(
-            #    b"!@#$",
-            #    pbf_request.parameters["blob_value"].primitive_value.blob_value
-            # )
+            self.assertEqual(
+                b"\x01\xff\xa5Z",
+                pbf_request.parameters["blob_value"].primitive_value.blob_value,
+            )
             self.assertEqual(
                 1,
                 pbf_request.parameters[
@@ -496,9 +498,9 @@ class TestGraphClient(unittest.TestCase):
                 "string_value": "abc123",
                 "double_value": 1.23,
                 "sint64_value": 123,
-                # "bool_value": True, TODO need to support bool bind params in client-core
+                "bool_value": True,
                 "uuid_value": UUID("12345678-1234-5678-1234-567812345678"),
-                "blob_value": b"!@#$",
+                "blob_value": b"\x01\xff\xa5Z",
                 "geometry_value": Geometry({"x": 5, "y": 6}),
                 "null_value": None,
                 "datetime_value": datetime(year=1965, month=2, day=5),
