@@ -21,10 +21,10 @@ from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
 
-
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_cm = LazyLoader("arcgis.gis._impl._content_manager")
 re = LazyLoader("re")
 
 _log = logging.getLogger()
@@ -2657,6 +2657,7 @@ class FeatureLayerCollectionManager(_GISResource):
         preserve_layer_ids: bool = True,
         visible_fields: list[str] | None = None,
         query: str | None = None,
+        folder: _cm.Folder | str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2726,6 +2727,8 @@ class FeatureLayerCollectionManager(_GISResource):
         visible_fields           Optional list[str] or None. A list of visible fields to display.
         --------------------     --------------------------------------------------------------------
         query                    Optional String. A SQL statement that defines the view.
+        --------------------     --------------------------------------------------------------------
+        folder                   Optional string or Folder. The folder to which the view will be saved.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -2753,43 +2756,43 @@ class FeatureLayerCollectionManager(_GISResource):
         :return:
             Returns the newly created :class:`~arcgis.gis.Item` for the view.
         """
-
-        import os
-        from . import FeatureLayerCollection
-
+        # check name doesn't contain invalid characters
         invalid_char_regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
         if len(re.findall(invalid_char_regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
-        gis = self._gis
-        content = gis.content
+
+        # check if hosted service
         if "serviceItemId" not in self.properties:
             raise Exception(
                 "A registered hosted feature service is required to use create_view"
             )
-        item_id = self.properties["serviceItemId"]
-        item = content.get(itemid=item_id)
-        url = item.url
-        fs = FeatureLayerCollection(url=url, gis=gis)
-        if gis._url.lower().find("sharing/rest") < 0:
-            url = gis._url + "/sharing/rest"
-        else:
-            url = gis._url
 
-        if "serviceItemId" in self.properties:
-            # get the owner of the service
-            user = gis.content.get(self.properties["serviceItemId"])["owner"]
-        else:
-            # if no service item id then default to logged in user
-            user = gis.users.me.username
+        # get the FeatureLayerCollection
+        gis = self._gis
+        content = gis.content
+        item = content.get(itemid=self.properties["serviceItemId"])
+        fs = features.FeatureLayerCollection(url=item.url, gis=gis)
 
-        url = "%s/content/users/%s/createService" % (url, user)
-        if spatial_reference is None:
-            # handle for tables
-            if "spatialReference" in fs.properties:
-                spatial_reference = fs.properties["spatialReference"]
+        # check if the service is a view
+        rest_url = (
+            gis._url + "/sharing/rest"
+            if "sharing/rest" not in gis._url.lower()
+            else gis._url
+        )
+
+        # get the owner of the service
+        user = item["owner"] if "owner" in item else gis.users.me.username
+
+        # get create service endpoint
+        url = "%s/content/users/%s/createService" % (rest_url, user)
+
+        # handle for tables
+        if spatial_reference is None and "spatialReference" in fs.properties:
             # else it stays the spatial reference given or None
+            spatial_reference = fs.properties["spatialReference"]
+
         params = {
             "f": "json",
             "isView": True,
@@ -2818,268 +2821,159 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwrite is currently not supported on this platform, and will not be honored"
             )
 
-        res = gis._con.post(path=url, postdata=params)
-        view = content.get(res["itemId"])
-        fs_view = FeatureLayerCollection(url=view.url, gis=gis)
+        res = gis._session.post(url=url, data=params).json()
+
+        # Get the view feature layer collection
+        view_item = content.get(res["itemId"])
+        fs_view = features.FeatureLayerCollection(url=view_item.url, gis=gis)
+
+        # If folder provided, move the view to the folder
+        if folder:
+            # The move method allows string or Folder object
+            view_item.move(folder)
+
         add_def = {"layers": [], "tables": []}
 
         def is_none_or_empty(view_param):
-            if not view_param:
-                return True
-            if isinstance(view_param, list) and len(view_param) == 0:
+            if not view_param:  # Handles None and empty lists/dicts
                 return True
             if isinstance(view_param, dict):
-                for k, v in view_param.items():
-                    if view_param[k] is not None:
-                        return False
-                return True
+                return all(v is None for v in view_param.values())
             return False
 
-        if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
-            # When view_layers and view_tables are not specified, create a view from all layers and tables
-            for lyr in fs.layers:
-                if hasattr(lyr.manager.properties, "serviceItemId"):
-                    lyr_id = lyr.manager.properties.serviceItemId
-                else:
-                    lyr_id = lyr.properties.serviceItemId
-                data_path = "content/items/" + res["itemId"] + "/data"
-                data = item._portal.con.get(path=data_path)
-                add_def["layers"].append(
-                    {
-                        "adminLayerInfo": {
-                            "popupInfo": (
-                                data["layers"][0]["popupInfo"]
-                                if "layers" in data
-                                else None
-                            ),
-                            "viewLayerDefinition": {
-                                "sourceServiceName": os.path.basename(
-                                    os.path.dirname(fs.url)
-                                ),
-                                "sourceLayerId": lyr.manager.properties["id"],
-                                "sourceLayerFields": "*",
-                            },
-                        },
-                        "name": lyr.manager.properties["name"],
-                    }
+        def create_layer_definition(layer, fs, data=None):
+            return {
+                "adminLayerInfo": {
+                    "popupInfo": (
+                        data.get("popupInfo") if data and "popupInfo" in data else None
+                    ),
+                    "viewLayerDefinition": {
+                        "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                        "sourceLayerId": layer.manager.properties["id"],
+                        "sourceLayerFields": "*",
+                    },
+                },
+                "name": layer.manager.properties["name"],
+            }
+
+        def create_table_definition(table, fs):
+            return {
+                "adminLayerInfo": {
+                    "viewLayerDefinition": {
+                        "sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                        "sourceLayerId": table.manager.properties["id"],
+                        "sourceLayerFields": "*",
+                    },
+                },
+                "id": table.manager.properties["id"],
+                "name": table.manager.properties["name"],
+                "type": "Table",
+            }
+
+        def process_layers(layers, fs, data_fetcher=None):
+            return [
+                create_layer_definition(
+                    layer, fs, data_fetcher(layer) if data_fetcher else None
                 )
-            for tbl in fs.tables:
-                add_def["tables"].append(
-                    {
-                        "adminLayerInfo": {
-                            "viewLayerDefinition": {
-                                "sourceServiceName": os.path.basename(
-                                    os.path.dirname(fs.url)
-                                ),
-                                "sourceLayerId": tbl.manager.properties["id"],
-                                "sourceLayerFields": "*",
-                            }
-                        },
-                        "id": tbl.manager.properties["id"],
-                        "name": tbl.manager.properties["name"],
-                        "type": "Table",
-                    }
-                )
-        else:
-            # when view_layers is specified
-            if view_layers:
-                if isinstance(view_layers, list):
-                    for lyr in view_layers:
-                        if hasattr(lyr.manager.properties, "serviceItemId"):
-                            lyr_id = lyr.manager.properties.serviceItemId
-                        else:
-                            # enterprise layers have serviceItemId in properties of layer not manager
-                            lyr_id = lyr.properties.serviceItemId
-                        data_path = "content/items/" + lyr_id + "/data"
-                        data = item._portal.con.get(path=data_path)
-                        def_lyr = dict(lyr.properties)
-                        def_lyr["adminLayerInfo"] = {
-                            "popupInfo": (
-                                data["layers"][0]["popupInfo"]
-                                if "layers" in data
-                                else None
-                            ),
-                            "viewLayerDefinition": {
-                                "sourceServiceName": os.path.basename(
-                                    os.path.dirname(fs.url)
-                                ),
-                                "sourceLayerId": lyr.manager.properties["id"],
-                                "sourceLayerFields": "*",
-                            },
-                        }
-                        for k in {
-                            "indexes",
-                            "relationships",
-                            "geometryProperties",
-                            "hasGeometryProperties",
-                            "serviceItemId",
-                            "supportsMultiScaleGeometry",
-                            "fields",
-                            "isView",
-                        }:
-                            if k in def_lyr:
-                                del def_lyr[k]
-                        if self._gis._con.token:
-                            def_lyr["url"] = lyr.url + f"?token={self._gis._con.token}"
-                        add_def["layers"].append(def_lyr)
-                else:
-                    import logging
+                for layer in layers
+            ]
 
-                    _log = logging.getLogger(__name__)
-                    from arcgis.features.layer import Layer
+        def process_tables(tables, fs):
+            return [create_table_definition(table, fs) for table in tables]
 
-                    if isinstance(view_layers, dict):
-                        if "layers" in view_layers:
-                            add_def["layers"] = view_layers["layers"]
-                        else:
-                            add_def["layers"].append(view_layers)
-                    elif isinstance(view_layers, Layer):
-                        add_def["layers"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": view_layers.manager.properties[
-                                            "id"
-                                        ],
-                                        "sourceLayerFields": "*",
-                                    }
-                                },
-                                "name": view_layers.manager.properties["name"],
-                            }
-                        )
-                    else:
-                        _log.error("Unable to parse the view_layers parameter")
+        def add_definitions(fs, view_layers, view_tables):
+            add_def = {"layers": [], "tables": []}
 
-            # when view_tables is specified
-            if view_tables:
-                if isinstance(view_tables, list):
-                    for tbl in view_tables:
-                        tbl_def = {
-                            "adminLayerInfo": {
-                                "viewLayerDefinition": {
-                                    "sourceServiceName": os.path.basename(
-                                        os.path.dirname(fs.url)
-                                    ),
-                                    "sourceLayerId": tbl.manager.properties["id"],
-                                    "sourceLayerFields": "*",
-                                }
-                            },
-                            "id": tbl.manager.properties["id"],
-                            "name": tbl.manager.properties["name"],
-                            "type": "Table",
-                        }
-                        tbl_def.update(dict(tbl.properties))
-                        for k in {
-                            "isView",
-                            "sourceSchemaChangesAllowed",
-                            "fields",
-                            "serviceItemId",
-                            "relationships",
-                            "indexes",
-                            "isUpdatableView",
-                            "viewSourceHasAttachments",
-                        }:
-                            if k in tbl_def:
-                                del tbl_def[k]
-                        add_def["tables"].append(tbl_def)
-                else:
-                    import logging
-
-                    _log = logging.getLogger(__name__)
-
-                    from arcgis.features.layer import Table
-
-                    if isinstance(view_tables, dict):
-                        if "tables" in view_tables:
-                            add_def["tables"] = view_tables["tables"]
-                        else:
-                            add_def["tables"].append(view_tables)
-                    elif isinstance(view_tables, Table):
-                        add_def["tables"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": view_tables.manager.properties[
-                                            "id"
-                                        ],
-                                        "sourceLayerFields": "*",
-                                    }
-                                },
-                                "name": view_tables.manager.properties["name"],
-                            }
-                        )
-                    else:
-                        _log.error("Unable to parse the view_tables parameter")
-
-        if self._gis._is_arcgisonline:
-            fs_view.manager.add_to_definition(add_def, future=True).result()
-        else:
-            fs_view.manager.add_to_definition(add_def, future=False)
-
-        if extent and fs_view.layers:
-            for vw_lyr in fs_view.layers:
-                vw_lyr.manager.update_definition(
-                    {
-                        "viewLayerDefinition": {
-                            "filter": {
-                                "operator": "esriSpatialRelIntersects",
-                                "value": {
-                                    "geometryType": "esriGeometryEnvelope",
-                                    "geometry": extent,
-                                },
-                            }
-                        }
-                    }
-                )
-
-        if view_layers:
-            data = item.get_data()
-            if "layers" in data:
-                item_upd_dict = {
-                    "layers": [
-                        ilyr
-                        for ilyr in item.get_data()["layers"]
-                        for lyr in view_layers
-                        if int(lyr.url[-1]) == ilyr["id"]
-                    ]
-                }
-                view.update(data=item_upd_dict)
-        else:
-            view.update(data=item.get_data())
-        item = content.get(res["itemId"])
-        if visible_fields or query:
-            values: dict[str, Any] = {}
-            if visible_fields:
-                values["fields"] = [
-                    {"name": fld["name"], "visible": True}
-                    for fld in self.layers[0].properties["fields"]
-                    if fld["name"].lower() in [f.lower() for f in visible_fields]
-                ] + [
-                    {"name": fld["name"], "visible": False}
-                    for fld in self.layers[0].properties["fields"]
-                    if fld["name"].lower() not in [f.lower() for f in visible_fields]
-                ]
+            if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
+                # Process all layers and tables when view_layers/tables are not specified
+                add_def["layers"] = process_layers(fs.layers, fs)
+                add_def["tables"] = process_tables(fs.tables, fs)
             else:
-                values["fields"] = [
-                    {"name": fld["name"], "visible": True}
-                    for fld in self.layers[0].properties["fields"]
-                ]
-            if query:
-                values["viewDefinitionQuery"] = query
-            if values:
-                flc = FeatureLayerCollection.fromitem(item)
-                lyr = flc.layers[0]
-                mgr = lyr.manager
-                if self._gis._is_arcgisonline:
-                    res = mgr.update_definition(values, future=True).result()
+                # Process specified layers and tables
+                if view_layers:
+                    add_def["layers"] = process_layers(
+                        view_layers, fs, lambda lyr: lyr.properties
+                    )
+                if view_tables:
+                    add_def["tables"] = process_tables(view_tables, fs)
+
+            return add_def
+
+        def update_layer_definition(layer_manager, values, gis_online):
+            if gis_online:
+                return layer_manager.update_definition(values, future=True).result()
+            else:
+                return layer_manager.update_definition(values)
+
+        def update_view_extent(fs_view, extent):
+            if extent and fs_view.layers:
+                for vw_lyr in fs_view.layers:
+                    vw_lyr.manager.update_definition(
+                        {
+                            "viewLayerDefinition": {
+                                "filter": {
+                                    "operator": "esriSpatialRelIntersects",
+                                    "value": {
+                                        "geometryType": "esriGeometryEnvelope",
+                                        "geometry": extent,
+                                    },
+                                }
+                            }
+                        }
+                    )
+
+        def update_item_data(view_item, item, view_layers):
+            if view_layers:
+                data = item.get_data()
+                if "layers" in data:
+                    item_upd_dict = {
+                        "layers": [
+                            ilyr
+                            for ilyr in data["layers"]
+                            for lyr in view_layers
+                            if int(lyr.url.split("/")[-1]) == ilyr["id"]
+                        ]
+                    }
+                    view_item.update(data=item_upd_dict)
+            else:
+                view_item.update(data=item.get_data())
+
+        def set_visible_fields_and_query(item, visible_fields, query, gis):
+            if visible_fields or query:
+                values = {}
+                fields = item.layers[0].properties["fields"]
+                if visible_fields:
+                    field_names = [f.lower() for f in visible_fields]
+                    values["fields"] = [
+                        {
+                            "name": fld["name"],
+                            "visible": fld["name"].lower() in field_names,
+                        }
+                        for fld in fields
+                    ]
                 else:
-                    res = mgr.update_definition(values)
+                    values["fields"] = [
+                        {"name": fld["name"], "visible": True} for fld in fields
+                    ]
+
+                if query:
+                    values["viewDefinitionQuery"] = query
+
+                if values:
+                    flc = features.FeatureLayerCollection.fromitem(item)
+                    lyr = flc.layers[0]
+                    update_layer_definition(lyr.manager, values, gis._is_arcgisonline)
+
+        add_def = add_definitions(fs, view_layers, view_tables)
+        fs_view.manager.add_to_definition(add_def, future=gis._is_arcgisonline)
+
+        update_view_extent(fs_view, extent)
+
+        view_item = item  # Assuming view_item is passed as item
+        update_item_data(view_item, item, view_layers)
+
+        item = gis.content.get(res["itemId"])
+        set_visible_fields_and_query(item, visible_fields, query, gis)
 
         return item
 
@@ -3415,7 +3309,7 @@ class FeatureLayerCollectionManager(_GISResource):
             related_data_item.type
             in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
-            or hosted_table is True
+            or (hosted_table is True and related_data_item.type != "Service Definition")
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time

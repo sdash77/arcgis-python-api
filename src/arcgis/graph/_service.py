@@ -4,6 +4,7 @@ from typing import Generator
 from arcgis.geometry import Geometry
 import copy
 import datetime
+from arcgis.gis._impl._util import _get_item_url
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -72,7 +73,11 @@ class KnowledgeGraph:
             raise ValueError(
                 "Invalid item type, please provide a 'Knowledge Graph' item."
             )
-        return cls(url=item.url, gis=item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = item.url
+        return cls(url=url, gis=item._gis)
 
     @property
     def properties(self) -> _isd.InsensitiveDict:

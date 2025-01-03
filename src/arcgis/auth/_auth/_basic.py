@@ -1,3 +1,4 @@
+from __future__ import annotations
 from requests.auth import (
     _basic_auth_str,
     HTTPBasicAuth,
@@ -9,6 +10,8 @@ from ..tools._lazy import LazyLoader
 from ..tools import parse_url, assemble_url
 
 requests = LazyLoader("requests")
+
+__all__ = ["ProxyAuth", "DigestAuth", "EsriBasicAuth"]
 
 
 ###########################################################################
@@ -43,23 +46,17 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
 
     def __init__(
         self,
+        session,
         username: str,
         password: str,
-        referer: str = "http",
-        verify_cert: bool = True,
         **kwargs,
     ):
         self.username = username
         self.password = password
         self._server_log = dict()
         self._tokens = dict()
-        self.referer = referer or ""
-        self.verify_cert = verify_cert
-        self._session = requests.Session()
-        self._session.verify = verify_cert
-        self._session.headers.update({"referer": referer})
-        self._session.auth = (self.username, self.password)
-        self._proxies = kwargs.pop("proxies", None)
+
+        self._session = session
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -106,7 +103,7 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
-                "referer": self.referer or "http",
+                "referer": self._session.referer or "http",
                 "f": "json",
             }
             if expiration:
@@ -117,9 +114,8 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
                     auth=self._session.auth,
-                    verify=self.verify_cert,
-                    proxies=self._proxies,
-                    timeout=5,
+                    proxies=self._session.proxies,
+                    timeout=self._session.timeout,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[server_url] = token_url
@@ -130,8 +126,8 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
                     token_url,
                     data=postdata,
                     auth=self._session.auth,
-                    verify=self.verify_cert,
-                    proxies=self._proxies,
+                    proxies=self._session.proxies,
+                    timeout=self._session.timeout,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:
@@ -141,10 +137,10 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
             #
             r.content
             r.raw.release_conn()
-            r.request.headers["referer"] = self.referer or "http"
+            r.request.headers["referer"] = self._session.referer or "http"
             r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r = r.connection.send(r.request, **kwargs)
-            _r.headers["referer"] = self.referer or "http"
+            _r.headers["referer"] = self._session.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r.history.append(r)
             return _r

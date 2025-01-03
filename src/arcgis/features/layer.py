@@ -37,6 +37,8 @@ from .managers import (
 from .feature import Feature, FeatureSet
 from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 _arcgis = LazyLoader("arcgis")
 
@@ -3771,7 +3773,11 @@ class OrientedImageryLayer(FeatureLayer):
         if index in [
             lyr["id"] for lyr in layers if lyr["type"] == "Oriented Imagery Layer"
         ]:
-            return cls(url=f"{item.url}/{index}", gis=item._gis)
+            if item._gis._use_private_url_only:
+                url: str = _get_item_url(item=item)
+            else:
+                url: str = _validate_url(item.url, item._gis)
+            return cls(url=f"{url}/{index}", gis=item._gis)
         else:
             raise Exception(
                 "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
