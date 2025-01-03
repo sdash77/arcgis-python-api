@@ -33,6 +33,7 @@ import requests
 from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
+from arcgis.gis._impl._util import _get_item_url
 
 
 ###########################################################################
@@ -306,7 +307,7 @@ class ServiceFactory(type):
         return Layer
 
     @staticmethod
-    def _get_layer_instance(layer_type, url, server, connection=None):
+    def _get_layer_instance(layer_type, url, server, connection=None, parent_url=None):
         """
         Handles nuanced differences in initializer signature
         between layer types and returns an instance of the Layer from type
@@ -335,6 +336,12 @@ class ServiceFactory(type):
             return _func(url, server)
         elif layer_type == _arcgis.geocoding._functions.Geocoder:
             return layer_type(location=url, gis=server)
+        elif (
+            layer_type == _arcgis.layers.SceneLayer
+            or layer_type == _arcgis.layers.VectorTileLayer
+        ):
+            # This is a special case where we pass in the parent url because serviceItemId is not part of the layer properties
+            return layer_type(url=url, gis=server, parent_url=parent_url)
         return layer_type(url=url, gis=server)
 
     def __call__(
@@ -342,6 +349,7 @@ class ServiceFactory(type):
         url_or_item: _arcgis.gis.Item | str = None,
         server=None,
         initialize=False,
+        parent_url=None,
     ):
         """generates the proper type of layer from a given url"""
         from ...gis.server import ServicesDirectory
@@ -349,7 +357,7 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = url_or_item.url
+            url = _get_item_url(url_or_item)
             if url in [None, ""]:
                 url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
@@ -387,7 +395,7 @@ class ServiceFactory(type):
                     )  # anonymous connection
                     server = ServicesDirectory(url=site_url)
             return cls._get_layer_instance(layer_type, url, server, connection)
-        return cls._get_layer_instance(layer_type, url, server)
+        return cls._get_layer_instance(layer_type, url, server, parent_url=parent_url)
 
 
 ###########################################################################
@@ -449,4 +457,5 @@ class Service(object, metaclass=ServiceFactory):
         url_or_item: _arcgis.gis.Item | str | None = None,
         server=None,
         initialize=False,
+        parent_url=None,
     ) -> None: ...

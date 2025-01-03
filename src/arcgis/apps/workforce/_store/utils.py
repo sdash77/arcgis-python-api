@@ -30,12 +30,10 @@ def add_features(feature_layer, features, use_global_ids=False):
         response = feature_layer.edit_features(
             adds=feature_set,
             use_global_ids=use_global_ids,
-            future=_should_use_async_apply_edits(feature_layer),
+            future=False,
         )
-        if _should_use_async_apply_edits(feature_layer):
-            add_results = response.result()[0]["addResults"]
-        else:
-            add_results = response["addResults"]
+
+        add_results = response["addResults"]
         errors = [result["error"] for result in add_results if not result["success"]]
         if errors:
             raise workforce.ServerError(errors)

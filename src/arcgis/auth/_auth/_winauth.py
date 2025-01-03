@@ -50,6 +50,8 @@ except:
 
 requests = LazyLoader("requests")
 
+__all__ = ["EsriWindowsAuth", "EsriKerberosAuth"]
+
 
 class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     _token_url = None
@@ -58,12 +60,14 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
     def __init__(
         self,
+        session: "EsriSession" | requests.Session,
         username: str = None,
         password: str = None,
         referer: str = None,
         verify_cert: bool = True,
         **kwargs,
     ):
+        self.session: "EsriSession" | requests.Session = session
         self.legacy = kwargs.pop("legacy", False)
         self.proxies = kwargs.pop("proxies", None)
         self._server_log = {}
@@ -77,10 +81,12 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
         try:
             if not username and not password and HAS_SSPI:
-                self.auth = EsriHttpNegotiateAuth()
+                self.auth = EsriHttpNegotiateAuth(session=session)
 
             elif username and password and HAS_SSPI:
-                self.auth = EsriHttpNegotiateAuth(username=username, password=password)
+                self.auth = EsriHttpNegotiateAuth(
+                    session=session, username=username, password=password
+                )
             elif WINDOWS == True and HAS_KERBEROS:
                 uname_format = _split_username(username)
                 prin = uname_format[0] + "@" + uname_format[1]
@@ -95,7 +101,9 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         from ._ntlm import EsriHttpNtlmAuth
 
                         self.auth = EsriHttpNtlmAuth(
-                            username=username, password=password
+                            session=session,
+                            username=username,
+                            password=password,
                         )
 
                     except Exception as ex:
@@ -141,10 +149,9 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             if server_url in self._server_log:
                 token_url = self._server_log[server_url]
             else:
-                info = requests.get(
+                info = self.session.get(
                     server_url + "/rest/info?f=json",
                     auth=self.auth,
-                    verify=self.verify_cert,
                     proxies=self.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
@@ -152,12 +159,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
-                token = requests.post(
+                token = self.session.post(
                     token_url,
                     data=postdata,
                     auth=self.auth,
                     proxies=self.proxies,
-                    verify=self.verify_cert,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:
@@ -211,25 +217,26 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
     def __init__(
         self,
-        referer: str | None = None,
-        verify_cert: bool = True,
+        session,
         *,
         username: str | None = None,
         password: str | None = None,
         **kwargs,
     ):
         """initializer"""
+        referer: str = kwargs.pop("referer", "http")
         if HAS_KERBEROS == False:
             raise ImportError(
                 "requests_kerberos is required to use this authentication handler."
             )
+
         self.proxies = kwargs.pop("proxies", None)
         self.legacy = kwargs.pop("legacy", False)
 
         self._server_log = {}
         self._tokens = {}
         self._token_url = None
-        self.verify_cert = verify_cert
+
         self._session: requests.Session = kwargs.pop("session", requests.Session())
         mutual_auth_lu = {
             1: requests_kerberos.REQUIRED,
@@ -296,8 +303,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
                     auth=self.auth,
-                    verify=self.verify_cert,
-                    proxies=self.proxies,
+                    proxies=self._session.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[server_url] = token_url
@@ -308,8 +314,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     token_url,
                     data=postdata,
                     auth=self.auth,
-                    verify=self.verify_cert,
-                    proxies=self.proxies,
+                    proxies=self._session.proxies,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:
