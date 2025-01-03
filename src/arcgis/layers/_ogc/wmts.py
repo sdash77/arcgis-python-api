@@ -266,7 +266,6 @@ class WMTSLayer(BaseOGC):
                 if t["Identifier"] == tile_matrix_identifier:
                     tile_matrix = t
                     break
-
         resource_url_template = (
             layer["ResourceURL"][0]["@template"]
             if isinstance(layer["ResourceURL"], (list, tuple))
@@ -279,6 +278,8 @@ class WMTSLayer(BaseOGC):
             .replace("{TileCol}", "{col}")
             .replace("{TileMatrixSet}", tile_matrix["Identifier"])
         )
+        if "Dimension" in layer:
+            url_template = url_template.replace("{Time}", layer["Dimension"]["Default"])
         bounding_box_name = (
             "BoundingBox" if "BoundingBox" in layer else "WGS84BoundingBox"
         )
@@ -318,8 +319,8 @@ class WMTSLayer(BaseOGC):
                 "spatialReference": spatial_reference,
             },
             "tileInfo": {
-                "rows": 256,
-                "cols": 256,
+                "rows": tile_matrix["TileMatrix"][0]["TileHeight"],
+                "cols": tile_matrix["TileMatrix"][0]["TileWidth"],
                 "dpi": 96,
                 "origin": {
                     "x": (fullExtent[2] + fullExtent[0]) / 2,
