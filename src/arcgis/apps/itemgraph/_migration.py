@@ -185,7 +185,8 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     item.download_thumbnail(files_folder)
 
     # download metadata
-    item.download_metadata(files_folder)
+    if "Metadata" in item_dict["typeKeywords"]:
+        item.download_metadata(files_folder)
 
     # resources
     res_folder = os.path.join(output_folder, "resources")
@@ -215,6 +216,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
 
     # data
     data_folder = os.path.join(output_folder, "data")
+    download_path = None
     if item.type in JSON_BASED_TYPES:
         path_name = "structure.json"
         download_path = item.download(data_folder, path_name)
@@ -241,7 +243,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     with open(json_file_path, "w") as json_file:
         json.dump(item_dict, json_file, indent=4, ensure_ascii=False)
 
-    if os.stat(download_path).st_size == 0:
+    if download_path and os.stat(download_path).st_size == 0:
         os.remove(download_path)
 
     return output_folder
@@ -286,6 +288,7 @@ class ImportPackage():
         with open(os.path.join(item_folder, "resources/resources.json"), "r") as res_file:
             resources = json.load(res_file)
         
+
         # read the data folder
         data_folder = os.path.join(item_folder, "data")
         res_folder_path = os.path.join(item_folder, "resources")
@@ -323,6 +326,10 @@ class ImportPackage():
         for prop_name in _property_names:
             if prop_name in item_properties:
                 props[prop_name] = item_properties[prop_name]
+        thumbnail_name = item_properties["thumbnail"].split("/")[1]
+        props["thumbnail"] = os.path.join(item_folder, "files", thumbnail_name)
+        if "Metadata" in item_properties["typeKeywords"]:
+            props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
         item_id = item_properties["id"]
         new_item_id = None
         if (
@@ -404,17 +411,19 @@ class ImportPackage():
                 except:
                     new_name = _get_unique_name(self.gis, item_properties["title"], True)
                     new_name = new_name.replace("/", "_")
-                    pub_params["name"] = new_name
+                    pub_params["title"] = new_name
                     new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
             
             self._service_mapping[item_id] = (item_properties["url"], new_item.url)
 
         elif item_properties["type"] in FILE_BASED_TYPES:
             for file in os.listdir(data_folder):
-                if file.endswith(".zip"):
-                    fp = os.path.join(data_folder, file)
-                    new_item = _add_data_item(fp, item_properties["type"], props)
-                    break
+                # if file.endswith(".zip"):
+                #     fp = os.path.join(data_folder, file)
+                #     new_item = _add_data_item(fp, item_properties["type"], props)
+                #     break
+                fp = os.path.join(data_folder, file)
+                new_item = _add_data_item(fp, item_properties["type"], props)
         
         elif item_properties["type"] in JSON_BASED_TYPES:
             reqs = self.graph.get_item(item_id).requires("node")
