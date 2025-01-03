@@ -1219,7 +1219,12 @@ class TestGraphClient(unittest.TestCase):
             self.assertFalse(pbf_location_property.hasZ)
             self.assertFalse(pbf_location_property.hasM)
             self.assertEqual(DataModelTypes_pb2.GraphPropertyRole.Regular, pbf_location_property.role)  # type: ignore
-            self.assertEqual(0, len(pbf_entity_type.entity.field_indexes))
+            self.assertEqual(1, len(pbf_entity_type.entity.field_indexes))
+            pbf_field_index = pbf_entity_type.entity.field_indexes[0]
+            self.assertEqual("myIdx", pbf_field_index.name)
+            self.assertTrue(pbf_field_index.isAscending)
+            self.assertTrue(pbf_field_index.isUnique)
+            self.assertEqual("abc,def", pbf_field_index.fields)
             self.assertFalse(pbf_entity_type.entity.strict)
             self.assertEqual(1, len(pbf_request.relationship_types))
             pbf_relationship_type = pbf_request.relationship_types[0]
@@ -1265,6 +1270,14 @@ class TestGraphClient(unittest.TestCase):
                             name="location",
                             field_type="esriFieldTypeGeometry",
                             geometry_type="esriGeometryPoint",
+                        ),
+                    },
+                    field_indexes={
+                        "myIdx": FieldIndex(
+                            name="myIdx",
+                            is_ascending=True,
+                            is_unique=True,
+                            fields=["abc", "def"],
                         ),
                     },
                 )
