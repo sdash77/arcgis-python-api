@@ -15,7 +15,6 @@ class TestDataStoreLifeCycles(unittest.TestCase):
         if len(datastores) > 0:
             datastore = datastores[0]
             assert datastore.lifecycleinfos
-            print(datastore.lifecycleinfos)
             assert isinstance(datastore.lifecycleinfos, dict)
 
 

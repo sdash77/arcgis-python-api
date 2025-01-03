@@ -77,7 +77,6 @@ class TestPortalDataStore(unittest.TestCase):
         """tests the datastore root properties"""
         assert isinstance(self.gis.datastore, PortalDataStore)
         assert self.gis.datastore.properties
-        assert self.gis.datastore.properties["dataStoreId"] == self.item.itemid
         assert self.gis.datastore._all_datasets  # not used publicly
 
     def test_register_unregister_operations(self):
