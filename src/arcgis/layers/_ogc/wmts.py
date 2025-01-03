@@ -291,14 +291,24 @@ class WMTSLayer(BaseOGC):
             for coord in layer[bounding_box_name]["UpperCorner"].strip().split(" ")
         ]
         lods = []
-        WMTS_DPI = 90.71428571428571
+        DPI = 96  # Default DPI for most Map Viewer configurations
+        METER_PER_PIXEL_AT_SCALE_1 = (
+            0.00028  # Constant for pixel size in meters at scale denominator = 1
+        )
+        EARTH_CIRCUMFERENCE = 40075000  # Approximate Earth circumference in meters
+        METERS_PER_DEGREE = EARTH_CIRCUMFERENCE / 360
+
         for l in tile_matrix["TileMatrix"]:
+            scale_denominator = float(l["ScaleDenominator"])
+            resolution_meters = scale_denominator * METER_PER_PIXEL_AT_SCALE_1
+            resolution_degrees = resolution_meters / METERS_PER_DEGREE
+
             lods.append(
                 {
                     "level": int(l["Identifier"]),
                     "levelValue": l["Identifier"],
-                    "resolution": float(l["ScaleDenominator"]) * 0.00028,
-                    "scale": float(l["ScaleDenominator"]) * WMTS_DPI / 96,
+                    "resolution": resolution_degrees,  # Degrees per pixel for Map Viewer
+                    "scale": scale_denominator,  # Scale remains unchanged
                 }
             )
         if bounding_box_name == "WGS84BoundingBox":
