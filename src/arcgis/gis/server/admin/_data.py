@@ -236,6 +236,7 @@ class Datastore(BaseServer):
         :return:
             True if the data item was successfully validated.
         """
+        self._init()
         params = {"f": "json", "item": self._json_dict}
         path = self._datastore._url + "/validateDataItem"
         if (
@@ -252,7 +253,16 @@ class Datastore(BaseServer):
         else:
             res = self._con.post(path, params, verify_cert=False)
 
-        return res["status"] == "success"
+        if "status" in res:
+            return res["status"] == "success"
+        if "machines" in res:
+            success = True
+            for machine in res["machines"]:
+                if "status" not in machine or machine["status"] != "success":
+                    success = False
+                    break
+            return success
+        return False
 
     # ----------------------------------------------------------------------
     @property
