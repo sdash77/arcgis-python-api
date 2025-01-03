@@ -48,7 +48,7 @@ from arcgis.geometry import (
 import arcgis.env
 from arcgis.auth.tools import LazyLoader
 
-gis = LazyLoader("arcgis.gis")
+arcgis_gis = LazyLoader("arcgis.gis")
 
 
 class AreaUnits(Enum):
@@ -284,7 +284,7 @@ def auto_complete(
     polygons: Optional[list[Polygon]] = None,
     polylines: Optional[list[Polyline]] = None,
     spatial_ref: Optional[SpatialReference] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -332,7 +332,7 @@ def buffer(
     buffer_sr: Optional[float] = None,
     union_results: Optional[bool] = None,
     geodesic: Optional[bool] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -455,7 +455,7 @@ def buffer(
 def convex_hull(
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -586,7 +586,7 @@ def cut(
     cutter: Polyline,
     target: Union[list[Polyline], list[Polygon]],
     spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -637,7 +637,7 @@ def densify(
     max_segment_length: Optional[float],
     length_unit: Optional[str] | Optional[LengthUnits],
     geodesic: bool = False,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -709,7 +709,7 @@ def difference(
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometry: Geometry,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -764,7 +764,7 @@ def distance(
     geometry2: Geometry,
     distance_unit: str | LengthUnits | None = "",
     geodesic: bool = False,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -832,7 +832,7 @@ def find_transformation(
     out_sr: Optional[Union[int, dict[str, Any]]],
     extent_of_interest: Optional[dict[str, Any]] = None,
     num_of_results: int = 1,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -908,7 +908,7 @@ def from_geo_coordinate_string(
     strings: list[str],
     conversion_type: Optional[str],
     conversion_mode: Optional[str] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -996,7 +996,7 @@ def generalize(
     geometries: list[Geometry],
     max_deviation: int,
     deviation_unit: str | LengthUnits | None = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1057,7 +1057,7 @@ def intersect(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometries: list[Geometry],
     geometry: Geometry,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1108,7 +1108,7 @@ def intersect(
 def label_points(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     polygons: list[Polygon],
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1151,7 +1151,7 @@ def lengths(
     polylines: Polyline,
     length_unit: str | LengthUnits,
     calculation_type: str,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1228,7 +1228,7 @@ def offset(
     bevel_ratio: int = 10,
     simplify_result: bool = False,
     spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1334,7 +1334,7 @@ def project(
     out_sr: Optional[Union[int, dict[str, Any]]],
     transformation: str = "",
     transform_forward: bool = False,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1415,7 +1415,7 @@ def relation(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     spatial_relation: str = "esriGeometryRelationIntersection",
     relation_param: str = "",
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1502,7 +1502,7 @@ def reshape(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     target: Union[Polyline, Polygon],
     reshaper: Polyline,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1542,7 +1542,7 @@ def reshape(
 def simplify(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1588,7 +1588,7 @@ def to_geo_coordinate_string(
     num_of_digits: Optional[int] = None,
     rounding: bool = True,
     add_spaces: bool = True,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1719,7 +1719,7 @@ def trim_extend(
     polylines: list[Polyline],
     trim_extend_to: Polyline,
     extend_how: int = 0,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """
@@ -1782,7 +1782,7 @@ def trim_extend(
 def union(
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[str, dict[str:str]]] = None,
-    gis: Optional[gis.GIS] = None,
+    gis: Optional[arcgis_gis.GIS] = None,
     future: bool = False,
 ):
     """

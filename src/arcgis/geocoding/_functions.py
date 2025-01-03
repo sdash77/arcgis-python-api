@@ -12,6 +12,7 @@ import logging
 from ..features import FeatureSet
 from ..geometry import Geometry, Point, SpatialReference
 from arcgis._impl.common._utils import _validate_url, chunks
+from arcgis.gis._impl._util import _get_item_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +83,10 @@ class Geocoder(_GISResource):
             raise TypeError(
                 "item must be a type of Geocoding Service, not " + item.type
             )
-        url = _validate_url(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
         return cls(url, item._gis)
 
     def geocode(

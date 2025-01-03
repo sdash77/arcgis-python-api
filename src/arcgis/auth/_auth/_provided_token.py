@@ -2,10 +2,13 @@
 Handles security where a user provides the token
 """
 
+from __future__ import annotations
 from requests.auth import AuthBase
 from urllib import parse
 from ._schain import SupportMultiAuth
 from ..tools import parse_url, assemble_url
+
+__all__ = ["EsriUserTokenAuth"]
 
 
 class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
