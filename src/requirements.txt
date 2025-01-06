@@ -26,3 +26,4 @@ pyspnego >=0.8.0
 matplotlib-inline
 pyarrow >=12.0.0
 puremagic >=1.15,<2
+gdal >=3.9.2,<4

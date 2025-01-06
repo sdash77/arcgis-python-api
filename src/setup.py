@@ -256,6 +256,7 @@ kwargs = {
     # $ pip install -e .[dev,test]
     "extras_require": {
         "gp": ["dill"],
+        "gdal" :['gdal >=3.9.2, <4'],
     },
     "distclass": BinaryDistribution,
     # extras_require={
