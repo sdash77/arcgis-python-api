@@ -14,6 +14,8 @@ from arcgis._impl.common._mixins import PropertyMap
 
 from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 _dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
@@ -2236,7 +2238,11 @@ class MapImageLayer(_gis.Layer):
     def fromitem(cls, item: _gis.Item) -> MapImageLayer:
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     @property
     def _lyr_dict(self):
@@ -2623,7 +2629,7 @@ class MapImageLayer(_gis.Layer):
 
                                     <width>, <height>, <dpi>
         ------------------     --------------------------------------------------------------------
-        return_geometry        Optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the result set will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
         max_offset             Optional integer. This option can be used to specify the maximum
@@ -2703,7 +2709,7 @@ class MapImageLayer(_gis.Layer):
                                         image_display = "width",
                                         return_geometry =True,
                                         return_z = True,
-                                        retrun_m = True,
+                                        return_m = True,
                                         return_field_name = True,
                                         )
             >>> type(identified)
@@ -2712,27 +2718,37 @@ class MapImageLayer(_gis.Layer):
 
         if geometry_type.find("esriGeometry") == -1:
             geometry_type = "esriGeometry" + geometry_type
-        if sr is None:
-            sr = kwargs.pop("sr", None)
-        if layer_defs is None:
-            layer_defs = kwargs.pop("layerDefs", None)
-        if time_value is None:
-            time_value = kwargs.pop("layerTimeOptions", None)
-        if return_geometry is None:
-            return_geometry = kwargs.pop("returnGeometry", True)
-        if return_m is None:
-            return_m = kwargs.pop("returnM", False)
-        if return_z is None:
-            return_z = kwargs.pop("returnZ", False)
-        if max_offset is None:
-            max_offset = kwargs.pop("maxAllowableOffset", None)
-        if precision is None:
-            precision = kwargs.pop("geometryPrecision", None)
-        if dynamic_layers is None:
-            dynamic_layers = kwargs.pop("dynamicLayers", None)
-        if gdb_version is None:
-            gdb_version = kwargs.pop("gdbVersion", None)
 
+        def get_param(key, default):
+            # see if param in kwargs, if not, return default
+            return kwargs.pop(key, default)
+
+        # Check if these parameters are in kwargs
+        sr = sr or get_param("sr", None)
+        layer_defs = layer_defs or get_param("layerDefs", None)
+        time_value = time_value or get_param("layerTimeOptions", None)
+        return_geometry = (
+            return_geometry
+            if return_geometry is not None
+            else get_param("returnGeometry", True)
+        )
+        layers = layers or get_param("layers", "all")
+        time_options = time_options or get_param("layerTimeOptions", None)
+        return_m = return_m if return_m is not None else get_param("returnM", False)
+        return_z = return_z if return_z is not None else get_param("returnZ", False)
+        max_offset = max_offset or get_param("maxAllowableOffset", None)
+        precision = precision or get_param("geometryPrecision", None)
+        dynamic_layers = dynamic_layers or get_param("dynamicLayers", None)
+        gdb_version = gdb_version or get_param("gdbVersion", None)
+
+        # check geometry input is a json format
+        if isinstance(geometry, _geometry.Geometry):
+            geometry = geometry.JSON
+        elif isinstance(geometry, list):
+            if all(isinstance(g, _geometry.Geometry) for g in geometry):
+                geometry = [g.JSON for g in geometry]
+
+        # start building params dict and include defined parameters
         params = {
             "f": "json",
             "geometry": geometry,
@@ -2740,45 +2756,32 @@ class MapImageLayer(_gis.Layer):
             "tolerance": tolerance,
             "mapExtent": map_extent,
             "imageDisplay": image_display,
+            **{
+                key: value
+                for key, value in {
+                    "sr": sr,
+                    "layerDefs": layer_defs,
+                    "time": time_value,
+                    "layerTimeOptions": time_options,
+                    "layers": layers,
+                    "returnGeometry": return_geometry,
+                    "returnM": return_m,
+                    "returnZ": return_z,
+                    "maxAllowableOffset": max_offset,
+                    "geometryPrecision": precision,
+                    "dynamicLayers": dynamic_layers,
+                    "gdbVersion": gdb_version,
+                    "returnUnformattedValues": return_unformatted,
+                    "returnFieldName": return_field_name,
+                    "datumTransformations": transformations,
+                    "mapRangeValues": map_range_values,
+                    "layerRangeValues": layer_range_values,
+                    "layerParameterValues": layer_parameters,
+                }.items()
+                if value is not None
+            },
         }
-        if sr:
-            params["sr"] = sr
-        if layer_defs:
-            params["layerDefs"] = layer_defs
-        if time_value:
-            params["time"] = time_value
-        if time_options:
-            params["layerTimeOptions"] = time_options
-        if layers:
-            params["layers"] = layers
-        if tolerance:
-            params["tolerance"] = tolerance
-        if return_geometry is not None:
-            params["returnGeometry"] = return_geometry
-        if max_offset:
-            params["maxAllowableOffset"] = max_offset
-        if precision:
-            params["geometryPrecision"] = precision
-        if dynamic_layers:
-            params["dynamicLayers"] = dynamic_layers
-        if return_m is not None:
-            params["returnM"] = return_m
-        if return_z is not None:
-            params["returnZ"] = return_z
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if return_unformatted is not None:
-            params["returnUnformattedValues"] = return_unformatted
-        if return_field_name is not None:
-            params["returnFieldName"] = return_field_name
-        if transformations:
-            params["datumTransformations"] = transformations
-        if map_range_values:
-            params["mapRangeValues"] = map_range_values
-        if layer_range_values:
-            params["layerRangeValues"] = layer_range_values
-        if layer_parameters:
-            params["layerParameterValues"] = layer_parameters
+
         identifyURL = "{url}/identify".format(url=self._url)
 
         resp: requests.Response = self._session.post(url=identifyURL, data=params)

@@ -3,6 +3,7 @@ import random
 from uuid import uuid4
 import string
 import os
+import re
 import tempfile
 import shutil
 from arcgis.auth.tools import LazyLoader
@@ -188,7 +189,8 @@ def _create_items(gis, file, file_type, **kwargs):
             "layerInfo": {"capabilities": "Query"},
         }
         if service_name is None:
-            service_name = publish_parameters["name"]
+            service_name = re.sub(r"[\s\W]", "_", title.replace(" ", ""))
+
         #  get a unique service name
         service_name = _find_service_name(gis, service_name, "featureService")
         publish_parameters["name"] = service_name
