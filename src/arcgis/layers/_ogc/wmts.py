@@ -291,7 +291,6 @@ class WMTSLayer(BaseOGC):
             for coord in layer[bounding_box_name]["UpperCorner"].strip().split(" ")
         ]
         lods = []
-        DPI = 96  # Default DPI for most Map Viewer configurations
         METER_PER_PIXEL_AT_SCALE_1 = (
             0.00028  # Constant for pixel size in meters at scale denominator = 1
         )
@@ -342,9 +341,10 @@ class WMTSLayer(BaseOGC):
             },
             "wmtsInfo": {
                 "url": url,
-                "layerIdentifier": layer["Title"],
+                "layerIdentifier": layer["Identifier"],
                 "tileMatrixSet": [tile_matrix["Identifier"]],
             },
+            "title": layer["Title"],
         }
 
     @property
