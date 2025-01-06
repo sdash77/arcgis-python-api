@@ -10,6 +10,8 @@ from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
 from arcgis._impl.common._deprecate import deprecated
+from arcgis.gis._impl._util import _get_item_url
+from arcgis._impl.common._utils import _validate_url
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -2335,8 +2337,11 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise TypeError(
                 "Item must be a type of Vector Tile Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = item.url
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     @property
@@ -3187,7 +3192,11 @@ class MapImageLayer(arcgis.gis.Layer):
     def fromitem(cls, item: _gis.Item):
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
-        return cls(item.url, item._gis)
+        if item._gis._use_private_url_only:
+            url: str = _get_item_url(item=item)
+        else:
+            url: str = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     @property
     def _lyr_dict(self):

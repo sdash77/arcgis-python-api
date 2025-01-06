@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import os
 from arcgis.auth.tools import LazyLoader
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from arcgis.gis import GIS
 from arcgis.features.layer import (
     FeatureLayer,
@@ -33,6 +33,7 @@ import requests
 from types import LambdaType
 
 _arcgis = LazyLoader("arcgis")
+from arcgis.gis._impl._util import _get_item_url
 
 
 ###########################################################################
@@ -296,13 +297,17 @@ class ServiceFactory(type):
             from .._ogc import WMTSLayer
 
             return WMTSLayer
+        if base_name_lower == "wmsserver" or url.lower().find("service=wms") > -1:
+            from .._ogc import WMSLayer
+
+            return WMSLayer
 
         # GlobeServer and MobileServer use generic Layer
         # Fall back to Layer for all other services
         return Layer
 
     @staticmethod
-    def _get_layer_instance(layer_type, url, server, connection=None):
+    def _get_layer_instance(layer_type, url, server, connection=None, parent_url=None):
         """
         Handles nuanced differences in initializer signature
         between layer types and returns an instance of the Layer from type
@@ -312,6 +317,14 @@ class ServiceFactory(type):
         """
         if layer_type == GeoData:
             return layer_type(url=url, connection=connection)
+        if layer_type == _arcgis.layers._ogc._wms.WMSLayer:
+            from urllib.parse import urlparse, parse_qs
+
+            parameters: dict = parse_qs(urlparse(url).query)
+            version: str = "1.3.0"
+            if "version" in parameters:
+                version: str = parameters["version"][0]
+            return layer_type(url=url, gis=server, version=version)
         if isinstance(layer_type, _arcgis.layers._ogc._csv.CSVLayer):
             return layer_type(url_or_item=url, gis=server)
         if isinstance(layer_type, tuple):
@@ -323,6 +336,12 @@ class ServiceFactory(type):
             return _func(url, server)
         elif layer_type == _arcgis.geocoding._functions.Geocoder:
             return layer_type(location=url, gis=server)
+        elif (
+            layer_type == _arcgis.layers.SceneLayer
+            or layer_type == _arcgis.layers.VectorTileLayer
+        ):
+            # This is a special case where we pass in the parent url because serviceItemId is not part of the layer properties
+            return layer_type(url=url, gis=server, parent_url=parent_url)
         return layer_type(url=url, gis=server)
 
     def __call__(
@@ -330,6 +349,7 @@ class ServiceFactory(type):
         url_or_item: _arcgis.gis.Item | str = None,
         server=None,
         initialize=False,
+        parent_url=None,
     ):
         """generates the proper type of layer from a given url"""
         from ...gis.server import ServicesDirectory
@@ -337,7 +357,7 @@ class ServiceFactory(type):
         url: str
         server = server or _arcgis.env.active_gis
         if isinstance(url_or_item, _arcgis.gis.Item):
-            url = url_or_item.url
+            url = _get_item_url(url_or_item)
             if url in [None, ""]:
                 url = cls._get_url_from_item(url_or_item, gis=server)
         elif isinstance(url_or_item, str):
@@ -375,7 +395,7 @@ class ServiceFactory(type):
                     )  # anonymous connection
                     server = ServicesDirectory(url=site_url)
             return cls._get_layer_instance(layer_type, url, server, connection)
-        return cls._get_layer_instance(layer_type, url, server)
+        return cls._get_layer_instance(layer_type, url, server, parent_url=parent_url)
 
 
 ###########################################################################
@@ -437,4 +457,5 @@ class Service(object, metaclass=ServiceFactory):
         url_or_item: _arcgis.gis.Item | str | None = None,
         server=None,
         initialize=False,
+        parent_url=None,
     ) -> None: ...

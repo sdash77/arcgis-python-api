@@ -894,7 +894,7 @@ class Version(object):
         url = "%s/differences" % self._url
         if from_moment:
             if not "DEFAULT" in self.properties.versionName:
-                raise (
+                raise Exception(
                     "The from_moment parameter is only available for the DEFAULT version."
                 )
         import json
@@ -1066,7 +1066,7 @@ class Version(object):
                 res = self._con.post(url, params)
                 return res["success"]
         else:
-            raise ("Version must be in edit mode to run post.")
+            raise Exception("Version must be in edit mode to run post.")
 
     # ----------------------------------------------------------------------
     def __enter__(self):
