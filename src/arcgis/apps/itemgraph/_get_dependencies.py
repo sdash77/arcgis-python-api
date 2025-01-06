@@ -233,6 +233,46 @@ def _get_related_items(item, forward=True, reverse=True):
 
     return forward_deps, reverse_deps
 
+def _get_related_item_dict(item, forward=True, reverse=True):
+    if not forward and not reverse:
+        raise ValueError("At least one direction must be specified.")
+
+    rel_item_dict = {}
+    f_rel_types = [
+        "Item2Attachment",
+        "Item2Report",
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+    ]
+    r_rel_types = [
+        "Listed2Provisioned",
+        "Listed2ImplicitlyListed",
+        "SurveyAddIn2Data",
+        "Solution2Item",
+        "APIKey2Item",
+        "Mission2Item",
+    ]
+    if item.type in _RELATIONSHIPS:
+        f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
+        r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+
+    if forward:
+        f_rel_dict = {}
+        for rel_type in f_rel_types:
+            rel_items = item.related_items(rel_type, direction="forward")
+            if rel_items:
+                f_rel_dict[rel_type] = [rel_item.id for rel_item in rel_items]
+        rel_item_dict["forward"] = f_rel_dict
+
+    if reverse:
+        r_rel_dict = {}
+        for rel_type in r_rel_types:
+            rel_items = item.related_items(rel_type, direction="reverse")
+            if rel_items:
+                r_rel_dict[rel_type] = [rel_item.id for rel_item in rel_items]
+        rel_item_dict["reverse"] = r_rel_dict
+
+    return rel_item_dict
 
 def _parse_webmap(item):
     items = []

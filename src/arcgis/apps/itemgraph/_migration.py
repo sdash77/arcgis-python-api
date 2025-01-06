@@ -1,4 +1,5 @@
 from ._item_graph import ItemGraph, ItemNode, load_from_file
+from ._get_dependencies import _get_related_item_dict
 from arcgis.gis import GIS, Item, ContentManager
 from arcgis.gis._impl._content_manager.folder import Folder
 from arcgis._impl.common._utils import _text_replace
@@ -210,6 +211,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     relationships["requires"] = node.requires("id")
     relationships["contained_by"] = node.contained_by("id")
     relationships["required_by"] = node.required_by("id")
+    relationships["related_items"] = _get_related_item_dict(item, forward=True, reverse=False)["forward"]
     rel_file_path = os.path.join(output_folder, "relationships.json")
     with open(rel_file_path, "w") as rel_file:
         json.dump(relationships, rel_file, indent=4)
@@ -263,6 +265,7 @@ class ImportPackage():
         manifest_file_path = os.path.join(self._temp_package, "manifest.json")
         with open(manifest_file_path, "r") as manifest_file:
             self.items = json.load(manifest_file)
+        self._item_relationships = {}
     
     def _unpack_package(self):
         temp_dir = tempfile.TemporaryDirectory()
@@ -411,7 +414,7 @@ class ImportPackage():
                 except:
                     new_name = _get_unique_name(self.gis, item_properties["title"], True)
                     new_name = new_name.replace("/", "_")
-                    pub_params["title"] = new_name
+                    pub_params["name"] = new_name
                     new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
             
             self._service_mapping[item_id] = (item_properties["url"], new_item.url)
@@ -476,6 +479,8 @@ class ImportPackage():
                 new_item.resources.add(file = res_path, folder_name = res_folder)
             # new_item.resources.add(res_path)
         
+        # add the related_items relationships to dict for reconstruction
+        self._item_relationships[item_id] = relationships["related_items"]
         # return the item
         return new_item
     
@@ -519,19 +524,35 @@ class ImportPackage():
             item_folder = os.path.join(self._temp_package, itemid)
             new_item = self._import_item(item_folder, preserve_id = preserve_ids, folder=folder)
             created_items.append(new_item)
-            # if we changed the item id, update mapping so other items adjust
-            if itemid != new_item.id:
-                item_mapping[itemid] = new_item.id
-            reqs = node.requires("id")
-            # Check if any item in the reqs is a key in the mapping
-            # maybe put this in the _import_item part instead?
-            if any(req in item_mapping for req in reqs):
-                try:
-                    new_item.remap_data(item_mapping)
-                except:
-                    pass
-
+            # # if we changed the item id, update mapping so other items adjust
+            # if itemid != new_item.id:
+            #     item_mapping[itemid] = new_item.id
+            # reqs = node.requires("id")
+            # # Check if any item in the reqs is a key in the mapping
+            # # maybe put this in the _import_item part instead?
+            # if any(req in item_mapping for req in reqs):
+            #     try:
+            #         new_item.remap_data(item_mapping)
+            #     except:
+            #         pass
+        # have to wait until all items are created to restore related items
+        # due to possible presence of reverse relationships
+        self._restore_related_items()
         return created_items
+    
+    def _restore_related_items(self):
+        for itemid, rel_dict in self._item_relationships.items():
+            if rel_dict == {}:
+                continue
+            try:
+                new_id = self.created_item_mapping[itemid]
+                new_item = self.gis.content.get(new_id)
+                for rel_type, rel_list in rel_dict.items():
+                    for rel_id in rel_list:
+                        new_rel_item = self.gis.content.get(self.created_item_mapping[rel_id])
+                        new_item.add_relationship(new_rel_item, rel_type)
+            except:
+                continue
     
 def _get_unique_name(target, name, force_add_guid_suffix=False):
     """Create a new unique name for the service.
