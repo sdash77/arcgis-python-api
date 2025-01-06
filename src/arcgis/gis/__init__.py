@@ -743,8 +743,7 @@ class GIS(object):
         if (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_admin"
+            and me.get("role", None) == "org_admin"
         ):
             try:
                 if self._is_hosted_nb_home:
@@ -762,9 +761,7 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -772,9 +769,7 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import (
-                        PortalAdminManager,
-                    )
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -788,15 +783,12 @@ class GIS(object):
         elif (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_publisher"
+            and me.get("role", None) == "org_publisher"
             and self._portal.is_arcgisonline is False
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -813,7 +805,7 @@ class GIS(object):
         elif (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "privileges")
+            and me.get("privileges", None) is not None
             and self._portal.is_arcgisonline is False
         ):
             privs = [
@@ -832,9 +824,7 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import (
-                            KubernetesAdmin,
-                        )
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -851,15 +841,12 @@ class GIS(object):
         if (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_publisher"
+            and me.get("role", None) == "org_publisher"
             and self._portal.is_arcgisonline is False
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -1084,9 +1071,7 @@ class GIS(object):
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
                     try:
-                        from arcgis.gis._impl._decrypt_nbauth import (
-                            get_token,
-                        )
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
                     except ImportError:
                         from arcgis.gis._impl.nbauth import get_token
 
@@ -13438,7 +13423,7 @@ class Item(dict):
             url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
 
-                lyr = ImageryLayer(url, self._gis)
+                lyr = ImageryLayer(url, self._gis, parent_url=url)
 
                 try:
                     item_data = self.get_data()
@@ -13465,7 +13450,7 @@ class Item(dict):
                     layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(Service(url, self._gis))
+                layers.append(Service(url, self._gis, parent_url=url))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13517,7 +13502,7 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
-                            lyr = Service(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis, parent_url=svc.url)
                         else:
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Layer(lyr_url, self._gis)
@@ -16677,7 +16662,7 @@ class Item(dict):
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
-        if (self._gis.is_arcgisonline or self._gis.version >= [2024, 2]) and (
+        if (self._gis._is_arcgisonline or self._gis.version >= [2024, 2]) and (
             fileType in ["excel", "csv", "geojson"]
         ):
             publish_parameters["fieldTypesVersion"] = "V2"
@@ -16794,16 +16779,15 @@ class Item(dict):
         folder_id = None
         if folder is not None:
             if isinstance(folder, str):
-                if folder == "/":
-                    folder_id = "/"
-                else:
-                    folder_id = self._portal.get_folder_id(owner_name, folder)
+                folder_id = self._gis.content.folders.get(folder=folder)._fid
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
             elif isinstance(folder, _folder.Folder):
                 folder_id = folder._fid
             else:
-                print("folder should be folder name as a string, or dict with id")
+                print(
+                    "Folder not found. Folder should be an instance of Folder class, a folder name as a string, or dict with id"
+                )
 
         if folder_id is not None:
             ret = self._portal.move_item(
@@ -19185,7 +19169,7 @@ class Layer(_GISResource):
     the GIS.
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, **kwargs):
         super(Layer, self).__init__(url, gis)
         self.filter = None
         self._time_filter = None
