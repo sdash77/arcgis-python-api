@@ -15449,6 +15449,11 @@ class Item(dict):
                 if "fileName" not in item_properties:
                     fileName = self.name
                     item_properties["fileName"] = fileName
+            # Make sure thumbnail doesn't get reset in the update
+            delete_file = False
+            if thumbnail is None and self.thumbnail:
+                thumbnail = self.download_thumbnail()
+                delete_file = True
             # update everything but the data
             ret = self._portal.update_item(
                 self.itemid,
@@ -15460,6 +15465,8 @@ class Item(dict):
                 folder,
                 large_thumbnail,
             )
+            if delete_file:
+                os.remove(thumbnail)
             # update the data by part:
             params = {
                 "f": "json",
@@ -15536,6 +15543,12 @@ class Item(dict):
                     fileName = self.name
                     item_properties["fileName"] = fileName
 
+            # Make sure thumbnail doesn't get reset in the update
+            delete_file = False
+            if thumbnail is None and self.thumbnail:
+                thumbnail = self.download_thumbnail()
+                delete_file = True
+
             ret = self._portal.update_item(
                 self.itemid,
                 item_properties,
@@ -15548,6 +15561,8 @@ class Item(dict):
             )
             if ret:
                 self._hydrate()
+            if delete_file:
+                os.remove(thumbnail)
             return ret
 
     # ----------------------------------------------------------------------
