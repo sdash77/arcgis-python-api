@@ -245,12 +245,19 @@ kwargs = {
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    "cmdclass": {"develop": develop, "install": install, "egg_info": egg_info,},
+    "cmdclass": {
+        "develop": develop,
+        "install": install,
+        "egg_info": egg_info,
+    },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {"gp": ["dill"], "gdal": ["gdal >=3.9.2, <4"],},
+    "extras_require": {
+        "gp": ["dill"],
+        "gdal": ["gdal >=3.9.2, <4"],
+    },
     "distclass": BinaryDistribution,
     # extras_require={
     #     'dev': ['check-manifest'],
