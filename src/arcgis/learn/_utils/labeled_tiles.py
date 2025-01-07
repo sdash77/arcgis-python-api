@@ -154,10 +154,6 @@ def plot_multi_top_losses_modified(
     if samples > 20:
         print("Max 20 samples")
         return
-    losses, idxs = self.top_losses(self.data.c)
-    l_dim = len(losses.size())
-    if l_dim == 1:
-        losses, idxs = self.top_losses()
     (
         infolist,
         ordlosses_idxs,
@@ -166,36 +162,50 @@ def plot_multi_top_losses_modified(
         losses_mismatches,
         mismatchescontainer,
     ) = ([], [], [], [], [], [])
-    truthlabels = np.asarray(self.y_true, dtype=int)
+    predclass, truthlabels, losses = self.learn.get_preds(with_loss=True)
     classes_ids = [k for k in enumerate(self.data.classes)]
-    predclass = np.asarray(self.pred_class)
-    for i, pred in enumerate(predclass):
-        where_truth = np.nonzero((truthlabels[i] > 0))[0]
-        mismatch = np.all(pred != where_truth)
-        if mismatch:
-            mismatches_idxs.append(i)
-            if l_dim > 1:
-                losses_mismatches.append((losses[i][pred], i))
-            else:
-                losses_mismatches.append((losses[i], i))
-        if l_dim > 1:
-            infotup = (
-                i,
-                pred,
-                where_truth,
-                losses[i][pred],
-                np.round(self.preds[i], decimals=3)[pred],
-                mismatch,
+    predclass_label = (predclass > 0.5).float()
+    losses_per_valid_item = losses.view(len(self.data.valid_ds.items), len(classes_ids))
+    losses_pred_classes = predclass_label * losses_per_valid_item
+    probability_pred_classes = predclass_label * predclass
+    losses_pred_classes_mean = torch.tensor([])
+    probability_pred_classes_mean = torch.tensor([])
+    for col1, col2 in zip(losses_pred_classes, probability_pred_classes):
+        non_zero_values1 = col1[col1 != 0]  # Filter out non-zero values
+        non_zero_values2 = col2[col2 != 0]
+        if len(non_zero_values2) > 0:
+            losses_pred_classes_mean = torch.cat(
+                (
+                    losses_pred_classes_mean,
+                    torch.tensor([non_zero_values1.mean().item()]),
+                )
+            )
+            probability_pred_classes_mean = torch.cat(
+                (
+                    probability_pred_classes_mean,
+                    torch.tensor([non_zero_values2.mean().item()]),
+                )
             )
         else:
-            infotup = (
-                i,
-                pred,
-                where_truth,
-                losses[i],
-                np.round(self.preds[i], decimals=3)[pred],
-                mismatch,
+            losses_pred_classes_mean = torch.cat(
+                (losses_pred_classes_mean, torch.tensor([0.0]))
             )
+            probability_pred_classes_mean = torch.cat(
+                (probability_pred_classes_mean, torch.tensor([0.0]))
+            )
+    for i, (act, pred) in enumerate(zip(truthlabels, predclass_label)):
+        mismatch = not (act.eq(pred).all())
+        if mismatch:
+            mismatches_idxs.append(i)
+            losses_mismatches.append((losses_pred_classes_mean[i], i))
+        infotup = (
+            i,
+            pred,
+            act,
+            losses_pred_classes_mean[i],
+            probability_pred_classes_mean[i],
+            mismatch,
+        )
         infolist.append(infotup)
     ds = self.data.dl(self.ds_type).dataset
     mismatches = ds[mismatches_idxs]
@@ -208,17 +218,19 @@ def plot_multi_top_losses_modified(
     )
     samples = min(samples, len(mismatches))
     from arcgis.learn._utils.common import ArcGISMSImage
+    from itertools import compress
 
     for ima in range(len(mismatches_ordered_byloss)):
         mismatchescontainer.append(mismatches_ordered_byloss[ima][0])
     for sampleN in range(samples):
         actualclasses = ""
-        for clas in infolist[ordlosses_idxs[sampleN]][2]:
-            actualclasses = f"{actualclasses} -- {str(classes_ids[clas][1])}"
+        predictedclasses = ""
+        actualclasses = f"{actualclasses} -- {str(r';'.join(compress(self.data.classes, infolist[ordlosses_idxs[sampleN]][2].bool())))}"
+        predictedclasses = f"{predictedclasses} -- {str(r';'.join(compress(self.data.classes, infolist[ordlosses_idxs[sampleN]][1].bool())))}"
         imag = mismatches_ordered_byloss[sampleN][0]
         imag = ArcGISMSImage.show(imag, return_ax=True)
         imag.set_title(
-            f"""Predicted: {classes_ids[infolist[ordlosses_idxs[sampleN]][1]][1]} \nActual: {actualclasses}\nLoss: {infolist[ordlosses_idxs[sampleN]][3]}\nProbability: {infolist[ordlosses_idxs[sampleN]][4]}""",
+            f"""Predicted: {predictedclasses} \nActual: {actualclasses}\nLoss: {infolist[ordlosses_idxs[sampleN]][3]}\nProbability: {infolist[ordlosses_idxs[sampleN]][4]}""",
             loc="left",
         )
         plt.show()
