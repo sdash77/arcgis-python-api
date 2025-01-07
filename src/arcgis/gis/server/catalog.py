@@ -414,7 +414,7 @@ class ServicesDirectory(BaseServer):
                         )
                     )
 
-                except:
+                except Exception as ex:
                     url = "%s/%s/%s" % (self._url, s["name"], s["type"])
                     _log.warning("Could not load service: %s" % url)
         return services

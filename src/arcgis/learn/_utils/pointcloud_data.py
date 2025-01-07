@@ -2714,7 +2714,9 @@ def compute_precision_recall(self):
     class_count = np.zeros(self._data.c)
 
     for x_in, y_in in progress_bar(valid_dl, display=True):
-        if not getattr(self, "_is_ModelInputDict", False):
+        if (not getattr(self, "_is_ModelInputDict", False)) and self.__str__() not in [
+            "<PTv3Seg>"
+        ]:
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
             indices = torch.tensor(
@@ -3037,6 +3039,20 @@ def model_predictions(model, data, point_nums):
                         data[key][i] = data[key][i].to(model._device)
                 else:
                     data[key] = data[key].to(model._device)
+            probs = model.learn.model(data).softmax(dim=-1).cpu()
+
+        elif model.__str__() in ["<PTv3Seg>"]:
+            from .pointcloud_serialization import transform_data
+
+            if not torch.is_tensor(point_nums):
+                point_nums = torch.tensor([point_nums])
+
+            data = transform_data(
+                [
+                    data.to(model._device).float(),
+                    point_nums.to(model._device),
+                ]
+            )[0]
             probs = model.learn.model(data).softmax(dim=-1).cpu()
         else:
             probs = (

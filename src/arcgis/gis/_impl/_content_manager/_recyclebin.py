@@ -166,26 +166,42 @@ class OrgRecycleBin:
         =================================================     ========================================================================
 
 
-        :return: Iterator[RecycleItem]
+        :return:
+            Iterator[:class:`RecycleItems <arcgis.gis._impl._content_manager.RecycleItem>`]
 
         .. code-block:: python
 
-            # Usage Example:
+            # Usage Example: Get all feature layer items in recycle bin
+            >>> from arcgis.gis import GIS, ItemTypeEnums
 
-            >>> gis = GIS(profile="your_online_profile")
+            >>> gis = GIS(profile="your_online_admin_profile")
 
-            >>> my_user = gis.users.me
-            >>> r_bin_content = my_user.recyclebin.content(sord_field='owner')
+            >>> org_rbin = gis.admin.org_recyclebin
+            >>> r_bin_content = org_rbin.content(
+                                    item_types=ItemTypeEnum.FEATURE_SERVICE.value,
+                                    sort_order="desc",
+                                    sort_field="size"
+                                )
             >>> type(r_bin_content)
 
             <class 'generator'>
 
             >>> for r_item in r_bin_content:
-                    print(f"{r_item.properties['title']":15}{r_item.properties['type']}")
+                    print(f"{r_item.properties['title']:25}{r_item.properties['size']}")
 
-            trees_sd        Service Definition
-            trees_flc       Feature Service
+            trees_lyr                90112
+            sewers                   81920
+            Case_1473 Survey         16384
+            water_quality_measures   6568
 
+            # Usage Example #2: Get all items in organization's recycle bin:
+
+            >>> org_rbin = gis.admin.org_recyclebin
+            >>> r_bin_content = org_rbin.content()
+
+            >>> len(list(r_bin_content))
+
+            1380
 
         """
         start: int = 1

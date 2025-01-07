@@ -264,37 +264,109 @@ class PrimaryTableView:
 @dataclass
 class ViewLayerDefParameter:
     """
-    When creating views, an optional definition query can be provided to limit what users
-    of the view can see with the service view.
+    When updating views, an *ViewLayerDefParameter* object can be provided
+    to change the view definition.  Objects of this class can be created
+    directly, obtained from the :meth:`~arcgis.gis.ViewManager.get_definitions`
+    method of the :class:`~arcgis.gis.ViewManager` class, or accessed using the
+    :meth:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter.from_layer`
+    method.
 
-    ==================  ===============================================================================
-    **Parameter**        **Description**
-    ------------------  -------------------------------------------------------------------------------
-    layer               Required FeatureLayer.  The layer to apply the layer definition to.
-    ------------------  -------------------------------------------------------------------------------
-    query_definition    Optional String.  The where clause to limit the layer with.
-    ------------------  -------------------------------------------------------------------------------
-    spatial_filter      Optional :class:`~arcgis.gis._impl._dataclasses.SpatialFilter`. A spatial
-                        filter that can limit the data a user sees.
-    ------------------  -------------------------------------------------------------------------------
-    fields              Optional list[dict].  An array of field/visible fields that shows or hides a
-                        field.  If this parameter is not given, all the fields are shown.
+    .. code-block:: python
 
-                        .. code-block:: python
+        # Usage Example 1: Initializing an object directly
+        >>> from arcgis.gis import GIS, ViewLayerDefParameter
+        >>> from arcgis.gis import SpatialFilter, SpatialRelationship
+        >>> from arcgis.geometry import Envelope, SpatialReference
 
-                            [
-                                {"name":"STATE_CITY","visible":True},
-                                {"name":"TYPE","visible":False},
-                            ]
+        >>> gis = GIS(profile="your_organization_profile")
 
-    ==================  ===============================================================================
+        >>> filter_geom = Envelope(
+              iterable={
+                            "xmin": -10571116.801669,
+                            "ymin": 3877172.713480,
+                            "xmax": -9897056.867736,
+                            "ymax": 4391087.518527,
+                            "spatialReference": {
+                              "wkid": 102100,
+                              "latestWkid": 3857
+                            }
+                        }
+            )
+        >>> spat_filter = SpatialFilter(
+                goemetry= filter_geom,
+                spatial_rel= SpatialRelationship.CROSSES,
+                sr= SpatialReference({"latestWkid": 3857, "wkid": 102100})
+            )
+        >>> vw_def = ViewLayerDefParameter(
+               layer= view_item.layers[0],
+               query_definition= "unit_field IS NOT NULL",
+               spatial_filter= spat_filter
+               fields= [
+                    {"name": "OBJECTID", "visible": True},
+                    {"name": "unit_field", "visible": True},
+                    {"name": "create_date", "visible": False},
+                    {"name": "system_id", "visible": False}
+                ]
+            )
 
+        # Usage Example 2: Accessing from a Feature Layer view
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> view_item = gis.content.get("<item_id_for_view>")
+        >>> vw_mgr = view_item.view_manager
+
+        >>> vw_defs = vw_mgr.get_definitions(view_item)
+        >>> vw_def - vw_defs[0]
+        <ViewLayerDefParameter>
+
+        >>> vw_def.as_json()
+        {'viewLayerDefinition': {'filter': {'geometry': {'rings': [[[-9982417.919074,4370975.02546],
+                                                            [-9982417.919074,4769966.75848],
+                                                            [-8954750.737665,4769966.75848],
+                                                            [-8954750.737665,4370975.02546],
+                                                            [-9982417.919074,4370975.02546]]],
+                                                 'spatialReference': {'latestWkid': 3857,'wkid': 102100}},
+                                    'geometryType': 'esriGeometryPolygon',
+                                    'spatialRel': 'esriSpatialRelIntersects',
+                                    'inSR': {'latestWkid': 3857,
+                                             'wkid': 102100}}},
+         'fields': [{'name': 'objectid', 'visible': True},
+                    ...
+                    {'name': 'feature_code', 'visible': True}]
+        }
     """
 
     layer: arcgis.features.FeatureLayer
+    """
+    A :class:`~arcgis.features.FeatureLayer` object.
+    """
     query_definition: str | None = None
+    """
+    A string representing a where clause to filter records in the view.
+    """
     spatial_filter: SpatialFilter | None = None
+    """
+    A :class:`~arcgis.gis._impl._dataclasses.SpatialFilter` object.
+    """
     fields: list[dict] | None = None
+    """
+    A list of dictionaries indicating whether a specific field is to be visible
+    in the view layer. Each dictionary must contain a *name* and *visible* key.
+    If this property is not defined, all fields will be visible.
+    
+    .. code-block:: python
+    
+        # Format for dictionary to define field visibility in a view
+        >>> view_lyr_def = ViewLayerDefParameter(
+                    ...
+                    fields=[
+                        {"name": <field_name>, "visible": True|False},
+                        ...
+                        {"name": <field2_name>}, "visible": True|False}  
+                    ]
+            )
+    """
     _dict_data: dict | None = field(init=False)
 
     def __str__(self) -> str:
@@ -324,7 +396,17 @@ class ViewLayerDefParameter:
             arcgis.features.managers.FeatureLayerManager | arcgis.features.FeatureLayer
         ),
     ) -> "ViewLayerDefParameter":
-        """Creates a view layer definition parameter object from a layer."""
+        """Creates a view layer definition parameter object from a feature layer
+        or feature layer manager.
+
+        =================     ==================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------
+        layer                 Required :class:`~arcgis.features.FeatureLayer` or
+                              :class:`~arcgis.features.managers.FeatureLayerManager`
+                              object.
+        =================     ==================================================
+        """
         from arcgis.features.managers import FeatureLayerManager
         from arcgis.features import FeatureLayer, Table
 
