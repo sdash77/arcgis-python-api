@@ -2218,6 +2218,8 @@ class MapImageLayer(_gis.Layer):
 
         self._populate_layers()
         self._admin = None
+        if gis is None:
+            gis = _gis.GIS()
         if hasattr(gis, "session"):
 
             self._session = gis.session
