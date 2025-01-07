@@ -13979,7 +13979,7 @@ class Item(dict):
             return fp
 
         elif resp.status_code > 199 and resp.status_code < 300:
-            content_disposition = resp.headers["Content-Disposition"]
+            content_disposition = resp.headers.get("Content-Disposition", {})
             size: int | None = None
             if "filename=" in content_disposition and file_name is None:
                 regex = r"filename=\"([^\"]+)"
@@ -16662,7 +16662,7 @@ class Item(dict):
 
         # New parameter that affects arcgis Online and Enterprise 11.4+
         # Applied to geojson, csv, excel
-        if (self._gis.is_arcgisonline or self._gis.version >= [2024, 2]) and (
+        if (self._gis._is_arcgisonline or self._gis.version >= [2024, 2]) and (
             fileType in ["excel", "csv", "geojson"]
         ):
             publish_parameters["fieldTypesVersion"] = "V2"
