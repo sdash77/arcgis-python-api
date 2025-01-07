@@ -1796,7 +1796,19 @@ class Map:
     def map(self, map):
         if self._existing is True:
             self._update_map(map)
-            return self.map
+
+    # ----------------------------------------------------------------------
+    @property
+    def map_layers(self):
+        """
+        Get the map layers present.
+
+        :return:
+            The map layers that are being used.
+        """
+        if self._existing is True:
+            return self._map_layers
+        return []
 
     # ----------------------------------------------------------------------
     def _calculate_z_value(self, scale: int = None):
@@ -1989,8 +2001,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "isShowingLegend"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_legend.setter
@@ -2012,8 +2023,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "legendPinned"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @legend_pinned.setter
@@ -2027,8 +2037,7 @@ class Map:
         if self._existing is True:
             if "search" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["search"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @show_search.setter
@@ -2040,15 +2049,62 @@ class Map:
     def time_slider(self):
         """Get/Set the time slider toggle. True if enabled and False if disabled"""
         if self._existing is True:
-            if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
+            if "timeSlider" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @time_slider.setter
     def time_slider(self, value: bool):
         self._story._properties["nodes"][self.node]["data"]["timeSlider"] = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def pinned_popup(self):
+        """
+        Get/Set the pinned popup. You must know the layer id and the featureId name and value that represents
+        the popup you want to pin. You can find the layer id by looking at the `map_layers` property.
+
+        This is considered a more advance workflow as you must know the layer data to pin the popup.
+
+        ==================  ================================================
+        **Parameter**        **Description**
+        ------------------  ------------------------------------------------
+        pinned_popup_info   The new pinned popup info for the Map. This is a
+                            dictionary containing the following keys:
+                            - `layerId`: String. The layer id of the feature layer. You can find this value in the `map_layers` property.
+                            - `idFieldName`: String. The field name that represents the id of the feature.
+                            - `idFieldValue`: Integer. The id of the feature you want to show.
+
+                            Example:
+                                | {
+                                |   "layerId": "0",
+                                |   "idFieldName": "OBJECTID",
+                                |   "idFieldValue": 1
+                                | }
+
+                            If you want to remove the pinned popup, set this to None.
+        ==================  ================================================
+        """
+        if self._existing is True:
+            if "pinnedPopupInfo" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "pinnedPopupInfo"
+                ]
+        return None
+
+    # ----------------------------------------------------------------------
+    @pinned_popup.setter
+    def pinned_popup_info(self, value: dict | None):
+        # Check if the dictionary has the correct keys
+        if value is None:
+            self._story._properties["nodes"][self.node]["data"].pop(
+                "pinnedPopupInfo", None
+            )
+        elif all(k in value for k in ("layerId", "idFieldName", "idFieldValue")):
+            self._story._properties["nodes"][self.node]["data"][
+                "pinnedPopupInfo"
+            ] = value
 
     # ----------------------------------------------------------------------
     @property
@@ -2068,8 +2124,7 @@ class Map:
         if self._existing is True:
             if "caption" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["caption"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @caption.setter
@@ -2077,7 +2132,6 @@ class Map:
         if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-            return self.caption
 
     # ----------------------------------------------------------------------
     @property
@@ -2097,15 +2151,13 @@ class Map:
         if self._existing is True:
             if "alt" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["alt"]
-        else:
-            return None
+        return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-            return self.alt_text
 
     # ----------------------------------------------------------------------
     @property
@@ -2118,8 +2170,7 @@ class Map:
         if self._existing is True:
             if "config" in self._story._properties["nodes"][self.node]:
                 return self._story._properties["nodes"][self.node]["config"]["size"]
-            else:
-                return None
+        return None
 
     # ----------------------------------------------------------------------
     @display.setter
@@ -2155,8 +2206,7 @@ class Map:
                 return self._story._properties["nodes"][self.node]["data"][
                     "popupDocked"
                 ]
-            else:
-                return False
+        return False
 
     # ----------------------------------------------------------------------
     @popup_docked.setter

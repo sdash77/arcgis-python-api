@@ -168,6 +168,8 @@ def apply_edits(
             data["attachments"] = attachments
         elif use_global_ids == False and attachments:
             _log.warning("Cannot add attachments without `user_global_ids` being True.")
+        if attachments is None:
+            data.pop("attachments", None)
         with tempfile.TemporaryDirectory() as folder:
             fp = os.path.join(folder, f"{uuid.uuid4().hex}.json")
             with open(fp, "w") as writer:
