@@ -2049,6 +2049,7 @@ class ArcGISModel(object):
             "<RandLANet>",
             "<SQNSeg>",
             "<MMDetection3D>",
+            "<PTv3Seg>",
         ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [

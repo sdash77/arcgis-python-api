@@ -38,6 +38,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
+from arcgis.gis._impl._dataclasses._sfilters import SpatialFilter, SpatialRelationship
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 
@@ -742,8 +743,7 @@ class GIS(object):
         if (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_admin"
+            and me.get("role", None) == "org_admin"
         ):
             try:
                 if self._is_hosted_nb_home:
@@ -761,9 +761,7 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -771,9 +769,7 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import (
-                        PortalAdminManager,
-                    )
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -787,15 +783,12 @@ class GIS(object):
         elif (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_publisher"
+            and me.get("role", None) == "org_publisher"
             and self._portal.is_arcgisonline is False
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -812,7 +805,7 @@ class GIS(object):
         elif (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "privileges")
+            and me.get("privileges", None) is not None
             and self._portal.is_arcgisonline is False
         ):
             privs = [
@@ -831,9 +824,7 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import (
-                            KubernetesAdmin,
-                        )
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -850,15 +841,12 @@ class GIS(object):
         if (
             self._con._auth.lower() != "anon"
             and self._con._auth is not None
-            and hasattr(me, "role")
-            and me.role == "org_publisher"
+            and me.get("role", None) == "org_publisher"
             and self._portal.is_arcgisonline is False
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import (
-                        KubernetesAdmin,
-                    )
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -1083,9 +1071,7 @@ class GIS(object):
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
                     try:
-                        from arcgis.gis._impl._decrypt_nbauth import (
-                            get_token,
-                        )
+                        from arcgis.gis._impl._decrypt_nbauth import get_token
                     except ImportError:
                         from arcgis.gis._impl.nbauth import get_token
 
@@ -11276,7 +11262,8 @@ class User(dict):
         .. note::
             This functionality is only available for ArcGIS Online.
 
-        :Returns: :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
+        :Returns:
+            :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
 
         .. code-block:: python
 
@@ -13436,7 +13423,7 @@ class Item(dict):
             url: str = _get_item_url(item=self)
             if self.type == "Image Service":  # service that is itself a layer
 
-                lyr = ImageryLayer(url, self._gis)
+                lyr = ImageryLayer(url, self._gis, parent_url=url)
 
                 try:
                     item_data = self.get_data()
@@ -13463,7 +13450,7 @@ class Item(dict):
                     layers.append(Service(lyrurl, self._gis))
 
             elif self.type == "Vector Tile Service":
-                layers.append(Service(url, self._gis))
+                layers.append(Service(url, self._gis, parent_url=url))
             elif self.type == "Network Analysis Service":
                 svc = NetworkDataset.fromitem(self)
 
@@ -13515,7 +13502,7 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == "Scene Service":
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
-                            lyr = Service(lyr_url, self._gis)
+                            lyr = Service(lyr_url, self._gis, parent_url=svc.url)
                         else:
                             lyr_url = svc.url + f"/layers/{lyr.get('id')}"
                             lyr = Layer(lyr_url, self._gis)
@@ -13992,7 +13979,7 @@ class Item(dict):
             return fp
 
         elif resp.status_code > 199 and resp.status_code < 300:
-            content_disposition = resp.headers["Content-Disposition"]
+            content_disposition = resp.headers.get("Content-Disposition", {})
             size: int | None = None
             if "filename=" in content_disposition and file_name is None:
                 regex = r"filename=\"([^\"]+)"
@@ -16074,6 +16061,8 @@ class Item(dict):
             "Mission2Item",
             "Map2FeatureCollectionMobileApp2Code",
             "Notebook2WebTool",
+            "Listed2ImplicitlyListed",
+            "Map2IndoorsConfig",
         ]
     )
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
@@ -16617,7 +16606,7 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "capabilities": "Query, Sync",
                 }
-            else:  # sd files
+            else:  # sd or geojson files
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters = {
                     "hasStaticData": True,
@@ -16670,6 +16659,13 @@ class Item(dict):
                     publish_parameters["name"], "featureService"
                 ):
                     raise Exception("Service name already exists in your org.")
+
+        # New parameter that affects arcgis Online and Enterprise 11.4+
+        # Applied to geojson, csv, excel
+        if (self._gis._is_arcgisonline or self._gis.version >= [2024, 2]) and (
+            fileType in ["excel", "csv", "geojson"]
+        ):
+            publish_parameters["fieldTypesVersion"] = "V2"
 
         ret = self._portal.publish_item(
             self.itemid,
@@ -16735,11 +16731,18 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
+        elif "success" in ret[0] and ret[0]["success"] == False and overwrite:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilities are enabled on your service.",
+                )
+            )
         elif "success" in ret[0] and ret[0]["success"] == False:
             raise Exception(
                 ret[0].get(
                     "error",
-                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                    "Unknown error, please check the data or the title of the item.",
                 )
             )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
@@ -16783,16 +16786,15 @@ class Item(dict):
         folder_id = None
         if folder is not None:
             if isinstance(folder, str):
-                if folder == "/":
-                    folder_id = "/"
-                else:
-                    folder_id = self._portal.get_folder_id(owner_name, folder)
+                folder_id = self._gis.content.folders.get(folder=folder)._fid
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
             elif isinstance(folder, _folder.Folder):
                 folder_id = folder._fid
             else:
-                print("folder should be folder name as a string, or dict with id")
+                print(
+                    "Folder not found. Folder should be an instance of Folder class, a folder name as a string, or dict with id"
+                )
 
         if folder_id is not None:
             ret = self._portal.move_item(
@@ -18237,17 +18239,66 @@ class Item(dict):
                 f"Item type {self.type} is not supported for remapping data"
             )
 
+    # ----------------------------------------------------------------------
+    def get_dependencies(
+        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
+    ):
+        """
+        Returns the dependencies of an item. Can be used to return either the immediate dependencies
+        of an item (other items that an item directly contains in its structure) or the full deep
+        dependency list (all of the items that must exist for the item to function properly- including
+        dependencies of dependencies). Note that not all items/item types may have dependencies.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        deep                Optional boolean. When set to True, the function will return every
+                            other item needed for an item to exist. When set to False, the
+                            function will only return the immediate dependencies of an item, or
+                            ones referenced directly by the item. Default is False.
+        ---------------     --------------------------------------------------------------------
+        outside_org         Optional boolean. When set to True, the output list will not include
+                            items that come from an outside GIS organization. Default is True.
+        ---------------     --------------------------------------------------------------------
+        out_format          Optional string. Determines the format of the output list. Options
+                            are "item", "id", or "graph". Default is "item".
+        ===============     ====================================================================
+
+        :return:
+                A list containing the dependencies of the item, in either Item or Item ID form.
+        """
+
+        from arcgis.apps.itemgraph import create_item_graph
+
+        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        if out_format.lower() == "graph":
+            return graph
+        node = graph.get_item(self.id)
+        if deep:
+            return node.requires(out_format=out_format)
+        return node.contains(out_format=out_format)
+
 
 ########################################################################
 class ViewManager:
     """
     A helper class to work with hosted feature layer views created from
-    :class:`items <arcgis.gis.Item>` whose `type` property value is ``feature
-    service.``
+    hosted feature layer :class:`items <arcgis.gis.Item>`.
 
-    This class is not meant to be created directly, but instead returned
-    from the :attr:`~arcgis.gis.Item.view_manager` property on an
-    :class:`~arcgis.gis.Item`.
+    Objects of this class are not meant to be created, but rather
+    accessed from the :attr:`~arcgis.gis.Item.view_manager` property on
+    a feature layer or feature layer view :class:`~arcgis.gis.Item`.
+
+    .. code-block:: python
+
+        # Usage Example: Accessing a ViewManager
+        >>> from arcgis.gis import GIS
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> view_item = gis.content.get("<view_item_id>")
+        >>> vw_mgr = view_item.view_manager
+        >>> vw_mgr
+        <arcgis.gis.ViewManager object at <mem_addr>>
     """
 
     _item = None
@@ -18260,10 +18311,20 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def list(self) -> list[Item]:
         """
-        Returns all views for a given item
+        Provides all the *views* for a given Feature Layer :class:`~arcgis.gis.Item`
 
         :returns:
-            List of feature layer view :class:`items <arcgis.gis.Item>`
+            List of feature layer view :class:`items <arcgis.gis.Item>` for
+            the hosted feature layer.
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> flyr_item = gis.content.get("<item_id>")
+            >>> flyr_vw_items = flyr_item.view_manager.list()
+            >>> flry_vw_items
+            [<Item title:"flyr_view" type:Feature Layer Collection owner:gis_user>]
+
         """
         return [
             i
@@ -18558,16 +18619,32 @@ class ViewManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Create a veiw from a hosted feature layer
+            # USAGE EXAMPLE: Create a view from a hosted feature layer
 
-            >>> crime_fl_item = gis.content.search("2012 crime")[0]
-            >>> view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
-                                                         updateable=True,
-                                                         allow_schema_changes=False,
-                                                         capabilities="Query,Update,Delete")
+            >>> flyr_item = gis.content.search("*", item_type="Feature Service")[0]
+            >>> view_item = flyr_item.view_manager.create(
+                                name="flyr_view",
+                                extent={
+                                    "xmin" : -9982417.919074,
+                                    "ymin" : 4370975.025460,
+                                    "xmax" : -8954750.737665,
+                                    "ymax" : 4769966.758480,
+                                    "spatialReference" : {
+                                        "wkid" : 102100,
+                                        "latestWkid" : 3857
+                                    }
+                                },
+                                view_layers=[
+                                    flyr_item.layers[0]
+                                ],
+                                allow_schema_changes=True,
+                                updateable=True,
+                                capabilities="Query,Update,Delete",
+                        )
+
 
         :return:
-            The :class:`~arcgis.gis.Item` for the view.
+            The view :class:`~arcgis.gis.Item`.
         """
         flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
@@ -18592,19 +18669,50 @@ class ViewManager:
 
     # ----------------------------------------------------------------------
     def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
-        """Gets the View Definition Parameters for a Given Item
+        """Gets the :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
+        objects that define the views for the *item* argument.
 
         =============     =====================================================
         **Argument**      **Description**
         -------------     -----------------------------------------------------
-        item              The :class:`~arcgis.gis.Item` to return the
-                          view layer definitions for.
+        item              The view :class:`~arcgis.gis.Item` to return the
+                          view definitions for.
         =============     =====================================================
 
 
         :return:
             List of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
             objects or None.
+
+        .. code-block:: python
+
+            # Usage Example: Getting ViewLayerDefParameter object from a view
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_organization_profile")
+
+            >>> fsvc_items = gis.content.search("flyr_view", item_type="Feature Service")
+            >>> view_item = [
+                       vi for vi in fsvc_items if "View Service" in vi.typeKeywords
+                ][0]
+
+            >>> vw_mgr = view_item.view_manager
+            >>> vw_def_list = vw_mgr.get_definitions(view_item)
+            [<ViewLayerDefParameter>]
+
+            >>> vw_def = vw_def_list[0]
+            >>> vw_def.as_json()
+            {'viewLayerDefinition': {'filter': {'geometry': {'rings': [[[-9982417.919074,4370975.02546],
+                                                            ...
+                                                                        [-9982417.919074,4370975.02546]]],
+                                                 'spatialReference': {'latestWkid': 3857, 'wkid': 102100}},
+                                                 'geometryType': 'esriGeometryPolygon',
+                                                 'spatialRel': 'esriSpatialRelIntersects',
+                                                 'inSR': {'latestWkid': 3857, 'wkid': 102100}}},
+             'fields': [{'name': 'objectid', 'visible': True},
+                        ...
+                        {'name': 'globalid', 'visible': True}]
+            }
         """
         if "View Service" in item.typeKeywords:
             from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
@@ -18616,7 +18724,8 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
         """
-        Updates a set of layers with new queries, geometries, and column visibilities.
+        Updates a view definition with new queries, geometries, and column
+        visibilities.
 
         =============     =====================================================
         **Argument**      **Description**
@@ -19067,7 +19176,7 @@ class Layer(_GISResource):
     the GIS.
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, **kwargs):
         super(Layer, self).__init__(url, gis)
         self.filter = None
         self._time_filter = None
