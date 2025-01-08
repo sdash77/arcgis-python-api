@@ -618,7 +618,6 @@ class ArcGISModel(object):
         if self._is_multispectral or (
             not isinstance(self._backbone, str) and "_hf_" in self._backbone.__module__
         ):
-
             self._orig_backbone = self._backbone
 
             @wraps(self._orig_backbone)
@@ -727,9 +726,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(params_iterator).requires_grad = (
-                    True  # make first conv weights learnable
-                )
+                next(
+                    params_iterator
+                ).requires_grad = True  # make first conv weights learnable
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
@@ -1352,9 +1351,9 @@ class ArcGISModel(object):
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template["per_class_metrics"] = (
-                            self.per_class_metrics().to_json()
-                        )
+                        _emd_template[
+                            "per_class_metrics"
+                        ] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod
@@ -1893,7 +1892,8 @@ class ArcGISModel(object):
                 arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
                 #
                 self._save_model_characteristics(
-                    saved_path.parent.absolute() / model_characteristics_folder
+                    saved_path.parent.absolute() / model_characteristics_folder,
+                    **kwargs,
                 )
                 ArcGISModel._create_html(saved_path)
             except:
@@ -2000,7 +2000,7 @@ class ArcGISModel(object):
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
-    def _save_model_characteristics(self, model_characteristics_dir):
+    def _save_model_characteristics(self, model_characteristics_dir, **kwargs):
         import shutil
         import matplotlib.pyplot as plt
 
@@ -2060,7 +2060,10 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            self.show_results()
+            if hasattr(self, "_show_results_multispectral"):
+                self.show_results(gradcam=kwargs.get("GradCam_Heatmap", False))
+            else:
+                self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 

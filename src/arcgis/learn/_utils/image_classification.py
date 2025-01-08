@@ -37,7 +37,13 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from fastai.vision import imagenet_stats
-    import fastai
+    from fastai.callbacks.hooks import hook_outputs, hook_output
+    from fastai.vision import Image
+    from fastai.vision.image import open_image
+    from fastai.data_block import MultiCategoryList
+    from fastai.vision.data import ImageDataBunch, ImageList
+    import warnings
+    import torch.nn.functional as F
     from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
     from .._data import _get_batch_stats, sniff_rgb_bands
     from .._utils.env import is_arcgispronotebook
@@ -49,7 +55,7 @@ except:
 ## Common section starts
 
 
-def IC_show_results(self, nrows=5, **kwargs):
+def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     type_data_loader = kwargs.get(
         "data_loader", "validation"
     )  # options : traininig, validation, testing
@@ -178,21 +184,80 @@ def IC_show_results(self, nrows=5, **kwargs):
         y_batch = y_batch.max(-1)[1]
 
     # Plotting Ground Truth and Prediction side by side
+
     ncols = 2
     title_font_size = 16
+    if (self._data.dataset_type == "MultiLabeled_Tiles") and gradcam_show_result:
+        ncols = len(self._data.classes) + 2
+        title_font_size = 16
+    if (self._data.dataset_type == "Labeled_Tiles") and gradcam_show_result:
+        ncols = 3
+        title_font_size = 16
+
     _top = 1 - (math.sqrt(title_font_size) / math.sqrt(100 * n_items * imsize))
     top = kwargs.get("top", _top)
     fig, axs = plt.subplots(
         nrows=n_items, ncols=ncols, figsize=(ncols * imsize, n_items * imsize)
     )
-    fig.suptitle("Ground truth/Predictions", fontsize=title_font_size, weight="bold")
+    if gradcam_show_result:
+        fig.suptitle(
+            "Ground truth/Predictions/GradCAM", fontsize=title_font_size, weight="bold"
+        )
+    else:
+        fig.suptitle(
+            "Ground truth/Predictions", fontsize=title_font_size, weight="bold"
+        )
     plt.subplots_adjust(top=top)
+    dataloader_image_path = [item for item in self._data.valid_dl.items]
     idx = 0
     for r in range(n_items):
         if n_items == 1:
             ax_i = axs
         else:
             ax_i = axs[r]
+        pred_img = open_image(dataloader_image_path[r])
+        im = pred_img
+        pred = self.learn.predict(pred_img)
+        if self._data.dataset_type == "MultiLabeled_Tiles":
+            cat_pred = pred[1]
+        else:
+            cat_pred = pred[1].unsqueeze(0)
+        m = self.learn.model.eval()
+        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+        xb, _ = self._data.one_item(
+            im, detach=False, denorm=False
+        )  # put into a minibatch of batch size = 1
+        grad_cam_outputs = []
+        for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
+            if self._data.dataset_type == "Labeled_Tiles":
+                class_label = pred_cat1
+                pred_cat1 = True
+            if pred_cat1:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    with hook_output(m[0]) as hook_a:
+                        with hook_output(m[0], grad=True) as hook_g:
+                            preds = m(xb)
+                            preds[0, class_label].backward()
+                acts = hook_a.stored[0].cpu()  # activation maps
+                grad = hook_g.stored[0][0].cpu()
+                if self._transformer:
+                    acts = reshape_tensor(acts)
+                    grad = reshape_tensor(grad)
+                if (acts.shape[-1] * acts.shape[-2]) >= 16:
+                    grad_chan = grad.mean(1).mean(1)
+                    mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
+                    grad_cam_outputs.append(mult)
+                    xb_im = Image(xb[0])
+                    xb_im_denorm = Image(xb_norm[0])
+                    sz = list(xb_im.shape[-2:])
+                else:
+                    raise ValueError(
+                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                    )
+            else:
+                mult = torch.zeros(4, 4)
+                grad_cam_outputs.append(mult)
 
         # Get ground truth and prediction class names
         if self._data.dataset_type == "MultiLabeled_Tiles":
@@ -216,6 +281,32 @@ def IC_show_results(self, nrows=5, **kwargs):
         ax_prediction.axis("off")
         ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
         ax_prediction.set_title(prediction)
+        if gradcam_show_result:
+            pred_class_expmap = len(self._data.classes)
+
+            if self._data.dataset_type == "Labeled_Tiles":
+                pred_class_expmap = len(self._data.classes) - 1
+
+            for i in range(pred_class_expmap):
+                ax_gradCAM = ax_i[2 + i]
+
+                ax_gradCAM.axis("off")
+
+                ax_gradCAM.imshow(symbology_x_batch[idx].cpu().numpy())
+
+                ax_gradCAM.imshow(
+                    grad_cam_outputs[i],
+                    alpha=0.4,
+                    extent=(0, *sz[::-1], 0),
+                    interpolation="bilinear",
+                    cmap="hot",
+                )
+
+                if self._data.dataset_type == "MultiLabeled_Tiles":
+                    ax_gradCAM.set_title(f"{self._data.classes[i]}")
+
+                if self._data.dataset_type == "Labeled_Tiles":
+                    ax_gradCAM.set_title(prediction)
 
         idx += 1
     if is_arcgispronotebook():

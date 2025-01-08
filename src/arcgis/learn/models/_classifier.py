@@ -5,6 +5,7 @@ from .._data import _check_esri_files, _raise_fastai_import_error
 import random
 import math
 import traceback
+from itertools import compress
 
 try:
     import pandas
@@ -441,7 +442,7 @@ class FeatureClassifier(ArcGISModel):
         if is_arcgispronotebook():
             plt.show()
 
-    def _show_results_multispectral(self, rows=5, **kwargs):
+    def _show_results_multispectral(self, rows=5, gradcam=False, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -456,7 +457,7 @@ class FeatureClassifier(ArcGISModel):
         from .._utils.image_classification import IC_show_results
 
         return_fig = kwargs.get("return_fig", False)
-        fig = IC_show_results(self, nrows=rows, **kwargs)
+        fig = IC_show_results(self, nrows=rows, gradcam_show_result=gradcam, **kwargs)
         if return_fig:
             fig1, axs = fig
             return fig1
@@ -489,7 +490,7 @@ class FeatureClassifier(ArcGISModel):
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
-            gradCam = self._gradCAM(img, pred[0], grad_vis=gradcam)
+            gradCam = self._gradCAM(img, pred, grad_vis=gradcam)
         return pred
 
     def _predict_batch(self, imagetensor_batch):
@@ -590,9 +591,9 @@ class FeatureClassifier(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         else:
-            _emd_template["InferenceFunction"] = (
-                "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
-            )
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["CropSizeFixed"] = int(
@@ -1791,8 +1792,8 @@ class FeatureClassifier(ArcGISModel):
     def _gradCAM(
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
-        if isinstance(cl, fastai.core.MultiCategory):
-            if not cl.raw:  # If the predictions are all 0, including for None class
+        if isinstance(cl[0], fastai.core.MultiCategory):
+            if not cl[0].raw:  # If the predictions are all 0, including for None class
                 xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
                 xb, _ = self._data.one_item(im, detach=False, denorm=False)
                 xb_im = Image(xb[0])
@@ -1801,49 +1802,96 @@ class FeatureClassifier(ArcGISModel):
                 xb_im_denorm.show(ax, title=f"Predicted class: None")
                 return
             else:
-                cat = cl.raw  # Handles MuliCategory types
-                cat1 = cat[0]
+                # Handles MuliCategory types
+                cat1 = cl[1]
         else:
-            cat1 = int(cl)
+            cat1 = cl[1].unsqueeze(0)
         m = self.learn.model.eval()
         xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
         xb, _ = self._data.one_item(
             im, detach=False, denorm=False
         )  # put into a minibatch of batch size = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            with hook_output(m[0]) as hook_a:
-                with hook_output(m[0], grad=True) as hook_g:
-                    preds = m(xb)
-                    preds[0, cat1].backward()
-        acts = hook_a.stored[0].cpu()  # activation maps
-        grad = hook_g.stored[0][0].cpu()
-        if self._transformer:
-            acts = reshape_tensor(acts)
-            grad = reshape_tensor(grad)
+        grad_cam_outputs = []
 
-        if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-            grad_chan = grad.mean(1).mean(1)
-            mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
-            if image:
-                xb_im = Image(xb[0])
-                xb_im_denorm = Image(xb_norm[0])
-                sz = list(xb_im.shape[-2:])
-                if grad_vis == True:
-                    _, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
-                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl}")
-                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl}")
-                    ax[1].imshow(
-                        mult,
+        pred_class_label = []
+
+        for class_label, predictions in enumerate(cat1.cpu().numpy()):
+            if (predictions and (isinstance(cl[0], fastai.core.MultiCategory))) or (
+                isinstance(cl[0], fastai.core.Category)
+            ):
+                if isinstance(cl[0], fastai.core.Category):
+                    class_label = predictions
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+
+                    with hook_output(m[0]) as hook_a:
+                        with hook_output(m[0], grad=True) as hook_g:
+                            preds = m(xb)
+
+                            preds[0, class_label].backward()
+
+                acts = hook_a.stored[0].cpu()  # activation maps
+
+                grad = hook_g.stored[0][0].cpu()
+
+                if self._transformer:
+                    acts = reshape_tensor(acts)
+
+                    grad = reshape_tensor(grad)
+
+                if (acts.shape[-1] * acts.shape[-2]) >= 16:
+                    grad_chan = grad.mean(1).mean(1)
+
+                    mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
+
+                    grad_cam_outputs.append(mult)
+
+                    pred_class_label.append(class_label)
+
+                else:
+                    raise ValueError(
+                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
+                    )
+        if image:
+            xb_im = Image(xb[0])
+
+            xb_im_denorm = Image(xb_norm[0])
+
+            sz = list(xb_im.shape[-2:])
+
+            if grad_vis == True:
+                plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
+
+                _, ax = plt.subplots(
+                    nrows=1,
+                    ncols=len(grad_cam_outputs) + 1,
+                    figsize=(plotsize, plotsize),
+                )
+
+                xb_im_denorm.show(ax[0], title=f"Predicted class: {cl[0]}")
+
+                xb_im_denorm.show(ax[1], title=f"Predicted class: {cl[0]}")
+
+                for i in range(len(grad_cam_outputs)):
+                    xb_im_denorm.show(
+                        ax[i + 1], title=f"{self._data.classes[pred_class_label[i]]}"
+                    )
+
+                    ax[i + 1].imshow(
+                        grad_cam_outputs[i],
                         alpha=0.4,
                         extent=(0, *sz[::-1], 0),
                         interpolation="bilinear",
                         cmap="hot",
                     )
-                else:
-                    _, ax = plt.subplots(figsize=(6, 6))
-                    xb_im_denorm.show(ax, title=f"Predicted class: {cl}")
-            return mult
+
+            else:
+                _, ax = plt.subplots(figsize=(6, 6))
+
+                xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
+
+        return mult
 
     @deprecated(
         deprecated_in="1.7.1",
