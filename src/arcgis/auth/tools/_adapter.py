@@ -272,9 +272,9 @@ class EsriTrustStoreAdapter(HTTPAdapter):
         proxies=None,
     ):
         """Sends the request"""
-        if proxies is None and self._poolmanager is not None:
+        if proxies is None and self.poolmanager is not None:
             proxies = (
-                get_environ_proxies(request.url) if self._poolmanager.trust_env else {}
+                get_environ_proxies(request.url) if self.poolmanager.trust_env else {}
             )
         check_hostname = self.ssl_context.check_hostname
         verify_mode = self.ssl_context.verify_mode
