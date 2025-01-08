@@ -15,8 +15,7 @@ from requests.adapters import HTTPAdapter
 from requests.cookies import RequestsCookieJar
 
 from arcgis.auth.tools import parse_url
-from arcgis.auth.tools._adapter import PKIAdapter
-from arcgis.auth.tools.cert import TruststoreAdapter
+from arcgis.auth.tools._adapter import EsriTrustStoreAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -4306,10 +4305,8 @@ class NotificationManager:
         adapter = self._gis.session.adapters.get(f"{scheme}://", None)
 
         context = None
-        if isinstance(adapter, PKIAdapter):
+        if isinstance(adapter, EsriTrustStoreAdapter):
             context = adapter.ssl_context
-        elif isinstance(adapter, TruststoreAdapter):
-            context = adapter.custom_context
         elif isinstance(adapter, HTTPAdapter) and hasattr(adapter, "ssl_context"):
             tmp = getattr(adapter, "ssl_context")
             if isinstance(tmp, SSLContext):
