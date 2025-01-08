@@ -523,16 +523,16 @@ class AGOLAdminManager(object):
 
                           Values: `asc` or `desc`
         ----------------  -------------------------------------------------------------------------------
-        data_format       Optional String.  The way the data is returned to the user.  The response can
-                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma
-                          seperated file, and 'raw' returns the JSON string as a dictionary.
+        data_format       Optional String.  The default 'csv' value returns a comma-separate file of the
+                          results. It is the only currently available format.
 
-                          Values: `df`, `csv`, 'raw'
+                          Values: `csv`
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :return: string or pd.DataFrame or dict
+        :return:
+            A string representing the file path of the csv file results.
 
         """
         _date_handler = _utils._date_handler
