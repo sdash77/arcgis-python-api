@@ -68,7 +68,7 @@ class GraphProperty(BaseModel):
     name: str
     alias: str = ""
     domain: str = ""
-    field_type: esriFieldType
+    field_type: esriFieldType = "esriFieldTypeString"
     geometry_type: Optional[esriGeometryType] = None
     has_z: bool = False
     has_m: bool = False
