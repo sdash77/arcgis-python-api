@@ -283,17 +283,12 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
         ax_prediction.set_title(prediction)
         if gradcam_show_result:
             pred_class_expmap = len(self._data.classes)
-
             if self._data.dataset_type == "Labeled_Tiles":
                 pred_class_expmap = len(self._data.classes) - 1
-
             for i in range(pred_class_expmap):
                 ax_gradCAM = ax_i[2 + i]
-
                 ax_gradCAM.axis("off")
-
                 ax_gradCAM.imshow(symbology_x_batch[idx].cpu().numpy())
-
                 ax_gradCAM.imshow(
                     grad_cam_outputs[i],
                     alpha=0.4,
@@ -301,10 +296,8 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
                     interpolation="bilinear",
                     cmap="hot",
                 )
-
                 if self._data.dataset_type == "MultiLabeled_Tiles":
                     ax_gradCAM.set_title(f"{self._data.classes[i]}")
-
                 if self._data.dataset_type == "Labeled_Tiles":
                     ax_gradCAM.set_title(prediction)
 
