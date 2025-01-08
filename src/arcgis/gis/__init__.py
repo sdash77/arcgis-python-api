@@ -16735,7 +16735,7 @@ class Item(dict):
             raise Exception(
                 ret[0].get(
                     "error",
-                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                    "Overwrite unsuccessful. Check that editing capabilities are enabled on your service.",
                 )
             )
         elif "success" in ret[0] and ret[0]["success"] == False:
