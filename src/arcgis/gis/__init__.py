@@ -15544,10 +15544,8 @@ class Item(dict):
                     item_properties["fileName"] = fileName
 
             # Make sure thumbnail doesn't get reset in the update
-            delete_file = False
             if thumbnail is None and self.thumbnail:
-                thumbnail = self.download_thumbnail()
-                delete_file = True
+                thumbnail = io.BytesIO(self.get_thumbnail())
 
             ret = self._portal.update_item(
                 self.itemid,
@@ -15561,8 +15559,6 @@ class Item(dict):
             )
             if ret:
                 self._hydrate()
-            if delete_file:
-                os.remove(thumbnail)
             return ret
 
     # ----------------------------------------------------------------------

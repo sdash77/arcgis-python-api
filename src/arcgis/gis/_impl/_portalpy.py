@@ -2613,7 +2613,9 @@ class Portal(object):
                 metadata = request.urlretrieve(metadata)[0]
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
-            if _is_http_url(thumbnail):
+            if isinstance(thumbnail, io.BytesIO):
+                files.append(("thumbnail", thumbnail, "thumbnail.png"))
+            elif _is_http_url(thumbnail):
                 # find file ext from url
                 file_ext = find_puremagic_ext(thumbnail)
                 # download file
@@ -2623,7 +2625,7 @@ class Portal(object):
                     new_thumbnail = thumbnail + "." + file_ext
                     os.rename(thumbnail, new_thumbnail)
                     thumbnail = new_thumbnail
-            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url
