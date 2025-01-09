@@ -2626,6 +2626,8 @@ class Portal(object):
                     os.rename(thumbnail, new_thumbnail)
                     thumbnail = new_thumbnail
                 files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+            else:
+                files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url
