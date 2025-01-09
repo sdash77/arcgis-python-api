@@ -11018,9 +11018,6 @@ class User(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
-        # if userdict is None:
-        #     # need to get the user dict since search doesn't return all properties
-        #     userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
             if (
@@ -11035,8 +11032,6 @@ class User(dict):
             self._user_id = self.username
         else:
             self._user_id = self.username
-
-    # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
     def _hydrate(self):
         userdict = self._portal.get_user(self._user_id)
@@ -11074,6 +11069,7 @@ class User(dict):
         return "<%s username:%s>" % (type(self).__name__, self.username)
 
     def _get_role(self, userdict):
+        """Get user role from the roleid as default"""
         if "role" in userdict and "roleId" not in userdict:
             userdict["roleId"] = userdict["role"]
         elif "roleId" in userdict:
