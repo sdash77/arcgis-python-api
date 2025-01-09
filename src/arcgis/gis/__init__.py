@@ -3705,7 +3705,6 @@ class UserManager(object):
                 if k in allowed_keys:
                     params[k] = v
             return self._createPre64(**params)
-        return None
 
     # ----------------------------------------------------------------------
     def _createPre64(
@@ -5282,16 +5281,18 @@ class RoleManager(object):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the custom role to get.
+        role_id                Required string. The role ID or name of the custom role to get.
         ==================     ====================================================================
 
         :return:
            The :class:`Role <arcgis.gis.Role>` object associated with the specified role ID
         """
-        role = self._portal.con.post(
-            "portals/self/roles/" + role_id, self._portal._postdata()
-        )
-        return Role(self._gis, role["id"], role)
+        # First try to get role
+        all_roles = self._portal.get_org_roles()
+        for role in all_roles:
+            if role["name"] == role_id or role["id"] == role_id:
+                return Role(self._gis, role["id"], role)
+        return None
 
 
 class Role(object):
@@ -11192,22 +11193,13 @@ class User(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
-        # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
             ):  # groups aren't set unless hydrated
                 del userdict["groups"]
-            if "role" in userdict and "roleId" not in userdict:
-                userdict["roleId"] = userdict["role"]
-            elif "roleId" in userdict and "role" not in userdict:
-                # try getting role name - only needed for custom roles
-                try:
-                    role_obj = self._gis.users.roles.get_role(userdict["roleId"])
-                    userdict["role"] = role_obj.name
-                except Exception:
-                    userdict["role"] = userdict["roleId"]
+            userdict = self._get_role(userdict)
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, "id") and self.id != "null":
@@ -11216,12 +11208,9 @@ class User(dict):
         else:
             self._user_id = self.username
 
-    # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
-
     def _hydrate(self):
         userdict = self._portal.get_user(self._user_id)
-        if "roleId" not in userdict and "role" in userdict:
-            userdict["roleId"] = userdict["role"]
+        userdict = self._get_role(userdict)
         self._hydrated = True
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
@@ -11253,6 +11242,19 @@ class User(dict):
 
     def __repr__(self):
         return "<%s username:%s>" % (type(self).__name__, self.username)
+
+    def _get_role(self, userdict):
+        """Get user role from the roleid as default"""
+        if "role" in userdict and "roleId" not in userdict:
+            userdict["roleId"] = userdict["role"]
+        elif "roleId" in userdict:
+            # try getting role name - only needed for custom roles
+            try:
+                role_obj = self._gis.users.roles.get_role(userdict["roleId"])
+                userdict["role"] = role_obj.name
+            except Exception:
+                userdict["role"] = userdict["roleId"]
+        return userdict
 
     # ----------------------------------------------------------------------
     @property
@@ -13979,7 +13981,7 @@ class Item(dict):
             return fp
 
         elif resp.status_code > 199 and resp.status_code < 300:
-            content_disposition = resp.headers["Content-Disposition"]
+            content_disposition = resp.headers.get("Content-Disposition", {})
             size: int | None = None
             if "filename=" in content_disposition and file_name is None:
                 regex = r"filename=\"([^\"]+)"
@@ -15384,6 +15386,7 @@ class Item(dict):
                                                 "tags":"local government, administration, Warren County"
                                                })
         """
+        # Get item properties from dataclass
         if isinstance(item_properties, ItemProperties):
             if (
                 thumbnail is None
@@ -15401,54 +15404,71 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
-            if "access" in item_properties:
-                access = item_properties.pop("access")
-                if access == "private":
-                    self.sharing.sharing_level = "PRIVATE"
-                if access == "org":
-                    self.sharing.sharing_level = "ORGANIZATION"
-                if access == "public":
-                    self.sharing.sharing_level = "EVERYONE"
-                if access == "shared":
-                    groups = self.shared_with["groups"]
-                    grp_share = self.sharing.groups
-                    for grp in groups:
-                        grp_share.add(grp)
-
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
+
+        # set up parameters and item properties
+        owner = self._user_id
+        try:
+            folder = self.ownerFolder
+        except Exception:
+            folder = None
+        if item_properties:
+            large_thumbnail = item_properties.pop("largeThumbnail", None)
+        else:
+            large_thumbnail = None
+
+        if item_properties is not None:
+            if "tags" in item_properties:
+                if isinstance(item_properties["tags"], list):
+                    item_properties["tags"] = ",".join(item_properties["tags"])
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+
+                # Define a mapping of access levels to sharing levels
+                access_mapping = {
+                    "private": "PRIVATE",
+                    "org": "ORGANIZATION",
+                    "public": "EVERYONE",
+                }
+
+                if access in access_mapping:
+                    self.sharing.sharing_level = access_mapping[access]
+                elif access == "shared":
+                    # Add all groups in `shared_with["groups"]` to `sharing.groups`
+                    self.sharing.groups.update(self.shared_with.get("groups", []))
+                else:
+                    raise ValueError(f"Unexpected access level: {access}")
+        if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if item_properties is None:
+                item_properties = {}
+            if "type" not in item_properties:
+                item_properties["type"] = self.type
+            if "fileName" not in item_properties:
+                if self.name is None or self.name == "":
+                    msg: str = (
+                        "The `update` method requires a user to "
+                        "pass a `fileName` value in the `item_properties` "
+                        "if the file name is not defined on the Item"
+                    )
+                    raise ValueError(msg)
+                fileName = self.name
+                item_properties["fileName"] = fileName
+
+        # Make sure thumbnail doesn't get reset in the update
+        if thumbnail is None and self.thumbnail:
+            thumbnail = io.BytesIO()
+            thumbnail.write(self.get_thumbnail())
+            thumbnail.seek(0)
+
+        # Update depending on data type and size
         if (
             data
             and isinstance(data, str)
             and os.path.isfile(data)
             and os.stat(data).st_size > int(2.5e7)
         ):
-            owner = self._user_id
-
-            try:
-                folder = self.ownerFolder
-            except Exception:
-                folder = None
-
-            if item_properties:
-                large_thumbnail = item_properties.pop("largeThumbnail", None)
-            else:
-                large_thumbnail = None
-
-            if item_properties is not None:
-                if "tags" in item_properties:
-                    if isinstance(item_properties["tags"], list):
-                        item_properties["tags"] = ",".join(item_properties["tags"])
-
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
-                if item_properties is None:
-                    item_properties = {}
-                if "type" not in item_properties:
-                    item_properties["type"] = self.type
-                if "fileName" not in item_properties:
-                    fileName = self.name
-                    item_properties["fileName"] = fileName
             # update everything but the data
             ret = self._portal.update_item(
                 self.itemid,
@@ -15460,6 +15480,7 @@ class Item(dict):
                 folder,
                 large_thumbnail,
             )
+
             # update the data by part:
             params = {
                 "f": "json",
@@ -15484,57 +15505,17 @@ class Item(dict):
                 owner=self.owner,
                 folder=folder,
             )
-            if status == "completed":
-                self._hydrate()
-            elif ret:
+            if status == "completed" or ret:
                 self._hydrate()
             return ret
         else:
-            owner = self._user_id
-
-            try:
-                folder = self.ownerFolder
-            except Exception:
-                folder = None
-
-            if item_properties:
-                large_thumbnail = item_properties.pop("largeThumbnail", None)
-            else:
-                large_thumbnail = None
-
-            if item_properties is not None:
-                if "tags" in item_properties:
-                    if isinstance(item_properties["tags"], list):
-                        item_properties["tags"] = ",".join(item_properties["tags"])
-                if "access" in item_properties:
-                    access = item_properties.pop("access")
-                    if access == "private":
-                        self.sharing.sharing_level = "PRIVATE"
-                    if access == "org":
-                        self.sharing.sharing_level = "ORGANIZATION"
-                    if access == "public":
-                        self.sharing.sharing_level = "EVERYONE"
-                    if access == "shared":
-                        groups = self.shared_with["groups"]
-                        grp_share = self.sharing.groups
-                        for grp in groups:
-                            grp_share.add(grp)
-
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
-                if item_properties is None:
-                    item_properties = {}
-                if "type" not in item_properties:
-                    item_properties["type"] = self.type
-                if "fileName" not in item_properties:
-                    if self.name is None or self.name == "":
-                        msg: str = (
-                            "The `update` method requires a user to "
-                            "pass a `fileName` value in the `item_properties` "
-                            "if the file name is not defined on the Item"
-                        )
-                        raise ValueError(msg)
-                    fileName = self.name
-                    item_properties["fileName"] = fileName
+            if data is not None:
+                # Need to add the data first and then update the item to avoid overwriting from the file
+                self._portal.update_item(
+                    self.itemid,
+                    data=data,
+                )
+                data = None
 
             ret = self._portal.update_item(
                 self.itemid,
@@ -16731,11 +16712,18 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
+        elif "success" in ret[0] and ret[0]["success"] == False and overwrite:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilities are enabled on your service.",
+                )
+            )
         elif "success" in ret[0] and ret[0]["success"] == False:
             raise Exception(
                 ret[0].get(
                     "error",
-                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                    "Unknown error, please check the data or the title of the item.",
                 )
             )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
