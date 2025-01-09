@@ -13979,7 +13979,7 @@ class Item(dict):
             return fp
 
         elif resp.status_code > 199 and resp.status_code < 300:
-            content_disposition = resp.headers["Content-Disposition"]
+            content_disposition = resp.headers.get("Content-Disposition", {})
             size: int | None = None
             if "filename=" in content_disposition and file_name is None:
                 regex = r"filename=\"([^\"]+)"
@@ -16731,11 +16731,18 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
+        elif "success" in ret[0] and ret[0]["success"] == False and overwrite:
+            raise Exception(
+                ret[0].get(
+                    "error",
+                    "Overwrite unsuccessful. Check that editing capabilities are enabled on your service.",
+                )
+            )
         elif "success" in ret[0] and ret[0]["success"] == False:
             raise Exception(
                 ret[0].get(
                     "error",
-                    "Overwrite unsuccessful. Check that editing capabilties are enabled on your service.",
+                    "Unknown error, please check the data or the title of the item.",
                 )
             )
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
