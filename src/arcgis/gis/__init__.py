@@ -3663,202 +3663,28 @@ class UserManager(object):
             "groups": groups,
             "email_text": email_text,
         }
-        if self._gis.version >= [6, 4]:
-            allowed_keys = {
-                "username",
-                "password",
-                "firstname",
-                "lastname",
-                "email",
-                "description",
-                "role",
-                "provider",
-                "idp_username",
-                "user_type",
-                "thumbnail",
-                "credits",
-                "groups",
-                "level",
-                "email_text",
-            }
-            params = {}
-            for k, v in kwargs.items():
-                if k in allowed_keys:
-                    params[k] = v
-            return self._create64plus(**params)
-        else:
-            allowed_keys = {
-                "username",
-                "password",
-                "firstname",
-                "lastname",
-                "email",
-                "description",
-                "role",
-                "provider",
-                "idp_username",
-                "level",
-                "thumbnail",
-            }
-            params = {}
-            for k, v in kwargs.items():
-                if k in allowed_keys:
-                    params[k] = v
-            return self._createPre64(**params)
-        return None
-
-    # ----------------------------------------------------------------------
-    def _createPre64(
-        self,
-        username: str,
-        password: str,
-        firstname: str,
-        lastname: str,
-        email: str,
-        description: Optional[str] = None,
-        role: str = "org_user",
-        provider: str = "arcgis",
-        idp_username: Optional[str] = None,
-        level: int = 2,
-        thumbnail: Optional[str] = None,
-    ):
-        """
-        This operation is used to pre-create built-in or enterprise accounts within the portal,
-        or built-in users in an ArcGIS Online organization account. Only an administrator
-        can call this method.
-
-        To create a viewer account, choose role='org_viewer' and level=1
-
-        .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
-            automatically. Only users with accounts that have been pre-created can sign in to the portal.
-            Alternatively, you can configure the portal to register enterprise accounts the first time
-            the user connects to the website.
-
-        ================  ===============================================================================
-        **Parameter**      **Description**
-        ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
-        ----------------  -------------------------------------------------------------------------------
-        password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
-                          the provider is arcgis; otherwise, the password parameter is ignored.
-                          If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
-        ----------------  -------------------------------------------------------------------------------
-        firstname         Required string. The first name for the user
-        ----------------  -------------------------------------------------------------------------------
-        lastname          Required string. The last name for the user
-        ----------------  -------------------------------------------------------------------------------
-        email             Required string. The email address for the user. This is important to have correct.
-        ----------------  -------------------------------------------------------------------------------
-        description       Optional string. The description of the user account.
-        ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to user's image.
-        ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The role for the user account. The default value is org_user.
-                          Other possible values are org_publisher, org_admin, org_viewer.
-        ----------------  -------------------------------------------------------------------------------
-        provider          Optional string. The provider for the account. The default value is arcgis.
-                          The other possible value is enterprise.
-        ----------------  -------------------------------------------------------------------------------
-        idp_username      Optional string. The name of the user as stored by the enterprise user store.
-                          This parameter is only required if the provider parameter is enterprise.
-        ----------------  -------------------------------------------------------------------------------
-        level             Optional integer. The account level.
-                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
-        ================  ===============================================================================
-
-        :return:
-            The user if successfully created, None if unsuccessful.
-
-        """
-        # map role parameter of a viewer to the internal value for org viewer.
-        if role == "org_viewer":
-            role = "iAAAAAAAAAAAAAAA"
-
-        if self._gis._portal.is_arcgisonline:
-            email_text = (
-                """<html><body><p>"""
-                + self._gis.properties.user.fullName
-                + """ has invited you to join an ArcGIS Online Organization, """
-                + self._gis.properties.name
-                + """</p>
-<p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
-<p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
-<p>If you have difficulty signing in, please contact """
-                + self._gis.properties.user.fullName
-                + "("
-                + self._gis.properties.user.email
-                + """). Be sure to include a description of the problem, the error message, and a screenshot.</p>
-<p>For your reference, you can access the home page of the organization here: <br>"""
-                + self._gis.properties.user.fullName
-                + """</p>
-<p>This link will expire in two weeks.</p>
-<p style="color:gray;">This is an automated email. Please do not reply.</p>
-</body></html>"""
-            )
-            params = {
-                "f": "json",
-                "invitationList": {
-                    "invitations": [
-                        {
-                            "username": username,
-                            "firstname": firstname,
-                            "lastname": lastname,
-                            "fullname": firstname + " " + lastname,
-                            "email": email,
-                            "role": role,
-                            "level": level,
-                        }
-                    ]
-                },
-                "message": email_text,
-            }
-            if idp_username is not None:
-                if provider is None:
-                    provider = "enterprise"
-                params["invitationList"]["invitations"][0][
-                    "targetUserProvider"
-                ] = provider
-                params["invitationList"]["invitations"][0]["idpUsername"] = idp_username
-            if password is not None:
-                params["invitationList"]["invitations"][0]["password"] = password
-
-            resp = self._portal.con.post("portals/self/invite", params, ssl=True)
-            if resp and resp.get("success"):
-                if username in resp["notInvited"]:
-                    print("Unable to create " + username)
-                    _log.error("Unable to create " + username)
-                    return None
-                else:
-                    return self.get(username)
-        else:
-            createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
-            # print(createuser_url)
-            params = {
-                "f": "json",
-                "username": username,
-                "password": password,
-                "firstname": firstname,
-                "lastname": lastname,
-                "email": email,
-                "description": description,
-                "role": role,
-                "provider": provider,
-                "idpUsername": idp_username,
-                "level": level,
-            }
-            self._portal.con.post(createuser_url, params)
-            user = self.get(username)
-            if thumbnail is not None:
-                ret = user.update(thumbnail=thumbnail)
-                if not ret:
-                    _log.error("Unable to update the thumbnail for  " + username)
-            return user
+        allowed_keys = {
+            "username",
+            "password",
+            "firstname",
+            "lastname",
+            "email",
+            "description",
+            "role",
+            "provider",
+            "idp_username",
+            "user_type",
+            "thumbnail",
+            "credits",
+            "groups",
+            "level",
+            "email_text",
+        }
+        params = {}
+        for k, v in kwargs.items():
+            if k in allowed_keys:
+                params[k] = v
+        return self._create64plus(**params)
 
     # ----------------------------------------------------------------------
     def _create64plus(
@@ -11192,22 +11018,16 @@ class User(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         self._invitemgr = None
-        # userdict = self._portal.get_user(self.username)
+        # if userdict is None:
+        #     # need to get the user dict since search doesn't return all properties
+        #     userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
             if (
                 "groups" in userdict and len(userdict["groups"]) == 0
             ):  # groups aren't set unless hydrated
                 del userdict["groups"]
-            if "role" in userdict and "roleId" not in userdict:
-                userdict["roleId"] = userdict["role"]
-            elif "roleId" in userdict and "role" not in userdict:
-                # try getting role name - only needed for custom roles
-                try:
-                    role_obj = self._gis.users.roles.get_role(userdict["roleId"])
-                    userdict["role"] = role_obj.name
-                except Exception:
-                    userdict["role"] = userdict["roleId"]
+            userdict = self._get_role(userdict)
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, "id") and self.id != "null":
@@ -11220,8 +11040,7 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self._user_id)
-        if "roleId" not in userdict and "role" in userdict:
-            userdict["roleId"] = userdict["role"]
+        userdict = self._get_role(userdict)
         self._hydrated = True
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
@@ -11253,6 +11072,18 @@ class User(dict):
 
     def __repr__(self):
         return "<%s username:%s>" % (type(self).__name__, self.username)
+
+    def _get_role(self, userdict):
+        if "role" in userdict and "roleId" not in userdict:
+            userdict["roleId"] = userdict["role"]
+        elif "roleId" in userdict:
+            # try getting role name - only needed for custom roles
+            try:
+                role_obj = self._gis.users.roles.get_role(userdict["roleId"])
+                userdict["role"] = role_obj.name
+            except Exception:
+                userdict["role"] = userdict["roleId"]
+        return userdict
 
     # ----------------------------------------------------------------------
     @property
