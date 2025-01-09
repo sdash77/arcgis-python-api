@@ -1,49 +1,20 @@
-import sys, json, uuid
-import logging
+import uuid
 import unittest
-from arcgis.auth.tools._util import detect_proxy
-from arcgis.gis import GIS, ContentManager, Item
+from arcgis.gis import ContentManager, Item
 from arcgis.gis._impl._datastores import PortalDataStore
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
+from utils._logging import enable_verbose_logging
 
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
 @integration_test
-class Test_BulkPublishing(unittest.TestCase):
+@profiles.admin_enterprise
+class TestBulkPublishing(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        gis_gen: GIS = GIS(
-            url="https://rpubs22001.ags.esri.com/portal",
-            username="PAPIadmin",
-            password="PAPIletmein01",
-            verify_cert=False,
-            use_gen_token=True,
-        ).users.me.update(security_question=1, security_answer="Redlands")
-        del gis_gen
-        cls.gis: GIS = GIS(
-            url="https://rpubs22001.ags.esri.com/portal",
-            username="PAPIadmin",
-            password="PAPIletmein01",
-            verify_cert=False,
-        )
-        cm: ContentManager = cls.gis.content
-
-        cls.item: Item = cm.add(
+        folder = cls.gis.content.folders._get_or_create("integration_testing")
+        cls.item: Item = folder.add(
             item_properties={
                 "text": {
                     'info': {
@@ -57,10 +28,9 @@ class Test_BulkPublishing(unittest.TestCase):
                 "type": "Data Store",
                 "title": f"bulk_publish_{uuid.uuid4().hex[:4]}",
             }
-        )
-        dstore: PortalDataStore = cls.gis.datastore
+        ).result()
+        cls.dstore: PortalDataStore = cls.gis.datastore
 
-        cls.dstore: PortalDataStore = dstore
         # servers:dict = cls.gis.servers
         server_id: str = [
             server
@@ -68,7 +38,7 @@ class Test_BulkPublishing(unittest.TestCase):
             if server['isHosted']
         ][0]['id']
         cls.server_id: str = server_id
-        status = dstore.register(cls.item, server_id, bind=False)
+        status = cls.dstore.register(cls.item, server_id, bind=False)
         assert status
 
     def test_bulk_publish_workflow(self):
