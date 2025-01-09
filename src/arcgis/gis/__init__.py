@@ -5288,17 +5288,10 @@ class RoleManager(object):
            The :class:`Role <arcgis.gis.Role>` object associated with the specified role ID
         """
         # First try to get role
-        try:
-            role = self._portal.con.post(
-                "portals/self/roles/" + role_id, self._portal._postdata()
-            )
-            return Role(self._gis, role["id"], role)
-        except:
-            # Assume the role_id is a role name
-            all_roles = self.all()
-            for r in all_roles:
-                if r.name == role_id:
-                    return r
+        all_roles = self._portal.get_org_roles()
+        for role in all_roles:
+            if role["name"] == role_id or role["id"] == role_id:
+                return Role(self._gis, role["id"], role)
         return None
 
 
