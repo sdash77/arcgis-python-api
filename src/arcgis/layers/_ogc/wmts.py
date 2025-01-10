@@ -15,7 +15,6 @@ class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
-
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -62,6 +61,33 @@ class WMTSLayer(BaseOGC):
         self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._opacity = kwargs.pop("opacity", 1)
         self._type = "WebTiledLayer"
+        self._properties = self.properties
+        self._lyr_identifiers = self._get_lyr_identifiers()
+        self._spatial_reference = self._get_spatial_reference()
+
+    def _get_spatial_reference(self):
+        """
+        Returns the spatial reference of the layer
+        """
+        if "BoundingBox" in self._properties["Capabilities"]["Contents"]["Layer"]:
+            crs = self._properties["Capabilities"]["Contents"]["Layer"]["BoundingBox"][
+                "@crs"
+            ]
+            return int(crs.split(":")[-1])
+        return 4326
+
+    def _get_lyr_identifiers(self):
+        """
+        Returns the identifiers of the layers
+        """
+        if isinstance(self._properties["Capabilities"]["Contents"]["Layer"], list):
+            return [
+                lyr["Identifier"]
+                for lyr in self._properties["Capabilities"]["Contents"]["Layer"]
+            ]
+        else:
+            # Only one layer so it's a dict
+            return [self._properties["Capabilities"]["Contents"]["Layer"]["Identifier"]]
 
     def _get_capabilities_xml(self, urls: list[str]) -> str:
         """
@@ -78,6 +104,17 @@ class WMTSLayer(BaseOGC):
                 try:
                     resp: requests.Response = get_func(url)
                     resp.raise_for_status()
+                    if (
+                        "<Capabilities xmlns" in resp.text
+                        and "<?xml" not in resp.text.lower()
+                    ):
+                        # add the xml tag to beggining of text and return
+                        resp_text = resp.text
+                        xml_tag = (
+                            f'<?xml version="{self._version}" encoding="UTF-8"?>\n'
+                        )
+                        resp_text = xml_tag + resp_text
+                        return resp_text
                     if "<?xml" not in resp.text.lower():
                         raise ValueError(
                             f"Could not retrieve valid XML from WebMap Tile Service Capabilities Endpoint; Got:\n{resp.text}"
@@ -202,14 +239,18 @@ class WMTSLayer(BaseOGC):
         }
 
     @staticmethod
-    def _get_operational_layer_config(url: str, properties: dict) -> dict:
+    def _get_operational_layer_config(url: str, properties: dict, idx=None) -> dict:
         """Returns the operational layer configuration"""
         layer = None
         tile_matrix = None
+        tile_matrix_identifier = None
 
-        if isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
+        if idx is not None and isinstance(
+            properties["Capabilities"]["Contents"]["Layer"], (list, tuple)
+        ):
+            layer = properties["Capabilities"]["Contents"]["Layer"][idx]
+        elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (list, tuple)):
             layer = properties["Capabilities"]["Contents"]["Layer"][0]
-            tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"][0]
         elif isinstance(properties["Capabilities"]["Contents"]["Layer"], (dict)):
             layer = properties["Capabilities"]["Contents"]["Layer"]
             tile_matrix = properties["Capabilities"]["Contents"]["TileMatrixSet"]
@@ -218,14 +259,27 @@ class WMTSLayer(BaseOGC):
         else:
             raise ValueError("Could not parse the results properly.")
 
+        # Get the tile_matrix
+        if tile_matrix is None:
+            tile_matrix_identifier = layer["TileMatrixSetLink"]["TileMatrixSet"]
+            for t in properties["Capabilities"]["Contents"]["TileMatrixSet"]:
+                if t["Identifier"] == tile_matrix_identifier:
+                    tile_matrix = t
+                    break
+        resource_url_template = (
+            layer["ResourceURL"][0]["@template"]
+            if isinstance(layer["ResourceURL"], (list, tuple))
+            else layer["ResourceURL"]["@template"]
+        )
         url_template = (
-            layer["ResourceURL"]["@template"]
-            .replace("{TileMatrix}", "{level}")
+            resource_url_template.replace("{TileMatrix}", "{level}")
             .replace("{Style}", layer["Style"]["Identifier"])
             .replace("{TileRow}", "{row}")
             .replace("{TileCol}", "{col}")
             .replace("{TileMatrixSet}", tile_matrix["Identifier"])
         )
+        if "Dimension" in layer:
+            url_template = url_template.replace("{Time}", layer["Dimension"]["Default"])
         bounding_box_name = (
             "BoundingBox" if "BoundingBox" in layer else "WGS84BoundingBox"
         )
@@ -237,14 +291,23 @@ class WMTSLayer(BaseOGC):
             for coord in layer[bounding_box_name]["UpperCorner"].strip().split(" ")
         ]
         lods = []
-        WMTS_DPI = 90.71428571428571
+        METER_PER_PIXEL_AT_SCALE_1 = (
+            0.00028  # Constant for pixel size in meters at scale denominator = 1
+        )
+        EARTH_CIRCUMFERENCE = 40075000  # Approximate Earth circumference in meters
+        METERS_PER_DEGREE = EARTH_CIRCUMFERENCE / 360
+
         for l in tile_matrix["TileMatrix"]:
+            scale_denominator = float(l["ScaleDenominator"])
+            resolution_meters = scale_denominator * METER_PER_PIXEL_AT_SCALE_1
+            resolution_degrees = resolution_meters / METERS_PER_DEGREE
+
             lods.append(
                 {
                     "level": int(l["Identifier"]),
                     "levelValue": l["Identifier"],
-                    "resolution": float(l["ScaleDenominator"]) * 0.00028,
-                    "scale": float(l["ScaleDenominator"]) * WMTS_DPI / 96,
+                    "resolution": resolution_degrees,  # Degrees per pixel for Map Viewer
+                    "scale": scale_denominator,  # Scale remains unchanged
                 }
             )
         if bounding_box_name == "WGS84BoundingBox":
@@ -265,8 +328,8 @@ class WMTSLayer(BaseOGC):
                 "spatialReference": spatial_reference,
             },
             "tileInfo": {
-                "rows": 256,
-                "cols": 256,
+                "rows": tile_matrix["TileMatrix"][0]["TileHeight"],
+                "cols": tile_matrix["TileMatrix"][0]["TileWidth"],
                 "dpi": 96,
                 "origin": {
                     "x": (fullExtent[2] + fullExtent[0]) / 2,
@@ -278,17 +341,45 @@ class WMTSLayer(BaseOGC):
             },
             "wmtsInfo": {
                 "url": url,
-                "layerIdentifier": layer["Title"],
+                "layerIdentifier": layer["Identifier"],
                 "tileMatrixSet": [tile_matrix["Identifier"]],
             },
+            "title": layer["Title"],
         }
 
     @property
     def __text__(self) -> dict:
-        """gets the item's text properties"""
+        """gets the item's text properties for the first layer"""
         return self._get_operational_layer_config(self._url, self.properties)
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Represents the Map's JSON format"""
+        """Represents the Map's JSON format for the first layer"""
         return self.__text__
+
+    def operational_layer_json(self, identifier: str) -> dict:
+        """
+        Represents the JSON Format for the specified layer.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        identifier          Required string. The layer's Identifier to get the JSON format for.
+
+                            You can find this by looping through the layers in the `properties` attribute.
+
+                            ex:
+                            ```
+                            for lyr in wmts.properties["Capabilities"]["Contents"]["Layer"]:
+                                print(lyr["Identifier"])
+                            ```
+        ===============     ====================================================================
+
+        :return: dict
+        """
+        # User the property to get the layer index
+        layer_index = self._lyr_identifiers.index(identifier)
+
+        return self._get_operational_layer_config(
+            self._url, self.properties, layer_index
+        )

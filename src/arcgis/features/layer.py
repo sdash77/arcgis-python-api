@@ -3058,6 +3058,7 @@ class FeatureLayer(Layer):
 
         :return:
             A dictionary by default, or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            The dictionary will contain keys "addResults", "updateResults", "deleteResults", and "attachments" with the results of the operation.
 
         .. code-block:: python
 
@@ -3072,6 +3073,12 @@ class FeatureLayer(Layer):
             }]
             lyr.edit_features(updates=feature)
 
+            >>> {
+                'addResults': [],
+                'updateResults': [{'objectId': 1, 'success': True}]},
+                'deleteResults': [],
+            }
+
         .. code-block:: python
 
             # Usage Example 2:
@@ -3082,11 +3089,23 @@ class FeatureLayer(Layer):
                     }
             lyr.edit_features(adds=[adds])
 
+            >>> {
+                'addResults': [{'objectId': 2542, 'success': True}],
+                'updateResults': [],
+                'deleteResults': [],
+            }
+
         .. code-block:: python
 
             # Usage Example 3:
 
             lyr.edit_features(deletes=[2542])
+
+            >>> {
+                'addResults': [],
+                'updateResults': [],
+                'deleteResults': [{'objectId': 2542, 'success': True}],
+            }
 
         """
 
