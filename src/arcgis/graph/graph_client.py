@@ -45,7 +45,7 @@ from arcgis.graph.response_types import (
 )
 
 
-class GraphClient:
+class Graph:
     """
     Provides access to the Knowledge Graph service data model and properties, as well as
     methods to search and query the graph.
@@ -63,7 +63,7 @@ class GraphClient:
         # Connect to a Knowledge Graph service:
 
         gis = GIS(url="url", username="username", password="password")
-        graph_client = GraphClient(url=url, gis=gis)
+        graph = Graph(url=url, gis=gis)
 
     """
 
@@ -117,11 +117,11 @@ class GraphClient:
         .. code-block:: python
 
             # Perform a search on the knowledge graph
-            for search_result in graph_client.search("cat", "both"):
+            for search_result in graph.search("cat", "both"):
                 print(search_result)
 
             # Perform a search on only entities in the knowledge graph
-            for searchentities_result in graph_client.search("cat", "entities"):
+            for searchentities_result in graph.search("cat", "entities"):
                 print(searchentities_result)
 
         :return: Generator[Sequence[Any], None, None]
@@ -209,11 +209,11 @@ class GraphClient:
         .. code-block:: python
 
             # Get a list of all query results
-            query_gen = graph_client.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            query_gen = graph.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
             results = list(gen)
 
             # Grab one result at a time
-            query_gen = graph_client.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            query_gen = graph.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
             first_result = next(query_gen)
             second_result = next(query_gen)
 
@@ -418,7 +418,7 @@ class GraphClient:
         .. code-block:: python
 
             # Delete a named type in the data model
-            delete_result = graph_client.named_object_type_delete("Person")
+            delete_result = graph.named_object_type_delete("Person")
 
 
         :return: `NamedObjectTypeDeleteResponse`
@@ -518,7 +518,7 @@ class GraphClient:
         .. code-block:: python
 
             # Delete a named type's property in the data model
-            delete_result = graph_client.graph_property_delete("Person", "Address")
+            delete_result = graph.graph_property_delete("Person", "Address")
 
 
         :return: `PropertyDeleteResponse`
@@ -582,7 +582,7 @@ class GraphClient:
         .. code-block:: python
 
             # Delete field indexes from a Knowledge Graph type
-            delete_result = graph_client.graph_property_index_deletes("Project", ["title"])
+            delete_result = graph.graph_property_index_deletes("Project", ["title"])
 
 
         :return: `IndexDeletesResponse`
@@ -657,7 +657,7 @@ class GraphClient:
         .. code-block:: python
 
             # Delete a constraint rule from the Knowledge Graph's data model.
-            graph_client.constraint_rule_deletes(["constraint_rule_1"])
+            graph.constraint_rule_deletes(["constraint_rule_1"])
 
 
         :return: `ConstraintRuleDeletesResponse`

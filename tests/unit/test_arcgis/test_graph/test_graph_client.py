@@ -50,7 +50,7 @@ from esriPBuffer.graph import (
 from arcgis.gis import Item
 from arcgis.geometry import Geometry
 from arcgis.graph import (
-    GraphClient,
+    Graph,
     EntityType,
     RelationshipType,
     GraphProperty,
@@ -88,7 +88,7 @@ from arcgis.graph import (
 )
 
 
-class TestGraphClient(unittest.TestCase):
+class TestGraph(unittest.TestCase):
     def test_fromitem_success(self):
         item: Item = Item(
             gis=TestHelpers.construct_gis(
@@ -101,8 +101,8 @@ class TestGraphClient(unittest.TestCase):
                 "url": TestConstants.FAKE_SERVICE,
             },
         )
-        graph_client: GraphClient = GraphClient.fromitem(item=item)
-        self.assertEqual(TestConstants.FAKE_SERVICE, graph_client._knowledge_graph._url)
+        graph: Graph = Graph.fromitem(item=item)
+        self.assertEqual(TestConstants.FAKE_SERVICE, graph._knowledge_graph._url)
 
     def test_update_search_index_success(self):
         def mock_service_func(data: Optional[bytes]) -> Response:
@@ -130,7 +130,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -139,7 +139,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: UpdateSearchIndexResponse = graph_client.update_search_index(
+        response: UpdateSearchIndexResponse = graph.update_search_index(
             adds={
                 "Person": SearchIndexProperties(property_names=["name"]),
             },
@@ -178,7 +178,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -187,7 +187,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: UpdateSearchIndexResponse = graph_client.update_search_index(
+        response: UpdateSearchIndexResponse = graph.update_search_index(
             adds={
                 "Person": SearchIndexProperties(property_names=["name"]),
             },
@@ -300,7 +300,7 @@ class TestGraphClient(unittest.TestCase):
             self.assertEqual(QueryTypes_pb2.DurationFormat.DURATION_FORMAT_DURATION_COMPONENTS, pbf_request.out_duration_format)  # type: ignore
             return TestHelpers.mock_query_response()
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -312,7 +312,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        for result in graph_client.search(search="abc", category="both"):
+        for result in graph.search(search="abc", category="both"):
             TestHelpers.validate_query_response(test_case=self, result=result)
 
     def test_query(self):
@@ -474,7 +474,7 @@ class TestGraphClient(unittest.TestCase):
             self.assertEqual(QueryRequest_pb2.ProvenanceBehavior.INCLUDE, pbf_request.provenance_behavior)  # type: ignore
             return TestHelpers.mock_query_response()
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -483,7 +483,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        for result in graph_client.query(
+        for result in graph.query(
             query="match (n) return n",
             input_transform=Transform(
                 xy_resolution=1.1,
@@ -532,7 +532,7 @@ class TestGraphClient(unittest.TestCase):
             TestHelpers.validate_query_response(test_case=self, result=result)
 
     def test_query_data_model_success(self):
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -541,7 +541,7 @@ class TestGraphClient(unittest.TestCase):
                 post_requests={},
             ),
         )
-        data_model: GraphDataModel = graph_client.query_data_model()
+        data_model: GraphDataModel = graph.query_data_model()
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("data_model_timestamp" in results)
         self.assertEqual(123, results["data_model_timestamp"])
@@ -792,7 +792,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -801,7 +801,7 @@ class TestGraphClient(unittest.TestCase):
                 post_requests={},
             ),
         )
-        data_model: GraphDataModel = graph_client.query_data_model()
+        data_model: GraphDataModel = graph.query_data_model()
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("identifier_info" in results)
         identifier_info: dict[str, Any] = results["identifier_info"]
@@ -843,7 +843,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -852,7 +852,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: SyncDataModelResponse = graph_client.sync_data_model()
+        response: SyncDataModelResponse = graph.sync_data_model()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
         self.assertFalse("warnings" in results)
@@ -898,7 +898,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -907,7 +907,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: SyncDataModelResponse = graph_client.sync_data_model()
+        response: SyncDataModelResponse = graph.sync_data_model()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error = results["error"]
@@ -1052,7 +1052,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1063,7 +1063,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: ApplyEditsResponse = graph_client.apply_edits(
+        response: ApplyEditsResponse = graph.apply_edits(
             adds=[
                 Entity(
                     type_name="AddEntityType",
@@ -1248,7 +1248,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1257,7 +1257,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeAddsResponse = graph_client.named_object_type_adds(
+        response: NamedObjectTypeAddsResponse = graph.named_object_type_adds(
             entity_types=[
                 EntityType(
                     name="Person",
@@ -1336,7 +1336,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1347,7 +1347,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeUpdateResponse = graph_client.named_object_type_update(
+        response: NamedObjectTypeUpdateResponse = graph.named_object_type_update(
             type_name="Person",
             named_type_update=EntityType(name="Person", properties=[]),
             mask=NamedObjectTypeMask(
@@ -1389,7 +1389,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1400,7 +1400,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeUpdateResponse = graph_client.named_object_type_update(
+        response: NamedObjectTypeUpdateResponse = graph.named_object_type_update(
             type_name="Owns",
             named_type_update=RelationshipType(name="Owns", properties=[]),
             mask=NamedObjectTypeMask(
@@ -1427,7 +1427,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1436,7 +1436,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeDeleteResponse = graph_client.named_object_type_delete(
+        response: NamedObjectTypeDeleteResponse = graph.named_object_type_delete(
             type_name="Person"
         )
         results: dict[str, Any] = response.model_dump(by_alias=True)
@@ -1453,7 +1453,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1462,7 +1462,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeDeleteResponse = graph_client.named_object_type_delete(
+        response: NamedObjectTypeDeleteResponse = graph.named_object_type_delete(
             type_name="Person"
         )
         results: dict[str, Any] = response.model_dump(by_alias=True)
@@ -1499,7 +1499,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1508,7 +1508,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyAddsResponse = graph_client.graph_property_adds(
+        response: PropertyAddsResponse = graph.graph_property_adds(
             type_name="Person",
             graph_properties=[
                 GraphProperty(
@@ -1571,7 +1571,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1580,7 +1580,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyUpdateResponse = graph_client.graph_property_update(
+        response: PropertyUpdateResponse = graph.graph_property_update(
             type_name="Person",
             property_name="name",
             graph_property=GraphProperty(name="name", field_type="esriFieldTypeString"),
@@ -1631,7 +1631,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1640,7 +1640,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyUpdateResponse = graph_client.graph_property_update(
+        response: PropertyUpdateResponse = graph.graph_property_update(
             type_name="Person",
             property_name="name",
             graph_property=GraphProperty(name="name", field_type="esriFieldTypeString"),
@@ -1679,7 +1679,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1688,7 +1688,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyDeleteResponse = graph_client.graph_property_delete(
+        response: PropertyDeleteResponse = graph.graph_property_delete(
             type_name="Person",
             property_name="name",
         )
@@ -1709,7 +1709,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1718,7 +1718,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyDeleteResponse = graph_client.graph_property_delete(
+        response: PropertyDeleteResponse = graph.graph_property_delete(
             type_name="Person",
             property_name="name",
         )
@@ -1754,7 +1754,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1763,7 +1763,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: IndexAddsResponse = graph_client.graph_property_index_adds(
+        response: IndexAddsResponse = graph.graph_property_index_adds(
             type_name="Person",
             field_indexes=[
                 FieldIndex(
@@ -1817,7 +1817,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1826,7 +1826,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: IndexDeletesResponse = graph_client.graph_property_index_deletes(
+        response: IndexDeletesResponse = graph.graph_property_index_deletes(
             type_name="Person",
             field_indexes=["myIdx"],
         )
@@ -1923,7 +1923,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1932,7 +1932,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleAddsResponse = graph_client.constraint_rule_adds(
+        response: ConstraintRuleAddsResponse = graph.constraint_rule_adds(
             rules=[
                 RelationshipExclusionRule(
                     name="rule",
@@ -2068,7 +2068,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -2077,7 +2077,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleUpdatesResponse = graph_client.constraint_rule_updates(
+        response: ConstraintRuleUpdatesResponse = graph.constraint_rule_updates(
             rules=[
                 RelationshipExclusionRuleUpdate(
                     rule_name="rule",
@@ -2158,7 +2158,7 @@ class TestGraphClient(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph_client: GraphClient = GraphClient(
+        graph: Graph = Graph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -2167,7 +2167,7 @@ class TestGraphClient(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleDeletesResponse = graph_client.constraint_rule_deletes(
+        response: ConstraintRuleDeletesResponse = graph.constraint_rule_deletes(
             rule_names=["rule"],
         )
         results: dict[str, Any] = response.model_dump(by_alias=True)

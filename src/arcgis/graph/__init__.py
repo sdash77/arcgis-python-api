@@ -92,4 +92,4 @@ from arcgis.graph.response_types import (
     CascadingProvenanceDelete,
     ApplyEditsResponse,
 )
-from arcgis.graph.graph_client import GraphClient
+from arcgis.graph.graph_client import Graph
