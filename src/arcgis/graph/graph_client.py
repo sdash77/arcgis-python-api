@@ -1,6 +1,5 @@
 from typing import Any, Union, Generator, Optional, Sequence
 
-from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._util import _get_item_url
 from arcgis.graph._service import KnowledgeGraph

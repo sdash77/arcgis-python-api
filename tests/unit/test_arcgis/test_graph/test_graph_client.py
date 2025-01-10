@@ -1261,31 +1261,31 @@ class TestGraphClient(unittest.TestCase):
             entity_types=[
                 EntityType(
                     name="Person",
-                    properties={
-                        "name": GraphProperty(
+                    properties=[
+                        GraphProperty(
                             name="name",
                             field_type="esriFieldTypeString",
                         ),
-                        "location": GraphProperty(
+                        GraphProperty(
                             name="location",
                             field_type="esriFieldTypeGeometry",
                             geometry_type="esriGeometryPoint",
                         ),
-                    },
-                    field_indexes={
-                        "myIdx": FieldIndex(
+                    ],
+                    field_indexes=[
+                        FieldIndex(
                             name="myIdx",
                             is_ascending=True,
                             is_unique=True,
                             fields=["abc", "def"],
                         ),
-                    },
+                    ],
                 )
             ],
             relationship_types=[
                 RelationshipType(
                     name="Owns",
-                    properties={},
+                    properties=[],
                 )
             ],
         )
@@ -1349,7 +1349,7 @@ class TestGraphClient(unittest.TestCase):
         )
         response: NamedObjectTypeUpdateResponse = graph_client.named_object_type_update(
             type_name="Person",
-            named_type_update=EntityType(name="Person", properties={}),
+            named_type_update=EntityType(name="Person", properties=[]),
             mask=NamedObjectTypeMask(
                 update_name=True,
                 update_alias=True,
@@ -1402,7 +1402,7 @@ class TestGraphClient(unittest.TestCase):
         )
         response: NamedObjectTypeUpdateResponse = graph_client.named_object_type_update(
             type_name="Owns",
-            named_type_update=RelationshipType(name="Owns", properties={}),
+            named_type_update=RelationshipType(name="Owns", properties=[]),
             mask=NamedObjectTypeMask(
                 update_name=True,
                 update_alias=True,
