@@ -2122,7 +2122,7 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_table(self, location, overwrite=True, **kwargs):
         """
-        The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
+        The ``to_table`` method exports a geo enabled dataframe to a file.
 
         .. note::
             Null integer values will be changed to 0 when using shapely instead

@@ -1396,8 +1396,11 @@ def _gdal_to_fc(
         "Polygon": ogr.wkbPolygon,
         "Point": ogr.wkbPoint,
         "Polyline": ogr.wkbLineString,
-        "null": ogr.wkbUnknown,
     }
+    if out_type == "OpenFileGDB":
+        GEOMTYPELOOKUP["null"] = ogr.wkbNone
+    else:
+        GEOMTYPELOOKUP["null"] = (ogr.wkbUnknown,)
 
     if not overwrite and os.path.exists(out_path):
         raise ValueError("overwrite set to False, cannot overwrite existent location.")
@@ -1418,14 +1421,13 @@ def _gdal_to_fc(
         out_file = out_driver.CreateDataSource(out_path)
 
     geom_field = df.spatial.name
-    if geom_field is None:
-        return
     geom_type = "null"
-    idx = df[geom_field].first_valid_index()
-    if idx > -1:
-        geom_type = df.loc[idx][geom_field].type
+    if geom_field:
+        idx = df[geom_field].first_valid_index()
+        if idx > -1:
+            geom_type = df.loc[idx][geom_field].type
 
-    df_ref = df.spatial.sr
+    df_ref = df.spatial.sr or {}
     osr_ref = osr.SpatialReference()
     if "wkid" in df_ref:
         ref_code = df_ref["wkid"]
@@ -1495,23 +1497,24 @@ def _gdal_to_fc(
 
     for idx, row in df.iterrows():
         feature = ogr.Feature(out_layer.GetLayerDefn())
-        geom = row[df.spatial.name]
-        geom_string = _ujson.dumps(dict(geom))
-        ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
-        feature.SetGeometry(ogr_geom)
+        if df.spatial.name:
+            geom = row[df.spatial.name]
+            geom_string = _ujson.dumps(dict(geom))
+            ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
+            feature.SetGeometry(ogr_geom)
 
-        for field_name, value in row.items():
-            if field_name != df.spatial.name:
-                # continue
-                if field_name in dfields:
-                    value = value.strftime("%Y-%m-%d %H:%M:%S")
-                feature.SetField(field_mapping[field_name], value)
+            for field_name, value in row.items():
+                if field_name != df.spatial.name:
+                    # continue
+                    if field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
+                    feature.SetField(field_mapping[field_name], value)
 
+            del idx
+            del row
+            del geom
+            del ogr_geom
         out_layer.CreateFeature(feature)
-        del idx
-        del row
-        del geom
-        del ogr_geom
 
     # out_file = None
     if zip_file:
