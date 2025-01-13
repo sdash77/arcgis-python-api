@@ -60,6 +60,14 @@ try:
     has_pyshp = True
 except ImportError:
     has_pyshp = False
+
+try:
+    from osgeo import ogr, osr
+
+    has_gdal = True
+except:
+    has_gdal = False
+    
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -70,6 +78,7 @@ from arcgis.auth import EsriSession
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
 features = LazyLoader("arcgis.features")
+fileops = LazyLoader("arcgis.features.geo._io.fileops")
 _geo = LazyLoader("arcgis.features.geo")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
@@ -8411,21 +8420,40 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
+        # Do some error handling
         assert isinstance(
             df, pd.DataFrame
         ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
-        fname: str = tempfile.mkstemp(suffix=".csv")[1]
-
-        df.to_csv(fname)
-        if title is None:
-            now: _dt.datetime = _dt.datetime.now()
-            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        
         if service_name is None:
-            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
-        pp: dict[str, Any] = {
-            "type": "CSV",
-            "title": title,
-        }
+            service_name = "a" + uuid.uuid4().hex[0:5]
+        if title is None:
+            title = service_name
+            
+        # If gdal is present, prioritize it
+        if has_gdal:
+            if not service_name.endswith(".gdb"):
+                service_name += ".gdb"
+            # create a temporary file
+            location = tempfile.mkdtemp()
+            location = os.path.join(location, service_name)
+            temp_zip = os.path.join(location, "%s.zip" % (service_name))
+            out_location = os.path.dirname(location)
+                
+            res = fileops._gdal_to_fc(
+                        df,
+                        os.path.join(out_location, service_name),
+                        "OpenFileGDB",
+                        layer_name=title,
+                        overwrite=True,
+                    )
+            pp = {
+                "title": title,
+                "type": "File Geodatabase",
+            }
+            file = _common_utils.zipws(path=location, outfile=temp_zip, keep=True)
+                    
+        
         if folder:
             folder = self.folders.get(folder=folder, owner=self._gis._username)
         if not folder:
@@ -8434,21 +8462,26 @@ class ContentManager(object):
         job = folder.add(
             **{
                 "item_properties": pp,
-                "file": fname,
+                "file": file,
             }
         )
-        csv_item: Item = job.result()
+        fgdb_item: Item = job.result()
         try:
-            os.remove(fname)
+            os.remove(file)
         except Exception:
             pass
         if publish_parameters is None:
-            publish_parameters: dict[str, Any] = self.analyze(
-                item=csv_item, file_type="csv"
-            )["publishParameters"]
-            publish_parameters["name"] = service_name
-            publish_parameters["locationType"] = "none"
-        return csv_item.publish(publish_parameters)
+            # publish_parameters: dict[str, Any] = self.analyze(
+            #     item=csv_item, file_type="csv"
+            # )["publishParameters"]
+            publish_parameters = {
+                "name": service_name,
+                "maxRecordCount": 2000,
+                "hasStaticData": True,
+                "layerInfo": {"capabilities": "Query"},
+                "locationType": "none",
+            }
+        return fgdb_item.publish(publish_parameters)
 
     # ----------------------------------------------------------------------
     def import_data(
