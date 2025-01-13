@@ -1,4 +1,5 @@
 import datetime
+import functools
 import json
 import sys
 from typing import Optional
@@ -43,11 +44,6 @@ def _initialize(instance, gis, is_admin=False):
     if instance._gis.users.me is None:
         raise ValueError("An authenticated `GIS` is required.")
 
-    instance._url = _wmx_server_url(instance, is_admin)[0]
-    if instance._url is None:
-        raise ValueError("No WorkflowManager Registered with your Organization")
-
-def _wmx_server_url(instance, is_admin):
     """locates the WMX server"""
     baseurl = instance._gis._portal.resturl
 
@@ -63,22 +59,24 @@ def _wmx_server_url(instance, is_admin):
                 x.strip() for x in s.get("serverFunction", "").lower().split(",")
             ]
             if "workflowmanager" in server_functions:
-                instance.server_url = instance._url = s.get("url", None)
-                instance._url = s.get("url", None)
-                instance._private_url = s.get("adminUrl", None)
-                if instance._url is None:
+                public_url = s.get("url", None)
+                private_url = s.get("adminUrl", None)
+                instance._server_url = _get_server_url(public_url, private_url, gis)
+
+                if instance._server_url is None:
                     raise RuntimeError("Cannot find a WorkflowManager Server")
+
                 if is_admin:
-                    instance._url += f"/{instance.org_id}"
-                    instance._private_url += f"/{instance.org_id}"
+                    instance._url = instance._server_url + f"/{instance.org_id}"
                 else:
-                    instance._url += f"/{instance.org_id}/{instance._item.id}"
-                    instance._private_url += f"/{instance.org_id}/{instance._item.id}"
-                return instance._url, instance._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+                    instance._url = instance._server_url + f"/{instance.org_id}/{instance._item.id}"
+                break
+
+        if instance._url is None:
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
     # is Arcgis Online
     else:
         instance.org_id = info_result["id"]
@@ -93,12 +91,37 @@ def _wmx_server_url(instance, is_admin):
 
         if is_admin:
             instance._url += f"/{instance.org_id}"
-            instance._private_url += f"/{instance.org_id}"
         else:
             instance._url += f"/{instance.org_id}/{instance._item.id}"
-            instance._private_url += f"/{instance.org_id}/{instance._item.id}"
-        return instance._url, instance._private_url
 
+    logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
+    if instance._url is None:
+        raise ValueError("No WorkflowManager Registered with your Organization")
+
+@functools.lru_cache(maxsize=255)
+def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> str:
+    if gis._use_private_url_only or gis._validate_item_url:
+        if private_url is None:
+            return public_url
+        parsed_private = parse_url(private_url)
+        if parsed_private.port == 6443:
+            private_url = (parsed_private
+                           # Port isn't part of the named tuple so can't be replaced directly
+                           ._replace(netloc=parsed_private.netloc.replace('6443', '13443'))
+                           ._replace(path='')
+                           .geturl())
+        if gis._use_private_url_only:
+            return private_url
+        for purl in [public_url, private_url]:
+            try:
+                if purl:
+                    logger.debug(f'Testing {purl}')
+                    gis._con.get(purl + '/workflow/healthCheck')
+                    return purl
+            except Exception:
+                ...
+
+    return public_url
 
 class WorkflowManagerAdmin:
     """
