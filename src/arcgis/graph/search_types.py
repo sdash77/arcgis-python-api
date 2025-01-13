@@ -56,19 +56,20 @@ class SearchIndex(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "supported_category" in data:
-                match data["supported_category"]:
-                    case "UNSPECIFIED":
-                        data["supported_category"] = "unspecified"
-                    case "Entity":
-                        data["supported_category"] = "entities"
-                    case "Relationship":
-                        data["supported_category"] = "relationships"
-                    case "Both":
-                        data["supported_category"] = "both_entity_relationship"
-                    case "MetaEntityProvenance":
-                        data["supported_category"] = "meta_entity_provenance"
-                    case _:
-                        pass
+        if not isinstance(data, dict):
+            return data
+        if "supported_category" in data:
+            match data["supported_category"]:
+                case "UNSPECIFIED":
+                    data["supported_category"] = "unspecified"
+                case "Entity":
+                    data["supported_category"] = "entities"
+                case "Relationship":
+                    data["supported_category"] = "relationships"
+                case "Both":
+                    data["supported_category"] = "both_entity_relationship"
+                case "MetaEntityProvenance":
+                    data["supported_category"] = "meta_entity_provenance"
+                case _:
+                    pass
         return data

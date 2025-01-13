@@ -406,9 +406,10 @@ class CascadingRelationshipDelete(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "destId" in data:
-                data["destinationId"] = data.pop("destId")
+        if not isinstance(data, dict):
+            return data
+        if "destId" in data:
+            data["destinationId"] = data.pop("destId")
         return data
 
     class Config:

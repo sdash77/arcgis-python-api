@@ -82,28 +82,11 @@ class GraphProperty(BaseModel):
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
-        if self.geometry_type is None:
-            return {
-                "name": self.name,
-                "alias": self.alias,
-                "domain": self.domain,
-                "fieldType": self.field_type,
-                "hasZ": self.has_z,
-                "hasM": self.has_m,
-                "defaultValue": self.default_value,
-                "nullable": self.nullable,
-                "visible": self.visible,
-                "editable": self.editable,
-                "required": self.required,
-                "isSystemMaintained": self.is_system_maintained,
-                "role": self.role,
-            }
-        return {
+        model: dict[str, Any] = {
             "name": self.name,
             "alias": self.alias,
             "domain": self.domain,
             "fieldType": self.field_type,
-            "geometryType": self.geometry_type,
             "hasZ": self.has_z,
             "hasM": self.has_m,
             "defaultValue": self.default_value,
@@ -114,17 +97,22 @@ class GraphProperty(BaseModel):
             "isSystemMaintained": self.is_system_maintained,
             "role": self.role,
         }
+        if not self.geometry_type:
+            return model
+        model["geometryType"] = self.geometry_type
+        return model
 
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if (
-                "geometry_type" in data
-                and "field_type" in data
-                and data["field_type"] != "esriFieldTypeGeometry"
-            ):
-                data.pop("geometry_type")
+        if not isinstance(data, dict):
+            return data
+        if (
+            "geometry_type" in data
+            and "field_type" in data
+            and data["field_type"] != "esriFieldTypeGeometry"
+        ):
+            data.pop("geometry_type")
         return data
 
     class Config:
@@ -180,11 +168,12 @@ class NamedObjectType(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "properties" in data and isinstance(data["properties"], dict):
-                data["properties"] = data["properties"].values()
-            if "field_indexes" in data and isinstance(data["field_indexes"], dict):
-                data["field_indexes"] = data["field_indexes"].values()
+        if not isinstance(data, dict):
+            return data
+        if "properties" in data and isinstance(data["properties"], dict):
+            data["properties"] = data["properties"].values()
+        if "field_indexes" in data and isinstance(data["field_indexes"], dict):
+            data["field_indexes"] = data["field_indexes"].values()
         return data
 
 
@@ -205,9 +194,10 @@ class EndPoint(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "dest_entity_type" in data:
-                data["destination_entity_type"] = data.pop("dest_entity_type")
+        if not isinstance(data, dict):
+            return data
+        if "dest_entity_type" in data:
+            data["destination_entity_type"] = data.pop("dest_entity_type")
         return data
 
 
@@ -229,13 +219,14 @@ class RelationshipType(NamedObjectType):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "properties" in data and isinstance(data["properties"], dict):
-                data["properties"] = data["properties"].values()
-            if "field_indexes" in data and isinstance(data["field_indexes"], dict):
-                data["field_indexes"] = data["field_indexes"].values()
-            if "end_points" in data:
-                data["observed_end_points"] = data.pop("end_points")
+        if not isinstance(data, dict):
+            return data
+        if "properties" in data and isinstance(data["properties"], dict):
+            data["properties"] = data["properties"].values()
+        if "field_indexes" in data and isinstance(data["field_indexes"], dict):
+            data["field_indexes"] = data["field_indexes"].values()
+        if "end_points" in data:
+            data["observed_end_points"] = data.pop("end_points")
         return data
 
 
@@ -319,18 +310,19 @@ class RelationshipExclusionRule(ConstraintRule):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "relationship_exclusion_rule" in data:
-                data["origin_entity_types"] = data["relationship_exclusion_rule"][
-                    "origin_entity_types"
-                ]
-                data["relationship_types"] = data["relationship_exclusion_rule"][
-                    "relationship_types"
-                ]
-                data["destination_entity_types"] = data["relationship_exclusion_rule"][
-                    "destination_entity_types"
-                ]
-                data.pop("relationship_exclusion_rule")
+        if not isinstance(data, dict):
+            return data
+        if "relationship_exclusion_rule" in data:
+            data["origin_entity_types"] = data["relationship_exclusion_rule"][
+                "origin_entity_types"
+            ]
+            data["relationship_types"] = data["relationship_exclusion_rule"][
+                "relationship_types"
+            ]
+            data["destination_entity_types"] = data["relationship_exclusion_rule"][
+                "destination_entity_types"
+            ]
+            data.pop("relationship_exclusion_rule")
         return data
 
 
@@ -407,12 +399,13 @@ class UniformPropertyIdentifier(IdentifierMappingInfo):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "uniform_property" in data:
-                data["identifier_property_name"] = data["uniform_property"][
-                    "identifier_property_name"
-                ]
-                data.pop("uniform_property")
+        if not isinstance(data, dict):
+            return data
+        if "uniform_property" in data:
+            data["identifier_property_name"] = data["uniform_property"][
+                "identifier_property_name"
+            ]
+            data.pop("uniform_property")
         return data
 
 
@@ -439,21 +432,22 @@ class IdentifierInfo(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "identifier_mapping_info" in data:
-                if isinstance(data["identifier_mapping_info"], dict):
-                    if "native_identifier" in data["identifier_mapping_info"]:
-                        data["identifier_mapping_info"] = (
-                            DatabaseNativeIdentifier.model_validate(
-                                data["identifier_mapping_info"]
-                            )
+        if not isinstance(data, dict):
+            return data
+        if "identifier_mapping_info" in data:
+            if isinstance(data["identifier_mapping_info"], dict):
+                if "native_identifier" in data["identifier_mapping_info"]:
+                    data["identifier_mapping_info"] = (
+                        DatabaseNativeIdentifier.model_validate(
+                            data["identifier_mapping_info"]
                         )
-                    elif "uniform_property" in data["identifier_mapping_info"]:
-                        data["identifier_mapping_info"] = (
-                            UniformPropertyIdentifier.model_validate(
-                                data["identifier_mapping_info"]
-                            )
+                    )
+                elif "uniform_property" in data["identifier_mapping_info"]:
+                    data["identifier_mapping_info"] = (
+                        UniformPropertyIdentifier.model_validate(
+                            data["identifier_mapping_info"]
                         )
+                    )
         return data
 
 
@@ -517,24 +511,21 @@ class GraphDataModel(BaseModel):
     @model_validator(mode="before")  # type: ignore
     @classmethod
     def validate_model(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "entity_types" in data and isinstance(data["entity_types"], dict):
-                data["entity_types"] = data["entity_types"].values()
-            if "relationship_types" in data and isinstance(
-                data["relationship_types"], dict
-            ):
-                data["relationship_types"] = data["relationship_types"].values()
-            if "meta_entity_types" in data and isinstance(
-                data["meta_entity_types"], dict
-            ):
-                data["meta_entity_types"] = data["meta_entity_types"].values()
-            if "search_indexes" in data and isinstance(data["search_indexes"], dict):
-                data["search_indexes"] = data["search_indexes"].values()
-            if "constraint_rules" in data and isinstance(
-                data["constraint_rules"], dict
-            ):
-                for value in data["constraint_rules"].values():
-                    if "relationship_exclusion_rule" in value:
-                        value = RelationshipExclusionRule.model_validate(value)
-                data["constraint_rules"] = data["constraint_rules"].values()
+        if not isinstance(data, dict):
+            return data
+        if "entity_types" in data and isinstance(data["entity_types"], dict):
+            data["entity_types"] = data["entity_types"].values()
+        if "relationship_types" in data and isinstance(
+            data["relationship_types"], dict
+        ):
+            data["relationship_types"] = data["relationship_types"].values()
+        if "meta_entity_types" in data and isinstance(data["meta_entity_types"], dict):
+            data["meta_entity_types"] = data["meta_entity_types"].values()
+        if "search_indexes" in data and isinstance(data["search_indexes"], dict):
+            data["search_indexes"] = data["search_indexes"].values()
+        if "constraint_rules" in data and isinstance(data["constraint_rules"], dict):
+            for value in data["constraint_rules"].values():
+                if "relationship_exclusion_rule" in value:
+                    value = RelationshipExclusionRule.model_validate(value)
+            data["constraint_rules"] = data["constraint_rules"].values()
         return data
