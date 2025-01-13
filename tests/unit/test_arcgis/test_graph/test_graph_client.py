@@ -85,6 +85,7 @@ from arcgis.graph import (
     ConstraintRuleMask,
     ConstraintRule,
     UpdateSetOfNamedTypes,
+    KnowledgeGraph,
 )
 
 
@@ -2197,6 +2198,79 @@ class TestGraph(unittest.TestCase):
         self.assertTrue("name" in constraint_rule_delete_result_1)
         self.assertEqual("rule1", constraint_rule_delete_result_1["name"])
         self.assertFalse("error" in constraint_rule_delete_result_1)
+
+    def test_convert_to_proper_representation_geometry(self):
+        geom: Geometry = Geometry(
+            {
+                "x": 1.1,
+                "y": 2.2,
+            }
+        )
+        converted_geom = KnowledgeGraph._convert_to_proper_representation(
+            python_value=geom
+        )
+        self.assertTrue(isinstance(converted_geom, dict))
+        self.assertTrue("_objectType" in converted_geom)
+        self.assertEqual("geometry", converted_geom["_objectType"])
+        self.assertTrue("x" in converted_geom)
+        self.assertEqual(1.1, converted_geom["x"])
+        self.assertTrue("y" in converted_geom)
+        self.assertEqual(2.2, converted_geom["y"])
+
+    def test_convert_to_proper_representation_dict(self):
+        dictionary: dict[str, Any] = {
+            "name": "Cameron",
+            "age": 27,
+        }
+        converted_dictionary = KnowledgeGraph._convert_to_proper_representation(
+            python_value=dictionary
+        )
+        self.assertTrue(isinstance(converted_dictionary, dict))
+        self.assertTrue("_objectType" in converted_dictionary)
+        self.assertEqual("object", converted_dictionary["_objectType"])
+        self.assertTrue("_properties" in converted_dictionary)
+        self.assertTrue(isinstance(converted_dictionary["_properties"], dict))
+        self.assertTrue("name" in converted_dictionary["_properties"])
+        self.assertEqual("Cameron", converted_dictionary["_properties"]["name"])
+        self.assertTrue("age" in converted_dictionary["_properties"])
+        self.assertEqual(27, converted_dictionary["_properties"]["age"])
+
+    def test_convert_to_proper_representation_list(self):
+        original_list: list[Any] = [
+            Geometry(
+                {
+                    "x": 1.1,
+                    "y": 2.2,
+                }
+            ),
+            {
+                "name": "Cameron",
+                "age": 27,
+            },
+        ]
+        converted_list = KnowledgeGraph._convert_to_proper_representation(
+            python_value=original_list
+        )
+        self.assertTrue(isinstance(converted_list, list))
+        self.assertEqual(2, len(converted_list))
+        converted_geom = converted_list[0]
+        self.assertTrue(isinstance(converted_geom, dict))
+        self.assertTrue("_objectType" in converted_geom)
+        self.assertEqual("geometry", converted_geom["_objectType"])
+        self.assertTrue("x" in converted_geom)
+        self.assertEqual(1.1, converted_geom["x"])
+        self.assertTrue("y" in converted_geom)
+        self.assertEqual(2.2, converted_geom["y"])
+        converted_dictionary = converted_list[1]
+        self.assertTrue(isinstance(converted_dictionary, dict))
+        self.assertTrue("_objectType" in converted_dictionary)
+        self.assertEqual("object", converted_dictionary["_objectType"])
+        self.assertTrue("_properties" in converted_dictionary)
+        self.assertTrue(isinstance(converted_dictionary["_properties"], dict))
+        self.assertTrue("name" in converted_dictionary["_properties"])
+        self.assertEqual("Cameron", converted_dictionary["_properties"]["name"])
+        self.assertTrue("age" in converted_dictionary["_properties"])
+        self.assertEqual(27, converted_dictionary["_properties"]["age"])
 
 
 if __name__ == "__main__":

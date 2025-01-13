@@ -291,6 +291,29 @@ class KnowledgeGraph:
                 raise RuntimeError(gqd.error.error_message)
         return rows
 
+    @staticmethod
+    def _convert_to_proper_representation(python_value: Any) -> Any:
+        if isinstance(python_value, Geometry):
+            copy_dict: dict[str, Any] = python_value.copy()
+            copy_dict["_objectType"] = "geometry"
+            return copy_dict
+        if isinstance(python_value, dict):
+            if "_objectType" in python_value:
+                return python_value
+            return {
+                "_objectType": "object",
+                "_properties": {
+                    key: KnowledgeGraph._convert_to_proper_representation(value)
+                    for key, value in python_value.items()
+                },
+            }
+        if isinstance(python_value, list):
+            return [
+                KnowledgeGraph._convert_to_proper_representation(val)
+                for val in python_value
+            ]
+        return python_value
+
     def query_streaming(
         self,
         query: str,
@@ -372,30 +395,8 @@ class KnowledgeGraph:
 
         # set bind parameters
         if bind_param:
-
-            def _convert_to_proper_representation(python_value: Any) -> Any:
-                if isinstance(python_value, Geometry):
-                    copy_dict: dict[str, Any] = python_value.copy()
-                    copy_dict["_objectType"] = "geometry"
-                    return copy_dict
-                elif isinstance(python_value, dict):
-                    if "_objectType" in python_value:
-                        return python_value
-                    return {
-                        "_objectType": "object",
-                        "_properties": {
-                            key: _convert_to_proper_representation(value)
-                            for key, value in python_value.items()
-                        },
-                    }
-                elif isinstance(python_value, list):
-                    return [
-                        _convert_to_proper_representation(val) for val in python_value
-                    ]
-                return python_value
-
             for k, v in bind_param.items():
-                converted: Any = _convert_to_proper_representation(v)
+                converted: Any = KnowledgeGraph._convert_to_proper_representation(v)
                 if isinstance(converted, dict) or isinstance(converted, list):
                     r_enc.set_param_key_value(k, _kgparser.from_value_object(converted))
                 else:
