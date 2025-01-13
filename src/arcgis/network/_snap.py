@@ -78,7 +78,5 @@ def snap_to_roads(
         "road_properties_on_lines": road_properties_on_lines,
         "return_location_fields": return_location_fields,
     }
-    params = _common_utils.inspect_function_inputs(
-        tbx.snap_to_roads, **params
-    )
+    params = _common_utils.inspect_function_inputs(tbx.snap_to_roads, **params)
     return tbx.snap_to_roads(**params)
