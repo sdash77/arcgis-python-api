@@ -38,7 +38,10 @@ from arcgis.gis._impl._dataclasses._contentds import (
 )
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 from arcgis.gis._impl import CreateServiceParameter, ViewLayerDefParameter
-from arcgis.gis._impl._dataclasses._sfilters import SpatialFilter, SpatialRelationship
+from arcgis.gis._impl._dataclasses._sfilters import (
+    SpatialFilter,
+    SpatialRelationship,
+)
 from arcgis._impl.common._utils import _validate_url
 from ._impl._util import _get_item_url
 
@@ -761,7 +764,9 @@ class GIS(object):
                     )
                     warnings.formatwarning = orin_fn
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -769,7 +774,9 @@ class GIS(object):
                     self.properties.isPortal is True
                     and self._portal.is_kubernetes is False
                 ):
-                    from arcgis.gis.admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import (
+                        PortalAdminManager,
+                    )
 
                     self.admin = PortalAdminManager(
                         url="%s/portaladmin" % self._portal.url, gis=self
@@ -788,7 +795,9 @@ class GIS(object):
         ):
             try:
                 if self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -824,7 +833,9 @@ class GIS(object):
             if can_publish:
                 try:
                     if self.properties.isPortal and self._portal.is_kubernetes:
-                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                        from arcgis.gis.kubernetes._admin.kadmin import (
+                            KubernetesAdmin,
+                        )
 
                         url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
@@ -846,7 +857,9 @@ class GIS(object):
         ):
             try:
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import (
+                        KubernetesAdmin,
+                    )
 
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
@@ -1071,7 +1084,9 @@ class GIS(object):
                 self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
                     try:
-                        from arcgis.gis._impl._decrypt_nbauth import get_token
+                        from arcgis.gis._impl._decrypt_nbauth import (
+                            get_token,
+                        )
                     except ImportError:
                         from arcgis.gis._impl.nbauth import get_token
 
@@ -7091,7 +7106,11 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ["excel", "csv"]:
             params["fileType"] = file_type
-        elif str(file_type).lower() in ["filegeodatabase", "shapefile", "geojson"]:
+        elif str(file_type).lower() in [
+            "filegeodatabase",
+            "shapefile",
+            "geojson",
+        ]:
             if (
                 str(file_type).lower() == "geojson"
                 and not self._gis._portal.is_arcgisonline
@@ -13949,7 +13968,9 @@ class Item(dict):
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
         if not save_path:
-            save_path: str = self._workdir
+            save_path: str = tempfile.gettempdir()
+        if os.path.isdir(save_path) == False:
+            os.makedirs(save_path)
         fp: str = os.path.join(save_path, file_name)
 
         url = self._gis._portal.resturl + data_path
@@ -18222,7 +18243,10 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def get_dependencies(
-        self, deep: bool = False, outside_org: bool = False, out_format: str = "item"
+        self,
+        deep: bool = False,
+        outside_org: bool = False,
+        out_format: str = "item",
     ):
         """
         Returns the dependencies of an item. Can be used to return either the immediate dependencies
