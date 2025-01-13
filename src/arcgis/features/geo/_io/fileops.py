@@ -1439,7 +1439,6 @@ def _gdal_to_fc(
         osr_ref.ImportFromWkt(df_ref["wkt"])
 
     out_layer = out_file.CreateLayer(layer_name, osr_ref, GEOMTYPELOOKUP[geom_type])
-    # out_layer = out_file.CreateLayer(layer_name, osr_ref, ogr.wkbPoint25D)
     dfields = []
     cfields = []
     field_mapping = {}
@@ -1450,7 +1449,7 @@ def _gdal_to_fc(
                 geom_field = (c, "GEOMETRY")
                 geom_column = c
                 # Since geometry is present, handle None type geometry occurrence
-                query_index = _handle_none_type_geometry(df, geom_type, geom_column)
+                _handle_none_type_geometry(df, geom_type, geom_column)
             else:
                 cfields.append(c)
                 if isinstance(df[c].loc[idx], (str)) or df[c].loc[idx] is None:
@@ -1465,9 +1464,6 @@ def _gdal_to_fc(
                 elif isinstance(df[c].loc[idx], (float, np.float64)):
                     field_def = ogr.FieldDefn(c, ogr.OFTReal)
                     out_layer.CreateField(field_def)
-                # elif isinstance(df[c].loc[idx], (np.NaN)):
-                #     field_def = ogr.FieldDefn(c, ogr.OFTReal)
-                #     out_layer.CreateField(field_def)
                 elif (
                     isinstance(
                         df[c].loc[idx],
@@ -1497,6 +1493,8 @@ def _gdal_to_fc(
 
     for idx, row in df.iterrows():
         feature = ogr.Feature(out_layer.GetLayerDefn())
+        geom = None
+        ogr_geom = None
         if df.spatial.name:
             geom = row[df.spatial.name]
             geom_string = _ujson.dumps(dict(geom))
@@ -1509,11 +1507,19 @@ def _gdal_to_fc(
                     if field_name in dfields:
                         value = value.strftime("%Y-%m-%d %H:%M:%S")
                     feature.SetField(field_mapping[field_name], value)
+        else:
+            for field_name, value in row.items():
+                if field_name in dfields:
+                    value = value.strftime("%Y-%m-%d %H:%M:%S")
+                if isinstance(value, type(pd.NA)):
+                    # gdal is not a fan of pandas NA
+                    value = None
+                feature.SetField(field_mapping[field_name], value)
 
-            del idx
-            del row
-            del geom
-            del ogr_geom
+        del idx
+        del row
+        del geom
+        del ogr_geom
         out_layer.CreateFeature(feature)
 
     # out_file = None
