@@ -12,11 +12,12 @@ from arcgis.features import FeatureSet
 enable_verbose_logging()
 
 
+@profiles.devext
 @integration_test
 class TestSnapToRoads(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis = GIS(profile='your_dev_online_profile', verify_cert=False)
+
         cls.points = points = {
             "features": [
                 {
