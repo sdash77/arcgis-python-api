@@ -13,7 +13,7 @@ enable_verbose_logging()
 
 
 @integration_test
-class TestFeature(unittest.TestCase):
+class TestSnapToRoads(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gis = GIS(profile='your_dev_online_profile', verify_cert=False)
