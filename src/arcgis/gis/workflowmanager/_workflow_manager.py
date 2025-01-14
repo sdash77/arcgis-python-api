@@ -116,7 +116,7 @@ def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> s
             try:
                 if purl:
                     logger.debug(f'Testing {purl}')
-                    gis._con.get(purl + '/workflow/healthCheck')
+                    gis._con.get(purl + '/workflow/checkStatus')
                     return purl
             except Exception:
                 ...
