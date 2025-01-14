@@ -1,3 +1,12 @@
+---
+name: Patch Release Template
+about: A template to request a patch release. 
+title: '[PATCH] '
+labels: 'PATCH'
+assignees: ''
+
+---
+
 ## Request for Patch Release
 
 _What Version of `arcgis` is the patch for? (e.g. `v2.4.0`)_
