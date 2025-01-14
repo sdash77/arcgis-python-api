@@ -12,6 +12,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
     """
     Test to check if a FeatureLayerCollectionManager object works
     """
+
     # Add fields to allow for the cleanup method to work
     data_item = None
     wfl_item = None
@@ -25,10 +26,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path,
-            "features_mod_FeatureLayerCollectionManager_cls_short"
+            cls.qalab_base_path, "features_mod_FeatureLayerCollectionManager_cls_short"
         )
-        # cls.qalab_cls_path = r"E:\temp\test_data"
+
     def test_create_FeatureLayerCollectionManager_object(self):
         """
         Test creating instances of FeatureLayerCollectionManager class in multiple ways
@@ -93,7 +93,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # delete all features in feature layer
             flayer = self.wfl_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
-            self.assertIsNotNone(delete_result, "Unable to delete features before overwrite")
+            self.assertIsNotNone(
+                delete_result, "Unable to delete features before overwrite"
+            )
             num_features_after_delete = flayer.query(return_count_only=True)
             self.assertEqual(
                 num_features_after_delete, 0, "Num features not 0 after delete all"
@@ -152,7 +154,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # region delete all features in feature layer
             flayer = self.wfl_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
-            self.assertIsNotNone(delete_result, "Unable to delete features before overwrite")
+            self.assertIsNotNone(
+                delete_result, "Unable to delete features before overwrite"
+            )
             num_features_after_delete = flayer.query(return_count_only=True)
             self.assertEqual(
                 num_features_after_delete, 0, "Num features not 0 after delete all"
@@ -203,9 +207,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
                 for item in search_result:
                     item.delete(permanent=True)
 
-            data_path = os.path.join(
-                self.qalab_cls_path, "overwrite_HFS_fgdb.gdb.zip"
-            )
+            data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_fgdb.gdb.zip")
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
             # endregion
@@ -213,7 +215,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # region delete all features in feature layer
             flayer = self.wfl_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
-            self.assertIsNotNone(delete_result, "Unable to delete features before overwrite")
+            self.assertIsNotNone(
+                delete_result, "Unable to delete features before overwrite"
+            )
             num_features_after_delete = flayer.query(return_count_only=True)
             self.assertEqual(
                 num_features_after_delete, 0, "Num features not 0 after delete all"
@@ -272,7 +276,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # region delete all features in feature layer
             flayer = self.wfl_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
-            self.assertIsNotNone(delete_result, "Unable to delete features before overwrite")
+            self.assertIsNotNone(
+                delete_result, "Unable to delete features before overwrite"
+            )
             num_features_after_delete = flayer.query(return_count_only=True)
             self.assertEqual(
                 num_features_after_delete, 0, "Num features not 0 after delete all"
@@ -332,7 +338,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # region delete all features in feature layer
             flayer = self.wfl_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
-            self.assertIsNotNone(delete_result, "Unable to delete features before over write")
+            self.assertIsNotNone(
+                delete_result, "Unable to delete features before over write"
+            )
             num_features_after_delete = flayer.query(return_count_only=True)
             self.assertEqual(
                 num_features_after_delete, 0, "Num features not 0 after delete all"
