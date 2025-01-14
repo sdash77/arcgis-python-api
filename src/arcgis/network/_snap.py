@@ -60,7 +60,7 @@ def snap_to_roads(
     gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ======================================  ===========================================================================================================================================
     """
-   gis = gis or _arcgis.env.active_gis
+    gis = gis or _arcgis.env.active_gis
     if "snapToRoads" not in gis.properties["helperServices"]:
         raise Exception("GIS not configured with Snap To Roads.")
     url: str = gis.properties["helperServices"]["snapToRoads"]["url"]
