@@ -2060,8 +2060,8 @@ class ArcGISModel(object):
         ]:
             pass
         elif hasattr(self, "show_results"):
-            if hasattr(self, "_show_results_multispectral"):
-                self.show_results(gradcam=kwargs.get("GradCam_Heatmap", False))
+            if hasattr(self, "_gradCAM"):
+                self.show_results(gradcam=kwargs.get("gradcam", False))
             else:
                 self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))

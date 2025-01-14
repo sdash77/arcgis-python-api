@@ -201,7 +201,9 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
     )
     if gradcam_show_result:
         fig.suptitle(
-            "Ground truth/Predictions/GradCAM", fontsize=title_font_size, weight="bold"
+            "Ground truth/Predictions/Explainability Map",
+            fontsize=title_font_size,
+            weight="bold",
         )
     else:
         fig.suptitle(
@@ -215,49 +217,12 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
             ax_i = axs
         else:
             ax_i = axs[r]
-        pred_img = open_image(dataloader_image_path[r])
-        im = pred_img
-        pred = self.learn.predict(pred_img)
-        if self._data.dataset_type == "MultiLabeled_Tiles":
-            cat_pred = pred[1]
-        else:
-            cat_pred = pred[1].unsqueeze(0)
-        m = self.learn.model.eval()
-        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-        xb, _ = self._data.one_item(
-            im, detach=False, denorm=False
-        )  # put into a minibatch of batch size = 1
-        grad_cam_outputs = []
-        for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
-            if self._data.dataset_type == "Labeled_Tiles":
-                class_label = pred_cat1
-                pred_cat1 = True
-            if pred_cat1:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    with hook_output(m[0]) as hook_a:
-                        with hook_output(m[0], grad=True) as hook_g:
-                            preds = m(xb)
-                            preds[0, class_label].backward()
-                acts = hook_a.stored[0].cpu()  # activation maps
-                grad = hook_g.stored[0][0].cpu()
-                if self._transformer:
-                    acts = reshape_tensor(acts)
-                    grad = reshape_tensor(grad)
-                if (acts.shape[-1] * acts.shape[-2]) >= 16:
-                    grad_chan = grad.mean(1).mean(1)
-                    mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
-                    grad_cam_outputs.append(mult)
-                    xb_im = Image(xb[0])
-                    xb_im_denorm = Image(xb_norm[0])
-                    sz = list(xb_im.shape[-2:])
-                else:
-                    raise ValueError(
-                        "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
-                    )
-            else:
-                mult = torch.zeros(4, 4)
-                grad_cam_outputs.append(mult)
+        im = open_image(dataloader_image_path[r])
+        pred = self.learn.predict(im)
+        # multi_all_cam setting it to True will return gradcam zero for the class not predicted
+        grad_cam_outputs, _, xb, _ = self._generate_grad_cam(
+            im, pred, multi_all_cam=True
+        )
 
         # Get ground truth and prediction class names
         if self._data.dataset_type == "MultiLabeled_Tiles":
@@ -283,8 +248,11 @@ def IC_show_results(self, nrows=5, gradcam_show_result=False, **kwargs):
         ax_prediction.set_title(prediction)
         if gradcam_show_result:
             pred_class_expmap = len(self._data.classes)
+            xb_im = Image(symbology_x_batch[idx].cpu().numpy())
+            sz = list(xb_im.shape[:-1])
             if self._data.dataset_type == "Labeled_Tiles":
-                pred_class_expmap = len(self._data.classes) - 1
+                # there will be only one predicted class gradcam for single label
+                pred_class_expmap = 1
             for i in range(pred_class_expmap):
                 ax_gradCAM = ax_i[2 + i]
                 ax_gradCAM.axis("off")

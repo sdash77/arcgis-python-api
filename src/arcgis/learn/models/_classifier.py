@@ -462,6 +462,101 @@ class FeatureClassifier(ArcGISModel):
             fig1, axs = fig
             return fig1
 
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        save_inference_file=True,
+        gradcam=False,
+        **kwargs,
+    ):
+        """
+        Saves the model weights, creates an Esri Model Definition and Deep
+        Learning Package zip for deployment to Image Server or ArcGIS Pro.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name and creates
+                                all the intermediate directories.
+        ---------------------   -------------------------------------------
+        framework               Optional string. Exports the model in the
+                                specified framework format ('PyTorch', 'tflite'
+                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                Only models saved with the default framework
+                                (PyTorch) can be loaded using `from_model`.
+                                ``tflite`` framework (experimental support) is
+                                supported by :class:`~arcgis.learn.SingleShotDetector`
+                                - tensorflow backend only,
+                                :class:`~arcgis.learn.FeatureClassifier`and
+                                :class:`~arcgis.learn.RetinaNet` - tensorflow
+                                backend only.``torchscript`` format is supported by
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
+                                For usage of SiamMask model in ArcGIS Pro >= 2.8,
+                                load the ``PyTorch`` framework saved model
+                                and export it with ``torchscript`` framework
+                                using ArcGIS API for Python >= v1.8.5.
+                                For usage of SiamMask model in ArcGIS Pro 2.9,
+                                set framework to ``torchscript`` and use the
+                                model files additionally generated inside
+                                'torch_scripts' folder.
+                                If framework is ``TF-ONNX`` (Only supported for
+                                :class:`~arcgis.learn.SingleShotDetector`),
+                                ``batch_size`` can be passed as an optional
+                                keyword argument.
+        ---------------------   -------------------------------------------
+        publish                 Optional boolean. Publishes the DLPK as an item.
+        ---------------------   -------------------------------------------
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object.
+                                Used for publishing the item. If not specified
+                                then active gis user is taken.
+        ---------------------   -------------------------------------------
+        compute_metrics         Optional boolean. Used for computing model
+                                metrics.
+        ---------------------   -------------------------------------------
+        save_optimizer          Optional boolean. Used for saving the model-optimizer
+                                state along with the model. Default is set to False
+        ---------------------   -------------------------------------------
+        save_inference_file     Optional boolean. Used for saving the inference file
+                                along with the model.
+                                If False, the model will not work with ArcGIS Pro 2.6
+                                or earlier. Default is set to True.
+        ---------------------   -------------------------------------------
+        gradcam                 Optional boolean.It presents the Grad-CAM heatmap for
+                                the predicted classes,improving the clarity and
+                                interpretability of the model's predictions.
+                                Default is set to False.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters.
+        =====================   ===========================================
+        """
+
+        if int(os.environ.get("RANK", 0)):
+            return
+
+        return super()._save(
+            name_or_path,
+            framework=framework,
+            publish=publish,
+            gis=gis,
+            compute_metrics=compute_metrics,
+            save_optimizer=save_optimizer,
+            save_inference_file=save_inference_file,
+            gradcam=gradcam,
+            **kwargs,
+        )
+
     def predict(self, img_path, visualize=False, gradcam=False):
         """
         Runs prediction on an Image. Works with RGB images only.
@@ -1789,109 +1884,114 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def _gradCAM(
-        self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
-    ):
-        if isinstance(cl[0], fastai.core.MultiCategory):
-            if not cl[0].raw:  # If the predictions are all 0, including for None class
-                xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-                xb, _ = self._data.one_item(im, detach=False, denorm=False)
-                xb_im = Image(xb[0])
-                xb_im_denorm = Image(xb_norm[0])
-                _, ax = plt.subplots(figsize=(6, 6))
-                xb_im_denorm.show(ax, title=f"Predicted class: None")
-                return
-            else:
-                # Handles MuliCategory types
-                cat1 = cl[1]
+    def _generate_grad_cam(self, im, cl, heatmap_thresh: int = 16, **kwargs):
+        """
+        Generate Grad-CAM heatmaps for the given image and model predictions.
+
+        Args:
+            im: The input image.
+            cl: List containing the information for the predicted classes and category labels.
+
+        Returns:
+            grad_cam_outputs: List of Grad-CAM heatmaps for the predicted classes.
+            pred_class_label: List of predicted class labels corresponding to the heatmaps.
+        """
+        if self._data.dataset_type == "MultiLabeled_Tiles":
+            # Handles MuliCategory types
+            cat_pred = cl[1]
         else:
-            cat1 = cl[1].unsqueeze(0)
-        m = self.learn.model.eval()
-        xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+            # gives dimension- 1 to the scalar tensor of SingleCategory types
+            cat_pred = cl[1].unsqueeze(0)
+        m = self.learn.model.eval()  # Set the model to evaluation mode
+        xb_norm, _ = self._data.one_item(
+            im, detach=False, denorm=True
+        )  # Normalized batch
         xb, _ = self._data.one_item(
             im, detach=False, denorm=False
-        )  # put into a minibatch of batch size = 1
+        )  # Batch without normalization
         grad_cam_outputs = []
-
         pred_class_label = []
-
-        for class_label, predictions in enumerate(cat1.cpu().numpy()):
-            if (predictions and (isinstance(cl[0], fastai.core.MultiCategory))) or (
-                isinstance(cl[0], fastai.core.Category)
-            ):
-                if isinstance(cl[0], fastai.core.Category):
-                    class_label = predictions
-
+        for class_label, pred_cat1 in enumerate(cat_pred.cpu().numpy()):
+            if self._data.dataset_type == "Labeled_Tiles":
+                class_label = pred_cat1
+                pred_cat1 = True
+            if pred_cat1:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-
                     with hook_output(m[0]) as hook_a:
                         with hook_output(m[0], grad=True) as hook_g:
                             preds = m(xb)
-
                             preds[0, class_label].backward()
 
-                acts = hook_a.stored[0].cpu()  # activation maps
-
-                grad = hook_g.stored[0][0].cpu()
+                acts = hook_a.stored[0].cpu()  # Activation maps
+                grad = hook_g.stored[0][0].cpu()  # Gradients
 
                 if self._transformer:
                     acts = reshape_tensor(acts)
-
                     grad = reshape_tensor(grad)
 
-                if (acts.shape[-1] * acts.shape[-2]) >= 16:
+                # Ensure sufficient resolution for Grad-CAM
+                if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
                     grad_chan = grad.mean(1).mean(1)
-
-                    mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
-
+                    mult = F.relu((acts * grad_chan[..., None, None]).sum(0))
                     grad_cam_outputs.append(mult)
-
                     pred_class_label.append(class_label)
-
                 else:
                     raise ValueError(
                         "Feature map resolution is too small for Grad-CAM. The feature map's spatial size must be at least 16 pixels."
                     )
-        if image:
-            xb_im = Image(xb[0])
-
-            xb_im_denorm = Image(xb_norm[0])
-
-            sz = list(xb_im.shape[-2:])
-
-            if grad_vis == True:
-                plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
-
-                _, ax = plt.subplots(
-                    nrows=1,
-                    ncols=len(grad_cam_outputs) + 1,
-                    figsize=(plotsize, plotsize),
-                )
-
-                xb_im_denorm.show(ax[0], title=f"Predicted class: {cl[0]}")
-
-                xb_im_denorm.show(ax[1], title=f"Predicted class: {cl[0]}")
-
-                for i in range(len(grad_cam_outputs)):
-                    xb_im_denorm.show(
-                        ax[i + 1], title=f"{self._data.classes[pred_class_label[i]]}"
-                    )
-
-                    ax[i + 1].imshow(
-                        grad_cam_outputs[i],
-                        alpha=0.4,
-                        extent=(0, *sz[::-1], 0),
-                        interpolation="bilinear",
-                        cmap="hot",
-                    )
-
             else:
-                _, ax = plt.subplots(figsize=(6, 6))
+                if kwargs.get("multi_all_cam"):
+                    # if not predicted the image will be displayed
+                    mult = torch.zeros(4, 4)
+                    grad_cam_outputs.append(mult)
 
-                xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
+        return grad_cam_outputs, pred_class_label, xb, xb_norm
 
-        return mult
+    def _gradCAM(self, im, cl, image: bool = True, grad_vis=False):
+        # If the predictions are all 0, including for None class
+        if isinstance(cl[0], fastai.core.MultiCategory) and not cl[0].raw:
+            xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
+            xb, _ = self._data.one_item(im, detach=False, denorm=False)
+            xb_im = Image(xb[0])
+            xb_im_denorm = Image(xb_norm[0])
+            _, ax = plt.subplots(figsize=(6, 6))
+            xb_im_denorm.show(ax, title=f"Predicted class: None")
+            return
+        else:
+            grad_cam_outputs, pred_class_label, xb, xb_norm = self._generate_grad_cam(
+                im, cl
+            )
+            if image:
+                xb_im = Image(xb[0])
+                xb_im_denorm = Image(xb_norm[0])
+                sz = list(xb_im.shape[-2:])
+                if grad_vis == True:
+                    plotsize = 12 + 2 * (len(grad_cam_outputs) - 1)
+                    _, ax = plt.subplots(
+                        nrows=1,
+                        ncols=len(grad_cam_outputs) + 1,
+                        figsize=(plotsize, plotsize),
+                    )
+                    xb_im_denorm.show(ax[0], title=f"Predicted class: {cl[0]}")
+                    xb_im_denorm.show(ax[1], title=f"Predicted class: {cl[0]}")
+                    for i in range(len(grad_cam_outputs)):
+                        xb_im_denorm.show(
+                            ax[i + 1],
+                            title=f"{self._data.classes[pred_class_label[i]]}",
+                        )
+                        ax[i + 1].imshow(
+                            grad_cam_outputs[i],
+                            alpha=0.4,
+                            extent=(0, *sz[::-1], 0),
+                            interpolation="bilinear",
+                            cmap="hot",
+                        )
+                else:
+                    _, ax = plt.subplots(figsize=(6, 6))
+                    xb_im_denorm.show(ax, title=f"Predicted class: {cl[0]}")
+
+            return grad_cam_outputs
 
     @deprecated(
         deprecated_in="1.7.1",
