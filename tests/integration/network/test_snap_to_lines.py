@@ -8,9 +8,6 @@ enable_verbose_logging()
 
 
 @integration_test
-# ^^^ marks the test as an integration test
-# sets the default timeout for the test
-# may be enhanced with additional functionality in the future
 class TestFeature(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
