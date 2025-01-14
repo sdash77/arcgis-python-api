@@ -67,7 +67,7 @@ try:
     has_gdal = True
 except:
     has_gdal = False
-    
+
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -8424,40 +8424,47 @@ class ContentManager(object):
         assert isinstance(
             df, pd.DataFrame
         ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
-        
+
+        # Set up the parameters
         if service_name is None:
             service_name = "a" + uuid.uuid4().hex[0:5]
         if title is None:
             title = service_name
-            
-        # If gdal is present, prioritize it
-        if has_gdal:
-            if not service_name.endswith(".gdb"):
-                service_name += ".gdb"
-            # create a temporary file
-            location = tempfile.mkdtemp()
-            location = os.path.join(location, service_name)
-            temp_zip = os.path.join(location, "%s.zip" % (service_name))
-            out_location = os.path.dirname(location)
-                
-            res = fileops._gdal_to_fc(
-                        df,
-                        os.path.join(out_location, service_name),
-                        "OpenFileGDB",
-                        layer_name=title,
-                        overwrite=True,
-                    )
-            pp = {
-                "title": title,
-                "type": "File Geodatabase",
-            }
-            file = _common_utils.zipws(path=location, outfile=temp_zip, keep=True)
-                    
-        
+        pp = {
+            "title": title,
+        }
+
+        # Find folder to add and publish
         if folder:
             folder = self.folders.get(folder=folder, owner=self._gis._username)
         if not folder:
             folder = self.folders.get()
+        # If gdal is present, prioritize it
+        x = 1
+        if x == 2:
+            if not service_name.endswith(".gdb"):
+                service_name += ".gdb"
+            # create a temporary file
+            temp = tempfile.mkdtemp()
+            location = os.path.join(temp, service_name)
+            temp_zip = os.path.join(location, "%s.zip" % (service_name))
+            out_location = os.path.dirname(location)
+
+            fileops._gdal_to_fc(
+                df,
+                os.path.join(out_location, service_name),
+                "OpenFileGDB",
+                layer_name=title,
+                overwrite=True,
+            )
+            pp["type"] = "File Geodatabase"
+            file = _common_utils.zipws(path=location, outfile=temp_zip, keep=True)
+        else:
+            # Create an empty CSV file using the service name
+            file = os.path.join(tempfile.gettempdir(), f"{service_name}.csv")
+            # Create empty df with same columns as input
+            df.to_csv(file, index=False)
+            pp["type"] = "CSV"
 
         job = folder.add(
             **{
@@ -8465,23 +8472,33 @@ class ContentManager(object):
                 "file": file,
             }
         )
-        fgdb_item: Item = job.result()
+        file_item: Item = job.result()
+        if publish_parameters is None:
+            if pp["type"] == "CSV":
+                publish_parameters: dict[str, Any] = self.analyze(
+                    item=file_item, file_type="CSV"
+                )["publishParameters"]
+                publish_parameters["name"] = service_name
+                publish_parameters["locationType"] = "none"
+            else:
+                publish_parameters = {
+                    "name": service_name,
+                    "maxRecordCount": 2000,
+                    "hasStaticData": True,
+                    "layerInfo": {"capabilities": "Query"},
+                    "locationType": "none",
+                }
+
+        # publish file item
+        new_item = file_item.publish(publish_parameters)
+
+        # Clean up
         try:
             os.remove(file)
         except Exception:
             pass
-        if publish_parameters is None:
-            # publish_parameters: dict[str, Any] = self.analyze(
-            #     item=csv_item, file_type="csv"
-            # )["publishParameters"]
-            publish_parameters = {
-                "name": service_name,
-                "maxRecordCount": 2000,
-                "hasStaticData": True,
-                "layerInfo": {"capabilities": "Query"},
-                "locationType": "none",
-            }
-        return fgdb_item.publish(publish_parameters)
+
+        return new_item
 
     # ----------------------------------------------------------------------
     def import_data(
