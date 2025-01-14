@@ -1400,7 +1400,7 @@ def _gdal_to_fc(
     if out_type == "OpenFileGDB":
         GEOMTYPELOOKUP["null"] = ogr.wkbNone
     else:
-        GEOMTYPELOOKUP["null"] = (ogr.wkbUnknown,)
+        GEOMTYPELOOKUP["null"] = ogr.wkbUnknown
 
     if not overwrite and os.path.exists(out_path):
         raise ValueError("overwrite set to False, cannot overwrite existent location.")
