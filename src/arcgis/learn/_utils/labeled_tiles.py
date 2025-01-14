@@ -154,65 +154,44 @@ def plot_multi_top_losses_modified(
     if samples > 20:
         print("Max 20 samples")
         return
-    (
-        infolist,
-        ordlosses_idxs,
-        mismatches_idxs,
-        mismatches,
-        losses_mismatches,
-        mismatchescontainer,
-    ) = ([], [], [], [], [], [])
     predclass, truthlabels, losses = self.learn.get_preds(with_loss=True)
-    classes_ids = [k for k in enumerate(self.data.classes)]
+    # convert it to one hot labels
     predclass_label = (predclass > 0.5).float()
-    losses_per_valid_item = losses.view(len(self.data.valid_ds.items), len(classes_ids))
-    losses_pred_classes = predclass_label * losses_per_valid_item
-    probability_pred_classes = predclass_label * predclass
-    losses_pred_classes_mean = torch.tensor([])
-    probability_pred_classes_mean = torch.tensor([])
-    for col1, col2 in zip(losses_pred_classes, probability_pred_classes):
-        non_zero_values1 = col1[col1 != 0]  # Filter out non-zero values
-        non_zero_values2 = col2[col2 != 0]
-        if len(non_zero_values2) > 0:
-            losses_pred_classes_mean = torch.cat(
-                (
-                    losses_pred_classes_mean,
-                    torch.tensor([non_zero_values1.mean().item()]),
-                )
-            )
-            probability_pred_classes_mean = torch.cat(
-                (
-                    probability_pred_classes_mean,
-                    torch.tensor([non_zero_values2.mean().item()]),
-                )
-            )
-        else:
-            losses_pred_classes_mean = torch.cat(
-                (losses_pred_classes_mean, torch.tensor([0.0]))
-            )
-            probability_pred_classes_mean = torch.cat(
-                (probability_pred_classes_mean, torch.tensor([0.0]))
-            )
-    for i, (act, pred) in enumerate(zip(truthlabels, predclass_label)):
-        mismatch = not (act.eq(pred).all())
-        if mismatch:
-            mismatches_idxs.append(i)
-            losses_mismatches.append((losses_pred_classes_mean[i], i))
-        infotup = (
-            i,
-            pred,
-            act,
-            losses_pred_classes_mean[i],
-            probability_pred_classes_mean[i],
-            mismatch,
+    num_classes = len(self.data.classes)
+    num_valid_img = len(self.data.valid_ds)
+    idx_img = [x for x in range(num_valid_img) for _ in range(num_classes)]
+    converted_predclass_labels = []
+    converted_truthclass_labels = []
+    for row in predclass_label:
+        converted_predclass_labels.append(
+            [i if value == 1 else None for i, value in enumerate(row)]
         )
-        infolist.append(infotup)
-    ds = self.data.dl(self.ds_type).dataset
-    mismatches = ds[mismatches_idxs]
-    ordlosses = sorted(losses_mismatches, key=lambda x: x[0], reverse=True)
-    for w in ordlosses:
-        ordlosses_idxs.append(w[1])
-    mismatches_ordered_byloss = ds[ordlosses_idxs]
+    for row in truthlabels:
+        converted_truthclass_labels.append(
+            [i if value == 1 else None for i, value in enumerate(row)]
+        )
+    from itertools import chain
+
+    # Flatten the lists
+    flattened_predclass_labels = list(chain.from_iterable(converted_predclass_labels))
+    flattened_truthclass_labels = list(chain.from_iterable(converted_truthclass_labels))
+    # combined_list will have at position 0 validation image id , 1 truth labels , 2 prediction  , 3 losses & 4 probability
+    combined_list = []
+    for num1 in range(len(losses)):
+        if flattened_predclass_labels[num1] is not None:
+            # checking the mismatch
+            if flattened_truthclass_labels[num1] != flattened_predclass_labels[num1]:
+                combined_list.append(
+                    (
+                        idx_img[num1],
+                        flattened_truthclass_labels[num1],
+                        flattened_predclass_labels[num1],
+                        losses[num1],
+                        predclass.view(-1)[num1],
+                    )
+                )
+
+    mismatches = sorted(combined_list, key=lambda x: x[3].item(), reverse=True)
     print(
         f"{str(len(mismatches))} misclassified samples over {str(len(self.data.valid_ds))} samples in the validation set."
     )
@@ -220,19 +199,15 @@ def plot_multi_top_losses_modified(
     from arcgis.learn._utils.common import ArcGISMSImage
     from itertools import compress
 
-    for ima in range(len(mismatches_ordered_byloss)):
-        mismatchescontainer.append(mismatches_ordered_byloss[ima][0])
     for sampleN in range(samples):
-        actualclasses = ""
         predictedclasses = ""
-        actualclasses = f"{actualclasses} -- {str(r';'.join(compress(self.data.classes, infolist[ordlosses_idxs[sampleN]][2].bool())))}"
-        predictedclasses = f"{predictedclasses} -- {str(r';'.join(compress(self.data.classes, infolist[ordlosses_idxs[sampleN]][1].bool())))}"
-        imag = mismatches_ordered_byloss[sampleN][0]
+        predictedclasses = f"{predictedclasses} -- {str(r''.join(self.data.classes[mismatches[sampleN][2]]))}"
+        imag = (self.data.valid_ds[mismatches[sampleN][0]])[0]
         imag = ArcGISMSImage.show(imag, return_ax=True)
         imag.set_title(
-            f"""Predicted: {predictedclasses} \nActual: {actualclasses}\nLoss: {infolist[ordlosses_idxs[sampleN]][3]}\nProbability: {infolist[ordlosses_idxs[sampleN]][4]}""",
+            f"""Incorrectly predicted as class: {predictedclasses} \nLoss: {mismatches[sampleN][3].numpy()}\nProbability: {mismatches[sampleN][4]}""",
             loc="left",
         )
         plt.show()
         if save_misclassified:
-            return mismatchescontainer
+            return mismatches
