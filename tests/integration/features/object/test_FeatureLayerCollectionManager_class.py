@@ -12,6 +12,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
     """
     Test to check if a FeatureLayerCollectionManager object works
     """
+    # Add fields to allow for the cleanup method to work
+    data_item = None
+    wfl_item = None
 
     @classmethod
     def setUpClass(cls):
@@ -23,9 +26,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = os.path.join(
             cls.qalab_base_path,
-            "features_mod_FeatureLayerCollectionManager_cls"
+            "features_mod_FeatureLayerCollectionManager_cls_short"
         )
-
+        # cls.qalab_cls_path = r"E:\temp\test_data"
     def test_create_FeatureLayerCollectionManager_object(self):
         """
         Test creating instances of FeatureLayerCollectionManager class in multiple ways
@@ -34,11 +37,15 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region Publish the feature layer if it does not exist
-            layer_name = "dino_FeatureLayerCollectionManager_basic"
+            layer_name = "dino_FLC_basic"
             search_result = self.gis.content.search(layer_name)
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
+            csv_search_result = self.gis.content.search("simple_points.csv")
+            if csv_search_result:
+                for item in csv_search_result:
+                    item.delete(permanent=True)
 
             data_path = os.path.join(self.qalab_cls_path, "simple_points.csv")
             self.data_item = self.gis.content.add({"title": layer_name}, data=data_path)
@@ -74,12 +81,12 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # get csv data
-            search_result = self.gis.content.search("set1_overwrite_HFS_csv")
+            search_result = self.gis.content.search("overwrite_HFS_csv")
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
 
-            data_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_csv.csv")
+            data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_csv.csv")
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
 
@@ -97,7 +104,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
             # overwrite the feature layer
             new_data_path = os.path.join(
-                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_csv.csv"
+                self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_csv.csv"
             )
             overwrite_result = flc_mgr.overwrite(new_data_path)
             self.assertIsNotNone(
@@ -133,12 +140,12 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # get excel data
-            search_result = self.gis.content.search("set1_overwrite_HFS_excel")
+            search_result = self.gis.content.search("overwrite_HFS_xsl")
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
 
-            data_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_excel.xlsx")
+            data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_excel.xlsx")
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
 
@@ -156,7 +163,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
             # overwrite the feature layer
             new_data_path = os.path.join(
-                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_excel.xlsx"
+                self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_excel.xlsx"
             )
             overwrite_result = flc_mgr.overwrite(new_data_path)
             self.assertIsNotNone(
@@ -191,13 +198,13 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region publish feature layer
-            search_result = self.gis.content.search("set1_overwrite_HFS_fgdb")
+            search_result = self.gis.content.search("overwrite_HFS_fgdb")
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
 
             data_path = os.path.join(
-                self.qalab_cls_path, "set1_overwrite_HFS_fgdb.gdb.zip"
+                self.qalab_cls_path, "overwrite_HFS_fgdb.gdb.zip"
             )
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
@@ -218,7 +225,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
             # overwrite the feature layer
             new_fgdb_path = os.path.join(
-                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_fgdb.gdb.zip"
+                self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_fgdb.gdb.zip"
             )
             overwrite_result = flc_mgr.overwrite(new_fgdb_path)
             self.assertIsNotNone(
@@ -252,12 +259,12 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region publish feature layer
-            search_result = self.gis.content.search("set1_overwrite_HFS_shp")
+            search_result = self.gis.content.search("overwrite_HFS_shp")
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
 
-            data_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_shp.zip")
+            data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_shp.zip")
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
             # endregion
@@ -277,7 +284,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
             # overwrite the feature layer
             new_data_path = os.path.join(
-                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_shp.zip"
+                self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_shp.zip"
             )
             overwrite_result = flc_mgr.overwrite(new_data_path)
             self.assertIsNotNone(
@@ -312,12 +319,12 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region publish feature layer if not found
-            search_result = self.gis.content.search("set1_overwrite_HFS_sd")
+            search_result = self.gis.content.search("overwrite_HFS_sd")
             if search_result:
                 for item in search_result:
-                    item.delete()
+                    item.delete(permanent=True)
 
-            data_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_sd.sd")
+            data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_sd.sd")
             self.data_item = self.gis.content.add({}, data=data_path)
             self.wfl_item = self.data_item.publish()
             # endregion
@@ -337,7 +344,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
             # overwrite the feature layer
             new_data_path = os.path.join(
-                self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_sd.sd"
+                self.qalab_cls_path, "overwrite_wfl", "overwrite_HFS_sd.sd"
             )
             overwrite_result = flc_mgr.overwrite(new_data_path)
             self.assertIsNotNone(
@@ -364,9 +371,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
     def tearDown(self):
         if self.data_item:
-            self.data_item.delete()
+            self.data_item.delete(permanent=True)
         if self.wfl_item:
-            self.wfl_item.delete()
+            self.wfl_item.delete(permanent=True)
 
 
 if __name__ == "__main__":
