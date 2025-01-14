@@ -44,7 +44,9 @@ def snap_to_roads(
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     travel_mode                             Optional dict.  Choose the mode of transportation, such as driving or walking for the analysis. Travel modes are essentially templates consisting of a long list of travel settings that are used by the service when snapping the input points to the roads that were traversed. The value for the travel_mode parameter should be a JSON object representing travel mode settings.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    return_lines                            Boolean. Specify whether or not the service will return lines representing the roads traversed. True-The output lines will be returned. False-The output lines will not be returned.
+    return_lines                            Boolean. Specify whether or not the service will return lines representing the roads traversed.
+                                            `True` - The output lines will be returned.  This is the default.
+                                            `False` - The output lines will not be returned.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     road_properties_on_snapped_points       List[str]. Specify the names of the properties from the roads that you wish returned on the output snapped points.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
@@ -53,21 +55,23 @@ def snap_to_roads(
     return_location_fields                  Bool. Specify whether the service will return fields on the output_snapped_points and output_lines defining the snapped point's location with respect to the road.
 
                                             `True`-The output points and lines will contain these additional location fields and they will be populated.
-                                            `false`-The location fields will not be included in the outputs.
+                                            `False`-The location fields will not be included in the outputs. This is the default value.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    context                                     Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output features.
+    context                                 Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output features.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ======================================  ===========================================================================================================================================
     """
-    gis = gis or _arcgis.env.active_gis
+    gis: _arcgis_gis.GIS = gis or _arcgis.env.active_gis
+    if gis is None:
+        raise ValueError("A `gis` value is required to use this service.")
     if "snapToRoads" not in gis.properties["helperServices"]:
         raise Exception("GIS not configured with Snap To Roads.")
     url: str = gis.properties["helperServices"]["snapToRoads"]["url"]
     url = _common_utils._validate_url(url, gis)
     tbx = _arcgis_gp.import_toolbox(url, gis=gis)
 
-    params = {
+    params: dict = {
         "points": points,
         "travel_mode": json.dumps(travel_mode),
         "return_lines": return_lines,

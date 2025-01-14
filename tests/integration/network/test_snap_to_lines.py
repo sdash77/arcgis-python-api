@@ -1,8 +1,13 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_11494\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_issue_11494\tests")
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
 from arcgis.gis import GIS
 from arcgis.network.analysis import snap_to_roads
+from arcgis.features import FeatureSet
 
 enable_verbose_logging()
 
@@ -161,7 +166,18 @@ class TestFeature(unittest.TestCase):
             road_properties_on_lines=self.road_properties_on_lines,
         )
         assert result.output_snapped_points
+        assert isinstance(result.output_snapped_points, FeatureSet)
         assert result.output_lines
+        assert isinstance(result.output_lines, FeatureSet)
+
+    def test_no_road_returns(self):
+        result = snap_to_roads(
+            points=self.points,
+            return_lines=False,
+        )
+        assert result.output_snapped_points
+        assert isinstance(result.output_snapped_points, FeatureSet)
+        assert result.output_lines is None
 
 
 if __name__ == "__main__":
