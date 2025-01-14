@@ -62,11 +62,9 @@ def snap_to_roads(
     """
     if gis is None:
         gis = _arcgis.env.active_gis
-    if "snapToRoads" in gis.properties["helperServices"]:
-
-        url: str = gis.properties["helperServices"]["snapToRoads"]["url"]
-    else:
-        raise Exception("Snap to roads not available.")
+    if "snapToRoads" not in gis.properties["helperServices"]:
+        raise Exception("GIS not configured with Snap To Roads.")
+    url: str = gis.properties["helperServices"]["snapToRoads"]["url"]
     url = _common_utils._validate_url(url, gis)
     tbx = _arcgis_gp.import_toolbox(url, gis=gis)
 
