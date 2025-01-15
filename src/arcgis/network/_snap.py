@@ -1,12 +1,29 @@
 from __future__ import annotations
 import json
 from arcgis.auth.tools import LazyLoader
+from enum import Enum
 
 _arcgis = LazyLoader("arcgis")
 _arcgis_gis = LazyLoader("arcgis.gis")
 _arcgis_gp = LazyLoader("arcgis.geoprocessing")
 _arcgis_features = LazyLoader("arcgis.features")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+
+__all__ = ["SnapToRoadsAnalysisRegions", "snap_to_roads"]
+
+
+class SnapToRoadsAnalysisRegions(Enum):
+    """Analysis Regions for the Snap to Roads Tool."""
+
+    EUROPE = "Europe"
+    JAPAN = "Japan"
+    KOREA = "Korea"
+    MIDDLE_EAST = "MiddleEastAndAfrica"
+    AFRICA = "MiddleEastAndAfrica"
+    NORTH_AMERICA = "NorthAmerica"
+    SOUTH_AMERICA = "SouthAmerica"
+    SOUTH_ASIA = "SouthAsia"
+    THAILAND = "Thailand"
 
 
 def snap_to_roads(
@@ -15,7 +32,8 @@ def snap_to_roads(
     return_lines: bool = True,
     road_properties_on_snapped_points: list | None = None,
     road_properties_on_lines: list | None = None,
-    return_location_fields: bool = False,
+    overrides: dict | None = None,
+    analysis_region: SnapToRoadsAnalysisRegions | None = None,
     context: dict | None = None,
     gis: _arcgis_gis.GIS | None = None,
 ) -> tuple:
@@ -35,7 +53,7 @@ def snap_to_roads(
     ======================================  ===========================================================================================================================================
     **Parameter**                           **Description**
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    points                                  Required FeatureSet or Feature Layer. Specifies the points that you want to snap to the most likely road. These are typically the GPS
+    points                                  Required FeatureSet or dict. Specifies the points that you want to snap to the most likely road. These are typically the GPS
                                             points from a navigation device, the Field Maps feature service, or some other set of points that were collected while driving the vehicle.
                                             The distance between the points will affect the performance and final quality of the output. If the points are close together, the
                                             algorithm will have a better chance of deducing the probable roads at the expense of processing time. Fewer points will process faster, but
@@ -52,32 +70,53 @@ def snap_to_roads(
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     road_properties_on_lines                List[str]. Specify the road properties that the service should return on the output_lines output.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
-    return_location_fields                  Bool. Specify whether the service will return fields on the output_snapped_points and output_lines defining the snapped point's location with respect to the road.
-
-                                            `True`-The output points and lines will contain these additional location fields and they will be populated.
-                                            `False`-The location fields will not be included in the outputs. This is the default value.
-    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    overrides                               Optional string. Specify additional settings that can influence the behavior of the solver when finding solutions
+                                            for the network analysis problems. The value for this parameter needs to be specified in JavaScript Object Notation
+                                            (JSON). For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" :
+                                            "value2"}. The override setting name is always enclosed in double quotes. The values can be a number, Boolean,
+                                            or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides
+                                            are advanced settings that should be used only after careful analysis of the results obtained before and after applying
+                                            the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting
+                                            Esri Technical Support.
+    --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
+    analysis_region                         Optional SnapAnalysisRegions. The region in which the analysis will be performed. If a value is not specified for this parameter, the tool will automatically calculate the region name based on the location of the input points. Setting the name of the region is required only if the automatic detection of the region name is not accurate for the inputs.
+    --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     context                                 Optional dict. This parameter contains additional settings that affect task operation, for example, the spatial reference of the output features.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ======================================  ===========================================================================================================================================
     """
+
     gis: _arcgis_gis.GIS = gis or _arcgis.env.active_gis
+    if isinstance(overrides, dict):
+        overrides: str = json.dumps(overrides)
+    if isinstance(points, _arcgis.features.FeatureSet):
+        points: dict = points.to_dict()
     if gis is None:
         raise ValueError("A `gis` value is required to use this service.")
     if "snapToRoads" not in gis.properties["helperServices"]:
         raise Exception("GIS not configured with Snap To Roads.")
+    if analysis_region and isinstance(analysis_region, SnapToRoadsAnalysisRegions):
+        analysis_region = analysis_region.value
+    elif analysis_region and not isinstance(
+        analysis_region, SnapToRoadsAnalysisRegions
+    ):
+        raise ValueError(
+            "The `analysis_region` value must be of type SnapToRoadsAnalysisRegions"
+        )
     url: str = gis.properties["helperServices"]["snapToRoads"]["url"]
     url = _common_utils._validate_url(url, gis)
     tbx = _arcgis_gp.import_toolbox(url, gis=gis)
-
     params: dict = {
         "points": points,
         "travel_mode": json.dumps(travel_mode),
         "return_lines": return_lines,
         "road_properties_on_snapped_points": road_properties_on_snapped_points,
         "road_properties_on_lines": road_properties_on_lines,
-        "return_location_fields": return_location_fields,
     }
+    if analysis_region:
+        params["analysis_region"] = analysis_region
+    if overrides:
+        params["overrides"] = overrides
     params = _common_utils.inspect_function_inputs(tbx.snap_to_roads, **params)
     return tbx.snap_to_roads(**params)
