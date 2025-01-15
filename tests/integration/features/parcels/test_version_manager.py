@@ -2,7 +2,7 @@ import time
 import unittest
 from arcgis.features.layer import FeatureLayerCollection
 from arcgis.gis import GIS
-from tests.integration.parcels import parcel_fabric_utils as pfutils
+from . import parcel_fabric_utils as pfutils
 from utils.decorators import integration_test
 
 @integration_test
@@ -50,10 +50,11 @@ class TestVersionManagementSQL(unittest.TestCase):
         self.vms.create(_version_name_txt)
         fq_version_name = f"admin.{_version_name_txt}"
 
-        with self.vms.get(fq_version_name, "edit") as version:
+        with self.vms.get(fq_version_name, "read") as version:
+            self.assertTrue(version.properties.isBeingRead, "Context mgr: Read session not open")
             # start the 'edit' session
-            self.assertTrue(version.properties.isBeingRead, "Read session not open")
-            self.assertTrue(version.properties.isBeingEdited, "Edit session not open")
+            version.mode = "edit"
+            self.assertTrue(version.properties.isBeingEdited, "Context mgr: Edit session not open")
 
         # Outside of with statement
         self.assertFalse(version.properties.isBeingRead, "Read session still open")

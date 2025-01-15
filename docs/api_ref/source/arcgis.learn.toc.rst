@@ -278,6 +278,13 @@ SQNSeg
     :inherited-members:
     :undoc-members:
 
+PTv3Seg
+^^^^^^^^
+.. autoclass:: arcgis.learn.PTv3Seg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 MMDetection3D
 ^^^^^^^^
 .. autoclass:: arcgis.learn.MMDetection3D
