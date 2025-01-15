@@ -1420,12 +1420,15 @@ def _gdal_to_fc(
             shutil.rmtree(out_path)
         out_file = out_driver.CreateDataSource(out_path)
 
-    geom_field = df.spatial.name
-    geom_type = "null"
-    if geom_field:
-        idx = df[geom_field].first_valid_index()
-        if idx > -1:
-            geom_type = df.loc[idx][geom_field].type
+    spatial_field = df.spatial.name if hasattr(df.spatial, "name") else None
+    if spatial_field:
+        idx = df[spatial_field].first_valid_index()
+        if idx is not None and df.loc[idx, spatial_field]:
+            geom_type = df.loc[idx, spatial_field].type
+        else:
+            geom_type = "null"
+    else:
+        geom_type = "null"
 
     df_ref = df.spatial.sr or {}
     osr_ref = osr.SpatialReference()
@@ -1495,20 +1498,15 @@ def _gdal_to_fc(
         feature = ogr.Feature(out_layer.GetLayerDefn())
         geom = None
         ogr_geom = None
-        if df.spatial.name:
-            geom = row[df.spatial.name]
+        if spatial_field:
+            geom = row[spatial_field]
             geom_string = _ujson.dumps(dict(geom))
             ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
             feature.SetGeometry(ogr_geom)
 
-            for field_name, value in row.items():
-                if field_name != df.spatial.name:
-                    # continue
-                    if field_name in dfields:
-                        value = value.strftime("%Y-%m-%d %H:%M:%S")
-                    feature.SetField(field_mapping[field_name], value)
-        else:
-            for field_name, value in row.items():
+        for field_name, value in row.items():
+            if spatial_field is None or field_name != spatial_field:
+                # always run for table, but only run for feature class if not geom field
                 if field_name in dfields:
                     value = value.strftime("%Y-%m-%d %H:%M:%S")
                 if isinstance(value, type(pd.NA)):
@@ -1516,17 +1514,17 @@ def _gdal_to_fc(
                     value = None
                 feature.SetField(field_mapping[field_name], value)
 
-        del idx
-        del row
-        del geom
-        del ogr_geom
         out_layer.CreateFeature(feature)
+        feature = None
+        del idx, row, geom, ogr_geom
 
-    # out_file = None
     if zip_file:
         path = os.path.dirname(out_path)
         dir_name = os.path.basename(out_path)
         _zip_dir(path, dir_name)
+
+    out_layer.SyncToDisk()  # Ensure the layer changes are written to disk
+    out_file = None  # Closing the dataset, saving everything to disk
 
     return out_path
 
