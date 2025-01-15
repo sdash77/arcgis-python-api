@@ -1,7 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_11494\src")
-sys.path.insert(1, r"C:\SVN\geosaurus_issue_11494\tests")
 import unittest
 from utils.decorators import profiles, integration_test
 from utils._logging import enable_verbose_logging
@@ -159,7 +155,6 @@ class TestSnapToRoads(unittest.TestCase):
         ]
         cls.road_properties_on_lines = ["length_miles"]
 
-    @unittest.skip("said so")
     def test_basic_usage(self):
         result = snap_to_roads(
             points=self.points,
@@ -184,7 +179,6 @@ class TestSnapToRoads(unittest.TestCase):
         assert isinstance(result.output_snapped_points, FeatureSet)
         assert result.output_lines is None
 
-    @unittest.skip("said so")
     def test_no_road_returns(self):
         result = snap_to_roads(
             points=self.points,
