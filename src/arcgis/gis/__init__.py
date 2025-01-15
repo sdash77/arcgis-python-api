@@ -8440,8 +8440,7 @@ class ContentManager(object):
         if not folder:
             folder = self.folders.get()
         # If gdal is present, prioritize it
-        x = 1
-        if x == 2:
+        if has_gdal:
             if not service_name.endswith(".gdb"):
                 service_name += ".gdb"
             # create a temporary file
