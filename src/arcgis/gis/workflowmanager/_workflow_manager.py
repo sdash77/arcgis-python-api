@@ -1871,8 +1871,8 @@ class WorkflowManager:
                                         used in the steps of the diagram. See details for CentralizedDataReference below
         ------------------------------- --------------------------------------------------------------------
         use_centralized_data_references Optional boolean. Indicates that the diagram's step configurations make use of
-                                        CentralizedDataReferences. Defaults to false. Note: This is set to True
-                                        for new diagrams
+                                        CentralizedDataReferences. Defaults to false. Note: It is recommended that this
+                                        is set to True for new diagrams
         =============================== ====================================================================
 
         :return:
