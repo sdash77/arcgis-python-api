@@ -1,6 +1,6 @@
 from ._item_graph import ItemGraph, ItemNode, load_from_file
 from ._get_dependencies import _get_related_item_dict
-from arcgis.gis import GIS, Item, ContentManager
+from arcgis.gis import GIS
 from arcgis.gis._impl._content_manager.folder import Folder
 from arcgis._impl.common._utils import _text_replace
 import os
@@ -8,7 +8,6 @@ import shutil
 import tempfile
 import tarfile
 import ujson as json
-import zipfile
 import re
 import uuid
 import random
@@ -223,19 +222,27 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         path_name = "structure.json"
         download_path = item.download(data_folder, path_name)
     elif item.type in JSON_BASED_WITH_DATA_TYPES:
-        reqs = node.requires("item")
-        needs_export = True
-        # go through and check if there's already a data file
-        for req in reqs:
-            if req.type in FILE_BASED_TYPES:
-                needs_export = False
-                break
-        # if no data file associated, export data to specified format
-        if needs_export:
-            fc_item = item.export(item.title, service_format)
-            download_path = fc_item.download(data_folder)
-            fc_item.delete()
-            item_dict["data_item_type"] = service_format
+        # views are annoying
+        if 'View Service' in item.typeKeywords:
+            view_props = dict(item.layers[0].container.manager.properties)
+            view_props_file_path = os.path.join(data_folder, "view_props.json")
+            with open(view_props_file_path, "w") as view_props_file:
+                json.dump(view_props, view_props_file, indent=4, ensure_ascii=False)
+        
+        else:
+            reqs = node.requires("item")
+            needs_export = True
+            # go through and check if there's already a data file
+            for req in reqs:
+                if req.type in FILE_BASED_TYPES:
+                    needs_export = False
+                    break
+            # if no data file associated, export data to specified format
+            if needs_export:
+                fc_item = item.export(item.title, service_format)
+                download_path = fc_item.download(data_folder)
+                fc_item.delete()
+                item_dict["data_item_type"] = service_format
                     
         # fc_zip = zipfile.ZipFile(download_path)
     else:
@@ -329,8 +336,9 @@ class ImportPackage():
         for prop_name in _property_names:
             if prop_name in item_properties:
                 props[prop_name] = item_properties[prop_name]
-        thumbnail_name = item_properties["thumbnail"].split("/")[1]
-        props["thumbnail"] = os.path.join(item_folder, "files", thumbnail_name)
+        if item_properties["thumbnail"] is not None:
+            thumbnail_name = item_properties["thumbnail"].split("/")[1]
+            props["thumbnail"] = os.path.join(item_folder, "files", thumbnail_name)
         if "Metadata" in item_properties["typeKeywords"]:
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
         item_id = item_properties["id"]
@@ -382,7 +390,41 @@ class ImportPackage():
                 json_text = _text_replace(json_text, secondary_remap)
             return json_text
         
-        if item_properties["type"] == "Feature Service":
+        if item_properties["type"] == "Feature Service" and "View Service" in item_properties["typeKeywords"]:
+            # completely different process for views. they're such a pain
+            return None
+            # this stuff below doesn't quite work yet but leaving it there to come back to
+            # view_props_path = os.path.join(data_folder, "view_props.json")
+            # with open(view_props_path, "r") as view_props_file:
+            #     view_props = json.load(view_props_file)
+            
+            # reqs = self.graph.get_item(item_id).requires("id")
+            # if len(reqs) == 0:
+            #     raise RuntimeError("View Service does not have a valid data item")
+            # elif len(reqs) == 1:
+            #     flc_item = self.gis.content.get(self.created_item_mapping[reqs[0]])
+            #     flc = flc_item.layers[0].container
+            #     flc_props = flc.manager.properties
+            #     v_layers = []
+            #     v_tables = []
+            #     if "layers" in view_props:
+            #         v_layers = view_props["layers"]
+            #     if "tables" in view_props:
+            #         v_tables = view_props["tables"]
+            #     vds = []
+            #     for layer in v_layers:
+            #         if "viewLayerDefinition" in layer["adminLayerInfo"]:
+            #             vds.append(layer["adminLayerInfo"]["viewLayerDefinition"])
+            #     for table in v_tables:
+            #         if "viewLayerDefinition" in table["adminLayerInfo"]:
+            #             vds.append(table["adminLayerInfo"]["viewLayerDefinition"])
+            #     new_item = flc.manager.create_view(
+            #         name = item_properties["title"],
+            #         view_def = vds,
+            #     )
+
+
+        elif item_properties["type"] == "Feature Service":
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
             service_item = None
@@ -523,7 +565,8 @@ class ImportPackage():
                 continue
             item_folder = os.path.join(self._temp_package, itemid)
             new_item = self._import_item(item_folder, preserve_id = preserve_ids, folder=folder)
-            created_items.append(new_item)
+            if new_item:
+                created_items.append(new_item)
             # # if we changed the item id, update mapping so other items adjust
             # if itemid != new_item.id:
             #     item_mapping[itemid] = new_item.id

@@ -220,6 +220,8 @@ def _get_related_items(item, forward=True, reverse=True):
     if item.type in _RELATIONSHIPS:
         f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
         r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+        if item.type == "Feature Service" and "View Service" not in item.typeKeywords:
+            f_rel_types.remove("Service2Service")
 
     if forward:
         for rel_type in f_rel_types:
@@ -255,6 +257,8 @@ def _get_related_item_dict(item, forward=True, reverse=True):
     if item.type in _RELATIONSHIPS:
         f_rel_types.extend(_RELATIONSHIPS[item.type]["forward"])
         r_rel_types.extend(_RELATIONSHIPS[item.type]["reverse"])
+        if item.type == "Feature Service" and "View Service" not in item.typeKeywords:
+            f_rel_types.remove("Service2Service")
 
     if forward:
         f_rel_dict = {}
