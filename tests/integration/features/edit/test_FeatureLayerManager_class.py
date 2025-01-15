@@ -9,7 +9,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 # region PreCondition check
 test_skip = False
@@ -52,6 +52,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class Test_FeatureLayerManager_portal(unittest.TestCase):
     """
@@ -85,7 +86,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        cls.gis = GIS(profile="your_ent_admin_profile")
+        # cls.gis = GIS(profile="your_ent_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -97,17 +98,27 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         search_result = PortalUtils.search_portal_item(
             cls.gis, layer_name, "Feature Layer"
         )
+
+        csv_search_result = PortalUtils.search_portal_item(
+            cls.gis, layer_name, "CSV"
+        )
+
         if search_result is not None:
             print("Found necessary feature layer")
             cls.feature_layer1_item = search_result
         else:
             print("Cannot find necessary feature layer, publishing a new layer")
-            csv_path = cls.qalab_cls_path + "edit_feature_definition_points.csv"
+
+            # Delete CSV item if exists
+            if csv_search_result:
+                PortalUtils.delete_portal_item(cls.gis, csv_search_result.itemid)
+
+            csv_path = cls.qalab_cls_path + "edit_feature_definition_points_test.csv"
             csv_item = cls.gis.content.add({"title": layer_name}, data=csv_path)
 
             # publish the csv item
             if csv_item is not None:
-                cls.feature_layer1_item = csv_item.publish({"title": layer_name})
+                cls.feature_layer1_item = csv_item.publish({"name": layer_name})
                 if cls.feature_layer1_item is not None:
                     print("Published edit_feature_definition_points feature layer")
                 else:
@@ -148,7 +159,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             cls.feature_layer2_item = search_result
         else:
             print("Cannot find necessary feature layer, publishing a new layer")
-            fgdb_path = cls.qalab_cls_path + "set1_fortune10_trunc2.gdb.zip"
+            fgdb_path = cls.qalab_cls_path + "set1_fortune10_trunc2_FLMtest.gdb.zip"
             fgdb_item = cls.gis.content.add(
                 {"title": layer_name_truncate}, data=fgdb_path
             )
@@ -171,7 +182,8 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
+                        "hasStaticData": False,
+                        "capabilities": "Query,Create,Update,Delete,Uploads,Editing",
                     }
                 )
                 if result.get("success"):
@@ -383,7 +395,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(True, "Yet to fix bug for portals. Works for AGO")
+    # @unittest.skipIf(True, "Yet to fix bug for portals. Works for AGO")
     def test_truncate_feature_layer(self):
         """
         This test case calls truncate() which will drop all features in 1 go.
