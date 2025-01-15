@@ -235,6 +235,7 @@ def _get_related_items(item, forward=True, reverse=True):
 
     return forward_deps, reverse_deps
 
+
 def _get_related_item_dict(item, forward=True, reverse=True):
     if not forward and not reverse:
         raise ValueError("At least one direction must be specified.")
@@ -277,6 +278,7 @@ def _get_related_item_dict(item, forward=True, reverse=True):
         rel_item_dict["reverse"] = r_rel_dict
 
     return rel_item_dict
+
 
 def _parse_webmap(item):
     items = []

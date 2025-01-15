@@ -105,30 +105,31 @@ FILE_BASED_TYPES = [
     "Workflow Manager (Classic) Package",
 ]
 
+
 def _export_content(
-        # item_list : list = None, 
-        graph: ItemGraph, 
-        output_folder: str = None,
-        package_name: str = None,
-        service_format: str = "File Geodatabase",
+    # item_list : list = None,
+    graph: ItemGraph,
+    output_folder: str = None,
+    package_name: str = None,
+    service_format: str = "File Geodatabase",
 ):
-    
+
     if output_folder is None:
         output_folder = tempfile.mkdtemp()
     if package_name is None:
         package_name = "exported_content"
-    
+
     # Create the main directory
     main_dir = os.path.join(output_folder, package_name)
     os.makedirs(main_dir, exist_ok=True)
-    
+
     # Helper function to create item folder and export item data
     def create_item_folder(item, parent_dir):
         item_dir = os.path.join(parent_dir, item.id)
         os.makedirs(item_dir, exist_ok=True)
         # Call helper function to export item data
         _export_item_data(item, item_dir, service_format)
-    
+
     manifest = {}
     # Iterate over all items in the graph and create their folders
     node_list = graph.all_items()
@@ -145,24 +146,24 @@ def _export_content(
             "created": item.created,
             "org_source": item._gis.url,
         }
-    
+
     # Create a metadata file at the top directory
     manifest_file = os.path.join(main_dir, "manifest.json")
     with open(manifest_file, "w") as f:
         json.dump(manifest, f, indent=4, ensure_ascii=False)
-    
+
     # create the graph structure file
     graph_file = os.path.join(main_dir, "graph.gml")
     graph.write_to_file(graph_file)
-    
+
     # Create a static binary file containing the entire directory
     binary_file_path = os.path.join(output_folder, f"{package_name}.contentexport")
     with tarfile.open(binary_file_path, "w:gz") as tar:
         tar.add(main_dir, arcname=os.path.basename(main_dir))
-    
+
     # Clean up the temporary main directory
     shutil.rmtree(main_dir)
-    
+
     return binary_file_path
 
 
@@ -172,11 +173,11 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         return
     # Create a folder for the item
     os.makedirs(output_folder, exist_ok=True)
-    
+
     # create all the proper folders
     for header in ["files", "resources", "data", "proxies"]:
         os.makedirs(os.path.join(output_folder, header), exist_ok=True)
-    
+
     # download json of item properties based
     item_dict = dict(item)
 
@@ -199,7 +200,7 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         # get the info and then download
         res_manifest[resource["resource"]] = resource
         res_download = rm.get(
-            file = resource["resource"], out_folder=res_folder, try_json=False
+            file=resource["resource"], out_folder=res_folder, try_json=False
         )
     with open(os.path.join(res_folder, "resources.json"), "w") as res_list:
         json.dump(res_manifest, res_list, indent=4)
@@ -210,7 +211,9 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
     relationships["requires"] = node.requires("id")
     relationships["contained_by"] = node.contained_by("id")
     relationships["required_by"] = node.required_by("id")
-    relationships["related_items"] = _get_related_item_dict(item, forward=True, reverse=False)["forward"]
+    relationships["related_items"] = _get_related_item_dict(
+        item, forward=True, reverse=False
+    )["forward"]
     rel_file_path = os.path.join(output_folder, "relationships.json")
     with open(rel_file_path, "w") as rel_file:
         json.dump(relationships, rel_file, indent=4)
@@ -223,12 +226,12 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         download_path = item.download(data_folder, path_name)
     elif item.type in JSON_BASED_WITH_DATA_TYPES:
         # views are annoying
-        if 'View Service' in item.typeKeywords:
+        if "View Service" in item.typeKeywords:
             view_props = dict(item.layers[0].container.manager.properties)
             view_props_file_path = os.path.join(data_folder, "view_props.json")
             with open(view_props_file_path, "w") as view_props_file:
                 json.dump(view_props, view_props_file, indent=4, ensure_ascii=False)
-        
+
         else:
             reqs = node.requires("item")
             needs_export = True
@@ -243,11 +246,11 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
                 download_path = fc_item.download(data_folder)
                 fc_item.delete()
                 item_dict["data_item_type"] = service_format
-                    
+
         # fc_zip = zipfile.ZipFile(download_path)
     else:
         download_path = item.download(data_folder)
-    
+
     json_file_path = os.path.join(output_folder, "properties.json")
     with open(json_file_path, "w") as json_file:
         json.dump(item_dict, json_file, indent=4, ensure_ascii=False)
@@ -256,8 +259,9 @@ def _export_item_data(node: ItemNode, output_folder: str, service_format: str):
         os.remove(download_path)
 
     return output_folder
-    
-class ImportPackage():
+
+
+class ImportPackage:
     def __init__(self, package_path: str, gis: GIS):
         self.package_path = package_path
         self.gis = gis
@@ -273,31 +277,32 @@ class ImportPackage():
         with open(manifest_file_path, "r") as manifest_file:
             self.items = json.load(manifest_file)
         self._item_relationships = {}
-    
+
     def _unpack_package(self):
         temp_dir = tempfile.TemporaryDirectory()
         with tarfile.open(self.package_path, "r:gz") as tar:
             tar.extractall(temp_dir.name)
         return temp_dir
-    
+
     def _import_item(
-        self, 
-        item_folder, 
-        preserve_id: bool = False, 
+        self,
+        item_folder,
+        preserve_id: bool = False,
         folder: Folder | str = None,
     ):
         # read the properties.json file
         with open(os.path.join(item_folder, "properties.json"), "r") as prop_file:
             item_properties = json.load(prop_file)
-        
+
         # read the relationships.json file
         with open(os.path.join(item_folder, "relationships.json"), "r") as rel_file:
             relationships = json.load(rel_file)
-        
+
         # read the resources.json file
-        with open(os.path.join(item_folder, "resources/resources.json"), "r") as res_file:
+        with open(
+            os.path.join(item_folder, "resources/resources.json"), "r"
+        ) as res_file:
             resources = json.load(res_file)
-        
 
         # read the data folder
         data_folder = os.path.join(item_folder, "data")
@@ -307,7 +312,7 @@ class ImportPackage():
             data_path = os.path.join(data_folder, path_name)
         else:
             data_path = None
-        
+
         # import the item
         if isinstance(folder, str):
             folder = self.gis.content.folders.get(folder)
@@ -343,12 +348,9 @@ class ImportPackage():
             props["metadata"] = os.path.join(item_folder, "files/metadata.xml")
         item_id = item_properties["id"]
         new_item_id = None
-        if (
-            preserve_id
-            and self.gis._portal.is_arcgisonline == False
-        ):
+        if preserve_id and self.gis._portal.is_arcgisonline == False:
             new_item_id = item_id
-        
+
         def _add_data_item(fp, item_type, props=None):
             if props is None:
                 data_props = {
@@ -363,7 +365,7 @@ class ImportPackage():
                     **{
                         "item_properties": data_props,
                         "file": fp,
-                        "stream" : False,
+                        "stream": False,
                     }
                 )
             except:
@@ -375,12 +377,13 @@ class ImportPackage():
                     **{
                         "item_properties": data_props,
                         "file": new_fp,
-                        "stream" : False,
+                        "stream": False,
                     }
                 )
             return job.result()
-        
+
         remap_dict = {}
+
         def _remap_json(json_text, remap_dict):
             if len(remap_dict) > 0:
                 json_text = json_text.replace("\\/", "/")
@@ -389,15 +392,18 @@ class ImportPackage():
                 secondary_remap = {self.items[item_id]["org_source"]: self.gis.url}
                 json_text = _text_replace(json_text, secondary_remap)
             return json_text
-        
-        if item_properties["type"] == "Feature Service" and "View Service" in item_properties["typeKeywords"]:
+
+        if (
+            item_properties["type"] == "Feature Service"
+            and "View Service" in item_properties["typeKeywords"]
+        ):
             # completely different process for views. they're such a pain
             return None
             # this stuff below doesn't quite work yet but leaving it there to come back to
             # view_props_path = os.path.join(data_folder, "view_props.json")
             # with open(view_props_path, "r") as view_props_file:
             #     view_props = json.load(view_props_file)
-            
+
             # reqs = self.graph.get_item(item_id).requires("id")
             # if len(reqs) == 0:
             #     raise RuntimeError("View Service does not have a valid data item")
@@ -423,7 +429,6 @@ class ImportPackage():
             #         view_def = vds,
             #     )
 
-
         elif item_properties["type"] == "Feature Service":
             # check if dependent file already was uploaded
             reqs = self.graph.get_item(item_id).requires("id")
@@ -431,7 +436,10 @@ class ImportPackage():
             if len(reqs) > 0:
                 # find the dependent file
                 for req in reqs:
-                    if req in self.created_item_mapping and self.items[req]["type"] in FILE_BASED_TYPES:
+                    if (
+                        req in self.created_item_mapping
+                        and self.items[req]["type"] in FILE_BASED_TYPES
+                    ):
                         service_id = self.created_item_mapping[req]
                         service_item = self.gis.content.get(service_id)
                         break
@@ -443,22 +451,30 @@ class ImportPackage():
                         fp = os.path.join(data_folder, file)
                         dt = item_properties.get("data_item_type", None)
                         if dt is None:
-                            raise RuntimeError("Feature Service does not have a valid data item")
+                            raise RuntimeError(
+                                "Feature Service does not have a valid data item"
+                            )
                         service_item = _add_data_item(fp, dt)
                         break
-            
+
             # publish the service
             if service_item:
                 # pub_params = {"name": item_properties["title"]}
                 pub_params = props
                 try:
-                    new_item = service_item.publish(publish_parameters = pub_params, item_id = new_item_id)
+                    new_item = service_item.publish(
+                        publish_parameters=pub_params, item_id=new_item_id
+                    )
                 except:
-                    new_name = _get_unique_name(self.gis, item_properties["title"], True)
+                    new_name = _get_unique_name(
+                        self.gis, item_properties["title"], True
+                    )
                     new_name = new_name.replace("/", "_")
                     pub_params["name"] = new_name
-                    new_item = service_item.publish(publish_parameters = pub_params, item_id = item_id)
-            
+                    new_item = service_item.publish(
+                        publish_parameters=pub_params, item_id=item_id
+                    )
+
             self._service_mapping[item_id] = (item_properties["url"], new_item.url)
 
         elif item_properties["type"] in FILE_BASED_TYPES:
@@ -469,11 +485,14 @@ class ImportPackage():
                 #     break
                 fp = os.path.join(data_folder, file)
                 new_item = _add_data_item(fp, item_properties["type"], props)
-        
+
         elif item_properties["type"] in JSON_BASED_TYPES:
             reqs = self.graph.get_item(item_id).requires("node")
             for req in reqs:
-                if req.id in self.created_item_mapping and self.created_item_mapping[req.id] != req.id:
+                if (
+                    req.id in self.created_item_mapping
+                    and self.created_item_mapping[req.id] != req.id
+                ):
                     remap_dict[req.id] = self.created_item_mapping[req.id]
                 if req.id in self._name_mapping:
                     orig_title, new_title = self._name_mapping[req.id]
@@ -481,26 +500,26 @@ class ImportPackage():
                 if req.id in self._service_mapping:
                     orig_url, new_url = self._service_mapping[req.id]
                     remap_dict[orig_url] = new_url
-            
+
             structure_file_path = os.path.join(data_folder, "structure.json")
             with open(structure_file_path, "r") as structure_file:
                 structure_data = json.load(structure_file)
                 structure_text = json.dumps(structure_data, ensure_ascii=False)
                 props["text"] = _remap_json(structure_text, remap_dict)
-            
+
             job = folder.add(
                 **{
                     "item_properties": props,
                     "item_id": new_item_id,
-                    "stream" : False,
+                    "stream": False,
                 }
             )
             new_item = job.result()
-        
+
         self.created_item_mapping[item_id] = new_item.id
         if item_properties["title"] != new_item.title:
             self._name_mapping[item_id] = (item_properties["title"], new_item.title)
-        
+
         # import the resources
         for res_name in resources.keys():
             res_split = res_name.split("/")
@@ -516,21 +535,23 @@ class ImportPackage():
                     res_data = json.load(res_file)
                     res_text = json.dumps(res_data, ensure_ascii=False)
                     res_text = _remap_json(res_text, remap_dict)
-                    new_item.resources.add(folder_name = res_folder, file_name = res_basename, text = res_text)
+                    new_item.resources.add(
+                        folder_name=res_folder, file_name=res_basename, text=res_text
+                    )
             else:
-                new_item.resources.add(file = res_path, folder_name = res_folder)
+                new_item.resources.add(file=res_path, folder_name=res_folder)
             # new_item.resources.add(res_path)
-        
+
         # add the related_items relationships to dict for reconstruction
         self._item_relationships[item_id] = relationships["related_items"]
         # return the item
         return new_item
-    
+
     def import_items(
-        self, 
-        items: list[str] = [], 
-        deep: bool = True, 
-        preserve_ids: bool = False, 
+        self,
+        items: list[str] = [],
+        deep: bool = True,
+        preserve_ids: bool = False,
         item_mapping: dict = {},
         folder: Folder | str = None,
     ):
@@ -542,7 +563,7 @@ class ImportPackage():
             for itemid in items:
                 if not itemid in self.items:
                     raise ValueError(f"Item with id {itemid} not found in the package")
-                
+
                 # if deep, make sure required items are also getting cloned
                 node = self.graph.get_item(itemid)
                 nodes.add(node)
@@ -555,7 +576,7 @@ class ImportPackage():
         # and we only have to iterate through the item list once
         def count_reqs(node):
             return len(node.requires("id"))
-        
+
         sorted_nodes = sorted(nodes, key=count_reqs)
         created_items = []
         for node in sorted_nodes:
@@ -564,7 +585,9 @@ class ImportPackage():
             if itemid in item_mapping:
                 continue
             item_folder = os.path.join(self._temp_package, itemid)
-            new_item = self._import_item(item_folder, preserve_id = preserve_ids, folder=folder)
+            new_item = self._import_item(
+                item_folder, preserve_id=preserve_ids, folder=folder
+            )
             if new_item:
                 created_items.append(new_item)
             # # if we changed the item id, update mapping so other items adjust
@@ -582,7 +605,7 @@ class ImportPackage():
         # due to possible presence of reverse relationships
         self._restore_related_items()
         return created_items
-    
+
     def _restore_related_items(self):
         for itemid, rel_dict in self._item_relationships.items():
             if rel_dict == {}:
@@ -592,11 +615,14 @@ class ImportPackage():
                 new_item = self.gis.content.get(new_id)
                 for rel_type, rel_list in rel_dict.items():
                     for rel_id in rel_list:
-                        new_rel_item = self.gis.content.get(self.created_item_mapping[rel_id])
+                        new_rel_item = self.gis.content.get(
+                            self.created_item_mapping[rel_id]
+                        )
                         new_item.add_relationship(new_rel_item, rel_type)
             except:
                 continue
-    
+
+
 def _get_unique_name(target, name, force_add_guid_suffix=False):
     """Create a new unique name for the service.
     Keyword arguments:
