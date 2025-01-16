@@ -3279,7 +3279,7 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name, version_guid=None, version_name=None, administered=False
+        self, data_source_name=None, version_guid=None, version_name=None, administered=False, data_source_id=None
     ):
         """
         Sets the version of the job.
@@ -3287,7 +3287,9 @@ class Job(object):
         ================    ===================================================================
         **Argument**        **Description**
         ----------------    -------------------------------------------------------------------
-        data_source_name    Required. The name of the data source for the job version to be set.
+        data_source_name    Optional. The name of the data source for the job version to be set. This is required when using decentralized data sources.
+        ----------------    -------------------------------------------------------------------
+        data_source_id      Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
         ----------------    -------------------------------------------------------------------
         version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
                             the versionName must be defined. versionGuid is preferred to be defined for better
@@ -3307,9 +3309,12 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "dataSourceName": data_source_name,
-            "workflowAdministered": administered,
+            "workflowAdministered": administered
         }
+        if data_source_name is not None:
+            params["dataSourceName"] = data_source_name
+        if data_source_id is not None:
+            params["dataSourceId"] = data_source_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
