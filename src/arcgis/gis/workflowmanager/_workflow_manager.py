@@ -73,7 +73,9 @@ def _initialize(instance, gis, is_admin=False):
                 if is_admin:
                     instance._url = instance._server_url + f"/{instance.org_id}"
                 else:
-                    instance._url = instance._server_url + f"/{instance.org_id}/{instance._item.id}"
+                    instance._url = (
+                        instance._server_url + f"/{instance.org_id}/{instance._item.id}"
+                    )
                 break
 
         if instance._url is None:
@@ -110,23 +112,26 @@ def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> s
             return public_url
         parsed_private = parse_url(private_url)
         if parsed_private.port == 6443:
-            private_url = (parsed_private
-                           # Port isn't part of the named tuple so can't be replaced directly
-                           ._replace(netloc=parsed_private.netloc.replace('6443', '13443'))
-                           ._replace(path='')
-                           .geturl())
+            private_url = (
+                parsed_private
+                # Port isn't part of the named tuple so can't be replaced directly
+                ._replace(netloc=parsed_private.netloc.replace("6443", "13443"))
+                ._replace(path="")
+                .geturl()
+            )
         if gis._use_private_url_only:
             return private_url
         for purl in [public_url, private_url]:
             try:
                 if purl:
-                    logger.debug(f'Testing {purl}')
-                    gis._con.get(purl + '/workflow/checkStatus')
+                    logger.debug(f"Testing {purl}")
+                    gis._con.get(purl + "/workflow/checkStatus")
                     return purl
             except Exception:
                 ...
 
     return public_url
+
 
 class WorkflowManagerAdmin:
     """
