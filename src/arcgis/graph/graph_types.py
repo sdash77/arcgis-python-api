@@ -1,5 +1,5 @@
 from typing import Optional, Any, Union
-from pydantic import BaseModel, model_serializer, model_validator
+from pydantic import BaseModel, model_serializer, model_validator, Field
 from pydantic.alias_generators import to_camel
 
 from arcgis.geometry import Geometry
@@ -44,7 +44,10 @@ def _python_to_client_core_value(python_value: Any) -> Any:
 
 
 class GraphObject(BaseModel):
-    properties: dict[str, Any] = {}
+    properties: dict[str, Any] = Field(
+        default={},
+        description="The property values, keyed by property name, in the graph object.",
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -71,8 +74,11 @@ class GraphObject(BaseModel):
 
 
 class NamedObject(GraphObject):
-    type_name: str
-    id: Optional[Any] = None
+    type_name: str = Field(..., description="The entity or relationship type name.")
+    id: Optional[Any] = Field(
+        default=None,
+        description="The unique identifier for the entity or relationship.",
+    )
 
 
 class Entity(NamedObject):
@@ -108,8 +114,13 @@ class Entity(NamedObject):
 
 
 class Relationship(NamedObject):
-    origin_entity_id: Any
-    destination_entity_id: Any
+    origin_entity_id: Any = Field(
+        ..., description="The unique identifier of the relationship's origin entity."
+    )
+    destination_entity_id: Any = Field(
+        ...,
+        description="The unique identifier of the relationship's destination entity.",
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -147,7 +158,9 @@ class Relationship(NamedObject):
 
 
 class Path(BaseModel):
-    path: list[Union[Entity, Relationship]]
+    path: list[Union[Entity, Relationship]] = Field(
+        ..., description="The list of entities and relationships in the path."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -191,8 +204,12 @@ class Path(BaseModel):
 
 
 class NamedObjectDelete(BaseModel):
-    type_name: str
-    ids: list[Any]
+    type_name: str = Field(
+        ..., description="The type name of the entity or relationship to delete."
+    )
+    ids: list[Any] = Field(
+        ..., description="The IDs of the entities or relationships to delete."
+    )
 
 
 class EntityDelete(NamedObjectDelete):
@@ -238,13 +255,13 @@ class RelationshipDelete(NamedObjectDelete):
 
 
 class Transform(BaseModel):
-    xy_resolution: float
-    x_false_origin: float
-    y_false_origin: float
-    z_resolution: float
-    z_false_origin: float
-    m_resolution: float
-    m_false_origin: float
+    xy_resolution: float = Field(..., description="The XY resolution.")
+    x_false_origin: float = Field(..., description="The X false origin.")
+    y_false_origin: float = Field(..., description="The Y false origin.")
+    z_resolution: float = Field(..., description="The Z resolution.")
+    z_false_origin: float = Field(..., description="The Z false origin.")
+    m_resolution: float = Field(..., description="The M resolution.")
+    m_false_origin: float = Field(..., description="The M false origin.")
 
     class Config:
         alias_generator = to_camel

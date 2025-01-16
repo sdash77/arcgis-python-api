@@ -1,17 +1,19 @@
 from typing import Optional, Any
-from pydantic import BaseModel, model_serializer, model_validator
+from pydantic import BaseModel, model_serializer, model_validator, Field
 from pydantic.alias_generators import to_camel
 
 from arcgis.graph.data_model_types import EndPoint
 
 
 class Error(BaseModel):
-    error_code: int
-    error_message: str
+    error_code: int = Field(..., description="The error code.")
+    error_message: str = Field(..., description="The error message.")
 
 
 class UpdateSearchIndexResponse(BaseModel):
-    error: Optional[Error] = None
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -21,9 +23,13 @@ class UpdateSearchIndexResponse(BaseModel):
 
 
 class SyncDataModelResult(BaseModel):
-    type_name: str
-    error: Optional[Error] = None
-    warnings: list[Error] = []
+    type_name: str = Field(..., description="The type name that was synced.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    warnings: list[Error] = Field(
+        default=[], description="The list of warnings returned for the named type."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -51,9 +57,15 @@ class SyncDataModelResult(BaseModel):
 
 
 class SyncDataModelResponse(BaseModel):
-    error: Optional[Error] = None
-    warnings: list[Error] = []
-    named_type_sync_results: list[SyncDataModelResult] = []
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    warnings: list[Error] = Field(
+        default=[], description="The list of warnings returned for the operation."
+    )
+    named_type_sync_results: list[SyncDataModelResult] = Field(
+        default=[], description="The list of results for each named type."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -92,8 +104,10 @@ class SyncDataModelResponse(BaseModel):
 
 
 class NamedObjectTypeAddResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
+    name: str = Field(..., description="The type name that was added.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -106,9 +120,15 @@ class NamedObjectTypeAddResult(BaseModel):
 
 
 class NamedObjectTypeAddsResponse(BaseModel):
-    error: Optional[Error] = None
-    entity_add_results: list[NamedObjectTypeAddResult]
-    relationship_add_results: list[NamedObjectTypeAddResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    entity_add_results: list[NamedObjectTypeAddResult] = Field(
+        ..., description="The list of results for added entity types."
+    )
+    relationship_add_results: list[NamedObjectTypeAddResult] = Field(
+        ..., description="The list of results for added relationship types."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -129,7 +149,9 @@ class NamedObjectTypeAddsResponse(BaseModel):
 
 
 class NamedObjectTypeUpdateResponse(BaseModel):
-    error: Optional[Error] = None
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -139,7 +161,9 @@ class NamedObjectTypeUpdateResponse(BaseModel):
 
 
 class NamedObjectTypeDeleteResponse(BaseModel):
-    error: Optional[Error] = None
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -149,8 +173,10 @@ class NamedObjectTypeDeleteResponse(BaseModel):
 
 
 class PropertyAddResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
+    name: str = Field(..., description="The name of the property that was added.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -163,8 +189,12 @@ class PropertyAddResult(BaseModel):
 
 
 class PropertyAddsResponse(BaseModel):
-    error: Optional[Error] = None
-    property_add_results: list[PropertyAddResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    property_add_results: list[PropertyAddResult] = Field(
+        ..., description="The list of results for the added properties."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -181,7 +211,9 @@ class PropertyAddsResponse(BaseModel):
 
 
 class PropertyUpdateResponse(BaseModel):
-    error: Optional[Error] = None
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -191,7 +223,9 @@ class PropertyUpdateResponse(BaseModel):
 
 
 class PropertyDeleteResponse(BaseModel):
-    error: Optional[Error] = None
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -205,8 +239,10 @@ def _to_camel_plus_extra_space(snake: str) -> str:
 
 
 class IndexAddResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
+    name: str = Field(..., description="The name of the added index.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -219,8 +255,12 @@ class IndexAddResult(BaseModel):
 
 
 class IndexAddsResponse(BaseModel):
-    error: Optional[Error] = None
-    index_add_results: list[IndexAddResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    index_add_results: list[IndexAddResult] = Field(
+        ..., description="The list of results for the added indexes."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -237,8 +277,10 @@ class IndexAddsResponse(BaseModel):
 
 
 class IndexDeleteResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
+    name: str = Field(..., description="The name of the deleted index.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -251,8 +293,12 @@ class IndexDeleteResult(BaseModel):
 
 
 class IndexDeletesResponse(BaseModel):
-    error: Optional[Error] = None
-    index_delete_results: list[IndexDeleteResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    index_delete_results: list[IndexDeleteResult] = Field(
+        ..., description="The list of results for the deleted indexes."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -269,9 +315,13 @@ class IndexDeletesResponse(BaseModel):
 
 
 class ConstraintRuleAddResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
-    warnings: list[Error]
+    name: str = Field(..., description="The name of the added constraint rule.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    warnings: list[Error] = Field(
+        ..., description="The list of warnings from adding the constraint rule."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -288,8 +338,12 @@ class ConstraintRuleAddResult(BaseModel):
 
 
 class ConstraintRuleAddsResponse(BaseModel):
-    error: Optional[Error] = None
-    constraint_rule_add_results: list[ConstraintRuleAddResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    constraint_rule_add_results: list[ConstraintRuleAddResult] = Field(
+        ..., description="The list of results for the added constraint rules."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -302,9 +356,13 @@ class ConstraintRuleAddsResponse(BaseModel):
 
 
 class ConstraintRuleUpdateResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
-    warnings: list[Error]
+    name: str = Field(..., description="The name of the updated constraint rule.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    warnings: list[Error] = Field(
+        ..., description="The list of warnings for the updated constraint rules."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -321,8 +379,12 @@ class ConstraintRuleUpdateResult(BaseModel):
 
 
 class ConstraintRuleUpdatesResponse(BaseModel):
-    error: Optional[Error] = None
-    constraint_rule_update_results: list[ConstraintRuleUpdateResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    constraint_rule_update_results: list[ConstraintRuleUpdateResult] = Field(
+        ..., description="The list of results from updating the constraint rule."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -337,8 +399,10 @@ class ConstraintRuleUpdatesResponse(BaseModel):
 
 
 class ConstraintRuleDeleteResult(BaseModel):
-    name: str
-    error: Optional[Error] = None
+    name: str = Field(..., description="The name of the deleted constraint rule.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -351,8 +415,12 @@ class ConstraintRuleDeleteResult(BaseModel):
 
 
 class ConstraintRuleDeletesResponse(BaseModel):
-    error: Optional[Error] = None
-    constraint_rule_delete_results: list[ConstraintRuleDeleteResult]
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    constraint_rule_delete_results: list[ConstraintRuleDeleteResult] = Field(
+        ..., description="The list of results from deleting the constraint rules."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -367,8 +435,10 @@ class ConstraintRuleDeletesResponse(BaseModel):
 
 
 class EditResult(BaseModel):
-    id: Any
-    error: Optional[Error] = None
+    id: Any = Field(..., description="The ID of the edited entity or relationship.")
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -381,9 +451,15 @@ class EditResult(BaseModel):
 
 
 class EditResults(BaseModel):
-    add_results: list[EditResult] = []
-    update_results: list[EditResult] = []
-    delete_results: list[EditResult] = []
+    add_results: list[EditResult] = Field(
+        default=[], description="The results from adding entities and relationships."
+    )
+    update_results: list[EditResult] = Field(
+        default=[], description="The results from updating entities and relationships."
+    )
+    delete_results: list[EditResult] = Field(
+        default=[], description="The results from deleting entities and relationships."
+    )
 
     class Config:
         alias_generator = to_camel
@@ -391,9 +467,17 @@ class EditResults(BaseModel):
 
 
 class CascadingRelationshipDelete(BaseModel):
-    id: Any
-    origin_id: Any
-    destination_id: Any
+    id: Any = Field(
+        ..., description="The ID of the relationship that was cascade deleted."
+    )
+    origin_id: Any = Field(
+        ...,
+        description="The origin entity ID for the relationship that was cascade deleted.",
+    )
+    destination_id: Any = Field(
+        ...,
+        description="The destination entity ID for the relationship that was cascade deleted.",
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
@@ -418,19 +502,33 @@ class CascadingRelationshipDelete(BaseModel):
 
 
 class RelationshipTypeSchemaChanges(BaseModel):
-    new_end_points: list[EndPoint]
+    new_end_points: list[EndPoint] = Field(
+        ..., description="The new end points in the database as a result of the edits."
+    )
 
 
 class CascadingProvenanceDelete(BaseModel):
-    id: Any
+    id: Any = Field(
+        ..., description="The ID of the Provenance entity that was cascade deleted."
+    )
 
 
 class ApplyEditsResponse(BaseModel):
-    error: Optional[Error] = None
-    edits_result: dict[str, EditResults]
-    cascaded_deletes: dict[str, list[CascadingRelationshipDelete]]
-    relationship_schema_changes: dict[str, RelationshipTypeSchemaChanges]
-    cascaded_provenance_deletes: list[CascadingProvenanceDelete] = []
+    error: Optional[Error] = Field(
+        default=None, description="The error, or None if the operation was successful."
+    )
+    edits_result: dict[str, EditResults] = Field(
+        ..., description="The edit results, grouped by type name."
+    )
+    cascaded_deletes: dict[str, list[CascadingRelationshipDelete]] = Field(
+        ..., description="The cascade deleted relationships, grouped by type name."
+    )
+    relationship_schema_changes: dict[str, RelationshipTypeSchemaChanges] = Field(
+        ..., description="The relationship type schema changes, grouped by type name."
+    )
+    cascaded_provenance_deletes: list[CascadingProvenanceDelete] = Field(
+        default=[], description="The cascade deleted Provenance entities."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:

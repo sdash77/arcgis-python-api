@@ -1,5 +1,5 @@
 from typing import Literal, Any
-from pydantic import BaseModel, model_validator, model_serializer
+from pydantic import BaseModel, model_validator, model_serializer, Field
 
 
 esriNamedTypeCategory = Literal[
@@ -13,18 +13,26 @@ esriNamedTypeCategory = Literal[
 
 
 class SearchAnalyzer(BaseModel):
-    name: str
+    name: str = Field(..., description="The search analyzer name.")
 
 
 class SearchIndexProperties(BaseModel):
-    property_names: list[str]
+    property_names: list[str] = Field(
+        ..., description="The properties in the search index."
+    )
 
 
 class SearchIndex(BaseModel):
-    name: str
-    supported_category: esriNamedTypeCategory
-    analyzers: list[SearchAnalyzer]
-    search_properties: dict[str, SearchIndexProperties]
+    name: str = Field(..., description="The name of the search index.")
+    supported_category: esriNamedTypeCategory = Field(
+        ..., description="The supported category of the search index."
+    )
+    analyzers: list[SearchAnalyzer] = Field(
+        ..., description="The list of search analyzers."
+    )
+    search_properties: dict[str, SearchIndexProperties] = Field(
+        ..., description="The search properties, grouped by type name."
+    )
 
     @model_serializer
     def ser_model(self) -> dict[str, Any]:
