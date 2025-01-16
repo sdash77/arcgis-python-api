@@ -15,6 +15,8 @@ from ._io.fileops import (
     from_featureclass,
     _sanitize_column_names,
     read_feather,
+    to_table,
+    _gdal_to_fc,
 )
 
 from arcgis.auth.tools import LazyLoader
@@ -34,6 +36,15 @@ _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
 _pa = LazyLoader("pyarrow")
+_common_utils = LazyLoader("arcgis._impl.common._utils")
+_tools_utils = LazyLoader("arcgis._impl.common._tools._utils")
+
+try:
+    from osgeo import ogr, osr
+
+    has_gdal = True
+except:
+    has_gdal = False
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -2132,7 +2143,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string. The output of the table.
+        location                        Required string. The output folder of the table.
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
@@ -2141,14 +2152,13 @@ class GeoAccessor(object):
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
                                         performed. The default is True.
+        ---------------------------     --------------------------------------------------------------------
+        service_name                    Optional String. The name for the service.
         ===========================     ====================================================================
 
         :return: String
 
         """
-        from arcgis.features.geo._io.fileops import to_table
-        from ._tools._utils import run_and_hide
-
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
@@ -2157,15 +2167,40 @@ class GeoAccessor(object):
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        table = run_and_hide(
-            to_table,
-            **{
-                "geo": self,
-                "location": location,
-                "overwrite": overwrite,
-                "sanitize_columns": sanitize_columns,
-            },
-        )
+
+        service_name = kwargs.pop("service_name", None)
+        if service_name is None:
+            service_name = "a" + uuid.uuid4().hex[0:5]
+
+        if has_gdal:
+            if not service_name.endswith(".gdb"):
+                service_name += ".gdb"
+
+            # Define the full path for the geodatabase
+            gdb_path = os.path.join(location, service_name)
+
+            # Ensure the base directory exists
+            os.makedirs(location, exist_ok=True)
+
+            # Create the feature class using GDAL
+            table = _gdal_to_fc(
+                self._data,
+                gdb_path,
+                "OpenFileGDB",
+                layer_name=service_name,
+                overwrite=True,
+            )
+
+        else:
+            table = _tools_utils.run_and_hide(
+                to_table,
+                **{
+                    "geo": self,
+                    "location": location,
+                    "overwrite": overwrite,
+                    "sanitize_columns": sanitize_columns,
+                },
+            )
         self._data.columns = origin_columns
         self._data.index = origin_index
         return table

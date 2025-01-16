@@ -88,7 +88,10 @@ def _create_file(df, file_type, **kwargs):
         temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
 
         # Create filegdb or shapefile
-        if file_type == "File Geodatabase" and has_arcpy:
+        if file_type == "File Geodatabase" and has_gdal:
+            location = os.path.join(temp_dir, name)
+            zip_loc = os.path.join(temp_dir, name)
+        elif file_type == "File Geodatabase" and has_arcpy:
             # create empty filegdb
             emtpy_fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
@@ -96,9 +99,6 @@ def _create_file(df, file_type, **kwargs):
             )
             fgdb = emtpy_fgdb[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
-            zip_loc = os.path.join(temp_dir, name)
-        elif file_type == "File Geodatabase" and has_gdal:
-            location = os.path.join(temp_dir, name)
             zip_loc = os.path.join(temp_dir, name)
         else:
             location = os.path.join(temp_dir, name)
