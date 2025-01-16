@@ -2608,7 +2608,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string or pathlib.Path. Full path to the feature class or URL (shapefile only).
+        location                        Required string or pathlib.Path. Full path to the file.
         ===========================     ====================================================================
 
         *Optional parameters when ArcPy library is available in the current environment*:
