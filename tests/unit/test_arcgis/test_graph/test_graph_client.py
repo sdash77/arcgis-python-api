@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from requests import Response
 from datetime import datetime, date, time, timedelta
 from zoneinfo import ZoneInfo
@@ -50,7 +50,6 @@ from esriPBuffer.graph import (
 from arcgis.gis import Item
 from arcgis.geometry import Geometry
 from arcgis.graph import (
-    Graph,
     EntityType,
     RelationshipType,
     GraphProperty,
@@ -102,8 +101,8 @@ class TestGraph(unittest.TestCase):
                 "url": TestConstants.FAKE_SERVICE,
             },
         )
-        graph: Graph = Graph.fromitem(item=item)
-        self.assertEqual(TestConstants.FAKE_SERVICE, graph._knowledge_graph._url)
+        graph: KnowledgeGraph = KnowledgeGraph.fromitem(item=item)
+        self.assertEqual(TestConstants.FAKE_SERVICE, graph._url)
 
     def test_update_search_index_success(self):
         def mock_service_func(data: Optional[bytes]) -> Response:
@@ -131,7 +130,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -140,14 +139,17 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: UpdateSearchIndexResponse = graph.update_search_index(
+        response: Union[dict, UpdateSearchIndexResponse] = graph.update_search_index(
             adds={
                 "Person": SearchIndexProperties(property_names=["name"]),
             },
             deletes={
                 "Vehicle": SearchIndexProperties(property_names=["model"]),
             },
+            as_dict=False,
         )
+        if not isinstance(response, UpdateSearchIndexResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" not in results)
 
@@ -179,7 +181,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -188,14 +190,17 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: UpdateSearchIndexResponse = graph.update_search_index(
+        response: Union[dict, UpdateSearchIndexResponse] = graph.update_search_index(
             adds={
                 "Person": SearchIndexProperties(property_names=["name"]),
             },
             deletes={
                 "Vehicle": SearchIndexProperties(property_names=["model"]),
             },
+            as_dict=False,
         )
+        if not isinstance(response, UpdateSearchIndexResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error = results["error"]
@@ -301,7 +306,7 @@ class TestGraph(unittest.TestCase):
             self.assertEqual(QueryTypes_pb2.DurationFormat.DURATION_FORMAT_DURATION_COMPONENTS, pbf_request.out_duration_format)  # type: ignore
             return TestHelpers.mock_query_response()
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -313,7 +318,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        for result in graph.search(search="abc", category="both"):
+        for result in graph.search(search="abc", category="both", as_dict=False):
             TestHelpers.validate_query_response(test_case=self, result=result)
 
     def test_query(self):
@@ -475,7 +480,7 @@ class TestGraph(unittest.TestCase):
             self.assertEqual(QueryRequest_pb2.ProvenanceBehavior.INCLUDE, pbf_request.provenance_behavior)  # type: ignore
             return TestHelpers.mock_query_response()
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -484,7 +489,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        for result in graph.query(
+        for result in graph.query_streaming(
             query="match (n) return n",
             input_transform=Transform(
                 xy_resolution=1.1,
@@ -529,11 +534,12 @@ class TestGraph(unittest.TestCase):
                 ),
             },
             include_provenance=True,
+            as_dict=False,
         ):
             TestHelpers.validate_query_response(test_case=self, result=result)
 
     def test_query_data_model_success(self):
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -542,7 +548,9 @@ class TestGraph(unittest.TestCase):
                 post_requests={},
             ),
         )
-        data_model: GraphDataModel = graph.query_data_model()
+        data_model: Union[dict, GraphDataModel] = graph.query_data_model(as_dict=False)
+        if not isinstance(data_model, GraphDataModel):
+            self.fail()
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("data_model_timestamp" in results)
         self.assertEqual(123, results["data_model_timestamp"])
@@ -793,7 +801,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -802,7 +810,9 @@ class TestGraph(unittest.TestCase):
                 post_requests={},
             ),
         )
-        data_model: GraphDataModel = graph.query_data_model()
+        data_model: Union[dict, GraphDataModel] = graph.query_data_model(as_dict=False)
+        if not isinstance(data_model, GraphDataModel):
+            self.fail()
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("identifier_info" in results)
         identifier_info: dict[str, Any] = results["identifier_info"]
@@ -844,7 +854,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -853,7 +863,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: SyncDataModelResponse = graph.sync_data_model()
+        response: Union[dict, SyncDataModelResponse] = graph.sync_data_model(
+            as_dict=False
+        )
+        if not isinstance(response, SyncDataModelResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
         self.assertFalse("warnings" in results)
@@ -899,7 +913,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -908,7 +922,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: SyncDataModelResponse = graph.sync_data_model()
+        response: Union[dict, SyncDataModelResponse] = graph.sync_data_model(
+            as_dict=False
+        )
+        if not isinstance(response, SyncDataModelResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error = results["error"]
@@ -1053,7 +1071,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1064,7 +1082,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: ApplyEditsResponse = graph.apply_edits(
+        response: Union[dict, ApplyEditsResponse] = graph.apply_edits(
             adds=[
                 Entity(
                     type_name="AddEntityType",
@@ -1116,7 +1134,10 @@ class TestGraph(unittest.TestCase):
             ),
             cascade_delete=True,
             cascade_delete_provenance=True,
+            as_dict=False,
         )
+        if not isinstance(response, ApplyEditsResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1249,7 +1270,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1258,38 +1279,43 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeAddsResponse = graph.named_object_type_adds(
-            entity_types=[
-                EntityType(
-                    name="Person",
-                    properties=[
-                        GraphProperty(
-                            name="name",
-                            field_type="esriFieldTypeString",
-                        ),
-                        GraphProperty(
-                            name="location",
-                            field_type="esriFieldTypeGeometry",
-                            geometry_type="esriGeometryPoint",
-                        ),
-                    ],
-                    field_indexes=[
-                        FieldIndex(
-                            name="myIdx",
-                            is_ascending=True,
-                            is_unique=True,
-                            fields=["abc", "def"],
-                        ),
-                    ],
-                )
-            ],
-            relationship_types=[
-                RelationshipType(
-                    name="Owns",
-                    properties=[],
-                )
-            ],
+        response: Union[dict, NamedObjectTypeAddsResponse] = (
+            graph.named_object_type_adds(
+                entity_types=[
+                    EntityType(
+                        name="Person",
+                        properties=[
+                            GraphProperty(
+                                name="name",
+                                field_type="esriFieldTypeString",
+                            ),
+                            GraphProperty(
+                                name="location",
+                                field_type="esriFieldTypeGeometry",
+                                geometry_type="esriGeometryPoint",
+                            ),
+                        ],
+                        field_indexes=[
+                            FieldIndex(
+                                name="myIdx",
+                                is_ascending=True,
+                                is_unique=True,
+                                fields=["abc", "def"],
+                            ),
+                        ],
+                    )
+                ],
+                relationship_types=[
+                    RelationshipType(
+                        name="Owns",
+                        properties=[],
+                    )
+                ],
+                as_dict=False,
+            )
         )
+        if not isinstance(response, NamedObjectTypeAddsResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1337,7 +1363,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1348,16 +1374,21 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeUpdateResponse = graph.named_object_type_update(
-            type_name="Person",
-            named_type_update=EntityType(name="Person", properties=[]),
-            mask=NamedObjectTypeMask(
-                update_name=True,
-                update_alias=True,
-                update_role=True,
-                update_strict=True,
-            ),
+        response: Union[dict, NamedObjectTypeUpdateResponse] = (
+            graph.named_object_type_update(
+                type_name="Person",
+                named_type_update=EntityType(name="Person", properties=[]),
+                mask=NamedObjectTypeMask(
+                    update_name=True,
+                    update_alias=True,
+                    update_role=True,
+                    update_strict=True,
+                ),
+                as_dict=False,
+            )
         )
+        if not isinstance(response, NamedObjectTypeUpdateResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1390,7 +1421,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={
@@ -1401,16 +1432,21 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeUpdateResponse = graph.named_object_type_update(
-            type_name="Owns",
-            named_type_update=RelationshipType(name="Owns", properties=[]),
-            mask=NamedObjectTypeMask(
-                update_name=True,
-                update_alias=True,
-                update_role=True,
-                update_strict=True,
-            ),
+        response: Union[dict, NamedObjectTypeUpdateResponse] = (
+            graph.named_object_type_update(
+                type_name="Owns",
+                named_type_update=RelationshipType(name="Owns", properties=[]),
+                mask=NamedObjectTypeMask(
+                    update_name=True,
+                    update_alias=True,
+                    update_role=True,
+                    update_strict=True,
+                ),
+                as_dict=False,
+            )
         )
+        if not isinstance(response, NamedObjectTypeUpdateResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1428,7 +1464,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1437,9 +1473,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeDeleteResponse = graph.named_object_type_delete(
-            type_name="Person"
+        response: Union[dict, NamedObjectTypeDeleteResponse] = (
+            graph.named_object_type_delete(type_name="Person", as_dict=False)
         )
+        if not isinstance(response, NamedObjectTypeDeleteResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1454,7 +1492,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1463,9 +1501,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: NamedObjectTypeDeleteResponse = graph.named_object_type_delete(
-            type_name="Person"
+        response: Union[dict, NamedObjectTypeDeleteResponse] = (
+            graph.named_object_type_delete(type_name="Person", as_dict=False)
         )
+        if not isinstance(response, NamedObjectTypeDeleteResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1500,7 +1540,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1509,7 +1549,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyAddsResponse = graph.graph_property_adds(
+        response: Union[dict, PropertyAddsResponse] = graph.graph_property_adds(
             type_name="Person",
             graph_properties=[
                 GraphProperty(
@@ -1522,7 +1562,10 @@ class TestGraph(unittest.TestCase):
                     geometry_type="esriGeometryPoint",
                 ),
             ],
+            as_dict=False,
         )
+        if not isinstance(response, PropertyAddsResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1572,7 +1615,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1581,7 +1624,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyUpdateResponse = graph.graph_property_update(
+        response: Union[dict, PropertyUpdateResponse] = graph.graph_property_update(
             type_name="Person",
             property_name="name",
             graph_property=GraphProperty(name="name", field_type="esriFieldTypeString"),
@@ -1599,7 +1642,10 @@ class TestGraph(unittest.TestCase):
                 update_required=True,
                 update_domain=True,
             ),
+            as_dict=False,
         )
+        if not isinstance(response, PropertyUpdateResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1632,7 +1678,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1641,7 +1687,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyUpdateResponse = graph.graph_property_update(
+        response: Union[dict, PropertyUpdateResponse] = graph.graph_property_update(
             type_name="Person",
             property_name="name",
             graph_property=GraphProperty(name="name", field_type="esriFieldTypeString"),
@@ -1659,7 +1705,10 @@ class TestGraph(unittest.TestCase):
                 update_required=True,
                 update_domain=True,
             ),
+            as_dict=False,
         )
+        if not isinstance(response, PropertyUpdateResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1680,7 +1729,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1689,10 +1738,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyDeleteResponse = graph.graph_property_delete(
-            type_name="Person",
-            property_name="name",
+        response: Union[dict, PropertyDeleteResponse] = graph.graph_property_delete(
+            type_name="Person", property_name="name", as_dict=False
         )
+        if not isinstance(response, PropertyDeleteResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1710,7 +1760,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1719,10 +1769,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: PropertyDeleteResponse = graph.graph_property_delete(
-            type_name="Person",
-            property_name="name",
+        response: Union[dict, PropertyDeleteResponse] = graph.graph_property_delete(
+            type_name="Person", property_name="name", as_dict=False
         )
+        if not isinstance(response, PropertyDeleteResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1755,7 +1806,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1764,7 +1815,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: IndexAddsResponse = graph.graph_property_index_adds(
+        response: Union[dict, IndexAddsResponse] = graph.graph_property_index_adds(
             type_name="Person",
             field_indexes=[
                 FieldIndex(
@@ -1774,7 +1825,10 @@ class TestGraph(unittest.TestCase):
                     fields=["name", "dob"],
                 ),
             ],
+            as_dict=False,
         )
+        if not isinstance(response, IndexAddsResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1818,7 +1872,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1827,10 +1881,13 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: IndexDeletesResponse = graph.graph_property_index_deletes(
-            type_name="Person",
-            field_indexes=["myIdx"],
+        response: Union[dict, IndexDeletesResponse] = (
+            graph.graph_property_index_deletes(
+                type_name="Person", field_indexes=["myIdx"], as_dict=False
+            )
         )
+        if not isinstance(response, IndexDeletesResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1924,7 +1981,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -1933,7 +1990,7 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleAddsResponse = graph.constraint_rule_adds(
+        response: Union[dict, ConstraintRuleAddsResponse] = graph.constraint_rule_adds(
             rules=[
                 RelationshipExclusionRule(
                     name="rule",
@@ -1942,7 +1999,10 @@ class TestGraph(unittest.TestCase):
                     destination_entity_types=SetOfNamedTypes(),
                 ),
             ],
+            as_dict=False,
         )
+        if not isinstance(response, ConstraintRuleAddsResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -2069,7 +2129,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -2078,33 +2138,38 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleUpdatesResponse = graph.constraint_rule_updates(
-            rules=[
-                RelationshipExclusionRuleUpdate(
-                    rule_name="rule",
-                    mask=ConstraintRuleMask(
-                        update_name=True,
-                        update_alias=True,
-                        update_disabled=True,
+        response: Union[dict, ConstraintRuleUpdatesResponse] = (
+            graph.constraint_rule_updates(
+                rules=[
+                    RelationshipExclusionRuleUpdate(
+                        rule_name="rule",
+                        mask=ConstraintRuleMask(
+                            update_name=True,
+                            update_alias=True,
+                            update_disabled=True,
+                        ),
+                        constraint_rule=ConstraintRule(
+                            name="rule",
+                        ),
+                        update_origin_entity_types=UpdateSetOfNamedTypes(
+                            add_named_types=["Person"],
+                            remove_named_types=[],
+                        ),
+                        update_relationship_types=UpdateSetOfNamedTypes(
+                            add_named_types=[],
+                            remove_named_types=["Owns"],
+                        ),
+                        update_destination_entity_types=UpdateSetOfNamedTypes(
+                            add_named_types=[],
+                            remove_named_types=[],
+                        ),
                     ),
-                    constraint_rule=ConstraintRule(
-                        name="rule",
-                    ),
-                    update_origin_entity_types=UpdateSetOfNamedTypes(
-                        add_named_types=["Person"],
-                        remove_named_types=[],
-                    ),
-                    update_relationship_types=UpdateSetOfNamedTypes(
-                        add_named_types=[],
-                        remove_named_types=["Owns"],
-                    ),
-                    update_destination_entity_types=UpdateSetOfNamedTypes(
-                        add_named_types=[],
-                        remove_named_types=[],
-                    ),
-                ),
-            ],
+                ],
+                as_dict=False,
+            )
         )
+        if not isinstance(response, ConstraintRuleUpdatesResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -2159,7 +2224,7 @@ class TestGraph(unittest.TestCase):
                 status_code=200, content=response_content
             )
 
-        graph: Graph = Graph(
+        graph: KnowledgeGraph = KnowledgeGraph(
             url=TestConstants.FAKE_SERVICE,
             gis=TestHelpers.construct_gis(
                 get_requests={},
@@ -2168,9 +2233,11 @@ class TestGraph(unittest.TestCase):
                 },
             ),
         )
-        response: ConstraintRuleDeletesResponse = graph.constraint_rule_deletes(
-            rule_names=["rule"],
+        response: Union[dict, ConstraintRuleDeletesResponse] = (
+            graph.constraint_rule_deletes(rule_names=["rule"], as_dict=False)
         )
+        if not isinstance(response, ConstraintRuleDeletesResponse):
+            self.fail()
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
