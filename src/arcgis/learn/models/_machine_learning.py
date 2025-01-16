@@ -22,6 +22,7 @@ try:
     from sklearn import *
     from sklearn.preprocessing import LabelEncoder
     import pandas as pd
+    import numpy as np
     import warnings
     from .._fairlearn import _fairlearn
     from .._fairlearn import _reweigh
@@ -42,6 +43,7 @@ try:
         import xgboost
     import lightgbm
     import catboost
+    import tabpfn
 
     HAS_ML_DEPS = True
 except:
@@ -55,6 +57,7 @@ except:
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
+_FAIRNESS_NOT_SUPPORTED = "Fairness is not supported with this model type"
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
 _DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
@@ -114,6 +117,17 @@ def _get_model_type(model_type):
 
         model = getattr(catboost, model)
 
+    elif model_type.startswith("tabpfn."):
+        model_type = model_type.replace("tabpfn.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        if not hasattr(tabpfn, model):
+            raise Exception("Invalid model_type.")
+
+        model = getattr(tabpfn, model)
+
     return model
 
 
@@ -154,6 +168,10 @@ class MLModel(object):
                             For gradient boosting:
 
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+
+                            For TabPFN:
+                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
+
     ---------------------   -------------------------------------------
     Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
 
@@ -198,6 +216,8 @@ class MLModel(object):
                             `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
 
                             `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+
+                            `tabpfn.TabPFNClassifier <https://github.com/PriorLabs/TabPFN/tree/v1.0.0>`
 
     =====================   ===========================================
 
@@ -273,7 +293,18 @@ class MLModel(object):
             + self._data._categorical_variables,
         )
 
+        if "tabpfn" in model_type and (
+            len(self._training_data) > 1024
+            or len(np.unique(self._training_labels)) > 10
+        ):
+            raise Exception(
+                f"{model_type} is incompatible with training data > 1024 or label > 10. Adjust validation split or input data or label."
+            )
+
         if fairness_args is not None:
+            if "tabpfn" in model_type:
+                raise ValueError(_FAIRNESS_NOT_SUPPORTED)
+
             self.initialize_fair_model(fairness_args)
 
     def initialize_fair_model(self, fairness_args):
@@ -828,6 +859,8 @@ class MLModel(object):
 
         else:
             emd_params["ModelParameters"] = self._model.get_params()
+            if "base_path" in emd_params["ModelParameters"]:
+                emd_params["ModelParameters"].pop("base_path")
             emd_params["fairness"] = False
 
         emd_params["categorical_variables"] = self._data._categorical_variables
