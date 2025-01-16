@@ -2174,7 +2174,7 @@ class GeoAccessor(object):
         if service_name.endswith(".gdb"):
             file_type = "OpenFileGDB"
         elif service_name.endswith(".shp"):
-            file_type = "Shapefile"
+            file_type = "Esri Shapefile"
         else:
             file_type = "OpenFileGDB"
             service_name = service_name + ".gdb"
@@ -3176,6 +3176,7 @@ class GeoAccessor(object):
         extent=None,
         global_id_field=None,
         sanitize_columns=False,
+        **kwargs,
     ):
         """
         The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a

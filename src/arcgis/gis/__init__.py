@@ -8667,7 +8667,7 @@ class ContentManager(object):
             return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
             # Feature Collection Workflow
-            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
+            return df.spatial.to_feature_collection(**kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
