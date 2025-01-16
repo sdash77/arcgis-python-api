@@ -2143,7 +2143,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string. The output folder of the table.
+        location                        Required string. The output location for the table.
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
@@ -2171,10 +2171,15 @@ class GeoAccessor(object):
         service_name = kwargs.pop("service_name", None)
         if service_name is None:
             service_name = "a" + uuid.uuid4().hex[0:5]
+        if service_name.endswith(".gdb"):
+            file_type = "OpenFileGDB"
+        elif service_name.endswith(".shp"):
+            file_type = "Shapefile"
+        else:
+            file_type = "OpenFileGDB"
+            service_name = service_name + ".gdb"
 
         if has_gdal:
-            if not service_name.endswith(".gdb"):
-                service_name += ".gdb"
 
             # Define the full path for the geodatabase
             gdb_path = os.path.join(location, service_name)
@@ -2186,7 +2191,7 @@ class GeoAccessor(object):
             table = _gdal_to_fc(
                 self._data,
                 gdb_path,
-                "OpenFileGDB",
+                file_type,
                 layer_name=service_name,
                 overwrite=True,
             )
