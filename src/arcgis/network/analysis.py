@@ -11,6 +11,7 @@ from ._od import generate_origin_destination_cost_matrix
 from ._route import find_routes
 from ._routing_utils import get_travel_modes, get_tool_info
 from ._svcareas import generate_service_areas
+from ._snap import snap_to_roads
 
 __all__ = [
     "solve_vehicle_routing_problem",
@@ -23,4 +24,5 @@ __all__ = [
     "get_travel_modes",
     "get_tool_info",
     "generate_service_areas",
+    "snap_to_roads",
 ]

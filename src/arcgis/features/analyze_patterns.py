@@ -289,7 +289,8 @@ def summarize_center_and_dispersion(
     }
 
     params = _util.inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs
+        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
+        **kwargs,
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 
@@ -415,7 +416,7 @@ def find_point_clusters(
     ----------------------------    ---------------------------------------------------------
     time_field                      Optional string. Specifies the field in the `analysis_layer`
                                     value that contains a timestamp for each feature. This parameter
-                                    is only available in ArcGIS Online.
+                                    is available in ArcGIS Enterprise 11.3 or higher.
 
                                     Example: `time_field = "start_time"`
 
@@ -426,14 +427,14 @@ def find_point_clusters(
     search_time_interval            Optional float. A value that will be used to determine
                                     whether features form a space-time cluster. The search
                                     time interval spans before and after the time of each feature.
-                                    This parameter is only available in ArcGIS Online.
+                                    This parameter is available in ArcGIS Enterprise 11.3 or higher.
 
                                     Example: `search_time_interval = 4`
     ----------------------------    ---------------------------------------------------------
     search_time_unit                Optional string. The unit that will be used with the time value
                                     specified for `search_time_interval`. You must provide a value
                                     if `search_time_interval` has been set. This parameter is
-                                    only available in ArcGIS Online.
+                                    available in ArcGIS Enterprise 11.3 or higher.
 
                                     Values: "Seconds" | "Minutes" | "Hours" | "Days" | "Weeks" | "Months" | "Years"
 
@@ -750,7 +751,8 @@ def calculate_composite_index(
         "future": future,
     }
     params = _util.inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.calculate_composite_index, **kwargs
+        fn=gis._tools.featureanalysis._tbx.calculate_composite_index,
+        **kwargs,
     )
     return gis._tools.featureanalysis.calculate_composite_index(**params)
 
