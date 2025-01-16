@@ -746,7 +746,7 @@ def from_featureclass(filename, **kwargs):
         return df
 
     # if no arcpy specific kwargs, prioritize gdal
-    if HASGDAL and not kwargs and not filename.lower().endswith(".sde"):
+    if HASGDAL and not kwargs and not ".sde" in filename.lower():
         return _gdal_workflow()
 
     if HASARCPY and (
