@@ -720,7 +720,6 @@ def from_featureclass(filename, **kwargs):
 
     """
     from arcgis.geometry import _types
-    import json
 
     # this covers files and shapefile URL's
     def _gdal_workflow(filename=filename):
@@ -1550,8 +1549,43 @@ def _gdal_to_sedf(file_path):
         for feature in layer:
             yield feature
 
-    data_source = ogr.Open(file_path)
-    out_layer = data_source.GetLayer()
+    # Validate the file path
+    if not os.path.exists(file_path):
+        raise ValueError("File path does not exist.")
+
+    # Determine file type
+    file_ext = os.path.splitext(file_path)[1].lower()
+    is_gdb = file_ext == ".gdb"
+    is_shp = file_ext == ".shp"
+    is_dbf = file_ext == ".dbf"
+
+    # Open the data source
+    if is_gdb:
+        # Handle geodatabase input
+        gdb_path, layer_name = (
+            os.path.split(file_path)
+            if not file_path.endswith(".gdb")
+            else (file_path, None)
+        )
+        data_source = ogr.Open(gdb_path)
+        if data_source is None:
+            raise ValueError("Unable to open geodatabase.")
+        if layer_name:
+            out_layer = data_source.GetLayerByName(layer_name)
+            if out_layer is None:
+                raise ValueError(f"Layer '{layer_name}' not found in geodatabase.")
+        else:
+            out_layer = data_source.GetLayer()  # Default to the first layer
+    elif is_shp or is_dbf:
+        # Handle shapefile or DBF input
+        data_source = ogr.Open(file_path)
+        if data_source is None:
+            raise ValueError(f"Unable to open file: {file_path}")
+        out_layer = data_source.GetLayer()
+    else:
+        data_source = ogr.Open(file_path)
+        out_layer = data_source.GetLayer()
+
     lay_name = out_layer.GetName()
     gen = feature_generator(out_layer)
     field_names = []
