@@ -29,7 +29,7 @@ class SnapToRoadsAnalysisRegions(Enum):
 def snap_to_roads(
     points: _arcgis_features.FeatureSet | dict,
     travel_mode: str | None = None,
-    return_lines: bool = True,
+    return_lines: bool = False,
     road_properties_on_snapped_points: list | None = None,
     road_properties_on_lines: list | None = None,
     overrides: dict | None = None,
@@ -63,8 +63,8 @@ def snap_to_roads(
     travel_mode                             Optional dict.  Choose the mode of transportation, such as driving or walking for the analysis. Travel modes are essentially templates consisting of a long list of travel settings that are used by the service when snapping the input points to the roads that were traversed. The value for the travel_mode parameter should be a JSON object representing travel mode settings.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     return_lines                            Boolean. Specify whether or not the service will return lines representing the roads traversed.
-                                            `True` - The output lines will be returned.  This is the default.
-                                            `False` - The output lines will not be returned.
+                                            `True` - The output lines will be returned.
+                                            `False` - The output lines will not be returned. This is the default.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
     road_properties_on_snapped_points       List[str]. Specify the names of the properties from the roads that you wish returned on the output snapped points.
     --------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------
