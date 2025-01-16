@@ -4,7 +4,7 @@ import unittest
 import pandas as pd
 from pandas import Timestamp
 from arcgis.geometry import Geometry
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 test_data = {
     "fid": {
@@ -60,7 +60,7 @@ test_data = {
         13: "04/06/2016 10:30:00 AM",
         14: "01/28/2016 12:37:00 PM",
         15: "04/07/2016 03:00:00 PM",
-        },
+    },
     "block": {
         0: "022XX W ARMITAGE AVE",
         1: "067XX S LANGLEY AVE",
@@ -348,7 +348,7 @@ test_data = {
         13: Timestamp("2016-04-06 00:00:00"),
         14: Timestamp("2016-01-28 00:00:00"),
         15: Timestamp("2016-04-07 00:00:00"),
-},
+    },
     "value": {
         0: 365.5,
         1: 57.03,
@@ -578,33 +578,29 @@ test_data = {
 }
 
 
-PROFILES = ["your_online_profile", "your_enterprise_profile", "your_online_dev_profile"]
-
+@profiles.enterprise_and_agol_and_agol_dev
 @integration_test
 class TestIssueInt64(unittest.TestCase):
     """tests the fact that int64 is only accepted on Online(November2023) and Enterprise 11.2+"""
 
+    @classmethod
+    def setUpClass(cls): ...
+
     def test_create_sdf_with_int64(self):
         """Create a spatially enabled dataframe and publish an item with it to different portals."""
+        try:
+            sdf = pd.DataFrame(test_data)
+            sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
+            sdf.spatial.set_geometry("SHAPE")
+            assert not sdf.empty
 
-        for profile in PROFILES:
-            print(profile)
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
-
-            try:
-                sdf = pd.DataFrame(test_data)
-                sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
-                sdf.spatial.set_geometry("SHAPE")
-                sdf.spatial.name
-                assert sdf
-
-                item = gis.content.import_data(sdf)
-                assert item
-            except Exception as e:
-                print(e)
-            finally:
-                if item:
-                    item.delete()
+            item = self.gis.content.import_data(sdf)
+            assert item
+        except Exception as e:
+            print(e)
+        finally:
+            if item:
+                item.delete()
 
 
 if __name__ == "__main__":

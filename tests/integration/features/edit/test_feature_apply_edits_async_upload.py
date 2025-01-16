@@ -74,7 +74,9 @@ class TestEditFeaturesUpload(unittest.TestCase):
             data=fp,
         )
         cls.items.append(item)
-        cls.pitems.append(item.publish({"name": item_name}))
+        cls.pitems.append(
+            item.publish({"name": item_name, "tags": "intergration-test"})
+        )
 
         for item in cls.pitems:
             lyr: FeatureLayer = item.layers[0]

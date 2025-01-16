@@ -329,11 +329,14 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             print("Cannot find necessary feature layer, publishing a new layer")
             try:
                 source_item = gis.content.add(
-                    {"title": layer_name}, data=source_data_path
+                    {"title": layer_name, "tags": "integration-test"},
+                    data=source_data_path,
                 )
                 # publish the item
                 if source_item is not None:
-                    feature_layer_item = source_item.publish({"title": layer_name})
+                    feature_layer_item = source_item.publish(
+                        {"title": layer_name, "tags": "integration-test"}
+                    )
                     if feature_layer_item is not None:
                         print("Published edit_feature_definition_points feature layer")
                         is_prepped_for_editing = cls.prep_test_item(feature_layer_item)

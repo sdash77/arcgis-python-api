@@ -5,7 +5,7 @@ from utils.decorators import integration_test, profiles
 from utils._logging import enable_verbose_logging
 
 
-enable_verbose_logging()
+# enable_verbose_logging()
 DATA = {
     "features": [
         {
@@ -268,7 +268,7 @@ DATA = {
 }
 
 
-@profiles.agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestApplyEditsSeDF(unittest.TestCase):
     @classmethod
@@ -281,7 +281,7 @@ class TestApplyEditsSeDF(unittest.TestCase):
             rows.append(att)
         df = pd.DataFrame(rows)
         df.spatial.set_geometry("SHAPE")
-        cls.item = cls.gis.content.import_data(df)
+        cls.item = cls.gis.content.import_data(df, tags="integration-test")
 
     def test_apply_edits_adds(self):
         lyr: FeatureLayer = self.item.layers[0]
@@ -305,8 +305,8 @@ class TestApplyEditsSeDF(unittest.TestCase):
         try:
             if cls.item:
                 source_item = cls.item.related_items("Service2Data", "forward")[0]
-                source_item.delete()
-                cls.item.delete()
+                source_item.delete(permanent=True)
+                cls.item.delete(permanent=True)
             else:
                 pass
         except IndexError as e:

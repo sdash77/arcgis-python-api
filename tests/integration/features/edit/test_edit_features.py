@@ -3308,7 +3308,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         sdf = pd.DataFrame(test_data)
         sdf.SHAPE = sdf.SHAPE.apply(lambda x: Geometry(x))
         sdf.spatial.set_geometry("SHAPE")
-        sdf.spatial.name
         self._sdf = sdf
 
     def test_sedf_adds(self):
