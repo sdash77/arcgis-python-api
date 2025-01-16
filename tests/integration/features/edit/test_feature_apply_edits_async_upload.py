@@ -8,7 +8,7 @@ from utils._logging import enable_verbose_logging
 from integration.config import QALAB_ROOT_PATH
 
 
-enable_verbose_logging()
+# enable_verbose_logging()
 
 
 def search_and_remove(gis):
@@ -65,16 +65,16 @@ class TestEditFeaturesUpload(unittest.TestCase):
                 "attributes": {"OBJECTID": 1},
             }
         ]
-
+        item_name = f"apply_edits_async_{uuid.uuid4().hex[:6]}"
         item = cls.gis.content.add(
             {
                 "type": "File Geodatabase",
-                "name": uuid.uuid4().hex[:6],
+                "name": item_name,
             },
             data=fp,
         )
         cls.items.append(item)
-        cls.pitems.append(item.publish())
+        cls.pitems.append(item.publish({"name": item_name}))
 
         for item in cls.pitems:
             lyr: FeatureLayer = item.layers[0]
@@ -134,9 +134,9 @@ class TestEditFeaturesUpload(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         for pitem in cls.pitems:
-            pitem.delete()
+            pitem.delete(permanent=True)
         for item in cls.items:
-            item.delete()
+            item.delete(permanent=True)
 
 
 if __name__ == "__main__":
