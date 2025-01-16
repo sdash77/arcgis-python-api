@@ -1,14 +1,18 @@
 import datetime
 import functools
 import json
+import logging
 import sys
-from typing import Optional
 import urllib.parse
+from typing import Optional
 
-from arcgis.geometry import Geometry
 import arcgis.gis
-from arcgis.gis import Item
+from arcgis.auth.tools import parse_url
+from arcgis.geometry import Geometry
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
+from arcgis.gis import Item
+
+logger = logging.getLogger(__name__)
 
 
 def _underscore_to_camelcase(name):
@@ -97,6 +101,7 @@ def _initialize(instance, gis, is_admin=False):
     logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
     if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
+
 
 @functools.lru_cache(maxsize=255)
 def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> str:
