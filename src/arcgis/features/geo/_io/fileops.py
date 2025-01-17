@@ -19,6 +19,7 @@ from arcgis.geometry import Geometry, _types
 import requests
 import tempfile
 import shutil
+import warnings
 
 arcgis = LazyLoader("arcgis")
 try:
@@ -1389,7 +1390,13 @@ def to_featureclass(
 
 # --------------------------------------------------------------------------
 def _gdal_to_fc(
-    df, out_path, out_type, layer_name, gdb_table=False, zip_file=False, overwrite=True
+    df,
+    out_path,
+    out_type,
+    layer_name,
+    gdb_table=False,
+    zip_file=False,
+    overwrite=True,
 ):
     GEOMTYPELOOKUP = {
         "Polygon": ogr.wkbPolygon,
@@ -1470,6 +1477,8 @@ def _gdal_to_fc(
                     out_layer.CreateField(field_def)
                 elif isinstance(df[c].loc[idx], (float, np.float64)):
                     field_def = ogr.FieldDefn(c, ogr.OFTReal)
+                    field_def.SetPrecision(50)
+                    field_def.SetWidth(50)
                     out_layer.CreateField(field_def)
                 elif (
                     isinstance(
@@ -1498,29 +1507,31 @@ def _gdal_to_fc(
         del c
         del idx
 
-    for idx, row in df.iterrows():
-        feature = ogr.Feature(out_layer.GetLayerDefn())
-        geom = None
-        ogr_geom = None
-        if spatial_field:
-            geom = row[spatial_field]
-            geom_string = _ujson.dumps(dict(geom))
-            ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
-            feature.SetGeometry(ogr_geom)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        for idx, row in df.iterrows():
+            feature = ogr.Feature(out_layer.GetLayerDefn())
+            geom = None
+            ogr_geom = None
+            if spatial_field:
+                geom = row[spatial_field]
+                geom_string = _ujson.dumps(dict(geom))
+                ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
+                feature.SetGeometry(ogr_geom)
 
-        for field_name, value in row.items():
-            if spatial_field is None or field_name != spatial_field:
-                # always run for table, but only run for feature class if not geom field
-                if field_name in dfields:
-                    value = value.strftime("%Y-%m-%d %H:%M:%S")
-                if isinstance(value, type(pd.NA)):
-                    # gdal is not a fan of pandas NA
-                    value = None
-                feature.SetField(field_mapping[field_name], value)
+            for field_name, value in row.items():
+                if spatial_field is None or field_name != spatial_field:
+                    # always run for table, but only run for feature class if not geom field
+                    if field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
+                    if isinstance(value, type(pd.NA)):
+                        # gdal is not a fan of pandas NA
+                        value = None
+                    feature.SetField(field_mapping[field_name], value)
 
-        out_layer.CreateFeature(feature)
-        feature = None
-        del idx, row, geom, ogr_geom
+            out_layer.CreateFeature(feature)
+            feature = None
+            del idx, row, geom, ogr_geom
 
     if zip_file:
         path = os.path.dirname(out_path)
