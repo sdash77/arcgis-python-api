@@ -28,28 +28,31 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         Get class test asset location
         :return:
         """
-
+        cls.items = []
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = os.path.join(
-            cls.qalab_base_path, "qalab_FeatureLayerManager_cls"
+            cls.qalab_base_path, "features_mod_FeatureLayerManager_cls"
         )
 
         # region Publish the feature layer if it does not exist
         cls.namePrefix = "dino_FeatureLayerManager"
         layer_name_basic = f"{cls.namePrefix}_basic"
         csv_path = os.path.join(
-            cls.qalab_cls_path, "edit_feature_definition_points.csv"
+            cls.qalab_cls_path, "edit_feature_definition_points_test.csv"
         )
 
         cls.feature_layer_item = cls.publish_test_item(
             cls.gis, layer_name_basic, "Feature Layer", csv_path
         )
+
         # endregion
 
         # region Publish the feature layer for truncate if it does not exist
         cls.namePrefix = "dino_FeatureLayerManager_"
         layer_name_truncate = cls.namePrefix + "truncate"
-        fgdb_path = os.path.join(cls.qalab_cls_path + "set1_fortune10_trunc2.gdb.zip")
+        fgdb_path = os.path.join(
+            cls.qalab_cls_path, "set1_fortune10_trunc2_FLMtest.gdb.zip"
+        )
 
         cls.feature_layer_item_truncate = cls.publish_test_item(
             cls.gis, layer_name_truncate, "Feature Layer", fgdb_path
@@ -77,7 +80,8 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        cls.feature_layer_item.delete(permanent=True)
+        cls.feature_layer_item_truncate.delete(permanent=True)
 
     def test_create_FeatureLayerManager_object(self):
         """
@@ -318,34 +322,36 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @classmethod
-    def publish_test_item(cls, gis, layer_name, item_type, source_data_path):
-        search_result = PortalUtils.search_portal_item(
-            gis, layer_name, item_type=item_type
-        )
-        if search_result is not None:
-            print("Found necessary feature layer")
-            return search_result
-        else:
-            print("Cannot find necessary feature layer, publishing a new layer")
-            try:
-                source_item = gis.content.add(
-                    {"title": layer_name, "tags": "integration-test"},
-                    data=source_data_path,
+    def publish_test_item(
+        cls, gis: GIS, layer_name: str, item_type: str, source_data_path: str
+    ):
+        # Clean out existing items
+        item_types = ["CSV", "File Geodatabase", "Feature Layer"]
+        for item_type in item_types:
+            search_result = PortalUtils.search_portal_item(
+                gis, layer_name, item_type=item_type
+            )
+            if search_result:
+                search_result.delete(permanent=True)
+        try:
+            source_item = gis.content.add(
+                {"title": layer_name, "tags": "integration-test"},
+                data=source_data_path,
+            )
+            # publish the item
+            if source_item is not None:
+                feature_layer_item = source_item.publish(
+                    {"name": layer_name, "tags": "integration-test"}
                 )
-                # publish the item
-                if source_item is not None:
-                    feature_layer_item = source_item.publish(
-                        {"title": layer_name, "tags": "integration-test"}
-                    )
-                    if feature_layer_item is not None:
-                        print("Published edit_feature_definition_points feature layer")
-                        is_prepped_for_editing = cls.prep_test_item(feature_layer_item)
-                        if is_prepped_for_editing:
-                            return feature_layer_item
-                        else:
-                            raise Exception("Could not update editing capabilities")
-            except Exception as ex:
-                print("Failed to add necessary item file to portal", ex)
+                if feature_layer_item is not None:
+                    print("Published edit_feature_definition_points feature layer")
+                    is_prepped_for_editing = cls.prep_test_item(feature_layer_item)
+                    if is_prepped_for_editing:
+                        return feature_layer_item
+                    else:
+                        raise Exception("Could not update editing capabilities")
+        except Exception as ex:
+            print("Failed to add necessary item file to portal", ex)
 
     @classmethod
     def prep_test_item(cls, feature_layer):

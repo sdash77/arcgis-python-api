@@ -3311,7 +3311,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         self._sdf = sdf
 
     def test_sedf_adds(self):
-        item = self.gis.content.import_data(self._sdf)
+        item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
         print(item)
         resp = item.layers[0].edit_features(adds=self._sdf)
         assert resp["addResults"]
@@ -3327,7 +3327,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
 
     def test_sedf_updates(self):
         """tests performing the updates with SeDF"""
-        item = self.gis.content.import_data(self._sdf)
+        item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
 
         resp = item.layers[0].edit_features(adds=self._sdf)
         update_sdf = self._sdf.head().copy()
@@ -3348,7 +3348,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         """tests performing the updates with SeDF"""
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = item.layers[0].query(as_df=True)
             oidfld = "OBJECTID"
             for fld in sdf.columns:
@@ -3373,7 +3373,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
     def test_featureset_adds(self):
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = item.layers[0].query(as_df=True)
             sdf = self._sdf.head().copy()
             sdf_updates = self._sdf.tail().copy()
@@ -3404,7 +3404,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
     def test_featureset_updates(self):
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = item.layers[0].query(as_df=True)
             sdf_updates = sdf.tail().copy().head()
             sdf_updates["OBJECTID"] = range(len(sdf_updates))
@@ -3433,7 +3433,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         """
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
             adds = [feat.as_dict for feat in fs.features]
@@ -3457,7 +3457,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         """
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = item.layers[0].query(as_df=True)
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
@@ -3497,7 +3497,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         """
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             sdf = item.layers[0].query(as_df=True)
             sdf = self._sdf.head().copy()
             fs = sdf.spatial.to_featureset()
@@ -3523,7 +3523,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         """
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             feature_layer: FeatureLayer = item.layers[0]
 
             geometry = Geometry(
@@ -3548,7 +3548,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
     def test_asset_maps(self):
         item = None
         try:
-            item = self.gis.content.import_data(self._sdf)
+            item = self.gis.content.import_data(self._sdf, tags="ntgrtn-tst")
             feature_layer: FeatureLayer = item.layers[0]
 
             adds = [

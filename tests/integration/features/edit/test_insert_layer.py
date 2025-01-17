@@ -2068,12 +2068,13 @@ class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
 
     def test_insert_layer(self):
         """tests creating a feature layer and inserting it into an existing feature service"""
-        print("User: ", self.gis.users.me.username)
         point_item = None
         try:
             # add point layer to portal
             sdf = pd.DataFrame(point_data)
-            point_item = self.gis.content.import_data(sdf)
+            point_item = self.gis.content.import_data(
+                sdf, title="insert_layer", tags="ntgrtn-tst"
+            )
 
             # create a new temp file and write point data
             df = pd.DataFrame(point_data)
@@ -2110,9 +2111,6 @@ class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
                 point_item.delete()
 
     def test_insert_table(self):
-        if self.gis._is_agol is False:
-            return
-        print("User: ", self.gis.users.me.username)
         # add point tbl to portal
         df = pd.DataFrame(tbl_data)
         xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]

@@ -9,7 +9,7 @@ from arcgis.geometry import Geometry
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features.managers import FeatureLayerManager, FeatureLayerCollectionManager
-from utils.decorators import integration_test
+from utils.decorators import integration_test, profiles
 
 geoms = [
     Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}}),
@@ -61,6 +61,7 @@ geoms = [
 ]
 
 
+@profiles.enterprise_and_agol
 @integration_test
 class TestAddUpdateDeleteDef(unittest.TestCase):
     """
@@ -84,22 +85,27 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
                 }
             ]
         }
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
         g = [
             Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-        df.spatial.set_geometry(g)
-        item = gis.content.import_data(df)
-        assert item
-        assert isinstance(item, Item)
-        fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
-        future = fl.manager.add_to_definition(json_dict=add_field, future=True)
-        res = future.result()
-        print(res)
-        item.delete()
+        item = None
+        try:
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            item = self.gis.content.import_data(
+                df, name="add_to_def_fl", tags="ntgrtn-tst"
+            )
+            assert item
+            assert isinstance(item, Item)
+            fl = item.layers[0]
+            assert isinstance(fl, FeatureLayer)
+            future = fl.manager.add_to_definition(json_dict=add_field, future=True)
+            res = future.result()
+            print(res)
+        finally:
+            if item:
+                item.delete(permanent=True)
 
     def test_update_to_def_fl(self):
         """
@@ -130,25 +136,34 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
                 }
             ]
         }
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
         g = [
             Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
         ] * len(geoms)
+        item = None
+        related_data = None
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-        df.spatial.set_geometry(g)
-        item = gis.content.import_data(df)
-        assert item
-        assert isinstance(item, Item)
-        fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
-        fl.manager.add_to_definition(json_dict=add_field, future=False)
-        future = fl.manager.update_definition(json_dict=up_field, future=True)
-        res = future.result()
-        assert "dogcat" in [fld["alias"] for fld in fl.properties.fields]
-        data = item.related_items(rel_type="Service2Data")[0]
-        item.delete()
-        data.delete()
+        try:
+
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            item = self.gis.content.import_data(
+                df, title="update_to_def_fl", tags="ntgrtn-tst"
+            )
+            assert item
+            assert isinstance(item, Item)
+            fl = item.layers[0]
+            assert isinstance(fl, FeatureLayer)
+            fl.manager.add_to_definition(json_dict=add_field, future=False)
+            future = fl.manager.update_definition(json_dict=up_field, future=True)
+            res = future.result()
+            assert "dogcat" in [fld["alias"] for fld in fl.properties.fields]
+            related_data = item.related_items(rel_type="Service2Data")[0]
+            assert related_data
+        finally:
+            if item:
+                item.delete(permanent=True)
+            if related_data:
+                related_data.delete(permanent=True)
 
     def test_delete_to_def_fl(self):
         """
@@ -168,25 +183,32 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
             ]
         }
         del_field = {"fields": [{"name": "sdfasdf"}]}
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
         g = [
             Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
         ] * len(geoms)
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-        df.spatial.set_geometry(g)
-        item = gis.content.import_data(df)
-        assert item
-        assert isinstance(item, Item)
-        fl = item.layers[0]
-        assert isinstance(fl, FeatureLayer)
-        fl.manager.add_to_definition(json_dict=add_field, future=False)
-        future = fl.manager.delete_from_definition(json_dict=del_field, future=True)
-        res = future.result()
-        assert res
-        data = item.related_items(rel_type="Service2Data")[0]
-        item.delete()
-        data.delete()
+        item = None
+        related_data = None
+        try:
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            item = self.gis.content.import_data(
+                df, title="delete_to_def_fl", tags="ntgrtn-tst"
+            )
+            assert item
+            assert isinstance(item, Item)
+            fl = item.layers[0]
+            assert isinstance(fl, FeatureLayer)
+            fl.manager.add_to_definition(json_dict=add_field, future=False)
+            future = fl.manager.delete_from_definition(json_dict=del_field, future=True)
+            res = future.result()
+            assert res
+            related_data = item.related_items(rel_type="Service2Data")[0]
+        finally:
+            if item:
+                item.delete(permanent=True)
+            if related_data:
+                related_data.delete(permanent=True)
 
 
 if __name__ == "__main__":

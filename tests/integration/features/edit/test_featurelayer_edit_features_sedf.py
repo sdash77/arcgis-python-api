@@ -281,7 +281,7 @@ class TestApplyEditsSeDF(unittest.TestCase):
             rows.append(att)
         df = pd.DataFrame(rows)
         df.spatial.set_geometry("SHAPE")
-        cls.item = cls.gis.content.import_data(df, tags="integration-test")
+        cls.item = cls.gis.content.import_data(df, tags="ntgrtn-tst")
 
     def test_apply_edits_adds(self):
         lyr: FeatureLayer = self.item.layers[0]
