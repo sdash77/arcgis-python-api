@@ -3279,7 +3279,7 @@ class Job(object):
         return return_obj["jobComments"]
 
     def set_job_version(
-        self, data_source_name=None, version_guid=None, version_name=None, administered=False, data_source_id=None
+        self, data_source_name=None, version_guid=None, version_name=None, administered=False, data_reference_id=None
     ):
         """
         Sets the version of the job.
@@ -3298,7 +3298,7 @@ class Job(object):
         ----------------    -------------------------------------------------------------------
         administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
         ----------------    -------------------------------------------------------------------
-        data_source_id      Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
+        data_reference_id   Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
         ================    ===================================================================
 
         :return:
@@ -3313,8 +3313,8 @@ class Job(object):
         }
         if data_source_name is not None:
             params["dataSourceName"] = data_source_name
-        if data_source_id is not None:
-            params["dataSourceId"] = data_source_id
+        if data_reference_id is not None:
+            params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
         if version_name is not None:
