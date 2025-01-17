@@ -1440,7 +1440,12 @@ def _gdal_to_fc(
     elif "wkt" in df_ref:
         osr_ref.ImportFromWkt(df_ref["wkt"])
 
-    out_layer = out_file.CreateLayer(layer_name, osr_ref, GEOMTYPELOOKUP[geom_type])
+    out_layer = out_file.CreateLayer(
+        layer_name,
+        osr_ref,
+        GEOMTYPELOOKUP[geom_type],
+        options=["TARGET_ARCGIS_VERSION=ARCGIS_PRO_3_2_OR_LATER"],
+    )
     dfields = []
     cfields = []
     field_mapping = {}
