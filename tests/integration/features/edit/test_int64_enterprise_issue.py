@@ -594,7 +594,7 @@ class TestIssueInt64(unittest.TestCase):
             sdf.spatial.set_geometry("SHAPE")
             assert not sdf.empty
 
-            item = self.gis.content.import_data(sdf)
+            item = self.gis.content.import_data(sdf, tags="ntgrtn-tst")
             assert item
         except Exception as e:
             print(e)
