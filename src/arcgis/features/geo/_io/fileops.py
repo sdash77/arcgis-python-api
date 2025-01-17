@@ -1624,44 +1624,48 @@ def _gdal_to_sedf(file_path):
     spatial_ref = out_layer.GetSpatialRef()
     sr_code = int(spatial_ref.GetAuthorityCode(None)) if spatial_ref else 4326
 
+    # Precompute field indices to avoid repeated calls to GetFieldIndex
+    field_indices = {
+        field: out_layer.GetLayerDefn().GetFieldIndex(field) for field in field_names
+    }
+
     # Initialize lists for bulk collection
-    records = []
-    geometries = []
+    rows = []  # This will hold entire rows, including geometries
 
     # Iterate over all features and add to the DataFrame
     for feature in out_layer:
-        # Collect attribute values
-        record = {
-            field: (
-                feature.GetField(field) if feature.GetFieldIndex(field) != -1 else None
-            )
-            for field in field_names
-        }
+        # Collect attribute values (fields)
+        row = []
+        for field in field_names:
+            index = field_indices[field]
+            row.append(feature.GetField(index) if index != -1 else None)
 
         # Process geometry as WKB, if needed
         geom = feature.geometry()
         if geom is not None:
-            wkb = geom.ExportToWkb()
-            esri_geom = Geometry(wkb)
+            # Export geometry to JSON and parse with ujson
+            geom_json = _ujson.loads(geom.ExportToJson())
+            esri_geom = Geometry(geom_json)
             esri_geom.spatialReference = Geometry({"wkid": sr_code})
-            geometries.append(esri_geom)
+            row.append(esri_geom)
         else:
-            geometries.append(None)
+            row.append(None)
 
-        records.append(record)
+        # Append entire row to the list
+        rows.append(row)
 
-    # Create DataFrame with all records
-    df = pd.DataFrame(records)
-
-    # Attach geometries (if necessary)
-    df.spatial.set_geometry(geometries)
-    df.spatial.sr = Geometry({"wkid": sr_code})
-    df.spatial._meta.layer_name = layer_name
+    # Create DataFrame with all rows
+    df = pd.DataFrame(rows, columns=field_names + ["SHAPE"])
 
     # Parse datetime fields
     for field in date_fields:
         if field in df.columns:
             df[field] = df[field].apply(parse_datetime)
+
+    df.spatial.set_geometry("SHAPE")
+    # Attach spatial reference
+    df.spatial.sr = Geometry({"wkid": sr_code})
+    df.spatial._meta.layer_name = layer_name
 
     return df
 
