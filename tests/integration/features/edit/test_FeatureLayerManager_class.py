@@ -11,6 +11,7 @@ from arcgis import features
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
 
+
 @profiles.enterprise_and_agol
 @integration_test
 class Test_FeatureLayerManager_portal(unittest.TestCase):
@@ -81,9 +82,11 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         for rel_item in rel_items:
             rel_item.delete(permanent=True)
         cls.feature_layer_item.delete(permanent=True)
-        rel_trunc_items = cls.feature_layer_item_truncate.related_items("Service2Data", "forward")
+        rel_trunc_items = cls.feature_layer_item_truncate.related_items(
+            "Service2Data", "forward"
+        )
         for rel_trunc_item in rel_trunc_items:
-            rel_trunc_item.delete(permanent=True)        
+            rel_trunc_item.delete(permanent=True)
         cls.feature_layer_item_truncate.delete(permanent=True)
 
     def test_create_FeatureLayerManager_object(self):
@@ -331,29 +334,29 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         # Clean out existing items
         item_types = ["CSV", "File Geodatabase", "Feature Layer"]
         for itm_type in item_types:
-            search_result = gis.content.search(
-                layer_name, item_type=itm_type
-            )
+            search_result = gis.content.search(layer_name, item_type=itm_type)
             if search_result:
                 for search_item in search_result:
                     search_item.delete(permanent=True)
         try:
             root_folder = gis.content.folders.get()
             source_item = root_folder.add(
-                item_properties= {
+                item_properties={
                     "title": layer_name,
-                    "type": "CSV" if source_data_path[-3:].upper() == "CSV" else "File Geodatabase",
+                    "type": (
+                        "CSV"
+                        if source_data_path[-3:].upper() == "CSV"
+                        else "File Geodatabase"
+                    ),
                     "tags": "integration-test",
-                    "snippet": "Item for Feature Layer integration testing"
-                    },
+                    "snippet": "Item for Feature Layer integration testing",
+                },
                 file=source_data_path,
-                ).result()          
+            ).result()
             # publish the item
             if source_item is not None:
-                feature_layer_item = source_item.publish({
-                    "name": layer_name,
-                    "tags": "integration-test"
-                     }
+                feature_layer_item = source_item.publish(
+                    {"name": layer_name, "tags": "integration-test"}
                 )
                 if feature_layer_item is not None:
                     print("Published edit_feature_definition_points feature layer")
@@ -384,6 +387,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
-    
+
+
 if __name__ == "__main__":
     unittest.main()
