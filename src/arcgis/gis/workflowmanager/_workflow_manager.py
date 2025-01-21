@@ -3284,22 +3284,22 @@ class Job(object):
         """
         Sets the version of the job.
 
-        ================    ===================================================================
-        **Argument**        **Description**
-        ----------------    -------------------------------------------------------------------
-        data_source_name    Optional. The name of the data source for the job version to be set. This is required when using decentralized data sources.
-        ----------------    -------------------------------------------------------------------
-        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
-                            the versionName must be defined. versionGuid is preferred to be defined for better
-                            performance.
-        ----------------    -------------------------------------------------------------------
-        version_name        Optional. The name of the version to be set. If the value is null or not defined,
-                            the versionGuid must be defined.
-        ----------------    -------------------------------------------------------------------
-        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ----------------    -------------------------------------------------------------------
-        data_reference_id   Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
-        ================    ===================================================================
+        =================    ===================================================================
+        **Argument**         **Description**
+        -----------------    -------------------------------------------------------------------
+        data_source_name     Optional. The name of the data source for the job version to be set. This is required when using decentralized data sources.
+        -----------------    -------------------------------------------------------------------
+        version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
+                             the versionName must be defined. versionGuid is preferred to be defined for better
+                             performance.
+        -----------------    -------------------------------------------------------------------
+        version_name         Optional. The name of the version to be set. If the value is null or not defined,
+                             the versionGuid must be defined.
+        -----------------    -------------------------------------------------------------------
+        administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
+        -----------------    -------------------------------------------------------------------
+        data_reference_id    Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
+        =================    ===================================================================
 
         :return:
             success object
