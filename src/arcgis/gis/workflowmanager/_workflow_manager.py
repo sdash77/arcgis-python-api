@@ -3287,7 +3287,7 @@ class Job(object):
         =================    ===================================================================
         **Argument**         **Description**
         -----------------    -------------------------------------------------------------------
-        data_source_name     Optional. The name of the data source for the job version to be set. This is required when using decentralized data sources.
+        data_source_name     The name of the data source for the job version to be set. Required if the job diagram is using the data sources format.
         -----------------    -------------------------------------------------------------------
         version_guid         Optional. The guid of the version to be set. If the value is null or not defined,
                              the versionName must be defined. versionGuid is preferred to be defined for better
@@ -3298,7 +3298,7 @@ class Job(object):
         -----------------    -------------------------------------------------------------------
         administered         Optional. If true, the version can be claimed. If not defined, the default value is false.
         -----------------    -------------------------------------------------------------------
-        data_reference_id    Optional. The id of the data reference for the job version to be set. This is required when using centralized data references.
+        data_reference_id    The id of the data reference for the job version to be set. Required if the job diagram is using the data references format.
         =================    ===================================================================
 
         :return:
