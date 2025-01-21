@@ -542,7 +542,7 @@ class Survey:
 
             >>> user_folder_id = [f["id"]
                                  for f in gis.users.me.folders
-                                 if f["title"] == "folder_title"][0]
+                                 if f.name == "folder_title"][0]
 
             >>> report_item = svy_obj.generate_report(report_template=report_templ,
                                                       report_title="Title of Report item",

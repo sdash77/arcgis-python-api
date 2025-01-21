@@ -45,7 +45,7 @@ class SharingGroupManager:
                       object for a specific :class:`~arcgis.gis.Item`.
     ================  ===============================================================
 
-    Objects of this class are not meant to be intialized
+    Objects of this class are not meant to be initialized
     directly, but rather accessed through the
     :attr:`~arcgis.gis._impl._content_manager.SharingManager.groups`
     property of an *item's* *SharingManager*.

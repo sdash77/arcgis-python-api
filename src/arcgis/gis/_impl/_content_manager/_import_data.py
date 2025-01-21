@@ -83,11 +83,11 @@ def _create_file(df, file_type, **kwargs):
         # Create filegdb or shapefile
         if file_type == "File Geodatabase":
             # create empty filegdb
-            emtpy_fgdb = _tool_utils.run_and_hide(
+            empty_fgdb = _tool_utils.run_and_hide(
                 fn=arcpy.CreateFileGDB_management,
                 **{"out_folder_path": temp_dir, "out_name": name},
             )
-            fgdb = emtpy_fgdb[0]
+            fgdb = empty_fgdb[0]
             location = os.path.join(fgdb, os.path.basename(temp_dir))
             zip_loc = os.path.join(temp_dir, name)
         else:

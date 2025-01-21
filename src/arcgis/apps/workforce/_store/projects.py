@@ -178,7 +178,7 @@ def _build_table(item, table_index):
 def _v2_create_project(gis, summary, title):
     """Creates project following version 2 Workforce schema"""
     for f in gis.users.me.folders:
-        if f["title"].lower() == title.lower():
+        if f.name.lower() == title.lower():
             raise WorkforceError("A folder named '{}' already exists.".format(title))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -663,7 +663,7 @@ def _get_default_extent(gis):
 
 def _v1_create_project(gis, summary, title):
     for f in gis.users.me.folders:
-        if f["title"].lower() == title.lower():
+        if f.name.lower() == title.lower():
             raise WorkforceError("A folder named '{}' already exists.".format(title))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:

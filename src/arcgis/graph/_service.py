@@ -88,7 +88,7 @@ class KnowledgeGraph:
     def _validate_import(self):
         if HAS_KG == False:
             raise ImportError(
-                "An error occured with importing the Knowledge Graph libraries. Please ensure you "
+                "An error occurred with importing the Knowledge Graph libraries. Please ensure you "
                 "are using Python 3.9, 3.10 or 3.11 on Windows or Linux platforms."
             )
 
