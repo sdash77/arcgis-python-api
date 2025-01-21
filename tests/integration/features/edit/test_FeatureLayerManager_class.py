@@ -350,7 +350,7 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
                 ).result()          
             # publish the item
             if source_item is not None:
-                feature_layer_item = source_item.publish(publish_parameters={
+                feature_layer_item = source_item.publish({
                     "name": layer_name,
                     "tags": "integration-test"
                      }
