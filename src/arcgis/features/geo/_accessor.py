@@ -15,6 +15,8 @@ from ._io.fileops import (
     from_featureclass,
     _sanitize_column_names,
     read_feather,
+    to_table,
+    _gdal_to_fc,
 )
 
 from arcgis.auth.tools import LazyLoader
@@ -34,6 +36,15 @@ _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
 _pa = LazyLoader("pyarrow")
+_common_utils = LazyLoader("arcgis._impl.common._utils")
+_tools_utils = LazyLoader("arcgis._impl.common._tools._utils")
+
+try:
+    from osgeo import ogr, osr
+
+    has_gdal = True
+except:
+    has_gdal = False
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -2122,7 +2133,7 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_table(self, location, overwrite=True, **kwargs):
         """
-        The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
+        The ``to_table`` method exports a geo enabled dataframe to a file.
 
         .. note::
             Null integer values will be changed to 0 when using shapely instead
@@ -2132,7 +2143,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string. The output of the table.
+        location                        Required string. The output location for the table.
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional Boolean.  If True and if the table exists, it will be
                                         deleted and overwritten.  This is default.  If False, the table and
@@ -2141,14 +2152,13 @@ class GeoAccessor(object):
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
                                         performed. The default is True.
+        ---------------------------     --------------------------------------------------------------------
+        service_name                    Optional String. The name for the service.
         ===========================     ====================================================================
 
         :return: String
 
         """
-        from arcgis.features.geo._io.fileops import to_table
-        from ._tools._utils import run_and_hide
-
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
@@ -2157,15 +2167,45 @@ class GeoAccessor(object):
             "in_memory",
         ]:
             location = os.path.abspath(path=location)
-        table = run_and_hide(
-            to_table,
-            **{
-                "geo": self,
-                "location": location,
-                "overwrite": overwrite,
-                "sanitize_columns": sanitize_columns,
-            },
-        )
+
+        service_name = kwargs.pop("service_name", None)
+        if service_name is None:
+            service_name = "a" + uuid.uuid4().hex[0:5]
+        if service_name.endswith(".gdb"):
+            file_type = "OpenFileGDB"
+        elif service_name.endswith(".shp"):
+            file_type = "Esri Shapefile"
+        else:
+            file_type = "OpenFileGDB"
+            service_name = service_name + ".gdb"
+
+        if has_gdal:
+
+            # Define the full path for the geodatabase
+            gdb_path = os.path.join(location, service_name)
+
+            # Ensure the base directory exists
+            os.makedirs(location, exist_ok=True)
+
+            # Create the feature class using GDAL
+            table = _gdal_to_fc(
+                self._data,
+                gdb_path,
+                file_type,
+                layer_name=service_name,
+                overwrite=True,
+            )
+
+        else:
+            table = _tools_utils.run_and_hide(
+                to_table,
+                **{
+                    "geo": self,
+                    "location": location,
+                    "overwrite": overwrite,
+                    "sanitize_columns": sanitize_columns,
+                },
+            )
         self._data.columns = origin_columns
         self._data.index = origin_index
         return table
@@ -2568,7 +2608,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string or pathlib.Path. Full path to the feature class or URL (shapefile only).
+        location                        Required string or pathlib.Path. Full path to the file.
         ===========================     ====================================================================
 
         *Optional parameters when ArcPy library is available in the current environment*:
@@ -3136,6 +3176,7 @@ class GeoAccessor(object):
         extent=None,
         global_id_field=None,
         sanitize_columns=False,
+        **kwargs,
     ):
         """
         The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a

@@ -19,6 +19,7 @@ from arcgis.geometry import Geometry, _types
 import requests
 import tempfile
 import shutil
+import warnings
 
 arcgis = LazyLoader("arcgis")
 try:
@@ -720,7 +721,6 @@ def from_featureclass(filename, **kwargs):
 
     """
     from arcgis.geometry import _types
-    import json
 
     # this covers files and shapefile URL's
     def _gdal_workflow(filename=filename):
@@ -747,7 +747,7 @@ def from_featureclass(filename, **kwargs):
         return df
 
     # if no arcpy specific kwargs, prioritize gdal
-    if HASGDAL and not kwargs:
+    if HASGDAL and not kwargs and not ".sde" in filename.lower():
         return _gdal_workflow()
 
     if HASARCPY and (
@@ -1390,14 +1390,23 @@ def to_featureclass(
 
 # --------------------------------------------------------------------------
 def _gdal_to_fc(
-    df, out_path, out_type, layer_name, gdb_table=False, zip_file=False, overwrite=True
+    df,
+    out_path,
+    out_type,
+    layer_name,
+    gdb_table=False,
+    zip_file=False,
+    overwrite=True,
 ):
     GEOMTYPELOOKUP = {
         "Polygon": ogr.wkbPolygon,
         "Point": ogr.wkbPoint,
         "Polyline": ogr.wkbLineString,
-        "null": ogr.wkbUnknown,
     }
+    if out_type == "OpenFileGDB":
+        GEOMTYPELOOKUP["null"] = ogr.wkbNone
+    else:
+        GEOMTYPELOOKUP["null"] = ogr.wkbUnknown
 
     if not overwrite and os.path.exists(out_path):
         raise ValueError("overwrite set to False, cannot overwrite existent location.")
@@ -1417,15 +1426,17 @@ def _gdal_to_fc(
             shutil.rmtree(out_path)
         out_file = out_driver.CreateDataSource(out_path)
 
-    geom_field = df.spatial.name
-    if geom_field is None:
-        return
-    geom_type = "null"
-    idx = df[geom_field].first_valid_index()
-    if idx > -1:
-        geom_type = df.loc[idx][geom_field].type
+    spatial_field = df.spatial.name if hasattr(df.spatial, "name") else None
+    if spatial_field:
+        idx = df[spatial_field].first_valid_index()
+        if idx is not None and df.loc[idx, spatial_field]:
+            geom_type = df.loc[idx, spatial_field].type
+        else:
+            geom_type = "null"
+    else:
+        geom_type = "null"
 
-    df_ref = df.spatial.sr
+    df_ref = df.spatial.sr or {}
     osr_ref = osr.SpatialReference()
     if "wkid" in df_ref:
         ref_code = df_ref["wkid"]
@@ -1436,8 +1447,12 @@ def _gdal_to_fc(
     elif "wkt" in df_ref:
         osr_ref.ImportFromWkt(df_ref["wkt"])
 
-    out_layer = out_file.CreateLayer(layer_name, osr_ref, GEOMTYPELOOKUP[geom_type])
-    # out_layer = out_file.CreateLayer(layer_name, osr_ref, ogr.wkbPoint25D)
+    out_layer = out_file.CreateLayer(
+        layer_name,
+        osr_ref,
+        GEOMTYPELOOKUP[geom_type],
+        options=["TARGET_ARCGIS_VERSION=ARCGIS_PRO_3_2_OR_LATER"],
+    )
     dfields = []
     cfields = []
     field_mapping = {}
@@ -1448,7 +1463,7 @@ def _gdal_to_fc(
                 geom_field = (c, "GEOMETRY")
                 geom_column = c
                 # Since geometry is present, handle None type geometry occurrence
-                query_index = _handle_none_type_geometry(df, geom_type, geom_column)
+                _handle_none_type_geometry(df, geom_type, geom_column)
             else:
                 cfields.append(c)
                 if isinstance(df[c].loc[idx], (str)) or df[c].loc[idx] is None:
@@ -1462,10 +1477,9 @@ def _gdal_to_fc(
                     out_layer.CreateField(field_def)
                 elif isinstance(df[c].loc[idx], (float, np.float64)):
                     field_def = ogr.FieldDefn(c, ogr.OFTReal)
+                    field_def.SetPrecision(50)
+                    field_def.SetWidth(50)
                     out_layer.CreateField(field_def)
-                # elif isinstance(df[c].loc[idx], (np.NaN)):
-                #     field_def = ogr.FieldDefn(c, ogr.OFTReal)
-                #     out_layer.CreateField(field_def)
                 elif (
                     isinstance(
                         df[c].loc[idx],
@@ -1493,31 +1507,39 @@ def _gdal_to_fc(
         del c
         del idx
 
-    for idx, row in df.iterrows():
-        feature = ogr.Feature(out_layer.GetLayerDefn())
-        geom = row[df.spatial.name]
-        geom_string = _ujson.dumps(dict(geom))
-        ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
-        feature.SetGeometry(ogr_geom)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        for idx, row in df.iterrows():
+            feature = ogr.Feature(out_layer.GetLayerDefn())
+            geom = None
+            ogr_geom = None
+            if spatial_field:
+                geom = row[spatial_field]
+                geom_string = _ujson.dumps(dict(geom))
+                ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
+                feature.SetGeometry(ogr_geom)
 
-        for field_name, value in row.items():
-            if field_name != df.spatial.name:
-                # continue
-                if field_name in dfields:
-                    value = value.strftime("%Y-%m-%d %H:%M:%S")
-                feature.SetField(field_mapping[field_name], value)
+            for field_name, value in row.items():
+                if spatial_field is None or field_name != spatial_field:
+                    # always run for table, but only run for feature class if not geom field
+                    if field_name in dfields:
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
+                    if isinstance(value, type(pd.NA)):
+                        # gdal is not a fan of pandas NA
+                        value = None
+                    feature.SetField(field_mapping[field_name], value)
 
-        out_layer.CreateFeature(feature)
-        del idx
-        del row
-        del geom
-        del ogr_geom
+            out_layer.CreateFeature(feature)
+            feature = None
+            del idx, row, geom, ogr_geom
 
-    # out_file = None
     if zip_file:
         path = os.path.dirname(out_path)
         dir_name = os.path.basename(out_path)
         _zip_dir(path, dir_name)
+
+    out_layer.SyncToDisk()  # Ensure the layer changes are written to disk
+    out_file = None  # Closing the dataset, saving everything to disk
 
     return out_path
 
@@ -1539,59 +1561,112 @@ def _zip_dir(path, dir_name):
 
 # --------------------------------------------------------------------------
 def _gdal_to_sedf(file_path):
-    def feature_generator(layer):
-        for feature in layer:
-            yield feature
+    def parse_datetime(value):
+        """Attempt to parse a datetime string into a Python datetime object."""
+        try:
+            if isinstance(value, str):
+                if "/" in value:
+                    value = value.replace("/", "-")
+                if "-" in value and ":" in value:
+                    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                elif "-" in value:
+                    return datetime.datetime.strptime(value, "%Y-%m-%d")
+                else:
+                    return datetime.datetime.strptime(value, "%H:%M:%S")
+        except Exception:
+            return value  # Fallback to original value
+        return value
 
-    data_source = ogr.Open(file_path)
-    out_layer = data_source.GetLayer()
-    lay_name = out_layer.GetName()
-    gen = feature_generator(out_layer)
-    field_names = []
-    date_fields = []
-    for field in out_layer.schema:
-        field_names.append(field.name)
-        if field.type in [7, 8, 9]:
-            date_fields.append(field.name)
-    field_values = {field: [] for field in field_names}
-    geoms = []
-    sr_code = False
-    for feature in gen:
+    # Validate the file path
+    if not os.path.exists(file_path):
+        raise ValueError("File path does not exist.")
+
+    # Determine file type
+    file_ext = os.path.splitext(file_path)[1].lower()
+    is_gdb = file_ext == ".gdb"
+    is_shp = file_ext == ".shp"
+    is_dbf = file_ext == ".dbf"
+
+    # Open the data source
+    if is_gdb:
+        gdb_path, layer_name = (
+            os.path.split(file_path)
+            if not file_path.endswith(".gdb")
+            else (file_path, None)
+        )
+        data_source = ogr.Open(gdb_path)
+        if data_source is None:
+            raise ValueError("Unable to open geodatabase.")
+        if layer_name:
+            out_layer = data_source.GetLayerByName(layer_name)
+            if out_layer is None:
+                raise ValueError(f"Layer '{layer_name}' not found in geodatabase.")
+        else:
+            out_layer = data_source.GetLayer()  # Default to the first layer
+    elif is_shp or is_dbf:
+        data_source = ogr.Open(file_path)
+        if data_source is None:
+            raise ValueError(f"Unable to open file: {file_path}")
+        out_layer = data_source.GetLayer()
+    else:
+        data_source = ogr.Open(file_path)
+        out_layer = data_source.GetLayer()
+
+    layer_name = out_layer.GetName()
+
+    # Extract field names and spatial reference
+    field_names = [field.name for field in out_layer.schema]
+    date_fields = [
+        field.name
+        for field in out_layer.schema
+        if field.type in [ogr.OFTDate, ogr.OFTDateTime]
+    ]
+    spatial_ref = out_layer.GetSpatialRef()
+    sr_code = int(spatial_ref.GetAuthorityCode(None)) if spatial_ref else 4326
+
+    # Precompute field indices to avoid repeated calls to GetFieldIndex
+    field_indices = {
+        field: out_layer.GetLayerDefn().GetFieldIndex(field) for field in field_names
+    }
+
+    # Initialize lists for bulk collection
+    rows = []  # This will hold entire rows, including geometries
+
+    # Iterate over all features and add to the DataFrame
+    for feature in out_layer:
+        # Collect attribute values (fields)
+        row = []
         for field in field_names:
-            fv = feature.GetField(field)
-            if isinstance(fv, str) and field in date_fields:
-                try:
-                    if "/" in fv:
-                        fv = fv.replace("/", "-")
-                    # note: can't go off of field number because it's not always accurate
-                    if "-" and ":" in fv:  # date and time
-                        fv = datetime.datetime.strptime(fv, "%Y-%m-%d %H:%M:%S")
-                    elif "-" in fv:  # date
-                        fv = datetime.datetime.strptime(fv, "%Y-%m-%d")
-                    else:  # time
-                        fv = datetime.datetime.strptime(fv, "%H:%M:%S")
-                except:
-                    fv = feature.GetField(field)
-            field_values[field].append(fv)
+            index = field_indices[field]
+            row.append(feature.GetField(index) if index != -1 else None)
+
+        # Process geometry as WKB, if needed
         geom = feature.geometry()
         if geom is not None:
-            esri_geom = Geometry(_ujson.loads(geom.ExportToJson()))
-        if not sr_code:
-            try:
-                sr = geom.GetSpatialReference()
-                sr_code = int(sr.GetAuthorityCode(None))
-            except:
-                sr_code = 4326
-        esri_geom.spatialReference = Geometry(sr_code)
-        geoms.append(esri_geom)
+            # Export geometry to JSON and parse with ujson
+            geom_json = _ujson.loads(geom.ExportToJson())
+            esri_geom = Geometry(geom_json)
+            esri_geom.spatialReference = Geometry({"wkid": sr_code})
+            row.append(esri_geom)
+        else:
+            row.append(None)
 
-    df = pd.DataFrame(field_values)
-    df.spatial.set_geometry(geoms)
-    if lay_name:
-        df.spatial._meta.layer_name = lay_name
-    if sr_code:
-        # df.spatial.sr = _types.SpatialReference({'wkid' : sr_code})
-        df.spatial.sr = Geometry(sr_code)
+        # Append entire row to the list
+        rows.append(row)
+
+    # Create DataFrame with all rows
+    df = pd.DataFrame(rows, columns=field_names + ["SHAPE"])
+
+    # Parse datetime fields
+    for field in date_fields:
+        if field in df.columns:
+            df[field] = df[field].apply(parse_datetime)
+
+    df.spatial.set_geometry("SHAPE")
+    # Attach spatial reference
+    df.spatial.sr = Geometry({"wkid": sr_code})
+    df.spatial._meta.layer_name = layer_name
+
     return df
 
 
