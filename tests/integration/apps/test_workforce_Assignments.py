@@ -2,9 +2,6 @@
 # Name:        Workforce Assignments tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
-sys.path.insert(1, r"C:\workspace\geosaurus\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 import datetime
