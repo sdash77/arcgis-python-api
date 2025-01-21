@@ -402,7 +402,8 @@ def detect_object(
             torch.tensor(images).to(device).float(), **transform_kwargs
         )
 
-    pred_batch = model(batch_input)
+    with torch.no_grad():
+        pred_batch = model(batch_input)
 
     preds = model_configuration.post_process(
         pred_batch, nms_overlap, thres, tile_height, device
