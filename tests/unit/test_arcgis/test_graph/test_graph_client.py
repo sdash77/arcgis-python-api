@@ -148,7 +148,6 @@ class TestGraph(unittest.TestCase):
             },
             as_dict=False,
         )
-        self.assertIsInstance(response, UpdateSearchIndexResponse)
         if not isinstance(response, UpdateSearchIndexResponse):
             self.fail(
                 msg="Expected response to be an instance of UpdateSearchIndexResponse."
