@@ -154,23 +154,23 @@ class AGOLServerManager:
                     url = f"{self._url}/{name}/{service['type']}"
                 else:
                     url = f"{self._url}/{name}.{service['type']}"
-                serivce_type = service["type"].lower()
-                if serivce_type == "mapserver":
+                service_type = service["type"].lower()
+                if service_type == "mapserver":
                     services.append(_lyrs.MapImageLayerManager(url=url, gis=self._gis))
-                elif serivce_type == "featureserver":
+                elif service_type == "featureserver":
                     services.append(
                         _featuremgr.FeatureLayerCollectionManager(
                             url=url, gis=self._gis
                         )
                     )
 
-                elif serivce_type.find("vector") > -1:
+                elif service_type.find("vector") > -1:
                     services.append(
                         _lyrs.VectorTileLayerManager(url=url, gis=self._gis)
                     )
-                elif serivce_type == "sceneserver":
+                elif service_type == "sceneserver":
                     services.append(_lyrs.SceneLayerManager(url=url, gis=self._gis))
-                elif serivce_type == "imageserver":
+                elif service_type == "imageserver":
                     services.append(
                         _imagemgr.ImageryLayerCacheManager(url, gis=self._gis)
                     )

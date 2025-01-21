@@ -116,7 +116,7 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     @lru_cache(maxsize=10)
-    def attachements(self) -> _features.managers.AttachmentManager:
+    def attachments(self) -> _features.managers.AttachmentManager:
         """
         The ``attachments`` property provides a manager to work with attachments if the ``MapFeatureLayer``
         supports this functionality.
@@ -688,7 +688,7 @@ class MapFeatureLayer(Layer):
                                             and the extent.
         -------------------------------     --------------------------------------------------------------------
         return_extent_only                  Optional boolean. If `True`, the response only includes the extent
-                                            of the features satisying the query. If `returnCountOnly=true`, the
+                                            of the features satisfying the query. If `returnCountOnly=true`, the
                                             response will return both the count and the extent. The default is
                                             `False`. This parameter applies only if the
                                             `supportsReturningQueryExtent` property of the layer is `true`.

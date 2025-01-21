@@ -890,7 +890,7 @@ class FeatureSet(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        fs                  Required arcpy.FeatureSet. The featureset object to consume.
         ===============     ====================================================================
 
         :return:
@@ -942,7 +942,7 @@ class FeatureSet(object):
 
             Input:
              dataframe - spatialdataframe object
-            Ouput:
+            Output:
               field type name
             """
             import numpy as np

@@ -263,7 +263,7 @@ def generate_origin_destination_cost_matrix(
                                             tool does not have to lookup the settings based on the travel mode name.
 
                                             The default value, Custom, allows you to configure your own travel mode using the custom travel mode parameters (UTurn at Junctions, Use Hierarchy, Restrictions, Attribute Parameter Values,  and Impedance).
-                                            The default values of the custom travel mode parameters model travelling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
+                                            The default values of the custom travel mode parameters model traveling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
                                             or a truck with a given height, weight, and cargo of certain hazardous materials. You may choose to do this to try out different settings to get desired analysis results.
                                             Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                             everyone in your organization can rerun the analysis with the same settings.
@@ -894,12 +894,12 @@ def generate_origin_destination_cost_matrix(
 
                                             .. note::
                                                 'default' has to be present if you want to pass in any locate_settings to the
-                                                service. In addition, locate setttings for default have to be complete, meaning
+                                                service. In addition, locate settings for default have to be complete, meaning
                                                 all properties need to be present.
                                                 For each override, the keys do not have to be complete.
 
                                             .. note::
-                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                 not supported.
 
                                             .. code-block:: python

@@ -1013,7 +1013,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features     Optional Boolean. When set to ``True``, features are returned even
                                            when the results include ``"exceededTransferLimit": true``. This
                                            allows a client to find the resolution in which the transfer limit
-                                           is no longer exceeded withou making multiple calls. The default
+                                           is no longer exceeded without making multiple calls. The default
                                            value is ``False``.
         ==============================     ====================================================================
 
@@ -1194,10 +1194,10 @@ class FeatureLayer(Layer):
         The ``top_filter`` parameter is used to set the group by, order by, and count criteria used in
         generating the result. The operation also has many of the same parameters (for example, where
         and geometry) as the layer query operation. However, unlike the layer query operation,
-        ``query_top_feaures`` does not support parameters such as outStatistics and its related parameters
+        ``query_top_features`` does not support parameters such as outStatistics and its related parameters
         or return distinct values. Consult the ``advancedQueryCapabilities`` layer property for more details.
 
-        If the feature layer collection supports the `query_top_feaures` operation, it will include
+        If the feature layer collection supports the `query_top_features` operation, it will include
         `"supportsTopFeaturesQuery": True`, in the ``advancedQueryCapabilities`` layer property.
 
         .. note::
@@ -2196,7 +2196,7 @@ class FeatureLayer(Layer):
                     'outStatisticFieldName': "total",
                     'statisticType': "count"
                 }]
-            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containting total count
+            >>> feature_layer.query(out_statistics=stats, as_df=True) # returns a DataFrame containing total count
 
         .. code-block:: python
 
@@ -2999,7 +2999,7 @@ class FeatureLayer(Layer):
                                     --------     --------------------------------
                                     adds         List of attachments to add.
                                     --------     --------------------------------
-                                    updates      List of attachements to update
+                                    updates      List of attachments to update
                                     --------     --------------------------------
                                     deletes      List of attachments to delete
                                     ========     ================================
@@ -3014,7 +3014,7 @@ class FeatureLayer(Layer):
                                 to the server that the client is not true curves capable. The default value is false.
         ---------------------   --------------------------------------------------------------------------------------
         session_id              Optional String. Introduced at 10.6. The `session_id` is a GUID value that clients
-                                establish at the beginning and use throughout the edit session. The sessonID ensures
+                                establish at the beginning and use throughout the edit session. The sessionID ensures
                                 isolation during the edit session. The `session_id` parameter is set by a client
                                 during long transaction editing on a branch version.
         ---------------------   --------------------------------------------------------------------------------------
@@ -3153,7 +3153,7 @@ class FeatureLayer(Layer):
             and isinstance(adds, pd.DataFrame)
             and _is_geoenabled(adds) == False
         ):
-            # we have a regular panadas dataframe
+            # we have a regular pandas dataframe
             cols = [
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
@@ -3399,7 +3399,7 @@ class FeatureLayer(Layer):
                                 version. The sessionid is a GUID value that clients
                                 establish at the beginning and use throughout the
                                 edit session.
-                                The sessonid ensures isolation during the edit
+                                The sessionid ensures isolation during the edit
                                 session. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
@@ -3799,7 +3799,7 @@ class OrientedImageryLayer(FeatureLayer):
             return cls(url=f"{url}/{index}", gis=item._gis)
         else:
             raise Exception(
-                "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
+                "The layer index is not an Oriented Imagery Layer, please verify the index and try again."
             )
 
 
