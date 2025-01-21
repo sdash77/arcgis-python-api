@@ -16,6 +16,7 @@ from arcgis.gis import Item, Layer
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis._impl._util import _get_item_url
 from arcgis._impl.common._utils import _validate_url
+from arcgis._impl.common._deprecate import deprecated
 
 _dt = LazyLoader("_dt.datetime")
 os = LazyLoader("os")
@@ -112,6 +113,14 @@ class MapFeatureLayer(Layer):
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
+
+    @deprecated(
+        deprecated_in="2.4.1",
+        details="Use the attachments property instead.",
+    )
+    @property
+    def attachements(self):
+        return self.attachments
 
     # ----------------------------------------------------------------------
     @property
