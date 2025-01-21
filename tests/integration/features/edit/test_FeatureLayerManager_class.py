@@ -6,7 +6,7 @@ import unittest
 import os
 import datetime
 import arcgis
-from arcgis.gis import GIS, ItemTypeEnum
+from arcgis.gis import GIS
 from arcgis import features
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
