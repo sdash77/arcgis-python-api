@@ -479,7 +479,7 @@ class KnowledgeGraph:
         if raw_bind_param:
             for k, v in raw_bind_param.items():
                 converted: Any = KnowledgeGraph._convert_to_proper_representation(v)
-                if isinstance(converted, dict) or isinstance(converted, list):
+                if isinstance(converted, (dict, list)):
                     r_enc.set_param_key_value(k, _kgparser.from_value_object(converted))
                 else:
                     r_enc.set_param_key_value(k, v)
@@ -681,8 +681,7 @@ class KnowledgeGraph:
         raw_adds: list[dict[str, Any]] = [
             (
                 named_object.model_dump(by_alias=True)
-                if isinstance(named_object, Entity)
-                or isinstance(named_object, Relationship)
+                if isinstance(named_object, (Entity, Relationship))
                 else named_object
             )
             for named_object in adds
@@ -690,8 +689,7 @@ class KnowledgeGraph:
         raw_updates: list[dict[str, Any]] = [
             (
                 named_object.model_dump(by_alias=True)
-                if isinstance(named_object, Entity)
-                or isinstance(named_object, Relationship)
+                if isinstance(named_object, (Entity, Relationship))
                 else named_object
             )
             for named_object in updates
@@ -699,8 +697,7 @@ class KnowledgeGraph:
         raw_deletes: list[dict[str, Any]] = [
             (
                 named_object_delete.model_dump(by_alias=True)
-                if isinstance(named_object_delete, EntityDelete)
-                or isinstance(named_object_delete, RelationshipDelete)
+                if isinstance(named_object_delete, (EntityDelete, RelationshipDelete))
                 else named_object_delete
             )
             for named_object_delete in deletes
@@ -931,8 +928,7 @@ class KnowledgeGraph:
 
         raw_named_type_update: dict[str, Any] = (
             named_type_update.model_dump(by_alias=True)
-            if isinstance(named_type_update, EntityType)
-            or isinstance(named_type_update, RelationshipType)
+            if isinstance(named_type_update, (EntityType, RelationshipType))
             else named_type_update
         )
         raw_mask: dict[str, Any] = (

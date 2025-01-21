@@ -190,9 +190,7 @@ class Path(BaseModel):
                             raise ValueError(
                                 "Path must contain only entities or relationships!"
                             )
-                elif isinstance(named_object, Entity) or isinstance(
-                    named_object, Relationship
-                ):
+                elif isinstance(named_object, (Entity, Relationship)):
                     new_path.append(named_object)
                 else:
                     raise ValueError(
