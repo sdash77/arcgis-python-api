@@ -236,7 +236,8 @@ def _create_project(
         definition = {}
 
     item_properties["text"] = json.dumps(definition)
-    item = gis.content.add(item_properties, folder=folder)
+    folder = gis.content.folders.get(folder)
+    item = folder.add(item_properties).result()
     item_data = None
     try:
         item_data = _initialize_project(sensor_type, scenario_type, is_rm=True)
@@ -2177,6 +2178,40 @@ def reconstruct_surface(
         flight_json_details=flight_json_details,
         **kwargs,
     )
+
+
+###################################################################################################
+## Create project
+###################################################################################################
+def create_project(name, sensor_type="Drone", scenario_type="Drone", *, gis=None, future=False, **kwargs):
+    """
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+    
+    from ._util import _initialize_project
+    project_settings = _initialize_project(sensor_type, scenario_type, is_rm=True)
+    project_definition = {"name": name, "processing_settings": project_settings}
+    # project_definition = json.dumps(project_definition)
+    # print(f"project_definition: {project_definition}")
+    # print(f"project_definition: {type(project_definition)}")
+    # return
+    result = gis._tools.realitymapping.create_project(project_definition, future=future, **kwargs)
+    item = Item(gis=gis, itemid=result["reality_project"]["itemId"])
+    project = RMProject(item)
+    return project
+
+
+###################################################################################################
+## Delete project
+###################################################################################################
+def delete_project(project, *, gis=None, future=False, **kwargs):
+    gis = arcgis.env.active_gis if gis is None else gis
+    if (
+        not isinstance(project, (RMProject, Item)) or
+        (isinstance(project, Item) and project.type != "Reality Mapping Project")
+    ):
+        raise ValueError("Invalid project. Project must be a Reality Mapping Project Item or RMProject object.")    
+    return gis._tools.realitymapping.delete_project(project, future=future, **kwargs)
 
 
 class RMProject:

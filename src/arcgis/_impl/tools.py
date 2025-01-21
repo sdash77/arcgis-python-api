@@ -9659,6 +9659,45 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if future:
             return final_job
         return final_job.result()
+    
+    # --------------------------------------------------------------------
+    def create_project(self, project_definition, gis=None, future=False, **kwargs):
+        """
+        The `create_project` method creates a Reality Mapping project on portal and sitescan
+
+        :return: project item
+
+        """
+        gis = self._gis
+        job = self._tbx.create_project(project_definition=project_definition, gis=gis, future=True)
+
+        # job._is_reality = True
+        job = RMJob(job)
+        if future:
+            return job
+        return job.result()
+
+    # --------------------------------------------------------------------
+    def delete_project(self, project, gis=None, future=False, **kwargs):
+        """
+        The `delete_project` method deletes a Reality Mapping project on portal and sitescan
+
+        :return: project item
+
+        """
+        gis = self._gis
+        item_id = {}
+        if isinstance(project, arcgis.raster._realitymapping.RMProject):
+            item_id = {"itemId": project._project_item.itemid}
+        if isinstance(project, arcgis.gis.Item):
+            item_id = {"itemId": project.itemid}
+        job = self._tbx.delete_project(project_item=item_id, gis=gis, future=True)
+
+        # job._is_reality = True
+        job = RMJob(job)
+        if future:
+            return job
+        return job.result()
 
 
 ###########################################################################
