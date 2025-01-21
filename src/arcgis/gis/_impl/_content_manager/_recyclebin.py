@@ -287,7 +287,7 @@ class RecycleBin:
         elif isinstance(user, _arcgis_gis.User):
             self._user = user
         else:
-            raise ValueError("The `user` parametre must be a str, User or None.")
+            raise ValueError("The `user` parameter must be a str, User or None.")
 
     # ----------------------------------------------------------------------
     def __str__(self):
