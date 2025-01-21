@@ -2,6 +2,7 @@ import unittest
 from utils.decorators import profiles, integration_test
 from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
 
+
 @profiles.admin_enterprise_and_agol
 @integration_test
 class TestLicenseClass(unittest.TestCase):
@@ -23,10 +24,10 @@ class TestLicenseClass(unittest.TestCase):
         licenses = self.admin.license.all()
         for lic in licenses:
             assert lic
-    
+
     def test_properties(self):
         assert self.admin.license.properties
-    
+
     def test_report(self):
         licenses = self.admin.license.all()
         for lic in licenses:
@@ -36,12 +37,18 @@ class TestLicenseClass(unittest.TestCase):
         licenses = self.admin.license.all()
         for lic in licenses:
             assert isinstance(lic.check(self.gis._username), list)
-    
+
     def test_user_entitlement(self):
         licenses = self.admin.license.all()
         for lic in licenses:
             assert isinstance(lic.user_entitlement(self.gis._username), dict)
-   
-   
+
+    def test_user_entitlement_check(self):
+        user = self.gis.users.me
+        lm = self.admin.license
+        lic = lm.get("ArcGIS Pro")
+        assert lic.check(user) == lic.user_entitlement(user)['entitlements']
+
+
 if __name__ == "__main__":
-        unittest.main()
+    unittest.main()

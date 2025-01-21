@@ -578,7 +578,7 @@ class AttachmentManager(object):
         Downloads all attachments to a specific folder
 
         =========================   ===============================================================
-        **Arguement**               **Description**
+        **Argument**               **Description**
         -------------------------   ---------------------------------------------------------------
         object_ids                  optional list. A list of object_ids to download data from.
         -------------------------   ---------------------------------------------------------------
@@ -590,7 +590,7 @@ class AttachmentManager(object):
                                     **Example:** image/jpeg
         =========================   ===============================================================
 
-        :return: path to the file where the attachements have downloaded
+        :return: path to the file where the attachments have downloaded
 
         """
         results = []
@@ -622,7 +622,7 @@ class AttachmentManager(object):
 
     def get_list(self, oid: str):
         """
-        Get the list of attachements for a given OBJECT ID
+        Get the list of attachments for a given OBJECT ID
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -631,7 +631,7 @@ class AttachmentManager(object):
         ===============     ====================================================================
 
         :result:
-            A list of attachements
+            A list of attachments
 
         """
         return self._layer._list_attachments(oid)["attachmentInfos"]
@@ -886,7 +886,7 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def unregister(self, replica_id: str):
         """
-        unregisters a replica from a feature layer collection
+        Unregister a replica from a feature layer collection
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -944,7 +944,7 @@ class SyncManager(object):
 
         The feature service must have the *Sync* capability. See `publishing criteria
         <https://enterprise.arcgis.com/en/server/latest/publish-services/windows/prepare-data-for-feature-services.htm>`_
-        for details on how to pulish services and set capabilities.
+        for details on how to publish services and set capabilities.
         The `Sync overview
         <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_
         provides additional details and links for details.
@@ -1333,7 +1333,7 @@ class SyncManager(object):
 
                                         * *esriTransportTypeUrl* - the response is contained in a file and a
                                           the URL link to the file is returned
-                                        * *esriTransporTypeEmbedded* - a JSON object is returned in the
+                                        * *esriTransportTypeEmbedded* - a JSON object is returned in the
                                           response
 
                                         .. note::
@@ -1341,7 +1341,7 @@ class SyncManager(object):
                                             response is always returned by URL.
         -----------------------------   --------------------------------------------------------------------
         replica_server_gen              Required Integer. A generation number that allows the server to keep
-                                        track of what changes have already been sychronized.
+                                        track of what changes have already been synchronized.
                                         A new *replicaServerGen* is sent with the response. Clients should
                                         persist this value and use it with the next call to *synchronize*.
 
@@ -1388,7 +1388,7 @@ class SyncManager(object):
                                         for full details on formatting.
         -----------------------------   --------------------------------------------------------------------
         return_attachment_databy_url    If *True*, a reference to a URL will be provided for each attachment
-                                        returned. Otherwise, attachments are embedded in the respose. The
+                                        returned. Otherwise, attachments are embedded in the response. The
                                         default is *True*.
 
                                         .. note::
@@ -1458,10 +1458,10 @@ class SyncManager(object):
                                           It is updated when a synchronization completes.
                                         * If this argument is provided and *sync_direction* is provided, layers
                                           in this argument that do not provide a *syncDirection* value will use
-                                          the value of *sync_direction*. If *sync_direction* is not specificed,
+                                          the value of *sync_direction*. If *sync_direction* is not specified,
                                           the default *bidirectional* is used.
         -----------------------------   --------------------------------------------------------------------
-        edits_upload_id                 Optinal String. The ID for the uploaded item that contains the edits
+        edits_upload_id                 Optional String. The ID for the uploaded item that contains the edits
                                         the client wants to apply to the service. Used in conjunction with
                                         *edits_upload_format*.
 
@@ -1508,7 +1508,7 @@ class SyncManager(object):
                                           completes.
                                         * If *False*, the replica can continue to be synchronized.
         -----------------------------   --------------------------------------------------------------------
-        out_path                        Opitonal String. Path of a folder to save the output to a file.
+        out_path                        optional String. Path of a folder to save the output to a file.
         =============================   ====================================================================
 
         :returns:
@@ -2485,7 +2485,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ------------------     --------------------------------------------------------------------
         index                  Required int. The index of the layer on the view to replace.
         ------------------     --------------------------------------------------------------------
-        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+        new_source             Required FeatureLayer or Table. The layer to replace the existing
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
@@ -2516,7 +2516,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ------------------     --------------------------------------------------------------------
         index                  Required int. The index of the layer on the view to replace.
         ------------------     --------------------------------------------------------------------
-        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+        new_source             Required FeatureLayer or Table. The layer to replace the existing
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
@@ -3296,14 +3296,14 @@ class FeatureLayerCollectionManager(_GISResource):
                 "The name and extension of the file must be the same as the original data."
             )
 
-        # find if we are overwritting only a hosted table
+        # find if we are overwriting only a hosted table
         hosted_table = False
         if not feature_layer_item.layers and feature_layer_item.tables:
             hosted_table = True
         # endregion
 
         params = None
-        # overwritting for online and enterprise is different
+        # overwriting for online and enterprise is different
         # if online or hosted table then use minimal parameters
         if (
             related_data_item.type
@@ -3342,7 +3342,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     table_def.pop("fields")
                 tables_dict.append(table_def)
 
-            # Splice the detailed table and layer def with FeatuerServer def
+            # Splice the detailed table and layer def with FeatureServer def
             feature_service_def["layers"] = layers_dict
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
@@ -3517,7 +3517,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     dump = table_def.pop("fields")
                 tables_dict.append(table_def)
 
-            # Splice the detailed table and layer def with FeatuerServer def
+            # Splice the detailed table and layer def with FeatureServer def
             feature_service_def["layers"] = layers_dict
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
