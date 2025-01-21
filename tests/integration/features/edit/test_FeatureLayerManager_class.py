@@ -338,28 +338,16 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
                 for search_item in search_result:
                     search_item.delete(permanent=True)
         try:
-            if source_data_path[-3:] == "csv":
-                root_folder = gis.content.folders.get()
-                source_item = root_folder.add(
-                    item_properties= {
-                        "title": layer_name,
-                        "type": source_data_path[-3:].upper(),
-                        "tags": "integration-test",
-                        "snippet": "Item for Feature Layer integration testing"
-                        },
-                    file=source_data_path,
-                ).result()
-            if source_data_path[-3:] == "zip":
-                root_folder = gis.content.folders.get()
-                source_item = root_folder.add(
-                    item_properties= {
-                        "title": layer_name,
-                        "type": "File Geodatabase",
-                        "tags": "integration-test",
-                        "snippet": "Item for Feature Layer integration testing"
-                        },
-                    file=source_data_path,
-                ).result()            
+            root_folder = gis.content.folders.get()
+            source_item = root_folder.add(
+                item_properties= {
+                    "title": layer_name,
+                    "type": "CSV" if source_data_path[-3:].upper() == "CSV" else "File Geodatabase",
+                    "tags": "integration-test",
+                    "snippet": "Item for Feature Layer integration testing"
+                    },
+                file=source_data_path,
+                ).result()          
             # publish the item
             if source_item is not None:
                 feature_layer_item = source_item.publish(publish_parameters={
