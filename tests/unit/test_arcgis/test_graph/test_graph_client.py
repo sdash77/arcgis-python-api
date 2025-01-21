@@ -148,8 +148,11 @@ class TestGraph(unittest.TestCase):
             },
             as_dict=False,
         )
+        self.assertIsInstance(response, UpdateSearchIndexResponse)
         if not isinstance(response, UpdateSearchIndexResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of UpdateSearchIndexResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" not in results)
 
@@ -200,7 +203,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, UpdateSearchIndexResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of UpdateSearchIndexResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error = results["error"]
@@ -550,7 +555,7 @@ class TestGraph(unittest.TestCase):
         )
         data_model: Union[dict, GraphDataModel] = graph.query_data_model(as_dict=False)
         if not isinstance(data_model, GraphDataModel):
-            self.fail()
+            self.fail(msg="Expected response to be an instance of GraphDataModel.")
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("data_model_timestamp" in results)
         self.assertEqual(123, results["data_model_timestamp"])
@@ -812,7 +817,7 @@ class TestGraph(unittest.TestCase):
         )
         data_model: Union[dict, GraphDataModel] = graph.query_data_model(as_dict=False)
         if not isinstance(data_model, GraphDataModel):
-            self.fail()
+            self.fail(msg="Expected response to be an instance of GraphDataModel.")
         results: dict[str, Any] = data_model.model_dump(by_alias=True)
         self.assertTrue("identifier_info" in results)
         identifier_info: dict[str, Any] = results["identifier_info"]
@@ -867,7 +872,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False
         )
         if not isinstance(response, SyncDataModelResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of SyncDataModelResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
         self.assertFalse("warnings" in results)
@@ -926,7 +933,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False
         )
         if not isinstance(response, SyncDataModelResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of SyncDataModelResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error = results["error"]
@@ -1137,7 +1146,7 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, ApplyEditsResponse):
-            self.fail()
+            self.fail(msg="Expected response to be an instance of ApplyEditsResponse.")
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1315,7 +1324,9 @@ class TestGraph(unittest.TestCase):
             )
         )
         if not isinstance(response, NamedObjectTypeAddsResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of NamedObjectTypeAddsResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1388,7 +1399,9 @@ class TestGraph(unittest.TestCase):
             )
         )
         if not isinstance(response, NamedObjectTypeUpdateResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of NamedObjectTypeUpdateResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1446,7 +1459,9 @@ class TestGraph(unittest.TestCase):
             )
         )
         if not isinstance(response, NamedObjectTypeUpdateResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of NamedObjectTypeUpdateResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1477,7 +1492,9 @@ class TestGraph(unittest.TestCase):
             graph.named_object_type_delete(type_name="Person", as_dict=False)
         )
         if not isinstance(response, NamedObjectTypeDeleteResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of NamedObjectTypeDeleteResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1505,7 +1522,9 @@ class TestGraph(unittest.TestCase):
             graph.named_object_type_delete(type_name="Person", as_dict=False)
         )
         if not isinstance(response, NamedObjectTypeDeleteResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of NamedObjectTypeDeleteResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1565,7 +1584,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, PropertyAddsResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of PropertyAddsResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1645,7 +1666,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, PropertyUpdateResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of PropertyUpdateResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1708,7 +1731,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, PropertyUpdateResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of PropertyUpdateResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1742,7 +1767,9 @@ class TestGraph(unittest.TestCase):
             type_name="Person", property_name="name", as_dict=False
         )
         if not isinstance(response, PropertyDeleteResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of PropertyDeleteResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertFalse("error" in results)
 
@@ -1773,7 +1800,9 @@ class TestGraph(unittest.TestCase):
             type_name="Person", property_name="name", as_dict=False
         )
         if not isinstance(response, PropertyDeleteResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of PropertyDeleteResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1828,7 +1857,7 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, IndexAddsResponse):
-            self.fail()
+            self.fail(msg="Expected response to be an instance of IndexAddsResponse.")
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -1887,7 +1916,9 @@ class TestGraph(unittest.TestCase):
             )
         )
         if not isinstance(response, IndexDeletesResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of IndexDeletesResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -2002,7 +2033,9 @@ class TestGraph(unittest.TestCase):
             as_dict=False,
         )
         if not isinstance(response, ConstraintRuleAddsResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of ConstraintRuleAddsResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -2169,7 +2202,9 @@ class TestGraph(unittest.TestCase):
             )
         )
         if not isinstance(response, ConstraintRuleUpdatesResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of ConstraintRuleUpdatesResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
@@ -2237,7 +2272,9 @@ class TestGraph(unittest.TestCase):
             graph.constraint_rule_deletes(rule_names=["rule"], as_dict=False)
         )
         if not isinstance(response, ConstraintRuleDeletesResponse):
-            self.fail()
+            self.fail(
+                msg="Expected response to be an instance of ConstraintRuleDeletesResponse."
+            )
         results: dict[str, Any] = response.model_dump(by_alias=True)
         self.assertTrue("error" in results)
         error: dict[str, Any] = results["error"]
