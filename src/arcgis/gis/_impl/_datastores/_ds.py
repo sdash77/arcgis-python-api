@@ -747,7 +747,7 @@ class PortalDataStore(object):
             >>>
             >>> portal_folderid = [f["id"]
             >>>                    for f in gis.users.me.folders
-            >>>                    if f["title"] == "My_Bulk_Layers_Folder"]
+            >>>                    if f.name == "My_Bulk_Layers_Folder"]
             >>>
             >>> service_template = {"serviceName": None,
             >>>                     "type": "MapServer",
