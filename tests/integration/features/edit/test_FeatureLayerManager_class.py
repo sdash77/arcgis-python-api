@@ -335,9 +335,8 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
         item_types = ["CSV", "File Geodatabase", "Feature Layer"]
         for itm_type in item_types:
             search_result = gis.content.search(layer_name, item_type=itm_type)
-            if search_result:
-                for search_item in search_result:
-                    search_item.delete(permanent=True)
+            for search_item in search_result:
+                search_item.delete(permanent=True)
         try:
             root_folder = gis.content.folders.get()
             source_item = root_folder.add(
