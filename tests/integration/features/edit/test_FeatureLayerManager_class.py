@@ -78,14 +78,12 @@ class Test_FeatureLayerManager_portal(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         rel_items = cls.feature_layer_item.related_items("Service2Data", "forward")
-        if rel_items:
-            for rel_item in rel_items:
-                rel_item.delete(permanent=True)
+        for rel_item in rel_items:
+            rel_item.delete(permanent=True)
         cls.feature_layer_item.delete(permanent=True)
         rel_trunc_items = cls.feature_layer_item_truncate.related_items("Service2Data", "forward")
-        if rel_trunc_items:
-            for rel_trunc_item in rel_trunc_items:
-                rel_trunc_item.delete(permanent=True)        
+        for rel_trunc_item in rel_trunc_items:
+            rel_trunc_item.delete(permanent=True)        
         cls.feature_layer_item_truncate.delete(permanent=True)
 
     def test_create_FeatureLayerManager_object(self):
