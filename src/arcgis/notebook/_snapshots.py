@@ -50,7 +50,7 @@ def create_snapshot(
         )
     if gis._portal.is_arcgisonline:
         mgr = mgrs[0]
-        sm = mgr.snaphots
+        sm = mgr.snapshots
         res = sm.create(
             item=item,
             name=name,
