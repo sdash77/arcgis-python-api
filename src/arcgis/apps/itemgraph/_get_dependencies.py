@@ -7,23 +7,24 @@ from collections import OrderedDict
 # any item that can contain another item or require another to exist
 _COMPLEX_ITEMS = frozenset(
     [
-        "Web Map",
-        "Web Scene",
-        "Web Mapping Application",
-        "Operation View",
-        "Dashboard",
-        "Feature Service",
-        "StoryMap",
-        "Workforce Project",
-        "Form",
-        "QuickCapture Project",
-        "Notebook",
-        "Pro Map",
-        "Project Package",
-        "Feature Collection",
-        "Web Experience",
-        "Hub Site Application",
-        "Hub Page",
+        "Web Map", # implemented
+        "Web Scene", # implemented
+        "Web Mapping Application", # implemented
+        "Operation View", # CHECK
+        "Dashboard", # implemented
+        "Feature Service", # works with related items
+        "StoryMap", # implemented
+        "Workforce Project", # CHECK
+        "Form", # works with related items
+        "QuickCapture Project", # CHECK
+        "Notebook", # figure out
+        "Pro Map", # CHECK
+        "Project Package", # CHECK
+        "Feature Collection", # CHECK
+        "Web Experience", # implemented
+        "Hub Site Application", # implemented, check for other item types within
+        "Hub Page", # ditto
+        "Solution", # works with related items
     ]
 )
 
@@ -176,6 +177,8 @@ def _get_item_dependencies(itemid, gis, include_related=True, include_reverse=Fa
         dependencies = _parse_wma(item)
     elif item_type == "StoryMap":
         dependencies = _parse_storymap(item)
+    elif item_type in ["Hub Site Application", "Hub Page"]:
+        dependencies = _parse_hub(item)
     else:
         dependencies = []
 
@@ -208,6 +211,7 @@ def _get_related_items(item, forward=True, reverse=True):
         "Item2Report",
         "Listed2Provisioned",
         "Listed2ImplicitlyListed",
+        "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
@@ -246,6 +250,7 @@ def _get_related_item_dict(item, forward=True, reverse=True):
         "Item2Report",
         "Listed2Provisioned",
         "Listed2ImplicitlyListed",
+        "Solution2Item",
     ]
     r_rel_types = [
         "Listed2Provisioned",
@@ -415,6 +420,38 @@ def _parse_storymap(item):
 
     return itemids
 
+def _parse_hub(item):
+    itemids = set()
+    pub_data = item.get_data()
+    draft_name = None
+    for r in item.resources.list():
+        if "draft" in r["resource"]:
+            draft_name = r["resource"]
+            break
+    if draft_name:
+        draft_data = item.resources.get(draft_name)['data']
+    else:
+        draft_data = None
+    
+    def _parse_hub_sections(data):
+        dep_ids = set()
+        for section in data['values']['layout']['sections']:
+            for row in section['rows']:
+                for card in row['cards']:
+                    c = card['component']
+                    if c['name'] == 'webmap-card':
+                        for w in ['webmap', 'webscene']:
+                            if c['settings'].get(w, None):
+                                dep_ids.add(c['settings'][w])
+                    elif c['name'] == 'app-card':
+                        dep_ids.add(c['settings']['itemId'])
+        return dep_ids
+    
+    for data in [pub_data, draft_data]:
+        if data:
+            itemids.update(_parse_hub_sections(data))
+    
+    return list(itemids)
 
 def _find_regex(i, regex, res=[]):
     """
