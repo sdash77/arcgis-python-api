@@ -1,3 +1,6 @@
+import json
+import os
+import tempfile
 import unittest
 
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
@@ -359,6 +362,70 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")
+
+    def test_check_server_status_uses_private_url(self):
+        gis_source = self.connection._gis
+        public_url = gis_source._url
+        referer = ""
+        token_resp = gis_source._con.post(
+            gis_source._con._token_url,
+            {
+                "username": gis_source.users.me.username,
+                "password": self.connection.portal_password,
+                "referer": json.dumps(referer),
+                "expiration": 1440,
+                "f": "json",
+            },
+            add_token=False,
+        ).get("token", None)
+        if token_resp is None:
+            raise Exception(
+                "Could not authenticate, please verify `your_enterprise_profile` exists on the system."
+            )
+        del gis_source
+
+        with tempfile.TemporaryDirectory() as d:
+            token = json.dumps(
+                {
+                    "token": f"{token_resp}",
+                    "referer": "",
+                    "privatePortalUrl": public_url,
+                    "publicPortalUrl": public_url,
+                    "expiration": 20160,
+                }
+            )
+            f = open(os.path.join(d, ".nbauth.json"), "w")
+            f.write(token)
+            f.close()
+            del f
+            os.getenv
+            with unittest.mock.patch.dict(
+                "os.environ",
+                {"NB_AUTH_FILE": os.path.join(d, ".nbauth.json")},
+                clear=True,
+            ):
+                with unittest.mock.patch.object(
+                    os,
+                    "getenv",
+                    return_value=os.path.join(d, ".nbauth.json"),
+                ):
+                    gis = GIS("HOME")
+                    local_connection = workflowmanager_setup.WorkflowManagerSetup(gis)
+                    self.assertTrue(
+                        local_connection._gis._use_private_url_only,
+                        "Portal was not mocked to use private url only",
+                    )
+
+                    actual = local_connection.workflow_manager_admin.server_status
+
+                    # Assert
+                    self.assertTrue(actual, "Incorrect return type")
+                    self.assertTrue(
+                        local_connection.workflow_manager_admin._url.endswith(
+                            ":13443/workflow"
+                        ),
+                        f"{local_connection.workflow_manager_admin._url} was not a private URL",
+                    )
 
     # endregion
 
