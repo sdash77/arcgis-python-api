@@ -18,13 +18,12 @@ _COMPLEX_ITEMS = frozenset(
         "Form", # works with related items
         "QuickCapture Project", # CHECK
         "Notebook", # figure out
-        "Pro Map", # CHECK
-        "Project Package", # CHECK
-        "Feature Collection", # CHECK
+        "Feature Collection", # works with related items
         "Web Experience", # implemented
         "Hub Site Application", # implemented, check for other item types within
         "Hub Page", # ditto
         "Solution", # works with related items
+        "Geoprocessing Service", # implemented
     ]
 )
 
@@ -179,6 +178,8 @@ def _get_item_dependencies(itemid, gis, include_related=True, include_reverse=Fa
         dependencies = _parse_storymap(item)
     elif item_type in ["Hub Site Application", "Hub Page"]:
         dependencies = _parse_hub(item)
+    elif item_type == "Geoprocessing Service":
+        dependencies = _parse_gp_service(item)
     else:
         dependencies = []
 
@@ -454,6 +455,13 @@ def _parse_hub(item):
             itemids.update(_parse_hub_sections(data))
     
     return list(itemids)
+
+def _parse_gp_service(item):
+    try:
+        structure = item.resources.get("webtoolDefinition.json")
+        return [structure["jsonProperties"]["notebookId"]]
+    except:
+        return []
 
 def _find_regex(i, regex, res=[]):
     """
