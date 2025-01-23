@@ -162,7 +162,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -214,7 +214,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -313,7 +313,7 @@ class Geocoder(_GISResource):
                                  passed in a request with or without the text
                                  parameter.
         --------------------     ----------------------------------------------------
-        out_fields               Optional string. Name of all the fields to inlcude.
+        out_fields               Optional string. Name of all the fields to include.
                                  The default is "*" which means all fields.
         --------------------     ----------------------------------------------------
         max_locations            Optional integer. The number of locations to be
@@ -367,7 +367,7 @@ class Geocoder(_GISResource):
         --------------------     ----------------------------------------------------
         source_country           Optional str. Limits the returned candidates to the
                                  specified country or countries for either single-field
-                                 or multifield requests. Acceptable values include
+                                 or multifields requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -719,7 +719,7 @@ class Geocoder(_GISResource):
                                       a single value or a comma-delimited collection of values as input.
                                       e.g. ='matchedCity,primaryStreet'
         -------------------------     ----------------------------------------------------------------
-        out_fields                    Optional String. A string of comma seperated fields names used to
+        out_fields                    Optional String. A string of comma separated fields names used to
                                       limit the return attributes of a geocoded location.
         =========================     ================================================================
 
@@ -2178,7 +2178,7 @@ def batch_geocode(
                                   a single value or a comma-delimited collection of values as input.
                                   e.g. ='matchedCity,primaryStreet'
     -------------------------     ----------------------------------------------------------------
-    out_fields                    Optional String. A string of comma seperated fields names used to
+    out_fields                    Optional String. A string of comma separated fields names used to
                                   limit the return attributes of a geocoded location.
     =========================     ================================================================
 
@@ -2268,7 +2268,7 @@ def suggest(
     ------------------------------      -----------------------------------------------------------------
     location                            Optional tuple[float, float] | Point. Defines an origin point
                                         location that is used with the distance parameter to sort
-                                        sugggested candidates based on their proximity to the location.
+                                        suggested candidates based on their proximity to the location.
                                         The *search_extent* parameter specifies the radial distance from
                                         the location in meters. The priority of candidates within this
                                         radius is boosted relative to those outside the radius.

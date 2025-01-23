@@ -861,7 +861,7 @@ def find_routes(
                                                                                       adjacent streets meet.
                                             ----------------------------------------  ------------------------------------------------
                                             ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
-                                                                                      U-turns are prohibited at all junctions and interesections and are permitted only at dead ends.
+                                                                                      U-turns are prohibited at all junctions and intersections and are permitted only at dead ends.
                                             ----------------------------------------  ------------------------------------------------
                                             NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
                                                                                       Note that even when this parameter value is chosen, a route can still
@@ -1465,7 +1465,7 @@ def find_routes(
 
                                             Choice list: ['True Shape', 'Straight Line', 'None']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    route_line_simplif ication_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for
+    route_line_simplification_tolerance     Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for
                                             routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to
                                             Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter
                                             is unchecked (False).
@@ -1539,7 +1539,7 @@ def find_routes(
                                             tool does not have to lookup the settings based on the travel mode name.
 
                                             The default value, Custom, allows you to configure your own travel mode using the custom travel mode parameters (UTurn at Junctions, Use Hierarchy, Restrictions, Attribute Parameter Values,  and Impedance).
-                                            The default values of the custom travel mode parameters model travelling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
+                                            The default values of the custom travel mode parameters model traveling by car. You may want to choose Custom and set the custom travel mode parameters listed above to model a pedestrian with a fast walking speed
                                             or a truck with a given height, weight, and cargo of certain hazardous materials. You may choose to do this to try out different settings to get desired analysis results.
                                             Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                             everyone in your organization can rerun the analysis with the same settings.
@@ -1635,7 +1635,7 @@ def find_routes(
 
                                             For each cost attribute that is accumulated, a `Total_[Cost Attribute Name]_[Units]` field is populated in the outputs created from the tool.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    ignore_network_location_fields          Optional bool. Specifies whether the newtork location fields will be considered when locating inputs such as stops or facilities on the
+    ignore_network_location_fields          Optional bool. Specifies whether the network location fields will be considered when locating inputs such as stops or facilities on the
                                             network.
                                             * True - Network location fields will not be considered when locating inputs on the network. Instead, the inputs will always be located by performing a spatial search.
                                             * False - Network location fields will be considered when locating inputs on the network. This is the default.
@@ -1658,12 +1658,12 @@ def find_routes(
 
                                             .. note::
                                                 'default' has to be present if you want to pass in any locate_settings to the
-                                                service. In addition, locate setttings for default have to be complete, meaning
+                                                service. In addition, locate settings for default have to be complete, meaning
                                                 all properties need to be present.
                                                 For each override, the keys do not have to be complete.
 
                                             .. note::
-                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_units are
                                                 not supported.
 
                                             .. code-block:: python
