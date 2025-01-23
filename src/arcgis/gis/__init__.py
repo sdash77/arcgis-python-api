@@ -1918,9 +1918,7 @@ class GroupMigrationManager(object):
                 "Must be an administrator or group owner to perform this action"
             )
 
-        try_json = True
-        if preview_only:
-            try_json = False
+        try_json = not preview_only
         url = (
             f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
         )
