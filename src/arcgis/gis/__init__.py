@@ -769,7 +769,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    if self._portal.url.endswith("/"):
+                        url = self._portal.url + "admin"
+                    else:
+                        url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -800,7 +803,10 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    if self._portal.url.endswith("/"):
+                        url = self._portal.url + "admin"
+                    else:
+                        url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -838,7 +844,10 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url = self._portal.url + "/admin"
+                        if self._portal.url.endswith("/"):
+                            url = self._portal.url + "admin"
+                        else:
+                            url = self._portal.url + "/admin"
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
