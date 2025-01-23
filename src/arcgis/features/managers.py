@@ -3878,7 +3878,9 @@ class FeatureLayerManager(_GISResource):
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
+            while "status" in job_response and not job_response.get(
+                "status"
+            ).lower() in [
                 "completed",
                 "Completed",
             ]:
@@ -3886,14 +3888,15 @@ class FeatureLayerManager(_GISResource):
                     count = 10
                 time.sleep(sleep_time * count)
                 job_response = con.post(url, params)
-                if job_response.get("status") in ("esriJobFailed", "failed"):
+                status: str = job_response.get("status", "unknown").lower()
+                if status in ("esriJobFailed".lower(), "failed"):
                     if "error" in job_response:
                         raise Exception(job_response["error"])
                     else:
                         raise Exception("Job failed.")
-                elif job_response.get("status") == "esriJobCancelled":
+                elif status in ["esriJobCancelled".lower(), "cancelled"]:
                     raise Exception("Job cancelled.")
-                elif job_response.get("status") == "esriJobTimedOut":
+                elif status in ("esriJobTimedOut".lower(), "timedout"):
                     raise Exception("Job timed out.")
                 count += 1
 
