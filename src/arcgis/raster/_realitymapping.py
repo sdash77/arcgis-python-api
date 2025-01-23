@@ -139,11 +139,11 @@ def _update_flight_info(
 
 def _create_project(
     name: str,
-    definition: Optional[dict[str, Any]] = None,
     sensor_type: str = "Drone",
     scenario_type: str = "Drone",
     *,
     gis: Optional[GIS] = None,
+    future: Optional[bool] = False,
     **kwargs,
 ):
     """
@@ -211,41 +211,12 @@ def _create_project(
     if sensor_type and sensor_type.lower() == "satellite":
         scenario_type = ""
 
-    folder = None
-    folderId = None
-
-    if folder is None:
-        folder = "_realitymapping_" + name
-    owner = gis.properties.user.username
-    try:
-        folder_item = gis.content.folders.create(folder, owner)
-        folder_dict = folder_item.properties
-    except:
-        raise RuntimeError(
-            "Unable to create folder for Realitymapping Project Item. The project name is not available."
-        )
-    folder = folder_dict["title"]
-    folderId = folder_dict["id"]
-
-    item_properties = {
-        "title": name,
-        "type": "Reality Mapping Project",
-        "properties": {"flightCount": 0, "status": "inProgress"},
-    }
-    if definition is None:
-        definition = {}
-
-    item_properties["text"] = json.dumps(definition)
-    folder = gis.content.folders.get(folder)
-    item = folder.add(item_properties).result()
-    item_data = None
-    try:
-        item_data = _initialize_project(sensor_type, scenario_type, is_rm=True)
-    except:
-        pass
-    if item_data:
-        props = item.properties
-        item.update(item_properties=props, data=json.dumps(item_data))
+    gis = arcgis.env.active_gis if gis is None else gis
+    from ._util import _initialize_project
+    project_settings = _initialize_project(sensor_type, scenario_type, is_rm=True)
+    project_definition = {"name": name, "processing_settings": project_settings}
+    result = gis._tools.realitymapping.create_project(project_definition, future=future, **kwargs)
+    item = Item(gis=gis, itemid=result["reality_project"]["itemId"])
     return item
 
 
@@ -2180,40 +2151,6 @@ def reconstruct_surface(
     )
 
 
-###################################################################################################
-## Create project
-###################################################################################################
-def create_project(name, sensor_type="Drone", scenario_type="Drone", *, gis=None, future=False, **kwargs):
-    """
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-    
-    from ._util import _initialize_project
-    project_settings = _initialize_project(sensor_type, scenario_type, is_rm=True)
-    project_definition = {"name": name, "processing_settings": project_settings}
-    # project_definition = json.dumps(project_definition)
-    # print(f"project_definition: {project_definition}")
-    # print(f"project_definition: {type(project_definition)}")
-    # return
-    result = gis._tools.realitymapping.create_project(project_definition, future=future, **kwargs)
-    item = Item(gis=gis, itemid=result["reality_project"]["itemId"])
-    project = RMProject(item)
-    return project
-
-
-###################################################################################################
-## Delete project
-###################################################################################################
-def delete_project(project, *, gis=None, future=False, **kwargs):
-    gis = arcgis.env.active_gis if gis is None else gis
-    if (
-        not isinstance(project, (RMProject, Item)) or
-        (isinstance(project, Item) and project.type != "Reality Mapping Project")
-    ):
-        raise ValueError("Invalid project. Project must be a Reality Mapping Project Item or RMProject object.")    
-    return gis._tools.realitymapping.delete_project(project, future=future, **kwargs)
-
-
 class RMProject:
     """
 
@@ -2267,14 +2204,14 @@ class RMProject:
             try:
                 project = _create_project(
                     name=project,
-                    definition=definition,
                     sensor_type=sensor_type,
                     scenario_type=scenario_type,
+                    gis=gis,
                 )
             except:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
-        if project.type == "Reality Mapping Project":  # Reality Mapping Project
+        if project.type == "Reality Mapping Project":
             self._project_item = project
         else:
             raise RuntimeError(
@@ -2345,15 +2282,29 @@ class RMProject:
         :return: A portal item
         """
         return self._project_item
+    
+    @property
+    def groups(self):
+        """
+        The ``groups`` property returns the groups associated with the Project.
 
-    def delete(self):
+        :return: A list of groups
+        """
+        return self._project_item.sharing.groups.list()
+
+    def delete(self, gis):
         """
         The ``delete`` method deletes the project item from the portal and all the associated products.
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        deleted = self._folder.delete()
-        return deleted
+        gis = arcgis.env.active_gis if gis is None else gis
+        if (
+            not isinstance(self, (RMProject, Item)) or
+            (isinstance(self, Item) and self.type != "Reality Mapping Project")
+        ):
+            raise ValueError("Invalid project. Project must be a Reality Mapping Project Item or RMProject object.")    
+        return gis._tools.realitymapping.delete_project(self, future=True)
 
     @property
     def settings(self):
@@ -2376,16 +2327,6 @@ class RMProject:
         props = item.properties
         updated_item = item.update(item_properties=props, data=properties_dict)
         return updated_item
-
-    # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
-    #    try:
-    #        project_item = _create_project(name=name,
-    #                                       definition=definition
-    #                                       )
-    #        self._project_item = project_item
-    #        return True
-    #    except:
-    #        raise RuntimeError("Creation of realitymapping project failed.")
 
     def add_mission(
         self,
