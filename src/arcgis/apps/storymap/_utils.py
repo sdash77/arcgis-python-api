@@ -368,28 +368,7 @@ def get_version(story) -> str:
     return sm_version
 
 
-def _publish_online(story, sm_version, access: str = None, make_copyable: bool = None):
-    """
-    Online has a publish endpoint. We do not need to take care of resources or keywords with this workflow.
-    """
-    # Publish Mode Online
-    # publish endpoint
-    url = "https://storymaps.arcgis.com/api/item/{}/publish".format(story._itemid)
-    data = {
-        "access": access or story._item.access,
-        "appVersion": sm_version,
-        "storyDraftData": story._properties,
-    }
-    if make_copyable in [True, False]:
-        data["canViewersCopy"] = make_copyable
-    story._gis._session.post(
-        url,
-        json.dumps(data),
-        headers={"x-storymaps-auth": story._gis._session.auth.token},
-    )
-
-
-def _publish_enterprise(story, access, item_properties):
+def _publish_enterprise_and_online(story, access, item_properties):
     """
     Enterprise does not have a publish endpoint. We need to manually update the item properties and resources.
     """
@@ -590,20 +569,17 @@ def save(
     # get the story map version from endpoint
     sm_version = get_version(story)
 
-    if publish is True and story._gis._is_agol:
-        _publish_online(story, sm_version, access, make_copyable)
-    else:
-        # No endpoint, do manually
-        item_properties = _prepare_story_for_save(
-            story, publish, make_copyable, no_seo, title, tags, sm_version
-        )
+    # No endpoint, do manually
+    item_properties = _prepare_story_for_save(
+        story, publish, make_copyable, no_seo, title, tags, sm_version
+    )
 
-        if publish is True and not story._gis._is_agol:
-            _publish_enterprise(story, access, item_properties)
-        else:
-            # access does not change when only saving
-            item_properties["access"] = story._item.access
-            story._item.update(item_properties=item_properties)
+    if publish is True:
+        _publish_enterprise_and_online(story, access, item_properties)
+    else:
+        # access does not change when only saving
+        item_properties["access"] = story._item.access
+        story._item.update(item_properties=item_properties)
 
     story._item = story._gis.content.get(story._itemid)
     return story._item
