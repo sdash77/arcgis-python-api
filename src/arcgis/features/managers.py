@@ -3562,8 +3562,8 @@ class FeatureLayerManager(_GISResource):
     """
     If the *user* has the appropriate privileges to access this class, it allows
     for updating the definition of a :class:`~arcgis.features.FeatureLayer`.
-    This class is not created directly, but instead is accessed as the
-    :attr:`~arcgis.features.FeatureLayer.manager` property of the
+    This class is not typically initialized by end users, but instead accessed
+    as the :attr:`~arcgis.features.FeatureLayer.manager` property of the
     :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
@@ -3652,12 +3652,10 @@ class FeatureLayerManager(_GISResource):
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
-                            asynchronously and:
+                            asynchronously.
 
-                              * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
-                                will be returned and the *result()* method returns results.
-                              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
-                                success or failure is returned.
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enteprise.
         ===============     ====================================================================
 
         :return:
@@ -3666,12 +3664,11 @@ class FeatureLayerManager(_GISResource):
 
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
-             * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
-               is returned
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
 
         .. code-block:: python
 
-            # Usage Example: ArcGIS Enterprise for Kubernetes asynchronous:
+            # Usage Example: ArcGIS Enterprise for Kubernetes:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_kubernetes_profile")
 
@@ -3691,8 +3688,7 @@ class FeatureLayerManager(_GISResource):
                                 ]
                              }
            >>> res = fl.manager.add_to_definition(
-                                json_dict=add_field,
-                                future=True
+                                json_dict=add_field
                     )
            >>> res
 
@@ -3772,12 +3768,10 @@ class FeatureLayerManager(_GISResource):
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
-                            asynchronously and:
+                            asynchronously.
 
-                              * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
-                                will be returned and the *result()* method returns results.
-                              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
-                                success or failure is returned.
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enteprise.
         ===============     ====================================================================
 
         :return:
@@ -3786,8 +3780,7 @@ class FeatureLayerManager(_GISResource):
 
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
-             * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
-               is returned
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -3836,12 +3829,10 @@ class FeatureLayerManager(_GISResource):
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
-                            asynchronously and:
+                            asynchronously.
 
-                              * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
-                                will be returned and the *result()* method returns results.
-                              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
-                                success or failure is returned.
+                              * Asynchronous operation only supported in ArcGIS Online and
+                                ArcGIS Enteprise.
         ===============     ====================================================================
 
         :return:
@@ -3850,8 +3841,7 @@ class FeatureLayerManager(_GISResource):
 
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
-             * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
-               is returned
+             * Asynchronous operation not supported in ArcGIS Online for Kubernetes.
         """
 
         if isinstance(json_dict, PropertyMap):
