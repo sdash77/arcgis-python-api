@@ -29,7 +29,26 @@ re = LazyLoader("re")
 
 _log = logging.getLogger()
 
+
 # pylint: disable=protected-access
+# ----------------------------------------------------------------------
+def _get_value_case_insensitive(my_dict, key):
+    """
+    Retrieves the value associated with the given key in a case-insensitive manner.
+
+    Args:
+      my_dict: The dictionary to search.
+      key: The key to look for.
+
+    Returns:
+      The value associated with the key, or None if the key is not found.
+    """
+    for k in my_dict.keys():
+        if k.lower() == key.lower():
+            return my_dict[k]
+    return None
+
+
 ###########################################################################
 
 
@@ -2979,7 +2998,8 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
-        """Internal method to check the status of the definition change.
+        """
+        Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================
@@ -2999,24 +3019,39 @@ class FeatureLayerCollectionManager(_GISResource):
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
+            while "status" in job_response and not job_response.get(
+                "status"
+            ).lower() in [
                 "completed",
                 "Completed",
+                "COMPLETED",
             ]:
+                if count > 10:
+                    count = 10
                 time.sleep(sleep_time * count)
                 job_response = con.post(url, params)
-                if (
-                    job_response.get("status") in ("esriJobFailed", "failed")
-                    or job_response.get("status").lower().find("error") > -1
+                if job_response.get("status").lower() in (
+                    "esriJobFailed",
+                    "failed",
+                    "esriJobFailed".lower(),
                 ):
                     if "error" in job_response:
                         raise Exception(job_response["error"])
                     else:
-                        raise Exception(f"Job failed: {job_response}")
-                elif job_response.get("status") == "esriJobCancelled":
+                        raise Exception("Job failed.")
+                elif job_response.get("status").lower() in (
+                    "esriJobCancelled".lower(),
+                    "cancelled",
+                    "esriJobFailed",
+                ):
                     raise Exception("Job cancelled.")
-                elif job_response.get("status") == "esriJobTimedOut":
+                elif job_response.get("status").lower() in (
+                    "esriJobTimedOut",
+                    "esriJobTimedOut".lower(),
+                    "timedout",
+                ):
                     raise Exception("Job timed out.")
+
                 count += 1
 
         else:
@@ -3072,11 +3107,10 @@ class FeatureLayerCollectionManager(_GISResource):
         }
         adddefn_url = self._url + "/addToDefinition"
         res = self._con.post(adddefn_url, params)
-        if future and "statusURL" in res:
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -3172,11 +3206,10 @@ class FeatureLayerCollectionManager(_GISResource):
         }
         u_url = self._url + "/updateDefinition"
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -3217,13 +3250,11 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
-
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -3641,11 +3672,10 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/addToDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -3690,11 +3720,10 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/updateDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -3742,11 +3771,10 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
-            )
+            futureobj = executor.submit(self._check_status, **{"url": status_url})
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
