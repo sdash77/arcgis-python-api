@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import functools
 import json
 import logging
 import sys
@@ -19,10 +20,13 @@ from arcgis.auth.tools._adapter import EsriTrustStoreAdapter
 
 logger = logging.getLogger(__name__)
 
-from arcgis.geometry import Geometry
 import arcgis.gis
-from arcgis.gis import Item
+from arcgis.auth.tools import parse_url
+from arcgis.geometry import Geometry
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
+from arcgis.gis import Item
+
+logger = logging.getLogger(__name__)
 
 
 def _underscore_to_camelcase(name):
@@ -55,66 +59,87 @@ def _check_license(gis):
 
 def _initialize(instance, gis, is_admin=False):
     instance._gis = gis
-    if instance._gis.users.me is None:
+    if not instance._gis.users.me:
         raise ValueError("An authenticated `GIS` is required.")
 
-    instance._url = _wmx_server_url(instance, is_admin)[0]
-    logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
-    if instance._url is None:
-        raise ValueError("No WorkflowManager Registered with your Organization")
-
-
-def _wmx_server_url(instance, is_admin):
-    """locates the WMX server"""
-    baseurl = instance._gis._portal.resturl
-
-    # Set org_id
     info_result = instance._gis.properties
     instance.is_enterprise = info_result["isPortal"]
 
     if instance.is_enterprise:
         instance.org_id = "workflow"
-        res = instance._gis.servers
-        for s in res["servers"]:
+        for s in instance._gis.servers.get("servers", []):
             server_functions = [
                 x.strip() for x in s.get("serverFunction", "").lower().split(",")
             ]
-            if "workflowmanager" in server_functions:
-                instance.server_url = instance._url = s.get("url", None)
-                instance._url = s.get("url", None)
-                instance._private_url = s.get("adminUrl", None)
-                if instance._url is None:
-                    raise RuntimeError("Cannot find a WorkflowManager Server")
-                if is_admin:
-                    instance._url += f"/{instance.org_id}"
-                    instance._private_url += f"/{instance.org_id}"
-                else:
-                    instance._url += f"/{instance.org_id}/{instance._item.id}"
-                    instance._private_url += f"/{instance.org_id}/{instance._item.id}"
-                return instance._url, instance._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+            if "workflowmanager" not in server_functions:
+                continue
+            public_url = s.get("url")
+            private_url = s.get("adminUrl")
+            instance._server_url = _get_server_url(public_url, private_url, gis)
+
+            if not instance._server_url:
+                raise RuntimeError("Cannot find a WorkflowManager Server")
+
+            instance._url = f"{instance._server_url}/{instance.org_id}"
+            if not is_admin:
+                instance._url = f"{instance._url}/{instance._item.id}"
+            break
+
+        if not instance._url:
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
     # is Arcgis Online
     else:
         instance.org_id = info_result["id"]
+        helper_services = info_result.get("helperServices", {})
+        instance.server_url = instance._url = helper_services.get(
+            "workflowManager", {}
+        ).get("url")
+        if not instance._url:
+            raise RuntimeError(f"Cannot get Workflow Manager url for {gis}")
 
-        helper_services = info_result["helperServices"]
-        if helper_services is None:
-            raise RuntimeError("Cannot find helper functions")
+        instance._url = f"{instance._url}/{instance.org_id}"
+        if not is_admin:
+            instance._url = f"{instance._url}/{instance._item.id}"
 
-        instance.server_url = instance._url = helper_services["workflowManager"]["url"]
-        if instance._url is None:
-            raise RuntimeError("Cannot get Workflow Manager url")
+    if not instance._url:
+        raise ValueError(f"WorkflowManager Not Registered on {gis}")
+    logger.debug(f"Initializing Workflow Manager. Url = {instance._url}")
 
-        if is_admin:
-            instance._url += f"/{instance.org_id}"
-            instance._private_url += f"/{instance.org_id}"
-        else:
-            instance._url += f"/{instance.org_id}/{instance._item.id}"
-            instance._private_url += f"/{instance.org_id}/{instance._item.id}"
-        return instance._url, instance._private_url
+
+@functools.lru_cache(maxsize=255)
+def _get_server_url(public_url: str, private_url: str, gis: arcgis.gis.GIS) -> str:
+    if not gis._use_private_url_only and not gis._validate_item_url:
+        return public_url
+
+    if not private_url:
+        return public_url
+
+    parsed_private = parse_url(private_url)
+    if parsed_private.port == 6443:
+        private_url = (
+            parsed_private
+            # Port isn't part of the named tuple so can't be replaced directly
+            ._replace(netloc=parsed_private.netloc.replace("6443", "13443"))
+            ._replace(path="")
+            .geturl()
+        )
+
+    if gis._use_private_url_only:
+        return private_url
+
+    for _url in [public_url, private_url]:
+        try:
+            if _url:
+                logger.debug(f"Testing workflow connection to {_url}")
+                gis._con.get(f"{_url}/workflow/checkStatus")
+                return _url
+        except:
+            continue  # if status check fails, try the next url
+
+    return public_url
 
 
 class WorkflowManagerAdmin:
