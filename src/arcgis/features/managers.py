@@ -3565,18 +3565,18 @@ class FeatureLayerManager(_GISResource):
     This class is not created directly, but instead is accessed as the
     :attr:`~arcgis.features.FeatureLayer.manager` property of the
     :class:`~arcgis.features.FeatureLayer`.
-    
+
     .. code-block:: python
-    
+
         # Usage Example
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_user_profile")
-        
+
         >>> item = gis.content.search("Flood Damage", "Feature Layer")[0]
         >>> flood_flyr = item.layers[0]
         >>> flood_mgr = flood_flyr.manager
         >>> type(flood_mgr)
-        
+
         <class 'arcgis.features.managers.FeatureLayerManager'>
     """
 
@@ -3646,14 +3646,14 @@ class FeatureLayerManager(_GISResource):
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
-                            can be derived from the `properties` property. For layer level 
+                            can be derived from the `properties` property. For layer level
                             modifications, run updates on each individual feature layer of the
                             service.
         ---------------     --------------------------------------------------------------------
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
                             asynchronously and:
-                              
+
                               * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
                                 will be returned and the *result()* method returns results.
                               * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
@@ -3663,21 +3663,21 @@ class FeatureLayerManager(_GISResource):
         :return:
            * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
            * If run asynchronously (*future = True*):
-             
+
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
                is returned
-               
+
         .. code-block:: python
-        
+
             # Usage Example: ArcGIS Enterprise for Kubernetes asynchronous:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_kubernetes_profile")
-            
+
             >>> item = gis.content.get("<feature_layer_item_id>")
             >>> fl = item.layers[0]
-            
+
             >>> new_field = {
                               "fields": [
                                     {
@@ -3695,15 +3695,15 @@ class FeatureLayerManager(_GISResource):
                                 future=True
                     )
            >>> res
-           
+
            {'success': True}
-           
+
            # Usage Example 2: ArcGIS Online asynchronous
            >>> gis = GIS(profile="your_online_profile")
-           
+
            >>> item = gis.content.get("<feature_layer_item_id>")
            >>> fl = item.layers[0]
-           
+
            >>> new_field = {
                               "fields": [
                                     {
@@ -3716,18 +3716,18 @@ class FeatureLayerManager(_GISResource):
                                     }
                                 ]
                              }
-                             
+
           >>> future = fl.manager.add_to_definition(
                                             json_dict=add_field,
                                             future=True
                        )
           >>> res = future.result()
           >>> res
-          
+
           {'submissionTime': <time_value>,
             'lastUpdatedTime': <time_value>,
             'status': 'Completed'}
-          
+
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -3773,7 +3773,7 @@ class FeatureLayerManager(_GISResource):
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
                             asynchronously and:
-                              
+
                               * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
                                 will be returned and the *result()* method returns results.
                               * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
@@ -3783,7 +3783,7 @@ class FeatureLayerManager(_GISResource):
         :return:
            * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
            * If run asynchronously (*future = True*):
-             
+
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
@@ -3821,7 +3821,7 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
-        This method deletes a definition property from a hosted feature layer. 
+        This method deletes a definition property from a hosted feature layer.
         See: `Delete From Definition (Feature Service) <https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm>`_
         for additional information on this function.
 
@@ -3837,7 +3837,7 @@ class FeatureLayerManager(_GISResource):
         future              Optional boolean. The default is *False*, which means to run the
                             method synchronously and wait for results. If *True*, the method runs
                             asynchronously and:
-                              
+
                               * On *ArcGIS Online* and *ArcGIS Enterprise*, a *future* object
                                 will be returned and the *result()* method returns results.
                               * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating
@@ -3847,7 +3847,7 @@ class FeatureLayerManager(_GISResource):
         :return:
            * If run synchronously (*future=False*), a JSON message as a dictionary indicating 'success' or 'error'
            * If run asynchronously (*future = True*):
-             
+
              * On *ArcGIS Enterprise and ArcGIS Online*, a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_
                object. Call ``result()`` to get the response.
              * On *ArcGIS Enterprise for Kubernetes*, a dictionary indicating success of failure
