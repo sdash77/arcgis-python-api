@@ -404,28 +404,22 @@ class TestWorkflowManager(unittest.TestCase):
                 {"NB_AUTH_FILE": os.path.join(d, ".nbauth.json")},
                 clear=True,
             ):
-                with unittest.mock.patch.object(
-                    os,
-                    "getenv",
-                    return_value=os.path.join(d, ".nbauth.json"),
-                ):
-                    gis = GIS("HOME")
-                    local_connection = workflowmanager_setup.WorkflowManagerSetup(gis)
-                    self.assertTrue(
-                        local_connection._gis._use_private_url_only,
-                        "Portal was not mocked to use private url only",
-                    )
+                gis = GIS("HOME")
+                local_connection = workflowmanager_setup.WorkflowManagerSetup(gis)
+                self.assertTrue(
+                    local_connection._gis._use_private_url_only,
+                    "Portal was not mocked to use private url only",
+                )
 
-                    actual = local_connection.workflow_manager_admin.server_status
+                actual = local_connection.workflow_manager_admin.server_status
 
-                    # Assert
-                    self.assertTrue(actual, "Incorrect return type")
-                    self.assertTrue(
-                        local_connection.workflow_manager_admin._url.endswith(
-                            ":13443/workflow"
-                        ),
-                        f"{local_connection.workflow_manager_admin._url} was not a private URL",
-                    )
+                self.assertTrue(actual, "Incorrect return type")
+                self.assertTrue(
+                    local_connection.workflow_manager_admin._url.endswith(
+                        ":13443/workflow"
+                    ),
+                    f"{local_connection.workflow_manager_admin._url} was not a private URL",
+                )
 
     # endregion
 
