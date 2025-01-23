@@ -443,8 +443,10 @@ def _parse_hub(item):
                         for w in ['webmap', 'webscene']:
                             if c['settings'].get(w, None):
                                 dep_ids.add(c['settings'][w])
-                    elif c['name'] == 'app-card':
+                    elif c['name'] in ['app-card', 'chart-card']:
                         dep_ids.add(c['settings']['itemId'])
+                    elif c['name'] == 'survey-card':
+                        dep_ids.add(c['settings']['surveyId'])
         return dep_ids
     
     for data in [pub_data, draft_data]:
