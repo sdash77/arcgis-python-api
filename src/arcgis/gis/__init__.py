@@ -15477,8 +15477,8 @@ class Item(dict):
                 fileName = self.name
                 item_properties["fileName"] = fileName
 
-        # Make sure thumbnail doesn't get reset in the update
-        if thumbnail is None and self.thumbnail:
+        # Make sure thumbnail doesn't get reset in the update if new data passed in
+        if data and thumbnail is None and self.thumbnail:
             thumbnail = io.BytesIO()
             thumbnail.write(self.get_thumbnail())
             thumbnail.seek(0)
@@ -15530,24 +15530,25 @@ class Item(dict):
                 self._hydrate()
             return ret
         else:
-            if data is not None:
-                # Need to add the data first and then update the item to avoid overwriting from the file
-                self._portal.update_item(
-                    self.itemid,
-                    data=data,
-                )
-                data = None
-
+            # call update the first time to update everything but the thumbnail
             ret = self._portal.update_item(
-                self.itemid,
-                item_properties,
-                data,
-                thumbnail,
-                metadata,
-                owner,
-                folder,
-                large_thumbnail,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                data=data,
+                thumbnail=None,
+                metadata=metadata,
+                owner=owner,
+                folder=folder,
+                large_thumbnail=None,
             )
+
+            if thumbnail or large_thumbnail:
+                # Update the thumbnail last otherwise it gets overwritten
+                ret = self._portal.update_item(
+                    itemid=self.itemid,
+                    thumbnail=thumbnail,
+                    large_thumbnail=large_thumbnail,
+                )
             if ret:
                 self._hydrate()
             return ret
