@@ -20,16 +20,69 @@ from typing import Any
 from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
+import requests
 
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
 _cm = LazyLoader("arcgis.gis._impl._content_manager")
+_arcgis_auth = LazyLoader("arcgis.auth")
 re = LazyLoader("re")
 
 _log = logging.getLogger()
 
+
 # pylint: disable=protected-access
+# ----------------------------------------------------------------------
+def _check_status(url: str, gis: GIS):
+    sleep_time: int = 1
+    count: int = 1
+    params: dict = {"f": "json"}
+    session: _arcgis_auth.EsriSession = gis.session
+
+    job_status_exceptions: dict = {
+        "esrijobfailed": "Job failed.",
+        "failed": "Job failed.",
+        "esrijobcancelled": "Job cancelled.",
+        "cancelled": "Job cancelled.",
+        "esrijobtimedout": "Job timed out.",
+        "timedout": "Job timed out.",
+    }
+    while True:
+        resp: requests.Response = session.get(url, params=params)
+        resp.raise_for_status()
+        job_response: dict = resp.json()
+
+        status: str = job_response.get("status", "").lower()
+        if status in job_status_exceptions:
+            raise Exception(job_status_exceptions[status])
+        elif "error" in job_response:
+            raise Exception(job_response["error"])
+        elif status == "completed":
+            return job_response
+        else:
+            time.sleep(sleep_time * count)
+            count = min(count + 1, 10)
+
+
+# ----------------------------------------------------------------------
+def _get_value_case_insensitive(my_dict, key):
+    """
+    Retrieves the value associated with the given key in a case-insensitive manner.
+
+    Args:
+      my_dict: The dictionary to search.
+      key: The key to look for.
+
+    Returns:
+      The value associated with the key, or None if the key is not found.
+    """
+    for k in my_dict.keys():
+        if k.lower() == key.lower():
+            return my_dict[k]
+    return None
+
+
 ###########################################################################
 
 
@@ -578,7 +631,7 @@ class AttachmentManager(object):
         Downloads all attachments to a specific folder
 
         =========================   ===============================================================
-        **Arguement**               **Description**
+        **Argument**               **Description**
         -------------------------   ---------------------------------------------------------------
         object_ids                  optional list. A list of object_ids to download data from.
         -------------------------   ---------------------------------------------------------------
@@ -590,7 +643,7 @@ class AttachmentManager(object):
                                     **Example:** image/jpeg
         =========================   ===============================================================
 
-        :return: path to the file where the attachements have downloaded
+        :return: path to the file where the attachments have downloaded
 
         """
         results = []
@@ -622,7 +675,7 @@ class AttachmentManager(object):
 
     def get_list(self, oid: str):
         """
-        Get the list of attachements for a given OBJECT ID
+        Get the list of attachments for a given OBJECT ID
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -631,7 +684,7 @@ class AttachmentManager(object):
         ===============     ====================================================================
 
         :result:
-            A list of attachements
+            A list of attachments
 
         """
         return self._layer._list_attachments(oid)["attachmentInfos"]
@@ -886,7 +939,7 @@ class SyncManager(object):
     # ----------------------------------------------------------------------
     def unregister(self, replica_id: str):
         """
-        unregisters a replica from a feature layer collection
+        Unregister a replica from a feature layer collection
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -944,7 +997,7 @@ class SyncManager(object):
 
         The feature service must have the *Sync* capability. See `publishing criteria
         <https://enterprise.arcgis.com/en/server/latest/publish-services/windows/prepare-data-for-feature-services.htm>`_
-        for details on how to pulish services and set capabilities.
+        for details on how to publish services and set capabilities.
         The `Sync overview
         <https://developers.arcgis.com/rest/services-reference/enterprise/sync-overview.htm>`_
         provides additional details and links for details.
@@ -1333,7 +1386,7 @@ class SyncManager(object):
 
                                         * *esriTransportTypeUrl* - the response is contained in a file and a
                                           the URL link to the file is returned
-                                        * *esriTransporTypeEmbedded* - a JSON object is returned in the
+                                        * *esriTransportTypeEmbedded* - a JSON object is returned in the
                                           response
 
                                         .. note::
@@ -1341,7 +1394,7 @@ class SyncManager(object):
                                             response is always returned by URL.
         -----------------------------   --------------------------------------------------------------------
         replica_server_gen              Required Integer. A generation number that allows the server to keep
-                                        track of what changes have already been sychronized.
+                                        track of what changes have already been synchronized.
                                         A new *replicaServerGen* is sent with the response. Clients should
                                         persist this value and use it with the next call to *synchronize*.
 
@@ -1388,7 +1441,7 @@ class SyncManager(object):
                                         for full details on formatting.
         -----------------------------   --------------------------------------------------------------------
         return_attachment_databy_url    If *True*, a reference to a URL will be provided for each attachment
-                                        returned. Otherwise, attachments are embedded in the respose. The
+                                        returned. Otherwise, attachments are embedded in the response. The
                                         default is *True*.
 
                                         .. note::
@@ -1458,10 +1511,10 @@ class SyncManager(object):
                                           It is updated when a synchronization completes.
                                         * If this argument is provided and *sync_direction* is provided, layers
                                           in this argument that do not provide a *syncDirection* value will use
-                                          the value of *sync_direction*. If *sync_direction* is not specificed,
+                                          the value of *sync_direction*. If *sync_direction* is not specified,
                                           the default *bidirectional* is used.
         -----------------------------   --------------------------------------------------------------------
-        edits_upload_id                 Optinal String. The ID for the uploaded item that contains the edits
+        edits_upload_id                 Optional String. The ID for the uploaded item that contains the edits
                                         the client wants to apply to the service. Used in conjunction with
                                         *edits_upload_format*.
 
@@ -1508,7 +1561,7 @@ class SyncManager(object):
                                           completes.
                                         * If *False*, the replica can continue to be synchronized.
         -----------------------------   --------------------------------------------------------------------
-        out_path                        Opitonal String. Path of a folder to save the output to a file.
+        out_path                        optional String. Path of a folder to save the output to a file.
         =============================   ====================================================================
 
         :returns:
@@ -2485,7 +2538,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ------------------     --------------------------------------------------------------------
         index                  Required int. The index of the layer on the view to replace.
         ------------------     --------------------------------------------------------------------
-        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+        new_source             Required FeatureLayer or Table. The layer to replace the existing
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
@@ -2516,7 +2569,7 @@ class FeatureLayerCollectionManager(_GISResource):
         ------------------     --------------------------------------------------------------------
         index                  Required int. The index of the layer on the view to replace.
         ------------------     --------------------------------------------------------------------
-        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+        new_source             Required FeatureLayer or Table. The layer to replace the existing
                                source with.
         ------------------     --------------------------------------------------------------------
         future                 Optional Bool. When True, a Future object will be returned else a
@@ -2978,52 +3031,6 @@ class FeatureLayerCollectionManager(_GISResource):
         return item
 
     # ----------------------------------------------------------------------
-    def _check_status(self, url: str) -> dict:
-        """Internal method to check the status of the definition change.
-
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        url                 Required String. The URL endpoint to check the status
-        ===============     ====================================================================
-
-
-        :return:
-           The status dictionary
-        """
-        sleep_time = 1
-        count = 1
-
-        params = {"f": "json"}
-        con = self._gis._con
-        job_response = con.post(url, params)
-        if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
-                "completed",
-                "Completed",
-            ]:
-                time.sleep(sleep_time * count)
-                job_response = con.post(url, params)
-                if (
-                    job_response.get("status") in ("esriJobFailed", "failed")
-                    or job_response.get("status").lower().find("error") > -1
-                ):
-                    if "error" in job_response:
-                        raise Exception(job_response["error"])
-                    else:
-                        raise Exception(f"Job failed: {job_response}")
-                elif job_response.get("status") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("status") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
-                count += 1
-
-        else:
-            raise Exception("No job results.")
-        return job_response
-
-    # ----------------------------------------------------------------------
     def _refresh_callback(self, *args, **kwargs):
         """function to refresh the service post add or update definition for async operations"""
         try:
@@ -3072,10 +3079,15 @@ class FeatureLayerCollectionManager(_GISResource):
         }
         adddefn_url = self._url + "/addToDefinition"
         res = self._con.post(adddefn_url, params)
-        if future and "statusURL" in res:
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3172,10 +3184,15 @@ class FeatureLayerCollectionManager(_GISResource):
         }
         u_url = self._url + "/updateDefinition"
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3217,12 +3234,16 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
-
+        status_url: str = _get_value_case_insensitive(res, "statusurl")
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3296,14 +3317,14 @@ class FeatureLayerCollectionManager(_GISResource):
                 "The name and extension of the file must be the same as the original data."
             )
 
-        # find if we are overwritting only a hosted table
+        # find if we are overwriting only a hosted table
         hosted_table = False
         if not feature_layer_item.layers and feature_layer_item.tables:
             hosted_table = True
         # endregion
 
         params = None
-        # overwritting for online and enterprise is different
+        # overwriting for online and enterprise is different
         # if online or hosted table then use minimal parameters
         if (
             related_data_item.type
@@ -3342,7 +3363,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     table_def.pop("fields")
                 tables_dict.append(table_def)
 
-            # Splice the detailed table and layer def with FeatuerServer def
+            # Splice the detailed table and layer def with FeatureServer def
             feature_service_def["layers"] = layers_dict
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
@@ -3517,7 +3538,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     dump = table_def.pop("fields")
                 tables_dict.append(table_def)
 
-            # Splice the detailed table and layer def with FeatuerServer def
+            # Splice the detailed table and layer def with FeatureServer def
             feature_service_def["layers"] = layers_dict
             feature_service_def["tables"] = tables_dict
             from pathlib import Path
@@ -3641,10 +3662,15 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/addToDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3690,10 +3716,15 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/updateDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3742,10 +3773,15 @@ class FeatureLayerManager(_GISResource):
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
-        if future and "statusURL" in res:
+        status_url = _get_value_case_insensitive(res, "statusurl")
+        if future and status_url:
             executor = _cf.ThreadPoolExecutor(1)
             futureobj = executor.submit(
-                self._check_status, **{"url": res.get("statusURL")}
+                _check_status,
+                **{
+                    "url": status_url,
+                    "gis": self._gis,
+                },
             )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
@@ -3826,52 +3862,6 @@ class FeatureLayerManager(_GISResource):
             res = self._con.post(u_url, params)
             self.refresh()
         return res
-
-    # ----------------------------------------------------------------------
-    def _check_status(self, url: str) -> dict:
-        """
-        Internal method to check the status of the definition change.
-
-
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        url                 Required String. The URL endpoint to check the status
-        ===============     ====================================================================
-
-
-        :return:
-           The status dictionary
-        """
-        sleep_time = 1
-        count = 1
-
-        params = {"f": "json"}
-        con = self._gis._con
-        job_response = con.post(url, params)
-        if "status" in job_response:
-            while "status" in job_response and not job_response.get("status") in [
-                "completed",
-                "Completed",
-            ]:
-                if count > 10:
-                    count = 10
-                time.sleep(sleep_time * count)
-                job_response = con.post(url, params)
-                if job_response.get("status") in ("esriJobFailed", "failed"):
-                    if "error" in job_response:
-                        raise Exception(job_response["error"])
-                    else:
-                        raise Exception("Job failed.")
-                elif job_response.get("status") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("status") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
-                count += 1
-
-        else:
-            raise Exception("No job results.")
-        return job_response
 
     # ----------------------------------------------------------------------
     def _refresh_callback(self, *args, **kwargs):

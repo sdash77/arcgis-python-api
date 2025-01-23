@@ -1188,7 +1188,7 @@ class Folders:
             owner: str = self._me.get("username", None)
 
         if owner is None:
-            logger.warning("User is anonymous, exitting")
+            logger.warning("User is anonymous, exiting")
             return None
 
         url: str = f"{self._gis._portal.resturl}content/users/{owner}"

@@ -20,7 +20,6 @@ from arcgis.geometry import (
 from arcgis.gis import GIS
 from arcgis import env as _env
 from arcgis.geocoding import geocode, reverse_geocode
-from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
 
