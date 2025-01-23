@@ -66,9 +66,9 @@ def _initialize(instance, gis, is_admin=False):
             if not instance._server_url:
                 raise RuntimeError("Cannot find a WorkflowManager Server")
 
-            instance_url = f"{instance._server_url}/{instance.org_id}"
+            instance._url = f"{instance._server_url}/{instance.org_id}"
             if not is_admin:
-                instance_url = f"{instance_url}/{instance._item.id}"
+                instance._url = f"{instance._url}/{instance._item.id}"
             break
 
         if not instance._url:
