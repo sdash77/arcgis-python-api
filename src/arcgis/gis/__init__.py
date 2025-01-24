@@ -1915,7 +1915,7 @@ class GroupMigrationManager(object):
         # admin or group owner has the ability to import content
         owner = self._group.owner == self._gis.users.me.username
 
-        if not owner or not self._gis.users.me.role == "org_admin":
+        if not owner and not self._gis.users.me.role == "org_admin":
             raise Exception(
                 "Must be an administrator or group owner to perform this action"
             )
