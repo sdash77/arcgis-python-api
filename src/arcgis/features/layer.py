@@ -2523,6 +2523,13 @@ class FeatureLayer(Layer):
 
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
+            
+        .. note::
+            Please reference specific deployment documentation for important information on criteria that
+            must be met before appending data will work:
+            
+            * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
+            * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
 
         ========================   ====================================================================
         **Parameter**               **Description**
@@ -2531,14 +2538,27 @@ class FeatureLayer(Layer):
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
-        upload_format              Required string. The source append data format. The default is
-                                   featureCollection.
-                                   Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
-                                   'geojson' | 'csv' | 'excel'
+        upload_format              Required string. The source append data format. Supported formats
+                                   vary by deployment and layer. See documentation for details:
+                                   
+                                   * `ArcGIS Enterprise append <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+                                   * `ArcGIS Online append <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
 
                                    .. note::
-                                        You can find the Feature Layer's supported formats by checking
-                                        the `featureLayer.properties.supportedAppendFormats` property.
+                                        You can find whether append is supported on a Feature Layer,
+                                        and the specific formats the layer supports by checking the
+                                        properties:
+                                        
+                                        .. code-block:: python
+                                            
+                                            >>> featurelayer.properties.supportsAppend
+                                            
+                                            True
+                                            
+                                            >>> featureLayer.properties.supportedAppendFormats
+                                            
+                                            'sqlite,geoPackage,shapefile,filegdb,featureCollection'
+                                            'geojson,csv,excel,jsonl,featureService,pbf'
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
