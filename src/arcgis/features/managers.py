@@ -3580,8 +3580,10 @@ class FeatureLayerManager(_GISResource):
         <class 'arcgis.features.managers.FeatureLayerManager'>
     """
 
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, **kwargs):
+        """initializer"""
         super(FeatureLayerManager, self).__init__(url, gis)
+        self._fl = kwargs.pop("fl", None)
         self._hydrate()
 
     # ----------------------------------------------------------------------
@@ -3634,7 +3636,8 @@ class FeatureLayerManager(_GISResource):
         res = self._con.post(u_url, params)
 
         super(FeatureLayerManager, self)._refresh()
-
+        if self._fl:
+            self._fl._refresh()
         return res
 
     # ----------------------------------------------------------------------
