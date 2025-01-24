@@ -368,7 +368,7 @@ def get_version(story) -> str:
     return sm_version
 
 
-def _publish_enterprise_and_online(story, access, item_properties):
+def _publish(story, access, item_properties):
     """
     Enterprise does not have a publish endpoint. We need to manually update the item properties and resources.
     """
@@ -574,8 +574,8 @@ def save(
         story, publish, make_copyable, no_seo, title, tags, sm_version
     )
 
-    if publish is True:
-        _publish_enterprise_and_online(story, access, item_properties)
+    if publish:
+        _publish(story, access, item_properties)
     else:
         # access does not change when only saving
         item_properties["access"] = story._item.access
