@@ -276,7 +276,6 @@ class GroupCloner(BaseCloneGroup):
             leaving_disallowed=group.leavingDisallowed,
             membership_access=group.pop("membershipAccess", None),
             hidden_members=group.pop("hiddenMembers", None),
-            autojoin=group.autoJoin,
         )
         return group
 

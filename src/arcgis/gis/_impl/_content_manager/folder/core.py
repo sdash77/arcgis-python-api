@@ -1091,7 +1091,7 @@ class Folders:
             # Usage Example
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_or_enterprise_admin_profile")
-            >>> new_folder = gis.content.create("Hurricane_Data", owner= "User1234")
+            >>> new_folder = gis.content.folders.create("Hurricane_Data", owner= "User1234")
             >>> new_folder.name
                 'Hurricane_Data'
         """
@@ -1188,7 +1188,7 @@ class Folders:
             owner: str = self._me.get("username", None)
 
         if owner is None:
-            logger.warning("User is anonymous, exitting")
+            logger.warning("User is anonymous, exiting")
             return None
 
         url: str = f"{self._gis._portal.resturl}content/users/{owner}"

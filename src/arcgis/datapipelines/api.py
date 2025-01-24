@@ -15,7 +15,7 @@ _last_run_by_item_id: dict[str, PipelineRun] = {}
 def _get_arcgis_pipeline(
     gis: _arcgis_gis.GIS, version: float | int = 1.1
 ) -> DataPipelines:
-    """gets the pipline from the GIS"""
+    """gets the pipeline from the GIS"""
     helper_service = gis.properties["helperServices"]
 
     if "dataPipelines" in helper_service:

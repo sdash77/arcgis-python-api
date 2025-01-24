@@ -252,7 +252,7 @@ class WorkflowManagerAdmin:
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
         queries, templates, and user settings of the indicated item. This file can be used with the import endpoint
         to update other item configurations. Configurations from Workflow items with a server that is on a more
-        recent version will not import due to incompatability.
+        recent version will not import due to incompatibility.
 
         =====================  =========================================================
         **Argument**           **Description**
@@ -298,7 +298,7 @@ class WorkflowManagerAdmin:
     def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
-        items with a server that is on a more recent version will not import due to incompatability. This will
+        items with a server that is on a more recent version will not import due to incompatibility. This will
         completely replace the version, job templates, diagrams, roles, role-group associations, lookup tables,
         charts and queries, templates, and user settings of the indicated item, and it is recommended to back
         up configurations before importing. Any encrypted settings included will only have their key imported
@@ -3706,7 +3706,7 @@ class JobDiagram(object):
     can be created by calling the :attr:`~arcgis.gis.workflowmanager.WorkflowManager.diagrams` property
     of the :class:`~arcgis.gis.workflowmanager.WorkflowManager` to retrieve a list of diagrams. Then
     the :meth:`~arcgis.gis.workflowmanager.WorkflowManager.diagram` method can be used with the appropriate
-    ID of the digram to retrieve the :class:`job diagram <arcgis.gis.workflowmanager.JobDiagram>`.
+    ID of the diagram to retrieve the :class:`job diagram <arcgis.gis.workflowmanager.JobDiagram>`.
 
     """
 

@@ -1,177 +1,95 @@
 import json
 import uuid
 import unittest
-
 import arcgis
-from arcgis.gis import GIS
+from arcgis.gis import ItemProperties
 from arcgis.gis._impl._datastores import PortalDataStore
 from arcgis.gis._impl._jb import StatusJob
-from utils.decorators import integration_test
-
-try:
-    gis = GIS(
-        profile="your_ent_admin_profile",
-        verify_cert=False,
-    )
-    SKIPTEST = False
-except:
-    SKIPTEST = True
+from utils.decorators import integration_test, profiles
 
 
-@unittest.skipIf(SKIPTEST, "Could not connect to test server")
 @integration_test
-class TestPortalDataStore1081(unittest.TestCase):
+@profiles.admin_enterprise
+class TestPortalDataStore(unittest.TestCase):
     """
     Tests the 10.7/10.7.1/10.8.1 functionality for Portal Datastores
 
     These tests focus primarily on scene package layers and bulk publishing of layers
     """
 
-    # ----------------------------------------------------------------------
-    def test_validate(self):
-        """tests the validate operation on portal"""
-        server_list = gis.admin.federation.servers
-        server_id = server_list["servers"][0]["id"]
+    def setUp(self):
+        """set up datastore for each test"""
+        server_list = self.gis.admin.federation.servers
+        server = [server for server in server_list["servers"] if server["serverRole"] == "HOSTING_SERVER"][0]
+        self.server_id = server["id"]
         h = uuid.uuid4().hex[:5]
         info = {
             "info": {
                 "isManaged": False,
                 "dataStoreConnectionType": "replicated",
-                "path": "\\\\kyanite\\packages",
+                "path": "/mnt/testDatastore",
             },
             "type": "folder",
             "path": "/fileShares/ajc_folder_test",
-            "clientPath": "\\\\kyanite\\packages",
+            "clientPath": "/mnt/testDatastore",
         }
         txt = json.dumps(info)
-        item = gis.content.add(
-            {
-                "title": f"datastore_{h}",
-                "type": "Data Store",
-                "tags": "erase me",
-                "text": txt,
-            }
-        )
-        assert gis.datastore.register(item=item, server_id=server_id)
-        assert gis.datastore.servers(item=item.itemid)
-        ds_item = item.itemid
-        server_id = server_id
-        assert gis.datastore.validate(server_id=server_id, item=ds_item)
-        ds_item = gis.content.get(ds_item)
-        assert gis.datastore.validate(server_id=server_id, item=ds_item)
 
-    # ----------------------------------------------------------------------
+        folder = self.gis.content.folders._get_or_create("integration_testing")
+        self.item = folder.add(
+            item_properties=ItemProperties(
+                title=f"datastore_{h}",
+                item_type="Data Store",
+                tags=["erase me", "integration testing"],
+            ),
+            text=txt,
+        ).result()
+
+    def tearDown(self):
+        """remove datastore after test"""
+        self.gis.datastore.unregister(item=self.item, server_id=self.server_id)
+        self.item.delete()
+
+    def test_validate(self):
+        """tests the validate operation on portal"""
+        assert self.gis.datastore.register(item=self.item, server_id=self.server_id)
+        assert self.gis.datastore.servers(item=self.item.itemid)
+        ds_item_id = self.item.itemid
+        server_id = self.server_id
+        assert self.gis.datastore.validate(server_id=server_id, item=ds_item_id)
+        ds_item = self.gis.content.get(ds_item_id)
+        assert self.gis.datastore.validate(server_id=server_id, item=ds_item)
 
     def test_servers(self):
         """tests the server method"""
-        server_list = gis.admin.federation.servers
-        server_id = server_list["servers"][0]["id"]
-        h = uuid.uuid4().hex[:5]
-        info = {
-            "info": {
-                "isManaged": False,
-                "dataStoreConnectionType": "replicated",
-                "path": "\\\\kyanite\\packages",
-            },
-            "type": "folder",
-            "path": "/fileShares/ajc_folder_test",
-            "clientPath": "\\\\kyanite\\packages",
-        }
-        txt = json.dumps(info)
-        item = gis.content.add(
-            {
-                "title": f"datastore_{h}",
-                "type": "Data Store",
-                "tags": "erase me",
-                "text": txt,
-            }
-        )
-        assert gis.datastore.register(item=item, server_id=server_id)
-        assert gis.datastore.servers(item=item.itemid)
-        assert isinstance(gis.datastore.servers(item=item.itemid), list)
-        assert gis.datastore.unregister(item=item, server_id=server_id)
-        assert item.delete()
+        assert self.gis.datastore.register(item=self.item, server_id=self.server_id)
+        assert self.gis.datastore.servers(item=self.item.itemid)
+        assert isinstance(self.gis.datastore.servers(item=self.item.itemid), list)
+        assert self.gis.datastore.servers(item=self.item.itemid)[0]["serverRole"] == "HOSTING_SERVER"
 
-    # ----------------------------------------------------------------------
     def test_layers(self):
         """tests that layers for the datastore are returned as a list"""
-        server_list = gis.admin.federation.servers
-        server_id = server_list["servers"][0]["id"]
-        h = uuid.uuid4().hex[:5]
-        info = {
-            "info": {
-                "isManaged": False,
-                "dataStoreConnectionType": "replicated",
-                "path": "\\\\kyanite\\packages",
-            },
-            "type": "folder",
-            "path": "/fileShares/ajc_folder_test",
-            "clientPath": "\\\\kyanite\\packages",
-        }
-        txt = json.dumps(info)
-        item = gis.content.add(
-            {
-                "title": f"datastore_{h}",
-                "type": "Data Store",
-                "tags": "erase me",
-                "text": txt,
-            }
-        )
-        assert gis.datastore.register(item=item, server_id=server_id)
-
-        layers = gis.datastore.layers(item=item.itemid)
+        assert self.gis.datastore.register(item=self.item, server_id=self.server_id)
+        layers = self.gis.datastore.layers(item=self.item)
         assert isinstance(layers, list)
-        assert gis.datastore.unregister(item=item, server_id=server_id)
-        assert item.delete()
-        gis.datastore.properties
 
-    # ----------------------------------------------------------------------
     def test_datastore_root(self):
         """tests the datastore root properties"""
-        assert gis.datastore.properties
-        assert gis.datastore._all_datasets  # not used publicly
-        assert isinstance(gis.datastore, PortalDataStore)
+        assert isinstance(self.gis.datastore, PortalDataStore)
+        assert self.gis.datastore.properties
+        assert self.gis.datastore._all_datasets  # not used publicly
 
-    # ----------------------------------------------------------------------
     def test_register_unregister_operations(self):
         """tests the unregister/register operation"""
-        server_list = gis.admin.federation.servers
-        server_id = server_list["servers"][0]["id"]
-        h = uuid.uuid4().hex[:5]
-        info = {
-            "info": {
-                "isManaged": False,
-                "dataStoreConnectionType": "replicated",
-                "path": "\\\\kyanite\\packages",
-            },
-            "type": "folder",
-            "path": "/fileShares/ajc_folder_test",
-            "clientPath": "\\\\kyanite\\packages",
-        }
-        txt = json.dumps(info)
-        item = gis.content.add(
-            {
-                "title": f"datastore_{h}",
-                "type": "Data Store",
-                "tags": "erase me",
-                "text": txt,
-            }
-        )
-        assert gis.datastore.register(item=item, server_id=server_id)
-        assert gis.datastore.unregister(item=item, server_id=server_id)
-        assert item.delete()
+        assert self.gis.datastore.register(item=self.item, server_id=self.server_id)
+        assert self.gis.datastore.unregister(item=self.item, server_id=self.server_id)
 
-    # ----------------------------------------------------------------------
     @unittest.skip("need stable egdb")
+    # TODO: mount egdb in portal
     def test_publish_delete_layers(self):
         """tests the publish/delete all layers operations"""
-        server_list = gis.admin.federation.servers
-        server_id = server_list["servers"][0]["id"]
-        for item in gis.content.search("datastore_"):
-            gis.datastore.unregister(item=item, server_id=server_id)
-            item.delete()
         network_path = (
-            r"\\datalibrary\data\Earth\Europe\Austria\Salzburg\City of Salzburg"
+            r"\\datalibrary\data\Europe\Austria\Salzburg"
         )
         h = uuid.uuid4().hex[:5]
         info = {
@@ -185,76 +103,56 @@ class TestPortalDataStore1081(unittest.TestCase):
             "clientPath": network_path,
         }
         txt = json.dumps(info)
-        item = gis.content.add(
-            {
-                "title": f"datastore_{h}",
-                "type": "Data Store",
-                "tags": "erase me",
-                "text": txt,
-            }
-        )
+
+        folder = self.gis.content.folder._get_or_create("integration_testing")
+        item = folder.add(
+            item_properties=ItemProperties(
+                title=f"datastore_{h}",
+                item_type="Data Store",
+                tags=["erase me", "integration testing"],
+            ),
+            text=txt,
+        ).result()
+
         try:
             cfg = json.loads(
                 """{"serviceName":"%s","type":"MapServer","capabilities":"Map","extensions":[{"typeName":"FeatureServer","capabilities":"Query","enabled":"true","properties":{"maxRecordCount":"3500"}}]}"""
                 % uuid.uuid4().hex[:5]
             )
-            assert gis.datastore.register(item=item, server_id=server_id)
-            g = gis.datastore.publish_layers(
-                item=item, srv_config=cfg, server_id=server_id
+            assert self.gis.datastore.register(item=item, server_id=self.server_id)
+            g = self.gis.datastore.publish_layers(
+                item=item, srv_config=cfg, server_id=self.server_id
             )
-            r = gis.datastore.delete_layers(item=item)
+            r = self.gis.datastore.delete_layers(item=item)
         except Exception as e:
             print(e)
             raise e
         finally:
-            gis.datastore.unregister(item=item, server_id=server_id)
+            self.gis.datastore.unregister(item=item, server_id=self.server_id)
             item.delete()
 
-    # ----------------------------------------------------------------------
+    @unittest.skip("scene layer json file not ready yet in portal")
+    # TODO: mount scene layer json file in portal
     def test_publish(self):
         """
         Tests the publishing of a single layer on Portal.
         """
         try:
-
             h = uuid.uuid4().hex[:5]
-            info = {
-                "info": {
-                    "isManaged": False,
-                    "dataStoreConnectionType": "replicated",
-                    "path": "\\\\kyanite\\packages",
-                },
-                "type": "folder",
-                "path": f"/fileShares/ajc_folder_{h}",
-                "clientPath": "\\\\kyanite\\packages",
-            }
-            txt = json.dumps(info)
-            ds_item = gis.content.add(
-                {
-                    "title": f"datastore_{h}",
-                    "type": "Data Store",
-                    "tags": "erase me",
-                    "text": txt,
-                }
-            )
-            # gets list of servers and their ids
-            server_list = gis.admin.federation.servers
-            server_id = server_list["servers"][0]["id"]
-
             # register data store
-            gis.datastore.register(ds_item, server_id)
+            self.gis.datastore.register(self.item, self.server_id)
 
             # query datastore for list of datasets
-            datastore_id = ds_item.get_data()["id"]
-            datasets = gis.datastore.describe(
-                ds_item, server_id=server_id, path="/", store_type="datastore"
+            datastore_id = self.item.get_data()["id"]
+            datasets = self.gis.datastore.describe(
+                self.item, server_id=self.server_id, path="/", store_type="datastore"
             ).result()
 
             if not "result" in datasets:
-                datasets = gis.datastore.describe(
-                    ds_item, server_id=server_id, path="/", store_type="datastore"
+                datasets = self.gis.datastore.describe(
+                    self.item, server_id=self.server_id, path="/", store_type="datastore"
                 ).result()
-            dataset_path = datasets["result"]["children"][0]["path"]
+            dataset_path = datasets["result"]["path"]
 
             # publish the scene layer
             service_config = {
@@ -266,9 +164,9 @@ class TestPortalDataStore1081(unittest.TestCase):
                 },
             }
 
-            sl_item = gis.datastore.publish(
+            sl_item = self.gis.datastore.publish(
                 config=service_config,
-                server_id=server_id,
+                server_id=self.server_id,
                 folder=None,
                 description="test",
                 tags=["test"],
@@ -279,47 +177,15 @@ class TestPortalDataStore1081(unittest.TestCase):
         except Exception as e:
             print(e)
             raise e
-        finally:
-            gis.datastore.unregister(item=ds_item, server_id=server_id)
-            try:
-                ds_item.delete()
-            except:
-                pass
 
-    # ----------------------------------------------------------------------
     def test_describe(self):
         """
         tests the describe asynchronous method
         """
         try:
-            server_list = gis.admin.federation.servers
-            server_id = server_list["servers"][0]["id"]
-            network_path = (
-                r"\\datalibrary\data\Earth\Europe\Austria\Salzburg\City of Salzburg"
-            )
-            h = uuid.uuid4().hex[:5]
-            info = {
-                "info": {
-                    "isManaged": False,
-                    "dataStoreConnectionType": "replicated",
-                    "path": network_path,
-                },
-                "type": "folder",
-                "path": f"/fileShares/ajc_folder_{h}",
-                "clientPath": network_path,
-            }
-            txt = json.dumps(info)
-            item = gis.content.add(
-                {
-                    "title": f"datastore_{h}",
-                    "type": "Data Store",
-                    "tags": "erase me",
-                    "text": txt,
-                }
-            )
-            assert gis.datastore.register(item=item, server_id=server_id)
-            j = gis.datastore.describe(
-                item, server_id=server_id, path="/", store_type="datastore"
+            assert self.gis.datastore.register(item=self.item, server_id=self.server_id)
+            j = self.gis.datastore.describe(
+                self.item, server_id=self.server_id, path="/", store_type="datastore"
             )
             assert j
             assert isinstance(j, StatusJob)
@@ -327,9 +193,6 @@ class TestPortalDataStore1081(unittest.TestCase):
         except Exception as e:
             print(e)
             raise e
-        finally:
-            gis.datastore.unregister(item=item, server_id=server_id)
-            item.delete()
 
 
 if __name__ == "__main__":
