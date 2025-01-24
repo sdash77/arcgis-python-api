@@ -6750,7 +6750,7 @@ class ContentManager(object):
         access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
-        
+
                                     .. note::
                                         Configuring items for ovewrite is no longer supported when adding
                                         an :class:`~arcgis.gis.Item`
