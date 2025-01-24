@@ -379,7 +379,7 @@ def _parse_wma(item):
                 itemids.add(ds["itemId"])
             except:
                 pass
-    
+
     try:
         itemids.add(data["values"]["webmap"])
     except:
@@ -427,6 +427,7 @@ def _parse_storymap(item):
 
     return itemids
 
+
 def _parse_hub(item):
     itemids = set()
     pub_data = item.get_data()
@@ -436,31 +437,32 @@ def _parse_hub(item):
             draft_name = r["resource"]
             break
     if draft_name:
-        draft_data = item.resources.get(draft_name)['data']
+        draft_data = item.resources.get(draft_name)["data"]
     else:
         draft_data = None
-    
+
     def _parse_hub_sections(data):
         dep_ids = set()
-        for section in data['values']['layout']['sections']:
-            for row in section['rows']:
-                for card in row['cards']:
-                    c = card['component']
-                    if c['name'] == 'webmap-card':
-                        for w in ['webmap', 'webscene']:
-                            if c['settings'].get(w, None):
-                                dep_ids.add(c['settings'][w])
-                    elif c['name'] in ['app-card', 'chart-card']:
-                        dep_ids.add(c['settings']['itemId'])
-                    elif c['name'] == 'survey-card':
-                        dep_ids.add(c['settings']['surveyId'])
+        for section in data["values"]["layout"]["sections"]:
+            for row in section["rows"]:
+                for card in row["cards"]:
+                    c = card["component"]
+                    if c["name"] == "webmap-card":
+                        for w in ["webmap", "webscene"]:
+                            if c["settings"].get(w, None):
+                                dep_ids.add(c["settings"][w])
+                    elif c["name"] in ["app-card", "chart-card"]:
+                        dep_ids.add(c["settings"]["itemId"])
+                    elif c["name"] == "survey-card":
+                        dep_ids.add(c["settings"]["surveyId"])
         return dep_ids
-    
+
     for data in [pub_data, draft_data]:
         if data:
             itemids.update(_parse_hub_sections(data))
-    
+
     return list(itemids)
+
 
 def _parse_gp_service(item):
     try:
@@ -468,6 +470,7 @@ def _parse_gp_service(item):
         return [structure["jsonProperties"]["notebookId"]]
     except:
         return []
+
 
 def _parse_qc(item):
     try:
@@ -479,6 +482,7 @@ def _parse_qc(item):
         return list(deps)
     except:
         return []
+
 
 def _find_regex(i, regex, res=[]):
     """
