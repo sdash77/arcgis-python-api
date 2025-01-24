@@ -28,11 +28,9 @@ class WebsocketConnection:
         self._headers = gis.session.headers
         self.subscribe_callback = subscribe_callback
         self.timeout = timeout
-        context = self._get_session_adapter_ssl_context()
-        self.sslopt = {"context": context} if context else None
 
     def _get_session_adapter_ssl_context(self):
-        scheme = parse_url(self.server_url).scheme
+        scheme = parse_url(self._url).scheme
         adapter = self._gis.session.adapters.get(f"{scheme}://", None)
         if isinstance(adapter, EsriTrustStoreAdapter):
             return adapter.ssl_context
@@ -61,6 +59,10 @@ class WebsocketConnection:
             logger.error(f"Error when processing a incoming message: {e}")
 
     def connect(self, url: str, token: str, cookie: str):
+        self._url = url
+        context = self._get_session_adapter_ssl_context()
+        self.sslopt = {"context": context} if context else None
+
         _open_event = threading.Event()
         # TODO Header does not work (bug with web adaptors), so use query parameter until that is fixed.
         # Sending all headers from requests also causes issues
@@ -79,7 +81,7 @@ class WebsocketConnection:
             logger.exception(f"Error in websocket handler: {err}")
 
         logger.debug(url_with_token)
-        logger.debug(self.headers)
+        logger.debug(self._headers)
 
         self.ws = websocket.WebSocketApp(
             url_with_token,

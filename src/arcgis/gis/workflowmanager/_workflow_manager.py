@@ -4171,13 +4171,13 @@ class NotificationManager:
         self.subscribed_jobs = {}
         self._workflow_manager = workflow_manager
         self._connected = False
-        self.server_url = self._workflow_manager.server_url
+        self._server_url = self._workflow_manager._server_url
 
         # need baseAddress/ server address, orgid, and workflow item id
-        base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
+        base = self._server_url.replace("http://", "ws://").replace("https://", "wss://")
         item_url = f"{self.org_id}/{self.workflow_item_id}"
         self.websocket_url = f"{base}/{item_url}/notificationWs"
-        self.token_request_url = f"{self.server_url}/{item_url}"
+        self.token_request_url = f"{self._server_url}/{item_url}"
 
     @property
     def is_connected(self) -> bool:
@@ -4250,23 +4250,23 @@ class NotificationManager:
         try:
             ids = job_ids
             if self.websocket_connection is None:
-                subscribe_obj = {
-                    "msgType": "subscribe",
-                    "jobIds": ids,
-                    "token": self._token_generator()[0],
-                }
-
                 logger.debug(
                     f"Creating temporary websocket connection to {self.websocket_url}"
                 )
                 with self._connect() as ws:
+                    subscribe_obj = {
+                        "msgType": "subscribe",
+                        "jobIds": ids,
+                        "token": ws.get_token(self.token_request_url),
+                    }
+
                     ws.send_and_wait(json.dumps(subscribe_obj))
             else:
                 ids = [i for i in job_ids if i not in self.subscribed_jobs.keys()]
                 subscribe_obj = {
                     "msgType": "subscribe",
                     "jobIds": ids,
-                    "token": self._token_generator()[0],
+                    "token": self.websocket_connection.get_token(self.token_request_url),
                 }
                 if len(ids) > 0:
                     self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
@@ -4301,7 +4301,7 @@ class NotificationManager:
                 unsubscribe_obj = {
                     "msgType": "unsubscribe",
                     "jobIds": job_ids,
-                    "token": self._token_generator()[0],
+                    "token": self.websocket_connection.get_token(self.token_request_url)
                 }
                 self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
