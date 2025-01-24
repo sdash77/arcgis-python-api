@@ -3624,7 +3624,8 @@ class FeatureLayerManager(_GISResource):
         res = self._con.post(u_url, params)
 
         super(FeatureLayerManager, self)._refresh()
-        self._fl._refresh()
+        if self._fl:
+            self._fl._refresh()
         return res
 
     # ----------------------------------------------------------------------
