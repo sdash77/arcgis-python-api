@@ -110,10 +110,10 @@ def execute_notebook(
                             notebook for this execution. The parameters will be inserted as a
                             new cell directly after the cell you have tagged *parameters*.
                             Separate parameters with a comma. Use format of:
-                            
+
                             * "x":1 when defining number parameters
                             * "y":"text" when defining string parameters
-                            
+
                             See `Prepare the Notebook <https://enterprise.arcgis.com/en/notebook/latest/use/windows/prepare-a-notebook-for-automated-execution.htm#GUID-74ECC731-D8D3-4E63-A22C-38027407A209>`_
                             for detailed explanation.
     --------------------    --------------------------------------------------------------------
@@ -122,12 +122,12 @@ def execute_notebook(
                             *False*.
     --------------------    --------------------------------------------------------------------
     timeout                 Optional Int. The number of minutes to run the instance before timeout.
-                            
+
                             .. note::
                                 This is only available in ArcGIS Online.
     --------------------    --------------------------------------------------------------------
     future                  Optional boolean.
-        
+
                             * If *True*, a Job object will be returned and the process runs
                               asynchronously, allowing for other work to be done while
                               processing completes.T
@@ -146,7 +146,7 @@ def execute_notebook(
         #Usage example: Inserting parameters at execution time
         >>> from arcgis.gis import GIS
         >>> from arcgis.notebook import execute_notebook
-        
+
         >>> gis = GIS(
                       profile="your_online_admin_profile",
                       verify_cert=False
@@ -156,7 +156,7 @@ def execute_notebook(
                        query="air_quality_regular_updates",
                        item_type="Notebook"
                       )[0]
-        
+
         # In the notebook cell tagged as parameters, the variables defined
         # with the below key values will be replaced by the value
         >>> execute_notebook(

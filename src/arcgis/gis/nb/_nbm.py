@@ -167,7 +167,7 @@ class NotebookManager(object):
 
         The Execute Notebook operation allows administrators and users with
         the `Create and Edit Notebooks` privilege to remotely
-        run a notebook that they own.  The notebook pecified in the operation will 
+        run a notebook that they own.  The notebook pecified in the operation will
         be run with all cells in order.
 
         Using this operation, you can schedule the execution of a notebook,
@@ -187,7 +187,7 @@ class NotebookManager(object):
         inserted into the notebook as a new cell. This cell will be placed
         at the beginning of the notebook, unless you have added the
         *parameters* tag to a cell.
-        
+
         See `Execute Notebook <https://developers.arcgis.com/rest/enterprise-administration/notebook/execute-notebook/>`_
         for full administration details.
 
@@ -210,10 +210,10 @@ class NotebookManager(object):
                                 notebook for this execution. The parameters will be inserted as a
                                 new cell directly after the cell you have tagged *parameters*.
                                 Separate parameters with a comma. Use formats:
-                                
+
                                 * "x":1 when defining number parameters
                                 * "y":"text" when defining string parameters
-                                
+
                                 See `Prepare the Notebook <https://enterprise.arcgis.com/en/notebook/latest/use/windows/prepare-a-notebook-for-automated-execution.htm#GUID-74ECC731-D8D3-4E63-A22C-38027407A209>`_
                                 for detailed explanation.
         --------------------    --------------------------------------------------------------------
@@ -222,7 +222,7 @@ class NotebookManager(object):
                                 *False*.
         --------------------    --------------------------------------------------------------------
         future                  Optional boolean.
-        
+
                                 * If *True*, a *future* object will be returned and the process runs
                                   asynchronously, allowing for other work to be done while
                                   processing completes.
@@ -231,7 +231,7 @@ class NotebookManager(object):
         ====================    ====================================================================
 
         :return:
-            
+
             * If *future=False*, a Python dictionary
             * If *future = True*, then the result is a
               `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_
