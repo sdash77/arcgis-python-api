@@ -16,7 +16,7 @@ _COMPLEX_ITEMS = frozenset(
         "StoryMap", # implemented
         "Workforce Project", # CHECK
         "Form", # works with related items
-        "QuickCapture Project", # CHECK
+        "QuickCapture Project", # implemented
         "Notebook", # figure out
         "Feature Collection", # works with related items
         "Web Experience", # implemented
@@ -180,6 +180,8 @@ def _get_item_dependencies(itemid, gis, include_related=True, include_reverse=Fa
         dependencies = _parse_hub(item)
     elif item_type == "Geoprocessing Service":
         dependencies = _parse_gp_service(item)
+    elif item_type == "QuickCapture Project":
+        dependencies = _parse_qc(item)
     else:
         dependencies = []
 
@@ -460,6 +462,17 @@ def _parse_gp_service(item):
     try:
         structure = item.resources.get("webtoolDefinition.json")
         return [structure["jsonProperties"]["notebookId"]]
+    except:
+        return []
+
+def _parse_qc(item):
+    try:
+        structure = item.resources.get("qc.project.json")
+        deps = set()
+        deps.add(structure["basemap"]["itemId"])
+        for ds in structure["dataSources"]:
+            deps.add(ds["featureServiceItemId"])
+        return list(deps)
     except:
         return []
 
