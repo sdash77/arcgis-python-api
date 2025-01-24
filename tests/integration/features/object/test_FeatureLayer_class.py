@@ -1,13 +1,13 @@
 import os
 import unittest
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS, Item, features, ItemProperties
 from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Feature
 from pandas import DataFrame
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
 
 
-@profiles.admin_all
+@profiles.devext
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
@@ -29,62 +29,23 @@ class TestFeatureLayerClass(unittest.TestCase):
 
         # Publish feature layer if it does not exist
         layer_name = cls.namePrefix + "basic"
-
-        search_fl = cls.gis.content.search(layer_name, "Feature Layer")
-        if search_fl:
-            cls.feature_layer1_item = search_fl[0]
-        else:
-            search_csv = cls.gis.content.search(layer_name, "CSV")
-            if search_csv:
-                csv_item = search_csv[0]
-            else:
-                csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
-                csv_item = cls.gis.content.add({"title": layer_name}, data=csv_path)
-            cls.feature_layer1_item = csv_item.publish({"title": layer_name})
-            assert isinstance(cls.feature_layer1_item, Item)
-
-        # ensure feature layer has necessary capabilities enabled
-        flc = FeatureLayerCollection.fromitem(cls.feature_layer1_item)
-        if "Editing" not in flc.properties.capabilities:
-            result = flc.manager.update_definition(
-                {
-                    "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
-                }
-            )
-            if result.get("success"):
-                print("Enabled necessary capabilities on feature layer")
-            else:
-                print(str(result))
-
+        csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
+        cls.feature_layer_item = cls.publish_test_item(cls.gis, layer_name, csv_path)
+        cls.assertIsNotNone(
+            cls.feature_layer_item, f"Error publishing test item: {layer_name}"
+        )
         # Publish feature layer for delete_features if it does not exist
         layer_name_delfeatures = cls.namePrefix + "delfeatures"
-
-        search_result = cls.gis.content.search(layer_name_delfeatures, "Feature Layer")
-        if search_result:
-            cls.feature_layer2_item = search_result[0]
-        else:
-            fgdb_path = os.path.join(
-                cls.qalab_cls_path, "set1_fortune10_delfeatures.gdb.zip"
-            )
-            fgdb_item = cls.gis.content.add(
-                {"title": layer_name_delfeatures}, data=fgdb_path
-            )
-            cls.feature_layer2_item = fgdb_item.publish(
-                {"name": layer_name_delfeatures}
-            )
-            assert isinstance(cls.feature_layer2_item, Item)
-
-        flc_del = FeatureLayerCollection.fromitem(cls.feature_layer2_item)
-        if "Editing" not in flc_del.properties.capabilities:
-            result = flc.manager.update_definition(
-                {
-                    "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
-                }
-            )
-            if result.get("success"):
-                print("Enabled necessary capabilities on feature layer")
-            else:
-                print(str(result))
+        fgdb_path = os.path.join(
+            cls.qalab_cls_path, "set1_fortune10_delfeatures.gdb.zip"
+        )
+        cls.feature_layer_del_features = cls.publish_test_item(
+            cls.gis, layer_name_delfeatures, fgdb_path
+        )
+        cls.assertIsNotNone(
+            cls.feature_layer_del_features,
+            f"Error publishing test item: {layer_name_delfeatures}",
+        )
 
     def test_feature_mod_classes(self):
         """
@@ -92,12 +53,12 @@ class TestFeatureLayerClass(unittest.TestCase):
         :return:
         """
         # check Item.layers property yields a list of FeatureLayer objects
-        flayers = self.feature_layer1_item.layers
+        flayers = self.feature_layer_item.layers
         assert isinstance(flayers, list)
         assert isinstance(flayers[0], FeatureLayer)
 
         # check a FeatureLayerCollection object can be created from Item object thru fromitem()
-        flc = FeatureLayerCollection.fromitem(self.feature_layer1_item)
+        flc = FeatureLayerCollection.fromitem(self.feature_layer_item)
         assert isinstance(flc, FeatureLayerCollection)
 
         # check FeatureLayer objects are obtained from FLC thru layers property
@@ -119,8 +80,8 @@ class TestFeatureLayerClass(unittest.TestCase):
         Test for updating features with edit_features()
         """
         # access the feature layer and its feature for editing
-        flayer0 = self.feature_layer1_item.layers[0]
-        fset = self.feature_layer1_item.layers[0].query("city_ID=1")
+        flayer0 = self.feature_layer_item.layers[0]
+        fset = self.feature_layer_item.layers[0].query("city_ID=1")
         f1 = fset.features[0]
 
         # update thru edit_feature()
@@ -133,7 +94,7 @@ class TestFeatureLayerClass(unittest.TestCase):
         Purpose of this test is to check if feature layer can be queried as a dataframe
         :return:
         """
-        flayer0 = self.feature_layer1_item.layers[0]
+        flayer0 = self.feature_layer_item.layers[0]
         county_fs_df = flayer0.query(as_df=True)
         assert isinstance(county_fs_df, DataFrame)
         self.assertEqual(5, county_fs_df.shape[0], "Number of features not correct")
@@ -143,7 +104,7 @@ class TestFeatureLayerClass(unittest.TestCase):
         test for deleting features with edit_features()
         """
         # access the feature layer and its feature for editing
-        flayer0 = self.feature_layer2_item.layers[0]
+        flayer0 = self.feature_layer_del_features.layers[0]
 
         # add two features
         f1 = Feature()
@@ -189,26 +150,82 @@ class TestFeatureLayerClass(unittest.TestCase):
         )
 
     @classmethod
+    def publish_test_item(cls, gis: GIS, layer_name: str, source_data_path: str):
+        source_item = None
+        # Clean out existing items
+        item_types = ["CSV", "File Geodatabase", "Feature Layer"]
+        for itm_type in item_types:
+            search_result = gis.content.search(layer_name, item_type=itm_type)
+            for search_item in search_result:
+                search_item.delete(permanent=True)
+        try:
+            item_type = (
+                "CSV" if source_data_path[-3:].upper() == "CSV" else "File Geodatabase"
+            )
+            ip = ItemProperties(
+                title=layer_name,
+                item_type=item_type,
+                tags=["ntgrtn-tst"],
+                snippet="Item for Feature Layer integration testing",
+            )
+            root_folder = gis.content.folders.get()
+            source_item = root_folder.add(
+                item_properties=ip,
+                file=source_data_path,
+            ).result()
+            # publish the item
+            if source_item:
+                feature_layer_item = source_item.publish(
+                    {"name": layer_name, "tags": "ntgrtn-tst"}
+                )
+                if feature_layer_item is not None:
+                    print("Published edit_feature_definition_points feature layer")
+                    is_prepped_for_editing = cls.prep_test_item(feature_layer_item)
+                    if is_prepped_for_editing:
+                        return feature_layer_item
+                    else:
+                        raise Exception("Could not update editing capabilities")
+        except Exception as ex:
+            if source_item:
+                source_item.delete(permanent=True)
+            raise Exception("Failed to add necessary item file to portal.", ex)
+
+    @classmethod
+    def prep_test_item(cls, feature_layer):
+        # ensure feature layer has necessary capabilities enabled
+        flc = features.FeatureLayerCollection.fromitem(feature_layer)
+        if flc is not None:
+            if "Editing" in flc.properties.capabilities:
+                return True
+            else:
+                result = flc.manager.update_definition(
+                    {
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
+                    }
+                )
+                return result
+
+    @classmethod
     def tearDownClass(cls):
         try:
-            source_item = cls.feature_layer1_item.related_items(
+            source_item = cls.feature_layer_item.related_items(
                 "Service2Data", "forward"
             )[0]
             if source_item:
-                source_item.delete()
-                cls.feature_layer1_item.delete()
+                source_item.delete(permanent=True)
+                cls.feature_layer_item.delete(permanent=True)
         except IndexError as ie:
-            cls.feature_layer1_item.delete()
+            cls.feature_layer_item.delete(permanent=True)
 
         try:
-            source_item2 = cls.feature_layer2_item.related_items(
+            source_item2 = cls.feature_layer_del_features.related_items(
                 "Service2Data", "forward"
             )[0]
             if source_item2:
                 source_item2.delete()
-                cls.feature_layer2_item.delete()
+                cls.feature_layer_del_features.delete(permanent=True)
         except IndexError as ie:
-            cls.feature_layer2_item.delete()
+            cls.feature_layer_del_features.delete(permanent=True)
 
 
 if __name__ == "__main__":
