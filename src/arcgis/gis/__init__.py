@@ -6751,7 +6751,7 @@ class ContentManager(object):
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
         
-                                    ..note::
+                                    .. note::
                                         Configuring items for ovewrite is no longer supported when adding
                                         an :class:`~arcgis.gis.Item`
         ==========================  =====================================================================
