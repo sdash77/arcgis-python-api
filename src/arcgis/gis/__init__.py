@@ -21,6 +21,7 @@ import tempfile
 import warnings
 import zipfile
 import configparser
+import urllib.parse
 from contextlib import contextmanager
 import functools
 import logging
@@ -769,10 +770,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    if self._portal.url.endswith("/"):
-                        url = self._portal.url + "admin"
-                    else:
-                        url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -803,10 +801,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    if self._portal.url.endswith("/"):
-                        url = self._portal.url + "admin"
-                    else:
-                        url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -844,10 +839,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        if self._portal.url.endswith("/"):
-                            url = self._portal.url + "admin"
-                        else:
-                            url = self._portal.url + "/admin"
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
