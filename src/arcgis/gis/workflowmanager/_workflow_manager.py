@@ -4174,7 +4174,9 @@ class NotificationManager:
         self._server_url = self._workflow_manager._server_url
 
         # need baseAddress/ server address, orgid, and workflow item id
-        base = self._server_url.replace("http://", "ws://").replace("https://", "wss://")
+        base = self._server_url.replace("http://", "ws://").replace(
+            "https://", "wss://"
+        )
         item_url = f"{self.org_id}/{self.workflow_item_id}"
         self.websocket_url = f"{base}/{item_url}/notificationWs"
         self.token_request_url = f"{self._server_url}/{item_url}"
@@ -4266,7 +4268,9 @@ class NotificationManager:
                 subscribe_obj = {
                     "msgType": "subscribe",
                     "jobIds": ids,
-                    "token": self.websocket_connection.get_token(self.token_request_url),
+                    "token": self.websocket_connection.get_token(
+                        self.token_request_url
+                    ),
                 }
                 if len(ids) > 0:
                     self.websocket_connection.send_and_wait(json.dumps(subscribe_obj))
@@ -4301,7 +4305,9 @@ class NotificationManager:
                 unsubscribe_obj = {
                     "msgType": "unsubscribe",
                     "jobIds": job_ids,
-                    "token": self.websocket_connection.get_token(self.token_request_url)
+                    "token": self.websocket_connection.get_token(
+                        self.token_request_url
+                    ),
                 }
                 self.websocket_connection.send(json.dumps(unsubscribe_obj))
 
