@@ -7,23 +7,22 @@ from collections import OrderedDict
 # any item that can contain another item or require another to exist
 _COMPLEX_ITEMS = frozenset(
     [
-        "Web Map", # implemented
-        "Web Scene", # implemented
-        "Web Mapping Application", # implemented
-        "Operation View", # CHECK
-        "Dashboard", # implemented
-        "Feature Service", # works with related items
-        "StoryMap", # implemented
-        "Workforce Project", # CHECK
-        "Form", # works with related items
-        "QuickCapture Project", # implemented
-        "Notebook", # figure out
-        "Feature Collection", # works with related items
-        "Web Experience", # implemented
-        "Hub Site Application", # implemented, check for other item types within
-        "Hub Page", # ditto
-        "Solution", # works with related items
-        "Geoprocessing Service", # implemented
+        "Web Map",
+        "Web Scene",
+        "Web Mapping Application",
+        "Dashboard",
+        "Feature Service",
+        "StoryMap",
+        "Workforce Project",
+        "Form",
+        "QuickCapture Project",
+        "Notebook",
+        "Feature Collection",
+        "Web Experience",
+        "Hub Site Application",
+        "Hub Page",
+        "Solution",
+        "Geoprocessing Service",
     ]
 )
 
@@ -364,11 +363,11 @@ def _parse_exb(item):
 
 def _parse_wma(item):
     data = item.get_data()
-    itemids = []
+    itemids = set()
 
     if "map" in data:
         try:
-            itemids.append(data["map"]["itemId"])
+            itemids.add(data["map"]["itemId"])
         except:
             pass
 
@@ -377,11 +376,16 @@ def _parse_wma(item):
 
         for ds in data_sources.values():
             try:
-                itemids.append(ds["itemId"])
+                itemids.add(ds["itemId"])
             except:
                 pass
+    
+    try:
+        itemids.add(data["values"]["webmap"])
+    except:
+        pass
 
-    return itemids
+    return list(itemids)
 
 
 def _parse_storymap(item):
