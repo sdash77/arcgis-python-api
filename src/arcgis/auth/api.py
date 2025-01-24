@@ -225,15 +225,20 @@ class EsriSession:
         self._session.mount("https://", self._adapter)
         self.auth = auth
 
-        if cert and len(cert) > 1:
-            self._session.auth = EsriPKIAuth(session=self)
-        elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
-            self._session.auth = EsriWindowsAuth(
-                referer=referer,
-                session=self,
-            )
-        elif HAS_KERBEROS:
-            self._session.auth = EsriKerberosAuth(referer=self._referer, session=self)
+        if auth is None:
+            if cert and len(cert) > 1:
+                self._session.auth = EsriPKIAuth(session=self)
+            elif (
+                sys.platform == "win32" and HAS_GSSAPI
+            ):  # Default Case Load IWA/WinAuth
+                self._session.auth = EsriWindowsAuth(
+                    referer=referer,
+                    session=self,
+                )
+            elif HAS_KERBEROS:
+                self._session.auth = EsriKerberosAuth(
+                    referer=self._referer, session=self
+                )
 
     # ----------------------------------------------------------------------
     def close(self):

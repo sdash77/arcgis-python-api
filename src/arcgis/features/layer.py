@@ -301,7 +301,7 @@ class FeatureLayer(Layer):
         part2 = url[res[1] :]
         admin_url = "%s%s%s" % (part1, add_text, part2)
 
-        res = FeatureLayerManager(admin_url, self._gis)
+        res = FeatureLayerManager(admin_url, self._gis, fl=self)
         return res
 
     @property
