@@ -57,6 +57,16 @@ class TestAddLayersToMap(unittest.TestCase):
         assert len(self.wm.content.layers) == 1
         assert isinstance(self.wm.content.layers[0], FeatureLayer)
 
+    def test_add_by_url(self):
+        """Test adding a layer by url"""
+
+        # add layer
+        url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
+        self.wm.content.add(url)
+        assert self.wm.content.layers
+        assert len(self.wm.content.layers) == 1
+        assert isinstance(self.wm.content.layers[0], MapFeatureLayer)
+        
     def test_vector_tile_layer(self):
         """Test adding a vector tile layer"""
         # add layer
