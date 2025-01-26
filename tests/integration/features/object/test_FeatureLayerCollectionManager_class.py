@@ -1,12 +1,16 @@
 import os
+import time
 import unittest
+
+from data_utils import publish_test_item
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
 from arcgis.gis import Item
 from arcgis.features.managers import FeatureLayerCollectionManager
+from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
 
 
-@profiles.admin_enterprise_and_agol
+@profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerCollectionManager(unittest.TestCase):
     """
@@ -16,6 +20,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
     # Add fields to allow for the cleanup method to work
     data_item = None
     wfl_item = None
+    is_agol = False
 
     @classmethod
     def setUpClass(cls):
@@ -23,11 +28,16 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         Get class test asset location
         :return:
         """
+        cls.uid = int(time.time())
 
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = os.path.join(
             cls.qalab_base_path, "features_mod_FeatureLayerCollectionManager_cls_short"
         )
+
+        cls.is_agol = cls.profile == "your_online_profile"
+        # Hold all Items for cleanup
+        cls.items = []
 
     def test_create_FeatureLayerCollectionManager_object(self):
         """
@@ -37,23 +47,20 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region Publish the feature layer if it does not exist
-            layer_name = "dino_FLC_basic"
-            search_result = self.gis.content.search(layer_name)
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-            csv_search_result = self.gis.content.search("simple_points.csv")
-            if csv_search_result:
-                for item in csv_search_result:
-                    item.delete(permanent=True)
-
+            layer_name = f"dino_FLC_basic_{self.uid}"
             data_path = os.path.join(self.qalab_cls_path, "simple_points.csv")
-            self.data_item = self.gis.content.add({"title": layer_name}, data=data_path)
-            self.wfl_item = self.data_item.publish({"name": layer_name})
-            self.assertIsInstance(self.wfl_item, Item)
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.CSV.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
 
             # check a FeatureLayerCollectionManager object can be created from url
-            flcm_url = FeatureLayerCollectionManager(self.wfl_item.url, self.gis)
+            flcm_url = FeatureLayerCollectionManager(published_item.url, self.gis)
             self.assertIsInstance(
                 flcm_url,
                 FeatureLayerCollectionManager,
@@ -61,7 +68,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             )
 
             # check FeatureLayerCollectionManager object can be created from item
-            flcm_item = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flcm_item = FeatureLayerCollectionManager.fromitem(published_item)
             self.assertIsInstance(
                 flcm_item,
                 FeatureLayerCollectionManager,
@@ -80,18 +87,20 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         """
 
         try:
-            # get csv data
-            search_result = self.gis.content.search("overwrite_HFS_csv")
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-
             data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_csv.csv")
-            self.data_item = self.gis.content.add({}, data=data_path)
-            self.wfl_item = self.data_item.publish()
+            layer_name = f"overwrite_HFS_csv_{self.uid}"
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.CSV.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
 
             # delete all features in feature layer
-            flayer = self.wfl_item.layers[0]
+            flayer = published_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
             self.assertIsNotNone(
                 delete_result, "Unable to delete features before overwrite"
@@ -102,7 +111,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             )
 
             # access feature layer coll manager
-            flc_mgr = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
             # overwrite the feature layer
             new_data_path = os.path.join(
@@ -141,18 +150,20 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         """
 
         try:
-            # get excel data
-            search_result = self.gis.content.search("overwrite_HFS_xsl")
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-
             data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_excel.xlsx")
-            self.data_item = self.gis.content.add({}, data=data_path)
-            self.wfl_item = self.data_item.publish()
+            layer_name = f"overwrite_HFS_excel_{self.uid}"
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.EXCEL.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
 
             # region delete all features in feature layer
-            flayer = self.wfl_item.layers[0]
+            flayer = published_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
             self.assertIsNotNone(
                 delete_result, "Unable to delete features before overwrite"
@@ -163,7 +174,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             )
 
             # access feature layer coll manager
-            flc_mgr = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
             # overwrite the feature layer
             new_data_path = os.path.join(
@@ -202,18 +213,21 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
 
         try:
             # region publish feature layer
-            search_result = self.gis.content.search("overwrite_HFS_fgdb")
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-
             data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_fgdb.gdb.zip")
-            self.data_item = self.gis.content.add({}, data=data_path)
-            self.wfl_item = self.data_item.publish()
+            layer_name = f"overwrite_HFS_fgdb_{self.uid}"
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.FGDB.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
             # endregion
 
             # region delete all features in feature layer
-            flayer = self.wfl_item.layers[0]
+            flayer = published_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
             self.assertIsNotNone(
                 delete_result, "Unable to delete features before overwrite"
@@ -225,7 +239,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # endregion
 
             # access feature layer coll manager
-            flc_mgr = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
             # overwrite the feature layer
             new_fgdb_path = os.path.join(
@@ -262,19 +276,21 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         """
 
         try:
-            # region publish feature layer
-            search_result = self.gis.content.search("overwrite_HFS_shp")
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-
             data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_shp.zip")
-            self.data_item = self.gis.content.add({}, data=data_path)
-            self.wfl_item = self.data_item.publish()
+            layer_name = f"overwrite_HFS_shp_{self.uid}"
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.SHP.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
             # endregion
 
             # region delete all features in feature layer
-            flayer = self.wfl_item.layers[0]
+            flayer = published_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
             self.assertIsNotNone(
                 delete_result, "Unable to delete features before overwrite"
@@ -286,7 +302,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # endregion
 
             # access feature layer coll manager
-            flc_mgr = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
             # overwrite the feature layer
             new_data_path = os.path.join(
@@ -315,6 +331,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
+    @unittest.skipIf(is_agol, "Will fail on agol with service name duplicate")
     def test_overwrite_HFS_using_sd(self):
         """
         Publish a feature layer with SD file
@@ -324,19 +341,21 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         """
 
         try:
-            # region publish feature layer if not found
-            search_result = self.gis.content.search("overwrite_HFS_sd")
-            if search_result:
-                for item in search_result:
-                    item.delete(permanent=True)
-
             data_path = os.path.join(self.qalab_cls_path, "overwrite_HFS_sd.sd")
-            self.data_item = self.gis.content.add({}, data=data_path)
-            self.wfl_item = self.data_item.publish()
+            layer_name = f"overwrite_HFS_sd_{self.uid}"
+            published_item = publish_test_item(
+                gis=self.gis,
+                layer_name=layer_name,
+                source_data_path=data_path,
+                item_type=ItemType.SD.value,
+                prep_for_editing=False,
+            )
+            self.assertIsInstance(published_item, Item)
+            self.items.append(published_item)
             # endregion
 
             # region delete all features in feature layer
-            flayer = self.wfl_item.layers[0]
+            flayer = published_item.layers[0]
             delete_result = flayer.delete_features(where="1=1")
             self.assertIsNotNone(
                 delete_result, "Unable to delete features before over write"
@@ -348,7 +367,7 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
             # endregion
 
             # access feature layer coll manager
-            flc_mgr = FeatureLayerCollectionManager.fromitem(self.wfl_item)
+            flc_mgr = FeatureLayerCollectionManager.fromitem(published_item)
 
             # overwrite the feature layer
             new_data_path = os.path.join(
@@ -377,11 +396,9 @@ class TestFeatureLayerCollectionManager(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    def tearDown(self):
-        if self.data_item:
-            self.data_item.delete(permanent=True)
-        if self.wfl_item:
-            self.wfl_item.delete(permanent=True)
+    @classmethod
+    def tearDownClass(cls):
+        cleanup_published_items(cls.items)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,14 @@
 import os
+import time
 import unittest
-from arcgis.gis import GIS, Item, features, ItemProperties
 from arcgis.features import FeatureLayer, FeatureLayerCollection, FeatureSet, Feature
 from pandas import DataFrame
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
+from utils.data_utils import ItemType, publish_test_item, cleanup_published_items
 
 
-@profiles.devext
+@profiles.enterprise_and_agol
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
@@ -19,33 +20,34 @@ class TestFeatureLayerClass(unittest.TestCase):
         """
         Check if portal builtin can be reached
         Get class test asset location
+        Publish test Items
         :return:
         """
+        uid = int(time.time())
         cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = os.path.join(
             cls.qalab_base_path, "features_mod_FeatureLayer_cls"
         )
-        cls.namePrefix = "dino_FeatureLayer_"
 
-        # Publish feature layer if it does not exist
-        layer_name = cls.namePrefix + "basic"
+        # Publish feature layer
+        layer_name = f"dino_FeatureLayer_basic_{uid}"
         csv_path = os.path.join(cls.qalab_cls_path, "edit_features_points.csv")
-        cls.feature_layer_item = cls.publish_test_item(cls.gis, layer_name, csv_path)
-        cls.assertIsNotNone(
-            cls.feature_layer_item, f"Error publishing test item: {layer_name}"
+        cls.feature_layer_item = publish_test_item(
+            cls.gis, layer_name, csv_path, ItemType.CSV.value
         )
-        # Publish feature layer for delete_features if it does not exist
-        layer_name_delfeatures = cls.namePrefix + "delfeatures"
+        assert cls.feature_layer_item, "Feature layer item not found"
+
+        # Publish feature layer
+        layer_name_delfeatures = f"dino_FeatureLayer_delfeatures_{uid}"
         fgdb_path = os.path.join(
             cls.qalab_cls_path, "set1_fortune10_delfeatures.gdb.zip"
         )
-        cls.feature_layer_del_features = cls.publish_test_item(
-            cls.gis, layer_name_delfeatures, fgdb_path
+        cls.feature_layer_del_features = publish_test_item(
+            cls.gis, layer_name_delfeatures, fgdb_path, ItemType.FGDB.value
         )
-        cls.assertIsNotNone(
-            cls.feature_layer_del_features,
-            f"Error publishing test item: {layer_name_delfeatures}",
-        )
+        assert (
+            cls.feature_layer_del_features
+        ), f"Error publishing test item: {layer_name_delfeatures}"
 
     def test_feature_mod_classes(self):
         """
@@ -150,82 +152,10 @@ class TestFeatureLayerClass(unittest.TestCase):
         )
 
     @classmethod
-    def publish_test_item(cls, gis: GIS, layer_name: str, source_data_path: str):
-        source_item = None
-        # Clean out existing items
-        item_types = ["CSV", "File Geodatabase", "Feature Layer"]
-        for itm_type in item_types:
-            search_result = gis.content.search(layer_name, item_type=itm_type)
-            for search_item in search_result:
-                search_item.delete(permanent=True)
-        try:
-            item_type = (
-                "CSV" if source_data_path[-3:].upper() == "CSV" else "File Geodatabase"
-            )
-            ip = ItemProperties(
-                title=layer_name,
-                item_type=item_type,
-                tags=["ntgrtn-tst"],
-                snippet="Item for Feature Layer integration testing",
-            )
-            root_folder = gis.content.folders.get()
-            source_item = root_folder.add(
-                item_properties=ip,
-                file=source_data_path,
-            ).result()
-            # publish the item
-            if source_item:
-                feature_layer_item = source_item.publish(
-                    {"name": layer_name, "tags": "ntgrtn-tst"}
-                )
-                if feature_layer_item is not None:
-                    print("Published edit_feature_definition_points feature layer")
-                    is_prepped_for_editing = cls.prep_test_item(feature_layer_item)
-                    if is_prepped_for_editing:
-                        return feature_layer_item
-                    else:
-                        raise Exception("Could not update editing capabilities")
-        except Exception as ex:
-            if source_item:
-                source_item.delete(permanent=True)
-            raise Exception("Failed to add necessary item file to portal.", ex)
-
-    @classmethod
-    def prep_test_item(cls, feature_layer):
-        # ensure feature layer has necessary capabilities enabled
-        flc = features.FeatureLayerCollection.fromitem(feature_layer)
-        if flc is not None:
-            if "Editing" in flc.properties.capabilities:
-                return True
-            else:
-                result = flc.manager.update_definition(
-                    {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
-                    }
-                )
-                return result
-
-    @classmethod
     def tearDownClass(cls):
-        try:
-            source_item = cls.feature_layer_item.related_items(
-                "Service2Data", "forward"
-            )[0]
-            if source_item:
-                source_item.delete(permanent=True)
-                cls.feature_layer_item.delete(permanent=True)
-        except IndexError as ie:
-            cls.feature_layer_item.delete(permanent=True)
-
-        try:
-            source_item2 = cls.feature_layer_del_features.related_items(
-                "Service2Data", "forward"
-            )[0]
-            if source_item2:
-                source_item2.delete()
-                cls.feature_layer_del_features.delete(permanent=True)
-        except IndexError as ie:
-            cls.feature_layer_del_features.delete(permanent=True)
+        cleanup_published_items(
+            [cls.feature_layer_item, cls.feature_layer_del_features]
+        )
 
 
 if __name__ == "__main__":
