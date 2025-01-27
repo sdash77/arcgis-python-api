@@ -106,38 +106,67 @@ def execute_notebook(
                             new information after executing, such as an administrative notebook
                             that emails reminders to inactive users.
     --------------------    --------------------------------------------------------------------
-    parameters              Optional List. An optional array of parameters to add to the
+    parameters              Optional Dictionary. Defines the parameters to add to the
                             notebook for this execution. The parameters will be inserted as a
-                            new cell directly after the cell you have tagged ``parameters``.
-                            Separate parameters with a comma. Use the format "x":1 when
-                            defining parameters with numbers, and "y":"text" when defining
-                            parameters with text strings.
+                            new cell directly after the cell you have tagged *parameters*.
+                            Separate parameters with a comma. Use format of:
+
+                            * "x":1 when defining number parameters
+                            * "y":"text" when defining string parameters
+
+                            See `Prepare the Notebook <https://enterprise.arcgis.com/en/notebook/latest/use/windows/prepare-a-notebook-for-automated-execution.htm#GUID-74ECC731-D8D3-4E63-A22C-38027407A209>`_
+                            for detailed explanation.
     --------------------    --------------------------------------------------------------------
     save_parameters         Optional Boolean.  Specifies whether the notebook parameters cell
                             should be saved in the notebook for future use. The default is
-                            false.
+                            *False*.
     --------------------    --------------------------------------------------------------------
-    timeout                 Optional Int. The number of minutes to run the instance before timeout. This is only available on ArcGIS Online.
+    timeout                 Optional Int. The number of minutes to run the instance before timeout.
+
+                            .. note::
+                                This is only available in ArcGIS Online.
     --------------------    --------------------------------------------------------------------
-    future                  Optional boolean. If True, a Job object will be returned and the process
-                            will not wait for the task to complete. The default is False, which means wait for results.
+    future                  Optional boolean.
+
+                            * If *True*, a Job object will be returned and the process runs
+                              asynchronously, allowing for other work to be done while
+                              processing completes.T
+                            * If *False*, which is the default, the process waits for results
+                              before continuing.
     ====================    ====================================================================
 
-    :returns: Dict else If ``future = True``, then the result is
-              a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
-              Call ``result()`` to get the response
+    :return:
+        * If *future=False*, a Python dictionary
+        * If *future = True*, then the result is a
+          `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_
+          object. Call *result()* on the object to get the response
 
     .. code-block:: python
 
-        #Usage example
-
+        #Usage example: Inserting parameters at execution time
         >>> from arcgis.gis import GIS
         >>> from arcgis.notebook import execute_notebook
 
-        >>> gis = GIS(profile="your_org_profile")
+        >>> gis = GIS(
+                      profile="your_online_admin_profile",
+                      verify_cert=False
+                  )
 
-        >>> nb_item = gis.content.get("ac7b7792913b4b3c9b22da4e2c42f986")
-        >>> execute_notebook(nb_item)
+        >>> nb_item = gis.content.search(
+                       query="air_quality_regular_updates",
+                       item_type="Notebook"
+                      )[0]
+
+        # In the notebook cell tagged as parameters, the variables defined
+        # with the below key values will be replaced by the value
+        >>> execute_notebook(
+                        item=nb_item,
+                        parameters={
+                            "file_path": r"/arcgis/home/aqi_data/",
+                            "num": 2,
+                        },
+                        save_parameters=True
+            )
 
     """
     if gis is None:
