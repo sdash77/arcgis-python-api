@@ -3686,7 +3686,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
     def test_stop_step_returns_successfully(self):
-        # Arrangess
+        # Arrange
         # Create Intro WM Job
         job_id = self.create_job()[0]
 
