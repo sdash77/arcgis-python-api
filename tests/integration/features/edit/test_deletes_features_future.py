@@ -1798,7 +1798,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
         try:
             gis = self.gis
             sdf = pd.DataFrame(data)
-            item = gis.content.import_data(sdf)
+            item = gis.content.import_data(
+                sdf, title="delete_features_sync", tags="ntgrtn-tst"
+            )
             flyr = item.layers[0]
             where = "FID=2"
             d = flyr.delete_features(
@@ -1848,7 +1850,9 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
         try:
             gis = self.gis
             sdf = pd.DataFrame(data)
-            item = gis.content.import_data(sdf)
+            item = gis.content.import_data(
+                sdf, title="delete_features_async", tags="ntgrtn-tst"
+            )
             flyr = item.layers[0]
             where = "FID=2"
             d = flyr.delete_features(
