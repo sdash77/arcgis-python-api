@@ -3309,11 +3309,11 @@ class Job(object):
         url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
 
         params = {
-            "workflowAdministered": administered
+            "workflowAdministered": administered,
         }
-        if data_source_name is not None:
+        if data_source_name:
             params["dataSourceName"] = data_source_name
-        if data_reference_id is not None:
+        if data_reference_id:
             params["dataReferenceId"] = data_reference_id
         if version_guid is not None:
             params["versionGuid"] = version_guid
