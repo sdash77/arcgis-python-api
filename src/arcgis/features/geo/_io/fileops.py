@@ -681,7 +681,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         geo._data.index = old_index
     return
 
-            
+
 # --------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
@@ -731,10 +731,13 @@ def from_featureclass(filename, **kwargs):
         return _gdal_workflow(filename)
     elif HASPYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
-    elif HASFIONA and (filename.lower().endswith(".shp") or ".gdb" in os.path.dirname(filename).lower()):
+    elif HASFIONA and (
+        filename.lower().endswith(".shp") or ".gdb" in os.path.dirname(filename).lower()
+    ):
         return _fiona_workflow(filename)
     else:
         raise Exception("Unsupported data format or missing required libraries.")
+
 
 def _http_workflow(filename):
     r = requests.get(filename)
@@ -750,13 +753,16 @@ def _http_workflow(filename):
     df.spatial._meta.source = filename
     return df
 
+
 def _gdal_workflow(filename):
     df = _gdal_to_sedf(file_path=filename)
     df.spatial._meta.source = filename
     return df
 
+
 def _arcpy_workflow(filename, **kwargs):
     from arcgis.geometry import _types
+
     sql_clause = kwargs.pop("sql_clause", (None, None))
     where_clause = kwargs.pop("where_clause", None)
     fields = kwargs.pop("fields", None)
@@ -781,12 +787,20 @@ def _arcpy_workflow(filename, **kwargs):
             "esriSpatialRelWithin": "WITHIN",
         }
         overlap_type = spatial_relation[spatial_filter["spatialRel"]]
-        geom = spatial_filter["geometry"].polygon if hasattr(spatial_filter["geometry"], "polygon") else spatial_filter["geometry"]
+        geom = (
+            spatial_filter["geometry"].polygon
+            if hasattr(spatial_filter["geometry"], "polygon")
+            else spatial_filter["geometry"]
+        )
         geom = geom.as_arcpy
 
         flname = "a" + uuid.uuid4().hex[:6]
-        filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
-        arcpy.management.SelectLayerByLocation(filename, overlap_type=overlap_type, select_features=geom)[0]
+        filename = arcpy.management.MakeFeatureLayer(
+            filename, out_layer=flname, where_clause=where_clause
+        )[0]
+        arcpy.management.SelectLayerByLocation(
+            filename, overlap_type=overlap_type, select_features=geom
+        )[0]
 
     if fields is None:
         fields = [
@@ -846,8 +860,10 @@ def _arcpy_workflow(filename, **kwargs):
 
     return df.convert_dtypes()
 
+
 def _shapefile_workflow(filename):
     from arcgis.geometry import _types
+
     records = []
     reader = shapefile.Reader(filename)
     fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
@@ -865,8 +881,10 @@ def _shapefile_workflow(filename):
     sdf.spatial._meta.source = filename
     return sdf
 
+
 def _fiona_workflow(filename):
     from arcgis.geometry import _types
+
     is_gdb = ".gdb" in os.path.dirname(filename).lower()
     if is_gdb:
         with fiona.Env():
@@ -896,6 +914,8 @@ def _fiona_workflow(filename):
                 df.spatial.set_geometry(geom_mapping)
                 df.spatial._meta.source = filename
                 return df
+
+
 # --------------------------------------------------------------------------
 import functools
 
