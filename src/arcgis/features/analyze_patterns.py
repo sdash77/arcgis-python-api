@@ -206,7 +206,7 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     analysis_layer          The point, line, or polygon features to be analyzed. This
                             parameter can be a URL to a feature service layer with an
-                            optional filter to select specific feaures, or a feature
+                            optional filter to select specific features, or a feature
                             collection
     --------------------    ---------------------------------------------------------
     summarize_type          The method with which to summarize the analysis_layer.
@@ -630,7 +630,7 @@ def calculate_composite_index(
                                                     # Example:
                                                     >>> output = calculate_composite_index(
                                                                     ...,
-                                                                    ouput_index_min_max= [
+                                                                    output_index_min_max= [
                                                                             {'min': 0, 'max': 100}
                                                                         ],
                                                                     ...,
@@ -664,7 +664,7 @@ def calculate_composite_index(
                                                     # Example #2:
                                                     >>> output = calculate_composite_index(
                                                                     ...,
-                                                                    ouput_name= {
+                                                                    output_name= {
                                                                         "itemProperties": {
                                                                             "itemId": "<itemID of existing service>",
                                                                             "overwrite": True
@@ -675,7 +675,7 @@ def calculate_composite_index(
                                                     # Example #3:
                                                     >>> output = calculate_composite_index(
                                                                     ...,
-                                                                    ouput_name= {
+                                                                    output_name= {
                                                                         "serviceProperties": {
                                                                                 "name": "<existing service name>"
                                                                                 },
@@ -899,7 +899,7 @@ def find_hot_spots(
 
         USAGE EXAMPLE: To find significant hot ot cold spots of collisions involving a bicycle within a specific boundary.
         collision_hot_spots = find_hot_spots(collisions,
-                                             bounding_polygon_layer=boundry_lyr,
+                                             bounding_polygon_layer=boundary_lyr,
                                              output_name='collision_hexagon_hot_spots',
                                              shape_type='hexagon')
 
@@ -1019,7 +1019,7 @@ def find_outliers(
                                                                         Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations
                                                                         can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
 
-                                                                        Choice list: ['Speed', 'Balance', 'Presision']
+                                                                        Choice list: ['Speed', 'Balance', 'Precision']
 
                                                                         * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.005.
                                                                         * ``Balance`` - implements 499 permutations and results in p-values with a precision of 0.002.

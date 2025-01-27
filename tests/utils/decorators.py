@@ -66,7 +66,9 @@ _gis_by_profile = {}
 def _get_gis(profile):
     """Returns a gis for a profile"""
     if profile not in configured_profiles:
-        print(f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!")
+        print(
+            f"Profile '{profile}' not configured in arcgis.gis.ProfileManager, run `config_profiles.py`!"
+        )
         return None
     if profile not in _gis_by_profile:
         _gis_by_profile[profile] = GIS(
@@ -239,7 +241,7 @@ class credentials:
             cls._enterprise_iwa_credential_parameters,
             cls._enterprise_multi_iwa_credential_parameters,
         )
-    
+
     @classproperty
     def enterprise_iwa(cls):
         """Run tests for iwa and multi-iwa enterprise credentials"""
@@ -305,14 +307,14 @@ class credentials:
         return cls._get_credentials_parameterized_class(
             cls._enterprise_oauth_credential_parameters
         )
-    
+
     @classproperty
     def agol_oauth(cls):
         """Run tests for agol oauth credentials"""
         return cls._get_credentials_parameterized_class(
             cls._agol_oauth_credential_parameters
         )
-    
+
     @classproperty
     def all_oauth(cls):
         """Run tests for all oauth credentials"""
@@ -344,7 +346,10 @@ class profiles:
     If multiple profiles are injected, the test will be run once for each profile.
     """
 
-    _agol_anonymous_profile_parameters = ("agol_anonymous", "your_anonymous_online_profile")
+    _agol_anonymous_profile_parameters = (
+        "agol_anonymous",
+        "your_anonymous_online_profile",
+    )
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_devext_profile_parameters = ("devext", "your_dev_online_profile")
     _agol_admin_profile_parameters = (
@@ -452,7 +457,16 @@ class profiles:
     def admin_enterprise_and_non_admin_agol(cls):
         """Run tests for admin enterprise and non-admin agol profiles"""
         return cls._get_profile_parameterized_class(
-            cls._agol_profile_parameters, cls._enterprise_admin_profile_parameters
+            cls._agol_profile_parameters, cls._enterprise_profile_parameters
+        )
+
+    @classproperty
+    def enterprise_and_agol_and_agol_dev(cls):
+        """Run tests for admin enterprise, prod agol and dev agol profiles"""
+        return cls._get_profile_parameterized_class(
+            cls._agol_profile_parameters,
+            cls._enterprise_admin_profile_parameters,
+            cls._agol_devext_profile_parameters,
         )
 
     @classproperty
@@ -498,6 +512,7 @@ class profiles:
         return cls._get_profile_parameterized_class(
             cls._utility_network_profile_parameters
         )
+
     # endregion
 
 

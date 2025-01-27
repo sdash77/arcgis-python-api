@@ -21,6 +21,7 @@ import tempfile
 import warnings
 import zipfile
 import configparser
+import urllib.parse
 from contextlib import contextmanager
 import functools
 import logging
@@ -262,7 +263,7 @@ class GIS(object):
     ----------------------    ---------------------------------------------------------------
     proxy                     Optional Dictionary.  If you need to use a proxy, you can
                               configure individual requests with the proxy argument to any
-                              request method.  See ```Usage Exmaple 9: Using a Proxy``` for
+                              request method.  See ```Usage Example 9: Using a Proxy``` for
                               example usage.
 
                               :Usage Example:
@@ -364,21 +365,21 @@ class GIS(object):
 
     .. code-block:: python
 
-        # Usage Exmaple 7: Login with token (actual token abbreviated for this illustration)
+        # Usage Example 7: Login with token (actual token abbreviated for this illustration)
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
 
     .. code-block:: python
 
-        # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
+        # Usage Example 8: Login with API Key (actual token abbreviated for this illustration)
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
 
     .. code-block:: python
 
-        # Usage Exmaple 9: Using a Proxy
+        # Usage Example 9: Using a Proxy
         proxy = {
             'http': 'http://10.10.1.10:3128',
             'https': 'http://10.10.1.10:1080',
@@ -387,7 +388,7 @@ class GIS(object):
 
     .. code-block:: python
 
-        # Usage Exmaple 10: Using a CA_BUNDLE specifying SSL certificates
+        # Usage Example 10: Using a CA_BUNDLE specifying SSL certificates
         certs = r"./CA_CERTS/cacert.pem"
         gis = GIS(profile="your_enterprise_admin_profile", verify_cert=certs)
 
@@ -769,7 +770,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif (
                     self.properties.isPortal is True
@@ -800,7 +801,7 @@ class GIS(object):
                         KubernetesAdmin,
                     )
 
-                    url = self._portal.url + "/admin"
+                    url: str = urllib.parse.urljoin(self._portal.url, "admin")
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
                     from .admin.portaladmin import PortalAdminManager
@@ -838,7 +839,7 @@ class GIS(object):
                             KubernetesAdmin,
                         )
 
-                        url = self._portal.url + "/admin"
+                        url: str = urllib.parse.urljoin(self._portal.url, "admin")
                         self.admin = KubernetesAdmin(url=url, gis=self)
                     else:
                         from .admin.portaladmin import PortalAdminManager
@@ -1182,7 +1183,7 @@ class GIS(object):
                 )
                 return velocity
             else:
-                raise Exception("Velocity is not available on this organizaiton.")
+                raise Exception("Velocity is not available on this organization.")
         else:
             raise Exception("ArcGIS Enterprise does not support Velocity")
 
@@ -1475,7 +1476,7 @@ class GIS(object):
     @property
     def servers(self) -> dict:
         """
-        Returns the servers registered with ArcGIS Entperise.  For ArcGIS
+        Returns the servers registered with ArcGIS Enterprise.  For ArcGIS
         Online, the return value is `None`.
 
         :return: dict
@@ -1573,9 +1574,8 @@ class GIS(object):
         The ``map`` method creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
         using the GIS's configured geocoders. Provided a match is found, the geographic
-        extent of the matched address is used as the extent of the map. If a zoomlevel is also
-        provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgis.map.Map` for more information.
+        extent of the matched address is used as the extent of the map.
+        See :class:`~arcgis.map.Map` for more information.
 
         .. note::
             The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
@@ -1912,44 +1912,47 @@ class GroupMigrationManager(object):
         Imports an EPK Item to a Group.  This will import items associated with this group.
         :return: Boolean
         """
-        if self._gis.users.me.role == "org_admin":
-            try_json = True
-            if preview_only:
-                try_json = False
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
-            if isinstance(item, Item):
-                item = item.itemid
-            params = {
-                "f": "json",
-                "itemId": item,
-                "itemIdList": "",
-                "folderId": "",
-                "folderOwnerUsername": "",
-                "token": self._con.token,
-            }
-            if import_content_folder:
-                params["importContentFolder"] = import_content_folder
-            if keep_package_item_after_import in [True, False]:
-                params["keepPackageItemAfterImport"] = json.dumps(
-                    keep_package_item_after_import
-                )
-            if item_id_list:
-                params["itemIdList"] = item_id_list
-            if overwrite is not None:
-                params["overwriteExistingItems"] = overwrite
-            if preview_only:
-                params["previewOnly"] = preview_only
-            if run_async:
-                params["async"] = run_async
-            if folder_id and self._gis.version >= [8, 4]:
-                params["folderId"] = folder_id
-            if folder_owner and self._gis.version >= [8, 4]:
-                params["folderOwnerUsername"] = folder_owner
-            return self._con.post(url, params, try_json=try_json)
+        # admin or group owner has the ability to import content
+        owner = self._group.owner == self._gis.users.me.username
 
-        else:
-            raise Exception("Must be an administror to perform this action")
-        pass
+        if not owner and not self._gis.users.me.role == "org_admin":
+            raise Exception(
+                "Must be an administrator or group owner to perform this action"
+            )
+
+        try_json = not preview_only
+        url = (
+            f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
+        )
+        if isinstance(item, Item):
+            item = item.itemid
+        params = {
+            "f": "json",
+            "itemId": item,
+            "itemIdList": "",
+            "folderId": "",
+            "folderOwnerUsername": "",
+            "token": self._con.token,
+        }
+        if import_content_folder:
+            params["importContentFolder"] = import_content_folder
+        if keep_package_item_after_import in [True, False]:
+            params["keepPackageItemAfterImport"] = json.dumps(
+                keep_package_item_after_import
+            )
+        if item_id_list:
+            params["itemIdList"] = item_id_list
+        if overwrite is not None:
+            params["overwriteExistingItems"] = overwrite
+        if preview_only:
+            params["previewOnly"] = preview_only
+        if run_async:
+            params["async"] = run_async
+        if folder_id and self._gis.version >= [8, 4]:
+            params["folderId"] = folder_id
+        if folder_owner and self._gis.version >= [8, 4]:
+            params["folderOwnerUsername"] = folder_owner
+        return self._con.post(url, params, try_json=try_json)
 
     # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
@@ -1991,7 +1994,7 @@ class GroupMigrationManager(object):
         it into a :class:`~arcgis.gis.Group` in that Enterprise deployment. The method will
         handle updating service URLs and item IDs used in any web maps,
         web-mapping applications, and/or associated web layers in those items during
-        the *load* operation. See full datails in the
+        the *load* operation. See full details in the
         `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
 
         .. note::
@@ -2127,7 +2130,7 @@ class GroupMigrationManager(object):
         :class:`~arcgis.gis.Item` into a :class:`~arcgis.gis.Group`.
 
         See the `Import Group Content <https://developers.arcgis.com/rest/users-groups-and-items/import-group.htm>`_
-        documenation for full system details.
+        documentation for full system details.
 
         .. note::
             Administrative privileges are required to run this operation.
@@ -6013,8 +6016,6 @@ class GroupManager(object):
             elif self._gis._is_agol and membership_access is None:
                 membership_access = "none"
             params["membershipAccess"] = membership_access
-        if autojoin in [True, False]:
-            params["autoJoin"] = autojoin
 
         if (
             isinstance(display_settings, str)
@@ -10863,7 +10864,7 @@ class Group(dict):
             leaving_disallowed=leaving_disallowed,
             hidden_members=hidden_members,
             membership_access=membership_access,
-            autojoin=autojoin,
+            auto_join=autojoin,
         )
         if resp:
             self._hydrate()
@@ -15480,8 +15481,8 @@ class Item(dict):
                 fileName = self.name
                 item_properties["fileName"] = fileName
 
-        # Make sure thumbnail doesn't get reset in the update
-        if thumbnail is None and self.thumbnail:
+        # Make sure thumbnail doesn't get reset in the update if new data passed in
+        if data and thumbnail is None and self.thumbnail:
             thumbnail = io.BytesIO()
             thumbnail.write(self.get_thumbnail())
             thumbnail.seek(0)
@@ -15533,24 +15534,25 @@ class Item(dict):
                 self._hydrate()
             return ret
         else:
-            if data is not None:
-                # Need to add the data first and then update the item to avoid overwriting from the file
-                self._portal.update_item(
-                    self.itemid,
-                    data=data,
-                )
-                data = None
-
+            # call update the first time to update everything but the thumbnail
             ret = self._portal.update_item(
-                self.itemid,
-                item_properties,
-                data,
-                thumbnail,
-                metadata,
-                owner,
-                folder,
-                large_thumbnail,
+                itemid=self.itemid,
+                item_properties=item_properties,
+                data=data,
+                thumbnail=None,
+                metadata=metadata,
+                owner=owner,
+                folder=folder,
+                large_thumbnail=None,
             )
+
+            if thumbnail or large_thumbnail:
+                # Update the thumbnail last otherwise it gets overwritten
+                ret = self._portal.update_item(
+                    itemid=self.itemid,
+                    thumbnail=thumbnail,
+                    large_thumbnail=large_thumbnail,
+                )
             if ret:
                 self._hydrate()
             return ret
