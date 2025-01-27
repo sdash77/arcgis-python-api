@@ -746,8 +746,7 @@ def _http_workflow(filename):
         with open(archive_path, "wb") as f:
             f.write(r.content)
 
-        with zipfile.ZipFile(archive_path) as archive:
-            archive.extractall(path=temp_dir)
+        shutil.unpack_archive(archive_path, temp_dir)
 
         df = _gdal_to_sedf(file_path=temp_dir)
     df.spatial._meta.source = filename
