@@ -3676,7 +3676,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
         self.assertEqual(
-            MessageType.STEPINFOREQUIRED,
+            MessageType.STEP_INFO_REQUIRED,
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
@@ -3686,7 +3686,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(job_exec.messages, "Incorrect return type")
 
     def test_stop_step_returns_successfully(self):
-        # Arrange
+        # Arrangess
         # Create Intro WM Job
         job_id = self.create_job()[0]
 
@@ -3704,7 +3704,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
         self.assertEqual(
-            MessageType.STEPPAUSED,
+            MessageType.STEP_PAUSED,
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
@@ -3730,7 +3730,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         self.assertTrue(job_exec.done(), "Incorrectly  set, execution should be done")
         self.assertEqual(
-            MessageType.STEPFINISHED,
+            MessageType.STEP_FINISHED,
             job_exec.result().msg_type,
             "last message should be stepinforequired.",
         )
@@ -3764,7 +3764,7 @@ class TestWorkflowManager(unittest.TestCase):
             sum(
                 1
                 for m in job_exec.messages
-                if m.msg_type == MessageType.STEPINFOREQUIRED
+                if m.msg_type == MessageType.STEP_INFO_REQUIRED
             ),
             4,
             "Multiple steps should be active",
@@ -3810,7 +3810,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(len(msgs), "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
-            MessageType.JOBCOMMENTUPDATED,
+            MessageType.JOB_COMMENT_UPDATED,
             "Messages were added when subscribed",
         )
 
@@ -3840,7 +3840,7 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(len(msgs) < 2, "Messages were added when subscribed")
         self.assertEqual(
             msgs[0].msg_type,
-            MessageType.JOBCOMMENTUPDATED,
+            MessageType.JOB_COMMENT_UPDATED,
             "Messages were added when subscribed",
         )
 

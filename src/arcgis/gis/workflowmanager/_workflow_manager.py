@@ -3540,33 +3540,33 @@ class JobExecution:
         if (
             "jobId" in msg.message
             and msg.message["jobId"] == self._job.job_id
-            and msg.msg_type not in [MessageType.JOBSTATE, MessageType.CREATED]
+            and msg.msg_type not in [MessageType.JOB_STATE, MessageType.CREATED]
         ):
             logger.debug(f"Received {msg}")
             self._messages.append(msg)
             if self._execution_type is ExecutionType.RUN:
                 if msg.msg_type in [
-                    MessageType.STEPFINISHED,
-                    MessageType.STEPSTOPPED,
-                    MessageType.STEPERROR,
-                    MessageType.STEPINFOREQUIRED,
+                    MessageType.STEP_FINISHED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_INFO_REQUIRED,
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
             elif self._execution_type is ExecutionType.STOP:
                 if msg.msg_type in [
-                    MessageType.STEPPAUSED,
-                    MessageType.STEPSTOPPED,
-                    MessageType.STEPERROR,
-                    MessageType.STEPCANCELLED,
+                    MessageType.STEP_PAUSED,
+                    MessageType.STEP_STOPPED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_CANCELLED,
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
             elif self._execution_type is ExecutionType.FINISH:
                 if msg.msg_type in [
-                    MessageType.STEPSTARTED,
-                    MessageType.STEPERROR,
-                    MessageType.STEPFINISHED,
+                    MessageType.STEP_STARTED,
+                    MessageType.STEP_ERROR,
+                    MessageType.STEP_FINISHED,
                 ]:
                     self._end_time = datetime.datetime.now()
                     self._event.set()
@@ -4496,25 +4496,25 @@ class MessageType(Enum):
 
     CREATED = "CREATED"
     ERROR = "ERROR"
-    JOBSTATE = "JOBSTATE"
-    JOBUPDATED = "JOBUPDATED"
-    JOBCOMMENTUPDATED = "JOBCOMMENTUPDATED"
-    JOBATTACHMENTUPDATED = "JOBATTACHMENTUPDATED"
-    JOBLOCATIONUPDATED = "JOBLOCATIONUPDATED"
-    STEPSTARTED = "STEPSTARTED"
-    STEPPROGRESS = "STEPPROGRESS"
-    STEPCANCELLED = "STEPCANCELLED"
-    STEPPAUSED = "STEPPAUSED"
-    STEPSTOPPING = "STEPSTOPPING"
-    STEPSTOPPED = "STEPSTOPPED"
-    STEPWARNINGSTOPPED = "STEPWARNINGSTOPPED"
-    STEPFINISHED = "STEPFINISHED"
-    STEPREASSIGNED = "STEPREASSIGNED"
-    STEPHELD = "STEPHELD"
-    STEPHOLDRELEASED = "STEPHOLDRELEASED"
-    STEPERROR = "STEPERROR"
-    STEPINFOREQUIRED = "STEPINFOREQUIRED"
-    STEPINFORMATION = "STEPINFORMATION"
+    JOB_STATE = "JOBSTATE"
+    JOB_UPDATED = "JOBUPDATED"
+    JOB_COMMENT_UPDATED = "JOBCOMMENTUPDATED"
+    JOB_ATTACHMENT_UPDATED = "JOBATTACHMENTUPDATED"
+    JOB_LOCATION_UPDATED = "JOBLOCATIONUPDATED"
+    STEP_STARTED = "STEPSTARTED"
+    STEP_PROGRESS = "STEPPROGRESS"
+    STEP_CANCELLED = "STEPCANCELLED"
+    STEP_PAUSED = "STEPPAUSED"
+    STEP_STOPPING = "STEPSTOPPING"
+    STEP_STOPPED = "STEPSTOPPED"
+    STEP_WARNING_STOPPED = "STEPWARNINGSTOPPED"
+    STEP_FINISHED = "STEPFINISHED"
+    STEP_REASSIGNED = "STEPREASSIGNED"
+    STEP_HELD = "STEPHELD"
+    STEP_HOLD_RELEASED = "STEPHOLDRELEASED"
+    STEP_ERROR = "STEPERROR"
+    STEP_INFO_REQUIRED = "STEPINFOREQUIRED"
+    STEP_INFORMATION = "STEPINFORMATION"
 
 
 class ExecutionType(Enum):
