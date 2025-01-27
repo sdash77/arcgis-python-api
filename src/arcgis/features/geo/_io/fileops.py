@@ -727,16 +727,15 @@ def from_featureclass(filename, **kwargs):
 
     if HASARCPY:
         return _arcpy_workflow(filename, **kwargs)
-    elif HASGDAL:
+    if HASGDAL:
         return _gdal_workflow(filename)
-    elif HASPYSHP and filename.lower().endswith(".shp"):
+    if HASPYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
-    elif HASFIONA and (
+    if HASFIONA and (
         filename.lower().endswith(".shp") or ".gdb" in os.path.dirname(filename).lower()
     ):
         return _fiona_workflow(filename)
-    else:
-        raise Exception("Unsupported data format or missing required libraries.")
+    raise Exception("Unsupported data format or missing required libraries.")
 
 
 def _http_workflow(filename):
