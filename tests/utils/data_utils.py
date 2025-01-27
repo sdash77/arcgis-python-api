@@ -4,6 +4,7 @@ from arcgis import GIS, features
 from arcgis.gis import ItemProperties, Item
 
 
+# Enum of potential ItemTypes
 class ItemType(Enum):
     CSV = "CSV"
     EXCEL = "Microsoft Excel"

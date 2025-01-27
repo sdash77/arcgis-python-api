@@ -1,8 +1,6 @@
 import os
 import time
 import unittest
-
-from data_utils import publish_test_item
 from integration.config import QALAB_ROOT_PATH
 from utils.decorators import integration_test, profiles
 from arcgis.gis import Item

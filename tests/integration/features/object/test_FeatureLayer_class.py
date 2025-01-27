@@ -12,7 +12,7 @@ from utils.data_utils import ItemType, publish_test_item, cleanup_published_item
 @integration_test
 class TestFeatureLayerClass(unittest.TestCase):
     """
-    Test to check if a FeatureLayer object works with builtin portal
+    Test to check if a FeatureLayer object works with builtin portal and agol
     """
 
     @classmethod
