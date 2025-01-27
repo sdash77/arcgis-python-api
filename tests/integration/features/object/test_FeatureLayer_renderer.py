@@ -1,10 +1,9 @@
 import os
 import unittest
-from arcgis.gis import GIS, ContentManager
-from arcgis.features import FeatureLayer
 from arcgis._impl.common._isd import InsensitiveDict
 from utils.decorators import integration_test, profiles
 from arcgis.auth.tools import LazyLoader
+
 arcgismapping = LazyLoader("arcgis.map")
 
 
@@ -45,9 +44,7 @@ class TestRendererProperty(unittest.TestCase):
         lyr.renderer.symbol.color = [255, 0, 0, 100]
         wm.content.add(lyr)
         assert list(
-            wm.content.layers[
-                0
-            ].layerDefinition.drawingInfo.renderer.symbol.color
+            wm.content.layers[0].layerDefinition.drawingInfo.renderer.symbol.color
         ) == [255, 0, 0, 100]
 
 

@@ -1,6 +1,8 @@
 import time
 import unittest
 import concurrent.futures
+
+import data_utils
 from arcgis.gis import ContentManager
 from utils.decorators import integration_test, profiles
 
@@ -12,23 +14,19 @@ class TestFeatureLayerCalculate(unittest.TestCase):
     def setUpClass(cls):
         file_path = "./calculate_sd.zip"
         uid = int(time.time())
-        cm = cls.gis.content
-        assert isinstance(cm, ContentManager)
-        cls.add_item = cm.add(
-            item_properties={
-                "title": f"calculate_sd_{uid}",
-                "type": "File Geodatabase",
-                "tags": "ntgrtn-tst",
-            },
-            data=file_path,
-        )
-        cls.pitem = cls.add_item.publish(
-            {"name": f"calculate_sd_{uid}", "tags": "ntgrtn-tst"}
+        layer_name = f"calculate_sd_{uid}"
+        item_type = data_utils.ItemType.FGDB.value
+        cls.published_item = data_utils.publish_test_item(
+            gis=cls.gis,
+            layer_name=layer_name,
+            source_data_path=file_path,
+            item_type=item_type,
+            prep_for_editing=False,
         )
 
     def test_calculate_basic(self):
         """tests a simple calculate method"""
-        fl = self.pitem.layers[0]
+        fl = self.published_item.layers[0]
         field_to_update = [
             f for f in fl.properties.fields if f.name.upper() == "FIPS_CNTRY"
         ][0]
@@ -45,7 +43,7 @@ class TestFeatureLayerCalculate(unittest.TestCase):
 
     def test_calculate_async(self):
         """tests a simple calculate method using the asynchronous method"""
-        fl = self.pitem.layers[0]
+        fl = self.published_item.layers[0]
         field_to_update = [
             f for f in fl.properties.fields if f.name.upper() == "FIPS_CNTRY"
         ][0]
@@ -67,10 +65,7 @@ class TestFeatureLayerCalculate(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.pitem:
-            cls.pitem.delete(permanent=True)
-        if cls.add_item:
-            cls.add_item.delete(permanent=True)
+        data_utils.cleanup_published_items([cls.published_item])
 
 
 if __name__ == "__main__":
