@@ -15,13 +15,13 @@ import numpy as np
 import pandas as pd
 from contextlib import closing
 import zipfile
-from arcgis.geometry import Geometry, _types
 import requests
 import tempfile
 import shutil
 import warnings
 
 arcgis = LazyLoader("arcgis")
+_types = LazyLoader("arcgis.geometry._types")
 try:
     arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
@@ -334,7 +334,7 @@ def from_url(url: str) -> list:
             for idx, r in enumerate(reader.shapeRecords()):
                 atr = dict(zip(fields, r.record))
                 g = r.shape.__geo_interface__
-                geom = Geometry(g)
+                geom = _types.Geometry(g)
                 atr["SHAPE"] = geom
                 records.append(atr)
                 del atr
@@ -720,7 +720,6 @@ def from_featureclass(filename, **kwargs):
     :return: pandas.core.frame.DataFrame
 
     """
-    from arcgis.geometry import _types
 
     # this covers files and shapefile URL's
     def _gdal_workflow(filename=filename):
@@ -746,16 +745,11 @@ def from_featureclass(filename, **kwargs):
         df.spatial._meta.source = filename
         return df
 
-    # if no arcpy specific kwargs, prioritize gdal
-    if HASGDAL and not kwargs and not ".sde" in filename.lower():
-        return _gdal_workflow()
-
     if HASARCPY and (
         isinstance(filename, (arcpy._mp.Layer))
         or type(filename).__name__.find("arcpy") > -1
     ):
         filename = filename
-
     # this part is for shapefile URL's if we don't have gdal
     else:
         filename = _ensure_path_string(filename)
@@ -817,7 +811,6 @@ def from_featureclass(filename, **kwargs):
                 filename, overlap_type=relto, select_features=geom
             )[0]
 
-        shape_name = desc["shapeType"]
         if fields is None:
             fields = [
                 fld.name
@@ -827,9 +820,7 @@ def from_featureclass(filename, **kwargs):
             ]
         cursor_fields = fields + ["SHAPE@JSON"]
         df_fields = fields + ["SHAPE"]
-        count = 0
         dfs = []
-        shape_field_idx = cursor_fields.index("SHAPE@JSON")
         with arcpy.da.SearchCursor(
             filename,
             field_names=cursor_fields,
@@ -866,7 +857,6 @@ def from_featureclass(filename, **kwargs):
             "envelope": _types.Envelope,
             "geometry": _types.Geometry,
         }
-        import json
 
         df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(geoms[gt])
         df.loc[none_q, "SHAPE"] = None
@@ -889,9 +879,8 @@ def from_featureclass(filename, **kwargs):
             return df.convert_dtypes()
 
     # this happens as a backup if we have arcpy kwargs but no arcpy
-    elif HASGDAL:
+    elif HASGDAL and not kwargs and not ".sde" in filename.lower():
         return _gdal_workflow()
-
     # pyshp workflow
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
@@ -932,8 +921,6 @@ def from_featureclass(filename, **kwargs):
                 fiona_env = fiona.Env
 
             with fiona_env():
-                from arcgis.geometry import _types
-
                 fp = os.path.dirname(filename)
                 fn = os.path.basename(filename)
                 geoms = []
@@ -967,7 +954,6 @@ def from_featureclass(filename, **kwargs):
                 geoms = []
                 atts = []
                 with fiona.open(filename) as source:
-                    meta = source.meta
                     cols = list(source.schema["properties"].keys())
                     for idx, row in source.items():
                         geoms.append(_types.Geometry(row["geometry"]))
@@ -1459,7 +1445,7 @@ def _gdal_to_fc(
     for c in df.columns:
         idx = df[c].first_valid_index() or df.index.tolist()[0]
         if idx > -1:
-            if isinstance(df[c].loc[idx], Geometry):
+            if isinstance(df[c].loc[idx], _types.Geometry):
                 geom_field = (c, "GEOMETRY")
                 geom_column = c
                 # Since geometry is present, handle None type geometry occurrence
@@ -1645,8 +1631,8 @@ def _gdal_to_sedf(file_path):
         if geom is not None:
             # Export geometry to JSON and parse with ujson
             geom_json = _ujson.loads(geom.ExportToJson())
-            esri_geom = Geometry(geom_json)
-            esri_geom.spatialReference = Geometry({"wkid": sr_code})
+            esri_geom = _types.Geometry(geom_json)
+            esri_geom.spatialReference = _types.Geometry({"wkid": sr_code})
             row.append(esri_geom)
         else:
             row.append(None)
@@ -1664,7 +1650,7 @@ def _gdal_to_sedf(file_path):
 
     df.spatial.set_geometry("SHAPE")
     # Attach spatial reference
-    df.spatial.sr = Geometry({"wkid": sr_code})
+    df.spatial.sr = _types.Geometry({"wkid": sr_code})
     df.spatial._meta.layer_name = layer_name
 
     return df
@@ -1683,8 +1669,6 @@ def _pyshp_to_shapefile(df, out_path, out_name):
      path to the shapefile or None if pyshp isn't installed or
      spatial dataframe does not have a geometry column.
     """
-    from arcgis.geometry._types import Geometry
-
     if HASPYSHP:
         GEOMTYPELOOKUP = {
             "Polygon": shapefile.POLYGON,
@@ -1713,7 +1697,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             for c in df.columns:
                 idx = df[c].first_valid_index() or df.index.tolist()[0]
                 if idx > -1:
-                    if isinstance(df[c].loc[idx], Geometry):
+                    if isinstance(df[c].loc[idx], _types.Geometry):
                         geom_field = (c, "GEOMETRY")
                     else:
                         cfields.append(c)
@@ -1803,8 +1787,6 @@ def _pyshp2(df, out_path, out_name):
      path to the shapefile or None if pyshp isn't installed or
      spatial dataframe does not have a geometry column.
     """
-    from arcgis.geometry._types import Geometry
-
     if HASPYSHP:
         GEOMTYPELOOKUP = {
             "Polygon": shapefile.POLYGON,
@@ -1837,7 +1819,7 @@ def _pyshp2(df, out_path, out_name):
         for c in df.columns:
             idx = df[c].first_valid_index() or df.index.tolist()[0]
             if idx > -1:
-                if isinstance(df[c].loc[idx], Geometry):
+                if isinstance(df[c].loc[idx], _types.Geometry):
                     geom_field = (c, "GEOMETRY")
                     geom_column = c
                     # Since geometry is present, handle None type geometry occurrence
@@ -1939,7 +1921,7 @@ def _handle_none_type_geometry(df, geom_type, geom_column):
         for idx, row in df_view.iterrows():
             if df.loc[idx][geom_column] is None:
                 if geom_type == "Point":
-                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                    df.iat[idx, df.columns.get_loc(geom_column)] = _types.Geometry(
                         {
                             "x": np.NAN,
                             "y": np.NAN,
@@ -1947,11 +1929,11 @@ def _handle_none_type_geometry(df, geom_type, geom_column):
                         }
                     )
                 elif geom_type == "Poyline":
-                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                    df.iat[idx, df.columns.get_loc(geom_column)] = _types.Geometry(
                         {"paths": []}
                     ).WKT
                 elif geom_type == "Polygon":
-                    df.iat[idx, df.columns.get_loc(geom_column)] = Geometry(
+                    df.iat[idx, df.columns.get_loc(geom_column)] = _types.Geometry(
                         {"rings": []}
                     ).WKT
     return query
