@@ -732,7 +732,8 @@ def from_featureclass(filename, **kwargs):
     if HASPYSHP and filename.lower().endswith(".shp"):
         return _shapefile_workflow(filename)
     if HASFIONA and (
-        filename.lower().endswith(".shp") or ".gdb" in os.path.dirname(filename).lower()
+        filename.lower().endswith(".shp")
+        or filename.lower().endswith(".gdb") in os.path.dirname(filename).lower()
     ):
         return _fiona_workflow(filename)
     raise Exception("Unsupported data format or missing required libraries.")
@@ -831,9 +832,9 @@ def _arcpy_workflow(filename, **kwargs):
     df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
 
     q = df.SHAPE.notnull()
-    none_q = ~q
+    none_q = ~q  # preserve the null geometries after processing
     geom_type = desc["shapeType"].lower()
-    geom_mapping = {
+    arcpy_geom_mapping = {
         "point": _types.Point,
         "polygon": _types.Polygon,
         "polyline": _types.Polyline,
@@ -841,8 +842,8 @@ def _arcpy_workflow(filename, **kwargs):
         "envelope": _types.Envelope,
         "geometry": _types.Geometry,
     }
-
-    df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(geom_mapping[geom_type])
+    arcpy_geom_type = arcpy_geom_mapping[geom_type]
+    df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(arcpy_geom_type)
     df.loc[none_q, "SHAPE"] = None
     df.spatial.set_geometry("SHAPE")
     df.spatial._meta.source = filename
@@ -884,34 +885,32 @@ def _fiona_workflow(filename):
     from arcgis.geometry import _types
 
     is_gdb = ".gdb" in os.path.dirname(filename).lower()
-    if is_gdb:
-        with fiona.Env():
+
+    def _create_df(source):
+        geom_mapping = []
+        atts = []
+        cols = list(source.schema["properties"].keys())
+        for _, row in source.items():
+            geom_mapping.append(_types.Geometry(row["geometry"]))
+            atts.append(list(row["properties"].values()))
+        df = pd.DataFrame(data=atts, columns=cols)
+        df.spatial.set_geometry(geom_mapping)
+        df.spatial._meta.source = filename
+        return df
+
+        # file geodatabase workflow
+
+    with fiona.Env():
+        if is_gdb:
+            # file geodatabase workflow
             fp = os.path.dirname(filename)
             fn = os.path.basename(filename)
-            geom_mapping = []
-            atts = []
             with fiona.open(fp, layer=fn) as source:
-                cols = list(source.schema["properties"].keys())
-                for _, row in source.items():
-                    geom_mapping.append(_types.Geometry(row["geometry"]))
-                    atts.append(list(row["properties"].values()))
-                df = pd.DataFrame(data=atts, columns=cols)
-                df.spatial.set_geometry(geom_mapping)
-                df.spatial._meta.source = filename
-                return df
-    else:
-        with fiona.Env():
-            geom_mapping = []
-            atts = []
+                return _create_df(source)
+        else:
+            # shapefile workflow
             with fiona.open(filename) as source:
-                cols = list(source.schema["properties"].keys())
-                for _, row in source.items():
-                    geom_mapping.append(_types.Geometry(row["geometry"]))
-                    atts.append(list(row["properties"].values()))
-                df = pd.DataFrame(data=atts, columns=cols)
-                df.spatial.set_geometry(geom_mapping)
-                df.spatial._meta.source = filename
-                return df
+                return _create_df(source)
 
 
 # --------------------------------------------------------------------------
