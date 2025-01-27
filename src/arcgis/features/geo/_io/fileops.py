@@ -1437,9 +1437,11 @@ def _gdal_to_fc(
             ogr_geom = None
             if spatial_field:
                 geom = row[spatial_field]
-                geom_string = _ujson.dumps(dict(geom))
-                ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
-                feature.SetGeometry(ogr_geom)
+                if geom:
+                    # The geometry could be None for a row
+                    geom_string = _ujson.dumps(dict(geom))
+                    ogr_geom = ogr.CreateGeometryFromEsriJson(geom_string)
+                    feature.SetGeometry(ogr_geom)
 
             for field_name, value in row.items():
                 if spatial_field is None or field_name != spatial_field:
