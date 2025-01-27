@@ -19,7 +19,7 @@ from arcgis.auth.tools import LazyLoader
 arcgismapping = LazyLoader("arcgis.map")
 
 
-@profiles.enterprise
+@profiles.enterprise_and_agol
 @integration_test
 class Test_Feature_class(unittest.TestCase):
     """
@@ -72,12 +72,13 @@ class Test_Feature_class(unittest.TestCase):
         try:
             temp = None
             # using Living Atlas curated content Transportation item
-            content = self.gis.content.get("f42ecc08a3634182b8678514af35fac3")
+            item_id = "c68d7c5e350c47cb9ad7ac491c327115"
+            content = self.gis.content.get(item_id)
 
             layer = content.layers[0]
-            features_req = layer.query(where="BASENAME = '20'")
+            features_req = layer.query(where="Nombre = 'Espana'")
 
-            csv_file = r"generatedCSVfile.csv"
+            csv_file = r"generatedCSVfile_ferroviaria.csv"
             path = tempfile.gettempdir()
             temp = features_req.save(path, csv_file)
 
@@ -97,7 +98,8 @@ class Test_Feature_class(unittest.TestCase):
         """
         try:
             # using Living Atlas curated content Transportation item
-            content = self.gis.content.get("f42ecc08a3634182b8678514af35fac3")
+            item_id = "c68d7c5e350c47cb9ad7ac491c327115"
+            content = self.gis.content.get(item_id)
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = -1")
