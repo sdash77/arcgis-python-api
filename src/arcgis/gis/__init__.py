@@ -18278,9 +18278,9 @@ class Item(dict):
                 A list containing the dependencies of the item, in either Item or Item ID form.
         """
 
-        from arcgis.apps.itemgraph import create_item_graph
+        from arcgis.apps.itemgraph import create_dependency_graph
 
-        graph = create_item_graph(self._gis, [self], outside_org=outside_org)
+        graph = create_dependency_graph(self._gis, [self], outside_org=outside_org)
         if out_format.lower() == "graph":
             return graph
         node = graph.get_item(self.id)
