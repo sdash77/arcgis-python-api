@@ -681,7 +681,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         geo._data.index = old_index
     return
 
-
+            
 # --------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
@@ -720,267 +720,182 @@ def from_featureclass(filename, **kwargs):
     :return: pandas.core.frame.DataFrame
 
     """
-    from arcgis.geometry import _types
+    if "http://" in filename or "https://" in filename:
+        return _http_workflow(filename)
 
-    # this covers files and shapefile URL's
-    def _gdal_workflow(filename=filename):
-        filename = _ensure_path_string(filename)
-        if not isinstance(filename, (str, Path, PurePath)):
-            raise ValueError(
-                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-            )
-        if filename.find("http://") > -1 or filename.find("https://") > -1:
-            r = requests.get(filename)
-            with tempfile.TemporaryDirectory() as temp_dir:
-                archive_path = os.path.join(temp_dir, "archive.zip")
-                with open(archive_path, "wb") as f:
-                    f.write(r.content)
+    filename = _ensure_path_string(filename)
 
-                with zipfile.ZipFile(archive_path) as archive:
-                    archive.extractall(path=temp_dir)
-
-                df = _gdal_to_sedf(file_path=temp_dir)
-        else:
-            df = _gdal_to_sedf(file_path=filename)
-
-        df.spatial._meta.source = filename
-        return df
-
-    if HASARCPY and (
-        isinstance(filename, (arcpy._mp.Layer))
-        or type(filename).__name__.find("arcpy") > -1
-    ):
-        filename = filename
-    # this part is for shapefile URL's if we don't have gdal
-    else:
-        filename = _ensure_path_string(filename)
-        if not isinstance(filename, (str, Path, PurePath)):
-            raise ValueError(
-                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-            )
-        # if url shapefile and no gdal, go to old shapefile-only method
-        if (
-            filename.find("http://") > -1
-            or filename.find("https://") > -1
-            and not HASGDAL
-        ):
-            res = from_url(url=filename)
-            if len(res) == 1:
-                return res[0]
-            return res
-
-    # if we either have arcpy-specific kwargs, or no gdal
     if HASARCPY:
-        sql_clause = kwargs.pop("sql_clause", (None, None))
-        where_clause = kwargs.pop("where_clause", None)
-        fields = kwargs.pop("fields", None)
-        sr = kwargs.pop("sr", None)
-        spatial_filter = kwargs.pop("spatial_filter", None)
-        geom = None
-        try:
-            desc = arcpy.da.Describe(filename)
-            area_field = desc.pop("areaFieldName", None)
-            length_field = desc.pop("lengthFieldName", None)
-        except:  # for older versions of arcpy
-            desc = arcpy.Describe(filename)
-            desc = {"fields": desc.fields, "shapeType": desc.shapeType}
-            area_field = getattr(desc, "areaFieldName", None)
-            length_field = getattr(desc, "lengthFieldName", None)
-        pandas_dtypes = _fc2pandas_dtypes(desc)
-
-        if spatial_filter:
-            _sf_lu = {
-                "esriSpatialRelIntersects": "INTERSECT",
-                "esriSpatialRelContains": "CONTAINS",
-                "esriSpatialRelCrosses": "CROSSED_BY_THE_OUTLINE_OF",
-                "esriSpatialRelEnvelopeIntersects": "INTERSECT",
-                "esriSpatialRelIndexIntersects": "INTERSECT",
-                "esriSpatialRelOverlaps": "INTERSECT",
-                "esriSpatialRelTouches": "BOUNDARY_TOUCHES",
-                "esriSpatialRelWithin": "WITHIN",
-            }
-            relto = _sf_lu[spatial_filter["spatialRel"]]
-            geom = spatial_filter["geometry"]
-            if hasattr(geom, "polygon"):
-                geom = geom.polygon
-            geom = geom.as_arcpy
-            flname = "a" + uuid.uuid4().hex[:6]
-            filename = arcpy.management.MakeFeatureLayer(
-                filename, out_layer=flname, where_clause=where_clause
-            )[0]
-            arcpy.management.SelectLayerByLocation(
-                filename, overlap_type=relto, select_features=geom
-            )[0]
-
-        if fields is None:
-            fields = [
-                fld.name
-                for fld in desc["fields"]
-                if fld.type not in ["Geometry"]
-                and fld.name not in [area_field, length_field]
-            ]
-        cursor_fields = fields + ["SHAPE@JSON"]
-        df_fields = fields + ["SHAPE"]
-        dfs = []
-        with arcpy.da.SearchCursor(
-            filename,
-            field_names=cursor_fields,
-            where_clause=where_clause,
-            sql_clause=sql_clause,
-            spatial_reference=sr,
-            datum_transformation=kwargs.get("datum_transformation", None),
-        ) as rows:
-            srows = []
-            for row in rows:
-                srows.append(row)
-                if len(srows) == 25000:
-                    dfs.append(pd.DataFrame(srows, columns=df_fields))
-                    srows = []
-            if len(srows):
-                dfs.append(pd.DataFrame(srows, columns=df_fields))
-                srows = []
-            del srows
-        if len(dfs) > 0:
-            df = pd.concat(dfs)
-            df = df.reset_index(drop=True)
-        elif len(dfs) == 1:
-            df = dfs[0]
-        else:
-            df = pd.DataFrame([], columns=df_fields)
-        q = df.SHAPE.notnull()
-        none_q = ~df.SHAPE.notnull()
-        gt = desc["shapeType"].lower()
-        geoms = {
-            "point": _types.Point,
-            "polygon": _types.Polygon,
-            "polyline": _types.Polyline,
-            "multipoint": _types.MultiPoint,
-            "envelope": _types.Envelope,
-            "geometry": _types.Geometry,
-        }
-
-        df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(geoms[gt])
-        df.loc[none_q, "SHAPE"] = None
-        df.spatial.set_geometry("SHAPE")
-        df.spatial._meta.source = filename
-        try:
-            for key, value in pandas_dtypes.items():
-                try:
-                    df[key] = df[key].astype(value)  # , errors='ignore')
-                except:
-                    from numpy import dtype as _dtype
-
-                    if value == _dtype("<m8[s]"):
-                        df[key] = pd.to_datetime(df[key], format="%H:%M:%S").dt.time
-                    elif value == _dtype("<M8[us]"):
-                        df[key] = pd.to_datetime(df[key], utc=True)
-
-            return df.convert_dtypes()
-        except:
-            return df.convert_dtypes()
-
-    # this happens as a backup if we have arcpy kwargs but no arcpy
-    elif HASGDAL and not kwargs and not ".sde" in filename.lower():
-        return _gdal_workflow()
-    # pyshp workflow
-    elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
-        geoms = []
-        records = []
-        reader = shapefile.Reader(filename)
-        fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
-        for r in reader.shapeRecords():
-            atr = dict(zip(fields, r.record))
-            g = r.shape.__geo_interface__
-            g = _geojson_to_esrijson(g)
-            geom = _types.Geometry(g)
-            atr["SHAPE"] = geom
-            records.append(atr)
-            del atr
-            del r, g
-            del geom
-        sdf = pd.DataFrame(records)
-        sdf.spatial.set_geometry("SHAPE")
-        sdf["OBJECTID"] = range(sdf.shape[0])
-        sdf.reset_index(inplace=True)
-        sdf.spatial._meta.source = filename
-        return sdf
-
-    # fiona workflow
-    elif (
-        HASARCPY == False
-        and HASFIONA == True
-        and (
-            filename.lower().find(".shp") > -1
-            or os.path.dirname(filename).lower().find(".gdb") > -1
-        )
-    ):
-        is_gdb = os.path.dirname(filename).lower().find(".gdb") > -1
-        if is_gdb:
-            # Remove deprecation warning.
-            fiona_env = fiona.drivers
-            if hasattr(fiona, "Env"):
-                fiona_env = fiona.Env
-
-            with fiona_env():
-                fp = os.path.dirname(filename)
-                fn = os.path.basename(filename)
-                geoms = []
-                atts = []
-                with fiona.open(fp, layer=fn) as source:
-                    meta = source.meta
-                    cols = list(source.schema["properties"].keys())
-
-                    # Get the CRS
-                    try:
-                        wkid = source.crs["init"].split(":")[1]
-                    except:
-                        wkid = 4326
-
-                    sr = _types.SpatialReference({"wkid": int(wkid)})
-
-                    for idx, row in source.items():
-                        g = _types.Geometry(row["geometry"])
-                        geoms.append(g)
-                        atts.append(list(row["properties"].values()))
-                        del idx, row
-                    df = pd.DataFrame(data=atts, columns=cols)
-                    df.spatial.set_geometry(geoms)
-                    df.spatial.sr = sr
-                    df.spatial._meta.source = filename
-                    return df
-        else:
-            with fiona.drivers():
-                from arcgis.geometry import _types
-
-                geoms = []
-                atts = []
-                with fiona.open(filename) as source:
-                    cols = list(source.schema["properties"].keys())
-                    for idx, row in source.items():
-                        geoms.append(_types.Geometry(row["geometry"]))
-                        atts.append(list(row["properties"].values()))
-                        del idx, row
-                    df = pd.DataFrame(data=atts, columns=cols)
-                    df.spatial.set_geometry(geoms)
-                    df.spatial._meta.source = filename
-                    return df
-
-    # womp womp, no shape engines
+        return _arcpy_workflow(filename, **kwargs)
+    elif HASGDAL:
+        return _gdal_workflow(filename)
+    elif HASPYSHP and filename.lower().endswith(".shp"):
+        return _shapefile_workflow(filename)
+    elif HASFIONA and (filename.lower().endswith(".shp") or ".gdb" in os.path.dirname(filename).lower()):
+        return _fiona_workflow(filename)
     else:
-        if os.path.dirname(filename).lower().find(".gdb") > -1:
-            message = """
-            Cannot Open Geodatabase without Arcpy, Fiona, pyshp, or GDAL
-            \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
-            """.strip()
-            print(message)
-            raise Exception("Failed to import Feature Class from Geodatabase specified")
-        else:
-            raise Exception(
-                "Unsupported Data Format or Invalid Feature Class specified"
-            )
-    # return
+        raise Exception("Unsupported data format or missing required libraries.")
 
+def _http_workflow(filename):
+    r = requests.get(filename)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = os.path.join(temp_dir, "archive.zip")
+        with open(archive_path, "wb") as f:
+            f.write(r.content)
 
+        with zipfile.ZipFile(archive_path) as archive:
+            archive.extractall(path=temp_dir)
+
+        df = _gdal_to_sedf(file_path=temp_dir)
+    df.spatial._meta.source = filename
+    return df
+
+def _gdal_workflow(filename):
+    df = _gdal_to_sedf(file_path=filename)
+    df.spatial._meta.source = filename
+    return df
+
+def _arcpy_workflow(filename, **kwargs):
+    from arcgis.geometry import _types
+    sql_clause = kwargs.pop("sql_clause", (None, None))
+    where_clause = kwargs.pop("where_clause", None)
+    fields = kwargs.pop("fields", None)
+    sr = kwargs.pop("sr", None)
+    spatial_filter = kwargs.pop("spatial_filter", None)
+    datum_transformation = kwargs.pop("datum_transformation", None)
+
+    desc = arcpy.da.Describe(filename)
+    area_field = desc.get("areaFieldName", None)
+    length_field = desc.get("lengthFieldName", None)
+    pandas_dtypes = _fc2pandas_dtypes(desc)
+
+    if spatial_filter:
+        spatial_relation = {
+            "esriSpatialRelIntersects": "INTERSECT",
+            "esriSpatialRelContains": "CONTAINS",
+            "esriSpatialRelCrosses": "CROSSED_BY_THE_OUTLINE_OF",
+            "esriSpatialRelEnvelopeIntersects": "INTERSECT",
+            "esriSpatialRelIndexIntersects": "INTERSECT",
+            "esriSpatialRelOverlaps": "INTERSECT",
+            "esriSpatialRelTouches": "BOUNDARY_TOUCHES",
+            "esriSpatialRelWithin": "WITHIN",
+        }
+        overlap_type = spatial_relation[spatial_filter["spatialRel"]]
+        geom = spatial_filter["geometry"].polygon if hasattr(spatial_filter["geometry"], "polygon") else spatial_filter["geometry"]
+        geom = geom.as_arcpy
+
+        flname = "a" + uuid.uuid4().hex[:6]
+        filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
+        arcpy.management.SelectLayerByLocation(filename, overlap_type=overlap_type, select_features=geom)[0]
+
+    if fields is None:
+        fields = [
+            fld.name
+            for fld in desc["fields"]
+            if fld.type != "Geometry" and fld.name not in [area_field, length_field]
+        ]
+
+    cursor_fields = fields + ["SHAPE@JSON"]
+    df_fields = fields + ["SHAPE"]
+
+    dfs = []
+    with arcpy.da.SearchCursor(
+        filename,
+        field_names=cursor_fields,
+        where_clause=where_clause,
+        sql_clause=sql_clause,
+        spatial_reference=sr,
+        datum_transformation=datum_transformation,
+    ) as rows:
+        batch = []
+        for row in rows:
+            batch.append(row)
+            if len(batch) == 25000:
+                dfs.append(pd.DataFrame(batch, columns=df_fields))
+                batch = []
+        if batch:
+            dfs.append(pd.DataFrame(batch, columns=df_fields))
+
+    df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=df_fields)
+
+    q = df.SHAPE.notnull()
+    none_q = ~q
+    geom_type = desc["shapeType"].lower()
+    geom_mapping = {
+        "point": _types.Point,
+        "polygon": _types.Polygon,
+        "polyline": _types.Polyline,
+        "multipoint": _types.MultiPoint,
+        "envelope": _types.Envelope,
+        "geometry": _types.Geometry,
+    }
+
+    df.SHAPE = df.SHAPE[q].apply(_ujson.loads).apply(geom_mapping[geom_type])
+    df.loc[none_q, "SHAPE"] = None
+    df.spatial.set_geometry("SHAPE")
+    df.spatial._meta.source = filename
+
+    for key, data_type in pandas_dtypes.items():
+        try:
+            df[key] = df[key].astype(data_type)
+        except:
+            if data_type == np.dtype("<m8[s]"):
+                df[key] = pd.to_datetime(df[key], format="%H:%M:%S").dt.time
+            elif data_type == np.dtype("<M8[us]"):
+                df[key] = pd.to_datetime(df[key], utc=True)
+
+    return df.convert_dtypes()
+
+def _shapefile_workflow(filename):
+    from arcgis.geometry import _types
+    records = []
+    reader = shapefile.Reader(filename)
+    fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
+    for r in reader.shapeRecords():
+        atr = dict(zip(fields, r.record))
+        g = r.shape.__geo_interface__
+        g = _geojson_to_esrijson(g)
+        geom = _types.Geometry(g)
+        atr["SHAPE"] = geom
+        records.append(atr)
+    sdf = pd.DataFrame(records)
+    sdf.spatial.set_geometry("SHAPE")
+    sdf["OBJECTID"] = range(sdf.shape[0])
+    sdf.reset_index(inplace=True)
+    sdf.spatial._meta.source = filename
+    return sdf
+
+def _fiona_workflow(filename):
+    from arcgis.geometry import _types
+    is_gdb = ".gdb" in os.path.dirname(filename).lower()
+    if is_gdb:
+        with fiona.Env():
+            fp = os.path.dirname(filename)
+            fn = os.path.basename(filename)
+            geom_mapping = []
+            atts = []
+            with fiona.open(fp, layer=fn) as source:
+                cols = list(source.schema["properties"].keys())
+                for _, row in source.items():
+                    geom_mapping.append(_types.Geometry(row["geometry"]))
+                    atts.append(list(row["properties"].values()))
+                df = pd.DataFrame(data=atts, columns=cols)
+                df.spatial.set_geometry(geom_mapping)
+                df.spatial._meta.source = filename
+                return df
+    else:
+        with fiona.Env():
+            geom_mapping = []
+            atts = []
+            with fiona.open(filename) as source:
+                cols = list(source.schema["properties"].keys())
+                for _, row in source.items():
+                    geom_mapping.append(_types.Geometry(row["geometry"]))
+                    atts.append(list(row["properties"].values()))
+                df = pd.DataFrame(data=atts, columns=cols)
+                df.spatial.set_geometry(geom_mapping)
+                df.spatial._meta.source = filename
+                return df
 # --------------------------------------------------------------------------
 import functools
 
