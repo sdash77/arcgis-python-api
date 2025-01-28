@@ -1923,9 +1923,9 @@ def geocode(
                         match_out_of_range = True,
                         location_type = "Street"
                        )
-                        
+
         >>> type(geocoded)
-        
+
         <class arcgis.features.FeatureSet>
 
     :return:
