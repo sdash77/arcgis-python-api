@@ -373,6 +373,10 @@ class profiles:
         "utility_network",
         "your_utility_network_profile",
     )
+    _workflow_manager_profile_parameters = (
+        "workflow_manager",
+        "your_workflow_manager_profile",
+    )
 
     def _get_profile_parameterized_class(*args):
         """Returns a parameterized class for the profile parameters from provided args"""
@@ -513,6 +517,12 @@ class profiles:
             cls._utility_network_profile_parameters
         )
 
+    @classproperty
+    def workflow_manager(cls):
+        """Run tests for utility network profile"""
+        return cls._get_profile_parameterized_class(
+            cls._workflow_manager_profile_parameters
+        )
     # endregion
 
 
