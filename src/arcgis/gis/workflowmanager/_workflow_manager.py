@@ -4226,6 +4226,7 @@ class NotificationManager:
         """
         if self.websocket_connection:
             self.websocket_connection.disconnect()
+            self.websocket_connection = None
             self._connected = False
 
     def subscribe(self, job_ids: list, callback: Callable[[Notification], None]):
