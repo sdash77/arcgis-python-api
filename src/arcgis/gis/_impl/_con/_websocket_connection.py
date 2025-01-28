@@ -123,8 +123,8 @@ class WebsocketConnection:
 
         # TODO this is always going to make the request even when the token is cached, but would need to expose more to avoid
         # TODO Can optimize to not get cookies when they're not going to be used
-        logger.debug(f"Making request to {self.token_request_url} to generate token")
-        resp = self._gis._session._session.get(f"{self.token_request_url}")
+        logger.debug(f"Making request to {token_request_url} to generate token")
+        resp = self._gis._session._session.get(f"{token_request_url}")
         logger.debug(
             f"Response headers: {resp.headers}. Request header: {resp.request.headers}"
         )
