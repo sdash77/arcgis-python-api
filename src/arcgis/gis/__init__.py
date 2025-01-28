@@ -4669,7 +4669,7 @@ class UserManager(object):
         The ``advanced_search`` method allows for the full control of the query operations
         by any given user.  The searches are performed against a high performance
         index that indexes the most popular fields of an user. See the
-        `Search reference page <https://developers.arcgis.com/web-scene-specification/objects/search/>`_ for information
+        `Search reference page <https://developers.arcgis.com/rest/users-groups-and-items/search-reference/>`_ for information
         on the fields and the syntax of the query. The ``advanced_search`` method is
         quite similar to the :attr:`~arcgis.gis.UserManager.search` method, which is less refined.
 
