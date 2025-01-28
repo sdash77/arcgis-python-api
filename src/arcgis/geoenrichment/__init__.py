@@ -8,8 +8,6 @@ installed. A remote source requires access to a property configured Web
 GIS. A Web GIS can either be ArcGIS Online or an instance of ArcGIS 
 Enterprise with Business Analyst.
 
-Test.
-
 .. note::
     Organizations should review the
     `data attributions <https://www.esri.com/en-us/legal/terms/data-attributions>`_
