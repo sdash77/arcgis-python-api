@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import sys
 import logging
 from typing import Dict, Any, Tuple
@@ -19,6 +20,17 @@ from .tools._lazy import LazyLoader
 
 __USERAGENT__ = f"Geosaurus/{__version__}"
 __log__ = logging.getLogger()
+
+
+def _is_cert_files(certs: tuple) -> bool:
+    """checks if the tuple is all files"""
+    checks: list[bool] = []
+    for fp in certs:
+        try:
+            checks.append(os.path.isfile(fp))
+        except:
+            checks.append(False)
+    return all(checks)
 
 
 ###########################################################################
@@ -152,6 +164,8 @@ class EsriSession:
             self.auth = auth
         if cert is None:
             self._x509_cert, self._x509_pw = None, None
+        elif cert and len(cert) == 2 and _is_cert_files(certs=cert):
+            self._x509_cert, self._x509_pw = cert, None
         elif cert and len(cert) == 2:
             self._x509_cert, self._x509_pw = cert[0], cert[1]
         else:
