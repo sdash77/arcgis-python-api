@@ -2524,6 +2524,13 @@ class FeatureLayer(Layer):
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
+        .. note::
+            Please reference specific deployment documentation for important information on criteria that
+            must be met before appending data will work:
+
+            * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
+            * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+
         ========================   ====================================================================
         **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
@@ -2531,14 +2538,27 @@ class FeatureLayer(Layer):
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
-        upload_format              Required string. The source append data format. The default is
-                                   featureCollection.
-                                   Values: 'sqlite' | 'shapefile' | 'filegdb' | 'featureCollection' |
-                                   'geojson' | 'csv' | 'excel'
+        upload_format              Required string. The source append data format. Supported formats
+                                   vary by deployment and layer. See documentation for details:
+
+                                   * `ArcGIS Enterprise append <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#APPEND>`_
+                                   * `ArcGIS Online append <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#APPEND>`_
 
                                    .. note::
-                                        You can find the Feature Layer's supported formats by checking
-                                        the `featureLayer.properties.supportedAppendFormats` property.
+                                        You can find whether append is supported on a Feature Layer,
+                                        and the specific formats the layer supports by checking the
+                                        properties:
+
+                                        .. code-block:: python
+
+                                            >>> featurelayer.properties.supportsAppend
+
+                                            True
+
+                                            >>> featureLayer.properties.supportedAppendFormats
+
+                                            'sqlite,geoPackage,shapefile,filegdb,featureCollection'
+                                            'geojson,csv,excel,jsonl,featureService,pbf'
         ------------------------   --------------------------------------------------------------------
         source_table_name          Required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
@@ -2605,7 +2625,9 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
-        layer_mappings             Optional list of dictionaries. This is needed if the source is featureService. It is used to map a source layer to a destination layer. Only one source can be mapped to a layer.
+        layer_mappings             Optional list of dictionaries. This is needed if the source is a
+                                   feature service. It is used to map a source layer to a destination
+                                   layer. Only one source can be mapped to a layer.
 
                                     Syntax: layerMappings=[{"id": <layerID>, "sourceId": <layer id>}]
         ------------------------   --------------------------------------------------------------------
@@ -2614,14 +2636,21 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional boolean. If True, a future object will be returned and the process
-                                   will not wait for the task to complete. The default is False, which means wait for results.
+        future                     Optional boolean.
+
+                                   * If *True*, method runs asynchronously and a future object will be
+                                     returned. The process will return control to the user.
+                                   * If *False*, method runs synchronously and process waits until the
+                                     operation completes before returning control back to user. This is
+                                     the default value.
         ========================   ====================================================================
 
         :return:
-            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
-            response messages will be return in addition to the boolean as a `tuple`.
-            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            * If *future=False*, A boolean indicating success (True), or failure (False). When
+              *return_messages* is *True*, the response will return a tuple with a boolean indicating
+              success or failure, and dictionary with the return messages.
+            * If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object.
+              Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2634,10 +2663,6 @@ class FeatureLayer(Layer):
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
                                     return_messages = False)
             <True>
-
-
-
-
         """
         import copy
 

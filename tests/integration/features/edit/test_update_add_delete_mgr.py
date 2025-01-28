@@ -65,7 +65,7 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
         )   
         item.delete(permanent=True)
         source_item.delete(permanent=True)
-
+        
     def test_delete_to_def_fl(self):
         """
         Tests the Delete Definition to the Feature Layer
@@ -83,6 +83,7 @@ class TestAddUpdateDeleteDef(unittest.TestCase):
                 }
             ]
         }
+
         g = [
             Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}}),
             Geometry({"x": -118.25, "y": 33.85, "spatialReference": {"wkid": 4326}}),
