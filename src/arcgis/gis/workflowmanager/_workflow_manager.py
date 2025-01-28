@@ -4274,10 +4274,10 @@ class NotificationManager:
         self._connected = False
 
         # need baseAddress/ server address, orgid, and workflow item id
-        base = self.server_url.replace("http://", "ws://").replace("https://", "wss://")
+        base = self._server_url.replace("http://", "ws://").replace("https://", "wss://")
         item_url = f"{self.org_id}/{self.workflow_item_id}"
         self.websocket_url = f"{base}/{item_url}/notificationWs"
-        self.token_request_url = f"{self.server_url}/{item_url}"
+        self.token_request_url = f"{self._server_url}/{item_url}"
 
     def _token_generator(self) -> (str, str):
         # TODO this is always going to make the request even when the token is cached, but would need to expose more to avoid
@@ -4326,7 +4326,7 @@ class NotificationManager:
             logger.error(e)
 
     def _connect(self) -> WebsocketConnection:
-        scheme = parse_url(self.server_url).scheme
+        scheme = parse_url(self._server_url).scheme
         adapter = self._gis.session.adapters.get(f"{scheme}://", None)
 
         context = None
